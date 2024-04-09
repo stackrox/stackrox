@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -122,7 +122,7 @@ func (KubernetesEvent_Object_Resource) EnumDescriptor() ([]byte, []int) {
 type KubernetesEvent struct {
 	Id        string                  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Object    *KubernetesEvent_Object `protobuf:"bytes,2,opt,name=object,proto3" json:"object,omitempty"`
-	Timestamp *types.Timestamp        `protobuf:"bytes,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Timestamp *timestamppb.Timestamp  `protobuf:"bytes,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	ApiVerb   KubernetesEvent_APIVerb `protobuf:"varint,4,opt,name=api_verb,json=apiVerb,proto3,enum=storage.KubernetesEvent_APIVerb" json:"api_verb,omitempty" policy:"Kubernetes API Verb"` // @gotags: policy:"Kubernetes API Verb"
 	// tags 5-14 reserved for ObjectArgs
 	// Next available tag: 7
@@ -235,7 +235,7 @@ func (m *KubernetesEvent) GetObject() *KubernetesEvent_Object {
 	return nil
 }
 
-func (m *KubernetesEvent) GetTimestamp() *types.Timestamp {
+func (m *KubernetesEvent) GetTimestamp() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Timestamp
 	}
@@ -1510,7 +1510,7 @@ func (m *KubernetesEvent) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Timestamp == nil {
-				m.Timestamp = &types.Timestamp{}
+				m.Timestamp = &timestamppb.Timestamp{}
 			}
 			if err := m.Timestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

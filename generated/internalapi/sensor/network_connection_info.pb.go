@@ -5,9 +5,9 @@ package sensor
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -31,10 +31,10 @@ type NetworkConnectionInfo struct {
 	UpdatedEndpoints []*NetworkEndpoint `protobuf:"bytes,3,rep,name=updated_endpoints,json=updatedEndpoints,proto3" json:"updated_endpoints,omitempty"`
 	//For active connections, the timestamp of the entire message serves as the latest timestamp
 	//that connection was deemed active
-	Time                 *types.Timestamp `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	Time                 *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *NetworkConnectionInfo) Reset()         { *m = NetworkConnectionInfo{} }
@@ -84,7 +84,7 @@ func (m *NetworkConnectionInfo) GetUpdatedEndpoints() []*NetworkEndpoint {
 	return nil
 }
 
-func (m *NetworkConnectionInfo) GetTime() *types.Timestamp {
+func (m *NetworkConnectionInfo) GetTime() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Time
 	}
@@ -127,10 +127,10 @@ type NetworkConnection struct {
 	ContainerId   string             `protobuf:"bytes,6,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
 	// If this connection was closed, this gives the timestamp when it was closed. If this is unset, we treat it as an
 	// open connection.
-	CloseTimestamp       *types.Timestamp `protobuf:"bytes,11,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	CloseTimestamp       *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *NetworkConnection) Reset()         { *m = NetworkConnection{} }
@@ -208,7 +208,7 @@ func (m *NetworkConnection) GetContainerId() string {
 	return ""
 }
 
-func (m *NetworkConnection) GetCloseTimestamp() *types.Timestamp {
+func (m *NetworkConnection) GetCloseTimestamp() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CloseTimestamp
 	}
@@ -239,7 +239,7 @@ type NetworkEndpoint struct {
 	ContainerId   string          `protobuf:"bytes,4,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
 	// If we're no longer listening on this endpoint, this gives the timestamp when the listen socket
 	// was shutdown. If this is unset, we treat it as an actively listening endpoint.
-	CloseTimestamp       *types.Timestamp                 `protobuf:"bytes,5,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty"`
+	CloseTimestamp       *timestamppb.Timestamp           `protobuf:"bytes,5,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty"`
 	Originator           *storage.NetworkProcessUniqueKey `protobuf:"bytes,6,opt,name=originator,proto3" json:"originator,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
 	XXX_unrecognized     []byte                           `json:"-"`
@@ -307,7 +307,7 @@ func (m *NetworkEndpoint) GetContainerId() string {
 	return ""
 }
 
-func (m *NetworkEndpoint) GetCloseTimestamp() *types.Timestamp {
+func (m *NetworkEndpoint) GetCloseTimestamp() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CloseTimestamp
 	}
@@ -986,7 +986,7 @@ func (m *NetworkConnectionInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Time == nil {
-				m.Time = &types.Timestamp{}
+				m.Time = &timestamppb.Timestamp{}
 			}
 			if err := m.Time.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1268,7 +1268,7 @@ func (m *NetworkConnection) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CloseTimestamp == nil {
-				m.CloseTimestamp = &types.Timestamp{}
+				m.CloseTimestamp = &timestamppb.Timestamp{}
 			}
 			if err := m.CloseTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1461,7 +1461,7 @@ func (m *NetworkEndpoint) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CloseTimestamp == nil {
-				m.CloseTimestamp = &types.Timestamp{}
+				m.CloseTimestamp = &timestamppb.Timestamp{}
 			}
 			if err := m.CloseTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

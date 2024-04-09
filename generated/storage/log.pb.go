@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -24,12 +24,12 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type LogImbue struct {
-	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`               // @gotags: sql:"pk"
-	Timestamp            *types.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Log Imbue Creation Time,hidden"` // @gotags: search:"Log Imbue Creation Time,hidden"
-	Log                  []byte           `protobuf:"bytes,3,opt,name=log,proto3" json:"log,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`               // @gotags: sql:"pk"
+	Timestamp            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Log Imbue Creation Time,hidden"` // @gotags: search:"Log Imbue Creation Time,hidden"
+	Log                  []byte                 `protobuf:"bytes,3,opt,name=log,proto3" json:"log,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *LogImbue) Reset()         { *m = LogImbue{} }
@@ -72,7 +72,7 @@ func (m *LogImbue) GetId() string {
 	return ""
 }
 
-func (m *LogImbue) GetTimestamp() *types.Timestamp {
+func (m *LogImbue) GetTimestamp() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Timestamp
 	}
@@ -311,7 +311,7 @@ func (m *LogImbue) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Timestamp == nil {
-				m.Timestamp = &types.Timestamp{}
+				m.Timestamp = &timestamppb.Timestamp{}
 			}
 			if err := m.Timestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

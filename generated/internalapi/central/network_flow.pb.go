@@ -5,9 +5,9 @@ package central
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -28,7 +28,7 @@ type NetworkFlowUpdate struct {
 	// Network flows that were added or removed from the last time state was sent to Central.
 	Updated              []*storage.NetworkFlow     `protobuf:"bytes,1,rep,name=updated,proto3" json:"updated,omitempty"`
 	UpdatedEndpoints     []*storage.NetworkEndpoint `protobuf:"bytes,3,rep,name=updated_endpoints,json=updatedEndpoints,proto3" json:"updated_endpoints,omitempty"`
-	Time                 *types.Timestamp           `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`
+	Time                 *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
 	XXX_unrecognized     []byte                     `json:"-"`
 	XXX_sizecache        int32                      `json:"-"`
@@ -81,7 +81,7 @@ func (m *NetworkFlowUpdate) GetUpdatedEndpoints() []*storage.NetworkEndpoint {
 	return nil
 }
 
-func (m *NetworkFlowUpdate) GetTime() *types.Timestamp {
+func (m *NetworkFlowUpdate) GetTime() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Time
 	}
@@ -492,7 +492,7 @@ func (m *NetworkFlowUpdate) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Time == nil {
-				m.Time = &types.Timestamp{}
+				m.Time = &timestamppb.Timestamp{}
 			}
 			if err := m.Time.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

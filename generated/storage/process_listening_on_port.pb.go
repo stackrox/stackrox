@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -33,7 +33,7 @@ type ProcessListeningOnPort struct {
 	Signal               *ProcessSignal                   `protobuf:"bytes,6,opt,name=signal,proto3" json:"signal,omitempty"`
 	ClusterId            string                           `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	Namespace            string                           `protobuf:"bytes,8,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	ContainerStartTime   *types.Timestamp                 `protobuf:"bytes,9,opt,name=container_start_time,json=containerStartTime,proto3" json:"container_start_time,omitempty"`
+	ContainerStartTime   *timestamppb.Timestamp           `protobuf:"bytes,9,opt,name=container_start_time,json=containerStartTime,proto3" json:"container_start_time,omitempty"`
 	ImageId              string                           `protobuf:"bytes,10,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
 	XXX_unrecognized     []byte                           `json:"-"`
@@ -129,7 +129,7 @@ func (m *ProcessListeningOnPort) GetNamespace() string {
 	return ""
 }
 
-func (m *ProcessListeningOnPort) GetContainerStartTime() *types.Timestamp {
+func (m *ProcessListeningOnPort) GetContainerStartTime() *timestamppb.Timestamp {
 	if m != nil {
 		return m.ContainerStartTime
 	}
@@ -232,7 +232,7 @@ type ProcessListeningOnPortFromSensor struct {
 	Port                 uint32                     `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
 	Protocol             L4Protocol                 `protobuf:"varint,2,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty"`
 	Process              *ProcessIndicatorUniqueKey `protobuf:"bytes,3,opt,name=process,proto3" json:"process,omitempty"`
-	CloseTimestamp       *types.Timestamp           `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty"`
+	CloseTimestamp       *timestamppb.Timestamp     `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty"`
 	ClusterId            string                     `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	DeploymentId         string                     `protobuf:"bytes,7,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
 	PodUid               string                     `protobuf:"bytes,8,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty"`
@@ -296,7 +296,7 @@ func (m *ProcessListeningOnPortFromSensor) GetProcess() *ProcessIndicatorUniqueK
 	return nil
 }
 
-func (m *ProcessListeningOnPortFromSensor) GetCloseTimestamp() *types.Timestamp {
+func (m *ProcessListeningOnPortFromSensor) GetCloseTimestamp() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CloseTimestamp
 	}
@@ -351,11 +351,11 @@ type ProcessListeningOnPortStorage struct {
 	// Ideally it has to be GENERATED ALWAYS AS IDENTITY, which will make it a
 	// bigint with a sequence. Unfortunately at the moment some bits of store
 	// generator assume an id has to be a string.
-	Id                 string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                                             // @gotags: sql:"pk,type(uuid)"
-	Port               uint32           `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty" search:"Port,store"`                                                        // @gotags: search:"Port,store"
-	Protocol           L4Protocol       `protobuf:"varint,3,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty" search:"Port Protocol,store"`                        // @gotags: search:"Port Protocol,store"
-	CloseTimestamp     *types.Timestamp `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty" search:"Closed Time,hidden"`               // @gotags: search:"Closed Time,hidden"
-	ProcessIndicatorId string           `protobuf:"bytes,5,opt,name=process_indicator_id,json=processIndicatorId,proto3" json:"process_indicator_id,omitempty" search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"` // @gotags: search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"
+	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                                             // @gotags: sql:"pk,type(uuid)"
+	Port               uint32                 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty" search:"Port,store"`                                                        // @gotags: search:"Port,store"
+	Protocol           L4Protocol             `protobuf:"varint,3,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty" search:"Port Protocol,store"`                        // @gotags: search:"Port Protocol,store"
+	CloseTimestamp     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty" search:"Closed Time,hidden"`               // @gotags: search:"Closed Time,hidden"
+	ProcessIndicatorId string                 `protobuf:"bytes,5,opt,name=process_indicator_id,json=processIndicatorId,proto3" json:"process_indicator_id,omitempty" search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"` // @gotags: search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"
 	// XXX: Make it a partial index on only active, not closed, PLOP
 	Closed bool `protobuf:"varint,6,opt,name=closed,proto3" json:"closed,omitempty" search:"Closed,store" sql:"index=btree"` // @gotags: search:"Closed,store" sql:"index=btree"
 	// ProcessIndicator will be not empty only for those cases when we were not
@@ -424,7 +424,7 @@ func (m *ProcessListeningOnPortStorage) GetProtocol() L4Protocol {
 	return L4Protocol_L4_PROTOCOL_UNKNOWN
 }
 
-func (m *ProcessListeningOnPortStorage) GetCloseTimestamp() *types.Timestamp {
+func (m *ProcessListeningOnPortStorage) GetCloseTimestamp() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CloseTimestamp
 	}
@@ -1404,7 +1404,7 @@ func (m *ProcessListeningOnPort) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ContainerStartTime == nil {
-				m.ContainerStartTime = &types.Timestamp{}
+				m.ContainerStartTime = &timestamppb.Timestamp{}
 			}
 			if err := m.ContainerStartTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1686,7 +1686,7 @@ func (m *ProcessListeningOnPortFromSensor) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CloseTimestamp == nil {
-				m.CloseTimestamp = &types.Timestamp{}
+				m.CloseTimestamp = &timestamppb.Timestamp{}
 			}
 			if err := m.CloseTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1971,7 +1971,7 @@ func (m *ProcessListeningOnPortStorage) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CloseTimestamp == nil {
-				m.CloseTimestamp = &types.Timestamp{}
+				m.CloseTimestamp = &timestamppb.Timestamp{}
 			}
 			if err := m.CloseTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

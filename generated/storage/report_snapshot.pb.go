@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -503,8 +503,8 @@ func (m *NotifierSnapshot) Clone() *NotifierSnapshot {
 
 type ReportStatus struct {
 	RunState                 ReportStatus_RunState           `protobuf:"varint,1,opt,name=run_state,json=runState,proto3,enum=storage.ReportStatus_RunState" json:"run_state,omitempty" search:"Report State"` // @gotags: search:"Report State"
-	QueuedAt                 *types.Timestamp                `protobuf:"bytes,2,opt,name=queued_at,json=queuedAt,proto3" json:"queued_at,omitempty" search:"Report Init Time"`                                     // @gotags: search:"Report Init Time"
-	CompletedAt              *types.Timestamp                `protobuf:"bytes,3,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty" search:"Report Completion Time"`                            // @gotags: search:"Report Completion Time"
+	QueuedAt                 *timestamppb.Timestamp          `protobuf:"bytes,2,opt,name=queued_at,json=queuedAt,proto3" json:"queued_at,omitempty" search:"Report Init Time"`                                     // @gotags: search:"Report Init Time"
+	CompletedAt              *timestamppb.Timestamp          `protobuf:"bytes,3,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty" search:"Report Completion Time"`                            // @gotags: search:"Report Completion Time"
 	ErrorMsg                 string                          `protobuf:"bytes,4,opt,name=error_msg,json=errorMsg,proto3" json:"error_msg,omitempty"`
 	ReportRequestType        ReportStatus_RunMethod          `protobuf:"varint,5,opt,name=report_request_type,json=reportRequestType,proto3,enum=storage.ReportStatus_RunMethod" json:"report_request_type,omitempty" search:"Report Request Type"`                               // @gotags: search:"Report Request Type"
 	ReportNotificationMethod ReportStatus_NotificationMethod `protobuf:"varint,6,opt,name=report_notification_method,json=reportNotificationMethod,proto3,enum=storage.ReportStatus_NotificationMethod" json:"report_notification_method,omitempty" search:"Report Notification Method"` // @gotags: search:"Report Notification Method"
@@ -553,14 +553,14 @@ func (m *ReportStatus) GetRunState() ReportStatus_RunState {
 	return ReportStatus_WAITING
 }
 
-func (m *ReportStatus) GetQueuedAt() *types.Timestamp {
+func (m *ReportStatus) GetQueuedAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.QueuedAt
 	}
 	return nil
 }
 
-func (m *ReportStatus) GetCompletedAt() *types.Timestamp {
+func (m *ReportStatus) GetCompletedAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CompletedAt
 	}
@@ -1892,7 +1892,7 @@ func (m *ReportStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.QueuedAt == nil {
-				m.QueuedAt = &types.Timestamp{}
+				m.QueuedAt = &timestamppb.Timestamp{}
 			}
 			if err := m.QueuedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1928,7 +1928,7 @@ func (m *ReportStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CompletedAt == nil {
-				m.CompletedAt = &types.Timestamp{}
+				m.CompletedAt = &timestamppb.Timestamp{}
 			}
 			if err := m.CompletedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

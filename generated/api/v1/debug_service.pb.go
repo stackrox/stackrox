@@ -5,9 +5,10 @@ package v1
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
+	_ "google.golang.org/protobuf/types/known/emptypb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -331,8 +332,8 @@ func (m *LogLevelResponse) Clone() *LogLevelResponse {
 }
 
 type AuthorizationTraceResponse struct {
-	ArrivedAt            *types.Timestamp                     `protobuf:"bytes,1,opt,name=arrived_at,json=arrivedAt,proto3" json:"arrived_at,omitempty"`
-	ProcessedAt          *types.Timestamp                     `protobuf:"bytes,2,opt,name=processed_at,json=processedAt,proto3" json:"processed_at,omitempty"`
+	ArrivedAt            *timestamppb.Timestamp               `protobuf:"bytes,1,opt,name=arrived_at,json=arrivedAt,proto3" json:"arrived_at,omitempty"`
+	ProcessedAt          *timestamppb.Timestamp               `protobuf:"bytes,2,opt,name=processed_at,json=processedAt,proto3" json:"processed_at,omitempty"`
 	Request              *AuthorizationTraceResponse_Request  `protobuf:"bytes,3,opt,name=request,proto3" json:"request,omitempty"`
 	Response             *AuthorizationTraceResponse_Response `protobuf:"bytes,4,opt,name=response,proto3" json:"response,omitempty"`
 	User                 *AuthorizationTraceResponse_User     `protobuf:"bytes,5,opt,name=user,proto3" json:"user,omitempty"`
@@ -375,14 +376,14 @@ func (m *AuthorizationTraceResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AuthorizationTraceResponse proto.InternalMessageInfo
 
-func (m *AuthorizationTraceResponse) GetArrivedAt() *types.Timestamp {
+func (m *AuthorizationTraceResponse) GetArrivedAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.ArrivedAt
 	}
 	return nil
 }
 
-func (m *AuthorizationTraceResponse) GetProcessedAt() *types.Timestamp {
+func (m *AuthorizationTraceResponse) GetProcessedAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.ProcessedAt
 	}
@@ -2529,7 +2530,7 @@ func (m *AuthorizationTraceResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ArrivedAt == nil {
-				m.ArrivedAt = &types.Timestamp{}
+				m.ArrivedAt = &timestamppb.Timestamp{}
 			}
 			if err := m.ArrivedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2565,7 +2566,7 @@ func (m *AuthorizationTraceResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ProcessedAt == nil {
-				m.ProcessedAt = &types.Timestamp{}
+				m.ProcessedAt = &timestamppb.Timestamp{}
 			}
 			if err := m.ProcessedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

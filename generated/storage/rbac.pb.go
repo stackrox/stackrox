@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -97,19 +97,19 @@ func (PermissionLevel) EnumDescriptor() ([]byte, []int) {
 // Properties of an individual k8s Role or ClusterRole.
 // ////////////////////////////////////////
 type K8SRole struct {
-	Id                   string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Role ID,hidden" sql:"pk,type(uuid)"`                                                                                                           // @gotags: search:"Role ID,hidden" sql:"pk,type(uuid)"
-	Name                 string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Role"`                                                                                                       // @gotags: search:"Role"
-	Namespace            string            `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                                                                                             // @gotags: search:"Namespace,store"
-	ClusterId            string            `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`                                                                            // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
-	ClusterName          string            `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"`                                                                      // @gotags: search:"Cluster"
-	ClusterRole          bool              `protobuf:"varint,6,opt,name=cluster_role,json=clusterRole,proto3" json:"cluster_role,omitempty" search:"Cluster Role"`                                                                     // @gotags: search:"Cluster Role"
-	Labels               map[string]string `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Role Label"`           // @gotags: search:"Role Label"
-	Annotations          map[string]string `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Role Annotation"` // @gotags: search:"Role Annotation"
-	CreatedAt            *types.Timestamp  `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	Rules                []*PolicyRule     `protobuf:"bytes,10,rep,name=rules,proto3" json:"rules,omitempty" sensorhash:"set"` // @gotags: sensorhash:"set"
-	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
-	XXX_unrecognized     []byte            `json:"-"`
-	XXX_sizecache        int32             `json:"-"`
+	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Role ID,hidden" sql:"pk,type(uuid)"`                                                                                                           // @gotags: search:"Role ID,hidden" sql:"pk,type(uuid)"
+	Name                 string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Role"`                                                                                                       // @gotags: search:"Role"
+	Namespace            string                 `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                                                                                             // @gotags: search:"Namespace,store"
+	ClusterId            string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`                                                                            // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+	ClusterName          string                 `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"`                                                                      // @gotags: search:"Cluster"
+	ClusterRole          bool                   `protobuf:"varint,6,opt,name=cluster_role,json=clusterRole,proto3" json:"cluster_role,omitempty" search:"Cluster Role"`                                                                     // @gotags: search:"Cluster Role"
+	Labels               map[string]string      `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Role Label"`           // @gotags: search:"Role Label"
+	Annotations          map[string]string      `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Role Annotation"` // @gotags: search:"Role Annotation"
+	CreatedAt            *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Rules                []*PolicyRule          `protobuf:"bytes,10,rep,name=rules,proto3" json:"rules,omitempty" sensorhash:"set"` // @gotags: sensorhash:"set"
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *K8SRole) Reset()         { *m = K8SRole{} }
@@ -201,7 +201,7 @@ func (m *K8SRole) GetAnnotations() map[string]string {
 	return nil
 }
 
-func (m *K8SRole) GetCreatedAt() *types.Timestamp {
+func (m *K8SRole) GetCreatedAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -372,15 +372,15 @@ type K8SRoleBinding struct {
 	// ClusterRole specifies whether the binding binds a cluster role. However, it cannot be used to determine whether
 	// the binding is a cluster role binding. This can be done in conjunction with the namespace. If the namespace is
 	// empty and cluster role is true, the binding is a cluster role binding.
-	ClusterRole          bool              `protobuf:"varint,6,opt,name=cluster_role,json=clusterRole,proto3" json:"cluster_role,omitempty" search:"Cluster Role"`                                                                     // @gotags: search:"Cluster Role"
-	Labels               map[string]string `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Role Binding Label"`           // @gotags: search:"Role Binding Label"
-	Annotations          map[string]string `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Role Binding Annotation"` // @gotags: search:"Role Binding Annotation"
-	CreatedAt            *types.Timestamp  `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	Subjects             []*Subject        `protobuf:"bytes,10,rep,name=subjects,proto3" json:"subjects,omitempty"`
-	RoleId               string            `protobuf:"bytes,11,opt,name=role_id,json=roleId,proto3" json:"role_id,omitempty" search:"Role ID" sql:"type(uuid)"` // @gotags: search:"Role ID" sql:"type(uuid)"
-	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
-	XXX_unrecognized     []byte            `json:"-"`
-	XXX_sizecache        int32             `json:"-"`
+	ClusterRole          bool                   `protobuf:"varint,6,opt,name=cluster_role,json=clusterRole,proto3" json:"cluster_role,omitempty" search:"Cluster Role"`                                                                     // @gotags: search:"Cluster Role"
+	Labels               map[string]string      `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Role Binding Label"`           // @gotags: search:"Role Binding Label"
+	Annotations          map[string]string      `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Role Binding Annotation"` // @gotags: search:"Role Binding Annotation"
+	CreatedAt            *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Subjects             []*Subject             `protobuf:"bytes,10,rep,name=subjects,proto3" json:"subjects,omitempty"`
+	RoleId               string                 `protobuf:"bytes,11,opt,name=role_id,json=roleId,proto3" json:"role_id,omitempty" search:"Role ID" sql:"type(uuid)"` // @gotags: search:"Role ID" sql:"type(uuid)"
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *K8SRoleBinding) Reset()         { *m = K8SRoleBinding{} }
@@ -472,7 +472,7 @@ func (m *K8SRoleBinding) GetAnnotations() map[string]string {
 	return nil
 }
 
-func (m *K8SRoleBinding) GetCreatedAt() *types.Timestamp {
+func (m *K8SRoleBinding) GetCreatedAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -1824,7 +1824,7 @@ func (m *K8SRole) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &types.Timestamp{}
+				m.CreatedAt = &timestamppb.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2590,7 +2590,7 @@ func (m *K8SRoleBinding) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &types.Timestamp{}
+				m.CreatedAt = &timestamppb.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

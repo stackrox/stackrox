@@ -5,8 +5,8 @@ package v1
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -25,11 +25,11 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // TimeRange allows for requesting data by a time range.
 type TimeRange struct {
-	From                 *types.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
-	To                   *types.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	From                 *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To                   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *TimeRange) Reset()         { *m = TimeRange{} }
@@ -65,14 +65,14 @@ func (m *TimeRange) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_TimeRange proto.InternalMessageInfo
 
-func (m *TimeRange) GetFrom() *types.Timestamp {
+func (m *TimeRange) GetFrom() *timestamppb.Timestamp {
 	if m != nil {
 		return m.From
 	}
 	return nil
 }
 
-func (m *TimeRange) GetTo() *types.Timestamp {
+func (m *TimeRange) GetTo() *timestamppb.Timestamp {
 	if m != nil {
 		return m.To
 	}
@@ -168,13 +168,13 @@ func (m *SecuredUnitsUsageResponse) Clone() *SecuredUnitsUsageResponse {
 // and CPU Units (as reported by Kubernetes) with the time at which these
 // values were aggregated, with the aggregation period accuracy (1h).
 type MaxSecuredUnitsUsageResponse struct {
-	MaxNodesAt           *types.Timestamp `protobuf:"bytes,1,opt,name=max_nodes_at,json=maxNodesAt,proto3" json:"max_nodes_at,omitempty"`
-	MaxNodes             int64            `protobuf:"varint,2,opt,name=max_nodes,json=maxNodes,proto3" json:"max_nodes,omitempty"`
-	MaxCpuUnitsAt        *types.Timestamp `protobuf:"bytes,3,opt,name=max_cpu_units_at,json=maxCpuUnitsAt,proto3" json:"max_cpu_units_at,omitempty"`
-	MaxCpuUnits          int64            `protobuf:"varint,4,opt,name=max_cpu_units,json=maxCpuUnits,proto3" json:"max_cpu_units,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	MaxNodesAt           *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=max_nodes_at,json=maxNodesAt,proto3" json:"max_nodes_at,omitempty"`
+	MaxNodes             int64                  `protobuf:"varint,2,opt,name=max_nodes,json=maxNodes,proto3" json:"max_nodes,omitempty"`
+	MaxCpuUnitsAt        *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=max_cpu_units_at,json=maxCpuUnitsAt,proto3" json:"max_cpu_units_at,omitempty"`
+	MaxCpuUnits          int64                  `protobuf:"varint,4,opt,name=max_cpu_units,json=maxCpuUnits,proto3" json:"max_cpu_units,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *MaxSecuredUnitsUsageResponse) Reset()         { *m = MaxSecuredUnitsUsageResponse{} }
@@ -210,7 +210,7 @@ func (m *MaxSecuredUnitsUsageResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MaxSecuredUnitsUsageResponse proto.InternalMessageInfo
 
-func (m *MaxSecuredUnitsUsageResponse) GetMaxNodesAt() *types.Timestamp {
+func (m *MaxSecuredUnitsUsageResponse) GetMaxNodesAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.MaxNodesAt
 	}
@@ -224,7 +224,7 @@ func (m *MaxSecuredUnitsUsageResponse) GetMaxNodes() int64 {
 	return 0
 }
 
-func (m *MaxSecuredUnitsUsageResponse) GetMaxCpuUnitsAt() *types.Timestamp {
+func (m *MaxSecuredUnitsUsageResponse) GetMaxCpuUnitsAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.MaxCpuUnitsAt
 	}
@@ -586,7 +586,7 @@ func (m *TimeRange) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.From == nil {
-				m.From = &types.Timestamp{}
+				m.From = &timestamppb.Timestamp{}
 			}
 			if err := m.From.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -622,7 +622,7 @@ func (m *TimeRange) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.To == nil {
-				m.To = &types.Timestamp{}
+				m.To = &timestamppb.Timestamp{}
 			}
 			if err := m.To.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -798,7 +798,7 @@ func (m *MaxSecuredUnitsUsageResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.MaxNodesAt == nil {
-				m.MaxNodesAt = &types.Timestamp{}
+				m.MaxNodesAt = &timestamppb.Timestamp{}
 			}
 			if err := m.MaxNodesAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -853,7 +853,7 @@ func (m *MaxSecuredUnitsUsageResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.MaxCpuUnitsAt == nil {
-				m.MaxCpuUnitsAt = &types.Timestamp{}
+				m.MaxCpuUnitsAt = &timestamppb.Timestamp{}
 			}
 			if err := m.MaxCpuUnitsAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

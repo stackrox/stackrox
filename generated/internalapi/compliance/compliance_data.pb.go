@@ -5,9 +5,9 @@ package compliance
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -606,7 +606,7 @@ type ComplianceReturn struct {
 	Files                map[string]*File        `protobuf:"bytes,5,rep,name=files,proto3" json:"files,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	SystemdFiles         map[string]*File        `protobuf:"bytes,6,rep,name=systemd_files,json=systemdFiles,proto3" json:"systemd_files,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	ContainerRuntimeInfo *ContainerRuntimeInfo   `protobuf:"bytes,9,opt,name=container_runtime_info,json=containerRuntimeInfo,proto3" json:"container_runtime_info,omitempty"`
-	Time                 *types.Timestamp        `protobuf:"bytes,7,opt,name=time,proto3" json:"time,omitempty"`
+	Time                 *timestamppb.Timestamp  `protobuf:"bytes,7,opt,name=time,proto3" json:"time,omitempty"`
 	Evidence             *GZIPDataChunk          `protobuf:"bytes,10,opt,name=evidence,proto3" json:"evidence,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
@@ -695,7 +695,7 @@ func (m *ComplianceReturn) GetContainerRuntimeInfo() *ContainerRuntimeInfo {
 	return nil
 }
 
-func (m *ComplianceReturn) GetTime() *types.Timestamp {
+func (m *ComplianceReturn) GetTime() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Time
 	}
@@ -3366,7 +3366,7 @@ func (m *ComplianceReturn) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Time == nil {
-				m.Time = &types.Timestamp{}
+				m.Time = &timestamppb.Timestamp{}
 			}
 			if err := m.Time.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

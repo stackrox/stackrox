@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -196,7 +196,7 @@ type NetworkBaseline struct {
 	// This is used to ensure we don't add it back in the event
 	// we see the flow again.
 	ForbiddenPeers       []*NetworkBaselinePeer `protobuf:"bytes,5,rep,name=forbidden_peers,json=forbiddenPeers,proto3" json:"forbidden_peers,omitempty" search:"-"` // @gotags: search:"-"
-	ObservationPeriodEnd *types.Timestamp       `protobuf:"bytes,6,opt,name=observation_period_end,json=observationPeriodEnd,proto3" json:"observation_period_end,omitempty"`
+	ObservationPeriodEnd *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=observation_period_end,json=observationPeriodEnd,proto3" json:"observation_period_end,omitempty"`
 	// Indicates if this baseline has been locked by user.
 	// Here locking means:
 	//   1: Do not let system automatically add any allowed peer to baseline
@@ -276,7 +276,7 @@ func (m *NetworkBaseline) GetForbiddenPeers() []*NetworkBaselinePeer {
 	return nil
 }
 
-func (m *NetworkBaseline) GetObservationPeriodEnd() *types.Timestamp {
+func (m *NetworkBaseline) GetObservationPeriodEnd() *timestamppb.Timestamp {
 	if m != nil {
 		return m.ObservationPeriodEnd
 	}
@@ -1130,7 +1130,7 @@ func (m *NetworkBaseline) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ObservationPeriodEnd == nil {
-				m.ObservationPeriodEnd = &types.Timestamp{}
+				m.ObservationPeriodEnd = &timestamppb.Timestamp{}
 			}
 			if err := m.ObservationPeriodEnd.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

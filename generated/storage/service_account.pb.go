@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -27,20 +27,20 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 // (regardless of time, scope, or context)
 // ////////////////////////////////////////
 type ServiceAccount struct {
-	Id                   string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                                                                                           // @gotags: sql:"pk,type(uuid)"
-	Name                 string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Service Account,store"`                                                                                                       // @gotags: search:"Service Account,store"
-	Namespace            string            `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                                                                                             // @gotags: search:"Namespace,store"
-	ClusterName          string            `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"`                                                                      // @gotags: search:"Cluster,store"
-	ClusterId            string            `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`                                                                            // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
-	Labels               map[string]string `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Service Account Label"`           // @gotags: search:"Service Account Label"
-	Annotations          map[string]string `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Service Account Annotation"` // @gotags: search:"Service Account Annotation"
-	CreatedAt            *types.Timestamp  `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	AutomountToken       bool              `protobuf:"varint,9,opt,name=automount_token,json=automountToken,proto3" json:"automount_token,omitempty"`
-	Secrets              []string          `protobuf:"bytes,10,rep,name=secrets,proto3" json:"secrets,omitempty"`
-	ImagePullSecrets     []string          `protobuf:"bytes,11,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
-	XXX_unrecognized     []byte            `json:"-"`
-	XXX_sizecache        int32             `json:"-"`
+	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                                                                                           // @gotags: sql:"pk,type(uuid)"
+	Name                 string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Service Account,store"`                                                                                                       // @gotags: search:"Service Account,store"
+	Namespace            string                 `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                                                                                             // @gotags: search:"Namespace,store"
+	ClusterName          string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"`                                                                      // @gotags: search:"Cluster,store"
+	ClusterId            string                 `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`                                                                            // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+	Labels               map[string]string      `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Service Account Label"`           // @gotags: search:"Service Account Label"
+	Annotations          map[string]string      `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Service Account Annotation"` // @gotags: search:"Service Account Annotation"
+	CreatedAt            *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	AutomountToken       bool                   `protobuf:"varint,9,opt,name=automount_token,json=automountToken,proto3" json:"automount_token,omitempty"`
+	Secrets              []string               `protobuf:"bytes,10,rep,name=secrets,proto3" json:"secrets,omitempty"`
+	ImagePullSecrets     []string               `protobuf:"bytes,11,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *ServiceAccount) Reset()         { *m = ServiceAccount{} }
@@ -125,7 +125,7 @@ func (m *ServiceAccount) GetAnnotations() map[string]string {
 	return nil
 }
 
-func (m *ServiceAccount) GetCreatedAt() *types.Timestamp {
+func (m *ServiceAccount) GetCreatedAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -923,7 +923,7 @@ func (m *ServiceAccount) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &types.Timestamp{}
+				m.CreatedAt = &timestamppb.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

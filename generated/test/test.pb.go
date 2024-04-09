@@ -5,8 +5,9 @@ package test
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	anypb "google.golang.org/protobuf/types/known/anypb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -126,14 +127,14 @@ type TestClone struct {
 	MessageMap  map[string]*TestCloneSubMessage `protobuf:"bytes,4,rep,name=message_map,json=messageMap,proto3" json:"message_map,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	StringMap   map[string]string               `protobuf:"bytes,5,rep,name=string_map,json=stringMap,proto3" json:"string_map,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	EnumSlice   []TestClone_CloneEnum           `protobuf:"varint,6,rep,packed,name=enum_slice,json=enumSlice,proto3,enum=test.TestClone_CloneEnum" json:"enum_slice,omitempty"`
-	Ts          *types.Timestamp                `protobuf:"bytes,7,opt,name=ts,proto3" json:"ts,omitempty"`
+	Ts          *timestamppb.Timestamp          `protobuf:"bytes,7,opt,name=ts,proto3" json:"ts,omitempty"`
 	// Types that are valid to be assigned to Primitive:
 	//
 	//	*TestClone_Int32
 	//	*TestClone_String_
 	//	*TestClone_Msg
 	Primitive            isTestClone_Primitive `protobuf_oneof:"primitive"`
-	Any                  *types.Any            `protobuf:"bytes,11,opt,name=any,proto3" json:"any,omitempty"`
+	Any                  *anypb.Any            `protobuf:"bytes,11,opt,name=any,proto3" json:"any,omitempty"`
 	BytesMap             map[string][]byte     `protobuf:"bytes,12,rep,name=bytes_map,json=bytesMap,proto3" json:"bytes_map,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	BytesSlice           [][]byte              `protobuf:"bytes,13,rep,name=bytes_slice,json=bytesSlice,proto3" json:"bytes_slice,omitempty"`
 	Bytes                []byte                `protobuf:"bytes,14,opt,name=bytes,proto3" json:"bytes,omitempty"`
@@ -274,7 +275,7 @@ func (m *TestClone) GetEnumSlice() []TestClone_CloneEnum {
 	return nil
 }
 
-func (m *TestClone) GetTs() *types.Timestamp {
+func (m *TestClone) GetTs() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Ts
 	}
@@ -302,7 +303,7 @@ func (m *TestClone) GetMsg() *TestCloneSubMessage {
 	return nil
 }
 
-func (m *TestClone) GetAny() *types.Any {
+func (m *TestClone) GetAny() *anypb.Any {
 	if m != nil {
 		return m.Any
 	}
@@ -1557,7 +1558,7 @@ func (m *TestClone) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Ts == nil {
-				m.Ts = &types.Timestamp{}
+				m.Ts = &timestamppb.Timestamp{}
 			}
 			if err := m.Ts.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1680,7 +1681,7 @@ func (m *TestClone) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Any == nil {
-				m.Any = &types.Any{}
+				m.Any = &anypb.Any{}
 			}
 			if err := m.Any.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -141,17 +141,17 @@ func (m *ProcessBaselineKey) Clone() *ProcessBaselineKey {
 }
 
 type ProcessBaseline struct {
-	Id                      string              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Key                     *ProcessBaselineKey `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
-	Elements                []*BaselineElement  `protobuf:"bytes,3,rep,name=elements,proto3" json:"elements,omitempty"`
-	ElementGraveyard        []*BaselineElement  `protobuf:"bytes,8,rep,name=element_graveyard,json=elementGraveyard,proto3" json:"element_graveyard,omitempty" search:"-"` // @gotags: search:"-"
-	Created                 *types.Timestamp    `protobuf:"bytes,4,opt,name=created,proto3" json:"created,omitempty"`
-	UserLockedTimestamp     *types.Timestamp    `protobuf:"bytes,5,opt,name=user_locked_timestamp,json=userLockedTimestamp,proto3" json:"user_locked_timestamp,omitempty"`
-	StackRoxLockedTimestamp *types.Timestamp    `protobuf:"bytes,6,opt,name=stack_rox_locked_timestamp,json=stackRoxLockedTimestamp,proto3" json:"stack_rox_locked_timestamp,omitempty"`
-	LastUpdate              *types.Timestamp    `protobuf:"bytes,7,opt,name=last_update,json=lastUpdate,proto3" json:"last_update,omitempty"`
-	XXX_NoUnkeyedLiteral    struct{}            `json:"-"`
-	XXX_unrecognized        []byte              `json:"-"`
-	XXX_sizecache           int32               `json:"-"`
+	Id                      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Key                     *ProcessBaselineKey    `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	Elements                []*BaselineElement     `protobuf:"bytes,3,rep,name=elements,proto3" json:"elements,omitempty"`
+	ElementGraveyard        []*BaselineElement     `protobuf:"bytes,8,rep,name=element_graveyard,json=elementGraveyard,proto3" json:"element_graveyard,omitempty" search:"-"` // @gotags: search:"-"
+	Created                 *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created,proto3" json:"created,omitempty"`
+	UserLockedTimestamp     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=user_locked_timestamp,json=userLockedTimestamp,proto3" json:"user_locked_timestamp,omitempty"`
+	StackRoxLockedTimestamp *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=stack_rox_locked_timestamp,json=stackRoxLockedTimestamp,proto3" json:"stack_rox_locked_timestamp,omitempty"`
+	LastUpdate              *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_update,json=lastUpdate,proto3" json:"last_update,omitempty"`
+	XXX_NoUnkeyedLiteral    struct{}               `json:"-"`
+	XXX_unrecognized        []byte                 `json:"-"`
+	XXX_sizecache           int32                  `json:"-"`
 }
 
 func (m *ProcessBaseline) Reset()         { *m = ProcessBaseline{} }
@@ -215,28 +215,28 @@ func (m *ProcessBaseline) GetElementGraveyard() []*BaselineElement {
 	return nil
 }
 
-func (m *ProcessBaseline) GetCreated() *types.Timestamp {
+func (m *ProcessBaseline) GetCreated() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Created
 	}
 	return nil
 }
 
-func (m *ProcessBaseline) GetUserLockedTimestamp() *types.Timestamp {
+func (m *ProcessBaseline) GetUserLockedTimestamp() *timestamppb.Timestamp {
 	if m != nil {
 		return m.UserLockedTimestamp
 	}
 	return nil
 }
 
-func (m *ProcessBaseline) GetStackRoxLockedTimestamp() *types.Timestamp {
+func (m *ProcessBaseline) GetStackRoxLockedTimestamp() *timestamppb.Timestamp {
 	if m != nil {
 		return m.StackRoxLockedTimestamp
 	}
 	return nil
 }
 
-func (m *ProcessBaseline) GetLastUpdate() *types.Timestamp {
+func (m *ProcessBaseline) GetLastUpdate() *timestamppb.Timestamp {
 	if m != nil {
 		return m.LastUpdate
 	}
@@ -1586,7 +1586,7 @@ func (m *ProcessBaseline) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Created == nil {
-				m.Created = &types.Timestamp{}
+				m.Created = &timestamppb.Timestamp{}
 			}
 			if err := m.Created.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1622,7 +1622,7 @@ func (m *ProcessBaseline) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.UserLockedTimestamp == nil {
-				m.UserLockedTimestamp = &types.Timestamp{}
+				m.UserLockedTimestamp = &timestamppb.Timestamp{}
 			}
 			if err := m.UserLockedTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1658,7 +1658,7 @@ func (m *ProcessBaseline) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.StackRoxLockedTimestamp == nil {
-				m.StackRoxLockedTimestamp = &types.Timestamp{}
+				m.StackRoxLockedTimestamp = &timestamppb.Timestamp{}
 			}
 			if err := m.StackRoxLockedTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1694,7 +1694,7 @@ func (m *ProcessBaseline) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdate == nil {
-				m.LastUpdate = &types.Timestamp{}
+				m.LastUpdate = &timestamppb.Timestamp{}
 			}
 			if err := m.LastUpdate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

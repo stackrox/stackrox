@@ -5,10 +5,10 @@ package sensor
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -28,7 +28,7 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 type AdmissionControlSettings struct {
 	ClusterConfig              *storage.DynamicClusterConfig `protobuf:"bytes,1,opt,name=cluster_config,json=clusterConfig,proto3" json:"cluster_config,omitempty"`
 	EnforcedDeployTimePolicies *storage.PolicyList           `protobuf:"bytes,2,opt,name=enforced_deploy_time_policies,json=enforcedDeployTimePolicies,proto3" json:"enforced_deploy_time_policies,omitempty"`
-	Timestamp                  *types.Timestamp              `protobuf:"bytes,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Timestamp                  *timestamppb.Timestamp        `protobuf:"bytes,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	CacheVersion               string                        `protobuf:"bytes,4,opt,name=cache_version,json=cacheVersion,proto3" json:"cache_version,omitempty"`
 	CentralEndpoint            string                        `protobuf:"bytes,5,opt,name=central_endpoint,json=centralEndpoint,proto3" json:"central_endpoint,omitempty"`
 	ClusterId                  string                        `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
@@ -85,7 +85,7 @@ func (m *AdmissionControlSettings) GetEnforcedDeployTimePolicies() *storage.Poli
 	return nil
 }
 
-func (m *AdmissionControlSettings) GetTimestamp() *types.Timestamp {
+func (m *AdmissionControlSettings) GetTimestamp() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Timestamp
 	}
@@ -1063,7 +1063,7 @@ func (m *AdmissionControlSettings) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Timestamp == nil {
-				m.Timestamp = &types.Timestamp{}
+				m.Timestamp = &timestamppb.Timestamp{}
 			}
 			if err := m.Timestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

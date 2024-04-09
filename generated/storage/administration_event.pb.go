@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -105,8 +105,8 @@ type AdministrationEvent struct {
 	Domain               string                        `protobuf:"bytes,6,opt,name=domain,proto3" json:"domain,omitempty" search:"Event Domain,hidden"` // @gotags: search:"Event Domain,hidden"
 	Resource             *AdministrationEvent_Resource `protobuf:"bytes,7,opt,name=resource,proto3" json:"resource,omitempty"`
 	NumOccurrences       int64                         `protobuf:"varint,8,opt,name=num_occurrences,json=numOccurrences,proto3" json:"num_occurrences,omitempty" search:"Event Occurrence,hidden"`  // @gotags: search:"Event Occurrence,hidden"
-	LastOccurredAt       *types.Timestamp              `protobuf:"bytes,9,opt,name=last_occurred_at,json=lastOccurredAt,proto3" json:"last_occurred_at,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
-	CreatedAt            *types.Timestamp              `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time,hidden"`                 // @gotags: search:"Created Time,hidden"
+	LastOccurredAt       *timestamppb.Timestamp        `protobuf:"bytes,9,opt,name=last_occurred_at,json=lastOccurredAt,proto3" json:"last_occurred_at,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
+	CreatedAt            *timestamppb.Timestamp        `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time,hidden"`                 // @gotags: search:"Created Time,hidden"
 	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
 	XXX_unrecognized     []byte                        `json:"-"`
 	XXX_sizecache        int32                         `json:"-"`
@@ -201,14 +201,14 @@ func (m *AdministrationEvent) GetNumOccurrences() int64 {
 	return 0
 }
 
-func (m *AdministrationEvent) GetLastOccurredAt() *types.Timestamp {
+func (m *AdministrationEvent) GetLastOccurredAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.LastOccurredAt
 	}
 	return nil
 }
 
-func (m *AdministrationEvent) GetCreatedAt() *types.Timestamp {
+func (m *AdministrationEvent) GetCreatedAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -879,7 +879,7 @@ func (m *AdministrationEvent) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastOccurredAt == nil {
-				m.LastOccurredAt = &types.Timestamp{}
+				m.LastOccurredAt = &timestamppb.Timestamp{}
 			}
 			if err := m.LastOccurredAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -915,7 +915,7 @@ func (m *AdministrationEvent) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &types.Timestamp{}
+				m.CreatedAt = &timestamppb.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

@@ -5,8 +5,9 @@ package v4
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	_ "google.golang.org/protobuf/types/known/emptypb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -93,10 +94,10 @@ func (m *GetVulnerabilitiesRequest) Clone() *GetVulnerabilitiesRequest {
 }
 
 type Metadata struct {
-	LastVulnerabilityUpdate *types.Timestamp `protobuf:"bytes,1,opt,name=LastVulnerabilityUpdate,proto3" json:"LastVulnerabilityUpdate,omitempty"`
-	XXX_NoUnkeyedLiteral    struct{}         `json:"-"`
-	XXX_unrecognized        []byte           `json:"-"`
-	XXX_sizecache           int32            `json:"-"`
+	LastVulnerabilityUpdate *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=LastVulnerabilityUpdate,proto3" json:"LastVulnerabilityUpdate,omitempty"`
+	XXX_NoUnkeyedLiteral    struct{}               `json:"-"`
+	XXX_unrecognized        []byte                 `json:"-"`
+	XXX_sizecache           int32                  `json:"-"`
 }
 
 func (m *Metadata) Reset()         { *m = Metadata{} }
@@ -132,7 +133,7 @@ func (m *Metadata) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Metadata proto.InternalMessageInfo
 
-func (m *Metadata) GetLastVulnerabilityUpdate() *types.Timestamp {
+func (m *Metadata) GetLastVulnerabilityUpdate() *timestamppb.Timestamp {
 	if m != nil {
 		return m.LastVulnerabilityUpdate
 	}
@@ -504,7 +505,7 @@ func (m *Metadata) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastVulnerabilityUpdate == nil {
-				m.LastVulnerabilityUpdate = &types.Timestamp{}
+				m.LastVulnerabilityUpdate = &timestamppb.Timestamp{}
 			}
 			if err := m.LastVulnerabilityUpdate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

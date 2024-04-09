@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -29,7 +29,7 @@ type Version struct {
 	// Associated version metadata. (For example, the corresponding product version.)
 	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Version"` // @gotags: search:"Version"
 	// Last time version was updated
-	LastPersisted *types.Timestamp `protobuf:"bytes,3,opt,name=last_persisted,json=lastPersisted,proto3" json:"last_persisted,omitempty" search:"Last Persisted"` // @gotags: search:"Last Persisted"
+	LastPersisted *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_persisted,json=lastPersisted,proto3" json:"last_persisted,omitempty" search:"Last Persisted"` // @gotags: search:"Last Persisted"
 	// The minimum sequence number supported by this iteration of the database.  Rollbacks
 	// to versions prior to this sequence number are not supported.
 	MinSeqNum            int32    `protobuf:"varint,4,opt,name=min_seq_num,json=minSeqNum,proto3" json:"min_seq_num,omitempty" search:"Minimum Sequence Number"` // @gotags: search:"Minimum Sequence Number"
@@ -85,7 +85,7 @@ func (m *Version) GetVersion() string {
 	return ""
 }
 
-func (m *Version) GetLastPersisted() *types.Timestamp {
+func (m *Version) GetLastPersisted() *timestamppb.Timestamp {
 	if m != nil {
 		return m.LastPersisted
 	}
@@ -347,7 +347,7 @@ func (m *Version) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastPersisted == nil {
-				m.LastPersisted = &types.Timestamp{}
+				m.LastPersisted = &timestamppb.Timestamp{}
 			}
 			if err := m.LastPersisted.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

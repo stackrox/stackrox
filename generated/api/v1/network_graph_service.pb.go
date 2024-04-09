@@ -5,9 +5,9 @@ package v1
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -85,12 +85,12 @@ func (m *NetworkGraphScope) Clone() *NetworkGraphScope {
 }
 
 type NetworkEdgeProperties struct {
-	Port                 uint32             `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
-	Protocol             storage.L4Protocol `protobuf:"varint,2,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty"`
-	LastActiveTimestamp  *types.Timestamp   `protobuf:"bytes,3,opt,name=last_active_timestamp,json=lastActiveTimestamp,proto3" json:"last_active_timestamp,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
-	XXX_unrecognized     []byte             `json:"-"`
-	XXX_sizecache        int32              `json:"-"`
+	Port                 uint32                 `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
+	Protocol             storage.L4Protocol     `protobuf:"varint,2,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty"`
+	LastActiveTimestamp  *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_active_timestamp,json=lastActiveTimestamp,proto3" json:"last_active_timestamp,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *NetworkEdgeProperties) Reset()         { *m = NetworkEdgeProperties{} }
@@ -140,7 +140,7 @@ func (m *NetworkEdgeProperties) GetProtocol() storage.L4Protocol {
 	return storage.L4Protocol_L4_PROTOCOL_UNKNOWN
 }
 
-func (m *NetworkEdgeProperties) GetLastActiveTimestamp() *types.Timestamp {
+func (m *NetworkEdgeProperties) GetLastActiveTimestamp() *timestamppb.Timestamp {
 	if m != nil {
 		return m.LastActiveTimestamp
 	}
@@ -347,15 +347,15 @@ func (m *NetworkNode) Clone() *NetworkNode {
 }
 
 type NetworkGraphRequest struct {
-	ClusterId            string             `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Query                string             `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
-	Since                *types.Timestamp   `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
-	IncludePorts         bool               `protobuf:"varint,4,opt,name=include_ports,json=includePorts,proto3" json:"include_ports,omitempty"`
-	Scope                *NetworkGraphScope `protobuf:"bytes,5,opt,name=scope,proto3" json:"scope,omitempty"`
-	IncludePolicies      bool               `protobuf:"varint,6,opt,name=include_policies,json=includePolicies,proto3" json:"include_policies,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
-	XXX_unrecognized     []byte             `json:"-"`
-	XXX_sizecache        int32              `json:"-"`
+	ClusterId            string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Query                string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	Since                *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
+	IncludePorts         bool                   `protobuf:"varint,4,opt,name=include_ports,json=includePorts,proto3" json:"include_ports,omitempty"`
+	Scope                *NetworkGraphScope     `protobuf:"bytes,5,opt,name=scope,proto3" json:"scope,omitempty"`
+	IncludePolicies      bool                   `protobuf:"varint,6,opt,name=include_policies,json=includePolicies,proto3" json:"include_policies,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *NetworkGraphRequest) Reset()         { *m = NetworkGraphRequest{} }
@@ -405,7 +405,7 @@ func (m *NetworkGraphRequest) GetQuery() string {
 	return ""
 }
 
-func (m *NetworkGraphRequest) GetSince() *types.Timestamp {
+func (m *NetworkGraphRequest) GetSince() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Since
 	}
@@ -1970,7 +1970,7 @@ func (m *NetworkEdgeProperties) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastActiveTimestamp == nil {
-				m.LastActiveTimestamp = &types.Timestamp{}
+				m.LastActiveTimestamp = &timestamppb.Timestamp{}
 			}
 			if err := m.LastActiveTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2520,7 +2520,7 @@ func (m *NetworkGraphRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Since == nil {
-				m.Since = &types.Timestamp{}
+				m.Since = &timestamppb.Timestamp{}
 			}
 			if err := m.Since.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

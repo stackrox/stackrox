@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -49,13 +49,13 @@ func (MatchType) EnumDescriptor() ([]byte, []int) {
 }
 
 type ResourceCollection struct {
-	Id          string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Collection ID" sql:"pk"`     // @gotags: search:"Collection ID" sql:"pk"
-	Name        string           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Collection Name" sql:"unique"` // @gotags: search:"Collection Name" sql:"unique"
-	Description string           `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	CreatedAt   *types.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	LastUpdated *types.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
-	CreatedBy   *SlimUser        `protobuf:"bytes,6,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
-	UpdatedBy   *SlimUser        `protobuf:"bytes,7,opt,name=updated_by,json=updatedBy,proto3" json:"updated_by,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Collection ID" sql:"pk"`     // @gotags: search:"Collection ID" sql:"pk"
+	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Collection Name" sql:"unique"` // @gotags: search:"Collection Name" sql:"unique"
+	Description string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	LastUpdated *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	CreatedBy   *SlimUser              `protobuf:"bytes,6,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	UpdatedBy   *SlimUser              `protobuf:"bytes,7,opt,name=updated_by,json=updatedBy,proto3" json:"updated_by,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
 	// `resource_selectors` resolve as disjunction (OR) with each-other and with selectors from `embedded_collections`. For MVP, the size of resource_selectors will at most be 1 from UX standpoint.
 	ResourceSelectors    []*ResourceSelector                              `protobuf:"bytes,8,rep,name=resource_selectors,json=resourceSelectors,proto3" json:"resource_selectors,omitempty"`
 	EmbeddedCollections  []*ResourceCollection_EmbeddedResourceCollection `protobuf:"bytes,9,rep,name=embedded_collections,json=embeddedCollections,proto3" json:"embedded_collections,omitempty"`
@@ -118,14 +118,14 @@ func (m *ResourceCollection) GetDescription() string {
 	return ""
 }
 
-func (m *ResourceCollection) GetCreatedAt() *types.Timestamp {
+func (m *ResourceCollection) GetCreatedAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
 	return nil
 }
 
-func (m *ResourceCollection) GetLastUpdated() *types.Timestamp {
+func (m *ResourceCollection) GetLastUpdated() *timestamppb.Timestamp {
 	if m != nil {
 		return m.LastUpdated
 	}
@@ -1124,7 +1124,7 @@ func (m *ResourceCollection) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &types.Timestamp{}
+				m.CreatedAt = &timestamppb.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1160,7 +1160,7 @@ func (m *ResourceCollection) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdated == nil {
-				m.LastUpdated = &types.Timestamp{}
+				m.LastUpdated = &timestamppb.Timestamp{}
 			}
 			if err := m.LastUpdated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

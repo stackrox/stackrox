@@ -5,8 +5,8 @@ package central
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -118,7 +118,7 @@ type PullTelemetryDataRequest struct {
 	RequestId            string                                     `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	DataType             PullTelemetryDataRequest_TelemetryDataType `protobuf:"varint,2,opt,name=data_type,json=dataType,proto3,enum=central.PullTelemetryDataRequest_TelemetryDataType" json:"data_type,omitempty"`
 	TimeoutMs            int64                                      `protobuf:"varint,3,opt,name=timeout_ms,json=timeoutMs,proto3" json:"timeout_ms,omitempty"`
-	Since                *types.Timestamp                           `protobuf:"bytes,4,opt,name=since,proto3" json:"since,omitempty"`
+	Since                *timestamppb.Timestamp                     `protobuf:"bytes,4,opt,name=since,proto3" json:"since,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                                   `json:"-"`
 	XXX_unrecognized     []byte                                     `json:"-"`
 	XXX_sizecache        int32                                      `json:"-"`
@@ -178,7 +178,7 @@ func (m *PullTelemetryDataRequest) GetTimeoutMs() int64 {
 	return 0
 }
 
-func (m *PullTelemetryDataRequest) GetSince() *types.Timestamp {
+func (m *PullTelemetryDataRequest) GetSince() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Since
 	}
@@ -1751,7 +1751,7 @@ func (m *PullTelemetryDataRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Since == nil {
-				m.Since = &types.Timestamp{}
+				m.Since = &timestamppb.Timestamp{}
 			}
 			if err := m.Since.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

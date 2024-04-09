@@ -6,8 +6,8 @@ package storage
 import (
 	encoding_binary "encoding/binary"
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -535,17 +535,17 @@ type CVE struct {
 	Summary     string        `protobuf:"bytes,4,opt,name=summary,proto3" json:"summary,omitempty"`
 	Link        string        `protobuf:"bytes,5,opt,name=link,proto3" json:"link,omitempty"`
 	// This indicates the timestamp when the cve was first published in the cve feeds.
-	PublishedOn *types.Timestamp `protobuf:"bytes,6,opt,name=published_on,json=publishedOn,proto3" json:"published_on,omitempty" search:"CVE Published On"` // @gotags: search:"CVE Published On"
+	PublishedOn *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=published_on,json=publishedOn,proto3" json:"published_on,omitempty" search:"CVE Published On"` // @gotags: search:"CVE Published On"
 	// Time when the CVE was first seen in the system.
-	CreatedAt            *types.Timestamp               `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"CVE Created Time"` // @gotags: search:"CVE Created Time"
-	LastModified         *types.Timestamp               `protobuf:"bytes,7,opt,name=last_modified,json=lastModified,proto3" json:"last_modified,omitempty"`
+	CreatedAt            *timestamppb.Timestamp         `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"CVE Created Time"` // @gotags: search:"CVE Created Time"
+	LastModified         *timestamppb.Timestamp         `protobuf:"bytes,7,opt,name=last_modified,json=lastModified,proto3" json:"last_modified,omitempty"`
 	References           []*CVE_Reference               `protobuf:"bytes,8,rep,name=references,proto3" json:"references,omitempty"`
 	ScoreVersion         CVE_ScoreVersion               `protobuf:"varint,9,opt,name=score_version,json=scoreVersion,proto3,enum=storage.CVE_ScoreVersion" json:"score_version,omitempty"`
 	CvssV2               *CVSSV2                        `protobuf:"bytes,10,opt,name=cvss_v2,json=cvssV2,proto3" json:"cvss_v2,omitempty"`
 	CvssV3               *CVSSV3                        `protobuf:"bytes,11,opt,name=cvss_v3,json=cvssV3,proto3" json:"cvss_v3,omitempty"`
 	Suppressed           bool                           `protobuf:"varint,12,opt,name=suppressed,proto3" json:"suppressed,omitempty" search:"CVE Snoozed"` // @gotags: search:"CVE Snoozed"
-	SuppressActivation   *types.Timestamp               `protobuf:"bytes,16,opt,name=suppress_activation,json=suppressActivation,proto3" json:"suppress_activation,omitempty"`
-	SuppressExpiry       *types.Timestamp               `protobuf:"bytes,17,opt,name=suppress_expiry,json=suppressExpiry,proto3" json:"suppress_expiry,omitempty" search:"CVE Snooze Expiry,hidden"` // @gotags: search:"CVE Snooze Expiry,hidden"
+	SuppressActivation   *timestamppb.Timestamp         `protobuf:"bytes,16,opt,name=suppress_activation,json=suppressActivation,proto3" json:"suppress_activation,omitempty"`
+	SuppressExpiry       *timestamppb.Timestamp         `protobuf:"bytes,17,opt,name=suppress_expiry,json=suppressExpiry,proto3" json:"suppress_expiry,omitempty" search:"CVE Snooze Expiry,hidden"` // @gotags: search:"CVE Snooze Expiry,hidden"
 	DistroSpecifics      map[string]*CVE_DistroSpecific `protobuf:"bytes,19,rep,name=distro_specifics,json=distroSpecifics,proto3" json:"distro_specifics,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Severity             VulnerabilitySeverity          `protobuf:"varint,20,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"` // @gotags: search:"Severity"
 	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
@@ -635,21 +635,21 @@ func (m *CVE) GetLink() string {
 	return ""
 }
 
-func (m *CVE) GetPublishedOn() *types.Timestamp {
+func (m *CVE) GetPublishedOn() *timestamppb.Timestamp {
 	if m != nil {
 		return m.PublishedOn
 	}
 	return nil
 }
 
-func (m *CVE) GetCreatedAt() *types.Timestamp {
+func (m *CVE) GetCreatedAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
 	return nil
 }
 
-func (m *CVE) GetLastModified() *types.Timestamp {
+func (m *CVE) GetLastModified() *timestamppb.Timestamp {
 	if m != nil {
 		return m.LastModified
 	}
@@ -691,14 +691,14 @@ func (m *CVE) GetSuppressed() bool {
 	return false
 }
 
-func (m *CVE) GetSuppressActivation() *types.Timestamp {
+func (m *CVE) GetSuppressActivation() *timestamppb.Timestamp {
 	if m != nil {
 		return m.SuppressActivation
 	}
 	return nil
 }
 
-func (m *CVE) GetSuppressExpiry() *types.Timestamp {
+func (m *CVE) GetSuppressExpiry() *timestamppb.Timestamp {
 	if m != nil {
 		return m.SuppressExpiry
 	}
@@ -926,17 +926,17 @@ type CVEInfo struct {
 	Summary string `protobuf:"bytes,2,opt,name=summary,proto3" json:"summary,omitempty"`
 	Link    string `protobuf:"bytes,3,opt,name=link,proto3" json:"link,omitempty"`
 	// This indicates the timestamp when the cve was first published in the cve feeds.
-	PublishedOn *types.Timestamp `protobuf:"bytes,4,opt,name=published_on,json=publishedOn,proto3" json:"published_on,omitempty" search:"CVE Published On"` // @gotags: search:"CVE Published On"
+	PublishedOn *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=published_on,json=publishedOn,proto3" json:"published_on,omitempty" search:"CVE Published On"` // @gotags: search:"CVE Published On"
 	// Time when the CVE was first seen in the system.
-	CreatedAt            *types.Timestamp     `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"CVE Created Time"` // @gotags: search:"CVE Created Time"
-	LastModified         *types.Timestamp     `protobuf:"bytes,6,opt,name=last_modified,json=lastModified,proto3" json:"last_modified,omitempty"`
-	ScoreVersion         CVEInfo_ScoreVersion `protobuf:"varint,7,opt,name=score_version,json=scoreVersion,proto3,enum=storage.CVEInfo_ScoreVersion" json:"score_version,omitempty"`
-	CvssV2               *CVSSV2              `protobuf:"bytes,8,opt,name=cvss_v2,json=cvssV2,proto3" json:"cvss_v2,omitempty"`
-	CvssV3               *CVSSV3              `protobuf:"bytes,9,opt,name=cvss_v3,json=cvssV3,proto3" json:"cvss_v3,omitempty"`
-	References           []*CVEInfo_Reference `protobuf:"bytes,10,rep,name=references,proto3" json:"references,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
-	XXX_unrecognized     []byte               `json:"-"`
-	XXX_sizecache        int32                `json:"-"`
+	CreatedAt            *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"CVE Created Time"` // @gotags: search:"CVE Created Time"
+	LastModified         *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_modified,json=lastModified,proto3" json:"last_modified,omitempty"`
+	ScoreVersion         CVEInfo_ScoreVersion   `protobuf:"varint,7,opt,name=score_version,json=scoreVersion,proto3,enum=storage.CVEInfo_ScoreVersion" json:"score_version,omitempty"`
+	CvssV2               *CVSSV2                `protobuf:"bytes,8,opt,name=cvss_v2,json=cvssV2,proto3" json:"cvss_v2,omitempty"`
+	CvssV3               *CVSSV3                `protobuf:"bytes,9,opt,name=cvss_v3,json=cvssV3,proto3" json:"cvss_v3,omitempty"`
+	References           []*CVEInfo_Reference   `protobuf:"bytes,10,rep,name=references,proto3" json:"references,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *CVEInfo) Reset()         { *m = CVEInfo{} }
@@ -993,21 +993,21 @@ func (m *CVEInfo) GetLink() string {
 	return ""
 }
 
-func (m *CVEInfo) GetPublishedOn() *types.Timestamp {
+func (m *CVEInfo) GetPublishedOn() *timestamppb.Timestamp {
 	if m != nil {
 		return m.PublishedOn
 	}
 	return nil
 }
 
-func (m *CVEInfo) GetCreatedAt() *types.Timestamp {
+func (m *CVEInfo) GetCreatedAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
 	return nil
 }
 
-func (m *CVEInfo) GetLastModified() *types.Timestamp {
+func (m *CVEInfo) GetLastModified() *timestamppb.Timestamp {
 	if m != nil {
 		return m.LastModified
 	}
@@ -1139,18 +1139,18 @@ func (m *CVEInfo_Reference) Clone() *CVEInfo_Reference {
 }
 
 type ImageCVE struct {
-	Id                   string                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
-	CveBaseInfo          *CVEInfo              `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
-	OperatingSystem      string                `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
-	Cvss                 float32               `protobuf:"fixed32,4,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`                                            // @gotags: search:"CVSS,store"
-	Severity             VulnerabilitySeverity `protobuf:"varint,5,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"`  // @gotags: search:"Severity"
-	ImpactScore          float32               `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`           // @gotags: search:"Impact Score"
-	Snoozed              bool                  `protobuf:"varint,7,opt,name=snoozed,proto3" json:"snoozed,omitempty" search:"CVE Snoozed"`                                       // Deprecated: Do not use. // @gotags: search:"CVE Snoozed"
-	SnoozeStart          *types.Timestamp      `protobuf:"bytes,8,opt,name=snooze_start,json=snoozeStart,proto3" json:"snooze_start,omitempty"`             // Deprecated: Do not use.
-	SnoozeExpiry         *types.Timestamp      `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"`          // Deprecated: Do not use. // @gotags: search:"CVE Snooze Expiry,hidden"
-	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
-	XXX_unrecognized     []byte                `json:"-"`
-	XXX_sizecache        int32                 `json:"-"`
+	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+	CveBaseInfo          *CVEInfo               `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
+	OperatingSystem      string                 `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
+	Cvss                 float32                `protobuf:"fixed32,4,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`                                            // @gotags: search:"CVSS,store"
+	Severity             VulnerabilitySeverity  `protobuf:"varint,5,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"`  // @gotags: search:"Severity"
+	ImpactScore          float32                `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`           // @gotags: search:"Impact Score"
+	Snoozed              bool                   `protobuf:"varint,7,opt,name=snoozed,proto3" json:"snoozed,omitempty" search:"CVE Snoozed"`                                       // Deprecated: Do not use. // @gotags: search:"CVE Snoozed"
+	SnoozeStart          *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_start,json=snoozeStart,proto3" json:"snooze_start,omitempty"`             // Deprecated: Do not use.
+	SnoozeExpiry         *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"`          // Deprecated: Do not use. // @gotags: search:"CVE Snooze Expiry,hidden"
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *ImageCVE) Reset()         { *m = ImageCVE{} }
@@ -1237,7 +1237,7 @@ func (m *ImageCVE) GetSnoozed() bool {
 }
 
 // Deprecated: Do not use.
-func (m *ImageCVE) GetSnoozeStart() *types.Timestamp {
+func (m *ImageCVE) GetSnoozeStart() *timestamppb.Timestamp {
 	if m != nil {
 		return m.SnoozeStart
 	}
@@ -1245,7 +1245,7 @@ func (m *ImageCVE) GetSnoozeStart() *types.Timestamp {
 }
 
 // Deprecated: Do not use.
-func (m *ImageCVE) GetSnoozeExpiry() *types.Timestamp {
+func (m *ImageCVE) GetSnoozeExpiry() *timestamppb.Timestamp {
 	if m != nil {
 		return m.SnoozeExpiry
 	}
@@ -1269,18 +1269,18 @@ func (m *ImageCVE) Clone() *ImageCVE {
 }
 
 type NodeCVE struct {
-	Id                   string                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
-	CveBaseInfo          *CVEInfo              `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
-	OperatingSystem      string                `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
-	Cvss                 float32               `protobuf:"fixed32,4,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`                                            // @gotags: search:"CVSS,store"
-	Severity             VulnerabilitySeverity `protobuf:"varint,5,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"`  // @gotags: search:"Severity"
-	ImpactScore          float32               `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`           // @gotags: search:"Impact Score"
-	Snoozed              bool                  `protobuf:"varint,7,opt,name=snoozed,proto3" json:"snoozed,omitempty" search:"CVE Snoozed"`                                       // @gotags: search:"CVE Snoozed"
-	SnoozeStart          *types.Timestamp      `protobuf:"bytes,8,opt,name=snooze_start,json=snoozeStart,proto3" json:"snooze_start,omitempty"`
-	SnoozeExpiry         *types.Timestamp      `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"` // @gotags: search:"CVE Snooze Expiry,hidden"
-	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
-	XXX_unrecognized     []byte                `json:"-"`
-	XXX_sizecache        int32                 `json:"-"`
+	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+	CveBaseInfo          *CVEInfo               `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
+	OperatingSystem      string                 `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
+	Cvss                 float32                `protobuf:"fixed32,4,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`                                            // @gotags: search:"CVSS,store"
+	Severity             VulnerabilitySeverity  `protobuf:"varint,5,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"`  // @gotags: search:"Severity"
+	ImpactScore          float32                `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`           // @gotags: search:"Impact Score"
+	Snoozed              bool                   `protobuf:"varint,7,opt,name=snoozed,proto3" json:"snoozed,omitempty" search:"CVE Snoozed"`                                       // @gotags: search:"CVE Snoozed"
+	SnoozeStart          *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_start,json=snoozeStart,proto3" json:"snooze_start,omitempty"`
+	SnoozeExpiry         *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"` // @gotags: search:"CVE Snooze Expiry,hidden"
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *NodeCVE) Reset()         { *m = NodeCVE{} }
@@ -1365,14 +1365,14 @@ func (m *NodeCVE) GetSnoozed() bool {
 	return false
 }
 
-func (m *NodeCVE) GetSnoozeStart() *types.Timestamp {
+func (m *NodeCVE) GetSnoozeStart() *timestamppb.Timestamp {
 	if m != nil {
 		return m.SnoozeStart
 	}
 	return nil
 }
 
-func (m *NodeCVE) GetSnoozeExpiry() *types.Timestamp {
+func (m *NodeCVE) GetSnoozeExpiry() *timestamppb.Timestamp {
 	if m != nil {
 		return m.SnoozeExpiry
 	}
@@ -1396,18 +1396,18 @@ func (m *NodeCVE) Clone() *NodeCVE {
 }
 
 type ClusterCVE struct {
-	Id                   string                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // This field is composite of cve and type. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
-	CveBaseInfo          *CVEInfo              `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
-	Cvss                 float32               `protobuf:"fixed32,3,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`                                           // @gotags: search:"CVSS,store"
-	Severity             VulnerabilitySeverity `protobuf:"varint,4,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"` // @gotags: search:"Severity"
-	ImpactScore          float32               `protobuf:"fixed32,5,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`          // @gotags: search:"Impact Score"
-	Snoozed              bool                  `protobuf:"varint,6,opt,name=snoozed,proto3" json:"snoozed,omitempty" search:"CVE Snoozed"`                                      // @gotags: search:"CVE Snoozed"
-	SnoozeStart          *types.Timestamp      `protobuf:"bytes,7,opt,name=snooze_start,json=snoozeStart,proto3" json:"snooze_start,omitempty"`
-	SnoozeExpiry         *types.Timestamp      `protobuf:"bytes,8,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"` // @gotags: search:"CVE Snooze Expiry,hidden"
-	Type                 CVE_CVEType           `protobuf:"varint,9,opt,name=type,proto3,enum=storage.CVE_CVEType" json:"type,omitempty" search:"CVE Type"`           // @gotags: search:"CVE Type"
-	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
-	XXX_unrecognized     []byte                `json:"-"`
-	XXX_sizecache        int32                 `json:"-"`
+	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // This field is composite of cve and type. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+	CveBaseInfo          *CVEInfo               `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
+	Cvss                 float32                `protobuf:"fixed32,3,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`                                           // @gotags: search:"CVSS,store"
+	Severity             VulnerabilitySeverity  `protobuf:"varint,4,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"` // @gotags: search:"Severity"
+	ImpactScore          float32                `protobuf:"fixed32,5,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`          // @gotags: search:"Impact Score"
+	Snoozed              bool                   `protobuf:"varint,6,opt,name=snoozed,proto3" json:"snoozed,omitempty" search:"CVE Snoozed"`                                      // @gotags: search:"CVE Snoozed"
+	SnoozeStart          *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=snooze_start,json=snoozeStart,proto3" json:"snooze_start,omitempty"`
+	SnoozeExpiry         *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"` // @gotags: search:"CVE Snooze Expiry,hidden"
+	Type                 CVE_CVEType            `protobuf:"varint,9,opt,name=type,proto3,enum=storage.CVE_CVEType" json:"type,omitempty" search:"CVE Type"`           // @gotags: search:"CVE Type"
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *ClusterCVE) Reset()         { *m = ClusterCVE{} }
@@ -1485,14 +1485,14 @@ func (m *ClusterCVE) GetSnoozed() bool {
 	return false
 }
 
-func (m *ClusterCVE) GetSnoozeStart() *types.Timestamp {
+func (m *ClusterCVE) GetSnoozeStart() *timestamppb.Timestamp {
 	if m != nil {
 		return m.SnoozeStart
 	}
 	return nil
 }
 
-func (m *ClusterCVE) GetSnoozeExpiry() *types.Timestamp {
+func (m *ClusterCVE) GetSnoozeExpiry() *timestamppb.Timestamp {
 	if m != nil {
 		return m.SnoozeExpiry
 	}
@@ -3636,7 +3636,7 @@ func (m *CVE) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.PublishedOn == nil {
-				m.PublishedOn = &types.Timestamp{}
+				m.PublishedOn = &timestamppb.Timestamp{}
 			}
 			if err := m.PublishedOn.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3672,7 +3672,7 @@ func (m *CVE) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastModified == nil {
-				m.LastModified = &types.Timestamp{}
+				m.LastModified = &timestamppb.Timestamp{}
 			}
 			if err := m.LastModified.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3864,7 +3864,7 @@ func (m *CVE) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &types.Timestamp{}
+				m.CreatedAt = &timestamppb.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3900,7 +3900,7 @@ func (m *CVE) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SuppressActivation == nil {
-				m.SuppressActivation = &types.Timestamp{}
+				m.SuppressActivation = &timestamppb.Timestamp{}
 			}
 			if err := m.SuppressActivation.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3936,7 +3936,7 @@ func (m *CVE) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SuppressExpiry == nil {
-				m.SuppressExpiry = &types.Timestamp{}
+				m.SuppressExpiry = &timestamppb.Timestamp{}
 			}
 			if err := m.SuppressExpiry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4623,7 +4623,7 @@ func (m *CVEInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.PublishedOn == nil {
-				m.PublishedOn = &types.Timestamp{}
+				m.PublishedOn = &timestamppb.Timestamp{}
 			}
 			if err := m.PublishedOn.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4659,7 +4659,7 @@ func (m *CVEInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &types.Timestamp{}
+				m.CreatedAt = &timestamppb.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4695,7 +4695,7 @@ func (m *CVEInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastModified == nil {
-				m.LastModified = &types.Timestamp{}
+				m.LastModified = &timestamppb.Timestamp{}
 			}
 			if err := m.LastModified.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5183,7 +5183,7 @@ func (m *ImageCVE) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SnoozeStart == nil {
-				m.SnoozeStart = &types.Timestamp{}
+				m.SnoozeStart = &timestamppb.Timestamp{}
 			}
 			if err := m.SnoozeStart.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5219,7 +5219,7 @@ func (m *ImageCVE) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SnoozeExpiry == nil {
-				m.SnoozeExpiry = &types.Timestamp{}
+				m.SnoozeExpiry = &timestamppb.Timestamp{}
 			}
 			if err := m.SnoozeExpiry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5467,7 +5467,7 @@ func (m *NodeCVE) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SnoozeStart == nil {
-				m.SnoozeStart = &types.Timestamp{}
+				m.SnoozeStart = &timestamppb.Timestamp{}
 			}
 			if err := m.SnoozeStart.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5503,7 +5503,7 @@ func (m *NodeCVE) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SnoozeExpiry == nil {
-				m.SnoozeExpiry = &types.Timestamp{}
+				m.SnoozeExpiry = &timestamppb.Timestamp{}
 			}
 			if err := m.SnoozeExpiry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5719,7 +5719,7 @@ func (m *ClusterCVE) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SnoozeStart == nil {
-				m.SnoozeStart = &types.Timestamp{}
+				m.SnoozeStart = &timestamppb.Timestamp{}
 			}
 			if err := m.SnoozeStart.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5755,7 +5755,7 @@ func (m *ClusterCVE) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SnoozeExpiry == nil {
-				m.SnoozeExpiry = &types.Timestamp{}
+				m.SnoozeExpiry = &timestamppb.Timestamp{}
 			}
 			if err := m.SnoozeExpiry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

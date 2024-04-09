@@ -5,8 +5,8 @@ package v1
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -114,12 +114,12 @@ type AdministrationEvent struct {
 	// occurrences track the amount.
 	NumOccurrences int64 `protobuf:"varint,8,opt,name=num_occurrences,json=numOccurrences,proto3" json:"num_occurrences,omitempty"`
 	// Specifies the time when the event has last occurred.
-	LastOccurredAt *types.Timestamp `protobuf:"bytes,9,opt,name=last_occurred_at,json=lastOccurredAt,proto3" json:"last_occurred_at,omitempty"`
+	LastOccurredAt *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_occurred_at,json=lastOccurredAt,proto3" json:"last_occurred_at,omitempty"`
 	// Specifies the time when the event has been created.
-	CreatedAt            *types.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	CreatedAt            *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *AdministrationEvent) Reset()         { *m = AdministrationEvent{} }
@@ -211,14 +211,14 @@ func (m *AdministrationEvent) GetNumOccurrences() int64 {
 	return 0
 }
 
-func (m *AdministrationEvent) GetLastOccurredAt() *types.Timestamp {
+func (m *AdministrationEvent) GetLastOccurredAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.LastOccurredAt
 	}
 	return nil
 }
 
-func (m *AdministrationEvent) GetCreatedAt() *types.Timestamp {
+func (m *AdministrationEvent) GetCreatedAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -328,9 +328,9 @@ func (m *AdministrationEvent_Resource) Clone() *AdministrationEvent_Resource {
 
 type AdministrationEventsFilter struct {
 	// Matches events with last_occurred_at after a specific timestamp, i.e. the lower boundary.
-	From *types.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	From *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
 	// Matches events with last_occurred_at before a specific timestamp, i.e. the upper boundary.
-	Until *types.Timestamp `protobuf:"bytes,2,opt,name=until,proto3" json:"until,omitempty"`
+	Until *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=until,proto3" json:"until,omitempty"`
 	// Matches events from a specific domain.
 	Domain []string `protobuf:"bytes,3,rep,name=domain,proto3" json:"domain,omitempty"`
 	// Matches events associated with a specific resource type.
@@ -377,14 +377,14 @@ func (m *AdministrationEventsFilter) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AdministrationEventsFilter proto.InternalMessageInfo
 
-func (m *AdministrationEventsFilter) GetFrom() *types.Timestamp {
+func (m *AdministrationEventsFilter) GetFrom() *timestamppb.Timestamp {
 	if m != nil {
 		return m.From
 	}
 	return nil
 }
 
-func (m *AdministrationEventsFilter) GetUntil() *types.Timestamp {
+func (m *AdministrationEventsFilter) GetUntil() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Until
 	}
@@ -1812,7 +1812,7 @@ func (m *AdministrationEvent) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastOccurredAt == nil {
-				m.LastOccurredAt = &types.Timestamp{}
+				m.LastOccurredAt = &timestamppb.Timestamp{}
 			}
 			if err := m.LastOccurredAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1848,7 +1848,7 @@ func (m *AdministrationEvent) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &types.Timestamp{}
+				m.CreatedAt = &timestamppb.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2082,7 +2082,7 @@ func (m *AdministrationEventsFilter) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.From == nil {
-				m.From = &types.Timestamp{}
+				m.From = &timestamppb.Timestamp{}
 			}
 			if err := m.From.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2118,7 +2118,7 @@ func (m *AdministrationEventsFilter) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Until == nil {
-				m.Until = &types.Timestamp{}
+				m.Until = &timestamppb.Timestamp{}
 			}
 			if err := m.Until.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

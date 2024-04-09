@@ -5,9 +5,9 @@ package v1
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -210,7 +210,7 @@ type DeferVulnRequest_ExpiresWhenFixed struct {
 	ExpiresWhenFixed bool `protobuf:"varint,4,opt,name=expires_when_fixed,json=expiresWhenFixed,proto3,oneof" json:"expires_when_fixed,omitempty"`
 }
 type DeferVulnRequest_ExpiresOn struct {
-	ExpiresOn *types.Timestamp `protobuf:"bytes,5,opt,name=expires_on,json=expiresOn,proto3,oneof" json:"expires_on,omitempty"`
+	ExpiresOn *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_on,json=expiresOn,proto3,oneof" json:"expires_on,omitempty"`
 }
 
 func (*DeferVulnRequest_ExpiresWhenFixed) isDeferVulnRequest_Expiry() {}
@@ -270,7 +270,7 @@ func (m *DeferVulnRequest) GetExpiresWhenFixed() bool {
 	return false
 }
 
-func (m *DeferVulnRequest) GetExpiresOn() *types.Timestamp {
+func (m *DeferVulnRequest) GetExpiresOn() *timestamppb.Timestamp {
 	if x, ok := m.GetExpiry().(*DeferVulnRequest_ExpiresOn); ok {
 		return x.ExpiresOn
 	}
@@ -2271,7 +2271,7 @@ func (m *DeferVulnRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &types.Timestamp{}
+			v := &timestamppb.Timestamp{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

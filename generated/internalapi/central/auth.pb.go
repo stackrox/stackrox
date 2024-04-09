@@ -5,8 +5,8 @@ package central
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -24,11 +24,11 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type ServiceCertAuth struct {
-	CertDer              []byte           `protobuf:"bytes,1,opt,name=cert_der,json=certDer,proto3" json:"cert_der,omitempty"`
-	CurrentTime          *types.Timestamp `protobuf:"bytes,2,opt,name=current_time,json=currentTime,proto3" json:"current_time,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	CertDer              []byte                 `protobuf:"bytes,1,opt,name=cert_der,json=certDer,proto3" json:"cert_der,omitempty"`
+	CurrentTime          *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=current_time,json=currentTime,proto3" json:"current_time,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *ServiceCertAuth) Reset()         { *m = ServiceCertAuth{} }
@@ -71,7 +71,7 @@ func (m *ServiceCertAuth) GetCertDer() []byte {
 	return nil
 }
 
-func (m *ServiceCertAuth) GetCurrentTime() *types.Timestamp {
+func (m *ServiceCertAuth) GetCurrentTime() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CurrentTime
 	}
@@ -295,7 +295,7 @@ func (m *ServiceCertAuth) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CurrentTime == nil {
-				m.CurrentTime = &types.Timestamp{}
+				m.CurrentTime = &timestamppb.Timestamp{}
 			}
 			if err := m.CurrentTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

@@ -6,8 +6,8 @@ package storage
 import (
 	encoding_binary "encoding/binary"
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -120,7 +120,7 @@ type TestSingleKeyStruct struct {
 	Int64     int64                         `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Int64"`                                                                                          // @gotags: search:"Test Int64"
 	Float     float32                       `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty" search:"Test Float"`                                                                                         // @gotags: search:"Test Float"
 	Labels    map[string]string             `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Test Labels"` // @gotags: search:"Test Labels"
-	Timestamp *types.Timestamp              `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Test Timestamp"`                                                                                   // @gotags: search:"Test Timestamp"
+	Timestamp *timestamppb.Timestamp        `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Test Timestamp"`                                                                                   // @gotags: search:"Test Timestamp"
 	Enum      TestSingleKeyStruct_Enum      `protobuf:"varint,10,opt,name=enum,proto3,enum=storage.TestSingleKeyStruct_Enum" json:"enum,omitempty" search:"Test Enum"`                                                     // @gotags: search:"Test Enum"
 	Enums     []TestSingleKeyStruct_Enum    `protobuf:"varint,11,rep,packed,name=enums,proto3,enum=storage.TestSingleKeyStruct_Enum" json:"enums,omitempty" search:"Test Enum Slice"`                                            // @gotags: search:"Test Enum Slice"
 	Embedded  *TestSingleKeyStruct_Embedded `protobuf:"bytes,12,opt,name=embedded,proto3" json:"embedded,omitempty"`
@@ -267,7 +267,7 @@ func (m *TestSingleKeyStruct) GetLabels() map[string]string {
 	return nil
 }
 
-func (m *TestSingleKeyStruct) GetTimestamp() *types.Timestamp {
+func (m *TestSingleKeyStruct) GetTimestamp() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Timestamp
 	}
@@ -767,7 +767,7 @@ type TestSingleUUIDKeyStruct struct {
 	Int64     int64                             `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Int64"`                                                                                          // @gotags: search:"Test Int64"
 	Float     float32                           `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty" search:"Test Float"`                                                                                         // @gotags: search:"Test Float"
 	Labels    map[string]string                 `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Test Labels"` // @gotags: search:"Test Labels"
-	Timestamp *types.Timestamp                  `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Test Timestamp"`                                                                                   // @gotags: search:"Test Timestamp"
+	Timestamp *timestamppb.Timestamp            `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Test Timestamp"`                                                                                   // @gotags: search:"Test Timestamp"
 	Enum      TestSingleUUIDKeyStruct_Enum      `protobuf:"varint,10,opt,name=enum,proto3,enum=storage.TestSingleUUIDKeyStruct_Enum" json:"enum,omitempty" search:"Test Enum"`                                                 // @gotags: search:"Test Enum"
 	Enums     []TestSingleUUIDKeyStruct_Enum    `protobuf:"varint,11,rep,packed,name=enums,proto3,enum=storage.TestSingleUUIDKeyStruct_Enum" json:"enums,omitempty" search:"Test Enum Slice"`                                        // @gotags: search:"Test Enum Slice"
 	Embedded  *TestSingleUUIDKeyStruct_Embedded `protobuf:"bytes,12,opt,name=embedded,proto3" json:"embedded,omitempty"`
@@ -914,7 +914,7 @@ func (m *TestSingleUUIDKeyStruct) GetLabels() map[string]string {
 	return nil
 }
 
-func (m *TestSingleUUIDKeyStruct) GetTimestamp() *types.Timestamp {
+func (m *TestSingleUUIDKeyStruct) GetTimestamp() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Timestamp
 	}
@@ -1409,18 +1409,18 @@ func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) Clone() *TestSingleUUIDKey
 }
 
 type TestStruct struct {
-	Key1        string            `protobuf:"bytes,1,opt,name=key1,proto3" json:"key1,omitempty" sql:"pk,id" search:"Test Key"`                                                                                             // @gotags: sql:"pk,id" search:"Test Key"
-	Key2        string            `protobuf:"bytes,2,opt,name=key2,proto3" json:"key2,omitempty" search:"Test Key 2,store,hidden"`                                                                                             // @gotags: search:"Test Key 2,store,hidden"
-	StringSlice []string          `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty" search:"Test String Slice"`                                                            // @gotags: search:"Test String Slice"
-	Bool        bool              `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty" search:"Test Bool"`                                                                                            // @gotags: search:"Test Bool"
-	Uint64      uint64            `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty" search:"Test Uint64"`                                                                                        // @gotags: search:"Test Uint64"
-	Int64       int64             `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Int64"`                                                                                          // @gotags: search:"Test Int64"
-	Float       float32           `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty" search:"Test Float"`                                                                                         // @gotags: search:"Test Float"
-	Labels      map[string]string `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Test Labels"` // @gotags: search:"Test Labels"
-	Timestamp   *types.Timestamp  `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Test Timestamp"`                                                                                   // @gotags: search:"Test Timestamp"
-	Enum        TestStruct_Enum   `protobuf:"varint,10,opt,name=enum,proto3,enum=storage.TestStruct_Enum" json:"enum,omitempty" search:"Test Enum"`                                                              // @gotags: search:"Test Enum"
-	Enums       []TestStruct_Enum `protobuf:"varint,11,rep,packed,name=enums,proto3,enum=storage.TestStruct_Enum" json:"enums,omitempty" search:"Test Enum Slice"`                                                     // @gotags: search:"Test Enum Slice"
-	String_     string            `protobuf:"bytes,16,opt,name=string,proto3" json:"string,omitempty" search:"Test String"`                                                                                        // @gotags: search:"Test String"
+	Key1        string                 `protobuf:"bytes,1,opt,name=key1,proto3" json:"key1,omitempty" sql:"pk,id" search:"Test Key"`                                                                                             // @gotags: sql:"pk,id" search:"Test Key"
+	Key2        string                 `protobuf:"bytes,2,opt,name=key2,proto3" json:"key2,omitempty" search:"Test Key 2,store,hidden"`                                                                                             // @gotags: search:"Test Key 2,store,hidden"
+	StringSlice []string               `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty" search:"Test String Slice"`                                                            // @gotags: search:"Test String Slice"
+	Bool        bool                   `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty" search:"Test Bool"`                                                                                            // @gotags: search:"Test Bool"
+	Uint64      uint64                 `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty" search:"Test Uint64"`                                                                                        // @gotags: search:"Test Uint64"
+	Int64       int64                  `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Int64"`                                                                                          // @gotags: search:"Test Int64"
+	Float       float32                `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty" search:"Test Float"`                                                                                         // @gotags: search:"Test Float"
+	Labels      map[string]string      `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Test Labels"` // @gotags: search:"Test Labels"
+	Timestamp   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Test Timestamp"`                                                                                   // @gotags: search:"Test Timestamp"
+	Enum        TestStruct_Enum        `protobuf:"varint,10,opt,name=enum,proto3,enum=storage.TestStruct_Enum" json:"enum,omitempty" search:"Test Enum"`                                                              // @gotags: search:"Test Enum"
+	Enums       []TestStruct_Enum      `protobuf:"varint,11,rep,packed,name=enums,proto3,enum=storage.TestStruct_Enum" json:"enums,omitempty" search:"Test Enum Slice"`                                                     // @gotags: search:"Test Enum Slice"
+	String_     string                 `protobuf:"bytes,16,opt,name=string,proto3" json:"string,omitempty" search:"Test String"`                                                                                        // @gotags: search:"Test String"
 	// repeated int64: currently unsupported
 	IntSliceDeprecated []int64              `protobuf:"varint,17,rep,packed,name=int_slice_deprecated,json=intSliceDeprecated,proto3" json:"int_slice_deprecated,omitempty" sql:"-"` // Deprecated: Do not use. // @gotags: sql:"-"
 	Int32Slice         []int32              `protobuf:"varint,18,rep,packed,name=int32_slice,json=int32Slice,proto3" json:"int32_slice,omitempty" search:"Test Int32 Slice"`                           // @gotags: search:"Test Int32 Slice"
@@ -1568,7 +1568,7 @@ func (m *TestStruct) GetLabels() map[string]string {
 	return nil
 }
 
-func (m *TestStruct) GetTimestamp() *types.Timestamp {
+func (m *TestStruct) GetTimestamp() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Timestamp
 	}
@@ -7008,7 +7008,7 @@ func (m *TestSingleKeyStruct) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Timestamp == nil {
-				m.Timestamp = &types.Timestamp{}
+				m.Timestamp = &timestamppb.Timestamp{}
 			}
 			if err := m.Timestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8216,7 +8216,7 @@ func (m *TestSingleUUIDKeyStruct) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Timestamp == nil {
-				m.Timestamp = &types.Timestamp{}
+				m.Timestamp = &timestamppb.Timestamp{}
 			}
 			if err := m.Timestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9424,7 +9424,7 @@ func (m *TestStruct) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Timestamp == nil {
-				m.Timestamp = &types.Timestamp{}
+				m.Timestamp = &timestamppb.Timestamp{}
 			}
 			if err := m.Timestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

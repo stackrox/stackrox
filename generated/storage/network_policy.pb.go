@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -83,20 +83,20 @@ func (NetworkPolicyType) EnumDescriptor() ([]byte, []int) {
 }
 
 type NetworkPolicy struct {
-	Id                   string             `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Name                 string             `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	ClusterId            string             `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
-	ClusterName          string             `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
-	Namespace            string             `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden,store"` // @gotags: search:"Namespace,hidden,store"
-	Labels               map[string]string  `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Annotations          map[string]string  `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Spec                 *NetworkPolicySpec `protobuf:"bytes,8,opt,name=spec,proto3" json:"spec,omitempty"`
-	Yaml                 string             `protobuf:"bytes,9,opt,name=yaml,proto3" json:"yaml,omitempty"`
-	ApiVersion           string             `protobuf:"bytes,10,opt,name=api_version,json=apiVersion,proto3" json:"api_version,omitempty"`
-	Created              *types.Timestamp   `protobuf:"bytes,11,opt,name=created,proto3" json:"created,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
-	XXX_unrecognized     []byte             `json:"-"`
-	XXX_sizecache        int32              `json:"-"`
+	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Name                 string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ClusterId            string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
+	ClusterName          string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	Namespace            string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden,store"` // @gotags: search:"Namespace,hidden,store"
+	Labels               map[string]string      `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Annotations          map[string]string      `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Spec                 *NetworkPolicySpec     `protobuf:"bytes,8,opt,name=spec,proto3" json:"spec,omitempty"`
+	Yaml                 string                 `protobuf:"bytes,9,opt,name=yaml,proto3" json:"yaml,omitempty"`
+	ApiVersion           string                 `protobuf:"bytes,10,opt,name=api_version,json=apiVersion,proto3" json:"api_version,omitempty"`
+	Created              *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created,proto3" json:"created,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *NetworkPolicy) Reset()         { *m = NetworkPolicy{} }
@@ -202,7 +202,7 @@ func (m *NetworkPolicy) GetApiVersion() string {
 	return ""
 }
 
-func (m *NetworkPolicy) GetCreated() *types.Timestamp {
+func (m *NetworkPolicy) GetCreated() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Created
 	}
@@ -926,7 +926,7 @@ func (m *NetworkPolicyModification) Clone() *NetworkPolicyModification {
 type NetworkPolicyApplicationUndoRecord struct {
 	ClusterId            string                     `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
 	User                 string                     `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
-	ApplyTimestamp       *types.Timestamp           `protobuf:"bytes,2,opt,name=apply_timestamp,json=applyTimestamp,proto3" json:"apply_timestamp,omitempty"`
+	ApplyTimestamp       *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=apply_timestamp,json=applyTimestamp,proto3" json:"apply_timestamp,omitempty"`
 	OriginalModification *NetworkPolicyModification `protobuf:"bytes,3,opt,name=original_modification,json=originalModification,proto3" json:"original_modification,omitempty"`
 	UndoModification     *NetworkPolicyModification `protobuf:"bytes,4,opt,name=undo_modification,json=undoModification,proto3" json:"undo_modification,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
@@ -981,7 +981,7 @@ func (m *NetworkPolicyApplicationUndoRecord) GetUser() string {
 	return ""
 }
 
-func (m *NetworkPolicyApplicationUndoRecord) GetApplyTimestamp() *types.Timestamp {
+func (m *NetworkPolicyApplicationUndoRecord) GetApplyTimestamp() *timestamppb.Timestamp {
 	if m != nil {
 		return m.ApplyTimestamp
 	}
@@ -2852,7 +2852,7 @@ func (m *NetworkPolicy) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Created == nil {
-				m.Created = &types.Timestamp{}
+				m.Created = &timestamppb.Timestamp{}
 			}
 			if err := m.Created.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4061,7 +4061,7 @@ func (m *NetworkPolicyApplicationUndoRecord) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ApplyTimestamp == nil {
-				m.ApplyTimestamp = &types.Timestamp{}
+				m.ApplyTimestamp = &timestamppb.Timestamp{}
 			}
 			if err := m.ApplyTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

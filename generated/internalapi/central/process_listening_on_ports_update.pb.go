@@ -5,9 +5,9 @@ package central
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -26,7 +26,7 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type ProcessListeningOnPortsUpdate struct {
 	ProcessesListeningOnPorts []*storage.ProcessListeningOnPortFromSensor `protobuf:"bytes,1,rep,name=processes_listening_on_ports,json=processesListeningOnPorts,proto3" json:"processes_listening_on_ports,omitempty"`
-	Time                      *types.Timestamp                            `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`
+	Time                      *timestamppb.Timestamp                      `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`
 	XXX_NoUnkeyedLiteral      struct{}                                    `json:"-"`
 	XXX_unrecognized          []byte                                      `json:"-"`
 	XXX_sizecache             int32                                       `json:"-"`
@@ -72,7 +72,7 @@ func (m *ProcessListeningOnPortsUpdate) GetProcessesListeningOnPorts() []*storag
 	return nil
 }
 
-func (m *ProcessListeningOnPortsUpdate) GetTime() *types.Timestamp {
+func (m *ProcessListeningOnPortsUpdate) GetTime() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Time
 	}
@@ -312,7 +312,7 @@ func (m *ProcessListeningOnPortsUpdate) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Time == nil {
-				m.Time = &types.Timestamp{}
+				m.Time = &timestamppb.Timestamp{}
 			}
 			if err := m.Time.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

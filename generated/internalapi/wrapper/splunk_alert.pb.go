@@ -5,8 +5,8 @@ package wrapper
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	anypb "google.golang.org/protobuf/types/known/anypb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -26,7 +26,7 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 // Splunk notification needs the source of data
 // and the type of data.
 type SplunkEvent struct {
-	Event                *types.Any `protobuf:"bytes,1,opt,name=event,proto3" json:"event,omitempty"`
+	Event                *anypb.Any `protobuf:"bytes,1,opt,name=event,proto3" json:"event,omitempty"`
 	Source               string     `protobuf:"bytes,2,opt,name=source,proto3" json:"source,omitempty"`
 	Sourcetype           string     `protobuf:"bytes,3,opt,name=sourcetype,proto3" json:"sourcetype,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
@@ -67,7 +67,7 @@ func (m *SplunkEvent) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_SplunkEvent proto.InternalMessageInfo
 
-func (m *SplunkEvent) GetEvent() *types.Any {
+func (m *SplunkEvent) GetEvent() *anypb.Any {
 	if m != nil {
 		return m.Event
 	}
@@ -279,7 +279,7 @@ func (m *SplunkEvent) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Event == nil {
-				m.Event = &types.Any{}
+				m.Event = &anypb.Any{}
 			}
 			if err := m.Event.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

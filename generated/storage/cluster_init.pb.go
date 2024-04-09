@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -24,15 +24,15 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type InitBundleMeta struct {
-	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Name                 string           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	CreatedAt            *types.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	CreatedBy            *User            `protobuf:"bytes,4,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
-	IsRevoked            bool             `protobuf:"varint,5,opt,name=is_revoked,json=isRevoked,proto3" json:"is_revoked,omitempty"`
-	ExpiresAt            *types.Timestamp `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Name                 string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	CreatedAt            *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	CreatedBy            *User                  `protobuf:"bytes,4,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
+	IsRevoked            bool                   `protobuf:"varint,5,opt,name=is_revoked,json=isRevoked,proto3" json:"is_revoked,omitempty"`
+	ExpiresAt            *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *InitBundleMeta) Reset()         { *m = InitBundleMeta{} }
@@ -82,7 +82,7 @@ func (m *InitBundleMeta) GetName() string {
 	return ""
 }
 
-func (m *InitBundleMeta) GetCreatedAt() *types.Timestamp {
+func (m *InitBundleMeta) GetCreatedAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -103,7 +103,7 @@ func (m *InitBundleMeta) GetIsRevoked() bool {
 	return false
 }
 
-func (m *InitBundleMeta) GetExpiresAt() *types.Timestamp {
+func (m *InitBundleMeta) GetExpiresAt() *timestamppb.Timestamp {
 	if m != nil {
 		return m.ExpiresAt
 	}
@@ -416,7 +416,7 @@ func (m *InitBundleMeta) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &types.Timestamp{}
+				m.CreatedAt = &timestamppb.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -508,7 +508,7 @@ func (m *InitBundleMeta) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ExpiresAt == nil {
-				m.ExpiresAt = &types.Timestamp{}
+				m.ExpiresAt = &timestamppb.Timestamp{}
 			}
 			if err := m.ExpiresAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

@@ -5,9 +5,10 @@ package v1
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
+	anypb "google.golang.org/protobuf/types/known/anypb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -170,7 +171,7 @@ func (m *Audit) Clone() *Audit {
 }
 
 type Audit_Message struct {
-	Time                 *types.Timestamp       `protobuf:"bytes,1,opt,name=time,proto3" json:"time,omitempty"`
+	Time                 *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=time,proto3" json:"time,omitempty"`
 	Status               Audit_RequestStatus    `protobuf:"varint,2,opt,name=status,proto3,enum=v1.Audit_RequestStatus" json:"status,omitempty"`
 	StatusReason         string                 `protobuf:"bytes,3,opt,name=status_reason,json=statusReason,proto3" json:"status_reason,omitempty"`
 	User                 *storage.UserInfo      `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"`
@@ -215,7 +216,7 @@ func (m *Audit_Message) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Audit_Message proto.InternalMessageInfo
 
-func (m *Audit_Message) GetTime() *types.Timestamp {
+func (m *Audit_Message) GetTime() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Time
 	}
@@ -283,7 +284,7 @@ func (m *Audit_Message) Clone() *Audit_Message {
 type Audit_Message_Request struct {
 	Endpoint      string                               `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
 	Method        string                               `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
-	Payload       *types.Any                           `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
+	Payload       *anypb.Any                           `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
 	SourceHeaders *Audit_Message_Request_SourceHeaders `protobuf:"bytes,4,opt,name=source_headers,json=sourceHeaders,proto3" json:"source_headers,omitempty"`
 	// The source IP of the request.
 	// This is determined from the values found within the request's source.
@@ -358,7 +359,7 @@ func (m *Audit_Message_Request) GetMethod() string {
 	return ""
 }
 
-func (m *Audit_Message_Request) GetPayload() *types.Any {
+func (m *Audit_Message_Request) GetPayload() *anypb.Any {
 	if m != nil {
 		return m.Payload
 	}
@@ -996,7 +997,7 @@ func (m *Audit_Message) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Time == nil {
-				m.Time = &types.Timestamp{}
+				m.Time = &timestamppb.Timestamp{}
 			}
 			if err := m.Time.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1308,7 +1309,7 @@ func (m *Audit_Message_Request) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Payload == nil {
-				m.Payload = &types.Any{}
+				m.Payload = &anypb.Any{}
 			}
 			if err := m.Payload.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

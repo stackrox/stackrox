@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -33,14 +33,14 @@ type ProcessIndicator struct {
 	PodId  string `protobuf:"bytes,4,opt,name=pod_id,json=podId,proto3" json:"pod_id,omitempty" search:"Pod ID,hidden"`     // @gotags: search:"Pod ID,hidden"
 	PodUid string `protobuf:"bytes,11,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty" search:"Pod UID,hidden" sql:"index=hash,type(uuid)"` // @gotags: search:"Pod UID,hidden" sql:"index=hash,type(uuid)"
 	// A process signal message passed from Collector to Sensor
-	Signal               *ProcessSignal   `protobuf:"bytes,6,opt,name=signal,proto3" json:"signal,omitempty"`
-	ClusterId            string           `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"type(uuid)"` // @gotags: search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"type(uuid)"
-	Namespace            string           `protobuf:"bytes,8,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store,hidden" policy:",prefer-parent"`                  // @gotags: search:"Namespace,store,hidden" policy:",prefer-parent"
-	ContainerStartTime   *types.Timestamp `protobuf:"bytes,9,opt,name=container_start_time,json=containerStartTime,proto3" json:"container_start_time,omitempty"`
-	ImageId              string           `protobuf:"bytes,12,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	Signal               *ProcessSignal         `protobuf:"bytes,6,opt,name=signal,proto3" json:"signal,omitempty"`
+	ClusterId            string                 `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"type(uuid)"` // @gotags: search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"type(uuid)"
+	Namespace            string                 `protobuf:"bytes,8,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store,hidden" policy:",prefer-parent"`                  // @gotags: search:"Namespace,store,hidden" policy:",prefer-parent"
+	ContainerStartTime   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=container_start_time,json=containerStartTime,proto3" json:"container_start_time,omitempty"`
+	ImageId              string                 `protobuf:"bytes,12,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *ProcessIndicator) Reset()         { *m = ProcessIndicator{} }
@@ -132,7 +132,7 @@ func (m *ProcessIndicator) GetNamespace() string {
 	return ""
 }
 
-func (m *ProcessIndicator) GetContainerStartTime() *types.Timestamp {
+func (m *ProcessIndicator) GetContainerStartTime() *timestamppb.Timestamp {
 	if m != nil {
 		return m.ContainerStartTime
 	}
@@ -342,7 +342,7 @@ type ProcessSignal struct {
 	// ID of container associated with this process
 	ContainerId string `protobuf:"bytes,2,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty" search:"Container ID,hidden"` // @gotags: search:"Container ID,hidden"
 	// Process creation time
-	Time *types.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty" search:"Process Creation Time,hidden"` // @gotags: search:"Process Creation Time,hidden"
+	Time *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty" search:"Process Creation Time,hidden"` // @gotags: search:"Process Creation Time,hidden"
 	// Process name
 	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty" search:"Process Name"` // @gotags: search:"Process Name"
 	// Process arguments
@@ -413,7 +413,7 @@ func (m *ProcessSignal) GetContainerId() string {
 	return ""
 }
 
-func (m *ProcessSignal) GetTime() *types.Timestamp {
+func (m *ProcessSignal) GetTime() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Time
 	}
@@ -1500,7 +1500,7 @@ func (m *ProcessIndicator) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ContainerStartTime == nil {
-				m.ContainerStartTime = &types.Timestamp{}
+				m.ContainerStartTime = &timestamppb.Timestamp{}
 			}
 			if err := m.ContainerStartTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2073,7 +2073,7 @@ func (m *ProcessSignal) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Time == nil {
-				m.Time = &types.Timestamp{}
+				m.Time = &timestamppb.Timestamp{}
 			}
 			if err := m.Time.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

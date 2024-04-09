@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -234,9 +234,9 @@ type Policy struct {
 	// FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
 	// FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
 	// FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
-	EnforcementActions []EnforcementAction `protobuf:"varint,13,rep,packed,name=enforcement_actions,json=enforcementActions,proto3,enum=storage.EnforcementAction" json:"enforcement_actions,omitempty" search:"Enforcement"` // @gotags: search:"Enforcement"
-	Notifiers          []string            `protobuf:"bytes,14,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
-	LastUpdated        *types.Timestamp    `protobuf:"bytes,15,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Policy Last Updated"` // @gotags: search:"Policy Last Updated"
+	EnforcementActions []EnforcementAction    `protobuf:"varint,13,rep,packed,name=enforcement_actions,json=enforcementActions,proto3,enum=storage.EnforcementAction" json:"enforcement_actions,omitempty" search:"Enforcement"` // @gotags: search:"Enforcement"
+	Notifiers          []string               `protobuf:"bytes,14,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	LastUpdated        *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Policy Last Updated"` // @gotags: search:"Policy Last Updated"
 	// For internal use only.
 	SORTName string `protobuf:"bytes,16,opt,name=SORT_name,json=SORTName,proto3" json:"SORT_name,omitempty" search:"SORT_Policy,hidden,analyzer=keyword"` // @gotags: search:"SORT_Policy,hidden,analyzer=keyword"
 	// For internal use only.
@@ -388,7 +388,7 @@ func (m *Policy) GetNotifiers() []string {
 	return nil
 }
 
-func (m *Policy) GetLastUpdated() *types.Timestamp {
+func (m *Policy) GetLastUpdated() *timestamppb.Timestamp {
 	if m != nil {
 		return m.LastUpdated
 	}
@@ -875,19 +875,19 @@ func (m *PolicyList) Clone() *PolicyList {
 }
 
 type ListPolicy struct {
-	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                 string           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Description          string           `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Severity             Severity         `protobuf:"varint,4,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty"`
-	Disabled             bool             `protobuf:"varint,5,opt,name=disabled,proto3" json:"disabled,omitempty"`
-	LifecycleStages      []LifecycleStage `protobuf:"varint,6,rep,packed,name=lifecycle_stages,json=lifecycleStages,proto3,enum=storage.LifecycleStage" json:"lifecycle_stages,omitempty"`
-	Notifiers            []string         `protobuf:"bytes,7,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
-	LastUpdated          *types.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
-	EventSource          EventSource      `protobuf:"varint,9,opt,name=event_source,json=eventSource,proto3,enum=storage.EventSource" json:"event_source,omitempty"`
-	IsDefault            bool             `protobuf:"varint,10,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description          string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Severity             Severity               `protobuf:"varint,4,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty"`
+	Disabled             bool                   `protobuf:"varint,5,opt,name=disabled,proto3" json:"disabled,omitempty"`
+	LifecycleStages      []LifecycleStage       `protobuf:"varint,6,rep,packed,name=lifecycle_stages,json=lifecycleStages,proto3,enum=storage.LifecycleStage" json:"lifecycle_stages,omitempty"`
+	Notifiers            []string               `protobuf:"bytes,7,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	LastUpdated          *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	EventSource          EventSource            `protobuf:"varint,9,opt,name=event_source,json=eventSource,proto3,enum=storage.EventSource" json:"event_source,omitempty"`
+	IsDefault            bool                   `protobuf:"varint,10,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *ListPolicy) Reset()         { *m = ListPolicy{} }
@@ -972,7 +972,7 @@ func (m *ListPolicy) GetNotifiers() []string {
 	return nil
 }
 
-func (m *ListPolicy) GetLastUpdated() *types.Timestamp {
+func (m *ListPolicy) GetLastUpdated() *timestamppb.Timestamp {
 	if m != nil {
 		return m.LastUpdated
 	}
@@ -1016,13 +1016,13 @@ func (m *ListPolicy) Clone() *ListPolicy {
 }
 
 type Exclusion struct {
-	Name                 string                `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Deployment           *Exclusion_Deployment `protobuf:"bytes,5,opt,name=deployment,proto3" json:"deployment,omitempty"`
-	Image                *Exclusion_Image      `protobuf:"bytes,7,opt,name=image,proto3" json:"image,omitempty"`
-	Expiration           *types.Timestamp      `protobuf:"bytes,6,opt,name=expiration,proto3" json:"expiration,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
-	XXX_unrecognized     []byte                `json:"-"`
-	XXX_sizecache        int32                 `json:"-"`
+	Name                 string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Deployment           *Exclusion_Deployment  `protobuf:"bytes,5,opt,name=deployment,proto3" json:"deployment,omitempty"`
+	Image                *Exclusion_Image       `protobuf:"bytes,7,opt,name=image,proto3" json:"image,omitempty"`
+	Expiration           *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expiration,proto3" json:"expiration,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *Exclusion) Reset()         { *m = Exclusion{} }
@@ -1079,7 +1079,7 @@ func (m *Exclusion) GetImage() *Exclusion_Image {
 	return nil
 }
 
-func (m *Exclusion) GetExpiration() *types.Timestamp {
+func (m *Exclusion) GetExpiration() *timestamppb.Timestamp {
 	if m != nil {
 		return m.Expiration
 	}
@@ -3227,7 +3227,7 @@ func (m *Policy) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdated == nil {
-				m.LastUpdated = &types.Timestamp{}
+				m.LastUpdated = &timestamppb.Timestamp{}
 			}
 			if err := m.LastUpdated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4403,7 +4403,7 @@ func (m *ListPolicy) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdated == nil {
-				m.LastUpdated = &types.Timestamp{}
+				m.LastUpdated = &timestamppb.Timestamp{}
 			}
 			if err := m.LastUpdated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4597,7 +4597,7 @@ func (m *Exclusion) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Expiration == nil {
-				m.Expiration = &types.Timestamp{}
+				m.Expiration = &timestamppb.Timestamp{}
 			}
 			if err := m.Expiration.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

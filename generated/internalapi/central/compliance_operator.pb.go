@@ -5,8 +5,8 @@ package central
 
 import (
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -2008,7 +2008,7 @@ type ComplianceOperatorCheckResultV2 struct {
 	Instructions         string                                      `protobuf:"bytes,8,opt,name=instructions,proto3" json:"instructions,omitempty"`
 	Labels               map[string]string                           `protobuf:"bytes,9,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Annotations          map[string]string                           `protobuf:"bytes,10,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	CreatedTime          *types.Timestamp                            `protobuf:"bytes,11,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
+	CreatedTime          *timestamppb.Timestamp                      `protobuf:"bytes,11,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
 	ScanName             string                                      `protobuf:"bytes,14,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
 	SuiteName            string                                      `protobuf:"bytes,15,opt,name=suite_name,json=suiteName,proto3" json:"suite_name,omitempty"`
 	Rationale            string                                      `protobuf:"bytes,16,opt,name=rationale,proto3" json:"rationale,omitempty"`
@@ -2122,7 +2122,7 @@ func (m *ComplianceOperatorCheckResultV2) GetAnnotations() map[string]string {
 	return nil
 }
 
-func (m *ComplianceOperatorCheckResultV2) GetCreatedTime() *types.Timestamp {
+func (m *ComplianceOperatorCheckResultV2) GetCreatedTime() *timestamppb.Timestamp {
 	if m != nil {
 		return m.CreatedTime
 	}
@@ -2772,17 +2772,17 @@ func (m *ComplianceOperatorScanV2) Clone() *ComplianceOperatorScanV2 {
 }
 
 type ComplianceOperatorScanStatusV2 struct {
-	Phase                string           `protobuf:"bytes,1,opt,name=phase,proto3" json:"phase,omitempty"`
-	Result               string           `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
-	ErrorMessage         string           `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	CurrentIndex         int64            `protobuf:"varint,4,opt,name=current_index,json=currentIndex,proto3" json:"current_index,omitempty"`
-	Warnings             string           `protobuf:"bytes,5,opt,name=warnings,proto3" json:"warnings,omitempty"`
-	RemainingRetries     int64            `protobuf:"varint,6,opt,name=remaining_retries,json=remainingRetries,proto3" json:"remaining_retries,omitempty"`
-	StartTime            *types.Timestamp `protobuf:"bytes,7,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	EndTime              *types.Timestamp `protobuf:"bytes,8,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	Phase                string                 `protobuf:"bytes,1,opt,name=phase,proto3" json:"phase,omitempty"`
+	Result               string                 `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
+	ErrorMessage         string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	CurrentIndex         int64                  `protobuf:"varint,4,opt,name=current_index,json=currentIndex,proto3" json:"current_index,omitempty"`
+	Warnings             string                 `protobuf:"bytes,5,opt,name=warnings,proto3" json:"warnings,omitempty"`
+	RemainingRetries     int64                  `protobuf:"varint,6,opt,name=remaining_retries,json=remainingRetries,proto3" json:"remaining_retries,omitempty"`
+	StartTime            *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	EndTime              *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *ComplianceOperatorScanStatusV2) Reset()         { *m = ComplianceOperatorScanStatusV2{} }
@@ -2860,14 +2860,14 @@ func (m *ComplianceOperatorScanStatusV2) GetRemainingRetries() int64 {
 	return 0
 }
 
-func (m *ComplianceOperatorScanStatusV2) GetStartTime() *types.Timestamp {
+func (m *ComplianceOperatorScanStatusV2) GetStartTime() *timestamppb.Timestamp {
 	if m != nil {
 		return m.StartTime
 	}
 	return nil
 }
 
-func (m *ComplianceOperatorScanStatusV2) GetEndTime() *types.Timestamp {
+func (m *ComplianceOperatorScanStatusV2) GetEndTime() *timestamppb.Timestamp {
 	if m != nil {
 		return m.EndTime
 	}
@@ -3017,14 +3017,14 @@ func (m *ComplianceOperatorScanSettingBindingV2) Clone() *ComplianceOperatorScan
 }
 
 type ComplianceOperatorCondition struct {
-	Type                 string           `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
-	Status               string           `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	Reason               string           `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
-	Message              string           `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
-	LastTransitionTime   *types.Timestamp `protobuf:"bytes,5,opt,name=last_transition_time,json=lastTransitionTime,proto3" json:"last_transition_time,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	Type                 string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	Status               string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	Reason               string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	Message              string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+	LastTransitionTime   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_transition_time,json=lastTransitionTime,proto3" json:"last_transition_time,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *ComplianceOperatorCondition) Reset()         { *m = ComplianceOperatorCondition{} }
@@ -3088,7 +3088,7 @@ func (m *ComplianceOperatorCondition) GetMessage() string {
 	return ""
 }
 
-func (m *ComplianceOperatorCondition) GetLastTransitionTime() *types.Timestamp {
+func (m *ComplianceOperatorCondition) GetLastTransitionTime() *timestamppb.Timestamp {
 	if m != nil {
 		return m.LastTransitionTime
 	}
@@ -9616,7 +9616,7 @@ func (m *ComplianceOperatorCheckResultV2) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedTime == nil {
-				m.CreatedTime = &types.Timestamp{}
+				m.CreatedTime = &timestamppb.Timestamp{}
 			}
 			if err := m.CreatedTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -11873,7 +11873,7 @@ func (m *ComplianceOperatorScanStatusV2) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.StartTime == nil {
-				m.StartTime = &types.Timestamp{}
+				m.StartTime = &timestamppb.Timestamp{}
 			}
 			if err := m.StartTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -11909,7 +11909,7 @@ func (m *ComplianceOperatorScanStatusV2) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.EndTime == nil {
-				m.EndTime = &types.Timestamp{}
+				m.EndTime = &timestamppb.Timestamp{}
 			}
 			if err := m.EndTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -12593,7 +12593,7 @@ func (m *ComplianceOperatorCondition) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastTransitionTime == nil {
-				m.LastTransitionTime = &types.Timestamp{}
+				m.LastTransitionTime = &timestamppb.Timestamp{}
 			}
 			if err := m.LastTransitionTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
