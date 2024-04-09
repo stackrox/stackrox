@@ -56,16 +56,16 @@ describe('Workload CVE Image Single page', () => {
         const cardSelector = selectors.summaryCard('CVEs by severity');
         cy.get(
             [
-                `${cardSelector} svg + *:contains("Critical")`,
-                `${cardSelector} svg + *:contains("Important")`,
-                `${cardSelector} svg + *:contains("Moderate")`,
-                `${cardSelector} svg + *:contains("Low")`,
+                `${cardSelector} span.pf-v5-c-icon:contains("Critical") ~ p`,
+                `${cardSelector} span.pf-v5-c-icon:contains("Important") ~ p`,
+                `${cardSelector} span.pf-v5-c-icon:contains("Moderate") ~ p`,
+                `${cardSelector} span.pf-v5-c-icon:contains("Low") ~ p`,
             ].join(',')
         ).then(($severityTotals) => {
-            const severityTotal = $severityTotals
-                .toArray()
-                .reduce((acc, $el) => acc + parseInt($el.innerText.replace(/\D/g, ''), 10), 0);
-
+            const severityTotal = $severityTotals.toArray().reduce((acc, $el) => {
+                const count = acc + parseInt($el.innerText.replace(/\D/g, ''), 10);
+                return isNaN(count) ? 0 : count;
+            }, 0);
             const plural = severityTotal === 1 ? '' : 's';
             cy.get(`*:contains(${severityTotal} result${plural} found)`);
         });
@@ -74,13 +74,14 @@ describe('Workload CVE Image Single page', () => {
         const fixStatusCardSelector = selectors.summaryCard('CVEs by status');
         cy.get(
             [
-                `${fixStatusCardSelector} svg + *:contains("with available fixes")`,
-                `${fixStatusCardSelector} svg + *:contains("without fixes")`,
+                `${fixStatusCardSelector} p:contains('with available fixes')`,
+                `${fixStatusCardSelector} p:contains("without fixes")`,
             ].join(',')
         ).then(($statusTotals) => {
-            const statusTotal = $statusTotals
-                .toArray()
-                .reduce((acc, $el) => acc + parseInt($el.innerText.replace(/\D/g, ''), 10), 0);
+            const statusTotal = $statusTotals.toArray().reduce((acc, $el) => {
+                const count = acc + parseInt($el.innerText.replace(/\D/g, ''), 10);
+                return isNaN(count) ? 0 : count;
+            }, 0);
 
             const plural = statusTotal === 1 ? '' : 's';
             cy.get(`*:contains(${statusTotal} result${plural} found)`);

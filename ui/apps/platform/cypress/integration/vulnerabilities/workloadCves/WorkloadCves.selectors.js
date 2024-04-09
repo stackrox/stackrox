@@ -40,7 +40,7 @@ export const selectors = {
     menuOption: (optionText) => `*[role="menu"] button:contains("${optionText}")`,
     paginationPrevious: "button[aria-label='Go to previous page']",
     paginationNext: "button[aria-label='Go to next page']",
-    severityIcon: (severity) => `svg:has(title:contains('${severity}'))`,
+    severityIcon: (severity) => `span.pf-v5-c-icon:contains('${severity}')`,
 
     // Image/Deployment tab selectors
     vulnerabilitiesTab: 'button[role="tab"]:contains("Vulnerabilities")',
@@ -53,7 +53,7 @@ export const selectors = {
     firstTableRow: 'table tbody:nth-of-type(1) tr:nth-of-type(1)',
     tableRowSelectCheckbox: 'td input[type="checkbox"][aria-label^="Select row"]',
     tableRowSelectAllCheckbox: 'thead input[type="checkbox"][aria-label^="Select all rows"]',
-    tableRowMenuToggle: 'td button[aria-label="Actions"]',
+    tableRowMenuToggle: 'td button[aria-label="Kebab toggle"]',
     nonZeroImageSeverityCounts:
         'td[data-label="Images by severity"] *[aria-label$="severity"i]:not([aria-label^="0"])',
     nonZeroCveSeverityCount: (severity) =>
