@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -24,11 +24,11 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type TelemetryConfiguration struct {
-	Enabled              bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	LastSetTime          *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_set_time,json=lastSetTime,proto3" json:"last_set_time,omitempty"` // Deprecated: Do not use.
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Enabled              bool             `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	LastSetTime          *types.Timestamp `protobuf:"bytes,2,opt,name=last_set_time,json=lastSetTime,proto3" json:"last_set_time,omitempty"` // Deprecated: Do not use.
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *TelemetryConfiguration) Reset()         { *m = TelemetryConfiguration{} }
@@ -72,7 +72,7 @@ func (m *TelemetryConfiguration) GetEnabled() bool {
 }
 
 // Deprecated: Do not use.
-func (m *TelemetryConfiguration) GetLastSetTime() *timestamppb.Timestamp {
+func (m *TelemetryConfiguration) GetLastSetTime() *types.Timestamp {
 	if m != nil {
 		return m.LastSetTime
 	}
@@ -281,7 +281,7 @@ func (m *TelemetryConfiguration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastSetTime == nil {
-				m.LastSetTime = &timestamppb.Timestamp{}
+				m.LastSetTime = &types.Timestamp{}
 			}
 			if err := m.LastSetTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

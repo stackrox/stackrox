@@ -5,10 +5,9 @@ package integrations
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -329,15 +328,15 @@ type SplunkViolation_ViolationInfo struct {
 	// In case of k8s alerts, this is storage.Alert.Violation.time
 	// In case of Process alerts, this is storage.ProcessSignal.process_creation_time
 	// In case of other alerts, this is storage.Alert.time
-	ViolationTime        *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=violation_time,json=violationTime,proto3" json:"violation_time,omitempty"`
-	PodId                string                 `protobuf:"bytes,102,opt,name=pod_id,json=podId,proto3" json:"pod_id,omitempty"`
-	PodUid               string                 `protobuf:"bytes,103,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty"`
-	ContainerName        string                 `protobuf:"bytes,104,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty"`
-	ContainerStartTime   *timestamppb.Timestamp `protobuf:"bytes,105,opt,name=container_start_time,json=containerStartTime,proto3" json:"container_start_time,omitempty"`
-	ContainerId          string                 `protobuf:"bytes,106,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	ViolationTime        *types.Timestamp `protobuf:"bytes,5,opt,name=violation_time,json=violationTime,proto3" json:"violation_time,omitempty"`
+	PodId                string           `protobuf:"bytes,102,opt,name=pod_id,json=podId,proto3" json:"pod_id,omitempty"`
+	PodUid               string           `protobuf:"bytes,103,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty"`
+	ContainerName        string           `protobuf:"bytes,104,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty"`
+	ContainerStartTime   *types.Timestamp `protobuf:"bytes,105,opt,name=container_start_time,json=containerStartTime,proto3" json:"container_start_time,omitempty"`
+	ContainerId          string           `protobuf:"bytes,106,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *SplunkViolation_ViolationInfo) Reset()         { *m = SplunkViolation_ViolationInfo{} }
@@ -401,7 +400,7 @@ func (m *SplunkViolation_ViolationInfo) GetViolationType() SplunkViolation_Viola
 	return SplunkViolation_ViolationInfo_UNKNOWN
 }
 
-func (m *SplunkViolation_ViolationInfo) GetViolationTime() *timestamppb.Timestamp {
+func (m *SplunkViolation_ViolationInfo) GetViolationTime() *types.Timestamp {
 	if m != nil {
 		return m.ViolationTime
 	}
@@ -429,7 +428,7 @@ func (m *SplunkViolation_ViolationInfo) GetContainerName() string {
 	return ""
 }
 
-func (m *SplunkViolation_ViolationInfo) GetContainerStartTime() *timestamppb.Timestamp {
+func (m *SplunkViolation_ViolationInfo) GetContainerStartTime() *types.Timestamp {
 	if m != nil {
 		return m.ContainerStartTime
 	}
@@ -468,7 +467,7 @@ func (m *SplunkViolation_ViolationInfo) Clone() *SplunkViolation_ViolationInfo {
 type SplunkViolation_AlertInfo struct {
 	AlertId              string                 `protobuf:"bytes,1,opt,name=alert_id,json=alertId,proto3" json:"alert_id,omitempty"`
 	LifecycleStage       storage.LifecycleStage `protobuf:"varint,2,opt,name=lifecycle_stage,json=lifecycleStage,proto3,enum=storage.LifecycleStage" json:"lifecycle_stage,omitempty"`
-	AlertFirstOccurred   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=alert_first_occurred,json=alertFirstOccurred,proto3" json:"alert_first_occurred,omitempty"`
+	AlertFirstOccurred   *types.Timestamp       `protobuf:"bytes,4,opt,name=alert_first_occurred,json=alertFirstOccurred,proto3" json:"alert_first_occurred,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
 	XXX_sizecache        int32                  `json:"-"`
@@ -521,7 +520,7 @@ func (m *SplunkViolation_AlertInfo) GetLifecycleStage() storage.LifecycleStage {
 	return storage.LifecycleStage_DEPLOY
 }
 
-func (m *SplunkViolation_AlertInfo) GetAlertFirstOccurred() *timestamppb.Timestamp {
+func (m *SplunkViolation_AlertInfo) GetAlertFirstOccurred() *types.Timestamp {
 	if m != nil {
 		return m.AlertFirstOccurred
 	}
@@ -544,16 +543,16 @@ func (m *SplunkViolation_AlertInfo) Clone() *SplunkViolation_AlertInfo {
 
 // From storage.ProcessIndicator (numbers 1xx) and storage.ProcessSignal (numbers 2xx).
 type SplunkViolation_ProcessInfo struct {
-	ProcessViolationId  string                 `protobuf:"bytes,101,opt,name=process_violation_id,json=processViolationId,proto3" json:"process_violation_id,omitempty"`
-	ProcessSignalId     string                 `protobuf:"bytes,202,opt,name=process_signal_id,json=processSignalId,proto3" json:"process_signal_id,omitempty"`
-	ProcessCreationTime *timestamppb.Timestamp `protobuf:"bytes,203,opt,name=process_creation_time,json=processCreationTime,proto3" json:"process_creation_time,omitempty"`
-	ProcessName         string                 `protobuf:"bytes,204,opt,name=process_name,json=processName,proto3" json:"process_name,omitempty"`
-	ProcessArgs         string                 `protobuf:"bytes,205,opt,name=process_args,json=processArgs,proto3" json:"process_args,omitempty"`
-	ExecFilePath        string                 `protobuf:"bytes,206,opt,name=exec_file_path,json=execFilePath,proto3" json:"exec_file_path,omitempty"`
+	ProcessViolationId  string           `protobuf:"bytes,101,opt,name=process_violation_id,json=processViolationId,proto3" json:"process_violation_id,omitempty"`
+	ProcessSignalId     string           `protobuf:"bytes,202,opt,name=process_signal_id,json=processSignalId,proto3" json:"process_signal_id,omitempty"`
+	ProcessCreationTime *types.Timestamp `protobuf:"bytes,203,opt,name=process_creation_time,json=processCreationTime,proto3" json:"process_creation_time,omitempty"`
+	ProcessName         string           `protobuf:"bytes,204,opt,name=process_name,json=processName,proto3" json:"process_name,omitempty"`
+	ProcessArgs         string           `protobuf:"bytes,205,opt,name=process_args,json=processArgs,proto3" json:"process_args,omitempty"`
+	ExecFilePath        string           `protobuf:"bytes,206,opt,name=exec_file_path,json=execFilePath,proto3" json:"exec_file_path,omitempty"`
 	// UInt32Value is used for pid, process_uid and process_gid instead of plain uint32 to include 0 values on output.
-	Pid                  *wrapperspb.UInt32Value              `protobuf:"bytes,207,opt,name=pid,proto3" json:"pid,omitempty"`
-	ProcessUid           *wrapperspb.UInt32Value              `protobuf:"bytes,208,opt,name=process_uid,json=processUid,proto3" json:"process_uid,omitempty"`
-	ProcessGid           *wrapperspb.UInt32Value              `protobuf:"bytes,209,opt,name=process_gid,json=processGid,proto3" json:"process_gid,omitempty"`
+	Pid                  *types.UInt32Value                   `protobuf:"bytes,207,opt,name=pid,proto3" json:"pid,omitempty"`
+	ProcessUid           *types.UInt32Value                   `protobuf:"bytes,208,opt,name=process_uid,json=processUid,proto3" json:"process_uid,omitempty"`
+	ProcessGid           *types.UInt32Value                   `protobuf:"bytes,209,opt,name=process_gid,json=processGid,proto3" json:"process_gid,omitempty"`
 	ProcessLineageInfo   []*storage.ProcessSignal_LineageInfo `protobuf:"bytes,210,rep,name=process_lineage_info,json=processLineageInfo,proto3" json:"process_lineage_info,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                             `json:"-"`
 	XXX_unrecognized     []byte                               `json:"-"`
@@ -607,7 +606,7 @@ func (m *SplunkViolation_ProcessInfo) GetProcessSignalId() string {
 	return ""
 }
 
-func (m *SplunkViolation_ProcessInfo) GetProcessCreationTime() *timestamppb.Timestamp {
+func (m *SplunkViolation_ProcessInfo) GetProcessCreationTime() *types.Timestamp {
 	if m != nil {
 		return m.ProcessCreationTime
 	}
@@ -635,21 +634,21 @@ func (m *SplunkViolation_ProcessInfo) GetExecFilePath() string {
 	return ""
 }
 
-func (m *SplunkViolation_ProcessInfo) GetPid() *wrapperspb.UInt32Value {
+func (m *SplunkViolation_ProcessInfo) GetPid() *types.UInt32Value {
 	if m != nil {
 		return m.Pid
 	}
 	return nil
 }
 
-func (m *SplunkViolation_ProcessInfo) GetProcessUid() *wrapperspb.UInt32Value {
+func (m *SplunkViolation_ProcessInfo) GetProcessUid() *types.UInt32Value {
 	if m != nil {
 		return m.ProcessUid
 	}
 	return nil
 }
 
-func (m *SplunkViolation_ProcessInfo) GetProcessGid() *wrapperspb.UInt32Value {
+func (m *SplunkViolation_ProcessInfo) GetProcessGid() *types.UInt32Value {
 	if m != nil {
 		return m.ProcessGid
 	}
@@ -2965,7 +2964,7 @@ func (m *SplunkViolation_ViolationInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ViolationTime == nil {
-				m.ViolationTime = &timestamppb.Timestamp{}
+				m.ViolationTime = &types.Timestamp{}
 			}
 			if err := m.ViolationTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3097,7 +3096,7 @@ func (m *SplunkViolation_ViolationInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ContainerStartTime == nil {
-				m.ContainerStartTime = &timestamppb.Timestamp{}
+				m.ContainerStartTime = &types.Timestamp{}
 			}
 			if err := m.ContainerStartTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3267,7 +3266,7 @@ func (m *SplunkViolation_AlertInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.AlertFirstOccurred == nil {
-				m.AlertFirstOccurred = &timestamppb.Timestamp{}
+				m.AlertFirstOccurred = &types.Timestamp{}
 			}
 			if err := m.AlertFirstOccurred.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3418,7 +3417,7 @@ func (m *SplunkViolation_ProcessInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ProcessCreationTime == nil {
-				m.ProcessCreationTime = &timestamppb.Timestamp{}
+				m.ProcessCreationTime = &types.Timestamp{}
 			}
 			if err := m.ProcessCreationTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3550,7 +3549,7 @@ func (m *SplunkViolation_ProcessInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Pid == nil {
-				m.Pid = &wrapperspb.UInt32Value{}
+				m.Pid = &types.UInt32Value{}
 			}
 			if err := m.Pid.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3586,7 +3585,7 @@ func (m *SplunkViolation_ProcessInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ProcessUid == nil {
-				m.ProcessUid = &wrapperspb.UInt32Value{}
+				m.ProcessUid = &types.UInt32Value{}
 			}
 			if err := m.ProcessUid.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3622,7 +3621,7 @@ func (m *SplunkViolation_ProcessInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ProcessGid == nil {
-				m.ProcessGid = &wrapperspb.UInt32Value{}
+				m.ProcessGid = &types.UInt32Value{}
 			}
 			if err := m.ProcessGid.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -1098,17 +1098,17 @@ func (m *ComplianceDomain_Deployment) Clone() *ComplianceDomain_Deployment {
 
 // Next available tag: 5
 type ComplianceRunMetadata struct {
-	RunId                string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty" sql:"pk" search:"Compliance Run ID,hidden"`                // @gotags: sql:"pk" search:"Compliance Run ID,hidden"
-	StandardId           string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID,hidden,store"` // @gotags: search:"Standard ID,hidden,store"
-	ClusterId            string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"`    // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
-	StartTimestamp       *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_timestamp,json=startTimestamp,proto3" json:"start_timestamp,omitempty"`
-	FinishTimestamp      *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=finish_timestamp,json=finishTimestamp,proto3" json:"finish_timestamp,omitempty" search:"Compliance Run Finished Timestamp,hidden,store"` // @gotags: search:"Compliance Run Finished Timestamp,hidden,store"
-	Success              bool                   `protobuf:"varint,6,opt,name=success,proto3" json:"success,omitempty"`
-	ErrorMessage         string                 `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	DomainId             string                 `protobuf:"bytes,8,opt,name=domain_id,json=domainId,proto3" json:"domain_id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	RunId                string           `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty" sql:"pk" search:"Compliance Run ID,hidden"`                // @gotags: sql:"pk" search:"Compliance Run ID,hidden"
+	StandardId           string           `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID,hidden,store"` // @gotags: search:"Standard ID,hidden,store"
+	ClusterId            string           `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"`    // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
+	StartTimestamp       *types.Timestamp `protobuf:"bytes,4,opt,name=start_timestamp,json=startTimestamp,proto3" json:"start_timestamp,omitempty"`
+	FinishTimestamp      *types.Timestamp `protobuf:"bytes,5,opt,name=finish_timestamp,json=finishTimestamp,proto3" json:"finish_timestamp,omitempty" search:"Compliance Run Finished Timestamp,hidden,store"` // @gotags: search:"Compliance Run Finished Timestamp,hidden,store"
+	Success              bool             `protobuf:"varint,6,opt,name=success,proto3" json:"success,omitempty"`
+	ErrorMessage         string           `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	DomainId             string           `protobuf:"bytes,8,opt,name=domain_id,json=domainId,proto3" json:"domain_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *ComplianceRunMetadata) Reset()         { *m = ComplianceRunMetadata{} }
@@ -1165,14 +1165,14 @@ func (m *ComplianceRunMetadata) GetClusterId() string {
 	return ""
 }
 
-func (m *ComplianceRunMetadata) GetStartTimestamp() *timestamppb.Timestamp {
+func (m *ComplianceRunMetadata) GetStartTimestamp() *types.Timestamp {
 	if m != nil {
 		return m.StartTimestamp
 	}
 	return nil
 }
 
-func (m *ComplianceRunMetadata) GetFinishTimestamp() *timestamppb.Timestamp {
+func (m *ComplianceRunMetadata) GetFinishTimestamp() *types.Timestamp {
 	if m != nil {
 		return m.FinishTimestamp
 	}
@@ -6227,7 +6227,7 @@ func (m *ComplianceRunMetadata) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.StartTimestamp == nil {
-				m.StartTimestamp = &timestamppb.Timestamp{}
+				m.StartTimestamp = &types.Timestamp{}
 			}
 			if err := m.StartTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -6263,7 +6263,7 @@ func (m *ComplianceRunMetadata) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.FinishTimestamp == nil {
-				m.FinishTimestamp = &timestamppb.Timestamp{}
+				m.FinishTimestamp = &types.Timestamp{}
 			}
 			if err := m.FinishTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

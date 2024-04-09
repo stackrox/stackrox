@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -90,7 +90,7 @@ type DiscoveredCluster struct {
 	Metadata             *DiscoveredCluster_Metadata `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	Status               DiscoveredCluster_Status    `protobuf:"varint,3,opt,name=status,proto3,enum=storage.DiscoveredCluster_Status" json:"status,omitempty" search:"Cluster Status,hidden"` // @gotags: search:"Cluster Status,hidden"
 	SourceId             string                      `protobuf:"bytes,4,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty" search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"`                    // @gotags: search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"
-	LastUpdatedAt        *timestamppb.Timestamp      `protobuf:"bytes,5,opt,name=last_updated_at,json=lastUpdatedAt,proto3" json:"last_updated_at,omitempty" search:"Last Updated,hidden"`   // @gotags: search:"Last Updated,hidden"
+	LastUpdatedAt        *types.Timestamp            `protobuf:"bytes,5,opt,name=last_updated_at,json=lastUpdatedAt,proto3" json:"last_updated_at,omitempty" search:"Last Updated,hidden"`   // @gotags: search:"Last Updated,hidden"
 	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
 	XXX_unrecognized     []byte                      `json:"-"`
 	XXX_sizecache        int32                       `json:"-"`
@@ -157,7 +157,7 @@ func (m *DiscoveredCluster) GetSourceId() string {
 	return ""
 }
 
-func (m *DiscoveredCluster) GetLastUpdatedAt() *timestamppb.Timestamp {
+func (m *DiscoveredCluster) GetLastUpdatedAt() *types.Timestamp {
 	if m != nil {
 		return m.LastUpdatedAt
 	}
@@ -185,7 +185,7 @@ type DiscoveredCluster_Metadata struct {
 	Type                 ClusterMetadata_Type                    `protobuf:"varint,3,opt,name=type,proto3,enum=storage.ClusterMetadata_Type" json:"type,omitempty" search:"Cluster Type,hidden"` // @gotags: search:"Cluster Type,hidden"
 	ProviderType         DiscoveredCluster_Metadata_ProviderType `protobuf:"varint,4,opt,name=provider_type,json=providerType,proto3,enum=storage.DiscoveredCluster_Metadata_ProviderType" json:"provider_type,omitempty"`
 	Region               string                                  `protobuf:"bytes,5,opt,name=region,proto3" json:"region,omitempty"`
-	FirstDiscoveredAt    *timestamppb.Timestamp                  `protobuf:"bytes,6,opt,name=first_discovered_at,json=firstDiscoveredAt,proto3" json:"first_discovered_at,omitempty" search:"Cluster Discovered Time,hidden"` // @gotags: search:"Cluster Discovered Time,hidden"
+	FirstDiscoveredAt    *types.Timestamp                        `protobuf:"bytes,6,opt,name=first_discovered_at,json=firstDiscoveredAt,proto3" json:"first_discovered_at,omitempty" search:"Cluster Discovered Time,hidden"` // @gotags: search:"Cluster Discovered Time,hidden"
 	XXX_NoUnkeyedLiteral struct{}                                `json:"-"`
 	XXX_unrecognized     []byte                                  `json:"-"`
 	XXX_sizecache        int32                                   `json:"-"`
@@ -259,7 +259,7 @@ func (m *DiscoveredCluster_Metadata) GetRegion() string {
 	return ""
 }
 
-func (m *DiscoveredCluster_Metadata) GetFirstDiscoveredAt() *timestamppb.Timestamp {
+func (m *DiscoveredCluster_Metadata) GetFirstDiscoveredAt() *types.Timestamp {
 	if m != nil {
 		return m.FirstDiscoveredAt
 	}
@@ -724,7 +724,7 @@ func (m *DiscoveredCluster) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdatedAt == nil {
-				m.LastUpdatedAt = &timestamppb.Timestamp{}
+				m.LastUpdatedAt = &types.Timestamp{}
 			}
 			if err := m.LastUpdatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -945,7 +945,7 @@ func (m *DiscoveredCluster_Metadata) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.FirstDiscoveredAt == nil {
-				m.FirstDiscoveredAt = &timestamppb.Timestamp{}
+				m.FirstDiscoveredAt = &types.Timestamp{}
 			}
 			if err := m.FirstDiscoveredAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

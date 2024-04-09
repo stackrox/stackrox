@@ -5,8 +5,8 @@ package v2
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -471,7 +471,7 @@ type VulnerabilityReportFilters_SinceLastSentScheduledReport struct {
 	SinceLastSentScheduledReport bool `protobuf:"varint,5,opt,name=since_last_sent_scheduled_report,json=sinceLastSentScheduledReport,proto3,oneof" json:"since_last_sent_scheduled_report,omitempty"`
 }
 type VulnerabilityReportFilters_SinceStartDate struct {
-	SinceStartDate *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=since_start_date,json=sinceStartDate,proto3,oneof" json:"since_start_date,omitempty"`
+	SinceStartDate *types.Timestamp `protobuf:"bytes,6,opt,name=since_start_date,json=sinceStartDate,proto3,oneof" json:"since_start_date,omitempty"`
 }
 
 func (*VulnerabilityReportFilters_AllVuln) isVulnerabilityReportFilters_CvesSince() {}
@@ -549,7 +549,7 @@ func (m *VulnerabilityReportFilters) GetSinceLastSentScheduledReport() bool {
 	return false
 }
 
-func (m *VulnerabilityReportFilters) GetSinceStartDate() *timestamppb.Timestamp {
+func (m *VulnerabilityReportFilters) GetSinceStartDate() *types.Timestamp {
 	if x, ok := m.GetCvesSince().(*VulnerabilityReportFilters_SinceStartDate); ok {
 		return x.SinceStartDate
 	}
@@ -1820,7 +1820,7 @@ func (m *ReportSnapshot) Clone() *ReportSnapshot {
 
 type ReportStatus struct {
 	RunState                 ReportStatus_RunState     `protobuf:"varint,1,opt,name=run_state,json=runState,proto3,enum=v2.ReportStatus_RunState" json:"run_state,omitempty"`
-	CompletedAt              *timestamppb.Timestamp    `protobuf:"bytes,2,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	CompletedAt              *types.Timestamp          `protobuf:"bytes,2,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
 	ErrorMsg                 string                    `protobuf:"bytes,3,opt,name=error_msg,json=errorMsg,proto3" json:"error_msg,omitempty"`
 	ReportRequestType        ReportStatus_ReportMethod `protobuf:"varint,4,opt,name=report_request_type,json=reportRequestType,proto3,enum=v2.ReportStatus_ReportMethod" json:"report_request_type,omitempty"`
 	ReportNotificationMethod NotificationMethod        `protobuf:"varint,5,opt,name=report_notification_method,json=reportNotificationMethod,proto3,enum=v2.NotificationMethod" json:"report_notification_method,omitempty"`
@@ -1869,7 +1869,7 @@ func (m *ReportStatus) GetRunState() ReportStatus_RunState {
 	return ReportStatus_WAITING
 }
 
-func (m *ReportStatus) GetCompletedAt() *timestamppb.Timestamp {
+func (m *ReportStatus) GetCompletedAt() *types.Timestamp {
 	if m != nil {
 		return m.CompletedAt
 	}
@@ -4655,7 +4655,7 @@ func (m *VulnerabilityReportFilters) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &timestamppb.Timestamp{}
+			v := &types.Timestamp{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -6664,7 +6664,7 @@ func (m *ReportStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CompletedAt == nil {
-				m.CompletedAt = &timestamppb.Timestamp{}
+				m.CompletedAt = &types.Timestamp{}
 			}
 			if err := m.CompletedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

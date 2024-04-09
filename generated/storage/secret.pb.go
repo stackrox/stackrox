@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -83,15 +83,15 @@ func (SecretType) EnumDescriptor() ([]byte, []int) {
 // (regardless of time, scope, or context)
 // ////////////////////////////////////////
 type Secret struct {
-	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Secret ID,store,hidden" sql:"pk,type(uuid)"`                                      // @gotags: search:"Secret ID,store,hidden" sql:"pk,type(uuid)"
-	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Secret,store"`                                  // @gotags: search:"Secret,store"
-	ClusterId   string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`       // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
-	ClusterName string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"` // @gotags: search:"Cluster,store"
-	Namespace   string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                        // @gotags: search:"Namespace,store"
-	Type        string                 `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
-	Labels      map[string]string      `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Annotations map[string]string      `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time"` // @gotags: search:"Created Time"
+	Id          string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Secret ID,store,hidden" sql:"pk,type(uuid)"`                                      // @gotags: search:"Secret ID,store,hidden" sql:"pk,type(uuid)"
+	Name        string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Secret,store"`                                  // @gotags: search:"Secret,store"
+	ClusterId   string            `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`       // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+	ClusterName string            `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"` // @gotags: search:"Cluster,store"
+	Namespace   string            `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                        // @gotags: search:"Namespace,store"
+	Type        string            `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
+	Labels      map[string]string `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Annotations map[string]string `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	CreatedAt   *types.Timestamp  `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time"` // @gotags: search:"Created Time"
 	// Metadata about the secrets.
 	// The secret need not be a file, but rather may be an arbitrary value.
 	Files                []*SecretDataFile   `protobuf:"bytes,10,rep,name=files,proto3" json:"files,omitempty" sql:"flag=ROX_SECRET_FILE_SEARCH" search:"flag=ROX_SECRET_FILE_SEARCH"` // @gotags: sql:"flag=ROX_SECRET_FILE_SEARCH" search:"flag=ROX_SECRET_FILE_SEARCH"
@@ -190,7 +190,7 @@ func (m *Secret) GetAnnotations() map[string]string {
 	return nil
 }
 
-func (m *Secret) GetCreatedAt() *timestamppb.Timestamp {
+func (m *Secret) GetCreatedAt() *types.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -245,16 +245,16 @@ func (m *Secret) Clone() *Secret {
 }
 
 type ListSecret struct {
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                 string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	ClusterId            string                 `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	ClusterName          string                 `protobuf:"bytes,3,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
-	Namespace            string                 `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Types                []SecretType           `protobuf:"varint,5,rep,packed,name=types,proto3,enum=storage.SecretType" json:"types,omitempty"`
-	CreatedAt            *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ClusterId            string           `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	ClusterName          string           `protobuf:"bytes,3,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	Namespace            string           `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Types                []SecretType     `protobuf:"varint,5,rep,packed,name=types,proto3,enum=storage.SecretType" json:"types,omitempty"`
+	CreatedAt            *types.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *ListSecret) Reset()         { *m = ListSecret{} }
@@ -332,7 +332,7 @@ func (m *ListSecret) GetTypes() []SecretType {
 	return nil
 }
 
-func (m *ListSecret) GetCreatedAt() *timestamppb.Timestamp {
+func (m *ListSecret) GetCreatedAt() *types.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -873,15 +873,15 @@ func (m *SecretDataFile) Clone() *SecretDataFile {
 }
 
 type Cert struct {
-	Subject              *CertName              `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`
-	Issuer               *CertName              `protobuf:"bytes,2,opt,name=issuer,proto3" json:"issuer,omitempty"`
-	Sans                 []string               `protobuf:"bytes,3,rep,name=sans,proto3" json:"sans,omitempty"`
-	StartDate            *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_date,json=startDate,proto3" json:"start_date,omitempty"`
-	EndDate              *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_date,json=endDate,proto3" json:"end_date,omitempty" search:"Cert Expiration"` // @gotags: search:"Cert Expiration"
-	Algorithm            string                 `protobuf:"bytes,6,opt,name=algorithm,proto3" json:"algorithm,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Subject              *CertName        `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`
+	Issuer               *CertName        `protobuf:"bytes,2,opt,name=issuer,proto3" json:"issuer,omitempty"`
+	Sans                 []string         `protobuf:"bytes,3,rep,name=sans,proto3" json:"sans,omitempty"`
+	StartDate            *types.Timestamp `protobuf:"bytes,4,opt,name=start_date,json=startDate,proto3" json:"start_date,omitempty"`
+	EndDate              *types.Timestamp `protobuf:"bytes,5,opt,name=end_date,json=endDate,proto3" json:"end_date,omitempty" search:"Cert Expiration"` // @gotags: search:"Cert Expiration"
+	Algorithm            string           `protobuf:"bytes,6,opt,name=algorithm,proto3" json:"algorithm,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *Cert) Reset()         { *m = Cert{} }
@@ -938,14 +938,14 @@ func (m *Cert) GetSans() []string {
 	return nil
 }
 
-func (m *Cert) GetStartDate() *timestamppb.Timestamp {
+func (m *Cert) GetStartDate() *types.Timestamp {
 	if m != nil {
 		return m.StartDate
 	}
 	return nil
 }
 
-func (m *Cert) GetEndDate() *timestamppb.Timestamp {
+func (m *Cert) GetEndDate() *types.Timestamp {
 	if m != nil {
 		return m.EndDate
 	}
@@ -2806,7 +2806,7 @@ func (m *Secret) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &timestamppb.Timestamp{}
+				m.CreatedAt = &types.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3160,7 +3160,7 @@ func (m *ListSecret) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &timestamppb.Timestamp{}
+				m.CreatedAt = &types.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4136,7 +4136,7 @@ func (m *Cert) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.StartDate == nil {
-				m.StartDate = &timestamppb.Timestamp{}
+				m.StartDate = &types.Timestamp{}
 			}
 			if err := m.StartDate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4172,7 +4172,7 @@ func (m *Cert) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.EndDate == nil {
-				m.EndDate = &timestamppb.Timestamp{}
+				m.EndDate = &types.Timestamp{}
 			}
 			if err := m.EndDate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

@@ -6,8 +6,8 @@ package v1
 import (
 	encoding_binary "encoding/binary"
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -250,7 +250,7 @@ type DBRestoreProcessMetadata struct {
 	// The header with which the restore was initiated.
 	Header *DBRestoreRequestHeader `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`
 	// The time at which the restore process was started.
-	StartTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	StartTime *types.Timestamp `protobuf:"bytes,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// The user who initiated the database restore process.
 	InitiatingUserName   string   `protobuf:"bytes,4,opt,name=initiating_user_name,json=initiatingUserName,proto3" json:"initiating_user_name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -305,7 +305,7 @@ func (m *DBRestoreProcessMetadata) GetHeader() *DBRestoreRequestHeader {
 	return nil
 }
 
-func (m *DBRestoreProcessMetadata) GetStartTime() *timestamppb.Timestamp {
+func (m *DBRestoreProcessMetadata) GetStartTime() *types.Timestamp {
 	if m != nil {
 		return m.StartTime
 	}
@@ -2504,7 +2504,7 @@ func (m *DBRestoreProcessMetadata) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.StartTime == nil {
-				m.StartTime = &timestamppb.Timestamp{}
+				m.StartTime = &types.Timestamp{}
 			}
 			if err := m.StartTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

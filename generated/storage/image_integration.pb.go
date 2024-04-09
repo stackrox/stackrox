@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -1172,12 +1172,12 @@ func (m *ECRConfig) Clone() *ECRConfig {
 // can be used to access any Amazon ECR registry that the IAM principal has
 // access to.
 type ECRConfig_AuthorizationData struct {
-	Username             string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	Password             string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	ExpiresAt            *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Username             string           `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	Password             string           `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	ExpiresAt            *types.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *ECRConfig_AuthorizationData) Reset()         { *m = ECRConfig_AuthorizationData{} }
@@ -1227,7 +1227,7 @@ func (m *ECRConfig_AuthorizationData) GetPassword() string {
 	return ""
 }
 
-func (m *ECRConfig_AuthorizationData) GetExpiresAt() *timestamppb.Timestamp {
+func (m *ECRConfig_AuthorizationData) GetExpiresAt() *types.Timestamp {
 	if m != nil {
 		return m.ExpiresAt
 	}
@@ -5359,7 +5359,7 @@ func (m *ECRConfig_AuthorizationData) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ExpiresAt == nil {
-				m.ExpiresAt = &timestamppb.Timestamp{}
+				m.ExpiresAt = &types.Timestamp{}
 			}
 			if err := m.ExpiresAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

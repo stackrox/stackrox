@@ -5,9 +5,9 @@ package v1
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -25,13 +25,13 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type GenerateTokenRequest struct {
-	Name                 string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Role                 string                 `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"` // Deprecated: Do not use.
-	Roles                []string               `protobuf:"bytes,3,rep,name=roles,proto3" json:"roles,omitempty"`
-	Expiration           *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expiration,proto3" json:"expiration,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Name                 string           `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Role                 string           `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"` // Deprecated: Do not use.
+	Roles                []string         `protobuf:"bytes,3,rep,name=roles,proto3" json:"roles,omitempty"`
+	Expiration           *types.Timestamp `protobuf:"bytes,4,opt,name=expiration,proto3" json:"expiration,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *GenerateTokenRequest) Reset()         { *m = GenerateTokenRequest{} }
@@ -89,7 +89,7 @@ func (m *GenerateTokenRequest) GetRoles() []string {
 	return nil
 }
 
-func (m *GenerateTokenRequest) GetExpiration() *timestamppb.Timestamp {
+func (m *GenerateTokenRequest) GetExpiration() *types.Timestamp {
 	if m != nil {
 		return m.Expiration
 	}
@@ -985,7 +985,7 @@ func (m *GenerateTokenRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Expiration == nil {
-				m.Expiration = &timestamppb.Timestamp{}
+				m.Expiration = &types.Timestamp{}
 			}
 			if err := m.Expiration.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -31,7 +31,7 @@ type SecuredUnits struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
 	// timestamp stores the moment at which the values of the metrics below are
 	// aggregated.
-	Timestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty" sql:"unique" search:"Administration Usage Timestamp,hidden"` // @gotags: sql:"unique" search:"Administration Usage Timestamp,hidden"
+	Timestamp *types.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty" sql:"unique" search:"Administration Usage Timestamp,hidden"` // @gotags: sql:"unique" search:"Administration Usage Timestamp,hidden"
 	// num_nodes is the maximum number of secured nodes, observed across all
 	// registered clusters during last aggregation period.
 	NumNodes int64 `protobuf:"varint,3,opt,name=num_nodes,json=numNodes,proto3" json:"num_nodes,omitempty" search:"Administration Usage Nodes,hidden"` // @gotags: search:"Administration Usage Nodes,hidden"
@@ -84,7 +84,7 @@ func (m *SecuredUnits) GetId() string {
 	return ""
 }
 
-func (m *SecuredUnits) GetTimestamp() *timestamppb.Timestamp {
+func (m *SecuredUnits) GetTimestamp() *types.Timestamp {
 	if m != nil {
 		return m.Timestamp
 	}
@@ -337,7 +337,7 @@ func (m *SecuredUnits) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Timestamp == nil {
-				m.Timestamp = &timestamppb.Timestamp{}
+				m.Timestamp = &types.Timestamp{}
 			}
 			if err := m.Timestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

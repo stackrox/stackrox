@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -137,7 +137,7 @@ type ReportConfiguration struct {
 	NotifierConfig        isReportConfiguration_NotifierConfig `protobuf_oneof:"notifier_config"`
 	Schedule              *Schedule                            `protobuf:"bytes,8,opt,name=schedule,proto3" json:"schedule,omitempty"`
 	LastRunStatus         *ReportLastRunStatus                 `protobuf:"bytes,9,opt,name=last_run_status,json=lastRunStatus,proto3" json:"last_run_status,omitempty"`
-	LastSuccessfulRunTime *timestamppb.Timestamp               `protobuf:"bytes,10,opt,name=last_successful_run_time,json=lastSuccessfulRunTime,proto3" json:"last_successful_run_time,omitempty"`
+	LastSuccessfulRunTime *types.Timestamp                     `protobuf:"bytes,10,opt,name=last_successful_run_time,json=lastSuccessfulRunTime,proto3" json:"last_successful_run_time,omitempty"`
 	ResourceScope         *ResourceScope                       `protobuf:"bytes,11,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`
 	Notifiers             []*NotifierConfiguration             `protobuf:"bytes,12,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
 	Creator               *SlimUser                            `protobuf:"bytes,13,opt,name=creator,proto3" json:"creator,omitempty" sql:"ignore_labels(User ID)"`  // @gotags: sql:"ignore_labels(User ID)"
@@ -299,7 +299,7 @@ func (m *ReportConfiguration) GetLastRunStatus() *ReportLastRunStatus {
 	return nil
 }
 
-func (m *ReportConfiguration) GetLastSuccessfulRunTime() *timestamppb.Timestamp {
+func (m *ReportConfiguration) GetLastSuccessfulRunTime() *types.Timestamp {
 	if m != nil {
 		return m.LastSuccessfulRunTime
 	}
@@ -374,7 +374,7 @@ func (m *ReportConfiguration) Clone() *ReportConfiguration {
 
 type ReportLastRunStatus struct {
 	ReportStatus         ReportLastRunStatus_RunStatus `protobuf:"varint,1,opt,name=report_status,json=reportStatus,proto3,enum=storage.ReportLastRunStatus_RunStatus" json:"report_status,omitempty"`
-	LastRunTime          *timestamppb.Timestamp        `protobuf:"bytes,2,opt,name=last_run_time,json=lastRunTime,proto3" json:"last_run_time,omitempty"`
+	LastRunTime          *types.Timestamp              `protobuf:"bytes,2,opt,name=last_run_time,json=lastRunTime,proto3" json:"last_run_time,omitempty"`
 	ErrorMsg             string                        `protobuf:"bytes,3,opt,name=error_msg,json=errorMsg,proto3" json:"error_msg,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
 	XXX_unrecognized     []byte                        `json:"-"`
@@ -421,7 +421,7 @@ func (m *ReportLastRunStatus) GetReportStatus() ReportLastRunStatus_RunStatus {
 	return ReportLastRunStatus_SUCCESS
 }
 
-func (m *ReportLastRunStatus) GetLastRunTime() *timestamppb.Timestamp {
+func (m *ReportLastRunStatus) GetLastRunTime() *types.Timestamp {
 	if m != nil {
 		return m.LastRunTime
 	}
@@ -512,7 +512,7 @@ type VulnerabilityReportFilters_SinceLastSentScheduledReport struct {
 	SinceLastSentScheduledReport bool `protobuf:"varint,6,opt,name=since_last_sent_scheduled_report,json=sinceLastSentScheduledReport,proto3,oneof" json:"since_last_sent_scheduled_report,omitempty"`
 }
 type VulnerabilityReportFilters_SinceStartDate struct {
-	SinceStartDate *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=since_start_date,json=sinceStartDate,proto3,oneof" json:"since_start_date,omitempty"`
+	SinceStartDate *types.Timestamp `protobuf:"bytes,7,opt,name=since_start_date,json=sinceStartDate,proto3,oneof" json:"since_start_date,omitempty"`
 }
 
 func (*VulnerabilityReportFilters_AllVuln) isVulnerabilityReportFilters_CvesSince() {}
@@ -597,7 +597,7 @@ func (m *VulnerabilityReportFilters) GetSinceLastSentScheduledReport() bool {
 	return false
 }
 
-func (m *VulnerabilityReportFilters) GetSinceStartDate() *timestamppb.Timestamp {
+func (m *VulnerabilityReportFilters) GetSinceStartDate() *types.Timestamp {
 	if x, ok := m.GetCvesSince().(*VulnerabilityReportFilters_SinceStartDate); ok {
 		return x.SinceStartDate
 	}
@@ -2314,7 +2314,7 @@ func (m *ReportConfiguration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastSuccessfulRunTime == nil {
-				m.LastSuccessfulRunTime = &timestamppb.Timestamp{}
+				m.LastSuccessfulRunTime = &types.Timestamp{}
 			}
 			if err := m.LastSuccessfulRunTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2545,7 +2545,7 @@ func (m *ReportLastRunStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastRunTime == nil {
-				m.LastRunTime = &timestamppb.Timestamp{}
+				m.LastRunTime = &types.Timestamp{}
 			}
 			if err := m.LastRunTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2882,7 +2882,7 @@ func (m *VulnerabilityReportFilters) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &timestamppb.Timestamp{}
+			v := &types.Timestamp{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -24,12 +24,12 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type BackupInfo struct {
-	BackupLastRunAt      *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=backup_last_run_at,json=backupLastRunAt,proto3" json:"backup_last_run_at,omitempty"`
-	Status               OperationStatus        `protobuf:"varint,2,opt,name=status,proto3,enum=storage.OperationStatus" json:"status,omitempty"`
-	Requestor            *SlimUser              `protobuf:"bytes,3,opt,name=requestor,proto3" json:"requestor,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	BackupLastRunAt      *types.Timestamp `protobuf:"bytes,1,opt,name=backup_last_run_at,json=backupLastRunAt,proto3" json:"backup_last_run_at,omitempty"`
+	Status               OperationStatus  `protobuf:"varint,2,opt,name=status,proto3,enum=storage.OperationStatus" json:"status,omitempty"`
+	Requestor            *SlimUser        `protobuf:"bytes,3,opt,name=requestor,proto3" json:"requestor,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *BackupInfo) Reset()         { *m = BackupInfo{} }
@@ -65,7 +65,7 @@ func (m *BackupInfo) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_BackupInfo proto.InternalMessageInfo
 
-func (m *BackupInfo) GetBackupLastRunAt() *timestamppb.Timestamp {
+func (m *BackupInfo) GetBackupLastRunAt() *types.Timestamp {
 	if m != nil {
 		return m.BackupLastRunAt
 	}
@@ -402,7 +402,7 @@ func (m *BackupInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackupLastRunAt == nil {
-				m.BackupLastRunAt = &timestamppb.Timestamp{}
+				m.BackupLastRunAt = &types.Timestamp{}
 			}
 			if err := m.BackupLastRunAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

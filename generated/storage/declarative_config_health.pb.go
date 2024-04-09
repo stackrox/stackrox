@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -96,10 +96,10 @@ type DeclarativeConfigHealth struct {
 	ResourceName string                               `protobuf:"bytes,6,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
 	ResourceType DeclarativeConfigHealth_ResourceType `protobuf:"varint,7,opt,name=resource_type,json=resourceType,proto3,enum=storage.DeclarativeConfigHealth_ResourceType" json:"resource_type,omitempty"`
 	// Timestamp when the current status was set.
-	LastTimestamp        *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_timestamp,json=lastTimestamp,proto3" json:"last_timestamp,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	LastTimestamp        *types.Timestamp `protobuf:"bytes,8,opt,name=last_timestamp,json=lastTimestamp,proto3" json:"last_timestamp,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *DeclarativeConfigHealth) Reset()         { *m = DeclarativeConfigHealth{} }
@@ -177,7 +177,7 @@ func (m *DeclarativeConfigHealth) GetResourceType() DeclarativeConfigHealth_Reso
 	return DeclarativeConfigHealth_CONFIG_MAP
 }
 
-func (m *DeclarativeConfigHealth) GetLastTimestamp() *timestamppb.Timestamp {
+func (m *DeclarativeConfigHealth) GetLastTimestamp() *types.Timestamp {
 	if m != nil {
 		return m.LastTimestamp
 	}
@@ -597,7 +597,7 @@ func (m *DeclarativeConfigHealth) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastTimestamp == nil {
-				m.LastTimestamp = &timestamppb.Timestamp{}
+				m.LastTimestamp = &types.Timestamp{}
 			}
 			if err := m.LastTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

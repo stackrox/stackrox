@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -831,9 +831,9 @@ type ComplianceOperatorScanConfigurationV2 struct {
 	// Will be configurable via env var
 	StrictNodeScan bool `protobuf:"varint,10,opt,name=strict_node_scan,json=strictNodeScan,proto3" json:"strict_node_scan,omitempty"`
 	// Starting point for schedule will probably have to build upon it
-	Schedule        *Schedule              `protobuf:"bytes,11,opt,name=schedule,proto3" json:"schedule,omitempty"`
-	CreatedTime     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
-	LastUpdatedTime *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=last_updated_time,json=lastUpdatedTime,proto3" json:"last_updated_time,omitempty"`
+	Schedule        *Schedule        `protobuf:"bytes,11,opt,name=schedule,proto3" json:"schedule,omitempty"`
+	CreatedTime     *types.Timestamp `protobuf:"bytes,12,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
+	LastUpdatedTime *types.Timestamp `protobuf:"bytes,13,opt,name=last_updated_time,json=lastUpdatedTime,proto3" json:"last_updated_time,omitempty"`
 	// Most recent user to update the scan configurations
 	ModifiedBy           *SlimUser                                        `protobuf:"bytes,14,opt,name=modified_by,json=modifiedBy,proto3" json:"modified_by,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
 	Description          string                                           `protobuf:"bytes,15,opt,name=description,proto3" json:"description,omitempty"`
@@ -953,14 +953,14 @@ func (m *ComplianceOperatorScanConfigurationV2) GetSchedule() *Schedule {
 	return nil
 }
 
-func (m *ComplianceOperatorScanConfigurationV2) GetCreatedTime() *timestamppb.Timestamp {
+func (m *ComplianceOperatorScanConfigurationV2) GetCreatedTime() *types.Timestamp {
 	if m != nil {
 		return m.CreatedTime
 	}
 	return nil
 }
 
-func (m *ComplianceOperatorScanConfigurationV2) GetLastUpdatedTime() *timestamppb.Timestamp {
+func (m *ComplianceOperatorScanConfigurationV2) GetLastUpdatedTime() *types.Timestamp {
 	if m != nil {
 		return m.LastUpdatedTime
 	}
@@ -1165,15 +1165,15 @@ func (m *ComplianceOperatorScanConfigurationV2_Cluster) Clone() *ComplianceOpera
 // Cluster and an error if necessary to handle cases where the scan configuration is
 // unable to be applied to a cluster for whatever reason.
 type ComplianceOperatorClusterScanConfigStatus struct {
-	Id                   string                 `protobuf:"bytes,6,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                           // @gotags: sql:"pk,type(uuid)"
-	ClusterId            string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`            // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
-	ScanConfigId         string                 `protobuf:"bytes,2,opt,name=scan_config_id,json=scanConfigId,proto3" json:"scan_config_id,omitempty" search:"Compliance Scan Config ID,hidden" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Compliance Scan Config ID,hidden" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"
-	Errors               []string               `protobuf:"bytes,3,rep,name=errors,proto3" json:"errors,omitempty"`
-	LastUpdatedTime      *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_updated_time,json=lastUpdatedTime,proto3" json:"last_updated_time,omitempty" search:"Compliance Scan Config Last Updated Time,hidden"` // @gotags: search:"Compliance Scan Config Last Updated Time,hidden"
-	ClusterName          string                 `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Id                   string           `protobuf:"bytes,6,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                           // @gotags: sql:"pk,type(uuid)"
+	ClusterId            string           `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`            // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+	ScanConfigId         string           `protobuf:"bytes,2,opt,name=scan_config_id,json=scanConfigId,proto3" json:"scan_config_id,omitempty" search:"Compliance Scan Config ID,hidden" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Compliance Scan Config ID,hidden" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"
+	Errors               []string         `protobuf:"bytes,3,rep,name=errors,proto3" json:"errors,omitempty"`
+	LastUpdatedTime      *types.Timestamp `protobuf:"bytes,4,opt,name=last_updated_time,json=lastUpdatedTime,proto3" json:"last_updated_time,omitempty" search:"Compliance Scan Config Last Updated Time,hidden"` // @gotags: search:"Compliance Scan Config Last Updated Time,hidden"
+	ClusterName          string           `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *ComplianceOperatorClusterScanConfigStatus) Reset() {
@@ -1241,7 +1241,7 @@ func (m *ComplianceOperatorClusterScanConfigStatus) GetErrors() []string {
 	return nil
 }
 
-func (m *ComplianceOperatorClusterScanConfigStatus) GetLastUpdatedTime() *timestamppb.Timestamp {
+func (m *ComplianceOperatorClusterScanConfigStatus) GetLastUpdatedTime() *types.Timestamp {
 	if m != nil {
 		return m.LastUpdatedTime
 	}
@@ -1288,7 +1288,7 @@ type ComplianceOperatorCheckResultV2 struct {
 	Instructions         string                                      `protobuf:"bytes,8,opt,name=instructions,proto3" json:"instructions,omitempty"`
 	Labels               map[string]string                           `protobuf:"bytes,9,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Annotations          map[string]string                           `protobuf:"bytes,10,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	CreatedTime          *timestamppb.Timestamp                      `protobuf:"bytes,11,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty" search:"Compliance Check Result Created Time,hidden"` // @gotags: search:"Compliance Check Result Created Time,hidden"
+	CreatedTime          *types.Timestamp                            `protobuf:"bytes,11,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty" search:"Compliance Check Result Created Time,hidden"` // @gotags: search:"Compliance Check Result Created Time,hidden"
 	ValuesUsed           []string                                    `protobuf:"bytes,12,rep,name=valuesUsed,proto3" json:"valuesUsed,omitempty"`
 	Warnings             []string                                    `protobuf:"bytes,13,rep,name=warnings,proto3" json:"warnings,omitempty"`
 	ScanName             string                                      `protobuf:"bytes,14,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
@@ -1405,7 +1405,7 @@ func (m *ComplianceOperatorCheckResultV2) GetAnnotations() map[string]string {
 	return nil
 }
 
-func (m *ComplianceOperatorCheckResultV2) GetCreatedTime() *timestamppb.Timestamp {
+func (m *ComplianceOperatorCheckResultV2) GetCreatedTime() *types.Timestamp {
 	if m != nil {
 		return m.CreatedTime
 	}
@@ -1583,25 +1583,25 @@ func (m *ScanStatus) Clone() *ScanStatus {
 // Next Tag: 16
 // Scan object per cluster
 type ComplianceOperatorScanV2 struct {
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                                 // @gotags: sql:"pk"
-	ScanConfigName       string                 `protobuf:"bytes,2,opt,name=scan_config_name,json=scanConfigName,proto3" json:"scan_config_name,omitempty" search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"` // @gotags: search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"
-	ClusterId            string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`                  // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
-	Errors               string                 `protobuf:"bytes,4,opt,name=errors,proto3" json:"errors,omitempty"`
-	Profile              *ProfileShim           `protobuf:"bytes,5,opt,name=profile,proto3" json:"profile,omitempty"`
-	Labels               map[string]string      `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Annotations          map[string]string      `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	ScanType             ScanType               `protobuf:"varint,8,opt,name=scan_type,json=scanType,proto3,enum=storage.ScanType" json:"scan_type,omitempty"`
-	NodeSelector         NodeRole               `protobuf:"varint,9,opt,name=node_selector,json=nodeSelector,proto3,enum=storage.NodeRole" json:"node_selector,omitempty"`
-	Status               *ScanStatus            `protobuf:"bytes,10,opt,name=status,proto3" json:"status,omitempty"`
-	CreatedTime          *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
-	LastExecutedTime     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=last_executed_time,json=lastExecutedTime,proto3" json:"last_executed_time,omitempty" search:"Compliance Scan Last Executed Time,hidden"` // @gotags: search:"Compliance Scan Last Executed Time,hidden"
-	ScanName             string                 `protobuf:"bytes,13,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty" search:"Compliance Scan Name,hidden"`                           // @gotags: search:"Compliance Scan Name,hidden"
-	Warnings             string                 `protobuf:"bytes,14,opt,name=warnings,proto3" json:"warnings,omitempty"`
-	ProductType          string                 `protobuf:"bytes,15,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty"`
-	ScanRefId            string                 `protobuf:"bytes,16,opt,name=scan_ref_id,json=scanRefId,proto3" json:"scan_ref_id,omitempty" search:"Scan Ref ID,hidden" sql:"type(uuid)"` // @gotags: search:"Scan Ref ID,hidden" sql:"type(uuid)"
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Id                   string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                                 // @gotags: sql:"pk"
+	ScanConfigName       string            `protobuf:"bytes,2,opt,name=scan_config_name,json=scanConfigName,proto3" json:"scan_config_name,omitempty" search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"` // @gotags: search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"
+	ClusterId            string            `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`                  // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+	Errors               string            `protobuf:"bytes,4,opt,name=errors,proto3" json:"errors,omitempty"`
+	Profile              *ProfileShim      `protobuf:"bytes,5,opt,name=profile,proto3" json:"profile,omitempty"`
+	Labels               map[string]string `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Annotations          map[string]string `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	ScanType             ScanType          `protobuf:"varint,8,opt,name=scan_type,json=scanType,proto3,enum=storage.ScanType" json:"scan_type,omitempty"`
+	NodeSelector         NodeRole          `protobuf:"varint,9,opt,name=node_selector,json=nodeSelector,proto3,enum=storage.NodeRole" json:"node_selector,omitempty"`
+	Status               *ScanStatus       `protobuf:"bytes,10,opt,name=status,proto3" json:"status,omitempty"`
+	CreatedTime          *types.Timestamp  `protobuf:"bytes,11,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
+	LastExecutedTime     *types.Timestamp  `protobuf:"bytes,12,opt,name=last_executed_time,json=lastExecutedTime,proto3" json:"last_executed_time,omitempty" search:"Compliance Scan Last Executed Time,hidden"` // @gotags: search:"Compliance Scan Last Executed Time,hidden"
+	ScanName             string            `protobuf:"bytes,13,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty" search:"Compliance Scan Name,hidden"`                           // @gotags: search:"Compliance Scan Name,hidden"
+	Warnings             string            `protobuf:"bytes,14,opt,name=warnings,proto3" json:"warnings,omitempty"`
+	ProductType          string            `protobuf:"bytes,15,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty"`
+	ScanRefId            string            `protobuf:"bytes,16,opt,name=scan_ref_id,json=scanRefId,proto3" json:"scan_ref_id,omitempty" search:"Scan Ref ID,hidden" sql:"type(uuid)"` // @gotags: search:"Scan Ref ID,hidden" sql:"type(uuid)"
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
 func (m *ComplianceOperatorScanV2) Reset()         { *m = ComplianceOperatorScanV2{} }
@@ -1707,14 +1707,14 @@ func (m *ComplianceOperatorScanV2) GetStatus() *ScanStatus {
 	return nil
 }
 
-func (m *ComplianceOperatorScanV2) GetCreatedTime() *timestamppb.Timestamp {
+func (m *ComplianceOperatorScanV2) GetCreatedTime() *types.Timestamp {
 	if m != nil {
 		return m.CreatedTime
 	}
 	return nil
 }
 
-func (m *ComplianceOperatorScanV2) GetLastExecutedTime() *timestamppb.Timestamp {
+func (m *ComplianceOperatorScanV2) GetLastExecutedTime() *types.Timestamp {
 	if m != nil {
 		return m.LastExecutedTime
 	}
@@ -1918,14 +1918,14 @@ func (m *ComplianceOperatorScanSettingBindingV2) Clone() *ComplianceOperatorScan
 // Next Tag: 6
 // ComplianceOperatorCondition represents an observation of status conditions.
 type ComplianceOperatorCondition struct {
-	Type                 string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
-	Status               string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	Reason               string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
-	Message              string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
-	LastTransitionTime   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_transition_time,json=lastTransitionTime,proto3" json:"last_transition_time,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Type                 string           `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	Status               string           `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	Reason               string           `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	Message              string           `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+	LastTransitionTime   *types.Timestamp `protobuf:"bytes,5,opt,name=last_transition_time,json=lastTransitionTime,proto3" json:"last_transition_time,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *ComplianceOperatorCondition) Reset()         { *m = ComplianceOperatorCondition{} }
@@ -1989,7 +1989,7 @@ func (m *ComplianceOperatorCondition) GetMessage() string {
 	return ""
 }
 
-func (m *ComplianceOperatorCondition) GetLastTransitionTime() *timestamppb.Timestamp {
+func (m *ComplianceOperatorCondition) GetLastTransitionTime() *types.Timestamp {
 	if m != nil {
 		return m.LastTransitionTime
 	}
@@ -7131,7 +7131,7 @@ func (m *ComplianceOperatorScanConfigurationV2) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedTime == nil {
-				m.CreatedTime = &timestamppb.Timestamp{}
+				m.CreatedTime = &types.Timestamp{}
 			}
 			if err := m.CreatedTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -7167,7 +7167,7 @@ func (m *ComplianceOperatorScanConfigurationV2) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdatedTime == nil {
-				m.LastUpdatedTime = &timestamppb.Timestamp{}
+				m.LastUpdatedTime = &types.Timestamp{}
 			}
 			if err := m.LastUpdatedTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -7618,7 +7618,7 @@ func (m *ComplianceOperatorClusterScanConfigStatus) Unmarshal(dAtA []byte) error
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdatedTime == nil {
-				m.LastUpdatedTime = &timestamppb.Timestamp{}
+				m.LastUpdatedTime = &types.Timestamp{}
 			}
 			if err := m.LastUpdatedTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8253,7 +8253,7 @@ func (m *ComplianceOperatorCheckResultV2) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedTime == nil {
-				m.CreatedTime = &timestamppb.Timestamp{}
+				m.CreatedTime = &types.Timestamp{}
 			}
 			if err := m.CreatedTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9235,7 +9235,7 @@ func (m *ComplianceOperatorScanV2) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedTime == nil {
-				m.CreatedTime = &timestamppb.Timestamp{}
+				m.CreatedTime = &types.Timestamp{}
 			}
 			if err := m.CreatedTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9271,7 +9271,7 @@ func (m *ComplianceOperatorScanV2) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastExecutedTime == nil {
-				m.LastExecutedTime = &timestamppb.Timestamp{}
+				m.LastExecutedTime = &types.Timestamp{}
 			}
 			if err := m.LastExecutedTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -10115,7 +10115,7 @@ func (m *ComplianceOperatorCondition) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastTransitionTime == nil {
-				m.LastTransitionTime = &timestamppb.Timestamp{}
+				m.LastTransitionTime = &types.Timestamp{}
 			}
 			if err := m.LastTransitionTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

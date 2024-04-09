@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -297,14 +297,14 @@ func (m *ComponentCVEEdge) Clone() *ComponentCVEEdge {
 
 type ImageCVEEdge struct {
 	// base 64 encoded Image:CVE ids.
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                                   // @gotags: sql:"pk,id"
-	FirstImageOccurrence *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"` // @gotags: search:"First Image Occurrence Timestamp,hidden"
-	State                VulnerabilityState     `protobuf:"varint,3,opt,name=state,proto3,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State"`                            // @gotags: search:"Vulnerability State"
-	ImageId              string                 `protobuf:"bytes,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=hash"`                                          // @gotags: sql:"fk(Image:id),index=hash"
-	ImageCveId           string                 `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId,proto3" json:"image_cve_id,omitempty" sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"`                               // @gotags: sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Id                   string             `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                                   // @gotags: sql:"pk,id"
+	FirstImageOccurrence *types.Timestamp   `protobuf:"bytes,2,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"` // @gotags: search:"First Image Occurrence Timestamp,hidden"
+	State                VulnerabilityState `protobuf:"varint,3,opt,name=state,proto3,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State"`                            // @gotags: search:"Vulnerability State"
+	ImageId              string             `protobuf:"bytes,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=hash"`                                          // @gotags: sql:"fk(Image:id),index=hash"
+	ImageCveId           string             `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId,proto3" json:"image_cve_id,omitempty" sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"`                               // @gotags: sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
 func (m *ImageCVEEdge) Reset()         { *m = ImageCVEEdge{} }
@@ -347,7 +347,7 @@ func (m *ImageCVEEdge) GetId() string {
 	return ""
 }
 
-func (m *ImageCVEEdge) GetFirstImageOccurrence() *timestamppb.Timestamp {
+func (m *ImageCVEEdge) GetFirstImageOccurrence() *types.Timestamp {
 	if m != nil {
 		return m.FirstImageOccurrence
 	}
@@ -2090,7 +2090,7 @@ func (m *ImageCVEEdge) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.FirstImageOccurrence == nil {
-				m.FirstImageOccurrence = &timestamppb.Timestamp{}
+				m.FirstImageOccurrence = &types.Timestamp{}
 			}
 			if err := m.FirstImageOccurrence.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -25,15 +25,15 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Next Tag: 7
 type Blob struct {
-	Name                 string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" sql:"pk" search:"Blob Name"` // @gotags: sql:"pk" search:"Blob Name"
-	Oid                  uint32                 `protobuf:"varint,2,opt,name=oid,proto3" json:"oid,omitempty"`
-	Checksum             string                 `protobuf:"bytes,3,opt,name=checksum,proto3" json:"checksum,omitempty"`
-	Length               int64                  `protobuf:"varint,4,opt,name=length,proto3" json:"length,omitempty" search:"Blob Length"` // @gotags: search:"Blob Length"
-	LastUpdated          *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
-	ModifiedTime         *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=modified_time,json=modifiedTime,proto3" json:"modified_time,omitempty" search:"Blob Modified On"` // @gotags: search:"Blob Modified On"
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Name                 string           `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" sql:"pk" search:"Blob Name"` // @gotags: sql:"pk" search:"Blob Name"
+	Oid                  uint32           `protobuf:"varint,2,opt,name=oid,proto3" json:"oid,omitempty"`
+	Checksum             string           `protobuf:"bytes,3,opt,name=checksum,proto3" json:"checksum,omitempty"`
+	Length               int64            `protobuf:"varint,4,opt,name=length,proto3" json:"length,omitempty" search:"Blob Length"` // @gotags: search:"Blob Length"
+	LastUpdated          *types.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	ModifiedTime         *types.Timestamp `protobuf:"bytes,6,opt,name=modified_time,json=modifiedTime,proto3" json:"modified_time,omitempty" search:"Blob Modified On"` // @gotags: search:"Blob Modified On"
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *Blob) Reset()         { *m = Blob{} }
@@ -97,14 +97,14 @@ func (m *Blob) GetLength() int64 {
 	return 0
 }
 
-func (m *Blob) GetLastUpdated() *timestamppb.Timestamp {
+func (m *Blob) GetLastUpdated() *types.Timestamp {
 	if m != nil {
 		return m.LastUpdated
 	}
 	return nil
 }
 
-func (m *Blob) GetModifiedTime() *timestamppb.Timestamp {
+func (m *Blob) GetModifiedTime() *types.Timestamp {
 	if m != nil {
 		return m.ModifiedTime
 	}
@@ -440,7 +440,7 @@ func (m *Blob) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdated == nil {
-				m.LastUpdated = &timestamppb.Timestamp{}
+				m.LastUpdated = &types.Timestamp{}
 			}
 			if err := m.LastUpdated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -476,7 +476,7 @@ func (m *Blob) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ModifiedTime == nil {
-				m.ModifiedTime = &timestamppb.Timestamp{}
+				m.ModifiedTime = &types.Timestamp{}
 			}
 			if err := m.ModifiedTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

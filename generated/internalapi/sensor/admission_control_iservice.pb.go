@@ -5,8 +5,8 @@ package sensor
 
 import (
 	fmt "fmt"
+	_ "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	_ "google.golang.org/protobuf/types/known/emptypb"
 	io "io"
 	math "math"
 	math_bits "math/bits"

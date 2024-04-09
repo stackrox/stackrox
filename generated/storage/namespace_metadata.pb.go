@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -24,17 +24,17 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type NamespaceMetadata struct {
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Namespace ID" sql:"pk,type(uuid)"`                                                                                                 // @gotags: search:"Namespace ID" sql:"pk,type(uuid)"
-	Name                 string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Namespace,store"`                                                                                             // @gotags: search:"Namespace,store"
-	ClusterId            string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`                                                                  // @gotags: search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
-	ClusterName          string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"`                                                            // @gotags: search:"Cluster"
-	Labels               map[string]string      `protobuf:"bytes,5,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Namespace Label"` // @gotags: search:"Namespace Label"
-	CreationTime         *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=creation_time,json=creationTime,proto3" json:"creation_time,omitempty"`
-	Priority             int64                  `protobuf:"varint,7,opt,name=priority,proto3" json:"priority,omitempty"`
-	Annotations          map[string]string      `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Namespace Annotation"` // @gotags: search:"Namespace Annotation"
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Id                   string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Namespace ID" sql:"pk,type(uuid)"`                                                                                                 // @gotags: search:"Namespace ID" sql:"pk,type(uuid)"
+	Name                 string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Namespace,store"`                                                                                             // @gotags: search:"Namespace,store"
+	ClusterId            string            `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`                                                                  // @gotags: search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+	ClusterName          string            `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"`                                                            // @gotags: search:"Cluster"
+	Labels               map[string]string `protobuf:"bytes,5,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Namespace Label"` // @gotags: search:"Namespace Label"
+	CreationTime         *types.Timestamp  `protobuf:"bytes,6,opt,name=creation_time,json=creationTime,proto3" json:"creation_time,omitempty"`
+	Priority             int64             `protobuf:"varint,7,opt,name=priority,proto3" json:"priority,omitempty"`
+	Annotations          map[string]string `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Namespace Annotation"` // @gotags: search:"Namespace Annotation"
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
 func (m *NamespaceMetadata) Reset()         { *m = NamespaceMetadata{} }
@@ -105,7 +105,7 @@ func (m *NamespaceMetadata) GetLabels() map[string]string {
 	return nil
 }
 
-func (m *NamespaceMetadata) GetCreationTime() *timestamppb.Timestamp {
+func (m *NamespaceMetadata) GetCreationTime() *types.Timestamp {
 	if m != nil {
 		return m.CreationTime
 	}
@@ -680,7 +680,7 @@ func (m *NamespaceMetadata) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreationTime == nil {
-				m.CreationTime = &timestamppb.Timestamp{}
+				m.CreationTime = &types.Timestamp{}
 			}
 			if err := m.CreationTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

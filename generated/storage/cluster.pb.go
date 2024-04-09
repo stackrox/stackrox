@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -789,7 +789,7 @@ type OrchestratorMetadata struct {
 	// Types that are valid to be assigned to IsOpenshift:
 	//	*OrchestratorMetadata_OpenshiftVersion
 	IsOpenshift          isOrchestratorMetadata_IsOpenshift `protobuf_oneof:"is_openshift"`
-	BuildDate            *timestamppb.Timestamp             `protobuf:"bytes,2,opt,name=build_date,json=buildDate,proto3" json:"build_date,omitempty"`
+	BuildDate            *types.Timestamp                   `protobuf:"bytes,2,opt,name=build_date,json=buildDate,proto3" json:"build_date,omitempty"`
 	ApiVersions          []string                           `protobuf:"bytes,3,rep,name=api_versions,json=apiVersions,proto3" json:"api_versions,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                           `json:"-"`
 	XXX_unrecognized     []byte                             `json:"-"`
@@ -872,7 +872,7 @@ func (m *OrchestratorMetadata) GetOpenshiftVersion() string {
 	return ""
 }
 
-func (m *OrchestratorMetadata) GetBuildDate() *timestamppb.Timestamp {
+func (m *OrchestratorMetadata) GetBuildDate() *types.Timestamp {
 	if m != nil {
 		return m.BuildDate
 	}
@@ -1734,11 +1734,11 @@ func (m *Cluster) Clone() *Cluster {
 }
 
 type ClusterCertExpiryStatus struct {
-	SensorCertExpiry     *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=sensor_cert_expiry,json=sensorCertExpiry,proto3" json:"sensor_cert_expiry,omitempty"`
-	SensorCertNotBefore  *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=sensor_cert_not_before,json=sensorCertNotBefore,proto3" json:"sensor_cert_not_before,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	SensorCertExpiry     *types.Timestamp `protobuf:"bytes,1,opt,name=sensor_cert_expiry,json=sensorCertExpiry,proto3" json:"sensor_cert_expiry,omitempty"`
+	SensorCertNotBefore  *types.Timestamp `protobuf:"bytes,2,opt,name=sensor_cert_not_before,json=sensorCertNotBefore,proto3" json:"sensor_cert_not_before,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *ClusterCertExpiryStatus) Reset()         { *m = ClusterCertExpiryStatus{} }
@@ -1774,14 +1774,14 @@ func (m *ClusterCertExpiryStatus) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ClusterCertExpiryStatus proto.InternalMessageInfo
 
-func (m *ClusterCertExpiryStatus) GetSensorCertExpiry() *timestamppb.Timestamp {
+func (m *ClusterCertExpiryStatus) GetSensorCertExpiry() *types.Timestamp {
 	if m != nil {
 		return m.SensorCertExpiry
 	}
 	return nil
 }
 
-func (m *ClusterCertExpiryStatus) GetSensorCertNotBefore() *timestamppb.Timestamp {
+func (m *ClusterCertExpiryStatus) GetSensorCertNotBefore() *types.Timestamp {
 	if m != nil {
 		return m.SensorCertNotBefore
 	}
@@ -1806,7 +1806,7 @@ func (m *ClusterCertExpiryStatus) Clone() *ClusterCertExpiryStatus {
 type ClusterStatus struct {
 	SensorVersion string `protobuf:"bytes,1,opt,name=sensor_version,json=sensorVersion,proto3" json:"sensor_version,omitempty"`
 	// This field has been deprecated starting release 49.0. Use healthStatus.lastContact instead.
-	DEPRECATEDLastContact *timestamppb.Timestamp   `protobuf:"bytes,2,opt,name=DEPRECATED_last_contact,json=DEPRECATEDLastContact,proto3" json:"DEPRECATED_last_contact,omitempty"`
+	DEPRECATEDLastContact *types.Timestamp         `protobuf:"bytes,2,opt,name=DEPRECATED_last_contact,json=DEPRECATEDLastContact,proto3" json:"DEPRECATED_last_contact,omitempty"`
 	ProviderMetadata      *ProviderMetadata        `protobuf:"bytes,3,opt,name=provider_metadata,json=providerMetadata,proto3" json:"provider_metadata,omitempty"`
 	OrchestratorMetadata  *OrchestratorMetadata    `protobuf:"bytes,4,opt,name=orchestrator_metadata,json=orchestratorMetadata,proto3" json:"orchestrator_metadata,omitempty"`
 	UpgradeStatus         *ClusterUpgradeStatus    `protobuf:"bytes,5,opt,name=upgrade_status,json=upgradeStatus,proto3" json:"upgrade_status,omitempty"`
@@ -1856,7 +1856,7 @@ func (m *ClusterStatus) GetSensorVersion() string {
 	return ""
 }
 
-func (m *ClusterStatus) GetDEPRECATEDLastContact() *timestamppb.Timestamp {
+func (m *ClusterStatus) GetDEPRECATEDLastContact() *types.Timestamp {
 	if m != nil {
 		return m.DEPRECATEDLastContact
 	}
@@ -1995,7 +1995,7 @@ type ClusterUpgradeStatus_UpgradeProcessStatus struct {
 	Id                   string                                                       `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	TargetVersion        string                                                       `protobuf:"bytes,3,opt,name=target_version,json=targetVersion,proto3" json:"target_version,omitempty"` // only relevant if type == Upgrade
 	UpgraderImage        string                                                       `protobuf:"bytes,4,opt,name=upgrader_image,json=upgraderImage,proto3" json:"upgrader_image,omitempty"`
-	InitiatedAt          *timestamppb.Timestamp                                       `protobuf:"bytes,5,opt,name=initiated_at,json=initiatedAt,proto3" json:"initiated_at,omitempty"`
+	InitiatedAt          *types.Timestamp                                             `protobuf:"bytes,5,opt,name=initiated_at,json=initiatedAt,proto3" json:"initiated_at,omitempty"`
 	Progress             *UpgradeProgress                                             `protobuf:"bytes,6,opt,name=progress,proto3" json:"progress,omitempty"`
 	Type                 ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType `protobuf:"varint,7,opt,name=type,proto3,enum=storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType" json:"type,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                                                     `json:"-"`
@@ -2068,7 +2068,7 @@ func (m *ClusterUpgradeStatus_UpgradeProcessStatus) GetUpgraderImage() string {
 	return ""
 }
 
-func (m *ClusterUpgradeStatus_UpgradeProcessStatus) GetInitiatedAt() *timestamppb.Timestamp {
+func (m *ClusterUpgradeStatus_UpgradeProcessStatus) GetInitiatedAt() *types.Timestamp {
 	if m != nil {
 		return m.InitiatedAt
 	}
@@ -2107,7 +2107,7 @@ func (m *ClusterUpgradeStatus_UpgradeProcessStatus) Clone() *ClusterUpgradeStatu
 type UpgradeProgress struct {
 	UpgradeState         UpgradeProgress_UpgradeState `protobuf:"varint,1,opt,name=upgrade_state,json=upgradeState,proto3,enum=storage.UpgradeProgress_UpgradeState" json:"upgrade_state,omitempty"`
 	UpgradeStatusDetail  string                       `protobuf:"bytes,2,opt,name=upgrade_status_detail,json=upgradeStatusDetail,proto3" json:"upgrade_status_detail,omitempty"`
-	Since                *timestamppb.Timestamp       `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
+	Since                *types.Timestamp             `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
 	XXX_unrecognized     []byte                       `json:"-"`
 	XXX_sizecache        int32                        `json:"-"`
@@ -2160,7 +2160,7 @@ func (m *UpgradeProgress) GetUpgradeStatusDetail() string {
 	return ""
 }
 
-func (m *UpgradeProgress) GetSince() *timestamppb.Timestamp {
+func (m *UpgradeProgress) GetSince() *types.Timestamp {
 	if m != nil {
 		return m.Since
 	}
@@ -2184,11 +2184,11 @@ func (m *UpgradeProgress) Clone() *UpgradeProgress {
 // AuditLogFileState tracks the last audit log event timestamp and ID that was collected by Compliance
 // For internal use only
 type AuditLogFileState struct {
-	CollectLogsSince     *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=collect_logs_since,json=collectLogsSince,proto3" json:"collect_logs_since,omitempty"`
-	LastAuditId          string                 `protobuf:"bytes,2,opt,name=last_audit_id,json=lastAuditId,proto3" json:"last_audit_id,omitempty"` // Previously received audit id. May be empty
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	CollectLogsSince     *types.Timestamp `protobuf:"bytes,1,opt,name=collect_logs_since,json=collectLogsSince,proto3" json:"collect_logs_since,omitempty"`
+	LastAuditId          string           `protobuf:"bytes,2,opt,name=last_audit_id,json=lastAuditId,proto3" json:"last_audit_id,omitempty"` // Previously received audit id. May be empty
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *AuditLogFileState) Reset()         { *m = AuditLogFileState{} }
@@ -2224,7 +2224,7 @@ func (m *AuditLogFileState) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AuditLogFileState proto.InternalMessageInfo
 
-func (m *AuditLogFileState) GetCollectLogsSince() *timestamppb.Timestamp {
+func (m *AuditLogFileState) GetCollectLogsSince() *types.Timestamp {
 	if m != nil {
 		return m.CollectLogsSince
 	}
@@ -2267,7 +2267,7 @@ type ClusterHealthStatus struct {
 	ScannerHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,11,opt,name=scanner_health_status,json=scannerHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"scanner_health_status,omitempty" search:"Scanner Status,store"`                             // @gotags: search:"Scanner Status,store"
 	// For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
 	// this timestamp will be updated by central pipeline when message is processed
-	LastContact *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_contact,json=lastContact,proto3" json:"last_contact,omitempty" search:"Last Contact,store"` // @gotags: search:"Last Contact,store"
+	LastContact *types.Timestamp `protobuf:"bytes,5,opt,name=last_contact,json=lastContact,proto3" json:"last_contact,omitempty" search:"Last Contact,store"` // @gotags: search:"Last Contact,store"
 	// To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
 	HealthInfoComplete   bool     `protobuf:"varint,6,opt,name=health_info_complete,json=healthInfoComplete,proto3" json:"health_info_complete,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -2371,7 +2371,7 @@ func (m *ClusterHealthStatus) GetScannerHealthStatus() ClusterHealthStatus_Healt
 	return ClusterHealthStatus_UNINITIALIZED
 }
 
-func (m *ClusterHealthStatus) GetLastContact() *timestamppb.Timestamp {
+func (m *ClusterHealthStatus) GetLastContact() *types.Timestamp {
 	if m != nil {
 		return m.LastContact
 	}
@@ -6773,7 +6773,7 @@ func (m *OrchestratorMetadata) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.BuildDate == nil {
-				m.BuildDate = &timestamppb.Timestamp{}
+				m.BuildDate = &types.Timestamp{}
 			}
 			if err := m.BuildDate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9001,7 +9001,7 @@ func (m *ClusterCertExpiryStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SensorCertExpiry == nil {
-				m.SensorCertExpiry = &timestamppb.Timestamp{}
+				m.SensorCertExpiry = &types.Timestamp{}
 			}
 			if err := m.SensorCertExpiry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9037,7 +9037,7 @@ func (m *ClusterCertExpiryStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SensorCertNotBefore == nil {
-				m.SensorCertNotBefore = &timestamppb.Timestamp{}
+				m.SensorCertNotBefore = &types.Timestamp{}
 			}
 			if err := m.SensorCertNotBefore.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9156,7 +9156,7 @@ func (m *ClusterStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.DEPRECATEDLastContact == nil {
-				m.DEPRECATEDLastContact = &timestamppb.Timestamp{}
+				m.DEPRECATEDLastContact = &types.Timestamp{}
 			}
 			if err := m.DEPRECATEDLastContact.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9641,7 +9641,7 @@ func (m *ClusterUpgradeStatus_UpgradeProcessStatus) Unmarshal(dAtA []byte) error
 				return io.ErrUnexpectedEOF
 			}
 			if m.InitiatedAt == nil {
-				m.InitiatedAt = &timestamppb.Timestamp{}
+				m.InitiatedAt = &types.Timestamp{}
 			}
 			if err := m.InitiatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9834,7 +9834,7 @@ func (m *UpgradeProgress) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Since == nil {
-				m.Since = &timestamppb.Timestamp{}
+				m.Since = &types.Timestamp{}
 			}
 			if err := m.Since.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9921,7 +9921,7 @@ func (m *AuditLogFileState) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CollectLogsSince == nil {
-				m.CollectLogsSince = &timestamppb.Timestamp{}
+				m.CollectLogsSince = &types.Timestamp{}
 			}
 			if err := m.CollectLogsSince.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -10133,7 +10133,7 @@ func (m *ClusterHealthStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastContact == nil {
-				m.LastContact = &timestamppb.Timestamp{}
+				m.LastContact = &types.Timestamp{}
 			}
 			if err := m.LastContact.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

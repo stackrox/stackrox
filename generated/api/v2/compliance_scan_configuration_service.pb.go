@@ -5,8 +5,8 @@ package v2
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -117,13 +117,13 @@ func (m *ClusterScanStatus) Clone() *ClusterScanStatus {
 
 // Additional scan status gathered from ComplianceSuite
 type ClusterScanStatus_SuiteStatus struct {
-	Phase                string                 `protobuf:"bytes,1,opt,name=phase,proto3" json:"phase,omitempty"`
-	Result               string                 `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
-	ErrorMessage         string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	LastTransitionTime   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_transition_time,json=lastTransitionTime,proto3" json:"last_transition_time,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Phase                string           `protobuf:"bytes,1,opt,name=phase,proto3" json:"phase,omitempty"`
+	Result               string           `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
+	ErrorMessage         string           `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	LastTransitionTime   *types.Timestamp `protobuf:"bytes,4,opt,name=last_transition_time,json=lastTransitionTime,proto3" json:"last_transition_time,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *ClusterScanStatus_SuiteStatus) Reset()         { *m = ClusterScanStatus_SuiteStatus{} }
@@ -180,7 +180,7 @@ func (m *ClusterScanStatus_SuiteStatus) GetErrorMessage() string {
 	return ""
 }
 
-func (m *ClusterScanStatus_SuiteStatus) GetLastTransitionTime() *timestamppb.Timestamp {
+func (m *ClusterScanStatus_SuiteStatus) GetLastTransitionTime() *types.Timestamp {
 	if m != nil {
 		return m.LastTransitionTime
 	}
@@ -389,8 +389,8 @@ type ComplianceScanConfigurationStatus struct {
 	ScanName        string                                   `protobuf:"bytes,2,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
 	ScanConfig      *BaseComplianceScanConfigurationSettings `protobuf:"bytes,3,opt,name=scan_config,json=scanConfig,proto3" json:"scan_config,omitempty"`
 	ClusterStatus   []*ClusterScanStatus                     `protobuf:"bytes,4,rep,name=cluster_status,json=clusterStatus,proto3" json:"cluster_status,omitempty"`
-	CreatedTime     *timestamppb.Timestamp                   `protobuf:"bytes,5,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
-	LastUpdatedTime *timestamppb.Timestamp                   `protobuf:"bytes,6,opt,name=last_updated_time,json=lastUpdatedTime,proto3" json:"last_updated_time,omitempty"`
+	CreatedTime     *types.Timestamp                         `protobuf:"bytes,5,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
+	LastUpdatedTime *types.Timestamp                         `protobuf:"bytes,6,opt,name=last_updated_time,json=lastUpdatedTime,proto3" json:"last_updated_time,omitempty"`
 	// Most recent user to update the scan settings
 	ModifiedBy           *SlimUser `protobuf:"bytes,7,opt,name=modified_by,json=modifiedBy,proto3" json:"modified_by,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
@@ -459,14 +459,14 @@ func (m *ComplianceScanConfigurationStatus) GetClusterStatus() []*ClusterScanSta
 	return nil
 }
 
-func (m *ComplianceScanConfigurationStatus) GetCreatedTime() *timestamppb.Timestamp {
+func (m *ComplianceScanConfigurationStatus) GetCreatedTime() *types.Timestamp {
 	if m != nil {
 		return m.CreatedTime
 	}
 	return nil
 }
 
-func (m *ComplianceScanConfigurationStatus) GetLastUpdatedTime() *timestamppb.Timestamp {
+func (m *ComplianceScanConfigurationStatus) GetLastUpdatedTime() *types.Timestamp {
 	if m != nil {
 		return m.LastUpdatedTime
 	}
@@ -1680,7 +1680,7 @@ func (m *ClusterScanStatus_SuiteStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastTransitionTime == nil {
-				m.LastTransitionTime = &timestamppb.Timestamp{}
+				m.LastTransitionTime = &types.Timestamp{}
 			}
 			if err := m.LastTransitionTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2255,7 +2255,7 @@ func (m *ComplianceScanConfigurationStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedTime == nil {
-				m.CreatedTime = &timestamppb.Timestamp{}
+				m.CreatedTime = &types.Timestamp{}
 			}
 			if err := m.CreatedTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2291,7 +2291,7 @@ func (m *ComplianceScanConfigurationStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdatedTime == nil {
-				m.LastUpdatedTime = &timestamppb.Timestamp{}
+				m.LastUpdatedTime = &types.Timestamp{}
 			}
 			if err := m.LastUpdatedTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

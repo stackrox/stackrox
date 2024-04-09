@@ -5,8 +5,8 @@ package v1
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -236,10 +236,10 @@ type DiscoveredCluster_Metadata struct {
 	// The region as reported by the cloud provider.
 	Region string `protobuf:"bytes,5,opt,name=region,proto3" json:"region,omitempty"`
 	// Timestamp at which the cluster was first discovered by the cloud source.
-	FirstDiscoveredAt    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=first_discovered_at,json=firstDiscoveredAt,proto3" json:"first_discovered_at,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	FirstDiscoveredAt    *types.Timestamp `protobuf:"bytes,6,opt,name=first_discovered_at,json=firstDiscoveredAt,proto3" json:"first_discovered_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *DiscoveredCluster_Metadata) Reset()         { *m = DiscoveredCluster_Metadata{} }
@@ -310,7 +310,7 @@ func (m *DiscoveredCluster_Metadata) GetRegion() string {
 	return ""
 }
 
-func (m *DiscoveredCluster_Metadata) GetFirstDiscoveredAt() *timestamppb.Timestamp {
+func (m *DiscoveredCluster_Metadata) GetFirstDiscoveredAt() *types.Timestamp {
 	if m != nil {
 		return m.FirstDiscoveredAt
 	}
@@ -2040,7 +2040,7 @@ func (m *DiscoveredCluster_Metadata) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.FirstDiscoveredAt == nil {
-				m.FirstDiscoveredAt = &timestamppb.Timestamp{}
+				m.FirstDiscoveredAt = &types.Timestamp{}
 			}
 			if err := m.FirstDiscoveredAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

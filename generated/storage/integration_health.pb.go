@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -92,10 +92,10 @@ type IntegrationHealth struct {
 	Status       IntegrationHealth_Status `protobuf:"varint,4,opt,name=status,proto3,enum=storage.IntegrationHealth_Status" json:"status,omitempty"`
 	ErrorMessage string                   `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	// Timestamp when the status was ascertained
-	LastTimestamp        *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_timestamp,json=lastTimestamp,proto3" json:"last_timestamp,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	LastTimestamp        *types.Timestamp `protobuf:"bytes,6,opt,name=last_timestamp,json=lastTimestamp,proto3" json:"last_timestamp,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *IntegrationHealth) Reset()         { *m = IntegrationHealth{} }
@@ -166,7 +166,7 @@ func (m *IntegrationHealth) GetErrorMessage() string {
 	return ""
 }
 
-func (m *IntegrationHealth) GetLastTimestamp() *timestamppb.Timestamp {
+func (m *IntegrationHealth) GetLastTimestamp() *types.Timestamp {
 	if m != nil {
 		return m.LastTimestamp
 	}
@@ -539,7 +539,7 @@ func (m *IntegrationHealth) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastTimestamp == nil {
-				m.LastTimestamp = &timestamppb.Timestamp{}
+				m.LastTimestamp = &types.Timestamp{}
 			}
 			if err := m.LastTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

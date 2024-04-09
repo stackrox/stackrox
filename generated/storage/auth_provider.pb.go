@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -91,10 +91,10 @@ type AuthProvider struct {
 	// In case there have been tokens issued by an auth provider _before_ this timestamp, they will be considered
 	// invalid. Subsequently, all clients will have to re-issue their tokens (either by refreshing or by an additional
 	// login attempt).
-	LastUpdated          *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	LastUpdated          *types.Timestamp `protobuf:"bytes,14,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *AuthProvider) Reset()         { *m = AuthProvider{} }
@@ -222,7 +222,7 @@ func (m *AuthProvider) GetClaimMappings() map[string]string {
 	return nil
 }
 
-func (m *AuthProvider) GetLastUpdated() *timestamppb.Timestamp {
+func (m *AuthProvider) GetLastUpdated() *types.Timestamp {
 	if m != nil {
 		return m.LastUpdated
 	}
@@ -1352,7 +1352,7 @@ func (m *AuthProvider) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdated == nil {
-				m.LastUpdated = &timestamppb.Timestamp{}
+				m.LastUpdated = &types.Timestamp{}
 			}
 			if err := m.LastUpdated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

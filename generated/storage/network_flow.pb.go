@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -103,7 +103,7 @@ func (NetworkEntityInfo_Type) EnumDescriptor() ([]byte, []int) {
 
 type NetworkFlow struct {
 	Props             *NetworkFlowProperties `protobuf:"bytes,1,opt,name=props,proto3" json:"props,omitempty"`
-	LastSeenTimestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_seen_timestamp,json=lastSeenTimestamp,proto3" json:"last_seen_timestamp,omitempty" sql:"index=brin"` // @gotags: sql:"index=brin"
+	LastSeenTimestamp *types.Timestamp       `protobuf:"bytes,2,opt,name=last_seen_timestamp,json=lastSeenTimestamp,proto3" json:"last_seen_timestamp,omitempty" sql:"index=brin"` // @gotags: sql:"index=brin"
 	// Need the clusterID as that is part of the key in RocksDB
 	ClusterId            string   `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -151,7 +151,7 @@ func (m *NetworkFlow) GetProps() *NetworkFlowProperties {
 	return nil
 }
 
-func (m *NetworkFlow) GetLastSeenTimestamp() *timestamppb.Timestamp {
+func (m *NetworkFlow) GetLastSeenTimestamp() *types.Timestamp {
 	if m != nil {
 		return m.LastSeenTimestamp
 	}
@@ -271,7 +271,7 @@ func (m *NetworkFlowProperties) Clone() *NetworkFlowProperties {
 
 type NetworkEndpoint struct {
 	Props                *NetworkEndpointProperties `protobuf:"bytes,1,opt,name=props,proto3" json:"props,omitempty"`
-	LastActiveTimestamp  *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=last_active_timestamp,json=lastActiveTimestamp,proto3" json:"last_active_timestamp,omitempty"`
+	LastActiveTimestamp  *types.Timestamp           `protobuf:"bytes,2,opt,name=last_active_timestamp,json=lastActiveTimestamp,proto3" json:"last_active_timestamp,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
 	XXX_unrecognized     []byte                     `json:"-"`
 	XXX_sizecache        int32                      `json:"-"`
@@ -317,7 +317,7 @@ func (m *NetworkEndpoint) GetProps() *NetworkEndpointProperties {
 	return nil
 }
 
-func (m *NetworkEndpoint) GetLastActiveTimestamp() *timestamppb.Timestamp {
+func (m *NetworkEndpoint) GetLastActiveTimestamp() *types.Timestamp {
 	if m != nil {
 		return m.LastActiveTimestamp
 	}
@@ -1972,7 +1972,7 @@ func (m *NetworkFlow) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastSeenTimestamp == nil {
-				m.LastSeenTimestamp = &timestamppb.Timestamp{}
+				m.LastSeenTimestamp = &types.Timestamp{}
 			}
 			if err := m.LastSeenTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2288,7 +2288,7 @@ func (m *NetworkEndpoint) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastActiveTimestamp == nil {
-				m.LastActiveTimestamp = &timestamppb.Timestamp{}
+				m.LastActiveTimestamp = &types.Timestamp{}
 			}
 			if err := m.LastActiveTimestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

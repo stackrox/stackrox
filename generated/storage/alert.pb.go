@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -190,15 +190,15 @@ type Alert struct {
 	Violations       []*Alert_Violation      `protobuf:"bytes,5,rep,name=violations,proto3" json:"violations,omitempty" sensorhash:"ignore" search:"-"`                                      // @gotags: sensorhash:"ignore" search:"-"
 	ProcessViolation *Alert_ProcessViolation `protobuf:"bytes,13,opt,name=process_violation,json=processViolation,proto3" json:"process_violation,omitempty" search:"-"` // @gotags: search:"-"
 	Enforcement      *Alert_Enforcement      `protobuf:"bytes,6,opt,name=enforcement,proto3" json:"enforcement,omitempty"`
-	Time             *timestamppb.Timestamp  `protobuf:"bytes,7,opt,name=time,proto3" json:"time,omitempty" sensorhash:"ignore" search:"Violation Time"`                                         // @gotags: sensorhash:"ignore" search:"Violation Time"
-	FirstOccurred    *timestamppb.Timestamp  `protobuf:"bytes,10,opt,name=first_occurred,json=firstOccurred,proto3" json:"first_occurred,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
+	Time             *types.Timestamp        `protobuf:"bytes,7,opt,name=time,proto3" json:"time,omitempty" sensorhash:"ignore" search:"Violation Time"`                                         // @gotags: sensorhash:"ignore" search:"Violation Time"
+	FirstOccurred    *types.Timestamp        `protobuf:"bytes,10,opt,name=first_occurred,json=firstOccurred,proto3" json:"first_occurred,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
 	// The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
-	ResolvedAt           *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=resolved_at,json=resolvedAt,proto3" json:"resolved_at,omitempty" sensorhash:"ignore"`  // @gotags: sensorhash:"ignore"
-	State                ViolationState         `protobuf:"varint,11,opt,name=state,proto3,enum=storage.ViolationState" json:"state,omitempty" search:"Violation State,store" sql:"index=btree"` // @gotags: search:"Violation State,store" sql:"index=btree"
-	SnoozeTill           *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=snooze_till,json=snoozeTill,proto3" json:"snooze_till,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	ResolvedAt           *types.Timestamp `protobuf:"bytes,17,opt,name=resolved_at,json=resolvedAt,proto3" json:"resolved_at,omitempty" sensorhash:"ignore"`  // @gotags: sensorhash:"ignore"
+	State                ViolationState   `protobuf:"varint,11,opt,name=state,proto3,enum=storage.ViolationState" json:"state,omitempty" search:"Violation State,store" sql:"index=btree"` // @gotags: search:"Violation State,store" sql:"index=btree"
+	SnoozeTill           *types.Timestamp `protobuf:"bytes,12,opt,name=snooze_till,json=snoozeTill,proto3" json:"snooze_till,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *Alert) Reset()         { *m = Alert{} }
@@ -383,21 +383,21 @@ func (m *Alert) GetEnforcement() *Alert_Enforcement {
 	return nil
 }
 
-func (m *Alert) GetTime() *timestamppb.Timestamp {
+func (m *Alert) GetTime() *types.Timestamp {
 	if m != nil {
 		return m.Time
 	}
 	return nil
 }
 
-func (m *Alert) GetFirstOccurred() *timestamppb.Timestamp {
+func (m *Alert) GetFirstOccurred() *types.Timestamp {
 	if m != nil {
 		return m.FirstOccurred
 	}
 	return nil
 }
 
-func (m *Alert) GetResolvedAt() *timestamppb.Timestamp {
+func (m *Alert) GetResolvedAt() *types.Timestamp {
 	if m != nil {
 		return m.ResolvedAt
 	}
@@ -411,7 +411,7 @@ func (m *Alert) GetState() ViolationState {
 	return ViolationState_ACTIVE
 }
 
-func (m *Alert) GetSnoozeTill() *timestamppb.Timestamp {
+func (m *Alert) GetSnoozeTill() *types.Timestamp {
 	if m != nil {
 		return m.SnoozeTill
 	}
@@ -795,10 +795,10 @@ type Alert_Violation struct {
 	// Indicates violation time. This field differs from top-level field 'time' which represents last time the alert
 	// occurred in case of multiple occurrences of the policy alert. As of 55.0, this field is set only for kubernetes
 	// event violations, but may not be limited to it in future.
-	Time                 *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=time,proto3" json:"time,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Time                 *types.Timestamp `protobuf:"bytes,6,opt,name=time,proto3" json:"time,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *Alert_Violation) Reset()         { *m = Alert_Violation{} }
@@ -906,7 +906,7 @@ func (m *Alert_Violation) GetType() Alert_Violation_Type {
 	return Alert_Violation_GENERIC
 }
 
-func (m *Alert_Violation) GetTime() *timestamppb.Timestamp {
+func (m *Alert_Violation) GetTime() *types.Timestamp {
 	if m != nil {
 		return m.Time
 	}
@@ -1393,7 +1393,7 @@ func (m *Alert_Enforcement) Clone() *Alert_Enforcement {
 type ListAlert struct {
 	Id                string                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	LifecycleStage    LifecycleStage              `protobuf:"varint,2,opt,name=lifecycle_stage,json=lifecycleStage,proto3,enum=storage.LifecycleStage" json:"lifecycle_stage,omitempty" search:"Lifecycle Stage,store"` // @gotags: search:"Lifecycle Stage,store"
-	Time              *timestamppb.Timestamp      `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty" search:"Violation Time"`                                                                        // @gotags: search:"Violation Time"
+	Time              *types.Timestamp            `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty" search:"Violation Time"`                                                                        // @gotags: search:"Violation Time"
 	Policy            *ListAlertPolicy            `protobuf:"bytes,4,opt,name=policy,proto3" json:"policy,omitempty"`
 	State             ViolationState              `protobuf:"varint,6,opt,name=state,proto3,enum=storage.ViolationState" json:"state,omitempty" search:"Violation State,store"` // @gotags: search:"Violation State,store"
 	EnforcementCount  int32                       `protobuf:"varint,7,opt,name=enforcement_count,json=enforcementCount,proto3" json:"enforcement_count,omitempty"`
@@ -1501,7 +1501,7 @@ func (m *ListAlert) GetLifecycleStage() LifecycleStage {
 	return LifecycleStage_DEPLOY
 }
 
-func (m *ListAlert) GetTime() *timestamppb.Timestamp {
+func (m *ListAlert) GetTime() *types.Timestamp {
 	if m != nil {
 		return m.Time
 	}
@@ -4366,7 +4366,7 @@ func (m *Alert) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Time == nil {
-				m.Time = &timestamppb.Timestamp{}
+				m.Time = &types.Timestamp{}
 			}
 			if err := m.Time.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4402,7 +4402,7 @@ func (m *Alert) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.FirstOccurred == nil {
-				m.FirstOccurred = &timestamppb.Timestamp{}
+				m.FirstOccurred = &types.Timestamp{}
 			}
 			if err := m.FirstOccurred.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4457,7 +4457,7 @@ func (m *Alert) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SnoozeTill == nil {
-				m.SnoozeTill = &timestamppb.Timestamp{}
+				m.SnoozeTill = &types.Timestamp{}
 			}
 			if err := m.SnoozeTill.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4599,7 +4599,7 @@ func (m *Alert) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ResolvedAt == nil {
-				m.ResolvedAt = &timestamppb.Timestamp{}
+				m.ResolvedAt = &types.Timestamp{}
 			}
 			if err := m.ResolvedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5832,7 +5832,7 @@ func (m *Alert_Violation) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Time == nil {
-				m.Time = &timestamppb.Timestamp{}
+				m.Time = &types.Timestamp{}
 			}
 			if err := m.Time.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -6751,7 +6751,7 @@ func (m *ListAlert) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Time == nil {
-				m.Time = &timestamppb.Timestamp{}
+				m.Time = &types.Timestamp{}
 			}
 			if err := m.Time.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

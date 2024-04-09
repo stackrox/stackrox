@@ -5,8 +5,8 @@ package v1
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -258,16 +258,16 @@ func (m *GetActiveComplianceRunsResponse) Clone() *GetActiveComplianceRunsRespon
 }
 
 type ComplianceRun struct {
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	ClusterId            string                 `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	StandardId           string                 `protobuf:"bytes,3,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty"`
-	StartTime            *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	FinishTime           *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=finish_time,json=finishTime,proto3" json:"finish_time,omitempty"`
-	State                ComplianceRun_State    `protobuf:"varint,7,opt,name=state,proto3,enum=v1.ComplianceRun_State" json:"state,omitempty"`
-	ErrorMessage         string                 `protobuf:"bytes,8,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Id                   string              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ClusterId            string              `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	StandardId           string              `protobuf:"bytes,3,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty"`
+	StartTime            *types.Timestamp    `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	FinishTime           *types.Timestamp    `protobuf:"bytes,6,opt,name=finish_time,json=finishTime,proto3" json:"finish_time,omitempty"`
+	State                ComplianceRun_State `protobuf:"varint,7,opt,name=state,proto3,enum=v1.ComplianceRun_State" json:"state,omitempty"`
+	ErrorMessage         string              `protobuf:"bytes,8,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
+	XXX_unrecognized     []byte              `json:"-"`
+	XXX_sizecache        int32               `json:"-"`
 }
 
 func (m *ComplianceRun) Reset()         { *m = ComplianceRun{} }
@@ -324,14 +324,14 @@ func (m *ComplianceRun) GetStandardId() string {
 	return ""
 }
 
-func (m *ComplianceRun) GetStartTime() *timestamppb.Timestamp {
+func (m *ComplianceRun) GetStartTime() *types.Timestamp {
 	if m != nil {
 		return m.StartTime
 	}
 	return nil
 }
 
-func (m *ComplianceRun) GetFinishTime() *timestamppb.Timestamp {
+func (m *ComplianceRun) GetFinishTime() *types.Timestamp {
 	if m != nil {
 		return m.FinishTime
 	}
@@ -374,7 +374,7 @@ type GetRecentComplianceRunsRequest struct {
 	// Types that are valid to be assigned to StandardIdOpt:
 	//	*GetRecentComplianceRunsRequest_StandardId
 	StandardIdOpt        isGetRecentComplianceRunsRequest_StandardIdOpt `protobuf_oneof:"standard_id_opt"`
-	Since                *timestamppb.Timestamp                         `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
+	Since                *types.Timestamp                               `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                                       `json:"-"`
 	XXX_unrecognized     []byte                                         `json:"-"`
 	XXX_sizecache        int32                                          `json:"-"`
@@ -481,7 +481,7 @@ func (m *GetRecentComplianceRunsRequest) GetStandardId() string {
 	return ""
 }
 
-func (m *GetRecentComplianceRunsRequest) GetSince() *timestamppb.Timestamp {
+func (m *GetRecentComplianceRunsRequest) GetSince() *types.Timestamp {
 	if m != nil {
 		return m.Since
 	}
@@ -2380,7 +2380,7 @@ func (m *ComplianceRun) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.StartTime == nil {
-				m.StartTime = &timestamppb.Timestamp{}
+				m.StartTime = &types.Timestamp{}
 			}
 			if err := m.StartTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2416,7 +2416,7 @@ func (m *ComplianceRun) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.FinishTime == nil {
-				m.FinishTime = &timestamppb.Timestamp{}
+				m.FinishTime = &types.Timestamp{}
 			}
 			if err := m.FinishTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2618,7 +2618,7 @@ func (m *GetRecentComplianceRunsRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Since == nil {
-				m.Since = &timestamppb.Timestamp{}
+				m.Since = &types.Timestamp{}
 			}
 			if err := m.Since.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

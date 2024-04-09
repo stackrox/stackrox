@@ -5,9 +5,9 @@ package v1
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -344,11 +344,11 @@ func (m *ResolveAlertsRequest) Clone() *ResolveAlertsRequest {
 }
 
 type SnoozeAlertRequest struct {
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	SnoozeTill           *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=snooze_till,json=snoozeTill,proto3" json:"snooze_till,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	SnoozeTill           *types.Timestamp `protobuf:"bytes,2,opt,name=snooze_till,json=snoozeTill,proto3" json:"snooze_till,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *SnoozeAlertRequest) Reset()         { *m = SnoozeAlertRequest{} }
@@ -391,7 +391,7 @@ func (m *SnoozeAlertRequest) GetId() string {
 	return ""
 }
 
-func (m *SnoozeAlertRequest) GetSnoozeTill() *timestamppb.Timestamp {
+func (m *SnoozeAlertRequest) GetSnoozeTill() *types.Timestamp {
 	if m != nil {
 		return m.SnoozeTill
 	}
@@ -3059,7 +3059,7 @@ func (m *SnoozeAlertRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SnoozeTill == nil {
-				m.SnoozeTill = &timestamppb.Timestamp{}
+				m.SnoozeTill = &types.Timestamp{}
 			}
 			if err := m.SnoozeTill.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

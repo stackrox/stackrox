@@ -5,9 +5,9 @@ package v1
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -128,12 +128,12 @@ type AuthStatus struct {
 	// Types that are valid to be assigned to Id:
 	//	*AuthStatus_UserId
 	//	*AuthStatus_ServiceId
-	Id             isAuthStatus_Id        `protobuf_oneof:"id"`
-	Expires        *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires,proto3" json:"expires,omitempty"`
-	RefreshUrl     string                 `protobuf:"bytes,4,opt,name=refresh_url,json=refreshUrl,proto3" json:"refresh_url,omitempty"`
-	AuthProvider   *storage.AuthProvider  `protobuf:"bytes,5,opt,name=auth_provider,json=authProvider,proto3" json:"auth_provider,omitempty"`
-	UserInfo       *storage.UserInfo      `protobuf:"bytes,6,opt,name=user_info,json=userInfo,proto3" json:"user_info,omitempty"`
-	UserAttributes []*UserAttribute       `protobuf:"bytes,7,rep,name=user_attributes,json=userAttributes,proto3" json:"user_attributes,omitempty"`
+	Id             isAuthStatus_Id       `protobuf_oneof:"id"`
+	Expires        *types.Timestamp      `protobuf:"bytes,3,opt,name=expires,proto3" json:"expires,omitempty"`
+	RefreshUrl     string                `protobuf:"bytes,4,opt,name=refresh_url,json=refreshUrl,proto3" json:"refresh_url,omitempty"`
+	AuthProvider   *storage.AuthProvider `protobuf:"bytes,5,opt,name=auth_provider,json=authProvider,proto3" json:"auth_provider,omitempty"`
+	UserInfo       *storage.UserInfo     `protobuf:"bytes,6,opt,name=user_info,json=userInfo,proto3" json:"user_info,omitempty"`
+	UserAttributes []*UserAttribute      `protobuf:"bytes,7,rep,name=user_attributes,json=userAttributes,proto3" json:"user_attributes,omitempty"`
 	// Token returned to ACS by the underlying identity provider. This field is set only in a few,
 	// specific contexts. Do not rely on this field being present in the response.
 	IdpToken             string   `protobuf:"bytes,8,opt,name=idp_token,json=idpToken,proto3" json:"idp_token,omitempty"`
@@ -232,7 +232,7 @@ func (m *AuthStatus) GetServiceId() *storage.ServiceIdentity {
 	return nil
 }
 
-func (m *AuthStatus) GetExpires() *timestamppb.Timestamp {
+func (m *AuthStatus) GetExpires() *types.Timestamp {
 	if m != nil {
 		return m.Expires
 	}
@@ -2105,7 +2105,7 @@ func (m *AuthStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Expires == nil {
-				m.Expires = &timestamppb.Timestamp{}
+				m.Expires = &types.Timestamp{}
 			}
 			if err := m.Expires.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

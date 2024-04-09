@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -89,13 +89,13 @@ func (RequestExpiry_ExpiryType) EnumDescriptor() ([]byte, []int) {
 }
 
 type RequestComment struct {
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Message              string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	User                 *SlimUser              `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
-	CreatedAt            *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Message              string           `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	User                 *SlimUser        `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	CreatedAt            *types.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *RequestComment) Reset()         { *m = RequestComment{} }
@@ -152,7 +152,7 @@ func (m *RequestComment) GetUser() *SlimUser {
 	return nil
 }
 
-func (m *RequestComment) GetCreatedAt() *timestamppb.Timestamp {
+func (m *RequestComment) GetCreatedAt() *types.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -235,7 +235,7 @@ type RequestExpiry_ExpiresWhenFixed struct {
 	ExpiresWhenFixed bool `protobuf:"varint,1,opt,name=expires_when_fixed,json=expiresWhenFixed,proto3,oneof" json:"expires_when_fixed,omitempty" search:"Request Expires When Fixed"` // @gotags: search:"Request Expires When Fixed"
 }
 type RequestExpiry_ExpiresOn struct {
-	ExpiresOn *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires_on,json=expiresOn,proto3,oneof" json:"expires_on,omitempty" search:"Request Expiry Time"` // @gotags: search:"Request Expiry Time"
+	ExpiresOn *types.Timestamp `protobuf:"bytes,2,opt,name=expires_on,json=expiresOn,proto3,oneof" json:"expires_on,omitempty" search:"Request Expiry Time"` // @gotags: search:"Request Expiry Time"
 }
 
 func (*RequestExpiry_ExpiresWhenFixed) isRequestExpiry_Expiry() {}
@@ -274,7 +274,7 @@ func (m *RequestExpiry) GetExpiresWhenFixed() bool {
 	return false
 }
 
-func (m *RequestExpiry) GetExpiresOn() *timestamppb.Timestamp {
+func (m *RequestExpiry) GetExpiresOn() *types.Timestamp {
 	if x, ok := m.GetExpiry().(*RequestExpiry_ExpiresOn); ok {
 		return x.ExpiresOn
 	}
@@ -712,8 +712,8 @@ type VulnerabilityRequest struct {
 	Expired     bool                        `protobuf:"varint,4,opt,name=expired,proto3" json:"expired,omitempty" search:"Expired Request"`                           // @gotags: search:"Expired Request"
 	Requestor   *SlimUser                   `protobuf:"bytes,5,opt,name=requestor,proto3" json:"requestor,omitempty" sql:"ignore_labels(User ID)"`                        // Deprecated: Do not use. // @gotags: sql:"ignore_labels(User ID)"
 	Approvers   []*SlimUser                 `protobuf:"bytes,6,rep,name=approvers,proto3" json:"approvers,omitempty" sql:"ignore_labels(User ID)"`                        // Deprecated: Do not use. // @gotags: sql:"ignore_labels(User ID)"
-	CreatedAt   *timestamppb.Timestamp      `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time"`       // @gotags: search:"Created Time"
-	LastUpdated *timestamppb.Timestamp      `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated"` // @gotags: search:"Last Updated"
+	CreatedAt   *types.Timestamp            `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time"`       // @gotags: search:"Created Time"
+	LastUpdated *types.Timestamp            `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated"` // @gotags: search:"Last Updated"
 	Comments    []*RequestComment           `protobuf:"bytes,9,rep,name=comments,proto3" json:"comments,omitempty"`
 	Scope       *VulnerabilityRequest_Scope `protobuf:"bytes,10,opt,name=scope,proto3" json:"scope,omitempty"`
 	RequesterV2 *Requester                  `protobuf:"bytes,28,opt,name=requester_v2,json=requesterV2,proto3" json:"requester_v2,omitempty"`
@@ -949,14 +949,14 @@ func (m *VulnerabilityRequest) GetApprovers() []*SlimUser {
 	return nil
 }
 
-func (m *VulnerabilityRequest) GetCreatedAt() *timestamppb.Timestamp {
+func (m *VulnerabilityRequest) GetCreatedAt() *types.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
 	return nil
 }
 
-func (m *VulnerabilityRequest) GetLastUpdated() *timestamppb.Timestamp {
+func (m *VulnerabilityRequest) GetLastUpdated() *types.Timestamp {
 	if m != nil {
 		return m.LastUpdated
 	}
@@ -2988,7 +2988,7 @@ func (m *RequestComment) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &timestamppb.Timestamp{}
+				m.CreatedAt = &types.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3095,7 +3095,7 @@ func (m *RequestExpiry) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &timestamppb.Timestamp{}
+			v := &types.Timestamp{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -3931,7 +3931,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &timestamppb.Timestamp{}
+				m.CreatedAt = &types.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3967,7 +3967,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdated == nil {
-				m.LastUpdated = &timestamppb.Timestamp{}
+				m.LastUpdated = &types.Timestamp{}
 			}
 			if err := m.LastUpdated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

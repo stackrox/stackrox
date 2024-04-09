@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -400,13 +400,13 @@ func (m *AlertRetentionConfig) Clone() *AlertRetentionConfig {
 
 // next available tag: 5
 type DecommissionedClusterRetentionConfig struct {
-	RetentionDurationDays int32                  `protobuf:"varint,1,opt,name=retention_duration_days,json=retentionDurationDays,proto3" json:"retention_duration_days,omitempty"`
-	IgnoreClusterLabels   map[string]string      `protobuf:"bytes,2,rep,name=ignore_cluster_labels,json=ignoreClusterLabels,proto3" json:"ignore_cluster_labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	LastUpdated           *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
-	CreatedAt             *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	XXX_NoUnkeyedLiteral  struct{}               `json:"-"`
-	XXX_unrecognized      []byte                 `json:"-"`
-	XXX_sizecache         int32                  `json:"-"`
+	RetentionDurationDays int32             `protobuf:"varint,1,opt,name=retention_duration_days,json=retentionDurationDays,proto3" json:"retention_duration_days,omitempty"`
+	IgnoreClusterLabels   map[string]string `protobuf:"bytes,2,rep,name=ignore_cluster_labels,json=ignoreClusterLabels,proto3" json:"ignore_cluster_labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	LastUpdated           *types.Timestamp  `protobuf:"bytes,3,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	CreatedAt             *types.Timestamp  `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral  struct{}          `json:"-"`
+	XXX_unrecognized      []byte            `json:"-"`
+	XXX_sizecache         int32             `json:"-"`
 }
 
 func (m *DecommissionedClusterRetentionConfig) Reset()         { *m = DecommissionedClusterRetentionConfig{} }
@@ -456,14 +456,14 @@ func (m *DecommissionedClusterRetentionConfig) GetIgnoreClusterLabels() map[stri
 	return nil
 }
 
-func (m *DecommissionedClusterRetentionConfig) GetLastUpdated() *timestamppb.Timestamp {
+func (m *DecommissionedClusterRetentionConfig) GetLastUpdated() *types.Timestamp {
 	if m != nil {
 		return m.LastUpdated
 	}
 	return nil
 }
 
-func (m *DecommissionedClusterRetentionConfig) GetCreatedAt() *timestamppb.Timestamp {
+func (m *DecommissionedClusterRetentionConfig) GetCreatedAt() *types.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -3217,7 +3217,7 @@ func (m *DecommissionedClusterRetentionConfig) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdated == nil {
-				m.LastUpdated = &timestamppb.Timestamp{}
+				m.LastUpdated = &types.Timestamp{}
 			}
 			if err := m.LastUpdated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3253,7 +3253,7 @@ func (m *DecommissionedClusterRetentionConfig) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &timestamppb.Timestamp{}
+				m.CreatedAt = &types.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

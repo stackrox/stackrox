@@ -5,8 +5,8 @@ package v2
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -286,7 +286,7 @@ func (m *ComplianceCheckResult) Clone() *ComplianceCheckResult {
 type ComplianceCheckResult_ClusterCheckStatus struct {
 	Cluster              *ComplianceScanCluster `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	Status               ComplianceCheckStatus  `protobuf:"varint,2,opt,name=status,proto3,enum=v2.ComplianceCheckStatus" json:"status,omitempty"`
-	CreatedTime          *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
+	CreatedTime          *types.Timestamp       `protobuf:"bytes,3,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
 	CheckUid             string                 `protobuf:"bytes,4,opt,name=check_uid,json=checkUid,proto3" json:"check_uid,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -342,7 +342,7 @@ func (m *ComplianceCheckResult_ClusterCheckStatus) GetStatus() ComplianceCheckSt
 	return ComplianceCheckStatus_UNSET_CHECK_STATUS
 }
 
-func (m *ComplianceCheckResult_ClusterCheckStatus) GetCreatedTime() *timestamppb.Timestamp {
+func (m *ComplianceCheckResult_ClusterCheckStatus) GetCreatedTime() *types.Timestamp {
 	if m != nil {
 		return m.CreatedTime
 	}
@@ -535,7 +535,7 @@ func (m *ComplianceCheckStatusCount) Clone() *ComplianceCheckStatusCount {
 type ComplianceScanStatsShim struct {
 	ScanName             string                        `protobuf:"bytes,1,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
 	CheckStats           []*ComplianceCheckStatusCount `protobuf:"bytes,2,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
-	LastScan             *timestamppb.Timestamp        `protobuf:"bytes,3,opt,name=last_scan,json=lastScan,proto3" json:"last_scan,omitempty"`
+	LastScan             *types.Timestamp              `protobuf:"bytes,3,opt,name=last_scan,json=lastScan,proto3" json:"last_scan,omitempty"`
 	ScanConfigId         string                        `protobuf:"bytes,4,opt,name=scan_config_id,json=scanConfigId,proto3" json:"scan_config_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
 	XXX_unrecognized     []byte                        `json:"-"`
@@ -589,7 +589,7 @@ func (m *ComplianceScanStatsShim) GetCheckStats() []*ComplianceCheckStatusCount 
 	return nil
 }
 
-func (m *ComplianceScanStatsShim) GetLastScan() *timestamppb.Timestamp {
+func (m *ComplianceScanStatsShim) GetLastScan() *types.Timestamp {
 	if m != nil {
 		return m.LastScan
 	}
@@ -4079,7 +4079,7 @@ func (m *ComplianceCheckResult_ClusterCheckStatus) Unmarshal(dAtA []byte) error 
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedTime == nil {
-				m.CreatedTime = &timestamppb.Timestamp{}
+				m.CreatedTime = &types.Timestamp{}
 			}
 			if err := m.CreatedTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4534,7 +4534,7 @@ func (m *ComplianceScanStatsShim) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastScan == nil {
-				m.LastScan = &timestamppb.Timestamp{}
+				m.LastScan = &types.Timestamp{}
 			}
 			if err := m.LastScan.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

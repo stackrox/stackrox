@@ -5,8 +5,8 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -24,16 +24,16 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type TokenMetadata struct {
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Name                 string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Roles                []string               `protobuf:"bytes,7,rep,name=roles,proto3" json:"roles,omitempty"`
-	IssuedAt             *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=issued_at,json=issuedAt,proto3" json:"issued_at,omitempty"`
-	Expiration           *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expiration,proto3" json:"expiration,omitempty" search:"Expiration,store"` // @gotags: search:"Expiration,store"
-	Revoked              bool                   `protobuf:"varint,6,opt,name=revoked,proto3" json:"revoked,omitempty" search:"Revoked,store"`      // @gotags: search:"Revoked,store"
-	Role                 string                 `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`             // Deprecated: Do not use.
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Name                 string           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Roles                []string         `protobuf:"bytes,7,rep,name=roles,proto3" json:"roles,omitempty"`
+	IssuedAt             *types.Timestamp `protobuf:"bytes,4,opt,name=issued_at,json=issuedAt,proto3" json:"issued_at,omitempty"`
+	Expiration           *types.Timestamp `protobuf:"bytes,5,opt,name=expiration,proto3" json:"expiration,omitempty" search:"Expiration,store"` // @gotags: search:"Expiration,store"
+	Revoked              bool             `protobuf:"varint,6,opt,name=revoked,proto3" json:"revoked,omitempty" search:"Revoked,store"`      // @gotags: search:"Revoked,store"
+	Role                 string           `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`             // Deprecated: Do not use.
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *TokenMetadata) Reset()         { *m = TokenMetadata{} }
@@ -90,14 +90,14 @@ func (m *TokenMetadata) GetRoles() []string {
 	return nil
 }
 
-func (m *TokenMetadata) GetIssuedAt() *timestamppb.Timestamp {
+func (m *TokenMetadata) GetIssuedAt() *types.Timestamp {
 	if m != nil {
 		return m.IssuedAt
 	}
 	return nil
 }
 
-func (m *TokenMetadata) GetExpiration() *timestamppb.Timestamp {
+func (m *TokenMetadata) GetExpiration() *types.Timestamp {
 	if m != nil {
 		return m.Expiration
 	}
@@ -470,7 +470,7 @@ func (m *TokenMetadata) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.IssuedAt == nil {
-				m.IssuedAt = &timestamppb.Timestamp{}
+				m.IssuedAt = &types.Timestamp{}
 			}
 			if err := m.IssuedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -506,7 +506,7 @@ func (m *TokenMetadata) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Expiration == nil {
-				m.Expiration = &timestamppb.Timestamp{}
+				m.Expiration = &types.Timestamp{}
 			}
 			if err := m.Expiration.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

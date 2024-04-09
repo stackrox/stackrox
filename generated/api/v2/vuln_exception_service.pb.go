@@ -5,8 +5,8 @@ package v2
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -88,13 +88,13 @@ func (ExceptionExpiry_ExpiryType) EnumDescriptor() ([]byte, []int) {
 }
 
 type Comment struct {
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Message              string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	User                 *SlimUser              `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
-	CreatedAt            *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Message              string           `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	User                 *SlimUser        `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
+	CreatedAt            *types.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *Comment) Reset()         { *m = Comment{} }
@@ -151,7 +151,7 @@ func (m *Comment) GetUser() *SlimUser {
 	return nil
 }
 
-func (m *Comment) GetCreatedAt() *timestamppb.Timestamp {
+func (m *Comment) GetCreatedAt() *types.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -180,10 +180,10 @@ type ExceptionExpiry struct {
 	// `ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.
 	ExpiryType ExceptionExpiry_ExpiryType `protobuf:"varint,1,opt,name=expiry_type,json=expiryType,proto3,enum=v2.ExceptionExpiry_ExpiryType" json:"expiry_type,omitempty"`
 	// Indicates the timestamp when the exception expires. This field is REQUIRED only if the expiry type is set to TIME.
-	ExpiresOn            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires_on,json=expiresOn,proto3" json:"expires_on,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	ExpiresOn            *types.Timestamp `protobuf:"bytes,2,opt,name=expires_on,json=expiresOn,proto3" json:"expires_on,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *ExceptionExpiry) Reset()         { *m = ExceptionExpiry{} }
@@ -226,7 +226,7 @@ func (m *ExceptionExpiry) GetExpiryType() ExceptionExpiry_ExpiryType {
 	return ExceptionExpiry_TIME
 }
 
-func (m *ExceptionExpiry) GetExpiresOn() *timestamppb.Timestamp {
+func (m *ExceptionExpiry) GetExpiresOn() *types.Timestamp {
 	if m != nil {
 		return m.ExpiresOn
 	}
@@ -371,12 +371,12 @@ type VulnerabilityException struct {
 	// Indicates the status of the exception.
 	Status ExceptionStatus `protobuf:"varint,4,opt,name=status,proto3,enum=v2.ExceptionStatus" json:"status,omitempty"`
 	// If set to `true`, this field indicates that the exception is no longer enforced.
-	Expired     bool                   `protobuf:"varint,5,opt,name=expired,proto3" json:"expired,omitempty"`
-	Requester   *SlimUser              `protobuf:"bytes,6,opt,name=requester,proto3" json:"requester,omitempty"`
-	Approvers   []*SlimUser            `protobuf:"bytes,7,rep,name=approvers,proto3" json:"approvers,omitempty"`
-	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	LastUpdated *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
-	Comments    []*Comment             `protobuf:"bytes,10,rep,name=comments,proto3" json:"comments,omitempty"`
+	Expired     bool             `protobuf:"varint,5,opt,name=expired,proto3" json:"expired,omitempty"`
+	Requester   *SlimUser        `protobuf:"bytes,6,opt,name=requester,proto3" json:"requester,omitempty"`
+	Approvers   []*SlimUser      `protobuf:"bytes,7,rep,name=approvers,proto3" json:"approvers,omitempty"`
+	CreatedAt   *types.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	LastUpdated *types.Timestamp `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	Comments    []*Comment       `protobuf:"bytes,10,rep,name=comments,proto3" json:"comments,omitempty"`
 	// Indicates the scope of enforcement of the exception.
 	Scope *VulnerabilityException_Scope `protobuf:"bytes,11,opt,name=scope,proto3" json:"scope,omitempty"`
 	// Types that are valid to be assigned to Req:
@@ -560,14 +560,14 @@ func (m *VulnerabilityException) GetApprovers() []*SlimUser {
 	return nil
 }
 
-func (m *VulnerabilityException) GetCreatedAt() *timestamppb.Timestamp {
+func (m *VulnerabilityException) GetCreatedAt() *types.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
 	return nil
 }
 
-func (m *VulnerabilityException) GetLastUpdated() *timestamppb.Timestamp {
+func (m *VulnerabilityException) GetLastUpdated() *types.Timestamp {
 	if m != nil {
 		return m.LastUpdated
 	}
@@ -3974,7 +3974,7 @@ func (m *Comment) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &timestamppb.Timestamp{}
+				m.CreatedAt = &types.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4080,7 +4080,7 @@ func (m *ExceptionExpiry) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ExpiresOn == nil {
-				m.ExpiresOn = &timestamppb.Timestamp{}
+				m.ExpiresOn = &types.Timestamp{}
 			}
 			if err := m.ExpiresOn.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4497,7 +4497,7 @@ func (m *VulnerabilityException) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CreatedAt == nil {
-				m.CreatedAt = &timestamppb.Timestamp{}
+				m.CreatedAt = &types.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4533,7 +4533,7 @@ func (m *VulnerabilityException) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdated == nil {
-				m.LastUpdated = &timestamppb.Timestamp{}
+				m.LastUpdated = &types.Timestamp{}
 			}
 			if err := m.LastUpdated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

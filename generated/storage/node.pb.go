@@ -6,8 +6,8 @@ package storage
 import (
 	encoding_binary "encoding/binary"
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -122,7 +122,7 @@ type Node struct {
 	Labels      map[string]string `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Node Label"`           // @gotags: search:"Node Label"
 	Annotations map[string]string `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Node Annotation"` // @gotags: search:"Node Annotation"
 	// When the cluster reported the node was added
-	JoinedAt *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty" search:"Node Join Time,store"` // @gotags: search:"Node Join Time,store"
+	JoinedAt *types.Timestamp `protobuf:"bytes,13,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty" search:"Node Join Time,store"` // @gotags: search:"Node Join Time,store"
 	// node internal IP addresses
 	InternalIpAddresses []string `protobuf:"bytes,8,rep,name=internal_ip_addresses,json=internalIpAddresses,proto3" json:"internal_ip_addresses,omitempty"`
 	// node external IP addresses
@@ -134,13 +134,13 @@ type Node struct {
 	// From NodeInfo. Operating system reported by the node (ex: linux).
 	OperatingSystem string `protobuf:"bytes,17,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
 	// From NodeInfo. OS image reported by the node from /etc/os-release.
-	OsImage          string                 `protobuf:"bytes,12,opt,name=os_image,json=osImage,proto3" json:"os_image,omitempty" search:"Operating System,store"` // @gotags: search:"Operating System,store"
-	KubeletVersion   string                 `protobuf:"bytes,15,opt,name=kubelet_version,json=kubeletVersion,proto3" json:"kubelet_version,omitempty"`
-	KubeProxyVersion string                 `protobuf:"bytes,16,opt,name=kube_proxy_version,json=kubeProxyVersion,proto3" json:"kube_proxy_version,omitempty"`
-	LastUpdated      *timestamppb.Timestamp `protobuf:"bytes,25,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
+	OsImage          string           `protobuf:"bytes,12,opt,name=os_image,json=osImage,proto3" json:"os_image,omitempty" search:"Operating System,store"` // @gotags: search:"Operating System,store"
+	KubeletVersion   string           `protobuf:"bytes,15,opt,name=kubelet_version,json=kubeletVersion,proto3" json:"kubelet_version,omitempty"`
+	KubeProxyVersion string           `protobuf:"bytes,16,opt,name=kube_proxy_version,json=kubeProxyVersion,proto3" json:"kube_proxy_version,omitempty"`
+	LastUpdated      *types.Timestamp `protobuf:"bytes,25,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
 	// Time we received an update from Kubernetes.
-	K8SUpdated *timestamppb.Timestamp `protobuf:"bytes,26,opt,name=k8s_updated,json=k8sUpdated,proto3" json:"k8s_updated,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
-	Scan       *NodeScan              `protobuf:"bytes,18,opt,name=scan,proto3" json:"scan,omitempty" policy:"Node Scan"`                               // @gotags: policy:"Node Scan"
+	K8SUpdated *types.Timestamp `protobuf:"bytes,26,opt,name=k8s_updated,json=k8sUpdated,proto3" json:"k8s_updated,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
+	Scan       *NodeScan        `protobuf:"bytes,18,opt,name=scan,proto3" json:"scan,omitempty" policy:"Node Scan"`                               // @gotags: policy:"Node Scan"
 	// Types that are valid to be assigned to SetComponents:
 	//	*Node_Components
 	SetComponents isNode_SetComponents `protobuf_oneof:"set_components"`
@@ -347,7 +347,7 @@ func (m *Node) GetAnnotations() map[string]string {
 	return nil
 }
 
-func (m *Node) GetJoinedAt() *timestamppb.Timestamp {
+func (m *Node) GetJoinedAt() *types.Timestamp {
 	if m != nil {
 		return m.JoinedAt
 	}
@@ -418,14 +418,14 @@ func (m *Node) GetKubeProxyVersion() string {
 	return ""
 }
 
-func (m *Node) GetLastUpdated() *timestamppb.Timestamp {
+func (m *Node) GetLastUpdated() *types.Timestamp {
 	if m != nil {
 		return m.LastUpdated
 	}
 	return nil
 }
 
-func (m *Node) GetK8SUpdated() *timestamppb.Timestamp {
+func (m *Node) GetK8SUpdated() *types.Timestamp {
 	if m != nil {
 		return m.K8SUpdated
 	}
@@ -560,7 +560,7 @@ func (m *Node) Clone() *Node {
 
 // Next tag: 5
 type NodeScan struct {
-	ScanTime             *timestamppb.Timestamp       `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Node Scan Time,store"` // @gotags: search:"Node Scan Time,store"
+	ScanTime             *types.Timestamp             `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Node Scan Time,store"` // @gotags: search:"Node Scan Time,store"
 	OperatingSystem      string                       `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
 	Components           []*EmbeddedNodeScanComponent `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty" sql:"-"` // @gotags: sql:"-"
 	Notes                []NodeScan_Note              `protobuf:"varint,4,rep,packed,name=notes,proto3,enum=storage.NodeScan_Note" json:"notes,omitempty"`
@@ -602,7 +602,7 @@ func (m *NodeScan) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_NodeScan proto.InternalMessageInfo
 
-func (m *NodeScan) GetScanTime() *timestamppb.Timestamp {
+func (m *NodeScan) GetScanTime() *types.Timestamp {
 	if m != nil {
 		return m.ScanTime
 	}
@@ -655,9 +655,9 @@ func (m *NodeScan) Clone() *NodeScan {
 }
 
 type NodeInventory struct {
-	NodeId   string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	NodeName string                 `protobuf:"bytes,2,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty"`
-	ScanTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
+	NodeId   string           `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	NodeName string           `protobuf:"bytes,2,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty"`
+	ScanTime *types.Timestamp `protobuf:"bytes,3,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
 	// Components represents a subset of the scannerV1.Components proto message containing only fields required for RHCOS node scanning.
 	// Keep scanner Components and NodeInventory_Components in sync to the degree defined by fuctions:
 	// func convertAndDedupRHELComponents (in pkg 'nodeinventorizer'), and the respective reverse convertion in pkg 'clairify'.
@@ -719,7 +719,7 @@ func (m *NodeInventory) GetNodeName() string {
 	return ""
 }
 
-func (m *NodeInventory) GetScanTime() *timestamppb.Timestamp {
+func (m *NodeInventory) GetScanTime() *types.Timestamp {
 	if m != nil {
 		return m.ScanTime
 	}
@@ -3305,7 +3305,7 @@ func (m *Node) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.JoinedAt == nil {
-				m.JoinedAt = &timestamppb.Timestamp{}
+				m.JoinedAt = &types.Timestamp{}
 			}
 			if err := m.JoinedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3610,7 +3610,7 @@ func (m *Node) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdated == nil {
-				m.LastUpdated = &timestamppb.Timestamp{}
+				m.LastUpdated = &types.Timestamp{}
 			}
 			if err := m.LastUpdated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3646,7 +3646,7 @@ func (m *Node) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.K8SUpdated == nil {
-				m.K8SUpdated = &timestamppb.Timestamp{}
+				m.K8SUpdated = &types.Timestamp{}
 			}
 			if err := m.K8SUpdated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3802,7 +3802,7 @@ func (m *NodeScan) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ScanTime == nil {
-				m.ScanTime = &timestamppb.Timestamp{}
+				m.ScanTime = &types.Timestamp{}
 			}
 			if err := m.ScanTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4088,7 +4088,7 @@ func (m *NodeInventory) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ScanTime == nil {
-				m.ScanTime = &timestamppb.Timestamp{}
+				m.ScanTime = &types.Timestamp{}
 			}
 			if err := m.ScanTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

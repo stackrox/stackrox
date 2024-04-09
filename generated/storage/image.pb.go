@@ -6,8 +6,8 @@ package storage
 import (
 	encoding_binary "encoding/binary"
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -202,12 +202,12 @@ type Image struct {
 	SetCves isImage_SetCves `protobuf_oneof:"set_cves"`
 	// Types that are valid to be assigned to SetFixable:
 	//	*Image_FixableCves
-	SetFixable     isImage_SetFixable     `protobuf_oneof:"set_fixable"`
-	LastUpdated    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
-	NotPullable    bool                   `protobuf:"varint,10,opt,name=not_pullable,json=notPullable,proto3" json:"not_pullable,omitempty"`
-	IsClusterLocal bool                   `protobuf:"varint,17,opt,name=is_cluster_local,json=isClusterLocal,proto3" json:"is_cluster_local,omitempty"`
-	Priority       int64                  `protobuf:"varint,11,opt,name=priority,proto3" json:"priority,omitempty" search:"Image Risk Priority,hidden"`                     // @gotags: search:"Image Risk Priority,hidden"
-	RiskScore      float32                `protobuf:"fixed32,12,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Image Risk Score,hidden"` // @gotags: search:"Image Risk Score,hidden"
+	SetFixable     isImage_SetFixable `protobuf_oneof:"set_fixable"`
+	LastUpdated    *types.Timestamp   `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
+	NotPullable    bool               `protobuf:"varint,10,opt,name=not_pullable,json=notPullable,proto3" json:"not_pullable,omitempty"`
+	IsClusterLocal bool               `protobuf:"varint,17,opt,name=is_cluster_local,json=isClusterLocal,proto3" json:"is_cluster_local,omitempty"`
+	Priority       int64              `protobuf:"varint,11,opt,name=priority,proto3" json:"priority,omitempty" search:"Image Risk Priority,hidden"`                     // @gotags: search:"Image Risk Priority,hidden"
+	RiskScore      float32            `protobuf:"fixed32,12,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Image Risk Score,hidden"` // @gotags: search:"Image Risk Score,hidden"
 	// Types that are valid to be assigned to SetTopCvss:
 	//	*Image_TopCvss
 	SetTopCvss           isImage_SetTopCvss `protobuf_oneof:"set_top_cvss"`
@@ -424,7 +424,7 @@ func (m *Image) GetFixableCves() int32 {
 	return 0
 }
 
-func (m *Image) GetLastUpdated() *timestamppb.Timestamp {
+func (m *Image) GetLastUpdated() *types.Timestamp {
 	if m != nil {
 		return m.LastUpdated
 	}
@@ -603,7 +603,7 @@ func (m *DataSource) Clone() *DataSource {
 // Next tag: 8
 type ImageScan struct {
 	ScannerVersion  string                        `protobuf:"bytes,6,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
-	ScanTime        *timestamppb.Timestamp        `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Image Scan Time,store"`                      // @gotags: search:"Image Scan Time,store"
+	ScanTime        *types.Timestamp              `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Image Scan Time,store"`                      // @gotags: search:"Image Scan Time,store"
 	Components      []*EmbeddedImageScanComponent `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty" sql:"-"`                                  // @gotags: sql:"-"
 	OperatingSystem string                        `protobuf:"bytes,4,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Image OS,store"` // @gotags: search:"Image OS,store"
 	// DataSource contains information about which integration was used to scan the image
@@ -686,7 +686,7 @@ func (m *ImageScan) GetScannerVersion() string {
 	return ""
 }
 
-func (m *ImageScan) GetScanTime() *timestamppb.Timestamp {
+func (m *ImageScan) GetScanTime() *types.Timestamp {
 	if m != nil {
 		return m.ScanTime
 	}
@@ -831,7 +831,7 @@ func (m *ImageSignatureVerificationData) Clone() *ImageSignatureVerificationData
 
 // Next Tag: 6
 type ImageSignatureVerificationResult struct {
-	VerificationTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=verification_time,json=verificationTime,proto3" json:"verification_time,omitempty"`
+	VerificationTime *types.Timestamp `protobuf:"bytes,1,opt,name=verification_time,json=verificationTime,proto3" json:"verification_time,omitempty"`
 	// verifier_id correlates to the ID of the signature integration used to verify the signature.
 	VerifierId string                                  `protobuf:"bytes,2,opt,name=verifier_id,json=verifierId,proto3" json:"verifier_id,omitempty"`
 	Status     ImageSignatureVerificationResult_Status `protobuf:"varint,3,opt,name=status,proto3,enum=storage.ImageSignatureVerificationResult_Status" json:"status,omitempty"`
@@ -877,7 +877,7 @@ func (m *ImageSignatureVerificationResult) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ImageSignatureVerificationResult proto.InternalMessageInfo
 
-func (m *ImageSignatureVerificationResult) GetVerificationTime() *timestamppb.Timestamp {
+func (m *ImageSignatureVerificationResult) GetVerificationTime() *types.Timestamp {
 	if m != nil {
 		return m.VerificationTime
 	}
@@ -1425,11 +1425,11 @@ func (m *ImageMetadata) Clone() *ImageMetadata {
 }
 
 type ImageSignature struct {
-	Signatures           []*Signature           `protobuf:"bytes,1,rep,name=signatures,proto3" json:"signatures,omitempty"`
-	Fetched              *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=fetched,proto3" json:"fetched,omitempty" search:"Image Signature Fetched Time,hidden"` // @gotags: search:"Image Signature Fetched Time,hidden"
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Signatures           []*Signature     `protobuf:"bytes,1,rep,name=signatures,proto3" json:"signatures,omitempty"`
+	Fetched              *types.Timestamp `protobuf:"bytes,2,opt,name=fetched,proto3" json:"fetched,omitempty" search:"Image Signature Fetched Time,hidden"` // @gotags: search:"Image Signature Fetched Time,hidden"
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *ImageSignature) Reset()         { *m = ImageSignature{} }
@@ -1472,7 +1472,7 @@ func (m *ImageSignature) GetSignatures() []*Signature {
 	return nil
 }
 
-func (m *ImageSignature) GetFetched() *timestamppb.Timestamp {
+func (m *ImageSignature) GetFetched() *types.Timestamp {
 	if m != nil {
 		return m.Fetched
 	}
@@ -1738,18 +1738,18 @@ func (m *V2Metadata) Clone() *V2Metadata {
 }
 
 type V1Metadata struct {
-	Digest               string                 `protobuf:"bytes,1,opt,name=digest,proto3" json:"digest,omitempty"`
-	Created              *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created,proto3" json:"created,omitempty" search:"Image Created Time,store"` // @gotags: search:"Image Created Time,store"
-	Author               string                 `protobuf:"bytes,3,opt,name=author,proto3" json:"author,omitempty"`
-	Layers               []*ImageLayer          `protobuf:"bytes,4,rep,name=layers,proto3" json:"layers,omitempty"`
-	User                 string                 `protobuf:"bytes,5,opt,name=user,proto3" json:"user,omitempty" search:"Image User"`                                                                                             // @gotags: search:"Image User"
-	Command              []string               `protobuf:"bytes,6,rep,name=command,proto3" json:"command,omitempty" search:"Image Command"`                                                                                       // @gotags: search:"Image Command"
-	Entrypoint           []string               `protobuf:"bytes,7,rep,name=entrypoint,proto3" json:"entrypoint,omitempty" search:"Image Entrypoint"`                                                                                 // @gotags: search:"Image Entrypoint"
-	Volumes              []string               `protobuf:"bytes,8,rep,name=volumes,proto3" json:"volumes,omitempty" search:"Image Volumes"`                                                                                       // @gotags: search:"Image Volumes"
-	Labels               map[string]string      `protobuf:"bytes,9,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Image Label,store"` // @gotags: search:"Image Label,store"
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Digest               string            `protobuf:"bytes,1,opt,name=digest,proto3" json:"digest,omitempty"`
+	Created              *types.Timestamp  `protobuf:"bytes,2,opt,name=created,proto3" json:"created,omitempty" search:"Image Created Time,store"` // @gotags: search:"Image Created Time,store"
+	Author               string            `protobuf:"bytes,3,opt,name=author,proto3" json:"author,omitempty"`
+	Layers               []*ImageLayer     `protobuf:"bytes,4,rep,name=layers,proto3" json:"layers,omitempty"`
+	User                 string            `protobuf:"bytes,5,opt,name=user,proto3" json:"user,omitempty" search:"Image User"`                                                                                             // @gotags: search:"Image User"
+	Command              []string          `protobuf:"bytes,6,rep,name=command,proto3" json:"command,omitempty" search:"Image Command"`                                                                                       // @gotags: search:"Image Command"
+	Entrypoint           []string          `protobuf:"bytes,7,rep,name=entrypoint,proto3" json:"entrypoint,omitempty" search:"Image Entrypoint"`                                                                                 // @gotags: search:"Image Entrypoint"
+	Volumes              []string          `protobuf:"bytes,8,rep,name=volumes,proto3" json:"volumes,omitempty" search:"Image Volumes"`                                                                                       // @gotags: search:"Image Volumes"
+	Labels               map[string]string `protobuf:"bytes,9,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Image Label,store"` // @gotags: search:"Image Label,store"
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
 func (m *V1Metadata) Reset()         { *m = V1Metadata{} }
@@ -1792,7 +1792,7 @@ func (m *V1Metadata) GetDigest() string {
 	return ""
 }
 
-func (m *V1Metadata) GetCreated() *timestamppb.Timestamp {
+func (m *V1Metadata) GetCreated() *types.Timestamp {
 	if m != nil {
 		return m.Created
 	}
@@ -1887,14 +1887,14 @@ func (m *V1Metadata) Clone() *V1Metadata {
 }
 
 type ImageLayer struct {
-	Instruction          string                 `protobuf:"bytes,1,opt,name=instruction,proto3" json:"instruction,omitempty" search:"Dockerfile Instruction Keyword,store"` // @gotags: search:"Dockerfile Instruction Keyword,store"
-	Value                string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty" search:"Dockerfile Instruction Value,store"`             // @gotags: search:"Dockerfile Instruction Value,store"
-	Created              *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created,proto3" json:"created,omitempty"`
-	Author               string                 `protobuf:"bytes,4,opt,name=author,proto3" json:"author,omitempty"`
-	Empty                bool                   `protobuf:"varint,6,opt,name=empty,proto3" json:"empty,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+	Instruction          string           `protobuf:"bytes,1,opt,name=instruction,proto3" json:"instruction,omitempty" search:"Dockerfile Instruction Keyword,store"` // @gotags: search:"Dockerfile Instruction Keyword,store"
+	Value                string           `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty" search:"Dockerfile Instruction Value,store"`             // @gotags: search:"Dockerfile Instruction Value,store"
+	Created              *types.Timestamp `protobuf:"bytes,3,opt,name=created,proto3" json:"created,omitempty"`
+	Author               string           `protobuf:"bytes,4,opt,name=author,proto3" json:"author,omitempty"`
+	Empty                bool             `protobuf:"varint,6,opt,name=empty,proto3" json:"empty,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *ImageLayer) Reset()         { *m = ImageLayer{} }
@@ -1944,7 +1944,7 @@ func (m *ImageLayer) GetValue() string {
 	return ""
 }
 
-func (m *ImageLayer) GetCreated() *timestamppb.Timestamp {
+func (m *ImageLayer) GetCreated() *types.Timestamp {
 	if m != nil {
 		return m.Created
 	}
@@ -2078,8 +2078,8 @@ type ListImage struct {
 	//
 	//	*ListImage_FixableCves
 	SetFixable           isListImage_SetFixable `protobuf_oneof:"set_fixable"`
-	Created              *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty"`
-	LastUpdated          *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	Created              *types.Timestamp       `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty"`
+	LastUpdated          *types.Timestamp       `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
 	Priority             int64                  `protobuf:"varint,10,opt,name=priority,proto3" json:"priority,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -2233,14 +2233,14 @@ func (m *ListImage) GetFixableCves() int32 {
 	return 0
 }
 
-func (m *ListImage) GetCreated() *timestamppb.Timestamp {
+func (m *ListImage) GetCreated() *types.Timestamp {
 	if m != nil {
 		return m.Created
 	}
 	return nil
 }
 
-func (m *ListImage) GetLastUpdated() *timestamppb.Timestamp {
+func (m *ListImage) GetLastUpdated() *types.Timestamp {
 	if m != nil {
 		return m.LastUpdated
 	}
@@ -4853,7 +4853,7 @@ func (m *Image) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdated == nil {
-				m.LastUpdated = &timestamppb.Timestamp{}
+				m.LastUpdated = &types.Timestamp{}
 			}
 			if err := m.LastUpdated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5403,7 +5403,7 @@ func (m *ImageScan) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ScanTime == nil {
-				m.ScanTime = &timestamppb.Timestamp{}
+				m.ScanTime = &types.Timestamp{}
 			}
 			if err := m.ScanTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5798,7 +5798,7 @@ func (m *ImageSignatureVerificationResult) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.VerificationTime == nil {
-				m.VerificationTime = &timestamppb.Timestamp{}
+				m.VerificationTime = &types.Timestamp{}
 			}
 			if err := m.VerificationTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -6869,7 +6869,7 @@ func (m *ImageSignature) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Fetched == nil {
-				m.Fetched = &timestamppb.Timestamp{}
+				m.Fetched = &types.Timestamp{}
 			}
 			if err := m.Fetched.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -7276,7 +7276,7 @@ func (m *V1Metadata) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Created == nil {
-				m.Created = &timestamppb.Timestamp{}
+				m.Created = &types.Timestamp{}
 			}
 			if err := m.Created.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -7748,7 +7748,7 @@ func (m *ImageLayer) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Created == nil {
-				m.Created = &timestamppb.Timestamp{}
+				m.Created = &types.Timestamp{}
 			}
 			if err := m.Created.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8158,7 +8158,7 @@ func (m *ListImage) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Created == nil {
-				m.Created = &timestamppb.Timestamp{}
+				m.Created = &types.Timestamp{}
 			}
 			if err := m.Created.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8226,7 +8226,7 @@ func (m *ListImage) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.LastUpdated == nil {
-				m.LastUpdated = &timestamppb.Timestamp{}
+				m.LastUpdated = &types.Timestamp{}
 			}
 			if err := m.LastUpdated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
