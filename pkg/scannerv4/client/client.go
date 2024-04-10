@@ -51,6 +51,9 @@ type Scanner interface {
 	// CreateNodeIndexReport indexes the node the target indexer is running on
 	CreateNodeIndexReport(ctx context.Context) (*v4.IndexReport, error)
 
+	// IndexAndScanNode indexes the node and matches vulnerabilities in one call
+	IndexAndScanNode(ctx context.Context) (*v4.VulnerabilityReport, error)
+
 	// Close cleans up any resources used by the implementation.
 	Close() error
 }
@@ -241,6 +244,7 @@ func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, c
 }
 
 func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
+	zlog.Info(ctx).Msgf("in getVulnerabilities with hashID: %s", hashID) // FIXME
 	req := &v4.GetVulnerabilitiesRequest{HashId: hashID, Contents: contents}
 	var vr *v4.VulnerabilityReport
 	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetVulnerabilities", func() (err error) {
@@ -280,6 +284,14 @@ func (c *gRPCScanner) CreateNodeIndexReport(ctx context.Context) (*v4.IndexRepor
 		HashId: "SCANNER_v4:" + randomSha, // FIXME: This parameter is unused and can go
 	}
 	return c.nodeIndexer.CreateNodeIndexReport(ctx, r)
+}
+
+func (c *gRPCScanner) IndexAndScanNode(ctx context.Context) (*v4.VulnerabilityReport, error) {
+	nr, err := c.CreateNodeIndexReport(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("creating node index report: %w", err)
+	}
+	return c.getVulnerabilities(ctx, fmt.Sprintf("/v4/containerimage/%s", nr.GetHashId()), nil)
 }
 
 func getImageManifestID(ref name.Digest) string {
