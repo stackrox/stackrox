@@ -31,6 +31,7 @@ import (
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/rhel/rhcos"
 	"github.com/quay/claircore/rpm"
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/zlog"
@@ -55,6 +56,7 @@ func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
 		rhel.NewEcosystem(ctx),
 		rpm.NewEcosystem(ctx),
 		ruby.NewEcosystem(ctx),
+		rhcos.NewEcosystem(ctx),
 	}
 	if env.ScannerV4NodeJSSupport.BooleanSetting() {
 		es = append(es, nodejs.NewEcosystem(ctx))
