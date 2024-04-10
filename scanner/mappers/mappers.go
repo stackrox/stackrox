@@ -72,6 +72,7 @@ func ToProtoV4IndexReport(r *claircore.IndexReport) (*v4.IndexReport, error) {
 		Success:  r.Success,
 		Err:      r.Err,
 		Contents: contents,
+		HashId:   r.Hash.String(), // FIXME: Check with scanner team whether adding this breaks something!
 	}, nil
 }
 

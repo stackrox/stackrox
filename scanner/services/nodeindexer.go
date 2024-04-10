@@ -45,7 +45,6 @@ func (s *nodeIndexerService) CreateNodeIndexReport(ctx context.Context, req *v4.
 		return nil, err
 	}
 
-	indexReport.HashId = req.GetHashId()
 	return indexReport, nil
 }
 

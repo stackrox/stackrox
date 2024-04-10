@@ -277,7 +277,7 @@ func (c *gRPCScanner) CreateNodeIndexReport(ctx context.Context) (*v4.IndexRepor
 	randomSha := fmt.Sprintf("%x", sha256.Sum256(data))
 
 	r := &v4.CreateNodeIndexReportRequest{
-		HashId: "SCANNER_v4:" + randomSha,
+		HashId: "SCANNER_v4:" + randomSha, // FIXME: This parameter is unused and can go
 	}
 	return c.nodeIndexer.CreateNodeIndexReport(ctx, r)
 }
