@@ -53,11 +53,11 @@ describe('Exception Management Request Details Page', () => {
         cy.get('div[role="dialog"]').should('exist');
         cy.get('div[role="dialog"] button:contains("Cancel request")').click();
         cy.get('div[role="dialog"]').should('not.exist');
-        cy.get('div[aria-label="Success Alert"]').should(
+        cy.get('div.pf-v5-c-alert.pf-m-success').should(
             'contain',
             'The vulnerability request was successfully canceled.'
         );
-        cy.get('div[aria-label="Warning Alert"]').should(
+        cy.get('div.pf-v5-c-alert.pf-m-warning').should(
             'contain',
             'You are viewing a canceled request. If this cancelation was not intended, please submit a new request'
         );
