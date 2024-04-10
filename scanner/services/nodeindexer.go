@@ -28,13 +28,8 @@ func NewNodeIndexerService(indexer indexer.NodeIndexer) *nodeIndexerService {
 	return &nodeIndexerService{nodeIndexer: indexer}
 }
 
-func (s *nodeIndexerService) CreateNodeIndexReport(_ context.Context, req *v4.CreateNodeIndexReportRequest) (*v4.IndexReport, error) {
-	ctx := zlog.ContextWithValues(context.TODO(), "component", "scanner/service/nodeIndexer.CreateNodeIndexReport")
-	// TODO: Actually run the scan and create the report
-	zlog.Info(ctx).Msg("handling CreateNodeIndexReportRequest")
-	defer zlog.Info(ctx).Msg("DONE handling CreateNodeIndexReportRequest")
-
-	clairReport, err := s.nodeIndexer.IndexNode(ctx, "/tmp/rhcos") // here we search for: failed to upsert index report: ERROR: null value in column \"manifest_id\" of relation \"indexreport\" violates not-null constraint (SQLSTATE 23502)
+func (s *nodeIndexerService) CreateNodeIndexReport(ctx context.Context, req *v4.CreateNodeIndexReportRequest) (*v4.IndexReport, error) {
+	clairReport, err := s.nodeIndexer.IndexNode(ctx)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("nodeIndexer.IndexNode failed")
 		return nil, err

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"errors"
+
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
 	ccpostgres "github.com/quay/claircore/datastore/postgres"
@@ -27,7 +28,7 @@ import (
 //
 // TODO: Find out if we really need a DB for the node indexer. Likely we need a caching layer, but not a DB.
 type NodeIndexer interface {
-	IndexNode(ctx context.Context, basePath string) (*claircore.IndexReport, error)
+	IndexNode(ctx context.Context) (*claircore.IndexReport, error)
 	Close(ctx context.Context) error
 }
 
@@ -132,8 +133,7 @@ func newNodeLibindex(ctx context.Context, _ config.NodeIndexerConfig, client *ht
 }
 
 // IndexNode indexes a live fs.FS at the container mountpoint given in the basePath.
-func (l *localNodeIndexer) IndexNode(ctx context.Context, basePath string) (*claircore.IndexReport, error) {
-	zlog.Info(ctx).Str("basePath", basePath).Msg("Would call index node now")
+func (l *localNodeIndexer) IndexNode(ctx context.Context) (*claircore.IndexReport, error) {
 	return l.libIndex.IndexNode(ctx)
 }
 
