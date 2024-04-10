@@ -226,8 +226,8 @@ func applyRfc5322TextWordWrap(text string) string {
 	// we have a combination of \n and \r\n. First, we must normalize the text.
 	// Otherwise, we will have wrong formatting if we replace \n with \r\n.
 	// If not normalized, we can get results with double \r. i.e. \r\r\n
-	wrappedText = strings.Replace(wrappedText, "\r\n", "\n", -1)
-	wrappedText = strings.Replace(wrappedText, "\n", "\r\n", -1)
+	wrappedText = strings.ReplaceAll(wrappedText, "\r\n", "\n")
+	wrappedText = strings.ReplaceAll(wrappedText, "\n", "\r\n")
 
 	return wrappedText
 }

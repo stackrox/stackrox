@@ -4,6 +4,7 @@ package pruning
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -70,7 +71,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	versionUtils "github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -822,7 +822,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 			require.Len(t, finalClusters, len(c.expectedNames), "Did not find expected number of clusters after gc")
 
 			for _, cluster := range finalClusters {
-				require.NotEqual(t, -1, sliceutils.Find(c.expectedNames, cluster.GetName()), "cluster %s should have been deleted", cluster.GetName())
+				require.NotEqual(t, -1, slices.Index(c.expectedNames, cluster.GetName()), "cluster %s should have been deleted", cluster.GetName())
 				// Remove the cluster to be ready for next test
 				require.NoError(t, clusterDS.RemoveCluster(s.ctx, cluster.GetId(), nil))
 			}

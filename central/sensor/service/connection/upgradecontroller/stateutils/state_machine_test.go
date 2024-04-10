@@ -2,6 +2,7 @@ package stateutils
 
 import (
 	"fmt"
+	"slices"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -88,7 +89,7 @@ func (m *mockUpgrader) run() {
 			// New workflow
 			nextStage = sensorupgrader.Workflows()[nextWorkflow][0]
 		} else {
-			idx := sliceutils.Find(sensorupgrader.Workflows()[workflow], stage)
+			idx := slices.Index(sensorupgrader.Workflows()[workflow], stage)
 			if idx == -1 {
 				panic(fmt.Sprintf("UNEXPECTED: workflow: %s, stage: %s", workflow, stage))
 			}

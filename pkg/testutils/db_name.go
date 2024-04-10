@@ -26,7 +26,7 @@ type testingT interface {
 
 // DBFileNameForT returns an appropriate, unique, DB file name for the given test.
 func DBFileNameForT(t testingT) string {
-	return strings.Replace(t.Name(), "/", "_", -1) + ".db"
+	return strings.ReplaceAll(t.Name(), "/", "_") + ".db"
 }
 
 // DBForT creates and returns a new DB to use for this test, failing the test if creating/opening

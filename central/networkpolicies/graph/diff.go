@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"slices"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -27,7 +28,7 @@ func adjacentNodeIDsToMap(adjacencies []string) map[string]*v1.NetworkEdgeProper
 }
 
 func getPolicyIDs(node *v1.NetworkNode) []string {
-	result := sliceutils.ShallowClone(node.GetPolicyIds())
+	result := slices.Clone(node.GetPolicyIds())
 	sort.Strings(result)
 	return result
 }

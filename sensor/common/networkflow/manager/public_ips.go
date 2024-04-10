@@ -2,6 +2,7 @@ package manager
 
 import (
 	"encoding/binary"
+	"slices"
 	"sort"
 	"time"
 
@@ -142,6 +143,6 @@ func normalizeIPsList(listProto *sensor.IPAddressList) {
 }
 
 func ipsListsEqual(a, b *sensor.IPAddressList) bool {
-	return sliceutils.Equal(a.GetIpv4Addresses(), b.GetIpv4Addresses()) &&
-		sliceutils.Equal(a.GetIpv6Addresses(), b.GetIpv6Addresses())
+	return slices.Equal(a.GetIpv4Addresses(), b.GetIpv4Addresses()) &&
+		slices.Equal(a.GetIpv6Addresses(), b.GetIpv6Addresses())
 }

@@ -42,7 +42,8 @@ spec:
   - name: prefetch-input
     value: |
       [
-        { "type": "npm", "path": "scripts/konflux/bootstrap-yarn" }
+        { "type": "npm", "path": "scripts/konflux/bootstrap-yarn" },
+        { "type": "gomod", "path": "." }
       ]
   - name: build-source-image
     value: 'true'
@@ -57,7 +58,7 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 1Gi
+            storage: 3Gi
       status: { }
   - name: git-auth
     secret:
@@ -85,6 +86,10 @@ spec:
       computeResources:
         requests:
           cpu: 1
+
+  # The pipeline regularly takes >1h to finish.
+  timeouts:
+    pipeline: 1h30m0s
 
   pipelineSpec:
 
@@ -340,7 +345,7 @@ spec:
         - name: name
           value: buildah-6gb
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-6gb:0.1@sha256:22f12f318163afe03c1feacef61fe858adf9be5fbc8dae345eda175deedef1aa
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-6gb:0.1@sha256:00a55fa4b456fba946076c74698e65c655e9d58d2623570db6275d059b22a76a
         - name: kind
           value: task
         resolver: bundles
@@ -365,7 +370,7 @@ spec:
         - name: name
           value: source-build
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-source-build:0.1@sha256:6f524c62083c2827ea34c82e394b1f0ca55e63c3f3f8eeaaf0029ace267b5820
+          value: quay.io/redhat-appstudio-tekton-catalog/task-source-build:0.1@sha256:403cb321a5b1105d8c3cdb9087e9b332f2ef94a190d93698f90350a391469af4
         - name: kind
           value: task
         resolver: bundles
@@ -502,7 +507,7 @@ spec:
         - name: name
           value: sbom-json-check
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-sbom-json-check:0.1@sha256:988213d48b64c8d2f3a1c511fbb819c14b244ab72d05cecd789a4778ec23fb5d
+          value: quay.io/redhat-appstudio-tekton-catalog/task-sbom-json-check:0.1@sha256:83441b9688d6921c832e7424c446fdfd4e62ee844dfe4000b97fa2f1726ecd42
         - name: kind
           value: task
         resolver: bundles

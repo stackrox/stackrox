@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -18,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 var (
@@ -191,7 +191,7 @@ func addMissingClustersInfo(remainingClusterNameMap map[string]string,
 	sb := strings.Builder{}
 	sb.WriteString("Data from the following clusters is unavailable:\n")
 	for _, clusterName := range remainingClusterNameMap {
-		if filterClusters != nil && sliceutils.Find(filterClusters, clusterName) != -1 {
+		if filterClusters != nil && slices.Index(filterClusters, clusterName) != -1 {
 			sb.WriteString(fmt.Sprintf("- %s (not requested by user)\n", clusterName))
 		} else {
 			sb.WriteString(fmt.Sprintf("- %s (no active connection)\n", clusterName))
@@ -237,7 +237,7 @@ func getClusterCandidate(conn connection.SensorConnection, clusterNameMap map[st
 	delete(clusterNameMap, clusterID)
 
 	// if there are no cluster filters, all clusters must be considered.
-	if opts.clusters != nil && sliceutils.Find(opts.clusters, clusterName) == -1 {
+	if opts.clusters != nil && slices.Index(opts.clusters, clusterName) == -1 {
 		return "", "", false
 	}
 

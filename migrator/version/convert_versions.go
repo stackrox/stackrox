@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/protoutils"
 )
 
 // ConvertVersionFromProto converts a `*storage.Version` to Gorm model
@@ -42,8 +42,7 @@ func ConvertVersionToProto(m *schema.Versions) (*storage.Version, error) {
 
 	if m.LastPersisted != nil {
 		ts := protoconv.MustConvertTimeToTimestamp(*m.LastPersisted)
-		timestamp.RoundTimestamp(ts, time.Microsecond)
-		msg.LastPersisted = ts
+		msg.LastPersisted = protoutils.RoundTimestamp(ts, time.Microsecond)
 	}
 
 	return &msg, nil
