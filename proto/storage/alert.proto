@@ -127,7 +127,7 @@ message Alert {
   }
 
   // For run-time phase alert, a maximum of 40 violations are retained.
-  repeated Violation violations = 5; // @gotags: sensorhash:"ignore" search:"-"
+  repeated Violation violations = 5; // @gotags: search:"-"
   ProcessViolation process_violation = 13; // @gotags: search:"-"
 
   Enforcement enforcement = 6;
