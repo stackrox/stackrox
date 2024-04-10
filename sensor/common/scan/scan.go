@@ -210,7 +210,7 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 			srcID := sourceImage.GetId()
 			pullName := pullSourceImage.GetName().GetFullName()
 			pullID := pullSourceImage.GetId()
-			log.Infof("Image %q (%v) enriched with metadata using pull source %q (%v) and integration %q (insecure: %t)", srcName, srcID, pullName, pullID, reg.Name(), reg.Config().Insecure)
+			log.Infof("Image %q (%v) enriched with metadata using pull source %q (%v) and integration %q (insecure: %t)", srcName, srcID, pullName, pullID, reg.Name(), reg.Config().GetInsecure())
 			log.Debugf("Metadata for image %q (%v) using pull source %q (%v): %v", srcName, srcID, pullName, pullID, pullSourceImage.GetMetadata())
 			return reg, pullSourceImage
 		}
@@ -310,7 +310,7 @@ func (s *LocalScan) enrichImageWithMetadata(errorList *errorhelpers.ErrorList, r
 	for _, reg := range registries {
 		metadata, err := reg.Metadata(image)
 		if err != nil {
-			insecure := reg.Config().Insecure
+			insecure := reg.Config().GetInsecure()
 			log.Debugf("Failed fetching metadata for image %q (%q) with integration %q (insecure: %t): %v", image.GetName().GetFullName(), image.GetId(), reg.Name(), insecure, err)
 			errs = append(errs, pkgErrors.Wrapf(err, "with integration %q (insecure: %t)", reg.Name(), insecure))
 			continue
