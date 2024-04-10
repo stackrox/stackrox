@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
-	"strings"
 
 	"github.com/google/go-github/v60/github"
 )
+
+const S = "stackrox"
 
 func main() {
 	ctx := context.Background()
@@ -23,106 +25,172 @@ func main() {
 	handleError(err)
 	log.Printf("Found %d PRs", search.GetTotal())
 
+loop:
 	for _, pr := range search.Issues {
 		prNumber := pr.GetNumber()
-		log.Printf("Processing #%d", prNumber)
-		comments, _, err := client.Issues.ListComments(ctx, "stackrox", "stackrox", prNumber, nil)
+		log.Printf("#%d processing...", prNumber)
+		prDetails, _, err := client.PullRequests.Get(ctx, S, S, prNumber)
 		handleError(err)
+		commentsBodies := commentsForPR(ctx, client, prNumber)
+		checks := checksForCommit(ctx, client, prDetails.GetHead().GetSHA())
 
-		retestNTimes(ctx, client, prNumber, comments)
-		retest(ctx, client, prNumber, comments)
+		for name, status := range checks {
+			if !status {
+				log.Printf("#%d has a failing check (%s) skipping", prNumber, name)
+				continue loop
+			}
+		}
 
+		statuses := statusForPR(ctx, client, prDetails.GetStatusesURL())
+		jobsToRetest := jobsToRetestFromComments(commentsBodies)
+
+		for _, job := range jobsToRetest {
+			status := statuses[job]
+			if status.State != "pending" {
+				continue
+			}
+			log.Printf("#%d retesting: %s %s", prNumber, job, status.State)
+			comment := github.IssueComment{
+				Body: ptr("/test " + job),
+			}
+			testComment, _, err := client.Issues.CreateComment(ctx, S, S, prNumber, &comment)
+			handleError(err)
+			log.Printf("#%d commented: %s", prNumber, testComment.GetURL())
+		}
+
+		if len(jobsToRetest) != 0 {
+			continue
+		}
+
+		retestComment := github.IssueComment{
+			Body: ptr(retestComment),
+		}
+		if !shouldRetest(statuses, commentsBodies) {
+			continue
+		}
+		comment, _, err := client.Issues.CreateComment(ctx, S, S, prNumber, &retestComment)
+		handleError(err)
+		log.Printf("#%d commented: %s", prNumber, comment.GetURL())
 	}
 }
 
-func retestNTimes(ctx context.Context, client *github.Client, prNumber int, comments []*github.IssueComment) {
-	restestNTimes := regexp.MustCompile("Retest (.*) (\\d+) times")
-	job := ""
-	times := 0
+var (
+	restestNTimes = regexp.MustCompile("Retest (.*) (\\d+) times")
+	testJob       = regexp.MustCompile("/test (.*)")
+)
+
+func jobsToRetestFromComments(comments []string) []string {
+	testedJobs := map[string]int{}
+	jobsToRetest := map[string]int{}
+
 	for _, c := range comments {
-		matched := restestNTimes.FindStringSubmatch(c.GetBody())
-		if len(matched) != 2 {
+		testJobMatch := testJob.FindStringSubmatch(c)
+		if len(testJobMatch) == 2 {
+			job := testJobMatch[1]
+			if _, ok := testedJobs[job]; !ok {
+				testedJobs[job] = 0
+			}
+			testedJobs[job]++
 			continue
 		}
-		job = matched[0]
-		t, err := strconv.Atoi(matched[1])
+
+		matched := restestNTimes.FindStringSubmatch(c)
+		if len(matched) != 3 {
+			continue
+		}
+		job := matched[1]
+		t, err := strconv.Atoi(matched[2])
 		if err != nil {
-			log.Printf("#%d got an error in a comment: %s", prNumber, err)
+			log.Printf("got an error in a comment %s: %s", c, err)
 			continue
 		}
-		times = t
-		if times < 1 || times > 100 {
-			log.Printf("#%d got request to retest %d times but it should be between 1 and 100", prNumber, times)
+		if t < 1 || t > 100 {
+			log.Printf("invalid retest number requested: %s", c)
 			continue
 		}
-		log.Printf("#%d will retest %s %d times", prNumber, job, times)
+		if _, ok := jobsToRetest[job]; !ok {
+			jobsToRetest[job] = 0
+		}
+		jobsToRetest[job] += t
 	}
 
+	missingTests := make([]string, 0, len(jobsToRetest))
+	for job, times := range jobsToRetest {
+		toTest := times - testedJobs[job]
+		if toTest < 1 {
+			continue
+		}
+		missingTests = append(missingTests, job)
+	}
+	slices.Sort(missingTests)
+
+	return missingTests
 }
 
-func retest(ctx context.Context, client *github.Client, prNumber int, comments []*github.IssueComment) {
-	retestComment := "/retest"
+const retestComment = "/retest"
+
+func shouldRetest(statuses map[string]Status, comments []string) bool {
 
 	retested := 0
 	for _, c := range comments {
-		if c.GetBody() == retestComment {
+		if c == retestComment {
 			retested++
 		}
 	}
-	log.Printf("#%d was retested %d times", prNumber, retested)
 	if retested > 3 {
-		return
-	}
-
-	prDetails, _, err := client.PullRequests.Get(ctx, "stackrox", "stackrox", prNumber)
-	handleError(err)
-
-	if isGHACheckFailing(ctx, client, prDetails.GetHead().GetSHA()) {
-		return
-	}
-
-	var statuses []Status
-	statusRequest, err := http.NewRequest("GET", prDetails.GetStatusesURL(), nil)
-	handleError(err)
-	_, err = client.Do(ctx, statusRequest, &statuses)
-	handleError(err)
-
-	comment := github.IssueComment{
-		Body: &retestComment,
+		return false
 	}
 
 	for _, status := range statuses {
-		log.Printf("#%d %-40s\t%10s", prNumber, status.Context, status.State)
-		if status.State != "failure" {
-			return
+		if status.State == "failure" {
+			return true
 		}
-		comment, _, err := client.Issues.CreateComment(ctx, "stackrox", "stackrox", prNumber, &comment)
-		handleError(err)
-		log.Printf("#%d commented: %s", prNumber, comment.GetURL())
-		break
 	}
+	return false
 }
 
-func isGHACheckFailing(ctx context.Context, client *github.Client, lastCommit string) bool {
-	checks, _, err := client.Checks.ListCheckRunsForRef(ctx, "stackrox", "stackrox", lastCommit, &github.ListCheckRunsOptions{
+func commentsForPR(ctx context.Context, client *github.Client, prNumber int) []string {
+	comments, _, err := client.Issues.ListComments(ctx, S, S, prNumber, nil)
+	handleError(err)
+	commentsBodies := make([]string, 0, len(comments))
+	for _, comment := range comments {
+		commentsBodies = append(commentsBodies, *comment.Body)
+	}
+	return commentsBodies
+}
+
+func checksForCommit(ctx context.Context, client *github.Client, lastCommit string) map[string]bool {
+	checks, _, err := client.Checks.ListCheckRunsForRef(ctx, S, S, lastCommit, &github.ListCheckRunsOptions{
 		Status: ptr("completed"),
 		Filter: ptr("latest"),
 	})
 	handleError(err)
+
+	result := map[string]bool{}
 	for _, check := range checks.CheckRuns {
-		ghaUrlPrefix := "https://api.github.com/repos/stackrox/stackrox/check-runs/"
-		if check.GetConclusion() == "failure" &&
-			strings.HasPrefix(check.GetURL(), ghaUrlPrefix) {
-			log.Printf("%s has failed: %s", check.GetName(), check.GetHTMLURL())
-		}
-		return true
+		result[check.GetName()] = check.GetConclusion() != "failure"
 	}
-	return false
+	return result
 }
 
 type Status struct {
 	Context string `json:"context"`
 	State   string `json:"state"`
+}
+
+func statusForPR(ctx context.Context, client *github.Client, url string) map[string]Status {
+	var statuses []Status
+	statusRequest, err := http.NewRequest("GET", url, nil)
+	handleError(err)
+	_, err = client.Do(ctx, statusRequest, &statuses)
+	handleError(err)
+
+	result := map[string]Status{}
+	for _, status := range statuses {
+		result[status.Context] = status
+	}
+
+	return result
 }
 
 func handleError(err error) {
