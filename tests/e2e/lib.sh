@@ -1139,8 +1139,8 @@ db_backup_and_restore_test() {
 handle_e2e_progress_failures() {
     info "Checking for progress events"
 
-    local images_available=("Image_Availability" "Are the required images are available?")
-    local stackrox_deployed=("Stackrox_Deployment" "Was Stackrox was deployed to the cluster?")
+    local images_available=("Image_Availability" "Are the required images available?")
+    local stackrox_deployed=("Stackrox_Deployment" "Was Stackrox deployed to the cluster?")
 
     local check_deployment=false
 
