@@ -241,14 +241,14 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	clonedPolicy.Categories = []string{}
 	err = ds.storage.Upsert(ctx, clonedPolicy)
 	if err != nil {
-		return policy.Id, err
+		return clonedPolicy.Id, err
 	}
 
-	err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
+	err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, clonedPolicy.GetId(), policyCategories)
 	if err != nil {
-		return policy.Id, err
+		return clonedPolicy.Id, err
 	}
-	return policy.Id, nil
+	return clonedPolicy.Id, nil
 }
 
 // UpdatePolicy updates a policy from the storage.
