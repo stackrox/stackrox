@@ -22,7 +22,7 @@ import spock.lang.Tag
 
 class DeploymentCheck extends BaseSpecification {
     private final static String DEPLOYMENT_CHECK = "check-deployments"
-    private final static String DEPLOYMENT_CHECK_POLICY_CATEGORY = "Deployment Check"
+    private final static String DEPLOYMENT_CHECK_POLICY_CATEGORY = "Test Category Filter"
 
     @Shared
     private String clusterId
@@ -96,9 +96,9 @@ class DeploymentCheck extends BaseSpecification {
     def "Test Deployment Check - Filtered by Category"() {
         given:
         "create the builder, policy category, and policy"
-        def image = "custom-registry"
+        def registry = "custom-registry"
         def builder = DetectionServiceOuterClass.DeployYAMLDetectionRequest.newBuilder()
-        builder.setYaml(createDeploymentYaml(DEPLOYMENT_CHECK, DEPLOYMENT_CHECK, "custom-registry/nginx:latest"))
+        builder.setYaml(createDeploymentYaml(DEPLOYMENT_CHECK, DEPLOYMENT_CHECK, registry+"nginx:latest"))
         builder.setNamespace(DEPLOYMENT_CHECK)
         builder.setCluster(clusterId)
         builder.setPolicyCategories(0, DEPLOYMENT_CHECK_POLICY_CATEGORY)
@@ -115,7 +115,7 @@ class DeploymentCheck extends BaseSpecification {
                         PolicyOuterClass.PolicyGroup.newBuilder().setFieldName("Image Registry").
                                 setBooleanOperator(PolicyOuterClass.BooleanOperator.AND).
                                 addAllValues(
-                                        [image].collect { PolicyOuterClass.
+                                        [registry].collect { PolicyOuterClass.
                                                 PolicyValue.newBuilder().setValue(it).build() }
                                 ).build()
                 )).

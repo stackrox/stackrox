@@ -570,7 +570,7 @@ func (s *serviceImpl) addActivePolicy(policy *storage.Policy) error {
 }
 
 func (s *serviceImpl) removeActivePolicy(id string) error {
-	return errors.Wrap(s.lifecycleManager.RemovePolicy(id), "removing policy from detection: ")
+	return errors.Wrap(s.lifecycleManager.RemovePolicy(id), "removing policy from detection cache")
 }
 
 func (s *serviceImpl) EnableDisablePolicyNotification(ctx context.Context, request *v1.EnableDisablePolicyNotificationRequest) (*v1.Empty, error) {
