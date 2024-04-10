@@ -101,8 +101,6 @@ The `workloads-diff-info` adds information about added/removed workload related 
 
 
 ### Visualization
-
-
 Generate output in [dot](https://graphviz.org/doc/info/lang.html) format:
 ```shell
 $ roxctl netpol connectivity diff --dir1=roxctl/netpol/connectivity/diff/testdata/netpol-analysis-example-minimal/ --dir2=roxctl/netpol/connectivity/diff/testdata/netpol-diff-example-minimal -o dot
