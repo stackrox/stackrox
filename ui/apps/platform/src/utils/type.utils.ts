@@ -52,3 +52,7 @@ export function tupleTypeGuard<const T extends readonly string[]>(
 }
 
 export type UnionFrom<T extends readonly string[]> = T[number];
+
+export type Tuple<T, N extends number, A extends unknown[] = []> = A extends { length: N }
+    ? A
+    : Tuple<T, N, [...A, T]>;

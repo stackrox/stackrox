@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
 import { gql, useQuery } from '@apollo/client';
 import {
@@ -8,20 +8,15 @@ import {
     BreadcrumbItem,
     Skeleton,
     Bullseye,
-    Tab,
-    TabContent,
-    TabTitleText,
-    Tabs,
-    TabsComponent,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
-import useURLStringUnion from 'hooks/useURLStringUnion';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
+import useTabContent from 'hooks/patternfly/useTabContent';
 import { detailsTabValues } from '../../types';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 
@@ -50,14 +45,34 @@ function NodePage() {
         variables: { id: nodeId },
     });
 
-    const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
-
-    const vulnTabKey = 'Vulnerabilities';
-    const detailsTabKey = 'Details';
-    const vulnTabId = 'node-vulnerabilities-tab';
-    const detailsTabId = 'node-details-tab';
-    const vulnTabRef = useRef<HTMLElement>(null);
-    const detailsTabRef = useRef<HTMLElement>(null);
+    const [Tabs, TabContents] = useTabContent({
+        parameterName: 'detailsTab',
+        tabKeys: detailsTabValues,
+        tabs: [
+            {
+                key: 'Vulnerabilities',
+                content: <NodePageVulnerabilities />,
+                contentProps: {
+                    className:
+                        'pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1',
+                },
+            },
+            {
+                key: 'Details',
+                content: <NodePageDetails />,
+                contentProps: {
+                    className:
+                        'pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1',
+                },
+            },
+        ],
+        tabsProps: {
+            className: 'pf-v5-u-pl-md pf-v5-u-background-color-100',
+        },
+        onTabChange: () => {
+            // pagination.setPage(1);
+        },
+    });
 
     const nodeName = data?.node?.name ?? '-';
 
@@ -91,53 +106,8 @@ function NodePage() {
                     <PageSection variant="light">
                         <NodePageHeader data={data?.node} />
                     </PageSection>
-                    <PageSection padding={{ default: 'noPadding' }}>
-                        <Tabs
-                            activeKey={activeTabKey}
-                            onSelect={(e, key) => {
-                                setActiveTabKey(key);
-                                // pagination.setPage(1);
-                            }}
-                            component={TabsComponent.nav}
-                            className="pf-v5-u-pl-md pf-v5-u-background-color-100"
-                            role="region"
-                            mountOnEnter
-                            unmountOnExit
-                        >
-                            <Tab
-                                eventKey={vulnTabKey}
-                                title={<TabTitleText>Vulnerabilities</TabTitleText>}
-                                tabContentId={vulnTabId}
-                                tabContentRef={vulnTabRef}
-                            />
-                            <Tab
-                                eventKey={detailsTabKey}
-                                title={<TabTitleText>Details</TabTitleText>}
-                                tabContentId={detailsTabId}
-                                tabContentRef={detailsTabRef}
-                            />
-                        </Tabs>
-                    </PageSection>
-                    {activeTabKey === vulnTabKey && (
-                        <TabContent
-                            id={vulnTabId}
-                            ref={vulnTabRef}
-                            eventKey={vulnTabKey}
-                            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
-                        >
-                            <NodePageVulnerabilities />
-                        </TabContent>
-                    )}
-                    {activeTabKey === detailsTabKey && (
-                        <TabContent
-                            id={detailsTabId}
-                            ref={detailsTabRef}
-                            eventKey={detailsTabKey}
-                            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
-                        >
-                            <NodePageDetails />
-                        </TabContent>
-                    )}
+                    <PageSection padding={{ default: 'noPadding' }}>{Tabs}</PageSection>
+                    {TabContents.map((content) => content)}
                 </>
             )}
         </>
