@@ -1,30 +1,24 @@
 import React from 'react';
-import { Bullseye, Divider, Spinner } from '@patternfly/react-core';
+import { Bullseye, Spinner } from '@patternfly/react-core';
 
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLPagination from 'hooks/useURLPagination';
 
-import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import { QuerySearchFilter } from '../../types';
 
-export type ClustersTableContainerProps = {
-    filterToolbar: TableEntityToolbarProps['filterToolbar'];
-    entityToggleGroup: TableEntityToolbarProps['entityToggleGroup'];
+export type ClustersTableProps = {
     querySearchFilter: QuerySearchFilter;
     isFiltered: boolean;
-    rowCount: number;
     pagination: ReturnType<typeof useURLPagination>;
 };
 
-function ClustersTableContainer({
-    filterToolbar,
-    entityToggleGroup,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+function ClustersTable({
+    /* eslint-disable @typescript-eslint/no-unused-vars */
     querySearchFilter,
     isFiltered,
-    rowCount,
     pagination,
-}: ClustersTableContainerProps) {
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+}: ClustersTableProps) {
     // TODO - Placeholders for query results
     const data = [];
     const previousData = undefined;
@@ -35,14 +29,6 @@ function ClustersTableContainer({
 
     return (
         <>
-            <TableEntityToolbar
-                filterToolbar={filterToolbar}
-                entityToggleGroup={entityToggleGroup}
-                pagination={pagination}
-                tableRowCount={rowCount}
-                isFiltered={isFiltered}
-            />
-            <Divider component="div" />
             {loading && !tableData && (
                 <Bullseye>
                     <Spinner />
@@ -60,4 +46,4 @@ function ClustersTableContainer({
     );
 }
 
-export default ClustersTableContainer;
+export default ClustersTable;

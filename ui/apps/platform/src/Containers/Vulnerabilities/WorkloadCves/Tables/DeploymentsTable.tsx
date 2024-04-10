@@ -6,7 +6,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Truncate } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
-import { getEntityPagePath } from '../../utils/searchUtils';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
@@ -115,7 +115,11 @@ function DeploymentsTable({
                             <Tr>
                                 <Td dataLabel="Deployment">
                                     <Link
-                                        to={getEntityPagePath('Deployment', id, vulnerabilityState)}
+                                        to={getWorkloadEntityPagePath(
+                                            'Deployment',
+                                            id,
+                                            vulnerabilityState
+                                        )}
                                     >
                                         <Truncate position="middle" content={name} />
                                     </Link>

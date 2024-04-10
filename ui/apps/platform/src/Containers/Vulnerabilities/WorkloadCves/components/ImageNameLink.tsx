@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button, Flex, FlexItem, Tooltip, Truncate } from '@patternfly/react-core';
 import { OutlinedCopyIcon } from '@patternfly/react-icons';
 
-import { getEntityPagePath } from '../../utils/searchUtils';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 export type ImageNameLinkProps = {
@@ -37,7 +37,7 @@ function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
             spaceItems={{ default: 'spaceItemsNone' }}
         >
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
-                <Link to={getEntityPagePath('Image', id, vulnerabilityState)}>
+                <Link to={getWorkloadEntityPagePath('Image', id, vulnerabilityState)}>
                     <Truncate position="middle" content={`${remote}:${tag}`} />
                 </Link>{' '}
                 <span className="pf-v5-u-color-200 pf-v5-u-font-size-sm">in {registry}</span>

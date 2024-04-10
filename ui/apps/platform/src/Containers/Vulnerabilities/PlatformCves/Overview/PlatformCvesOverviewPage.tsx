@@ -15,12 +15,13 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
+import TableEntityToolbar from 'Containers/Vulnerabilities/components/TableEntityToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import { parseWorkloadQuerySearchFilter } from '../../utils/searchUtils';
 import { platformEntityTabValues } from '../../types';
 
-import CVEsTableContainer from './CVEsTableContainer';
-import ClustersTableContainer from './ClustersTableContainer';
+import ClustersTable from './ClustersTable';
+import CVEsTable from './CVEsTable';
 
 function PlatformCvesOverviewPage() {
     const [activeEntityTabKey] = useURLStringUnion('entityTab', platformEntityTabValues);
@@ -65,33 +66,37 @@ function PlatformCvesOverviewPage() {
                     <FlexItem>Prioritize and manage scanned CVEs across clusters</FlexItem>
                 </Flex>
             </PageSection>
-            <PageSection padding={{ default: 'noPadding' }}>
-                <PageSection isCenterAligned>
-                    <Card>
-                        <CardBody>
-                            {activeEntityTabKey === 'CVE' && (
-                                <CVEsTableContainer
-                                    filterToolbar={filterToolbar}
-                                    entityToggleGroup={entityToggleGroup}
-                                    querySearchFilter={querySearchFilter}
-                                    isFiltered={isFiltered}
-                                    rowCount={entityCounts.CVE}
-                                    pagination={pagination}
-                                />
-                            )}
-                            {activeEntityTabKey === 'Cluster' && (
-                                <ClustersTableContainer
-                                    filterToolbar={filterToolbar}
-                                    entityToggleGroup={entityToggleGroup}
-                                    querySearchFilter={querySearchFilter}
-                                    isFiltered={isFiltered}
-                                    rowCount={entityCounts.Cluster}
-                                    pagination={pagination}
-                                />
-                            )}
-                        </CardBody>
-                    </Card>
-                </PageSection>
+            <PageSection isCenterAligned isFilled>
+                <Card>
+                    <CardBody>
+                        <TableEntityToolbar
+                            filterToolbar={filterToolbar}
+                            entityToggleGroup={entityToggleGroup}
+                            pagination={pagination}
+                            tableRowCount={
+                                activeEntityTabKey === 'CVE'
+                                    ? entityCounts.CVE
+                                    : entityCounts.Cluster
+                            }
+                            isFiltered={isFiltered}
+                        />
+                        <Divider component="div" />
+                        {activeEntityTabKey === 'CVE' && (
+                            <CVEsTable
+                                querySearchFilter={querySearchFilter}
+                                isFiltered={isFiltered}
+                                pagination={pagination}
+                            />
+                        )}
+                        {activeEntityTabKey === 'Cluster' && (
+                            <ClustersTable
+                                querySearchFilter={querySearchFilter}
+                                isFiltered={isFiltered}
+                                pagination={pagination}
+                            />
+                        )}
+                    </CardBody>
+                </Card>
             </PageSection>
         </>
     );
