@@ -34,10 +34,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 - Customer-provided PostgreSQL databases are now GA
-- ROX-21235: `/api/extensions/certs/backup` added to provide external database consumers a means to backup certs. `--certs-only` flag added to `roxctl central backup` to exercise that endpoint.
+- ROX-21235: `/api/extensions/certs/backup` added to provide external database consumers a means to back up certs. `--certs-only` flag added to `roxctl central backup` to exercise that endpoint.
 - The "Kubernetes Resource Name" policy criteria now supports regex values. Note: the value must be prefixed with "r/" to activate regex matching.
 - ROX-22238: `roxctl deployment check` results now contain additional information about the Permission Level and applicable Network Policies for a deployment, if `--cluster` and `--namespace` are provided together with `--verbose`.
-- Export APIs have been added for deployments, nodes, pods, and images as a tech preview.
+- Export APIs have been added for deployments (`/v1/export/deployments`), nodes (`/v1/export/nodes`), pods
+  (`/v1/export/pods`), and images (`/v1/export/images`) as a tech preview. They are much more performant for a full
+  export than their REST counterparts. 
 - ROX-21950: `roxctl scanner download-db` has been added to help download version specific offline vulnerability bundles introduced with `Scanner V4`.
 - The new vulnerability scanner named "Scanner V4" has been integrated. At the moment it needs to run side-by-side with the current default scanner named "StackRox Scanner". Installation instructions can be found in the official RHACS documentation.
 - ROX-19932: ACS can pull information about available clusters to secure from
