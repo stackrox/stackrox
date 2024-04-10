@@ -1,7 +1,7 @@
 import withAuth from '../../helpers/basicAuth';
 import { tryDeleteCollection, visitCollections } from './Collections.helpers';
 
-/* 
+/*
     Each test in this spec builds upon the previous by executing another piece
     of the collection CRUD workflow.
 */
