@@ -406,6 +406,7 @@ func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.A
 func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	m.policyAlertsLock.Lock()
 	defer m.policyAlertsLock.Unlock()
+
 	// Add policy to set.
 	if policies.AppliesAtBuildTime(policy) {
 		if err := m.buildTimeDetector.PolicySet().UpsertPolicy(policy); err != nil {
@@ -428,7 +429,8 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 			return errors.Wrapf(err, "adding policy %s to runtime detector", policy.GetName())
 		}
 		// Perform notifications and update DB.
-		modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithPolicyID(policy.GetId()))
+		modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil,
+			alertmanager.WithPolicyID(policy.GetId()))
 		if err != nil {
 			return err
 		}

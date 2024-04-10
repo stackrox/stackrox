@@ -5,7 +5,6 @@ import (
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
@@ -37,7 +36,6 @@ func New(policies datastore.DataStore,
 	notifiers notifierDataStore.DataStore,
 	mitreStore mitreDS.AttackReadOnlyDataStore,
 	reprocessor reprocessor.Loop,
-	buildTimePolicies detection.PolicySet,
 	manager lifecycle.Manager,
 	processor notifier.Processor,
 	metadataCache expiringcache.Cache,
@@ -51,7 +49,6 @@ func New(policies datastore.DataStore,
 		reprocessor:       reprocessor,
 		notifiers:         notifiers,
 		mitreStore:        mitreStore,
-		buildTimePolicies: buildTimePolicies,
 		lifecycleManager:  manager,
 		connectionManager: connectionManager,
 		networkPolicies:   networkPolicies,
