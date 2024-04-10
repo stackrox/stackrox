@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
-	detectionMocks "github.com/stackrox/rox/pkg/detection/mocks"
 	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -36,20 +35,11 @@ func TestPolicyService(t *testing.T) {
 	suite.Run(t, new(PolicyServiceTestSuite))
 }
 
-type testDeploymentMatcher struct {
-	*detectionMocks.MockPolicySet
-}
-
-func (t *testDeploymentMatcher) RemoveNotifier(_ string) error {
-	return nil
-}
-
 type PolicyServiceTestSuite struct {
 	suite.Suite
 	policies              *mocks.MockDataStore
 	clusters              *clusterMocks.MockDataStore
 	mitreVectorStore      *mitreMocks.MockAttackReadOnlyDataStore
-	mockBuildTimePolicies *detectionMocks.MockPolicySet
 	mockLifecycleManager  *lifecycleMocks.MockManager
 	mockConnectionManager *connectionMocks.MockManager
 	tested                Service
@@ -65,7 +55,6 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 
 	s.clusters = clusterMocks.NewMockDataStore(s.mockCtrl)
 
-	s.mockBuildTimePolicies = detectionMocks.NewMockPolicySet(s.mockCtrl)
 	s.mockLifecycleManager = lifecycleMocks.NewMockManager(s.mockCtrl)
 	s.mockConnectionManager = connectionMocks.NewMockManager(s.mockCtrl)
 	s.mitreVectorStore = mitreMocks.NewMockAttackReadOnlyDataStore(s.mockCtrl)
@@ -78,7 +67,6 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 		nil,
 		s.mitreVectorStore,
 		nil,
-		&testDeploymentMatcher{s.mockBuildTimePolicies},
 		s.mockLifecycleManager,
 		nil,
 		nil,
@@ -285,7 +273,6 @@ func (s *PolicyServiceTestSuite) TestImportPolicy() {
 	}
 
 	s.policies.EXPECT().ImportPolicies(ctx, []*storage.Policy{importedPolicy}, false).Return(mockImportResp, true, nil)
-	s.mockBuildTimePolicies.EXPECT().RemovePolicy(importedPolicy.GetId())
 	s.mockLifecycleManager.EXPECT().UpsertPolicy(importedPolicy).Return(nil)
 	s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, nil)
 	s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast(gomock.Any())

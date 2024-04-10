@@ -3,7 +3,6 @@ package service
 import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	"github.com/stackrox/rox/central/enrichment"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -30,7 +29,6 @@ func initialize() {
 		notifierDataStore.Singleton(),
 		mitreDataStore.Singleton(),
 		reprocessor.Singleton(),
-		buildTimeDetection.SingletonPolicySet(),
 		lifecycle.SingletonManager(),
 		notifierProcessor.Singleton(),
 		enrichment.ImageMetadataCacheSingleton(),
