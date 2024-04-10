@@ -111,8 +111,6 @@ Use [`Graphviz`](https://graphviz.org/) (locally installed or online viewer) to 
 Produced graph for the above example is depicted below:
 
 ![graph](connectivity-diff-graph-example.svg)
-
-
 ## Parameters
 
 The output can be redirected to a file by using `--output-file` parameter.
