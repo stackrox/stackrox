@@ -4,7 +4,7 @@ on:
   schedule:
   - cron: 5 * * * *
 jobs:
-  triage-report:
+  retest:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
