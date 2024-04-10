@@ -241,3 +241,15 @@ message ComplianceOperatorSuiteV2 {
 
   ComplianceOperatorStatus status = 4;
 }
+
+// Next Tag: 9
+message ComplianceOperatorRemediationV2 {
+  string id = 1; // @gotags: sql:"pk,id,type(uuid)"
+  string name = 2; // @gotags: search:"Compliance Remediation Name,hidden"
+  string compliance_check_result_name = 3; // @gotags: search:"Compliance Check Name,hidden"
+  bool apply = 4;
+  string current = 5;
+  string outdated = 6;
+  string type = 7;
+  string cluster_id = 8; // @gotags: search:"Cluster ID,hidden"
+}

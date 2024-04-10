@@ -266,3 +266,14 @@ message ComplianceOperatorSuiteV2 {
   reserved 3;
   ComplianceOperatorStatus status = 4;
 }
+
+message ComplianceOperatorRemediationV2 {
+  string id = 1; // @gotags: sql:"pk,id,type(uuid)"
+  string name = 2;
+  // TODO: Name or ID?
+  string compliance_check_result_name = 3;
+  bool apply = 4;
+  string current = 5;
+  string outdated = 6;
+  string type = 7;
+}
