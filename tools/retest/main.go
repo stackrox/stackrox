@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/google/go-github/v60/github"
 )
@@ -32,7 +33,9 @@ loop:
 		prDetails, _, err := client.PullRequests.Get(ctx, S, S, prNumber)
 		handleError(err)
 		commentsBodies := commentsForPR(ctx, client, prNumber)
+		log.Printf("#%d has %d comments", prNumber, len(commentsBodies))
 		checks := checksForCommit(ctx, client, prDetails.GetHead().GetSHA())
+		log.Printf("#%d has %d completed checks", prNumber, len(checks))
 
 		for name, status := range checks {
 			if !status {
@@ -42,11 +45,14 @@ loop:
 		}
 
 		statuses := statusForPR(ctx, client, prDetails.GetStatusesURL())
+		log.Printf("#%d has %d statuses", prNumber, len(statuses))
 		jobsToRetest := jobsToRetestFromComments(commentsBodies)
+		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
 
 		for _, job := range jobsToRetest {
 			status := statuses[job]
-			if status.State != "pending" {
+			if status.State == "pending" {
+				log.Printf("#%d %s is still pending", prNumber, job)
 				continue
 			}
 			log.Printf("#%d retesting: %s %s", prNumber, job, status.State)
@@ -55,7 +61,7 @@ loop:
 			}
 			testComment, _, err := client.Issues.CreateComment(ctx, S, S, prNumber, &comment)
 			handleError(err)
-			log.Printf("#%d commented: %s", prNumber, testComment.GetURL())
+			log.Printf("#%d commented: %s", prNumber, testComment.GetHTMLURL())
 		}
 
 		if len(jobsToRetest) != 0 {
@@ -70,7 +76,7 @@ loop:
 		}
 		comment, _, err := client.Issues.CreateComment(ctx, S, S, prNumber, &retestComment)
 		handleError(err)
-		log.Printf("#%d commented: %s", prNumber, comment.GetURL())
+		log.Printf("#%d commented: %s", prNumber, comment.GetHTMLURL())
 	}
 }
 
@@ -187,7 +193,8 @@ func statusForPR(ctx context.Context, client *github.Client, url string) map[str
 
 	result := map[string]Status{}
 	for _, status := range statuses {
-		result[status.Context] = status
+		job := strings.TrimPrefix(status.Context, "ci/prow/")
+		result[job] = status
 	}
 
 	return result
