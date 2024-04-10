@@ -50,12 +50,12 @@ loop:
 		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
 
 		for _, job := range jobsToRetest {
-			status := statuses[job]
-			if status.State == "pending" {
+			state := statuses[job]
+			if state == "pending" {
 				log.Printf("#%d %s is still pending", prNumber, job)
 				continue
 			}
-			log.Printf("#%d retesting: %s %s", prNumber, job, status.State)
+			log.Printf("#%d retesting: %s %s", prNumber, job, state)
 			comment := github.IssueComment{
 				Body: ptr("/test " + job),
 			}
@@ -135,7 +135,7 @@ func jobsToRetestFromComments(comments []string) []string {
 
 const retestComment = "/retest"
 
-func shouldRetest(statuses map[string]Status, comments []string) bool {
+func shouldRetest(statuses map[string]string, comments []string) bool {
 
 	retested := 0
 	for _, c := range comments {
@@ -148,7 +148,7 @@ func shouldRetest(statuses map[string]Status, comments []string) bool {
 	}
 
 	for _, status := range statuses {
-		if status.State == "failure" {
+		if status == "failure" {
 			return true
 		}
 	}
@@ -184,17 +184,17 @@ type Status struct {
 	State   string `json:"state"`
 }
 
-func statusForPR(ctx context.Context, client *github.Client, url string) map[string]Status {
+func statusForPR(ctx context.Context, client *github.Client, url string) map[string]string {
 	var statuses []Status
 	statusRequest, err := http.NewRequest("GET", url, nil)
 	handleError(err)
 	_, err = client.Do(ctx, statusRequest, &statuses)
 	handleError(err)
 
-	result := map[string]Status{}
+	result := map[string]string{}
 	for _, status := range statuses {
 		job := strings.TrimPrefix(status.Context, "ci/prow/")
-		result[job] = status
+		result[job] = status.State
 	}
 
 	return result

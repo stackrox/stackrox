@@ -34,6 +34,16 @@ func Test_retestNTimes(t *testing.T) {
 			},
 		},
 		{
+			name:     "too many times",
+			comments: []string{"Retest job-name-1 101 times"},
+			want:     []string{},
+		},
+		{
+			name:     "invalid number",
+			comments: []string{"Retest job-name-1 99999999999999999999999 times"},
+			want:     []string{},
+		},
+		{
 			name: "request test 10 times, with 5 already done",
 			comments: []string{
 				"Retest job-name-1 10 times",
@@ -103,7 +113,7 @@ func Test_retestNTimes(t *testing.T) {
 func Test_shouldRetest(t *testing.T) {
 	tests := []struct {
 		name     string
-		statuses map[string]Status
+		statuses map[string]string
 		comments []string
 		want     bool
 	}{
@@ -115,82 +125,46 @@ func Test_shouldRetest(t *testing.T) {
 		},
 		{
 			name:     "empty",
-			statuses: map[string]Status{},
+			statuses: map[string]string{},
 			comments: []string{},
 			want:     false,
 		},
 		{
 			name: "all success",
-			statuses: map[string]Status{
-				"a": {
-					Context: "a",
-					State:   "success",
-				},
-				"b": {
-					Context: "b",
-					State:   "success",
-				},
-				"c": {
-					Context: "c",
-					State:   "success",
-				},
+			statuses: map[string]string{
+				"a": "success",
+				"b": "success",
+				"c": "success",
 			},
 			comments: []string{},
 			want:     false,
 		},
 		{
 			name: "one failure",
-			statuses: map[string]Status{
-				"a": {
-					Context: "a",
-					State:   "success",
-				},
-				"b": {
-					Context: "b",
-					State:   "failure",
-				},
-				"c": {
-					Context: "c",
-					State:   "success",
-				},
+			statuses: map[string]string{
+				"a": "success",
+				"b": "failure",
+				"c": "success",
 			},
 			comments: []string{},
 			want:     true,
 		},
 		{
 			name: "one failure but already retested",
-			statuses: map[string]Status{
-				"a": {
-					Context: "a",
-					State:   "success",
-				},
-				"b": {
-					Context: "b",
-					State:   "failure",
-				},
-				"c": {
-					Context: "c",
-					State:   "success",
-				},
+			statuses: map[string]string{
+				"a": "success",
+				"b": "failure",
+				"c": "success",
 			},
 			comments: []string{"/retest"},
 			want:     true,
 		},
 		{
 			name: "one failure but already retested",
-			statuses: map[string]Status{
-				"a": {
-					Context: "a",
-					State:   "success",
-				},
-				"b": {
-					Context: "b",
-					State:   "failure",
-				},
-				"c": {
-					Context: "c",
-					State:   "success",
-				},
+			statuses: map[string]string{
+				"a": "success",
+				"b": "failure",
+				"c": "success",
 			},
 			comments: []string{"/retest", "/retest", "/retest", "/retest"},
 			want:     false,
