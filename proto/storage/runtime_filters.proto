@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package storage;
+
+import "storage/resource_collection.proto";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+message RuntimeFiltersACK {
+  string instance_id = 1;
+  Action action = 2;
+
+  enum Action {
+    ACK = 0;
+    NACK = 1;
+  }
+}
+
+message RuntimeFilter {
+  enum RuntimeFilterFeatures {
+    EXTERNAL_IPS = 0;
+    PROCESSES = 1;
+    NETWORK_CONNECTIONS = 2;
+    LISTENING_ENDPOINTS = 3;
+  }
+
+  message RuntimeFilterRule {
+    string resource_collection_id = 1;
+    string status = 2;
+  }
+
+  RuntimeFilterFeatures feature = 1;
+  string default_status = 2;
+  repeated RuntimeFilterRule rules = 3;
+}
+
+message RuntimeFilteringConfiguration {
+  repeated RuntimeFilter runtime_filters = 1;
+  repeated ResourceCollection resource_collections = 2;
+}
