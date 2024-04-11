@@ -43,6 +43,7 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResultsCount",
 			"/v2.ComplianceResultsService/GetComplianceProfileResults",
 			"/v2.ComplianceResultsService/GetComplianceClusterStats",
+			"/v2.ComplianceResultsService/GetComplianceProfileCheckStats",
 		},
 	})
 )
@@ -387,6 +388,41 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 	scanResults, err := s.complianceResultsDS.ComplianceProfileResults(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile scan stats for %+v", request)
+	}
+
+	return storagetov2.ComplianceV2ProfileResults(scanResults), nil
+}
+
+// GetComplianceProfileCheckStats lists current scan stats grouped by the specified profile and compliance check
+func (s *serviceImpl) GetComplianceProfileCheckStats(ctx context.Context, request *v2.ComplianceProfileCheckRequest) (*v2.ComplianceProfileResults, error) {
+	if request.GetProfileName() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
+	}
+
+	if request.GetCheckName() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Compliance check name is required")
+	}
+
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	// Add the scan config name as an exact match
+	parsedQuery = search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, request.GetProfileName()).
+			AddExactMatches(search.ComplianceOperatorCheckName, request.GetCheckName()).
+			ProtoQuery(),
+		parsedQuery,
+	)
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
+
+	scanResults, err := s.complianceResultsDS.ComplianceProfileResults(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile check stats for %+v", request)
 	}
 
 	return storagetov2.ComplianceV2ProfileResults(scanResults), nil
