@@ -284,7 +284,7 @@ spec:
       - name: basic-auth
         workspace: git-auth
 
-    - name: fetch-external-content
+    - name: copy-subscription-manager-activation-key
       runAfter:
       - clone-repository
       workspaces:
@@ -352,7 +352,7 @@ spec:
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
       runAfter:
-      - fetch-external-content
+      - copy-subscription-manager-activation-key
       - prefetch-dependencies
       - clone-rocksdb
       - fetch-external-networks

@@ -282,7 +282,7 @@ spec:
       - name: basic-auth
         workspace: git-auth
 
-    - name: fetch-external-content
+    - name: copy-subscription-manager-activation-key
       runAfter:
       - clone-repository
       workspaces:
@@ -306,8 +306,9 @@ spec:
             image: registry.access.redhat.com/ubi8-minimal:latest
             script: |
               #!/usr/bin/env bash
+              set -euo pipefail
               microdnf install -y openssl zip
-              "$(workspaces.source.path)/source/image/rhel/fetch-stackrox-data.sh" \
+              exec "$(workspaces.source.path)/source/image/rhel/fetch-stackrox-data.sh" \
                   "$(workspaces.source.path)/source/.konflux/stackrox-data"
       workspaces:
       - name: source
@@ -349,7 +350,7 @@ spec:
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
       runAfter:
-      - fetch-external-content
+      - copy-subscription-manager-activation-key
       - prefetch-dependencies
       - clone-rocksdb
       - fetch-external-networks
