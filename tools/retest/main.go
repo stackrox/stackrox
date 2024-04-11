@@ -136,7 +136,6 @@ func jobsToRetestFromComments(comments []string) []string {
 const retestComment = "/retest"
 
 func shouldRetest(statuses map[string]string, comments []string) bool {
-
 	retested := 0
 	for _, c := range comments {
 		if c == retestComment {
