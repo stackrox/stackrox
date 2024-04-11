@@ -9,7 +9,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -21,10 +20,13 @@ type MetricsHandler struct {
 }
 
 // roundedDurationBuckets produces exponential buckets rounded to the next millisecond.
-// The smallest bucket contains all durations smaller than 0.1 seconds. The largest
-// bucket is set to the registry client timeout.
+// The smallest bucket contains all durations smaller than 0.1 seconds. The largest finite
+// bucket is set to 20 seconds. The total number of buckets is 20.
+// Note that depending on env.RegistryClientTimeout, the request duration may fall
+// outside of the bucket scope. In this case, the request will fall into the "infinite"
+// bucket.
 func roundedDurationBuckets() []float64 {
-	buckets := prometheus.ExponentialBucketsRange(0.1, env.RegistryClientTimeout.DurationSetting().Seconds(), 16)
+	buckets := prometheus.ExponentialBucketsRange(0.1, 20, 20)
 	for i := range buckets {
 		buckets[i] = math.Round(buckets[i]*1000) / 1000
 	}
