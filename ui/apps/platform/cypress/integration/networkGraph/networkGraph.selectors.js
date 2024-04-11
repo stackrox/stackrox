@@ -28,5 +28,5 @@ export const networkGraphSelectors = {
         `${manageCidrBlocksModal} button[name="entities.${index}.entity.delete"]`,
     updateCidrBlocksButton: `${manageCidrBlocksModal} button:contains("Update configuration")`,
     cidrModalAlertWithMessage: (message) =>
-        `${manageCidrBlocksModal} *[data-ouia-component-type="PF4/Alert"]:contains("${message}")`,
+        `${manageCidrBlocksModal} .pf-v5-c-alert:contains("${message}")`,
 };
