@@ -75,7 +75,7 @@ func (*FakeReg) Test() error                                               { ret
 
 func creatorWithoutRepoList() (string, types.Creator) {
 	return RegistryType,
-		func(integration *storage.ImageIntegration, _ *types.MetricsHandler, _ ...types.CreatorOption) (types.Registry, error) {
+		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
 			reg := newFakeReg(NameRepoListDisabled)
 			return reg, nil
 		}
@@ -83,7 +83,7 @@ func creatorWithoutRepoList() (string, types.Creator) {
 
 func creatorWithRepoList() (string, types.Creator) {
 	return RegistryType,
-		func(integration *storage.ImageIntegration, _ *types.MetricsHandler, _ ...types.CreatorOption) (types.Registry, error) {
+		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
 			reg := newFakeReg(NameRepoListEnabled)
 			return reg, nil
 		}

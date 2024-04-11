@@ -16,8 +16,9 @@ const (
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, types.Creator) {
 	return types.IBMType,
-		func(integration *storage.ImageIntegration, metricsHandler *types.MetricsHandler, _ ...types.CreatorOption) (types.Registry, error) {
-			return newRegistry(integration, false, metricsHandler)
+		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			cfg := types.ApplyCreatorOptions(options...)
+			return newRegistry(integration, false, cfg.GetMetricsHandler())
 		}
 }
 
@@ -25,8 +26,9 @@ func Creator() (string, types.Creator) {
 // Populating the internal repo list will be disabled.
 func CreatorWithoutRepoList() (string, types.Creator) {
 	return types.IBMType,
-		func(integration *storage.ImageIntegration, metricsHandler *types.MetricsHandler, _ ...types.CreatorOption) (types.Registry, error) {
-			return newRegistry(integration, true, metricsHandler)
+		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			cfg := types.ApplyCreatorOptions(options...)
+			return newRegistry(integration, true, cfg.GetMetricsHandler())
 		}
 }
 

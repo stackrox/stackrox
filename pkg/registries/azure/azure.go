@@ -9,8 +9,9 @@ import (
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, types.Creator) {
 	return types.AzureType,
-		func(integration *storage.ImageIntegration, metricsHandler *types.MetricsHandler, _ ...types.CreatorOption) (types.Registry, error) {
-			reg, err := docker.NewDockerRegistry(integration, false, metricsHandler)
+		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			cfg := types.ApplyCreatorOptions(options...)
+			reg, err := docker.NewDockerRegistry(integration, false, cfg.GetMetricsHandler())
 			return reg, err
 		}
 }
@@ -19,8 +20,9 @@ func Creator() (string, types.Creator) {
 // Populating the internal repo list will be disabled.
 func CreatorWithoutRepoList() (string, types.Creator) {
 	return types.AzureType,
-		func(integration *storage.ImageIntegration, metricsHandler *types.MetricsHandler, _ ...types.CreatorOption) (types.Registry, error) {
-			reg, err := docker.NewDockerRegistry(integration, true, metricsHandler)
+		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			cfg := types.ApplyCreatorOptions(options...)
+			reg, err := docker.NewDockerRegistry(integration, true, cfg.GetMetricsHandler())
 			return reg, err
 		}
 }
