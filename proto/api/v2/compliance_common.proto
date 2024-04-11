@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package v2;
+
+option go_package = "v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+message ComplianceRule {
+  string name = 1;
+  reserved 2;
+  string rule_type = 3;
+  string severity = 4;
+  string standard = 5;
+  string control = 6;
+  string title = 7;
+  string description = 8;
+  string rationale = 9;
+  message Fix {
+    string platform = 1;
+    string disruption = 2;
+  }
+  repeated Fix fixes = 10;
+  string id = 11;
+  string rule_id = 12;
+  string parent_rule = 13;
+  string instructions = 14;
+  string warning = 15;
+}

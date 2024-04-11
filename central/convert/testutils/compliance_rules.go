@@ -5,6 +5,7 @@ import (
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
+	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -82,7 +83,6 @@ func GetRuleV2Storage(_ *testing.T) *storage.ComplianceOperatorRuleV2 {
 		RuleId:      ruleID,
 		Name:        "ocp-cis",
 		RuleType:    "node",
-		Severity:    0,
 		Labels:      map[string]string{v1alpha1.SuiteLabel: "ocp-cis"},
 		Annotations: getAnnotations(),
 		Title:       "test rule",
@@ -93,6 +93,31 @@ func GetRuleV2Storage(_ *testing.T) *storage.ComplianceOperatorRuleV2 {
 		Controls:    controls,
 		ClusterId:   fixtureconsts.Cluster1,
 		RuleRefId:   internaltov2storage.BuildNameRefID(fixtureconsts.Cluster1, "random-rule-name"),
+		ParentRule:  "random-rule-name",
+	}
+}
+
+// GetRuleV2 -- returns V2 storage rule
+func GetRuleV2(_ *testing.T) *apiV2.ComplianceRule {
+	fixes := []*apiV2.ComplianceRule_Fix{
+		{
+			Platform:   "openshift",
+			Disruption: "its broken",
+		},
+	}
+
+	return &apiV2.ComplianceRule{
+		Id:          RuleUID,
+		RuleId:      ruleID,
+		Name:        "ocp-cis",
+		RuleType:    "node",
+		Title:       "test rule",
+		Description: "test description",
+		Rationale:   "test rationale",
+		Warning:     "test warning",
+		Severity:    "UNSET_RULE_SEVERITY",
+		Fixes:       fixes,
+		ParentRule:  "random-rule-name",
 	}
 }
 
