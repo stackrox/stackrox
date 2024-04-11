@@ -1,8 +1,9 @@
 package main
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_retestNTimes(t *testing.T) {
@@ -103,9 +104,8 @@ func Test_retestNTimes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := jobsToRetestFromComments(tt.comments); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("jobsToRetestFromComments() = %v, want %v", got, tt.want)
-			}
+			got := jobsToRetestFromComments(tt.comments)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -172,9 +172,8 @@ func Test_shouldRetest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := shouldRetestFailedStatuses(tt.statuses, tt.comments); got != tt.want {
-				t.Errorf("shouldRetestFailedStatuses() = %v, want %v", got, tt.want)
-			}
+			got := shouldRetestFailedStatuses(tt.statuses, tt.comments)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -240,9 +239,8 @@ func Test_commentsToCreate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := commentsToCreate(tt.statuses, tt.jobsToRetest, tt.shouldRetest); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("commentsToCreate() = %v, want %v", got, tt.want)
-			}
+			got := commentsToCreate(tt.statuses, tt.jobsToRetest, tt.shouldRetest)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
