@@ -172,8 +172,8 @@ func Test_shouldRetest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := shouldRetest(tt.statuses, tt.comments); got != tt.want {
-				t.Errorf("shouldRetest() = %v, want %v", got, tt.want)
+			if got := shouldRetestFailedStatuses(tt.statuses, tt.comments); got != tt.want {
+				t.Errorf("shouldRetestFailedStatuses() = %v, want %v", got, tt.want)
 			}
 		})
 	}
