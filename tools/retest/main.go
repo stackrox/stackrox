@@ -25,7 +25,9 @@ func main() {
 
 	//TODO(janisz): handle pagination
 	search, _, err := client.Search.Issues(ctx, `repo:stackrox/stackrox label:auto-retest state:open type:pr status:failure`, nil)
-	handleError(err)
+	if err != nil {
+		log.Fatalf("could not find issues: %v", err)
+	}
 	log.Printf("Found %d PRs", search.GetTotal())
 
 issues:
@@ -33,10 +35,21 @@ issues:
 		prNumber := pr.GetNumber()
 		log.Printf("#%d retrieving...", prNumber)
 		prDetails, _, err := client.PullRequests.Get(ctx, S, S, prNumber)
-		handleError(err)
-		commentsBodies := commentsForPR(ctx, client, prNumber)
+		if err != nil {
+			log.Printf("#%d could not get PR details: %v", prNumber, err)
+			continue
+		}
+		commentsBodies, err := commentsForPR(ctx, client, prNumber)
+		if err != nil {
+			log.Printf("#%d could not get comments: %v", prNumber, err)
+			continue
+		}
 		log.Printf("#%d has %d comments", prNumber, len(commentsBodies))
-		checks := checksForCommit(ctx, client, prDetails.GetHead().GetSHA())
+		checks, err := checksForCommit(ctx, client, prDetails.GetHead().GetSHA())
+		if err != nil {
+			log.Printf("#%d could not get checks: %v", prNumber, err)
+			continue
+		}
 		log.Printf("#%d has %d completed checks", prNumber, len(checks))
 
 		for name, status := range checks {
@@ -46,14 +59,20 @@ issues:
 			}
 		}
 
-		statuses := statusesForPR(ctx, client, prDetails.GetStatusesURL())
+		statuses, err := statusesForPR(ctx, client, prDetails.GetStatusesURL())
+		if err != nil {
+			log.Printf("#%d could not statuses: %v", prNumber, err)
+			continue
+		}
 		log.Printf("#%d has %d statuses", prNumber, len(statuses))
 		jobsToRetest := jobsToRetestFromComments(commentsBodies)
 		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
 		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetest(statuses, commentsBodies))
 		log.Printf("#%d will be commented with: %s", prNumber, strings.Join(newComments, ", "))
 		for _, newComment := range newComments {
-			createComment(ctx, client, prNumber, newComment)
+			if err := createComment(ctx, client, prNumber, newComment); err != nil {
+				log.Printf("#%d could not create a comment '%s': %v", prNumber, newComment, err)
+			}
 		}
 	}
 }
@@ -155,37 +174,46 @@ func shouldRetest(statuses map[string]string, comments []string) bool {
 
 //region Github client helper
 
-func createComment(ctx context.Context, client *github.Client, prNumber int, comment string) {
+func createComment(ctx context.Context, client *github.Client, prNumber int, comment string) error {
 	issueComment := &github.IssueComment{
 		Body: &comment,
 	}
 	c, _, err := client.Issues.CreateComment(ctx, S, S, prNumber, issueComment)
-	handleError(err)
+	if err != nil {
+		return err
+	}
 	log.Printf("#%d commented: %s", prNumber, c.GetHTMLURL())
+	return nil
 }
 
-func commentsForPR(ctx context.Context, client *github.Client, prNumber int) []string {
+func commentsForPR(ctx context.Context, client *github.Client, prNumber int) ([]string, error) {
 	comments, _, err := client.Issues.ListComments(ctx, S, S, prNumber, nil)
-	handleError(err)
+	if err != nil {
+		return nil, err
+	}
 	commentsBodies := make([]string, 0, len(comments))
 	for _, comment := range comments {
 		commentsBodies = append(commentsBodies, *comment.Body)
 	}
-	return commentsBodies
+	return commentsBodies, nil
 }
 
-func checksForCommit(ctx context.Context, client *github.Client, lastCommit string) map[string]bool {
+func checksForCommit(ctx context.Context, client *github.Client, lastCommit string) (map[string]bool, error) {
+	completed := "completed"
+	latest := "latest"
 	checks, _, err := client.Checks.ListCheckRunsForRef(ctx, S, S, lastCommit, &github.ListCheckRunsOptions{
-		Status: ptr("completed"),
-		Filter: ptr("latest"),
+		Status: &completed,
+		Filter: &latest,
 	})
-	handleError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	result := map[string]bool{}
 	for _, check := range checks.CheckRuns {
 		result[check.GetName()] = check.GetConclusion() != "failure"
 	}
-	return result
+	return result, nil
 }
 
 type Status struct {
@@ -193,12 +221,16 @@ type Status struct {
 	State   string `json:"state"`
 }
 
-func statusesForPR(ctx context.Context, client *github.Client, url string) map[string]string {
+func statusesForPR(ctx context.Context, client *github.Client, url string) (map[string]string, error) {
 	var statuses []Status
 	statusRequest, err := http.NewRequest("GET", url, nil)
-	handleError(err)
+	if err != nil {
+		return nil, err
+	}
 	_, err = client.Do(ctx, statusRequest, &statuses)
-	handleError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	result := map[string]string{}
 	for _, status := range statuses {
@@ -206,17 +238,7 @@ func statusesForPR(ctx context.Context, client *github.Client, url string) map[s
 		result[job] = status.State
 	}
 
-	return result
+	return result, nil
 }
 
 // endregion
-
-func handleError(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func ptr[T any](in T) *T {
-	return &in
-}
