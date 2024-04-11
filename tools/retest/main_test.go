@@ -28,25 +28,25 @@ func Test_retestNTimes(t *testing.T) {
 		},
 		{
 			name:     "request test 10 times",
-			comments: []string{"Retest job-name-1 10 times"},
+			comments: []string{"/retest-times 10 job-name-1"},
 			want: []string{
 				"job-name-1",
 			},
 		},
 		{
-			name:     "too many times",
-			comments: []string{"Retest job-name-1 101 times"},
+			name:     "too many",
+			comments: []string{"/retest-times 101 job-name-1"},
 			want:     []string{},
 		},
 		{
 			name:     "invalid number",
-			comments: []string{"Retest job-name-1 99999999999999999999999 times"},
+			comments: []string{"/retest-times 99999999999999999999999 job-name-1"},
 			want:     []string{},
 		},
 		{
 			name: "request test 10 times, with 5 already done",
 			comments: []string{
-				"Retest job-name-1 10 times",
+				"/retest-times 10 job-name-1",
 				"/test job-name-1",
 				"/test job-name-1",
 				"/test job-name-1",
@@ -60,7 +60,7 @@ func Test_retestNTimes(t *testing.T) {
 		{
 			name: "request test 10 times, with 3 already done and other as well",
 			comments: []string{
-				"Retest job-name-1 10 times",
+				"/retest-times 10 job-name-1",
 				"/test job-name-1",
 				"/test job-name-2",
 				"/test job-name-3",
@@ -74,12 +74,12 @@ func Test_retestNTimes(t *testing.T) {
 		{
 			name: "request test 10 times for multiple jobs",
 			comments: []string{
-				"Retest job-name-1 10 times",
+				"/retest-times 10 job-name-1",
 				"/test job-name-2",
 				"/test job-name-3",
 				"/test job-name-3",
-				"Retest job-name-1 10 times",
-				"Retest job-name-2 10 times",
+				"/retest-times 10 job-name-1",
+				"/retest-times 10 job-name-2",
 				"/test job-name-3",
 				"/test job-name-3",
 			},
@@ -91,12 +91,12 @@ func Test_retestNTimes(t *testing.T) {
 		{
 			name: "request test 10 times for multiple jobs",
 			comments: []string{
-				"Retest job-name-1 1 times",
+				"/retest-times 1 job-name-1",
 				"/test job-name-1",
 				"/test job-name-2",
 				"/test job-name-1",
-				"Retest job-name-1 1 times",
-				"Retest job-name-2 1 times",
+				"/retest-times 1 job-name-1",
+				"/retest-times 1 job-name-2",
 			},
 			want: []string{},
 		},

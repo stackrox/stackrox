@@ -40,7 +40,7 @@ issues:
 		for name, status := range checks {
 			if !status {
 				log.Printf("#%d has a failing check (%s), skipping", prNumber, name)
-				continue loop
+				continue issues
 			}
 		}
 
@@ -104,8 +104,8 @@ func jobsToRetestFromComments(comments []string) []string {
 		if len(matched) != 3 {
 			continue
 		}
-		job := matched[1]
-		t, err := strconv.Atoi(matched[2])
+		job := matched[2]
+		t, err := strconv.Atoi(matched[1])
 		if err != nil {
 			log.Printf("got an error in a comment %s: %s", c, err)
 			continue
@@ -183,7 +183,7 @@ type Status struct {
 	State   string `json:"state"`
 }
 
-func statusForPR(ctx context.Context, client *github.Client, url string) map[string]string {
+func statusesForPR(ctx context.Context, client *github.Client, url string) map[string]string {
 	var statuses []Status
 	statusRequest, err := http.NewRequest("GET", url, nil)
 	handleError(err)
