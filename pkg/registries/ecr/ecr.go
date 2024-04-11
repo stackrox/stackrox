@@ -147,6 +147,7 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 		Endpoint:        endpoint,
 		DisableRepoList: disableRepoList,
 		MetricsHandler:  metricsHandler,
+		RegistryType:    integration.GetType(),
 	}
 	if authData := conf.GetAuthorizationData(); authData != nil {
 		cfg.SetCredentials(authData.GetUsername(), authData.GetPassword())

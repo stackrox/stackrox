@@ -28,6 +28,8 @@ type Config struct {
 	mutex    sync.RWMutex
 
 	MetricsHandler *types.MetricsHandler
+	// RegistryType is the underlying registry type as encoded in the image integration.
+	RegistryType   string
 }
 
 // GetCredentials returns the Docker basic auth credentials.
@@ -54,7 +56,7 @@ func (c *Config) formatURL() string {
 }
 
 // DefaultTransport returns the default transport based on the configuration.
-func DefaultTransport(cfg *Config, registryType string) registry.Transport {
+func DefaultTransport(cfg *Config) registry.Transport {
 	transport := proxy.RoundTripper(
 		proxy.WithDialTimeout(env.RegistryDialerTimeout.DurationSetting()),
 		proxy.WithResponseHeaderTimeout(env.RegistryResponseTimeout.DurationSetting()),
@@ -66,7 +68,7 @@ func DefaultTransport(cfg *Config, registryType string) registry.Transport {
 			proxy.WithResponseHeaderTimeout(env.RegistryResponseTimeout.DurationSetting()),
 		)
 	}
-	transport = cfg.MetricsHandler.RoundTripper(transport, registryType)
+	transport = cfg.MetricsHandler.RoundTripper(transport, cfg.RegistryType)
 	username, password := cfg.GetCredentials()
 	return registry.WrapTransport(transport, strings.TrimSuffix(cfg.formatURL(), "/"), username, password)
 }

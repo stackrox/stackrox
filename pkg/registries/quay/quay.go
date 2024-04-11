@@ -110,6 +110,7 @@ func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.Imag
 		Insecure:        config.GetInsecure(),
 		DisableRepoList: disableRepoList,
 		MetricsHandler:  metricsHandler,
+		RegistryType:    integration.GetType(),
 	}
 	cfg.SetCredentials(username, password)
 	dockerRegistry, err := docker.NewDockerRegistryWithConfig(cfg, integration)

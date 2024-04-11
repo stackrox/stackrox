@@ -80,7 +80,7 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 
 	var transport registry.Transport
 	if len(transports) == 0 || transports[0] == nil {
-		transport = DefaultTransport(cfg, integration.GetType())
+		transport = DefaultTransport(cfg)
 	} else {
 		transport = transports[0]
 	}
@@ -132,6 +132,7 @@ func NewDockerRegistry(integration *storage.ImageIntegration, disableRepoList bo
 		Insecure:        dockerConfig.Docker.GetInsecure(),
 		DisableRepoList: disableRepoList,
 		MetricsHandler:  metricsHandler,
+		RegistryType:    integration.GetType(),
 	}
 	return NewDockerRegistryWithConfig(cfg, integration)
 }

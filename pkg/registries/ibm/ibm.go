@@ -58,6 +58,7 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 		Endpoint:        config.GetEndpoint(),
 		DisableRepoList: disableRepoList,
 		MetricsHandler:  metricsHandler,
+		RegistryType:    integration.GetType(),
 	}
 	cfg.SetCredentials(username, config.GetApiKey())
 	registry, err := docker.NewDockerRegistryWithConfig(cfg, integration)

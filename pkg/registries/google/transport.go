@@ -20,18 +20,15 @@ var log = logging.LoggerForModule()
 // accept a standard oauth2 transport.
 type googleTransport struct {
 	registry.Transport
-	name         string
-	config       *docker.Config
-	registryType string
-	token        *oauth2.Token
-	tokenSource  oauth2.TokenSource
-	mutex        sync.RWMutex
+	name        string
+	config      *docker.Config
+	token       *oauth2.Token
+	tokenSource oauth2.TokenSource
+	mutex       sync.RWMutex
 }
 
-func newGoogleTransport(name string, config *docker.Config,
-	tokenSource oauth2.TokenSource, registryType string,
-) *googleTransport {
-	transport := &googleTransport{name: name, config: config, tokenSource: tokenSource, registryType: registryType}
+func newGoogleTransport(name string, config *docker.Config, tokenSource oauth2.TokenSource) *googleTransport {
+	transport := &googleTransport{name: name, config: config, tokenSource: tokenSource}
 	if err := transport.refreshNoLock(); err != nil {
 		log.Error("Failed to refresh token: ", err)
 	}
@@ -71,6 +68,6 @@ func (t *googleTransport) refreshNoLock() error {
 	}
 	t.token = token
 	t.config.SetCredentials("oauth2accesstoken", token.AccessToken)
-	t.Transport = docker.DefaultTransport(t.config, t.registryType)
+	t.Transport = docker.DefaultTransport(t.config)
 	return nil
 }

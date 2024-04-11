@@ -95,6 +95,7 @@ func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 		Endpoint:        config.GetEndpoint(),
 		DisableRepoList: disableRepoList,
 		MetricsHandler:  metricsHandler,
+		RegistryType:    integration.GetType(),
 	}
 	var (
 		tokenSource oauth2.TokenSource
@@ -122,7 +123,7 @@ func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 	reg := &googleRegistry{
 		project: strings.ToLower(config.GetProject()),
 	}
-	reg.transport = newGoogleTransport(integration.GetName(), dockerConfig, tokenSource, integration.GetType())
+	reg.transport = newGoogleTransport(integration.GetName(), dockerConfig, tokenSource)
 	dockerRegistry, err := docker.NewDockerRegistryWithConfig(dockerConfig, integration, reg.transport)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create docker registry")

@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/registries/docker"
-	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -82,6 +81,6 @@ func (t *awsTransport) refreshNoLock() error {
 	}
 	t.expiresAt = authData.ExpiresAt
 	t.config.SetCredentials(username, password)
-	t.Transport = docker.DefaultTransport(t.config, types.ECRType)
+	t.Transport = docker.DefaultTransport(t.config)
 	return nil
 }
