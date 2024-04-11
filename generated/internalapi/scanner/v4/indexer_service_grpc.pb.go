@@ -25,6 +25,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	Indexer_CreateIndexReport_FullMethodName      = "/scanner.v4.Indexer/CreateIndexReport"
 	Indexer_GetIndexReport_FullMethodName         = "/scanner.v4.Indexer/GetIndexReport"
+	Indexer_GetIndexReportFromHash_FullMethodName = "/scanner.v4.Indexer/GetIndexReportFromHash"
 	Indexer_GetOrCreateIndexReport_FullMethodName = "/scanner.v4.Indexer/GetOrCreateIndexReport"
 	Indexer_HasIndexReport_FullMethodName         = "/scanner.v4.Indexer/HasIndexReport"
 )
@@ -37,6 +38,8 @@ type IndexerClient interface {
 	CreateIndexReport(ctx context.Context, in *CreateIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error)
 	// GetIndexReport returns one index report.
 	GetIndexReport(ctx context.Context, in *GetIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error)
+	// GetIndexReportFromHash returns one index report, converting the given string into a digest directly.
+	GetIndexReportFromHash(ctx context.Context, in *GetIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error)
 	// GetOrCreateIndexReport creates an index report for the specified resource,
 	// if it does not already exist, and returns the report.
 	// This essentially combines GetIndexReport and CreateIndexReport.
@@ -71,6 +74,15 @@ func (c *indexerClient) GetIndexReport(ctx context.Context, in *GetIndexReportRe
 	return out, nil
 }
 
+func (c *indexerClient) GetIndexReportFromHash(ctx context.Context, in *GetIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error) {
+	out := new(IndexReport)
+	err := c.cc.Invoke(ctx, Indexer_GetIndexReportFromHash_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *indexerClient) GetOrCreateIndexReport(ctx context.Context, in *GetOrCreateIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error) {
 	out := new(IndexReport)
 	err := c.cc.Invoke(ctx, Indexer_GetOrCreateIndexReport_FullMethodName, in, out, opts...)
@@ -97,6 +109,8 @@ type IndexerServer interface {
 	CreateIndexReport(context.Context, *CreateIndexReportRequest) (*IndexReport, error)
 	// GetIndexReport returns one index report.
 	GetIndexReport(context.Context, *GetIndexReportRequest) (*IndexReport, error)
+	// GetIndexReportFromHash returns one index report, converting the given string into a digest directly.
+	GetIndexReportFromHash(context.Context, *GetIndexReportRequest) (*IndexReport, error)
 	// GetOrCreateIndexReport creates an index report for the specified resource,
 	// if it does not already exist, and returns the report.
 	// This essentially combines GetIndexReport and CreateIndexReport.
@@ -114,6 +128,9 @@ func (UnimplementedIndexerServer) CreateIndexReport(context.Context, *CreateInde
 }
 func (UnimplementedIndexerServer) GetIndexReport(context.Context, *GetIndexReportRequest) (*IndexReport, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetIndexReport not implemented")
+}
+func (UnimplementedIndexerServer) GetIndexReportFromHash(context.Context, *GetIndexReportRequest) (*IndexReport, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIndexReportFromHash not implemented")
 }
 func (UnimplementedIndexerServer) GetOrCreateIndexReport(context.Context, *GetOrCreateIndexReportRequest) (*IndexReport, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrCreateIndexReport not implemented")
@@ -169,6 +186,24 @@ func _Indexer_GetIndexReport_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Indexer_GetIndexReportFromHash_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIndexReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IndexerServer).GetIndexReportFromHash(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Indexer_GetIndexReportFromHash_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexerServer).GetIndexReportFromHash(ctx, req.(*GetIndexReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Indexer_GetOrCreateIndexReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetOrCreateIndexReportRequest)
 	if err := dec(in); err != nil {
@@ -219,6 +254,10 @@ var Indexer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetIndexReport",
 			Handler:    _Indexer_GetIndexReport_Handler,
+		},
+		{
+			MethodName: "GetIndexReportFromHash",
+			Handler:    _Indexer_GetIndexReportFromHash_Handler,
 		},
 		{
 			MethodName: "GetOrCreateIndexReport",

@@ -23,3 +23,18 @@ func getClairIndexReport(ctx context.Context, indexer indexer.ReportGetter, hash
 	}
 	return ir, nil
 }
+
+// TODO: We could merge both functions with a bit of work
+func getClairIndexReportFromHash(ctx context.Context, indexer indexer.ReportGetter, manifestID string) (*claircore.IndexReport, error) {
+	ir, found, err := indexer.GetIndexReportFromHash(ctx, manifestID)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, errox.NotFound.Newf("report with id %q not found", manifestID)
+	}
+	if !ir.Success {
+		return nil, errox.NotFound.Newf("report failed in state %q: %s", ir.State, ir.Err)
+	}
+	return ir, nil
+}

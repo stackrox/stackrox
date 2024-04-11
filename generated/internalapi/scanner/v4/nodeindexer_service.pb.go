@@ -4,12 +4,8 @@
 package v4
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -109,88 +105,6 @@ var fileDescriptor_29583f3c47770ebe = []byte{
 	0xc9, 0x3b, 0x89, 0x9c, 0x78, 0x24, 0xc7, 0x78, 0xe1, 0x91, 0x1c, 0xe3, 0x83, 0x47, 0x72, 0x8c,
 	0x33, 0x1e, 0xcb, 0x31, 0x44, 0x31, 0x95, 0x99, 0x24, 0xb1, 0x81, 0x3d, 0x60, 0x0c, 0x08, 0x00,
 	0x00, 0xff, 0xff, 0xed, 0xa6, 0x2b, 0x11, 0x2b, 0x01, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// NodeIndexerClient is the client API for NodeIndexer service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type NodeIndexerClient interface {
-	// CreateNodeIndexReport creates an index report for the node the container runs on and returns the report.
-	CreateNodeIndexReport(ctx context.Context, in *CreateNodeIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error)
-}
-
-type nodeIndexerClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewNodeIndexerClient(cc grpc.ClientConnInterface) NodeIndexerClient {
-	return &nodeIndexerClient{cc}
-}
-
-func (c *nodeIndexerClient) CreateNodeIndexReport(ctx context.Context, in *CreateNodeIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error) {
-	out := new(IndexReport)
-	err := c.cc.Invoke(ctx, "/scanner.v4.NodeIndexer/CreateNodeIndexReport", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// NodeIndexerServer is the server API for NodeIndexer service.
-type NodeIndexerServer interface {
-	// CreateNodeIndexReport creates an index report for the node the container runs on and returns the report.
-	CreateNodeIndexReport(context.Context, *CreateNodeIndexReportRequest) (*IndexReport, error)
-}
-
-// UnimplementedNodeIndexerServer can be embedded to have forward compatible implementations.
-type UnimplementedNodeIndexerServer struct {
-}
-
-func (*UnimplementedNodeIndexerServer) CreateNodeIndexReport(ctx context.Context, req *CreateNodeIndexReportRequest) (*IndexReport, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateNodeIndexReport not implemented")
-}
-
-func RegisterNodeIndexerServer(s *grpc.Server, srv NodeIndexerServer) {
-	s.RegisterService(&_NodeIndexer_serviceDesc, srv)
-}
-
-func _NodeIndexer_CreateNodeIndexReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateNodeIndexReportRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(NodeIndexerServer).CreateNodeIndexReport(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/scanner.v4.NodeIndexer/CreateNodeIndexReport",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeIndexerServer).CreateNodeIndexReport(ctx, req.(*CreateNodeIndexReportRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _NodeIndexer_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "scanner.v4.NodeIndexer",
-	HandlerType: (*NodeIndexerServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "CreateNodeIndexReport",
-			Handler:    _NodeIndexer_CreateNodeIndexReport_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "internalapi/scanner/v4/nodeindexer_service.proto",
 }
 
 func (m *CreateNodeIndexReportRequest) Marshal() (dAtA []byte, err error) {

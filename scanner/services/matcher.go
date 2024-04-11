@@ -95,6 +95,34 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 	return report, nil
 }
 
+// GetVulnerabilitiesForManifest expects the ID in the request to be a directly parseable claircore Manifest Digest
+func (s *matcherService) GetVulnerabilitiesForManifest(ctx context.Context, req *v4.GetVulnerabilitiesRequest) (*v4.VulnerabilityReport, error) {
+	// FIXME: Error handling / refactor to join with GetVulnerabilities
+	if err := s.matcher.Initialized(ctx); err != nil {
+		return nil, status.Errorf(codes.FailedPrecondition, "the matcher is not initialized: %v", err)
+	}
+	ctx = zlog.ContextWithValues(ctx, "hash_id", req.GetHashId())
+
+	ir, err := getClairIndexReportFromHash(ctx, s.indexer, req.GetHashId())
+	if err != nil {
+		return nil, err
+	}
+	zlog.Info(ctx).Msgf("getting vulnerabilities for index report %q", req.GetHashId())
+	ccReport, err := s.matcher.GetVulnerabilities(ctx, ir)
+	if err != nil {
+		zlog.Error(ctx).Err(err).Send()
+		return nil, err
+	}
+	report, err := mappers.ToProtoV4VulnerabilityReport(ctx, ccReport)
+	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.VulnerabilityReport")
+		return nil, err
+	}
+	report.HashId = req.GetHashId()
+	report.Notes = s.notes(ctx, report)
+	return report, nil
+}
+
 // parseIndexReport will generate an index report from a Contents payload.
 func (s *matcherService) parseIndexReport(contents *v4.Contents) (*claircore.IndexReport, error) {
 	ir, err := mappers.ToClairCoreIndexReport(contents)

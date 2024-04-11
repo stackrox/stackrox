@@ -31,10 +31,12 @@ func nodeScanCmd(ctx context.Context) *cobra.Command {
 			var vr *v4.VulnerabilityReport
 			vr, err = scanner.IndexAndScanNode(ctx)
 			report = vr
+			fmt.Println("Vulnerability Report")
 		} else {
 			var ir *v4.IndexReport
 			ir, err = scanner.CreateNodeIndexReport(ctx)
 			report = ir
+			fmt.Println("Index Report")
 		}
 
 		if err != nil {

@@ -244,11 +244,25 @@ func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, c
 }
 
 func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
-	zlog.Info(ctx).Msgf("in getVulnerabilities with hashID: %s", hashID) // FIXME
 	req := &v4.GetVulnerabilitiesRequest{HashId: hashID, Contents: contents}
 	var vr *v4.VulnerabilityReport
 	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetVulnerabilities", func() (err error) {
-		vr, err = c.matcher.GetVulnerabilities(ctx, req)
+		vr, err = c.matcher.GetVulnerabilitiesForManifest(ctx, req)
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get vulns: %w", err)
+	}
+
+	return vr, nil
+}
+
+func (c *gRPCScanner) getVulnerabilitiesForManifest(ctx context.Context, hashID string, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
+	zlog.Info(ctx).Msgf("in getVulnerabilitiesForManifest with manifestID: %s", hashID) // FIXME
+	req := &v4.GetVulnerabilitiesRequest{HashId: hashID, Contents: contents}
+	var vr *v4.VulnerabilityReport
+	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetVulnerabilities", func() (err error) {
+		vr, err = c.matcher.GetVulnerabilitiesForManifest(ctx, req)
 		return err
 	})
 	if err != nil {
@@ -291,7 +305,7 @@ func (c *gRPCScanner) IndexAndScanNode(ctx context.Context) (*v4.VulnerabilityRe
 	if err != nil {
 		return nil, fmt.Errorf("creating node index report: %w", err)
 	}
-	return c.getVulnerabilities(ctx, fmt.Sprintf("/v4/containerimage/%s", nr.GetHashId()), nil)
+	return c.getVulnerabilities(ctx, nr.GetHashId(), nil)
 }
 
 func getImageManifestID(ref name.Digest) string {

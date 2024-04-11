@@ -80,6 +80,7 @@ func proxiedRemoteTransport() http.RoundTripper {
 // ReportGetter can get index reports from an Indexer.
 type ReportGetter interface {
 	GetIndexReport(context.Context, string) (*claircore.IndexReport, bool, error)
+	GetIndexReportFromHash(ctx context.Context, hash string) (*claircore.IndexReport, bool, error)
 }
 
 // Indexer represents an image indexer.
@@ -351,6 +352,15 @@ func getLayerRequest(httpClient *http.Client, imgRef name.Reference, layerDigest
 // GetIndexReport retrieves an IndexReport for the given hash ID, if it exists.
 func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
 	manifestDigest, err := createManifestDigest(hashID)
+	if err != nil {
+		return nil, false, err
+	}
+	return i.libIndex.IndexReport(ctx, manifestDigest)
+}
+
+// GetIndexReportFromHash doesn't create a new hash, but instead parses the given hash into a claircore.Digest
+func (i *localIndexer) GetIndexReportFromHash(ctx context.Context, hash string) (*claircore.IndexReport, bool, error) {
+	manifestDigest, err := claircore.ParseDigest(hash)
 	if err != nil {
 		return nil, false, err
 	}
