@@ -4,15 +4,15 @@ ARG FINAL_STAGE_PATH="/mnt/final"
 
 
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-FROM registry.access.redhat.com/ubi8/ubi:latest AS rocksdb-builder-base
+FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-base
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.21 AS go-builder-base
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS final-base
 
 # TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available. Move dnf commands to respective stages.
-FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-installer
+FROM ubi-base AS rpm-installer
 
 ARG ROCKSDB_BUILDER_STAGE_PATH
-COPY --from=rocksdb-builder-base / "$ROCKSDB_BUILDER_STAGE_PATH"
+COPY --from=ubi-base / "$ROCKSDB_BUILDER_STAGE_PATH"
 
 ARG GO_BUILDER_STAGE_PATH
 COPY --from=go-builder-base / "$GO_BUILDER_STAGE_PATH"
