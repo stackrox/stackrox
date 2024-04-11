@@ -687,6 +687,10 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		}
 	}
 
+	if err := c.sendRuntimeConfiguration(server); err != nil {
+		return errors.Wrap(err, "unable to send runtime configuration")
+	}
+
 	metrics.IncrementSensorConnect(c.clusterID, c.sensorHello.GetSensorState().String())
 
 	c.runRecv(ctx, server)
@@ -732,5 +736,27 @@ func (c *sensorConnection) sendDeduperState(server central.SensorService_Communi
 		log.Errorf("Central wasn't able to send deduper state to sensor (%s): %s", c.clusterID, err)
 		return errors.Wrap(err, "unable to sync deduper state")
 	}
+	return nil
+}
+
+func (c *sensorConnection) sendRuntimeConfiguration(server central.SensorService_CommunicateServer) error {
+	runtimeFilters := []*storage.RuntimeFilter{}
+	resourceCollections := []*storage.ResourceCollection{}
+
+	runtimeFilteringConfiguration := &storage.RuntimeFilteringConfiguration{
+		RuntimeFilters: runtimeFilters,
+		ResourceCollections: resourceCollections,
+	}
+
+	runtimeFiltersConfigurationMsg := &central.MsgToSensor{Msg: &central.MsgToSensor_RuntimeFilteringConfiguration{
+		RuntimeFilteringConfiguration: runtimeFilteringConfiguration,
+	}}
+
+	err := server.Send(runtimeFiltersConfigurationMsg)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
