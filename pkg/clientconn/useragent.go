@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/version"
 )
@@ -33,7 +34,11 @@ func SetUserAgent(agent string) {
 	if testutils.IsRunningInCI() {
 		ci = " CI"
 	}
-	userAgent = fmt.Sprintf("%s/%s (%s; %s)%s", agent, version.GetMainVersion(), runtime.GOOS, runtime.GOARCH, ci)
+	execEnv := env.ExecutionEnvironment.Setting()
+	if execEnv != "" {
+		execEnv = fmt.Sprintf(" (%s)", execEnv)
+	}
+	userAgent = fmt.Sprintf("%s/%s (%s; %s)%s%s", agent, version.GetMainVersion(), runtime.GOOS, runtime.GOARCH, ci, execEnv)
 }
 
 // GetUserAgent returns the previously calculated value, which has to be set

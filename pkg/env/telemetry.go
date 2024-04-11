@@ -17,4 +17,8 @@ var (
 
 	// TelemetryStorageKey can be empty to disable telemetry collection.
 	TelemetryStorageKey = RegisterSetting("ROX_TELEMETRY_STORAGE_KEY_V1", AllowEmpty())
+
+	// ExecutionEnvironment specifies the context of the roxctl run. For example: "GHA" or "Tekton".
+	// The value will be added to the User-Agent string.
+	ExecutionEnvironment = RegisterSetting("ROX_EXECUTION_ENV", AllowEmpty())
 )
