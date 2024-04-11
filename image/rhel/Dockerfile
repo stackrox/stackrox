@@ -16,11 +16,11 @@ RUN /download.sh
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} as stackrox_data
 
 RUN mkdir /stackrox-data
-RUN microdnf upgrade --nobest -y  && microdnf install -y openssl zip
+RUN microdnf upgrade --nobest -y  && microdnf install -y zip
 
 WORKDIR /
 COPY fetch-stackrox-data.sh .
-RUN /fetch-stackrox-data.sh
+RUN /fetch-stackrox-data.sh /stackrox-data
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
