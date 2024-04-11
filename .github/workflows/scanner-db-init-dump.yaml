@@ -9,7 +9,7 @@ jobs:
   build-updater:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.66
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.67-3-g1fcba96e08
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
