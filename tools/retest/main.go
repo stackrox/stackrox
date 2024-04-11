@@ -26,7 +26,7 @@ func main() {
 	handleError(err)
 	log.Printf("Found %d PRs", search.GetTotal())
 
-loop:
+issues:
 	for _, pr := range search.Issues {
 		prNumber := pr.GetNumber()
 		log.Printf("#%d processing...", prNumber)
