@@ -291,7 +291,7 @@ func (c *gRPCScanner) CreateNodeIndexReport(ctx context.Context) (*v4.IndexRepor
 
 	// Generate random SHA to use as HashId // FIXME: temporary for tests. Find way to properly calc the hashId.
 	data := make([]byte, 10)
-	rand.Read(data)
+	_, _ = rand.Read(data)
 	randomSha := fmt.Sprintf("%x", sha256.Sum256(data))
 
 	r := &v4.CreateNodeIndexReportRequest{

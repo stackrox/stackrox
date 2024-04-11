@@ -39,6 +39,7 @@ type localNodeIndexer struct {
 	getIndexerTimeout time.Duration
 }
 
+// NewNodeIndexer creates a new node indexer
 func NewNodeIndexer(ctx context.Context, cfg config.NodeIndexerConfig) (NodeIndexer, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.NewNodeIndexer")
 
@@ -108,7 +109,7 @@ func NewNodeIndexer(ctx context.Context, cfg config.NodeIndexerConfig) (NodeInde
 	}, nil
 }
 
-func newNodeLibindex(ctx context.Context, _ config.NodeIndexerConfig, client *http.Client, mountPath string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
+func newNodeLibindex(ctx context.Context, _ config.NodeIndexerConfig, client *http.Client, _ string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
 	opts := libindex.Options{
 		Store:                store,
 		Locker:               locker,
@@ -140,7 +141,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*claircore.IndexRepor
 // Close closes the NodeIndexer.
 func (l *localNodeIndexer) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/nodeindexer.Close")
-	err := errors.Join(l.libIndex.Close(ctx)) //, os.RemoveAll(l.root)) // FIXME: Close fs.FS here!
+	err := errors.Join(l.libIndex.Close(ctx)) // , os.RemoveAll(l.root)) // FIXME: Close fs.FS here!
 	return err
 }
 

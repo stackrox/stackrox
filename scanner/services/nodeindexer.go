@@ -24,11 +24,13 @@ type nodeIndexerService struct {
 	nodeIndexer indexer.NodeIndexer
 }
 
+// NewNodeIndexerService returns a new NodeIndexerService
 func NewNodeIndexerService(indexer indexer.NodeIndexer) *nodeIndexerService {
 	return &nodeIndexerService{nodeIndexer: indexer}
 }
 
-func (s *nodeIndexerService) CreateNodeIndexReport(ctx context.Context, req *v4.CreateNodeIndexReportRequest) (*v4.IndexReport, error) {
+// CreateNodeIndexReport is the endpoint to create a new report for the node it runs on.
+func (s *nodeIndexerService) CreateNodeIndexReport(ctx context.Context, _ *v4.CreateNodeIndexReportRequest) (*v4.IndexReport, error) {
 	clairReport, err := s.nodeIndexer.IndexNode(ctx)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("nodeIndexer.IndexNode failed")
@@ -60,10 +62,12 @@ func (s *nodeIndexerService) AuthFuncOverride(ctx context.Context, fullMethodNam
 	return ctx, errors.New("Not implemented / unauthorized")
 }
 
+// RegisterServiceServer .
 func (s *nodeIndexerService) RegisterServiceServer(server *grpc.Server) {
 	v4.RegisterNodeIndexerServer(server, s)
 }
 
+// RegisterServiceHandler .
 func (s *nodeIndexerService) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	// Currently we do not set up gRPC gateway for the indexer.
 	return nil
