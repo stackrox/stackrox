@@ -23,7 +23,7 @@ func main() {
 	// Use installation transport with client.
 	client := github.NewClient(nil).WithAuthToken(os.Getenv("GITHUB_TOKEN"))
 
-	//TODO(janisz): handle pagination
+	// TODO(janisz): handle pagination
 	search, _, err := client.Search.Issues(ctx, `repo:stackrox/stackrox label:auto-retest state:open type:pr status:failure`, nil)
 	if err != nil {
 		log.Fatalf("could not find issues: %v", err)
@@ -78,8 +78,8 @@ issues:
 }
 
 var (
-	restestNTimes = regexp.MustCompile("/retest-times (\\d+) (.*)")
-	testJob       = regexp.MustCompile("/test (.*)")
+	restestNTimes = regexp.MustCompile(`/retest-times (\\d+) (.*)`)
+	testJob       = regexp.MustCompile(`/test (.*)`)
 )
 
 func commentsToCreate(statuses map[string]string, jobsToRetest []string, shouldRetest bool) []string {
