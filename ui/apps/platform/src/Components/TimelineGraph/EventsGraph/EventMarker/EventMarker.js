@@ -72,7 +72,9 @@ const EventMarker = ({
                 popoverRef={popoverRef}
             >
                 <g>
-                    {type === eventTypes.POLICY_VIOLATION && <PolicyViolationEvent size={size} />}
+                    {type === eventTypes.POLICY_VIOLATION && (
+                        <PolicyViolationEvent size={size} ref={popoverRef} />
+                    )}
                     {type === eventTypes.PROCESS_ACTIVITY && (
                         <ProcessActivityEvent
                             size={size}
