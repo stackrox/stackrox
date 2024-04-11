@@ -1,0 +1,117 @@
+package io
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestDefaultIO(t *testing.T) {
+	t.Run("default environment", func(t *testing.T) {
+		defaultIO := DefaultIO()
+		assert.NotNil(t, defaultIO)
+
+		outImpl := defaultIO.Out().(*os.File)
+		assert.NotNil(t, outImpl)
+		assert.Equal(t, "/dev/stdout", outImpl.Name())
+
+		errImpl := defaultIO.ErrOut().(*os.File)
+		assert.NotNil(t, errImpl)
+		assert.Equal(t, "/dev/stderr", errImpl.Name())
+	})
+
+	tmpPath, err := os.MkdirTemp("", "")
+	assert.NoError(t, err)
+	defer os.RemoveAll(tmpPath)
+
+	writeableSubDirPath := filepath.Join(tmpPath, "writeable-dir")
+	err = os.Mkdir(writeableSubDirPath, 0777)
+	assert.NoError(t, err)
+
+	notWriteableSubDirPath := filepath.Join(tmpPath, "not-writeable-dir")
+	err = os.Mkdir(notWriteableSubDirPath, 0555)
+	assert.NoError(t, err)
+
+	writeableFilePath := filepath.Join(tmpPath, "writeable-file")
+	err = os.WriteFile(writeableFilePath, []byte{}, 0600)
+	assert.NoError(t, err)
+
+	missingFileInWriteableSubDirPath := filepath.Join(writeableSubDirPath, "new-file")
+
+	writeableFileWithMissingSubDirPath := filepath.Join(writeableSubDirPath, "missing-dir", "writeable-file")
+
+	notWriteableFilePath := filepath.Join(tmpPath, "not-writeable-file")
+	err = os.WriteFile(notWriteableFilePath, []byte{}, 0400)
+	assert.NoError(t, err)
+
+	const stdoutPath = "/dev/stdout"
+	const stderrPath = "/dev/stderr"
+
+	testCases := []struct {
+		testName            string
+		outFilePath         string
+		expectedOutFileName string
+		errFilePath         string
+		expectedErrFileName string
+	}{
+		{
+			testName:            "out and err point to an existing writeable file",
+			outFilePath:         writeableFilePath,
+			expectedOutFileName: writeableFilePath,
+			errFilePath:         writeableFilePath,
+			expectedErrFileName: writeableFilePath,
+		},
+		{
+			testName:            "out and err variables are empty",
+			outFilePath:         "",
+			expectedOutFileName: stdoutPath,
+			errFilePath:         "",
+			expectedErrFileName: stderrPath,
+		},
+		{
+			testName:            "out and err point to missing files with writeable path base -> files are created",
+			outFilePath:         missingFileInWriteableSubDirPath,
+			expectedOutFileName: missingFileInWriteableSubDirPath,
+			errFilePath:         writeableFileWithMissingSubDirPath,
+			expectedErrFileName: writeableFileWithMissingSubDirPath,
+		},
+		{
+			testName:            "out points to a non-writeable file and err points to a path in a non-writeable directory -> use defaults",
+			outFilePath:         notWriteableFilePath,
+			expectedOutFileName: stdoutPath,
+			errFilePath:         filepath.Join(notWriteableSubDirPath, "missing-file"),
+			expectedErrFileName: stderrPath,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.testName, func(t *testing.T) {
+			t.Setenv("ROX_OUTPUT_FILE", testCase.outFilePath)
+			t.Setenv("ROX_ERROR_FILE", testCase.errFilePath)
+			defaultIO := DefaultIO()
+
+			outImpl := defaultIO.Out().(*os.File)
+			assert.NotNil(t, outImpl)
+			assert.Equal(t, testCase.expectedOutFileName, outImpl.Name())
+			if testCase.outFilePath == testCase.expectedOutFileName {
+				_, err = os.Stat(testCase.outFilePath)
+				assert.NoError(t, err)
+			}
+
+			errImpl := defaultIO.ErrOut().(*os.File)
+			assert.NotNil(t, errImpl)
+			assert.Equal(t, testCase.expectedErrFileName, errImpl.Name())
+			if testCase.errFilePath == testCase.expectedErrFileName {
+				_, err = os.Stat(testCase.errFilePath)
+				assert.NoError(t, err)
+			}
+		})
+	}
+
+	err = os.Chmod(notWriteableSubDirPath, 0777)
+	assert.NoError(t, err)
+	err = os.Chmod(notWriteableFilePath, 0666)
+	assert.NoError(t, err)
+}
