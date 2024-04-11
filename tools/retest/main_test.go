@@ -178,3 +178,71 @@ func Test_shouldRetest(t *testing.T) {
 		})
 	}
 }
+
+func Test_commentsToCreate(t *testing.T) {
+	tests := []struct {
+		name         string
+		statuses     map[string]string
+		jobsToRetest []string
+		shouldRetest bool
+		want         []string
+	}{
+		{
+			name:         "nil",
+			statuses:     nil,
+			jobsToRetest: nil,
+			want:         nil,
+		},
+		{
+			name:         "empty",
+			statuses:     map[string]string{},
+			jobsToRetest: []string{},
+			want:         nil,
+		},
+		{
+			name:         "competed",
+			statuses:     map[string]string{"job-1": "succeeded"},
+			jobsToRetest: []string{"job-1"},
+			want:         []string{"/test job-1"},
+		},
+		{
+			name:         "competed",
+			statuses:     map[string]string{"job-1": "pending"},
+			jobsToRetest: []string{"job-1"},
+			want:         nil,
+		},
+		{
+			name:         "competed",
+			statuses:     map[string]string{"job-1": "succeeded"},
+			jobsToRetest: []string{"job-1"},
+			want:         []string{"/test job-1"},
+		},
+		{
+			name:         "retest",
+			statuses:     map[string]string{"job-1": "failure"},
+			jobsToRetest: []string{},
+			shouldRetest: true,
+			want:         []string{"/retest"},
+		},
+		{
+			name:         "retest",
+			statuses:     map[string]string{"job-1": "failure"},
+			jobsToRetest: []string{},
+			want:         nil,
+		},
+		{
+			name:         "just test no retest",
+			statuses:     map[string]string{"job-1": "failure"},
+			jobsToRetest: []string{"job-1"},
+			shouldRetest: true,
+			want:         []string{"/test job-1"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := commentsToCreate(tt.statuses, tt.jobsToRetest, tt.shouldRetest); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("commentsToCreate() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

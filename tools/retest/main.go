@@ -48,35 +48,11 @@ issues:
 		log.Printf("#%d has %d statuses", prNumber, len(statuses))
 		jobsToRetest := jobsToRetestFromComments(commentsBodies)
 		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
-
-		for _, job := range jobsToRetest {
-			state := statuses[job]
-			if state == "pending" {
-				log.Printf("#%d %s is still pending", prNumber, job)
-				continue
-			}
-			log.Printf("#%d retesting: %s %s", prNumber, job, state)
-			comment := github.IssueComment{
-				Body: ptr("/test " + job),
-			}
-			testComment, _, err := client.Issues.CreateComment(ctx, S, S, prNumber, &comment)
-			handleError(err)
-			log.Printf("#%d commented: %s", prNumber, testComment.GetHTMLURL())
+		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetest(statuses, commentsBodies))
+		log.Printf("#%d will be commented with: %s", prNumber, strings.Join(newComments, ", "))
+		for _, newComment := range newComments {
+			createComment(ctx, client, prNumber, newComment)
 		}
-
-		if len(jobsToRetest) != 0 {
-			continue
-		}
-
-		retestComment := github.IssueComment{
-			Body: ptr(retestComment),
-		}
-		if !shouldRetest(statuses, commentsBodies) {
-			continue
-		}
-		comment, _, err := client.Issues.CreateComment(ctx, S, S, prNumber, &retestComment)
-		handleError(err)
-		log.Printf("#%d commented: %s", prNumber, comment.GetHTMLURL())
 	}
 }
 
@@ -84,6 +60,27 @@ var (
 	restestNTimes = regexp.MustCompile("/retest-times (\\d+) (.*)")
 	testJob       = regexp.MustCompile("/test (.*)")
 )
+
+func commentsToCreate(statuses map[string]string, jobsToRetest []string, shouldRetest bool) []string {
+	var comments []string
+	for _, job := range jobsToRetest {
+		state := statuses[job]
+		if state == "pending" {
+			continue
+		}
+		comments = append(comments, "/test "+job)
+	}
+
+	if len(jobsToRetest) != 0 {
+		return comments
+	}
+
+	if !shouldRetest {
+		return comments
+	}
+	comments = append(comments, retestComment)
+	return comments
+}
 
 func jobsToRetestFromComments(comments []string) []string {
 	testedJobs := map[string]int{}
@@ -154,6 +151,17 @@ func shouldRetest(statuses map[string]string, comments []string) bool {
 	return false
 }
 
+//region Github client helper
+
+func createComment(ctx context.Context, client *github.Client, prNumber int, comment string) {
+	issueComment := &github.IssueComment{
+		Body: &comment,
+	}
+	c, _, err := client.Issues.CreateComment(ctx, S, S, prNumber, issueComment)
+	handleError(err)
+	log.Printf("#%d commented: %s", prNumber, c.GetHTMLURL())
+}
+
 func commentsForPR(ctx context.Context, client *github.Client, prNumber int) []string {
 	comments, _, err := client.Issues.ListComments(ctx, S, S, prNumber, nil)
 	handleError(err)
@@ -198,6 +206,8 @@ func statusesForPR(ctx context.Context, client *github.Client, url string) map[s
 
 	return result
 }
+
+// endregion
 
 func handleError(err error) {
 	if err != nil {
