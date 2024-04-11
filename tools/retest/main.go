@@ -78,7 +78,7 @@ issues:
 }
 
 var (
-	restestNTimes = regexp.MustCompile(`/retest-times (\\d+) (.*)`)
+	restestNTimes = regexp.MustCompile(`/retest-times (\d+) (.*)`)
 	testJob       = regexp.MustCompile(`/test (.*)`)
 )
 
