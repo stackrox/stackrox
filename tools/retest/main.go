@@ -29,7 +29,7 @@ func main() {
 issues:
 	for _, pr := range search.Issues {
 		prNumber := pr.GetNumber()
-		log.Printf("#%d processing...", prNumber)
+		log.Printf("#%d retrieving...", prNumber)
 		prDetails, _, err := client.PullRequests.Get(ctx, S, S, prNumber)
 		handleError(err)
 		commentsBodies := commentsForPR(ctx, client, prNumber)
@@ -39,12 +39,12 @@ issues:
 
 		for name, status := range checks {
 			if !status {
-				log.Printf("#%d has a failing check (%s) skipping", prNumber, name)
+				log.Printf("#%d has a failing check (%s), skipping", prNumber, name)
 				continue loop
 			}
 		}
 
-		statuses := statusForPR(ctx, client, prDetails.GetStatusesURL())
+		statuses := statusesForPR(ctx, client, prDetails.GetStatusesURL())
 		log.Printf("#%d has %d statuses", prNumber, len(statuses))
 		jobsToRetest := jobsToRetestFromComments(commentsBodies)
 		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
@@ -81,7 +81,7 @@ issues:
 }
 
 var (
-	restestNTimes = regexp.MustCompile("Retest (.*) (\\d+) times")
+	restestNTimes = regexp.MustCompile("/retest-times (\\d+) (.*)")
 	testJob       = regexp.MustCompile("/test (.*)")
 )
 
