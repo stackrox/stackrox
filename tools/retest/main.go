@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v60/github"
 )
@@ -16,7 +17,8 @@ import (
 const S = "stackrox"
 
 func main() {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
 
 	// Use installation transport with client.
 	client := github.NewClient(nil).WithAuthToken(os.Getenv("GITHUB_TOKEN"))
