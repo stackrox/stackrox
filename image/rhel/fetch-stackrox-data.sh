@@ -21,7 +21,7 @@ fetch_stackrox_data() {
     sha256sum -c <( echo "$(cat /tmp/external-networks/checksum) /tmp/external-networks/networks" )
 
     mkdir -p "${target_dir}/external-networks"
-    zip -jr "${target_dir}/external-networks/external-networks.zip" /tmp/external-networks
+    zip -jr --test "${target_dir}/external-networks/external-networks.zip" /tmp/external-networks
     rm -rf /tmp/external-networks
 }
 
