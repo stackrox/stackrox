@@ -8,6 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func cleanup(t *testing.T, tmpPath string) {
+	err := os.RemoveAll(tmpPath)
+	assert.NoError(t, err)
+}
+
 func TestDefaultIO(t *testing.T) {
 	t.Run("default environment", func(t *testing.T) {
 		defaultIO := DefaultIO()
@@ -24,14 +29,10 @@ func TestDefaultIO(t *testing.T) {
 
 	tmpPath, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
-	defer os.RemoveAll(tmpPath)
+	defer cleanup(t, tmpPath)
 
 	writeableSubDirPath := filepath.Join(tmpPath, "writeable-dir")
 	err = os.Mkdir(writeableSubDirPath, 0777)
-	assert.NoError(t, err)
-
-	notWriteableSubDirPath := filepath.Join(tmpPath, "not-writeable-dir")
-	err = os.Mkdir(notWriteableSubDirPath, 0555)
 	assert.NoError(t, err)
 
 	writeableFilePath := filepath.Join(tmpPath, "writeable-file")
@@ -78,10 +79,10 @@ func TestDefaultIO(t *testing.T) {
 			expectedErrFileName: writeableFileWithMissingSubDirPath,
 		},
 		{
-			testName:            "out points to a non-writeable file and err points to a path in a non-writeable directory -> use defaults",
+			testName:            "out and err point to a non-writeable file -> use defaults",
 			outFilePath:         notWriteableFilePath,
 			expectedOutFileName: stdoutPath,
-			errFilePath:         filepath.Join(notWriteableSubDirPath, "missing-file"),
+			errFilePath:         notWriteableFilePath,
 			expectedErrFileName: stderrPath,
 		},
 	}
@@ -110,8 +111,6 @@ func TestDefaultIO(t *testing.T) {
 		})
 	}
 
-	err = os.Chmod(notWriteableSubDirPath, 0777)
-	assert.NoError(t, err)
 	err = os.Chmod(notWriteableFilePath, 0666)
 	assert.NoError(t, err)
 }
