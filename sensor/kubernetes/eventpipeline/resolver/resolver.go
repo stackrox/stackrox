@@ -12,6 +12,6 @@ func New(outputQueue component.OutputQueue, provider store.Provider, queueSize i
 		outputQueue:   outputQueue,
 		innerQueue:    make(chan *component.ResourceEvent, queueSize),
 		storeProvider: provider,
-		stopSig:       concurrency.NewSignal(),
+		stopper:       concurrency.NewStopper(),
 	}
 }
