@@ -309,7 +309,7 @@ spec:
             script: |
               #!/usr/bin/env bash
               set -euo pipefail
-              microdnf install -y openssl zip
+              microdnf install -y zip
               exec "$(workspaces.source.path)/source/image/rhel/fetch-stackrox-data.sh" \
                   "$(workspaces.source.path)/source/.konflux/stackrox-data"
       workspaces:
