@@ -760,9 +760,6 @@ reinstall-dev-tools: clean-dev-tools
 .PHONY: install-dev-tools
 install-dev-tools: gotools-all
 	@echo "+ $@"
-ifeq ($(UNAME_S),Darwin)
-	@echo "Please manually install RocksDB if you haven't already. See README for details"
-endif
 
 .PHONY: roxvet
 roxvet: skip-dirs := operator/pkg/clientset \
