@@ -37,14 +37,17 @@ func (i *ioImpl) ErrOut() io.Writer {
 	return i.errOut
 }
 
+// getOutputFile opens a file in write (append) mode for output or error writing.
+// A nil output means that the specified path is either empty, or
+// that something prevented the file from being opened in write mode.
 func getOutputFile(filePath string) *os.File {
-	// This function opens a file in write (append) mode for output or error writing.
-	// A nil output means that the specified path is either empty, or
-	// that something prevented the file from being opened in write mode.
 	if len(filePath) == 0 {
 		return nil
 	}
 	fileInfo, err := os.Stat(filePath)
+	if err != nil && !os.IsNotExist(err) {
+		return nil
+	}
 	if os.IsNotExist(err) {
 		// If the output file does not exist, try to create it along with the path to it.
 		dirPath := filepath.Dir(filePath)

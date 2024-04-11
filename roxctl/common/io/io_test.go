@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -89,8 +90,8 @@ func TestDefaultIO(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.testName, func(t *testing.T) {
-			t.Setenv("ROX_OUTPUT_FILE", testCase.outFilePath)
-			t.Setenv("ROX_ERROR_FILE", testCase.errFilePath)
+			t.Setenv(env.OutputFile.EnvVar(), testCase.outFilePath)
+			t.Setenv(env.ErrorFile.EnvVar(), testCase.errFilePath)
 			defaultIO := DefaultIO()
 
 			outImpl := defaultIO.Out().(*os.File)

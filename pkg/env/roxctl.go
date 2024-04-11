@@ -48,8 +48,8 @@ var (
 	ScannerDBDownloadBaseURL = RegisterSetting("ROX_SCAN_DB_DL_BASE_URL", WithDefault("https://install.stackrox.io/scanner"))
 
 	// OutputFile specifies the path where roxctl should write its standard output
-	OutputFile = RegisterSetting("ROX_OUTPUT_FILE")
+	OutputFile = RegisterSetting("ROX_STDOUT")
 
 	// ErrorFile specifies the path where roxctl should write its standard error
-	ErrorFile = RegisterSetting("ROX_ERROR_FILE")
+	ErrorFile = RegisterSetting("ROX_STDERR")
 )
