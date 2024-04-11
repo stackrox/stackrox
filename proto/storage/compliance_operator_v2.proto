@@ -61,7 +61,6 @@ message ComplianceOperatorProfileV2 {
   string profile_ref_id = 15; // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
 }
 
-// Next Tag: 16
 message ComplianceOperatorRuleV2 {
   string id = 1; // @gotags: sql:"pk"
   string rule_id = 2;
@@ -82,6 +81,8 @@ message ComplianceOperatorRuleV2 {
   repeated RuleControls controls = 13;
   string cluster_id = 14; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
   string rule_ref_id = 15; // @gotags: search:"Rule Ref ID,hidden" sql:"type(uuid)"
+  string parent_rule = 16;
+  string instructions = 17;
 }
 
 // Next Tag: 3

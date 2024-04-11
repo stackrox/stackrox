@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -81,6 +82,21 @@ func (m *MockDataStore) GetRulesByCluster(ctx context.Context, clusterID string)
 func (mr *MockDataStoreMockRecorder) GetRulesByCluster(ctx, clusterID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRulesByCluster", reflect.TypeOf((*MockDataStore)(nil).GetRulesByCluster), ctx, clusterID)
+}
+
+// SearchRules mocks base method.
+func (m *MockDataStore) SearchRules(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorRuleV2, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchRules", ctx, query)
+	ret0, _ := ret[0].([]*storage.ComplianceOperatorRuleV2)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRules indicates an expected call of SearchRules.
+func (mr *MockDataStoreMockRecorder) SearchRules(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRules", reflect.TypeOf((*MockDataStore)(nil).SearchRules), ctx, query)
 }
 
 // UpsertRule mocks base method.
