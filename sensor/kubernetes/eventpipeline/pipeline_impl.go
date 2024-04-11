@@ -59,6 +59,8 @@ func (p *eventPipeline) ProcessMessage(msg *central.MsgToSensor) error {
 		return p.processReprocessDeployment(msg.GetReprocessDeployment())
 	case msg.GetInvalidateImageCache() != nil:
 		return p.processInvalidateImageCache(msg.GetInvalidateImageCache())
+	case msg.GetRuntimeFilteringConfiguration() != nil:
+		return p.processRuntimeFilterConfiguration(msg.GetRuntimeFilteringConfiguration())
 	}
 	return nil
 }
@@ -237,4 +239,11 @@ func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImage
 	msg.Context = p.getCurrentContext()
 	p.resolver.Send(msg)
 	return nil
+}
+
+func (p *eventPipeline) processRuntimeFilterConfiguration(req *storage.RuntimeFilteringConfiguration) error {
+	log.Infof("In processRuntimeFilterConfiguration msg is %+v", req)
+
+	return nil
+
 }
