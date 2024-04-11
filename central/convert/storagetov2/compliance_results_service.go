@@ -24,7 +24,7 @@ func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2) 
 	converted := &v2.ComplianceCheckResult{
 		CheckId:   incoming.GetCheckId(),
 		CheckName: incoming.GetCheckName(),
-		Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
+		Clusters: []*v2.ClusterCheckStatus{
 			clusterStatus(incoming),
 		},
 		Description:  incoming.GetDescription(),
@@ -295,8 +295,18 @@ func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfi
 	}
 }
 
-func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2) *v2.ComplianceCheckResult_ClusterCheckStatus {
-	return &v2.ComplianceCheckResult_ClusterCheckStatus{
+// ComplianceV2CheckClusterResults converts the storage check results to v2 scan results
+func ComplianceV2CheckClusterResults(incoming []*storage.ComplianceOperatorCheckResultV2) []*v2.ClusterCheckStatus {
+	clusterResults := make([]*v2.ClusterCheckStatus, 0, len(incoming))
+	for _, result := range incoming {
+		clusterResults = append(clusterResults, clusterStatus(result))
+	}
+
+	return clusterResults
+}
+
+func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2) *v2.ClusterCheckStatus {
+	return &v2.ClusterCheckStatus{
 		Cluster: &v2.ComplianceScanCluster{
 			ClusterId:   incoming.GetClusterId(),
 			ClusterName: incoming.GetClusterName(),
