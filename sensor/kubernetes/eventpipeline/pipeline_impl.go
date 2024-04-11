@@ -32,7 +32,7 @@ type eventPipeline struct {
 	offlineMode *atomic.Bool
 
 	eventsC chan *message.ExpiringMessage
-	stopSig concurrency.Signal
+	stopper concurrency.Stopper
 
 	contextMtx    sync.Mutex
 	context       context.Context
@@ -106,12 +106,17 @@ func (p *eventPipeline) Start() error {
 
 // Stop implements common.SensorComponent
 func (p *eventPipeline) Stop(_ error) {
+	if !p.stopper.Client().Stopped().IsDone() {
+		defer func() {
+			_ = p.stopper.Client().Stopped().Wait()
+		}()
+	}
 	// The order is important here, we need to stop the components
 	// that send messages to other components first
 	p.listener.Stop(nil)
 	p.resolver.Stop(nil)
 	p.output.Stop(nil)
-	p.stopSig.Signal()
+	p.stopper.Client().Stop()
 }
 
 func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
@@ -141,9 +146,10 @@ func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
 // forwardMessages from listener component to responses channel
 func (p *eventPipeline) forwardMessages() {
 	defer close(p.eventsC)
+	defer p.stopper.Flow().ReportStopped()
 	for {
 		select {
-		case <-p.stopSig.Done():
+		case <-p.stopper.Flow().StopRequested():
 			return
 		case msg, more := <-p.output.ResponsesC():
 			if !more {

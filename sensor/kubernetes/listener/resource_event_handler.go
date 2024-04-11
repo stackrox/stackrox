@@ -30,7 +30,7 @@ type startable interface {
 	Start(stopCh <-chan struct{})
 }
 
-func startAndWait(stopSignal *concurrency.Signal, wg *concurrency.WaitGroup, startables ...startable) bool {
+func startAndWait(stopSignal concurrency.Waitable, wg *concurrency.WaitGroup, startables ...startable) bool {
 	for _, start := range startables {
 		if start == nil {
 			continue
