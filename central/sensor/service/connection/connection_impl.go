@@ -740,8 +740,44 @@ func (c *sensorConnection) sendDeduperState(server central.SensorService_Communi
 }
 
 func (c *sensorConnection) sendRuntimeConfiguration(server central.SensorService_CommunicateServer) error {
-	runtimeFilters := []*storage.RuntimeFilter{}
-	resourceCollections := []*storage.ResourceCollection{}
+	runtimeFilterRule := storage.RuntimeFilter_RuntimeFilterRule{
+		ResourceCollectionId: "abcd",
+		Status: "off",
+	}
+
+	rules := []*storage.RuntimeFilter_RuntimeFilterRule{&runtimeFilterRule}
+
+	runtimeFilter := storage.RuntimeFilter{
+		Feature: storage.RuntimeFilter_PROCESSES,
+		DefaultStatus: "on",
+		Rules: rules,
+	}
+
+	resourceSelector := storage.ResourceSelector{
+		Rules: []*storage.SelectorRule{
+			&storage.SelectorRule{
+				FieldName: "Namespace",
+				Operator: storage.BooleanOperator_OR,
+				Values: []*storage.RuleValue{
+					&storage.RuleValue{
+						Value: "webapp",
+						MatchType: storage.MatchType_EXACT,
+					},
+				},
+			},
+		},
+	}
+
+	resourceSelectors := []*storage.ResourceSelector{&resourceSelector}
+
+	resourceCollection := storage.ResourceCollection{
+		Id: "abcd",
+		Name: "Fake collection",
+		ResourceSelectors: resourceSelectors,
+	}
+
+	runtimeFilters := []*storage.RuntimeFilter{&runtimeFilter}
+	resourceCollections := []*storage.ResourceCollection{&resourceCollection}
 
 	runtimeFilteringConfiguration := &storage.RuntimeFilteringConfiguration{
 		RuntimeFilters: runtimeFilters,
