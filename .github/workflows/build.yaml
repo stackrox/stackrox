@@ -683,6 +683,8 @@ jobs:
           roxctl version
 
       - name: Scan images
+        env:
+          ROX_EXECUTION_ENV: stackrox workflow
         run: |
           ./release/scripts/scan-images-with-roxctl.sh
 
