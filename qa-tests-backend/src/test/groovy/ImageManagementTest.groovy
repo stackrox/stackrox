@@ -341,7 +341,6 @@ class ImageManagementTest extends BaseSpecification {
             .clearLifecycleStages()
             .addLifecycleStages(LifecycleStage.BUILD)
             .addNotifiers(notifier.id)
-            .addCategories("DevOps Best Practices") // required for putPolicy
             .clearExclusions()
             .build()
         Services.updatePolicy(update)

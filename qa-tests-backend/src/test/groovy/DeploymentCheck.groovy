@@ -3,7 +3,6 @@ import static util.Helpers.withRetry
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.Rbac
-import io.stackrox.proto.storage.ScopeOuterClass
 
 import objects.K8sRole
 import objects.K8sRoleBinding
@@ -96,31 +95,29 @@ class DeploymentCheck extends BaseSpecification {
     def "Test Deployment Check - Filtered by Category"() {
         given:
         "create the builder, policy category, and policy"
-        def registry = "custom-registry"
+        def registry = "custom-registry.io"
         def builder = DetectionServiceOuterClass.DeployYAMLDetectionRequest.newBuilder()
-        builder.setYaml(createDeploymentYaml(DEPLOYMENT_CHECK, DEPLOYMENT_CHECK, registry+"nginx:latest"))
+        builder.setYaml(createDeploymentYaml(DEPLOYMENT_CHECK, DEPLOYMENT_CHECK, registry+"/nginx:latest"))
         builder.setNamespace(DEPLOYMENT_CHECK)
         builder.setCluster(clusterId)
-        builder.setPolicyCategories(0, DEPLOYMENT_CHECK_POLICY_CATEGORY)
+        builder.addPolicyCategories(DEPLOYMENT_CHECK_POLICY_CATEGORY)
         def req = builder.build()
         DetectionServiceOuterClass.DeployDetectionResponse res
         policyCategoryID = PolicyCategoryService.createNewPolicyCategory(DEPLOYMENT_CHECK_POLICY_CATEGORY)
         def policy = PolicyOuterClass.Policy.newBuilder().
-                addLifecycleStages(PolicyOuterClass.LifecycleStage.BUILD).
+                addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY).
                 addCategories(DEPLOYMENT_CHECK_POLICY_CATEGORY).
                 setName(DEPLOYMENT_CHECK).
                 setDisabled(false).
                 setSeverityValue(2).
                 addPolicySections(PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
                         PolicyOuterClass.PolicyGroup.newBuilder().setFieldName("Image Registry").
-                                setBooleanOperator(PolicyOuterClass.BooleanOperator.AND).
+                                setBooleanOperator(PolicyOuterClass.BooleanOperator.OR).
                                 addAllValues(
                                         [registry].collect { PolicyOuterClass.
                                                 PolicyValue.newBuilder().setValue(it).build() }
                                 ).build()
                 )).
-                addAllScope([DEPLOYMENT_CHECK].collect
-                        { ScopeOuterClass.Scope.newBuilder().setNamespace(DEPLOYMENT_CHECK).build() }).
                 build()
         policyID = PolicyService.createNewPolicy(policy)
 
