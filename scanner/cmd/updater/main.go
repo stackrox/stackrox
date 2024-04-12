@@ -3,72 +3,90 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/quay/zlog"
+	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/updater"
 )
 
-func tryExport(outputDir string) error {
+func tryExport(ctx context.Context, outputDir string, opts *updater.ExportOptions) error {
 	const timeout = 1 * time.Hour
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-
-	err := updater.Export(ctx, outputDir)
-	if errors.Is(err, context.DeadlineExceeded) {
-		zlog.Error(ctx).Err(err).Msg("Export timed out")
-		return err
-	}
+	err := updater.Export(ctx, outputDir, opts)
 	if err != nil {
-		zlog.Error(ctx).Err(err).Msg("Failed to export the vulnerabilities")
 		return err
 	}
-
 	return nil
 }
 
 func main() {
-	versionFlag := flag.Bool("version", false, "Print version")
-	outputDir := flag.String("output-dir", "", "Output directory")
-	dbConn := flag.String("db-conn", "", "Postgres connection string")
-	vulnsURL := flag.String("vulns-url", "", "URL to the vulnerabilities bundle")
-	flag.Parse()
+	var ctx = context.Background()
 
-	if *versionFlag {
-		fmt.Println(version.Version)
-		os.Exit(0)
+	var rootCmd = &cobra.Command{
+		Use:          "updater",
+		Version:      version.Version,
+		SilenceUsage: true,
+		Short:        "Stackrox Scanner vulnerability updater",
 	}
 
-	if *outputDir != "" {
-		const maxRetries = 3
-
-		for attempt := 1; attempt <= maxRetries; attempt++ {
-			err := tryExport(*outputDir)
-			if err == nil {
-				return
+	var exportCmd = &cobra.Command{
+		Use:   "export [--split] <output-dir>",
+		Short: "Export vulnerabilities and write bundle(s) to <output-dir>.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			outputDir := args[0]
+			split, err := cmd.Flags().GetBool("split")
+			if err != nil {
+				return err
 			}
-			if errors.Is(err, context.DeadlineExceeded) {
-				zlog.Error(context.Background()).Err(err).Msg("Data export attempt failed; will attempt retry if within retry limits")
-				continue
+			const retries = 3
+			for attempt := 1; attempt <= retries; attempt++ {
+				err = tryExport(ctx, outputDir, &updater.ExportOptions{SplitBundles: split})
+				if err != nil {
+					if errors.Is(err, context.DeadlineExceeded) {
+						zlog.Warn(ctx).
+							Err(err).
+							Int("attempt", attempt).
+							Int("retries", retries).
+							Msg("export failed; will retry if within retry limits")
+						continue
+					}
+					return fmt.Errorf("data export failed: %w", err)
+				}
+				return nil
 			}
+			return errors.New("data export failed: max retries exceeded")
+		},
+	}
+	exportCmd.Flags().Bool("split", false,
+		"If true create multiple bundles per updater, rather than a single bundle.")
 
-			zlog.Error(context.Background()).Err(err).Msg("Data updater failed to update vulnerabilities")
-			log.Fatal("The data export process has failed.")
-		}
-		log.Fatal("The data export process has failed: max retries exceeded")
-		return
+	var importCmd = &cobra.Command{
+		Use:   "import",
+		Short: "Import vulnerabilities using the provided database and URL",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			dbConn, _ := cmd.Flags().GetString("db-conn")
+			vulnsURL, _ := cmd.Flags().GetString("vulns-url")
+			if err := updater.Load(ctx, dbConn, vulnsURL); err != nil {
+				return err
+			}
+			return nil
+		},
 	}
-	if *vulnsURL != "" {
-		err := updater.Load(context.Background(), *dbConn, *vulnsURL)
-		if err != nil {
-			log.Fatal(err)
-		}
-		return
+	importCmd.Flags().String("db-conn", "host=/var/run/postgresql",
+		"Postgres connection string")
+	importCmd.Flags().String("vulns-url",
+		"https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulns.json.zst",
+		"URL to the vulnerabilities bundle")
+
+	rootCmd.AddCommand(exportCmd, importCmd)
+
+	if err := rootCmd.Execute(); err != nil {
+		log.Fatal(err)
 	}
-	log.Fatal("Invalid arguments: See `updater -h`")
 }

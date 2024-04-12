@@ -2,16 +2,23 @@ name: Scanner dev vulnerability update
 on:
   schedule:
   - cron: "30 */4 * * *"
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
 
 jobs:
-  upload-dev-vulnerabilities:
+  build-updater:
     runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'schedule' ||
+      (github.event_name == 'pull_request' &&
+       contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns'))
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.68
-      volumes:
-        - /tmp:/tmp # make sure Claircore blob can access tmp folder
     steps:
-    - name: Checkout
+    - name: Checkout repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
@@ -20,36 +27,106 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+    - uses: ./.github/actions/cache-go-dependencies
+
+    - name: Build updater
+      run: |
+        make tag
+        make -C scanner bin/updater
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: updater
+        path: scanner/bin/updater
+        if-no-files-found: error
+
+  run-updater:
+    needs:
+      - build-updater
+    runs-on: ubuntu-latest
+    env:
+      STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+      STACKROX_NVD_API_CALL_INTERVAL: 6s
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: updater
+        path: /usr/local/bin
+
+    - name: Run updater
+      if: >
+        github.event_name == 'pull_request' &&
+        !contains(github.event.pull_request.labels.*.name, 'scanner-split-vulns')
+      run: |
+        chmod +x /usr/local/bin/updater
+        updater export vulns
+
+    - name: Run updater with split vulns
+      if: >
+        github.event_name == 'pull_request' &&
+        contains(github.event.pull_request.labels.*.name, 'scanner-split-vulns')
+      run: |
+        chmod +x /usr/local/bin/updater
+        updater export --split bundles
+        mkdir vulns
+        zip vulns/vulnerabilities.zip bundles/*.json.zst
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: vulns
+        path: vulns
+        if-no-files-found: error
+
+  upload-vulnerabilities:
+    runs-on: ubuntu-latest
+    needs:
+      - run-updater
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: vulns
+        path: vulns
 
     - name: Authenticate with Google Cloud
+      if: github.event_name == 'schedule'
       uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
+    - name: Authenticate with Google Cloud
+      if: github.event_name == 'pull_request'
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
-    - name: Update vulnerabilities
-      env:
-        STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        STACKROX_NVD_API_CALL_INTERVAL: 6s
+    - name: Update dev vulnerabilities
+      if: github.event_name == 'schedule'
       run: |
-        if [ ! -d "scanner" ]; then
-          echo "Scanner directory not found. Terminating current step."
-          exit 1
-        fi
-
-        make -C scanner bin/updater
-        go clean -cache -modcache
-        ./scanner/bin/updater -output-dir=vulns
-
+        cd vulns
         # Upload development tags for upstream (dev) and downstream (1.0.0).
-        gsutil cp "vulns/vulns.json.zst" "gs://definitions.stackrox.io/v4/vulnerability-bundles/dev"
-        gsutil cp "vulns/vulns.json.zst" "gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0"
+        gsutil -m cp -r . gs://definitions.stackrox.io/v4/vulnerability-bundles/dev/
+        gsutil -m cp -r . gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
+
+    - name: Update PR vulnerabilities
+      if: github.event_name == 'pull_request'
+      run: |
+        branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+        # Replace / with -, so the branch name isn't truncated when pushed to GCS.
+        dir=${branch////-}
+        case $dir in
+        dev|1.0.0)
+          echo "Branch $dir is disallowed"
+          exit 1
+        esac
+        cd vulns
+        gsutil cp -r . "gs://scanner-v4-test/vulnerability-bundles/$dir"
 
   send-notification:
     needs:
-    - upload-dev-vulnerabilities
+    - upload-vulnerabilities
     runs-on: ubuntu-latest
     if: failure()
     steps:
