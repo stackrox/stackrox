@@ -32,9 +32,10 @@ func init() {
 func SetUserAgent(agent string) {
 	var ci string
 	if v, ok := os.LookupEnv("CI"); ok {
-		if v == "" {
-			ci = " CI"
-		} else if value, err := strconv.ParseBool(v); err == nil && value {
+		// Do not set CI if CI=false.
+		if value, err := strconv.ParseBool(v); err == nil && !value {
+			ci = ""
+		} else {
 			ci = " CI"
 		}
 	}
