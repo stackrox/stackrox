@@ -29,7 +29,7 @@ type Config struct {
 
 	MetricsHandler *types.MetricsHandler
 	// RegistryType is the underlying registry type as encoded in the image integration.
-	RegistryType   string
+	RegistryType string
 }
 
 // GetCredentials returns the Docker basic auth credentials.

@@ -7,7 +7,7 @@ import (
 // CreatorConfig specifies optional configuration parameters for registry creators.
 type CreatorConfig struct {
 	GCPTokenManager gcpAuth.STSTokenManager
-	MetricsHandler *MetricsHandler
+	MetricsHandler  *MetricsHandler
 }
 
 // GetGCPTokenManager is a nil-safe getter for GCPTokenManager.
