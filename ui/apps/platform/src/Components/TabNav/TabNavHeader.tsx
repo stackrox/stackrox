@@ -18,7 +18,7 @@ function TabNavHeader({ mainTitle, pageTitle, currentTabTitle, tabLinks }: TabNa
             <PageSection variant="light">
                 <Title headingLevel="h1">{mainTitle}</Title>
             </PageSection>
-            <PageSection variant="light" className="pf-u-px-sm pf-u-py-0">
+            <PageSection variant="light" className="pf-v5-u-px-sm pf-v5-u-py-0">
                 <TabNav currentTabTitle={currentTabTitle} tabLinks={tabLinks} />
             </PageSection>
         </>

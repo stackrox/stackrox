@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
@@ -41,7 +41,7 @@ export type DeploymentResourceTableProps = {
 function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTableProps) {
     const vulnerabilityState = useVulnerabilityState();
     return (
-        <TableComposable borders={false} variant="compact">
+        <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th sort={getSortParams('Deployment')}>Name</Th>
@@ -56,7 +56,7 @@ function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTabl
                     <Tbody
                         key={id}
                         style={{
-                            borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                            borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
                         }}
                     >
                         <Tr>
@@ -74,7 +74,7 @@ function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTabl
                     </Tbody>
                 );
             })}
-        </TableComposable>
+        </Table>
     );
 }
 

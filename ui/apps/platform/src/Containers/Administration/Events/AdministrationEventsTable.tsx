@@ -1,14 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import {
-    ExpandableRowContent,
-    TableComposable,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
 import { UseURLSortResult } from 'hooks/useURLSort';
@@ -39,7 +31,7 @@ function AdministrationEventsTable({
     searchFilter,
 }: AdministrationEventsTableProps): ReactElement {
     return (
-        <TableComposable variant="compact" borders={false}>
+        <Table variant="compact" borders={false}>
             <Thead>
                 <Tr>
                     <Th>Domain</Th>
@@ -64,7 +56,7 @@ function AdministrationEventsTable({
                             key={id}
                             isExpanded
                             style={{
-                                borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                                borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
                             }}
                         >
                             <Tr>
@@ -96,7 +88,7 @@ function AdministrationEventsTable({
                     );
                 })
             )}
-        </TableComposable>
+        </Table>
     );
 }
 

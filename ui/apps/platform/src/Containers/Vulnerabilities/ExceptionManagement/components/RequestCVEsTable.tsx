@@ -1,14 +1,6 @@
 import React from 'react';
 import { Bullseye, Flex, PageSection, Spinner, Text, Title } from '@patternfly/react-core';
-import {
-    ExpandableRowContent,
-    TableComposable,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { SearchIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import { Link } from 'react-router-dom';
@@ -84,7 +76,7 @@ function RequestCVEsTable({
     if (loading && !data) {
         return (
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner />
             </Bullseye>
         );
     }
@@ -104,7 +96,7 @@ function RequestCVEsTable({
         <PageSection variant="light">
             <Flex direction={{ default: 'column' }}>
                 <Title headingLevel="h2">{data?.imageCVEs.length || 0} results found</Title>
-                <TableComposable variant="compact">
+                <Table variant="compact">
                     <Thead noWrap>
                         <Tr>
                             <Td />
@@ -235,7 +227,7 @@ function RequestCVEsTable({
                                 );
                             }
                         )}
-                </TableComposable>
+                </Table>
             </Flex>
         </PageSection>
     );

@@ -1,14 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-    ExpandableRowContent,
-    TableComposable,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 import { min } from 'date-fns';
 
@@ -151,7 +143,7 @@ function DeploymentVulnerabilitiesTable({
     const vulnerabilities = formatVulnerabilityData(deployment);
 
     return (
-        <TableComposable variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
@@ -221,7 +213,7 @@ function DeploymentVulnerabilitiesTable({
                                 <ExpandableRowContent>
                                     {summary && images.length > 0 ? (
                                         <>
-                                            <p className="pf-u-mb-md">{summary}</p>
+                                            <p className="pf-v5-u-mb-md">{summary}</p>
                                             <DeploymentComponentVulnerabilitiesTable
                                                 images={images}
                                                 cve={cve}
@@ -237,7 +229,7 @@ function DeploymentVulnerabilitiesTable({
                     </Tbody>
                 );
             })}
-        </TableComposable>
+        </Table>
     );
 }
 

@@ -6,10 +6,13 @@ import {
     Flex,
     FlexItem,
     FormGroup,
-    SelectOption,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
     TextInput,
     Tooltip,
 } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { ArrowRightIcon, InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import { Group } from 'services/AuthService';
@@ -29,8 +32,8 @@ export type RuleGroupErrors = {
 export type RuleGroupsProps = {
     authProviderId: string;
     onChange: (
-        _value: unknown,
-        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
+        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>,
+        _value: unknown
     ) => void;
     roles: Role[];
     groups: Group[];
@@ -91,18 +94,12 @@ function RuleGroups({
                                     <FormGroup
                                         label="Origin"
                                         fieldId={`groups[${index}].props.traits.origin`}
-                                        validated="default"
                                     >
                                         {getOriginLabel(group?.props?.traits)}
                                     </FormGroup>
                                 </FlexItem>
                                 <FlexItem>
-                                    <FormGroup
-                                        label="Key"
-                                        fieldId={`groups[${index}].props.key`}
-                                        helperTextInvalid={errors[index]?.props?.key ?? ''}
-                                        validated={errors[index]?.props?.key ? 'error' : 'default'}
-                                    >
+                                    <FormGroup label="Key" fieldId={`groups[${index}].props.key`}>
                                         <SelectSingle
                                             id={`groups[${index}].props.key`}
                                             value={groups[`${index}`].props.key ?? ''}
@@ -117,16 +114,25 @@ function RuleGroups({
                                                 <SelectOption key={ruleKey} value={ruleKey} />
                                             ))}
                                         </SelectSingle>
+                                        <FormHelperText>
+                                            <HelperText>
+                                                <HelperTextItem
+                                                    variant={
+                                                        errors[index]?.props?.key
+                                                            ? 'error'
+                                                            : 'default'
+                                                    }
+                                                >
+                                                    {errors[index]?.props?.key ?? ''}
+                                                </HelperTextItem>
+                                            </HelperText>
+                                        </FormHelperText>
                                     </FormGroup>
                                 </FlexItem>
                                 <FlexItem>
                                     <FormGroup
                                         label="Value"
                                         fieldId={`groups[${index}].props.value`}
-                                        helperTextInvalid={errors[index]?.props?.value || ''}
-                                        validated={
-                                            errors[index]?.props?.value ? 'error' : 'default'
-                                        }
                                     >
                                         <TextInput
                                             type="text"
@@ -135,18 +141,26 @@ function RuleGroups({
                                             onChange={onChange}
                                             isDisabled={isDisabled(group)}
                                         />
+                                        <FormHelperText>
+                                            <HelperText>
+                                                <HelperTextItem
+                                                    variant={
+                                                        errors[index]?.props?.value
+                                                            ? 'error'
+                                                            : 'default'
+                                                    }
+                                                >
+                                                    {errors[index]?.props?.value || ''}
+                                                </HelperTextItem>
+                                            </HelperText>
+                                        </FormHelperText>
                                     </FormGroup>
                                 </FlexItem>
                                 <FlexItem>
                                     <ArrowRightIcon style={{ transform: 'translate(0, 42px)' }} />
                                 </FlexItem>
                                 <FlexItem>
-                                    <FormGroup
-                                        label="Role"
-                                        fieldId={`groups[${index}].roleName`}
-                                        helperTextInvalid={errors[index]?.roleName || ''}
-                                        validated={errors[index]?.roleName ? 'error' : 'default'}
-                                    >
+                                    <FormGroup label="Role" fieldId={`groups[${index}].roleName`}>
                                         <SelectSingle
                                             id={`groups[${index}].roleName`}
                                             value={groups[`${index}`].roleName}
@@ -159,6 +173,19 @@ function RuleGroups({
                                                 <SelectOption key={name} value={name} />
                                             ))}
                                         </SelectSingle>
+                                        <FormHelperText>
+                                            <HelperText>
+                                                <HelperTextItem
+                                                    variant={
+                                                        errors[index]?.roleName
+                                                            ? 'error'
+                                                            : 'default'
+                                                    }
+                                                >
+                                                    {errors[index]?.roleName || ''}
+                                                </HelperTextItem>
+                                            </HelperText>
+                                        </FormHelperText>
                                     </FormGroup>
                                 </FlexItem>
                                 {!isDisabled(group) && (
@@ -195,7 +222,7 @@ function RuleGroups({
                                     variant="link"
                                     isInline
                                     isDisabled={!!errors?.length}
-                                    icon={<PlusCircleIcon className="pf-u-mr-sm" />}
+                                    icon={<PlusCircleIcon className="pf-v5-u-mr-sm" />}
                                     onClick={() =>
                                         arrayHelpers.push({
                                             roleName: '',

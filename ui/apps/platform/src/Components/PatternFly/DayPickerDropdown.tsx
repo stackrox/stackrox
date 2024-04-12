@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Select, SelectOption, SelectVariant } from '@patternfly/react-core';
+import { Select, SelectOption, SelectVariant } from '@patternfly/react-core/deprecated';
 
 import useMultiSelect from 'hooks/useMultiSelect';
 import { IntervalType } from 'types/report.proto';

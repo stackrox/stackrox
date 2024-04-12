@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Select, SelectVariant } from '@patternfly/react-core';
+import { Select, SelectVariant } from '@patternfly/react-core/deprecated';
 
 export type SelectSingleProps = {
     toggleIcon?: ReactElement;
@@ -53,7 +53,7 @@ function SelectSingle({
             isDisabled={isDisabled}
             isOpen={isOpen}
             onSelect={onSelect}
-            onToggle={setIsOpen}
+            onToggle={(_event, val) => setIsOpen(val)}
             selections={value}
             direction={direction}
             isCreatable={isCreatable}

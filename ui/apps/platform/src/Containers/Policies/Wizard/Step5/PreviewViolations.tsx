@@ -14,15 +14,16 @@ function PreviewViolations({ alertsFromDryRun }: PreviewViolationsProps): ReactE
 
     return (
         <div>
-            <Title className="pf-u-mb-sm" headingLevel="h2">
+            <Title className="pf-v5-u-mb-sm" headingLevel="h2">
                 Deployment results
             </Title>
             {alertsFromDryRun.map(({ deployment, violations }, alertIndex) => {
                 /*
-                 * pf-u-mb-sm separates deployment name from first list item with same spacing as subsequent list items.
-                 * pf-u-mt-mg separates subsequent deployment names with same spacing as bottom of explanation text.
+                 * pf-v5-u-mb-sm separates deployment name from first list item with same spacing as subsequent list items.
+                 * pf-v5-u-mt-mg separates subsequent deployment names with same spacing as bottom of explanation text.
                  */
-                const className = alertIndex === 0 ? 'pf-u-mb-sm' : 'pf-u-mb-sm pf-u-mt-md';
+                const className =
+                    alertIndex === 0 ? 'pf-v5-u-mb-sm' : 'pf-v5-u-mb-sm pf-v5-u-mt-md';
 
                 return (
                     // eslint-disable-next-line react/no-array-index-key

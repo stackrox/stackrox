@@ -5,7 +5,7 @@ import {
     ActionsColumn,
     ExpandableRowContent,
     IAction,
-    TableComposable,
+    Table,
     Tbody,
     Td,
     Th,
@@ -144,7 +144,7 @@ function CVEsTable({
         (showExceptionDetailsLink ? 1 : 0);
 
     return (
-        <TableComposable borders={false} variant="compact">
+        <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
@@ -211,7 +211,7 @@ function CVEsTable({
                         <Tbody
                             key={cve}
                             style={{
-                                borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                                borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
                             }}
                             isExpanded={isExpanded}
                         >
@@ -277,9 +277,9 @@ function CVEsTable({
                                     />
                                 )}
                                 {createTableActions && (
-                                    <Td className="pf-u-px-0">
+                                    <Td className="pf-v5-u-px-0">
                                         <ActionsColumn
-                                            menuAppendTo={() => document.body}
+                                            // menuAppendTo={() => document.body}
                                             items={createTableActions({
                                                 cve,
                                                 summary,
@@ -301,7 +301,7 @@ function CVEsTable({
                     );
                 }
             )}
-        </TableComposable>
+        </Table>
     );
 }
 

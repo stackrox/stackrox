@@ -17,7 +17,7 @@ import {
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { FileAltIcon, SearchIcon } from '@patternfly/react-icons';
 import { gql, useQuery } from '@apollo/client';
 
@@ -140,7 +140,7 @@ function NamespaceViewPage() {
     return (
         <>
             <PageTitle title="Workload CVEs - Namespace view" />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilitiesWorkloadCvesPath}>
                         Workload CVEs
@@ -154,7 +154,7 @@ function NamespaceViewPage() {
                     direction={{ default: 'column' }}
                     alignItems={{ default: 'alignItemsFlexStart' }}
                 >
-                    <Title headingLevel="h1" className="pf-u-mb-sm">
+                    <Title headingLevel="h1" className="pf-v5-u-mb-sm">
                         Namespace view
                     </Title>
                     <FlexItem>Discover and prioritize namespaces by risk priority</FlexItem>
@@ -169,7 +169,7 @@ function NamespaceViewPage() {
                             onFilterChange={(newFilter) => setSearchFilter(newFilter)}
                             searchOptions={searchOptions}
                         />
-                        <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                             <Pagination
                                 toggleTemplate={({ firstIndex, lastIndex }) => (
                                     <span>
@@ -186,7 +186,7 @@ function NamespaceViewPage() {
                                 isCompact
                             />
                         </ToolbarItem>
-                        <ToolbarGroup aria-label="applied search filters" className="pf-u-w-100">
+                        <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                             <SearchFilterChips
                                 onFilterChange={onFilterChange}
                                 filterChipGroupDescriptors={searchOptions.map(
@@ -201,7 +201,7 @@ function NamespaceViewPage() {
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <TableComposable borders={false}>
+                <Table borders={false}>
                     <Thead noWrap>
                         <Tr>
                             <Th sort={getSortParams('Namespace')} width={30}>
@@ -228,7 +228,7 @@ function NamespaceViewPage() {
                             <Tr>
                                 <Td colSpan={5}>
                                     <Bullseye>
-                                        <Spinner isSVG aria-label="Loading table data" />
+                                        <Spinner aria-label="Loading table data" />
                                     </Bullseye>
                                 </Td>
                             </Tr>
@@ -302,7 +302,7 @@ function NamespaceViewPage() {
                                 );
                             })}
                     </Tbody>
-                </TableComposable>
+                </Table>
             </PageSection>
         </>
     );

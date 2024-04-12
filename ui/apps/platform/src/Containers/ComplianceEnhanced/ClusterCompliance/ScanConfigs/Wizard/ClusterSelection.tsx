@@ -13,7 +13,7 @@ import {
     Spinner,
     Title,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { SearchIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -113,7 +113,7 @@ function ClusterSelection({
             <Tr>
                 <Td colSpan={2}>
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner />
                     </Bullseye>
                 </Td>
             </Tr>
@@ -153,7 +153,7 @@ function ClusterSelection({
     return (
         <>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">Clusters</Title>
                     </FlexItem>
@@ -161,7 +161,7 @@ function ClusterSelection({
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Form className="pf-u-py-lg pf-u-px-lg" ref={alertRef}>
+            <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" ref={alertRef}>
                 {formikTouched.clusters && formikValues.clusters.length === 0 && (
                     <Alert
                         title="At least one cluster is required to proceed"
@@ -169,7 +169,7 @@ function ClusterSelection({
                         isInline
                     />
                 )}
-                <TableComposable>
+                <Table>
                     <Thead noWrap>
                         <Tr>
                             <Th
@@ -183,7 +183,7 @@ function ClusterSelection({
                         </Tr>
                     </Thead>
                     <Tbody>{renderTableBodyContent()}</Tbody>
-                </TableComposable>
+                </Table>
             </Form>
         </>
     );

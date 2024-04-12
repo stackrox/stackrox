@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { SearchOption } from '../searchOptions';
@@ -26,11 +26,11 @@ function SearchOptionsDropdown({
             variant="single"
             toggleAriaLabel="search options filter menu toggle"
             aria-label="search options filter menu items"
-            onToggle={onToggle}
+            onToggle={(_e, v) => onToggle(v)}
             onSelect={onSearchOptionSelect}
             selections={searchOption.value}
             isOpen={isOpen}
-            className="pf-u-flex-basis-0"
+            className="pf-v5-u-flex-basis-0"
         >
             {children}
         </Select>

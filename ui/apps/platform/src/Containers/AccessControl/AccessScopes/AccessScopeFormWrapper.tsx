@@ -120,7 +120,7 @@ function AccessScopeFormWrapper({
 
     return (
         <>
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">
@@ -133,14 +133,14 @@ function AccessScopeFormWrapper({
                         </ToolbarItem>
                     )}
                     {action !== 'create' && (
-                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
                             <ToolbarItem>
                                 {isActionable ? (
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
                                         isDisabled={!hasWriteAccessForPage || action === 'edit'}
-                                        isSmall
+                                        size="sm"
                                     >
                                         Edit access scope
                                     </Button>
@@ -160,7 +160,7 @@ function AccessScopeFormWrapper({
                 // setLabelSelectorsEditingState={setLabelSelectorsEditingState}
             />
             {hasAction && (
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
+                <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
                     <ToolbarContent>
                         <ToolbarGroup variant="button-group">
                             <ToolbarItem>
@@ -177,13 +177,13 @@ function AccessScopeFormWrapper({
                                         isSubmitting
                                     }
                                     isLoading={isSubmitting}
-                                    isSmall
+                                    size="sm"
                                 >
                                     Save
                                 </Button>
                             </ToolbarItem>
                             <ToolbarItem>
-                                <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                <Button variant="tertiary" onClick={onClickCancel} size="sm">
                                     Cancel
                                 </Button>
                             </ToolbarItem>

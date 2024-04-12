@@ -6,11 +6,11 @@ export const networkGraphSelectors = {
     nodes: '.pf-ri__topology-section .pf-topology-content [data-id="stackrox-graph"] [data-layer-id="default"]',
     toolbar: '.pf-ri__topology-section .pf-topology-content .pf-topology-control-bar',
     toolbarItem:
-        '.pf-ri__topology-section .pf-topology-content .pf-topology-control-bar .pf-c-toolbar__item',
-    drawer: '.pf-c-drawer__panel',
-    drawerTitle: '.pf-c-drawer__panel [data-testid="drawer-title"]',
-    drawerSubtitle: '.pf-c-drawer__panel [data-testid="drawer-subtitle"]',
-    drawerTabs: '.pf-c-drawer__panel .pf-c-tabs__list',
+        '.pf-ri__topology-section .pf-topology-content .pf-topology-control-bar .pf-v5-c-toolbar__item',
+    drawer: '.pf-v5-c-drawer__panel',
+    drawerTitle: '.pf-v5-c-drawer__panel [data-testid="drawer-title"]',
+    drawerSubtitle: '.pf-v5-c-drawer__panel [data-testid="drawer-subtitle"]',
+    drawerTabs: '.pf-v5-c-drawer__panel .pf-v5-c-tabs__list',
     deploymentNode: (deploymentName) =>
         `${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label:contains("${deploymentName}")`,
     filteredNamespaceGroupNode: (namespace) =>
@@ -28,5 +28,5 @@ export const networkGraphSelectors = {
         `${manageCidrBlocksModal} button[name="entities.${index}.entity.delete"]`,
     updateCidrBlocksButton: `${manageCidrBlocksModal} button:contains("Update configuration")`,
     cidrModalAlertWithMessage: (message) =>
-        `${manageCidrBlocksModal} *[data-ouia-component-type="PF4/Alert"]:contains("${message}")`,
+        `${manageCidrBlocksModal} .pf-v5-c-alert:contains("${message}")`,
 };

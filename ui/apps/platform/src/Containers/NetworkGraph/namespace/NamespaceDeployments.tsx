@@ -10,7 +10,7 @@ import {
     Text,
     TextContent,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import usePagination from 'hooks/patternfly/usePagination';
 
 const columnNames = {
@@ -40,7 +40,7 @@ function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeployment
     });
 
     return (
-        <div className="pf-u-h-100 pf-u-p-md">
+        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
             <Stack hasGutter>
                 <StackItem>
                     <SearchInput
@@ -64,7 +64,6 @@ function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeployment
                         </FlexItem>
                         <FlexItem>
                             <Pagination
-                                perPageComponent="button"
                                 itemCount={deployments.length}
                                 perPage={perPage}
                                 page={page}
@@ -77,7 +76,7 @@ function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeployment
                     </Flex>
                 </StackItem>
                 <StackItem>
-                    <TableComposable aria-label="Simple table" variant="compact">
+                    <Table aria-label="Simple table" variant="compact">
                         <Thead>
                             <Tr>
                                 <Th>{columnNames.DEPLOYMENT}</Th>
@@ -102,7 +101,7 @@ function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeployment
                                 </Tr>
                             ))}
                         </Tbody>
-                    </TableComposable>
+                    </Table>
                 </StackItem>
             </Stack>
         </div>

@@ -14,7 +14,8 @@ import { ApolloProvider } from '@apollo/client';
 import 'css.imports';
 
 import { configure as mobxConfigure } from 'mobx';
-import { setDiagnosticsOptions } from 'monaco-yaml';
+import * as monaco from 'monaco-editor';
+import { configureMonacoYaml } from 'monaco-yaml';
 
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import AppPage from 'Containers/AppPage';
@@ -29,7 +30,7 @@ import configureApollo from './configureApolloClient';
 
 // This enables syntax highlighting for the patternfly code editor
 // Reference: https://github.com/patternfly/patternfly-react/tree/main/packages/react-code-editor#enable-yaml-syntax-highlighting
-setDiagnosticsOptions({
+configureMonacoYaml(monaco, {
     enableSchemaRequest: true,
     hover: true,
     completion: true,

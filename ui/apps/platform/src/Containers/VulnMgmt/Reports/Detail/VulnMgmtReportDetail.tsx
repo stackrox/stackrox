@@ -13,15 +13,13 @@ import {
     DescriptionListGroup,
     DescriptionListTerm,
     Divider,
-    Dropdown,
-    DropdownItem,
-    DropdownToggle,
     PageSection,
     Title,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { Dropdown, DropdownItem, DropdownToggle } from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -143,7 +141,7 @@ function VulnMgmtReportDetail({ report, reportScope }: VulnMgmtReportDetailProps
     return (
         <>
             <PageSection id="report-page" variant="light">
-                <Breadcrumb className="pf-u-mb-md">
+                <Breadcrumb className="pf-v5-u-mb-md">
                     <BreadcrumbItemLink to={vulnManagementReportsPath}>
                         Vulnerability reporting
                     </BreadcrumbItemLink>
@@ -155,14 +153,14 @@ function VulnMgmtReportDetail({ report, reportScope }: VulnMgmtReportDetailProps
                             <Title headingLevel="h1">{name}</Title>
                         </ToolbarItem>
                         {dropdownItems.length > 0 && (
-                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem align={{ default: 'alignRight' }}>
                                 <Dropdown
                                     onSelect={onSelectActions}
                                     position="right"
                                     toggle={
                                         <DropdownToggle
-                                            isPrimary
-                                            onToggle={onToggleActions}
+                                            toggleVariant="primary"
+                                            onToggle={(_event, isOpen) => onToggleActions(isOpen)}
                                             toggleIndicator={CaretDownIcon}
                                         >
                                             Actions
@@ -185,7 +183,7 @@ function VulnMgmtReportDetail({ report, reportScope }: VulnMgmtReportDetailProps
                                 isInline
                                 variant={alert.variant}
                                 title={alert.title}
-                                className="pf-u-mb-lg"
+                                className="pf-v5-u-mb-lg"
                                 timeout={alert.timeout}
                                 onTimeout={() => setAlert(null)}
                             />

@@ -8,16 +8,9 @@ import {
     Modal,
     ModalVariant,
     TextInput,
+    InputGroupItem,
 } from '@patternfly/react-core';
-import {
-    ExpandableRowContent,
-    TableComposable,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -68,19 +61,21 @@ function AffectedComponentsModal({
             isOpen={isOpen}
             onClose={onCloseHandler}
         >
-            <InputGroup className="pf-u-mt-md">
-                <TextInput
-                    name="componentsFilter"
-                    id="componentsFilter"
-                    type="text"
-                    aria-label="Filter components"
-                    placeholder="Filter components"
-                    value={inputValue}
-                    onChange={onInputValueChange}
-                />
+            <InputGroup className="pf-v5-u-mt-md">
+                <InputGroupItem isFill>
+                    <TextInput
+                        name="componentsFilter"
+                        id="componentsFilter"
+                        type="text"
+                        aria-label="Filter components"
+                        placeholder="Filter components"
+                        value={inputValue}
+                        onChange={(_event, value) => onInputValueChange(value)}
+                    />
+                </InputGroupItem>
             </InputGroup>
-            <Card isFlat className="pf-u-mt-lg">
-                <TableComposable aria-label="Affected Components Table" variant="compact" borders>
+            <Card isFlat className="pf-v5-u-mt-lg">
+                <Table aria-label="Affected Components Table" variant="compact" borders>
                     <Thead>
                         <Tr>
                             <Td />
@@ -142,7 +137,7 @@ function AffectedComponentsModal({
                             </Tbody>
                         );
                     })}
-                </TableComposable>
+                </Table>
             </Card>
         </Modal>
     );

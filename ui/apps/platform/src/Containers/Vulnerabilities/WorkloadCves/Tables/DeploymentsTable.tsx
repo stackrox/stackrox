@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Truncate } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
@@ -72,7 +72,7 @@ function DeploymentsTable({
 }: DeploymentsTableProps) {
     const vulnerabilityState = useVulnerabilityState();
     return (
-        <TableComposable borders={false} variant="compact">
+        <Table borders={false} variant="compact">
             <Thead noWrap>
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
@@ -109,7 +109,7 @@ function DeploymentsTable({
                         <Tbody
                             key={id}
                             style={{
-                                borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                                borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
                             }}
                         >
                             <Tr>
@@ -145,7 +145,7 @@ function DeploymentsTable({
                     );
                 }
             )}
-        </TableComposable>
+        </Table>
     );
 }
 

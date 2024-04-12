@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { debounce, Select, SelectOption, Skeleton, ToolbarGroup } from '@patternfly/react-core';
+import { debounce, Skeleton, ToolbarGroup } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { useQuery } from '@apollo/client';
 
 import { SearchFilter } from 'types/search';
@@ -129,7 +130,7 @@ function FilterAutocompleteSelect({
     return (
         <ToolbarGroup
             variant="filter-group"
-            className="pf-u-display-flex pf-u-flex-grow-1"
+            className="pf-v5-u-display-flex pf-v5-u-flex-grow-1"
             id="filter-autocomplete-toolbar-group"
         >
             <SearchOptionsDropdown
@@ -158,7 +159,7 @@ function FilterAutocompleteSelect({
                 onSelect={(e, value) => {
                     onSelect(value);
                 }}
-                onToggle={onToggle}
+                onToggle={(_e, v) => onToggle(v)}
                 isOpen={isOpen}
                 placeholderText={`Filter results by ${searchOption.label}`}
                 variant="typeaheadmulti"
@@ -171,7 +172,7 @@ function FilterAutocompleteSelect({
                     setIsTyping(true);
                     updateTypeahead(val);
                 }}
-                className="pf-u-flex-grow-1"
+                className="pf-v5-u-flex-grow-1"
             >
                 {getSuggestedOptions()}
             </Select>

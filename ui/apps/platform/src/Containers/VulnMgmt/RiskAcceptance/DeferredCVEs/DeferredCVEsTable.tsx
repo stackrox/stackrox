@@ -1,11 +1,10 @@
 import React, { ReactElement, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
     Bullseye,
     Button,
     ButtonVariant,
     Divider,
-    DropdownItem,
     PageSection,
     PageSectionVariants,
     Pagination,
@@ -14,6 +13,7 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
 
 import useTableSelection from 'hooks/useTableSelection';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
@@ -133,7 +133,7 @@ function DeferredCVEsTable({
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             itemCount={itemCount}
                             page={page}
@@ -157,7 +157,7 @@ function DeferredCVEsTable({
                 </Toolbar>
             )}
             <Divider component="div" />
-            <TableComposable aria-label="Observed CVEs Table" variant="compact" borders>
+            <Table aria-label="Observed CVEs Table" variant="compact" borders>
                 <Thead>
                     <Tr>
                         <Th
@@ -181,7 +181,7 @@ function DeferredCVEsTable({
                         <Tr>
                             <Td colSpan={9}>
                                 <Bullseye>
-                                    <Spinner isSVG size="sm" />
+                                    <Spinner size="sm" />
                                 </Bullseye>
                             </Td>
                         </Tr>
@@ -268,7 +268,7 @@ function DeferredCVEsTable({
                                                   .join(',')
                                             : 'N/A'}
                                     </Td>
-                                    <Td className="pf-u-text-align-right">
+                                    <Td className="pf-v5-u-text-align-right">
                                         <DeferredCVEActionsColumn
                                             row={row}
                                             setVulnsToBeAssessed={setVulnsToBeAssessed}
@@ -280,7 +280,7 @@ function DeferredCVEsTable({
                         })
                     )}
                 </Tbody>
-            </TableComposable>
+            </Table>
             <UndoVulnRequestModal
                 type="DEFERRAL"
                 isOpen={vulnsToBeAssessed?.action === 'UNDO'}

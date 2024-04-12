@@ -8,10 +8,10 @@ import {
     FlexItem,
     Breadcrumb,
     BreadcrumbItem,
-    Wizard,
     Bullseye,
     Spinner,
 } from '@patternfly/react-core';
+import { Wizard } from '@patternfly/react-core/deprecated';
 import isEmpty from 'lodash/isEmpty';
 
 import { vulnerabilityReportsPath } from 'routePaths';
@@ -115,7 +115,7 @@ function EditVulnReportPage() {
     if (isLoading) {
         return (
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner />
             </Bullseye>
         );
     }
@@ -124,7 +124,7 @@ function EditVulnReportPage() {
         <>
             <PageTitle title="Create vulnerability report" />
             <ReportFormErrorAlert error={saveError} />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilityReportsPath}>
                         Vulnerability reporting
@@ -134,7 +134,7 @@ function EditVulnReportPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h1">Edit report</Title>
                     </FlexItem>

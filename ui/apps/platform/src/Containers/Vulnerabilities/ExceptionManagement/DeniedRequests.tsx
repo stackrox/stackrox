@@ -11,7 +11,7 @@ import {
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { FileAltIcon, SearchIcon } from '@patternfly/react-icons';
 
 import useURLPagination from 'hooks/useURLPagination';
@@ -119,7 +119,7 @@ function DeniedRequests() {
                         onFilterChange={(newFilter) => setSearchFilter(newFilter)}
                         searchOptions={searchOptions}
                     />
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             toggleTemplate={({ firstIndex, lastIndex }) => (
                                 <span>
@@ -136,7 +136,7 @@ function DeniedRequests() {
                             isCompact
                         />
                     </ToolbarItem>
-                    <ToolbarGroup aria-label="applied search filters" className="pf-u-w-100">
+                    <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                         <SearchFilterChips
                             onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={searchOptions.map(({ label, value }) => {
@@ -149,7 +149,7 @@ function DeniedRequests() {
                     </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>
-            <TableComposable borders={false}>
+            <Table borders={false}>
                 <Thead noWrap>
                     <Tr>
                         <Th sort={getSortParams('Request Name')}>Request name</Th>
@@ -166,7 +166,7 @@ function DeniedRequests() {
                         <Tr>
                             <Td colSpan={7}>
                                 <Bullseye>
-                                    <Spinner isSVG aria-label="Loading table data" />
+                                    <Spinner aria-label="Loading table data" />
                                 </Bullseye>
                             </Td>
                         </Tr>
@@ -248,7 +248,7 @@ function DeniedRequests() {
                             );
                         })}
                 </Tbody>
-            </TableComposable>
+            </Table>
         </PageSection>
     );
 }

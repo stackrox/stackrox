@@ -3,7 +3,7 @@ import { DescriptionList, DescriptionListProps } from '@patternfly/react-core';
 
 // Specify top and bottom padding equivalent to variant="compact" of PatternFly tables.
 const styleDescriptionListCompact = {
-    '--pf-c-description-list--RowGap': 'var(--pf-global--spacer--xs)', // 8px (sm) = 2 * 4px (xs)
+    '--pf-v5-c-description-list--RowGap': 'var(--pf-v5-global--spacer--xs)', // 8px (sm) = 2 * 4px (xs)
 } as CSSProperties;
 
 // TODO Replace occurrences with DescriptionList if variant="compact" becomes available.

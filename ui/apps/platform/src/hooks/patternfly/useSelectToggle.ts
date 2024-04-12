@@ -4,9 +4,25 @@ interface SelectToggleReturn {
     /** Whether or not the Select component should be displayed as open */
     isOpen: boolean;
     /** Callback that fires when the toggle element is clicked in the component */
-    onToggle: (isExpanded: boolean) => void;
+    onToggle: (
+        // TODO: add this as a param once all Selects are using PF5
+        // event:
+        //     | Event
+        //     | React.MouseEvent<Element, MouseEvent>
+        //     | React.ChangeEvent<Element>
+        //     | React.KeyboardEvent<Element>,
+        isExpanded: boolean
+    ) => void;
     /** Function that sets the toggle state of the component */
-    toggleSelect: (isExpanded: boolean) => void;
+    toggleSelect: (
+        // TODO: add this as a param once all Selects are using PF5
+        // event:
+        //     | Event
+        //     | React.MouseEvent<Element, MouseEvent>
+        //     | React.ChangeEvent<Element>
+        //     | React.KeyboardEvent<Element>,
+        isExpanded: boolean
+    ) => void;
     /** Function that opens the component dropdown */
     openSelect: () => void;
     /** Function that closes the component dropdown */

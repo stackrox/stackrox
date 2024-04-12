@@ -54,7 +54,7 @@ function ScanConfigOptions(): ReactElement {
     return (
         <>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">Configuration options</Title>
                     </FlexItem>
@@ -62,7 +62,7 @@ function ScanConfigOptions(): ReactElement {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Form className="pf-u-py-lg pf-u-px-lg">
+            <Form className="pf-v5-u-py-lg pf-v5-u-px-lg">
                 <Stack hasGutter>
                     <StackItem>
                         <Stack hasGutter>
@@ -81,7 +81,7 @@ function ScanConfigOptions(): ReactElement {
                                         id="parameters.name"
                                         name="parameters.name"
                                         value={formik.values.parameters.name}
-                                        onChange={(_value, event) => formik.handleChange(event)}
+                                        onChange={(event) => formik.handleChange(event)}
                                         onBlur={formik.handleBlur}
                                     />
                                 </FormLabelGroup>
@@ -98,7 +98,7 @@ function ScanConfigOptions(): ReactElement {
                                         id="parameters.description"
                                         name="parameters.description"
                                         value={formik.values.parameters.description}
-                                        onChange={(_value, event) => formik.handleChange(event)}
+                                        onChange={(event) => formik.handleChange(event)}
                                         onBlur={formik.handleBlur}
                                     />
                                 </FormLabelGroup>

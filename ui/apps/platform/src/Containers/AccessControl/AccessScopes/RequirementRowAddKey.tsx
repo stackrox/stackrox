@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useRef, useState } from 'react';
-import { Button, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
+import { Button, Icon, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
 import { ArrowCircleDownIcon, TimesCircleIcon } from '@patternfly/react-icons';
 import { Td, Tr } from '@patternfly/react-table';
 
@@ -55,42 +55,44 @@ function RequirementRowAddKey({
     return (
         <Tr>
             <Td dataLabel="Key">
-                <div className="pf-u-display-flex">
-                    <span className="pf-u-flex-basis-0 pf-u-flex-grow-1 pf-u-flex-shrink-1 pf-u-text-break-word">
+                <div className="pf-v5-u-display-flex">
+                    <span className="pf-v5-u-flex-basis-0 pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1 pf-v5-u-text-break-word">
                         <TextInput
                             aria-label="Type a key"
                             value={keyInput}
                             validated={validatedKey}
-                            onChange={onKeyChange}
+                            onChange={(_event, keyChange: string) => onKeyChange(keyChange)}
                             onKeyDown={onKeyDown}
                             ref={refKeyInput}
                             className="pf-m-small"
                         />
                     </span>
-                    <span className="pf-u-flex-shrink-0">
+                    <span className="pf-v5-u-flex-shrink-0">
                         <Tooltip content="Requirement key OK (press tab or enter)">
                             <Button
                                 aria-label="Requirement key OK (press tab or enter)"
                                 variant="plain"
-                                className="pf-m-smallest pf-u-ml-sm"
+                                className="pf-m-smallest pf-v5-u-ml-sm"
                                 isDisabled={isDisabledOK}
                                 onClick={onClickRequirementKeyOK}
                             >
-                                <ArrowCircleDownIcon
-                                    color="var(--pf-global--primary-color--100)"
-                                    style={{ transform: 'rotate(-90deg)' }}
-                                />
+                                <Icon>
+                                    <ArrowCircleDownIcon
+                                        color="var(--pf-v5-global--primary-color--100)"
+                                        style={{ transform: 'rotate(-90deg)' }}
+                                    />
+                                </Icon>
                             </Button>
                         </Tooltip>
                     </span>
                 </div>
                 {keyInput.length !== 0 && isInvalidKey && (
-                    <p className="pf-u-font-size-sm pf-u-danger-color-100">Invalid key</p>
+                    <p className="pf-v5-u-font-size-sm pf-v5-u-danger-color-100">Invalid key</p>
                 )}
             </Td>
             <Td dataLabel="Operator" />
             <Td dataLabel="Values" />
-            <Td dataLabel="Action" className="pf-u-text-align-right">
+            <Td dataLabel="Action" className="pf-v5-u-text-align-right">
                 <Tooltip key="Cancel" content="Cancel">
                     <Button
                         aria-label="Cancel"
@@ -98,7 +100,9 @@ function RequirementRowAddKey({
                         className="pf-m-smallest"
                         onClick={handleRequirementKeyCancel}
                     >
-                        <TimesCircleIcon color="var(--pf-global--color--100)" />
+                        <Icon>
+                            <TimesCircleIcon color="var(--pf-v5-global--color--100)" />
+                        </Icon>
                     </Button>
                 </Tooltip>
             </Td>

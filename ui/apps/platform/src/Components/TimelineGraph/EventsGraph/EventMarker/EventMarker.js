@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import PropTypes from 'prop-types';
 import { scaleLinear } from 'd3-scale';
 
@@ -31,6 +31,8 @@ const EventMarker = ({
     size,
     margin,
 }) => {
+    const popoverRef = useRef(null);
+
     // the "container" argument is a reference to the container for the D3-related element
     function onUpdate(container) {
         const width = getWidth(mainViewSelector);
@@ -67,14 +69,23 @@ const EventMarker = ({
                 timestamp={timestamp}
                 reason={reason}
                 inBaseline={inBaseline}
+                popoverRef={popoverRef}
             >
                 <g>
-                    {type === eventTypes.POLICY_VIOLATION && <PolicyViolationEvent size={size} />}
-                    {type === eventTypes.PROCESS_ACTIVITY && (
-                        <ProcessActivityEvent size={size} inBaseline={inBaseline} />
+                    {type === eventTypes.POLICY_VIOLATION && (
+                        <PolicyViolationEvent size={size} ref={popoverRef} />
                     )}
-                    {type === eventTypes.RESTART && <RestartEvent size={size} />}
-                    {type === eventTypes.TERMINATION && <TerminationEvent size={size} />}
+                    {type === eventTypes.PROCESS_ACTIVITY && (
+                        <ProcessActivityEvent
+                            size={size}
+                            inBaseline={inBaseline}
+                            ref={popoverRef}
+                        />
+                    )}
+                    {type === eventTypes.RESTART && <RestartEvent size={size} ref={popoverRef} />}
+                    {type === eventTypes.TERMINATION && (
+                        <TerminationEvent size={size} ref={popoverRef} />
+                    )}
                 </g>
             </EventTooltip>
         </D3Anchor>

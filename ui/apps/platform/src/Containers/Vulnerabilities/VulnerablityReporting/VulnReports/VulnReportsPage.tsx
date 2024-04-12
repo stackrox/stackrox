@@ -25,9 +25,10 @@ import {
     ToolbarItem,
     SearchInput,
     Pagination,
-    DropdownItem,
+    EmptyStateHeader,
 } from '@patternfly/react-core';
-import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
+import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
 import { vulnerabilityReportsPath } from 'routePaths';
@@ -183,7 +184,7 @@ function VulnReportsPage() {
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
-                    className="pf-u-py-lg pf-u-px-lg"
+                    className="pf-v5-u-py-lg pf-v5-u-px-lg"
                 >
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Flex direction={{ default: 'column' }}>
@@ -210,12 +211,12 @@ function VulnReportsPage() {
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection isCenterAligned>
                     <Card>
-                        <CardBody className="pf-u-p-0">
+                        <CardBody className="pf-v5-u-p-0">
                             <Toolbar>
                                 <ToolbarContent>
                                     <ToolbarItem
                                         variant="search-filter"
-                                        className="pf-u-flex-grow-1"
+                                        className="pf-v5-u-flex-grow-1"
                                     >
                                         <SearchInput
                                             placeholder="Filter by report name"
@@ -246,7 +247,7 @@ function VulnReportsPage() {
                                     </ToolbarItem>
                                     <ToolbarItem
                                         variant="pagination"
-                                        alignment={{ default: 'alignRight' }}
+                                        align={{ default: 'alignRight' }}
                                     >
                                         <Pagination
                                             itemCount={totalReports}
@@ -262,26 +263,29 @@ function VulnReportsPage() {
                                 </ToolbarContent>
                             </Toolbar>
                             {isLoading && !reportConfigurations && (
-                                <div className="pf-u-p-md">
+                                <div className="pf-v5-u-p-md">
                                     <Bullseye>
-                                        <Spinner isSVG />
+                                        <Spinner />
                                     </Bullseye>
                                 </div>
                             )}
                             {fetchError && (
-                                <EmptyState variant={EmptyStateVariant.small}>
-                                    <EmptyStateIcon
-                                        icon={ExclamationCircleIcon}
-                                        className="pf-u-danger-color-100"
+                                <EmptyState variant={EmptyStateVariant.sm}>
+                                    <EmptyStateHeader
+                                        titleText="Unable to get vulnerability reports"
+                                        icon={
+                                            <EmptyStateIcon
+                                                icon={ExclamationCircleIcon}
+                                                className="pf-v5-u-danger-color-100"
+                                            />
+                                        }
+                                        headingLevel="h2"
                                     />
-                                    <Title headingLevel="h2" size="lg">
-                                        Unable to get vulnerability reports
-                                    </Title>
                                     <EmptyStateBody>{fetchError}</EmptyStateBody>
                                 </EmptyState>
                             )}
                             {reportConfigurations && (
-                                <TableComposable borders={false}>
+                                <Table borders={false}>
                                     <Thead noWrap>
                                         <Tr>
                                             <Th
@@ -492,7 +496,7 @@ function VulnReportsPage() {
                                                     <span
                                                         className={
                                                             !isReportStatusPending
-                                                                ? 'pf-u-danger-color-100'
+                                                                ? 'pf-v5-u-danger-color-100'
                                                                 : ''
                                                         }
                                                     >
@@ -513,7 +517,7 @@ function VulnReportsPage() {
                                                 key={report.id}
                                                 style={{
                                                     borderBottom:
-                                                        '1px solid var(--pf-c-table--BorderColor)',
+                                                        '1px solid var(--pf-v5-c-table--BorderColor)',
                                                 }}
                                             >
                                                 <Tr>
@@ -560,7 +564,7 @@ function VulnReportsPage() {
                                                             <ActionsColumn
                                                                 items={rowActions}
                                                                 isDisabled={isRunning}
-                                                                menuAppendTo={() => document.body}
+                                                                // menuAppendTo={() => document.body}
                                                             />
                                                         </Td>
                                                     )}
@@ -568,7 +572,7 @@ function VulnReportsPage() {
                                             </Tbody>
                                         );
                                     })}
-                                </TableComposable>
+                                </Table>
                             )}
                         </CardBody>
                     </Card>
@@ -593,7 +597,7 @@ function VulnReportsPage() {
                                 'report',
                                 numSuccessfulDeletions
                             )}`}
-                            className="pf-u-mb-sm"
+                            className="pf-v5-u-mb-sm"
                         />
                     )}
                     {deleteResults?.filter(isErrorDeleteResult).map((deleteResult) => {
@@ -608,7 +612,7 @@ function VulnReportsPage() {
                                 isInline
                                 variant={AlertVariant.danger}
                                 title={`Failed to delete "${report.name}"`}
-                                className="pf-u-mb-sm"
+                                className="pf-v5-u-mb-sm"
                             >
                                 {deleteResult.error}
                             </Alert>

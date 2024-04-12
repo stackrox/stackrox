@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Divider, Select, SelectOption } from '@patternfly/react-core';
+import { Divider } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { domains } from 'services/AdministrationEventsService';
 
@@ -36,7 +37,7 @@ function SearchFilterDomain({ domain, isDisabled, setDomain }: SearchFilterDomai
             variant="single"
             aria-label="Domain filter menu items"
             toggleAriaLabel="Domain filter menu toggle"
-            onToggle={setIsOpen}
+            onToggle={(_event, val) => setIsOpen(val)}
             onSelect={onSelect}
             selections={domain ?? optionAll}
             isDisabled={isDisabled}

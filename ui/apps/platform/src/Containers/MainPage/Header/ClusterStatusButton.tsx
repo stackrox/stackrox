@@ -5,8 +5,8 @@ import { Tooltip } from '@patternfly/react-core';
 
 import { clustersBasePath } from 'routePaths';
 
-const thClassName = 'font-400 pf-u-pr-md pf-u-text-align-left';
-const tdClassName = 'pf-u-text-align-right';
+const thClassName = 'font-400 pf-v5-u-pr-md pf-v5-u-text-align-left';
+const tdClassName = 'pf-v5-u-text-align-right';
 
 type ClusterStatusButtonProps = {
     degraded?: number;
@@ -56,17 +56,17 @@ const ClusterStatusButton = ({
     let styleProblems: CSSProperties | undefined;
     /*
      * Explicit white background because the following did not work:
-     * `backgroundColor: var(--pf-global--BackgroundColor--100)`
+     * `backgroundColor: var(--pf-v5-global--BackgroundColor--100)`
      */
     if (hasUnhealthyClusters) {
         styleProblems = {
             backgroundColor: '#ffffff',
-            color: 'var(--pf-global--danger-color--100)',
+            color: 'var(--pf-v5-global--danger-color--100)',
         };
     } else if (hasDegradedClusters) {
         styleProblems = {
             backgroundColor: '#ffffff',
-            color: 'var(--pf-global--warning-color--100)',
+            color: 'var(--pf-v5-global--warning-color--100)',
         };
     }
 
@@ -82,8 +82,8 @@ const ClusterStatusButton = ({
 
     // On masthead, black text on white background like a dropdown menu.
     const styleTooltip = {
-        '--pf-c-tooltip__content--Color': 'var(--pf-global--Color--100)',
-        '--pf-c-tooltip__content--BackgroundColor': 'var(--pf-global--BackgroundColor--100)',
+        '--pf-v5-c-tooltip__content--Color': 'var(--pf-v5-global--Color--100)',
+        '--pf-v5-c-tooltip__content--BackgroundColor': 'var(--pf-v5-global--BackgroundColor--100)',
     } as CSSProperties;
 
     // Using aria-label for accessibility instead of title to avoid two tooltips.

@@ -1,12 +1,16 @@
 import React from 'react';
-import { Bullseye, Text } from '@patternfly/react-core';
+import { Bullseye, Icon, Text } from '@patternfly/react-core';
 import { ModuleIcon } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 
 function EmptyIcon(props: SVGIconProps) {
-    return <ModuleIcon {...props} size="lg" />;
+    return (
+        <Icon size="lg">
+            <ModuleIcon {...props} />
+        </Icon>
+    );
 }
 
 function EmptyUnscopedState() {

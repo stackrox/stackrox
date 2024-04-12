@@ -3,6 +3,10 @@ import {
     Button,
     Divider,
     FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    Icon,
     Label,
     TextInput,
     ValidatedOptions,
@@ -147,14 +151,12 @@ function ByLabelSelector({
                                         <FormGroup
                                             className="rule-selector-name-value-input"
                                             fieldId={inputId}
-                                            helperTextInvalid={errorMessage}
-                                            validated={inputValidated}
                                         >
                                             <TextInput
                                                 id={inputId}
                                                 aria-label={ariaLabel}
-                                                className="pf-u-flex-grow-1 pf-u-w-auto"
-                                                onChange={(val) =>
+                                                className="pf-v5-u-flex-grow-1 pf-v5-u-w-auto"
+                                                onChange={(_event, val) =>
                                                     onChangeLabelValue(
                                                         scopedResourceSelector,
                                                         ruleIndex,
@@ -167,6 +169,13 @@ function ByLabelSelector({
                                                 value={value}
                                                 isDisabled={isDisabled}
                                             />
+                                            <FormHelperText>
+                                                <HelperText>
+                                                    <HelperTextItem variant={inputValidated}>
+                                                        {errorMessage}
+                                                    </HelperTextItem>
+                                                </HelperText>
+                                            </FormHelperText>
                                         </FormGroup>
                                         {!isDisabled && (
                                             <Button
@@ -175,10 +184,12 @@ function ByLabelSelector({
                                                 variant="plain"
                                                 onClick={() => onDeleteValue(ruleIndex, valueIndex)}
                                             >
-                                                <TrashIcon
-                                                    style={{ cursor: 'pointer' }}
-                                                    color="var(--pf-global--Color--dark-200)"
-                                                />
+                                                <Icon>
+                                                    <TrashIcon
+                                                        color="var(--pf-v5-global--Color--dark-200)"
+                                                        style={{ cursor: 'pointer' }}
+                                                    />
+                                                </Icon>
                                             </Button>
                                         )}
                                     </div>
@@ -201,11 +212,11 @@ function ByLabelSelector({
                 );
             })}
             {!isDisabled && (
-                <div className="pf-u-pt-md">
-                    <Divider component="div" className="pf-u-pb-md" />
+                <div className="pf-v5-u-pt-md">
+                    <Divider component="div" className="pf-v5-u-pb-md" />
                     <Button
                         aria-label={`Add ${lowerCaseEntity} label rule`}
-                        className="pf-u-p-0"
+                        className="pf-v5-u-p-0"
                         variant="link"
                         onClick={onAddLabelRule}
                     >

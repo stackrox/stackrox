@@ -4,7 +4,7 @@ import {
     EmptyStateIcon,
     EmptyStateBody,
     EmptyStateVariant,
-    Title,
+    EmptyStateHeader,
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 
@@ -24,11 +24,12 @@ function EmptyStateTemplate({
     iconClassName = '',
 }: EmptyStateTemplateProps): ReactElement {
     return (
-        <EmptyState variant={EmptyStateVariant.large}>
-            <EmptyStateIcon className={iconClassName} icon={icon} />
-            <Title headingLevel={headingLevel} size="lg">
-                {title}
-            </Title>
+        <EmptyState variant={EmptyStateVariant.lg}>
+            <EmptyStateHeader
+                titleText={<>{title}</>}
+                icon={<EmptyStateIcon className={iconClassName} icon={icon} />}
+                headingLevel={headingLevel}
+            />
             <EmptyStateBody>{children}</EmptyStateBody>
         </EmptyState>
     );

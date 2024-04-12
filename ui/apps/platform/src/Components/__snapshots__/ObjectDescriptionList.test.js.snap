@@ -3,26 +3,26 @@
 exports[`ObjectDescriptionList annotations 1`] = `
 <div>
   <dl
-    class="pf-c-description-list pf-m-horizontal"
+    class="pf-v5-c-description-list pf-m-horizontal"
   >
     <div>
       <div
-        class="pf-c-description-list__group"
+        class="pf-v5-c-description-list__group"
       >
         <dt
-          class="pf-c-description-list__term"
+          class="pf-v5-c-description-list__term"
         >
           <span
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             deprecated.daemonset.template.generation
           </span>
         </dt>
         <dd
-          class="pf-c-description-list__description"
+          class="pf-v5-c-description-list__description"
         >
           <div
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             1
           </div>
@@ -36,26 +36,26 @@ exports[`ObjectDescriptionList annotations 1`] = `
 exports[`ObjectDescriptionList labels 1`] = `
 <div>
   <dl
-    class="pf-c-description-list pf-m-horizontal"
+    class="pf-v5-c-description-list pf-m-horizontal"
   >
     <div>
       <div
-        class="pf-c-description-list__group"
+        class="pf-v5-c-description-list__group"
       >
         <dt
-          class="pf-c-description-list__term"
+          class="pf-v5-c-description-list__term"
         >
           <span
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             k8s-app
           </span>
         </dt>
         <dd
-          class="pf-c-description-list__description"
+          class="pf-v5-c-description-list__description"
         >
           <div
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             kube-proxy
           </div>
@@ -69,48 +69,48 @@ exports[`ObjectDescriptionList labels 1`] = `
 exports[`ObjectDescriptionList ports 1`] = `
 <div>
   <dl
-    class="pf-c-description-list pf-m-horizontal"
+    class="pf-v5-c-description-list pf-m-horizontal"
   >
     <div>
       <div
-        class="pf-c-description-list__group"
+        class="pf-v5-c-description-list__group"
       >
         <dt
-          class="pf-c-description-list__term"
+          class="pf-v5-c-description-list__term"
         >
           <span
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             name
           </span>
         </dt>
         <dd
-          class="pf-c-description-list__description"
+          class="pf-v5-c-description-list__description"
         >
           <div
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           />
         </dd>
       </div>
     </div>
     <div>
       <div
-        class="pf-c-description-list__group"
+        class="pf-v5-c-description-list__group"
       >
         <dt
-          class="pf-c-description-list__term"
+          class="pf-v5-c-description-list__term"
         >
           <span
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             containerPort
           </span>
         </dt>
         <dd
-          class="pf-c-description-list__description"
+          class="pf-v5-c-description-list__description"
         >
           <div
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             22
           </div>
@@ -119,22 +119,22 @@ exports[`ObjectDescriptionList ports 1`] = `
     </div>
     <div>
       <div
-        class="pf-c-description-list__group"
+        class="pf-v5-c-description-list__group"
       >
         <dt
-          class="pf-c-description-list__term"
+          class="pf-v5-c-description-list__term"
         >
           <span
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             protocol
           </span>
         </dt>
         <dd
-          class="pf-c-description-list__description"
+          class="pf-v5-c-description-list__description"
         >
           <div
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             TCP
           </div>
@@ -143,22 +143,22 @@ exports[`ObjectDescriptionList ports 1`] = `
     </div>
     <div>
       <div
-        class="pf-c-description-list__group"
+        class="pf-v5-c-description-list__group"
       >
         <dt
-          class="pf-c-description-list__term"
+          class="pf-v5-c-description-list__term"
         >
           <span
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             exposure
           </span>
         </dt>
         <dd
-          class="pf-c-description-list__description"
+          class="pf-v5-c-description-list__description"
         >
           <div
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             UNSET
           </div>
@@ -167,22 +167,22 @@ exports[`ObjectDescriptionList ports 1`] = `
     </div>
     <div>
       <div
-        class="pf-c-description-list__group"
+        class="pf-v5-c-description-list__group"
       >
         <dt
-          class="pf-c-description-list__term"
+          class="pf-v5-c-description-list__term"
         >
           <span
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             exposedPort
           </span>
         </dt>
         <dd
-          class="pf-c-description-list__description"
+          class="pf-v5-c-description-list__description"
         >
           <div
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             0
           </div>
@@ -191,48 +191,48 @@ exports[`ObjectDescriptionList ports 1`] = `
     </div>
   </dl>
   <dl
-    class="pf-c-description-list pf-m-horizontal"
+    class="pf-v5-c-description-list pf-m-horizontal"
   >
     <div>
       <div
-        class="pf-c-description-list__group"
+        class="pf-v5-c-description-list__group"
       >
         <dt
-          class="pf-c-description-list__term"
+          class="pf-v5-c-description-list__term"
         >
           <span
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             name
           </span>
         </dt>
         <dd
-          class="pf-c-description-list__description"
+          class="pf-v5-c-description-list__description"
         >
           <div
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           />
         </dd>
       </div>
     </div>
     <div>
       <div
-        class="pf-c-description-list__group"
+        class="pf-v5-c-description-list__group"
       >
         <dt
-          class="pf-c-description-list__term"
+          class="pf-v5-c-description-list__term"
         >
           <span
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             containerPort
           </span>
         </dt>
         <dd
-          class="pf-c-description-list__description"
+          class="pf-v5-c-description-list__description"
         >
           <div
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             8080
           </div>
@@ -241,22 +241,22 @@ exports[`ObjectDescriptionList ports 1`] = `
     </div>
     <div>
       <div
-        class="pf-c-description-list__group"
+        class="pf-v5-c-description-list__group"
       >
         <dt
-          class="pf-c-description-list__term"
+          class="pf-v5-c-description-list__term"
         >
           <span
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             protocol
           </span>
         </dt>
         <dd
-          class="pf-c-description-list__description"
+          class="pf-v5-c-description-list__description"
         >
           <div
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             TCP
           </div>
@@ -265,22 +265,22 @@ exports[`ObjectDescriptionList ports 1`] = `
     </div>
     <div>
       <div
-        class="pf-c-description-list__group"
+        class="pf-v5-c-description-list__group"
       >
         <dt
-          class="pf-c-description-list__term"
+          class="pf-v5-c-description-list__term"
         >
           <span
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             exposure
           </span>
         </dt>
         <dd
-          class="pf-c-description-list__description"
+          class="pf-v5-c-description-list__description"
         >
           <div
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             INTERNAL
           </div>
@@ -289,22 +289,22 @@ exports[`ObjectDescriptionList ports 1`] = `
     </div>
     <div>
       <div
-        class="pf-c-description-list__group"
+        class="pf-v5-c-description-list__group"
       >
         <dt
-          class="pf-c-description-list__term"
+          class="pf-v5-c-description-list__term"
         >
           <span
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             exposedPort
           </span>
         </dt>
         <dd
-          class="pf-c-description-list__description"
+          class="pf-v5-c-description-list__description"
         >
           <div
-            class="pf-c-description-list__text"
+            class="pf-v5-c-description-list__text"
           >
             0
           </div>
@@ -313,30 +313,30 @@ exports[`ObjectDescriptionList ports 1`] = `
     </div>
     <div>
       <dl
-        class="pf-c-description-list pf-m-horizontal pf-u-pl-md"
+        class="pf-v5-c-description-list pf-m-horizontal pf-v5-u-pl-md"
       >
         <div>
           <dl
-            class="pf-c-description-list pf-m-horizontal pf-u-pl-md"
+            class="pf-v5-c-description-list pf-m-horizontal pf-v5-u-pl-md"
           >
             <div>
               <div
-                class="pf-c-description-list__group"
+                class="pf-v5-c-description-list__group"
               >
                 <dt
-                  class="pf-c-description-list__term"
+                  class="pf-v5-c-description-list__term"
                 >
                   <span
-                    class="pf-c-description-list__text"
+                    class="pf-v5-c-description-list__text"
                   >
                     level
                   </span>
                 </dt>
                 <dd
-                  class="pf-c-description-list__description"
+                  class="pf-v5-c-description-list__description"
                 >
                   <div
-                    class="pf-c-description-list__text"
+                    class="pf-v5-c-description-list__text"
                   >
                     INTERNAL
                   </div>
@@ -345,22 +345,22 @@ exports[`ObjectDescriptionList ports 1`] = `
             </div>
             <div>
               <div
-                class="pf-c-description-list__group"
+                class="pf-v5-c-description-list__group"
               >
                 <dt
-                  class="pf-c-description-list__term"
+                  class="pf-v5-c-description-list__term"
                 >
                   <span
-                    class="pf-c-description-list__text"
+                    class="pf-v5-c-description-list__text"
                   >
                     serviceName
                   </span>
                 </dt>
                 <dd
-                  class="pf-c-description-list__description"
+                  class="pf-v5-c-description-list__description"
                 >
                   <div
-                    class="pf-c-description-list__text"
+                    class="pf-v5-c-description-list__text"
                   >
                     visa-processor-service
                   </div>
@@ -369,22 +369,22 @@ exports[`ObjectDescriptionList ports 1`] = `
             </div>
             <div>
               <div
-                class="pf-c-description-list__group"
+                class="pf-v5-c-description-list__group"
               >
                 <dt
-                  class="pf-c-description-list__term"
+                  class="pf-v5-c-description-list__term"
                 >
                   <span
-                    class="pf-c-description-list__text"
+                    class="pf-v5-c-description-list__text"
                   >
                     serviceId
                   </span>
                 </dt>
                 <dd
-                  class="pf-c-description-list__description"
+                  class="pf-v5-c-description-list__description"
                 >
                   <div
-                    class="pf-c-description-list__text"
+                    class="pf-v5-c-description-list__text"
                   >
                     eb1af0b8-a6da-11ea-a6c6-42010a800049
                   </div>
@@ -393,22 +393,22 @@ exports[`ObjectDescriptionList ports 1`] = `
             </div>
             <div>
               <div
-                class="pf-c-description-list__group"
+                class="pf-v5-c-description-list__group"
               >
                 <dt
-                  class="pf-c-description-list__term"
+                  class="pf-v5-c-description-list__term"
                 >
                   <span
-                    class="pf-c-description-list__text"
+                    class="pf-v5-c-description-list__text"
                   >
                     serviceClusterIp
                   </span>
                 </dt>
                 <dd
-                  class="pf-c-description-list__description"
+                  class="pf-v5-c-description-list__description"
                 >
                   <div
-                    class="pf-c-description-list__text"
+                    class="pf-v5-c-description-list__text"
                   >
                     10.19.243.95
                   </div>
@@ -417,22 +417,22 @@ exports[`ObjectDescriptionList ports 1`] = `
             </div>
             <div>
               <div
-                class="pf-c-description-list__group"
+                class="pf-v5-c-description-list__group"
               >
                 <dt
-                  class="pf-c-description-list__term"
+                  class="pf-v5-c-description-list__term"
                 >
                   <span
-                    class="pf-c-description-list__text"
+                    class="pf-v5-c-description-list__text"
                   >
                     servicePort
                   </span>
                 </dt>
                 <dd
-                  class="pf-c-description-list__description"
+                  class="pf-v5-c-description-list__description"
                 >
                   <div
-                    class="pf-c-description-list__text"
+                    class="pf-v5-c-description-list__text"
                   >
                     8080
                   </div>
@@ -441,22 +441,22 @@ exports[`ObjectDescriptionList ports 1`] = `
             </div>
             <div>
               <div
-                class="pf-c-description-list__group"
+                class="pf-v5-c-description-list__group"
               >
                 <dt
-                  class="pf-c-description-list__term"
+                  class="pf-v5-c-description-list__term"
                 >
                   <span
-                    class="pf-c-description-list__text"
+                    class="pf-v5-c-description-list__text"
                   >
                     nodePort
                   </span>
                 </dt>
                 <dd
-                  class="pf-c-description-list__description"
+                  class="pf-v5-c-description-list__description"
                 >
                   <div
-                    class="pf-c-description-list__text"
+                    class="pf-v5-c-description-list__text"
                   >
                     0
                   </div>

@@ -299,7 +299,7 @@ function NetworkGraphPage() {
                 >
                     <ToolbarContent>
                         <ToolbarGroup variant="filter-group">
-                            <Title headingLevel="h1" className="pf-u-screen-reader">
+                            <Title headingLevel="h1" className="pf-v5-u-screen-reader">
                                 Network Graph
                             </Title>
                             <NetworkBreadcrumbs
@@ -313,7 +313,7 @@ function NetworkGraphPage() {
                         {(hasWriteAccessForBlocks || hasReadAccessForGenerator) && (
                             <ToolbarGroup
                                 variant="button-group"
-                                alignment={{ default: 'alignRight' }}
+                                align={{ default: 'alignRight' }}
                                 spaceItems={{ default: 'spaceItemsMd' }}
                             >
                                 {hasWriteAccessForBlocks && (
@@ -363,8 +363,8 @@ function NetworkGraphPage() {
                                     </ToolbarItem>
                                 </ToolbarGroup>
                                 <Divider orientation={{ default: 'vertical' }} />
-                                <ToolbarGroup className="pf-u-flex-grow-1">
-                                    <ToolbarItem className="pf-u-flex-grow-1">
+                                <ToolbarGroup className="pf-v5-u-flex-grow-1">
+                                    <ToolbarItem className="pf-v5-u-flex-grow-1">
                                         <NetworkSearch
                                             selectedCluster={clusterFromUrl.name}
                                             selectedNamespaces={namespacesFromUrl}
@@ -380,12 +380,12 @@ function NetworkGraphPage() {
                                         />
                                     </ToolbarItem>
                                 </ToolbarGroup>
-                                <ToolbarGroup alignment={{ default: 'alignRight' }}>
+                                <ToolbarGroup align={{ default: 'alignRight' }}>
                                     <Divider
                                         component="div"
                                         orientation={{ default: 'vertical' }}
                                     />
-                                    <ToolbarItem className="pf-u-color-200">
+                                    <ToolbarItem className="pf-v5-u-color-200">
                                         <NodeUpdateSection
                                             isLoading={isLoading}
                                             lastUpdatedTime={lastUpdatedTime}
@@ -403,7 +403,7 @@ function NetworkGraphPage() {
             <PageSection className="network-graph" padding={{ default: 'noPadding' }}>
                 {isLoading ? (
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner />
                     </Bullseye>
                 ) : (
                     <NetworkGraphContainer

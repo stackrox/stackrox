@@ -1,15 +1,15 @@
 import React, { ReactElement, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
     Bullseye,
     Divider,
-    DropdownItem,
     Pagination,
     Spinner,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { SearchIcon } from '@patternfly/react-icons';
 
 import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestComments/RequestCommentsButton';
@@ -216,7 +216,7 @@ function PendingApprovalsTable({
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             itemCount={itemCount}
                             page={page}
@@ -242,10 +242,10 @@ function PendingApprovalsTable({
             <Divider component="div" />
             {isLoading ? (
                 <Bullseye>
-                    <Spinner isSVG size="xl" />
+                    <Spinner size="xl" />
                 </Bullseye>
             ) : (
-                <TableComposable aria-label="Pending Approvals Table" variant="compact" borders>
+                <Table aria-label="Pending Approvals Table" variant="compact" borders>
                     <Thead>
                         <Tr>
                             <Th
@@ -314,7 +314,7 @@ function PendingApprovalsTable({
                                         />
                                     </Td>
                                     <Td dataLabel="Requestor">{row.requestor.name}</Td>
-                                    <Td className="pf-u-text-align-right">
+                                    <Td className="pf-v5-u-text-align-right">
                                         {row.targetState === 'DEFERRED' && (
                                             <DeferralRequestActionsColumn
                                                 row={row}
@@ -351,7 +351,7 @@ function PendingApprovalsTable({
                             </Tr>
                         )}
                     </Tbody>
-                </TableComposable>
+                </Table>
             )}
 
             {/* @TODO: The modals are very similiar and probably could be abstracted out more */}

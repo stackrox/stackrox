@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { PermissionsMap } from 'services/RolesService';
 
@@ -19,7 +19,7 @@ export type UserPermissionsTableProps = {
 
 function UserPermissionsTable({ permissions }: UserPermissionsTableProps): ReactElement {
     return (
-        <TableComposable aria-label="Permissions" variant="compact">
+        <Table aria-label="Permissions" variant="compact">
             <Thead>
                 <Tr>
                     <Th key="resourceName">Resource</Th>
@@ -49,7 +49,7 @@ function UserPermissionsTable({ permissions }: UserPermissionsTableProps): React
                     </Tr>
                 ))}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

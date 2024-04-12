@@ -5,7 +5,8 @@ import {
     ButtonVariant,
     EmptyState,
     EmptyStateBody,
-    Title,
+    EmptyStateHeader,
+    EmptyStateFooter,
 } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
@@ -28,16 +29,23 @@ const NotFoundMessage = ({
     const isButtonVisible = actionText && onClick;
     const isLinkVisible = actionText && url;
     return (
-        <Bullseye className="pf-u-flex-grow-1">
+        <Bullseye className="pf-v5-u-flex-grow-1">
             <EmptyState>
-                <Title headingLevel="h1">{title}</Title>
-                {message && <EmptyStateBody>{message}</EmptyStateBody>}
-                {isButtonVisible && <Button variant="primary">{actionText}</Button>}
-                {isLinkVisible && (
-                    <Button variant={ButtonVariant.link} isInline component={LinkShim} href={url}>
-                        {actionText}
-                    </Button>
-                )}
+                <EmptyStateHeader titleText={title} headingLevel="h1" />
+                <EmptyStateFooter>
+                    {message && <EmptyStateBody>{message}</EmptyStateBody>}
+                    {isButtonVisible && <Button variant="primary">{actionText}</Button>}
+                    {isLinkVisible && (
+                        <Button
+                            variant={ButtonVariant.link}
+                            isInline
+                            component={LinkShim}
+                            href={url}
+                        >
+                            {actionText}
+                        </Button>
+                    )}
+                </EmptyStateFooter>
             </EmptyState>
         </Bullseye>
     );

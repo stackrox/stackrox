@@ -1,5 +1,5 @@
 import React from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 import capitalize from 'lodash/capitalize';
 
@@ -81,7 +81,7 @@ function EnableDisableNotificationModal({
             {notifiers.length === 0 && <>No notifiers configured!</>}
             {notifiers.length === 1 && <>Selected notifier: {notifiers[0].name}</>}
             {notifiers.length > 1 && (
-                <TableComposable
+                <Table
                     aria-label="Policies enable/disable notification table"
                     data-testid="policies-enable-disable-notification-table"
                     variant="compact"
@@ -113,10 +113,10 @@ function EnableDisableNotificationModal({
                             );
                         })}
                     </Tbody>
-                </TableComposable>
+                </Table>
             )}
             {notifiers.length > 0 && enableDisableType === 'disable' && (
-                <div className="pf-u-pt-sm">
+                <div className="pf-v5-u-pt-sm">
                     Are you sure you want to disable notification for {selectedPolicyIds.length}{' '}
                     {pluralize('policy', selectedPolicyIds.length)}?
                 </div>

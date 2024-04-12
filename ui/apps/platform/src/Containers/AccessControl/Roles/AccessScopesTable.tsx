@@ -1,5 +1,5 @@
 import React, { ChangeEventHandler, ReactElement } from 'react';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { AccessScope } from 'services/AccessScopesService';
 
@@ -19,7 +19,7 @@ function AccessScopesTable({
     isDisabled,
 }: AccessScopesTableProps): ReactElement {
     return (
-        <TableComposable variant="compact" isStickyHeader>
+        <Table variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
                     <Td />
@@ -30,7 +30,7 @@ function AccessScopesTable({
             <Tbody>
                 {accessScopes.map(({ id, name, description }) => (
                     <Tr key={id}>
-                        <Td className="pf-c-table__check">
+                        <Td className="pf-v5-c-table__check">
                             <input
                                 type="radio"
                                 name={fieldId}
@@ -48,7 +48,7 @@ function AccessScopesTable({
                     </Tr>
                 ))}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

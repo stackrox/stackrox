@@ -12,15 +12,13 @@ import {
     GridItem,
     PageSection,
     PageSectionVariants,
-    Select,
-    SelectOption,
-    SelectVariant,
     Text,
     TextArea,
     TextInput,
     TextVariants,
     Title,
 } from '@patternfly/react-core';
+import { Select, SelectOption, SelectVariant } from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -232,7 +230,7 @@ function VulnMgmtReportForm({
                                             type="text"
                                             id="name"
                                             value={values.name}
-                                            onChange={onChange}
+                                            onChange={(event, value) => onChange(value, event)}
                                             onBlur={handleBlur}
                                             isDisabled={!isEditable}
                                         />
@@ -290,7 +288,7 @@ function VulnMgmtReportForm({
                                             type="text"
                                             id="description"
                                             value={values.description}
-                                            onChange={onChange}
+                                            onChange={(event, value) => onChange(value, event)}
                                             onBlur={handleBlur}
                                             isDisabled={!isEditable}
                                         />
@@ -397,10 +395,10 @@ function VulnMgmtReportForm({
                         </GridItem>
                         <GridItem span={4}>
                             <div>
-                                <Title headingLevel="h2" className="pf-u-mb-xs">
+                                <Title headingLevel="h2" className="pf-v5-u-mb-xs">
                                     Notification method and distribution
                                 </Title>
-                                <Text component={TextVariants.p} className="pf-u-mb-md">
+                                <Text component={TextVariants.p} className="pf-v5-u-mb-md">
                                     Schedule reports across the organization by defining a
                                     notification method and distribution list for the report
                                 </Text>

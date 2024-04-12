@@ -1,23 +1,25 @@
 const watchedImageLabelText = 'Watched image';
-const filterChipSection = '.pf-c-toolbar .pf-c-toolbar__group[aria-label="applied search filters"]';
+const filterChipSection =
+    '.pf-v5-c-toolbar .pf-v5-c-toolbar__group[aria-label="applied search filters"]';
 
 export const selectors = {
     // Toolbar selectors
-    searchOptionsDropdown: '.pf-c-toolbar button[aria-label="search options filter menu toggle"]',
+    searchOptionsDropdown:
+        '.pf-v5-c-toolbar button[aria-label="search options filter menu toggle"]',
     searchOptionsMenuItem: (searchOption) =>
-        `.pf-c-toolbar ul[aria-label="search options filter menu items"] button:contains("${searchOption}")`,
+        `.pf-v5-c-toolbar ul[aria-label="search options filter menu items"] button:contains("${searchOption}")`,
     searchOptionsValueTypeahead: (searchOption) =>
-        `.pf-c-toolbar input[aria-label="Filter by ${searchOption}"]`,
+        `.pf-v5-c-toolbar input[aria-label="Filter by ${searchOption}"]`,
     searchOptionsValueMenuItem: (searchOption) =>
-        `.pf-c-toolbar ul[aria-label="Filter by ${searchOption}"] button`,
-    severityDropdown: '.pf-c-toolbar button[aria-label="CVE severity filter menu toggle"]',
-    severityMenuItems: '.pf-c-toolbar ul[aria-label="CVE severity filter menu items"]',
+        `.pf-v5-c-toolbar ul[aria-label="Filter by ${searchOption}"] button`,
+    severityDropdown: '.pf-v5-c-toolbar button[aria-label="CVE severity filter menu toggle"]',
+    severityMenuItems: '.pf-v5-c-toolbar ul[aria-label="CVE severity filter menu items"]',
     severityMenuItem: (severity) => `${selectors.severityMenuItems} label:contains("${severity}")`,
-    fixabilityDropdown: '.pf-c-toolbar button[aria-label="CVE status filter menu toggle"]',
-    fixabilityMenuItems: '.pf-c-toolbar ul[aria-label="CVE status filter menu items"]',
+    fixabilityDropdown: '.pf-v5-c-toolbar button[aria-label="CVE status filter menu toggle"]',
+    fixabilityMenuItems: '.pf-v5-c-toolbar ul[aria-label="CVE status filter menu items"]',
     fixabilityMenuItem: (fixability) =>
         `${selectors.fixabilityMenuItems} label:contains("${fixability}")`,
-    filterChipGroup: `${filterChipSection} .pf-c-chip-group`,
+    filterChipGroup: `${filterChipSection} .pf-v5-c-chip-group`,
     filterChipGroupForCategory: (category) =>
         `${selectors.filterChipGroup} *:contains("${category}")`,
     filterChipGroupRemove: (category) =>
@@ -29,16 +31,16 @@ export const selectors = {
         `${selectors.filterChipGroupItem(category, item)} button[aria-label="close"]`,
 
     // General selectors
-    filteredViewLabel: '.pf-c-label:contains("Filtered view")',
+    filteredViewLabel: '.pf-v5-c-label:contains("Filtered view")',
     entityTypeToggleItem: (entityType) =>
-        `.pf-c-toggle-group[aria-label="Entity type toggle items"] button:contains("${entityType}")`,
-    summaryCard: (cardTitle) => `.pf-c-card:contains("${cardTitle}")`,
+        `.pf-v5-c-toggle-group[aria-label="Entity type toggle items"] button:contains("${entityType}")`,
+    summaryCard: (cardTitle) => `.pf-v5-c-card:contains("${cardTitle}")`,
     iconText: (textContent) => `svg ~ *:contains("${textContent}")`,
     bulkActionMenuToggle: 'button:contains("Bulk actions")',
     menuOption: (optionText) => `*[role="menu"] button:contains("${optionText}")`,
     paginationPrevious: "button[aria-label='Go to previous page']",
     paginationNext: "button[aria-label='Go to next page']",
-    severityIcon: (severity) => `svg:has(title:contains('${severity}'))`,
+    severityIcon: (severity) => `span.pf-v5-c-icon:contains('${severity}')`,
 
     // Image/Deployment tab selectors
     vulnerabilitiesTab: 'button[role="tab"]:contains("Vulnerabilities")',
@@ -51,7 +53,7 @@ export const selectors = {
     firstTableRow: 'table tbody:nth-of-type(1) tr:nth-of-type(1)',
     tableRowSelectCheckbox: 'td input[type="checkbox"][aria-label^="Select row"]',
     tableRowSelectAllCheckbox: 'thead input[type="checkbox"][aria-label^="Select all rows"]',
-    tableRowMenuToggle: 'td button[aria-label="Actions"]',
+    tableRowMenuToggle: 'td button[aria-label="Kebab toggle"]',
     nonZeroImageSeverityCounts:
         'td[data-label="Images by severity"] *[aria-label$="severity"i]:not([aria-label^="0"])',
     nonZeroCveSeverityCount: (severity) =>
@@ -69,7 +71,7 @@ export const selectors = {
     copyToClipboardTooltipText: 'div[role="tooltip"]',
 
     // Watched image selectors
-    watchedImageLabel: `.pf-c-label:contains("${watchedImageLabelText}")`,
+    watchedImageLabel: `.pf-v5-c-label:contains("${watchedImageLabelText}")`,
     firstUnwatchedImageRow: `tbody tr:has(td[data-label="Image"]:not(:contains("${watchedImageLabelText}"))):eq(0)`,
     tableRowActionsForImage: (name) =>
         `tbody tr:has(td[data-label="Image"]:contains("${name}")) *[aria-label="Actions"]`,
@@ -80,7 +82,7 @@ export const selectors = {
     addWatchedImageNameInput: '*[role="dialog"] input[id="imageName"]',
     addImageToWatchListButton: 'button:contains("Add image to watch list")',
     currentWatchedImagesTable: '*[role="dialog"] table',
-    modalAlertWithText: (text) => `*[role="dialog"] .pf-c-alert:contains("${text}")`,
+    modalAlertWithText: (text) => `*[role="dialog"] .pf-v5-c-alert:contains("${text}")`,
     currentWatchedImageRow: (name) =>
         `${selectors.currentWatchedImagesTable} tr:has(td:contains("${name}"))`,
     removeImageFromTableButton: (name) =>

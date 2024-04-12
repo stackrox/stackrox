@@ -19,7 +19,7 @@ type ScanConfigParameterViewProps = {
 
 function ScanConfigParameterView({ scanConfig }: ScanConfigParameterViewProps): React.ReactElement {
     return (
-        <Card className="pf-u-h-100">
+        <Card className="pf-v5-u-h-100">
             <CardTitle component="h2">Parameters</CardTitle>
             <CardBody>
                 <DescriptionList>
@@ -53,7 +53,7 @@ function ScanConfigParameterView({ scanConfig }: ScanConfigParameterViewProps): 
                                 date={new Date(scanConfig.lastUpdatedTime)}
                                 dateFormat="short"
                                 timeFormat="long"
-                                className="pf-u-color-100 pf-u-font-size-md"
+                                className="pf-v5-u-color-100 pf-v5-u-font-size-md"
                             />
                         </DescriptionListDescription>
                     </DescriptionListGroup>

@@ -23,7 +23,7 @@ function InviteUsersConfirmationNoEmail({
                     title="All entered emails already have auth provider rules"
                     variant="warning"
                     isInline
-                    className="pf-u-mb-lg"
+                    className="pf-v5-u-mb-lg"
                 >
                     <Text>
                         You must enter at least one email that does not yet have a rule in the
@@ -44,13 +44,13 @@ function InviteUsersConfirmationNoEmail({
                             title="Some emails already have auth provider rules."
                             variant="warning"
                             isInline
-                            className="pf-u-mb-lg"
+                            className="pf-v5-u-mb-lg"
                         >
-                            <Text className="pf-u-mb-md">
+                            <Text className="pf-v5-u-mb-md">
                                 The following users could not be invited because their emails
                                 already have rules applied to them.
                             </Text>
-                            <Text className="pf-u-mb-md">
+                            <Text className="pf-v5-u-mb-md">
                                 {emailBuckets.existingEmails.join(', ')}
                             </Text>
                             <Text>
@@ -65,11 +65,11 @@ function InviteUsersConfirmationNoEmail({
                             </Text>
                         </Alert>
                     )}
-                    <Text className="pf-u-mb-sm">
+                    <Text className="pf-v5-u-mb-sm">
                         New rules have been created, but invitation emails could not be sent. Use
                         the text below to manually send emails to your invitees.
                     </Text>
-                    <Text className="pf-u-mb-lg">
+                    <Text className="pf-v5-u-mb-lg">
                         Role: <strong>{role}</strong>
                     </Text>
                     <ClipboardCopy
@@ -78,7 +78,7 @@ function InviteUsersConfirmationNoEmail({
                         hoverTip="Copy"
                         clickTip="Copied"
                         variant={ClipboardCopyVariant.expansion}
-                        className="pf-u-mb-md"
+                        className="pf-v5-u-mb-md"
                     >
                         {emailBuckets.newEmails.join(', ')}
                     </ClipboardCopy>
@@ -88,7 +88,7 @@ function InviteUsersConfirmationNoEmail({
                         hoverTip="Copy"
                         clickTip="Copied"
                         variant={ClipboardCopyVariant.expansion}
-                        className="pf-u-mb-md"
+                        className="pf-v5-u-mb-md"
                     >
                         You have been invited to use Red Hat Advanced Cluster Security. Please use
                         the link to sign in: {window.location.origin}

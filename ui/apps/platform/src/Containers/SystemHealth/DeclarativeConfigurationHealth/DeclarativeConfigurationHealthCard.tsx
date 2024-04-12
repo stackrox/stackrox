@@ -4,12 +4,11 @@ import {
     Card,
     CardBody,
     CardHeader,
-    CardHeaderMain,
     CardTitle,
     Flex,
     FlexItem,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import { fetchDeclarativeConfigurationsHealth } from 'services/DeclarativeConfigHealthService';
@@ -66,28 +65,30 @@ function DeclarativeConfigurationHealthCard({
     return (
         <Card isFullHeight isCompact>
             <CardHeader>
-                <CardHeaderMain>
-                    <Flex className="pf-u-flex-grow-1">
-                        <FlexItem>{icon}</FlexItem>
-                        <FlexItem>
-                            <CardTitle component="h2">Declarative configuration</CardTitle>
-                        </FlexItem>
-                        {hasCount && (
+                {
+                    <>
+                        <Flex className="pf-v5-u-flex-grow-1">
+                            <FlexItem>{icon}</FlexItem>
                             <FlexItem>
-                                {unhealthyCount === 0
-                                    ? 'no errors'
-                                    : `${unhealthyCount} ${pluralize('error', unhealthyCount)}`}
+                                <CardTitle component="h2">Declarative configuration</CardTitle>
                             </FlexItem>
-                        )}
-                    </Flex>
-                </CardHeaderMain>
+                            {hasCount && (
+                                <FlexItem>
+                                    {unhealthyCount === 0
+                                        ? 'no errors'
+                                        : `${unhealthyCount} ${pluralize('error', unhealthyCount)}`}
+                                </FlexItem>
+                            )}
+                        </Flex>
+                    </>
+                }
             </CardHeader>
             {(errorMessageFetching || unhealthyCount !== 0) && (
                 <CardBody>
                     {errorMessageFetching ? (
                         <Alert isInline variant="warning" title={errorMessageFetching} />
                     ) : (
-                        <TableComposable variant="compact">
+                        <Table variant="compact">
                             <Thead>
                                 <Tr>
                                     <Th width={40}>Name</Th>
@@ -116,7 +117,7 @@ function DeclarativeConfigurationHealthCard({
                                     </Tr>
                                 ))}
                             </Tbody>
-                        </TableComposable>
+                        </Table>
                     )}
                 </CardBody>
             )}

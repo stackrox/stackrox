@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import { SearchResult, SearchResultCategory } from 'services/SearchService';
@@ -73,7 +73,7 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                   .sort((a: SearchResult, b: SearchResult) => a.name.localeCompare(b.name));
 
     return (
-        <TableComposable aria-label="Search results" variant="compact" isStickyHeader>
+        <Table aria-label="Search results" variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
                     <Th>{firstColumnHeading}</Th>
@@ -95,14 +95,14 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                                     location.length !== 0 && (
                                         <div
                                             aria-label={getLocationLabelForCategory(category)}
-                                            className="pf-u-color-200"
+                                            className="pf-v5-u-color-200"
                                         >
                                             {getLocationTextForCategory(location, category)}
                                         </div>
                                     )}
                             </Td>
                             {hasLocationColumn && (
-                                <Td dataLabel={locationColumnHeading} className="pf-u-color-200">
+                                <Td dataLabel={locationColumnHeading} className="pf-v5-u-color-200">
                                     {getLocationTextForCategory(location, category)}
                                 </Td>
                             )}
@@ -134,7 +134,7 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                     );
                 })}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

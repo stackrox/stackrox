@@ -5,18 +5,18 @@ import {
     Alert,
     Button,
     Card,
-    CardActions,
     CardBody,
     CardHeader,
-    CardHeaderMain,
     CardTitle,
     Divider,
     Form,
     FormGroup,
+    FormHelperText,
     FormSection,
     Grid,
     GridItem,
-    SelectOption,
+    HelperText,
+    HelperTextItem,
     Split,
     SplitItem,
     Switch,
@@ -25,6 +25,7 @@ import {
     TextInput,
     Title,
 } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -196,7 +197,7 @@ const SystemConfigForm = ({
                             value={
                                 values?.privateConfig?.alertConfig?.allRuntimeRetentionDurationDays
                             }
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             min={0}
                         />
                     </FormGroup>
@@ -216,7 +217,7 @@ const SystemConfigForm = ({
                                 values?.privateConfig?.alertConfig
                                     ?.deletedRuntimeRetentionDurationDays
                             }
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             min={0}
                         />
                     </FormGroup>
@@ -236,7 +237,7 @@ const SystemConfigForm = ({
                                 values?.privateConfig?.alertConfig
                                     ?.resolvedDeployRetentionDurationDays
                             }
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             min={0}
                         />
                     </FormGroup>
@@ -256,7 +257,7 @@ const SystemConfigForm = ({
                                 values?.privateConfig?.alertConfig
                                     ?.attemptedDeployRetentionDurationDays
                             }
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             min={0}
                         />
                     </FormGroup>
@@ -276,7 +277,7 @@ const SystemConfigForm = ({
                                 values?.privateConfig?.alertConfig
                                     ?.attemptedRuntimeRetentionDurationDays
                             }
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             min={0}
                         />
                     </FormGroup>
@@ -293,7 +294,7 @@ const SystemConfigForm = ({
                             id="privateConfig.imageRetentionDurationDays"
                             name="privateConfig.imageRetentionDurationDays"
                             value={values?.privateConfig?.imageRetentionDurationDays}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             min={0}
                         />
                     </FormGroup>
@@ -310,7 +311,7 @@ const SystemConfigForm = ({
                             id="privateConfig.expiredVulnReqRetentionDurationDays"
                             name="privateConfig.expiredVulnReqRetentionDurationDays"
                             value={values?.privateConfig?.expiredVulnReqRetentionDurationDays}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             min={0}
                         />
                     </FormGroup>
@@ -330,7 +331,7 @@ const SystemConfigForm = ({
                                 values?.privateConfig?.reportRetentionConfig
                                     ?.historyRetentionDurationDays
                             }
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             min={0}
                         />
                     </FormGroup>
@@ -350,7 +351,7 @@ const SystemConfigForm = ({
                                 values?.privateConfig?.reportRetentionConfig
                                     ?.downloadableReportRetentionDays
                             }
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             min={0}
                         />
                     </FormGroup>
@@ -360,10 +361,8 @@ const SystemConfigForm = ({
                         label="Prepared downloadable vulnerability reports limit"
                         isRequired
                         fieldId="privateConfig.reportRetentionConfig.downloadableReportGlobalRetentionBytes"
-                        helperTextInvalid={downloadableReportRetentionError}
-                        validated={downloadableReportRetentionError ? 'error' : 'default'}
                     >
-                        <Split hasGutter className="pf-u-align-items-center">
+                        <Split hasGutter className="pf-v5-u-align-items-center">
                             <SplitItem isFilled>
                                 <TextInput
                                     isRequired
@@ -375,7 +374,9 @@ const SystemConfigForm = ({
                                             ?.downloadableReportGlobalRetentionBytes,
                                         'B'
                                     )}
-                                    onChange={onDownloadableReportChange}
+                                    onChange={(event, value) =>
+                                        onDownloadableReportChange(value, event)
+                                    }
                                     min={50}
                                     validated={
                                         downloadableReportRetentionError ? 'error' : 'default'
@@ -386,6 +387,15 @@ const SystemConfigForm = ({
                                 <Text>MB</Text>
                             </SplitItem>
                         </Split>
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem
+                                    variant={downloadableReportRetentionError ? 'error' : 'default'}
+                                >
+                                    {downloadableReportRetentionError}
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                     </FormGroup>
                 </GridItem>
                 {isFeatureFlagEnabled('ROX_ADMINISTRATION_EVENTS') && (
@@ -404,7 +414,7 @@ const SystemConfigForm = ({
                                     values?.privateConfig?.administrationEventsConfig
                                         ?.retentionDurationDays
                                 }
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 min={0}
                             />
                         </FormGroup>
@@ -428,7 +438,7 @@ const SystemConfigForm = ({
                                 values?.privateConfig?.decommissionedClusterRetention
                                     ?.retentionDurationDays
                             }
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             min={0}
                         />
                     </FormGroup>
@@ -454,19 +464,28 @@ const SystemConfigForm = ({
             <Grid hasGutter>
                 <GridItem sm={12} md={6}>
                     <Card isFlat data-testid="header-config">
-                        <CardHeader>
-                            <CardHeaderMain>
-                                <CardTitle component="h3">Header configuration</CardTitle>
-                            </CardHeaderMain>
-                            <CardActions>
-                                <Switch
-                                    id="publicConfig.header.enabled"
-                                    label="Enabled"
-                                    labelOff="Disabled"
-                                    isChecked={values?.publicConfig?.header?.enabled}
-                                    onChange={onChange}
-                                />
-                            </CardActions>
+                        <CardHeader
+                            actions={{
+                                actions: (
+                                    <>
+                                        <Switch
+                                            id="publicConfig.header.enabled"
+                                            label="Enabled"
+                                            labelOff="Disabled"
+                                            isChecked={values?.publicConfig?.header?.enabled}
+                                            onChange={(event, value) => onChange(value, event)}
+                                        />
+                                    </>
+                                ),
+                                hasNoOffset: false,
+                                className: undefined,
+                            }}
+                        >
+                            {
+                                <>
+                                    <CardTitle component="h3">Header configuration</CardTitle>
+                                </>
+                            }
                         </CardHeader>
                         <Divider component="div" />
                         <CardBody>
@@ -483,7 +502,7 @@ const SystemConfigForm = ({
                                                 id="publicConfig.header.text"
                                                 name="publicConfig.header.text"
                                                 value={values?.publicConfig?.header?.text}
-                                                onChange={onChange}
+                                                onChange={(event, value) => onChange(value, event)}
                                             />
                                         </FormGroup>
                                     </GridItem>
@@ -543,19 +562,28 @@ const SystemConfigForm = ({
                 </GridItem>
                 <GridItem sm={12} md={6}>
                     <Card isFlat data-testid="footer-config">
-                        <CardHeader>
-                            <CardHeaderMain>
-                                <CardTitle component="h3">Footer configuration</CardTitle>
-                            </CardHeaderMain>
-                            <CardActions>
-                                <Switch
-                                    id="publicConfig.footer.enabled"
-                                    label="Enabled"
-                                    labelOff="Disabled"
-                                    isChecked={values?.publicConfig?.footer?.enabled}
-                                    onChange={onChange}
-                                />
-                            </CardActions>
+                        <CardHeader
+                            actions={{
+                                actions: (
+                                    <>
+                                        <Switch
+                                            id="publicConfig.footer.enabled"
+                                            label="Enabled"
+                                            labelOff="Disabled"
+                                            isChecked={values?.publicConfig?.footer?.enabled}
+                                            onChange={(event, value) => onChange(value, event)}
+                                        />
+                                    </>
+                                ),
+                                hasNoOffset: false,
+                                className: undefined,
+                            }}
+                        >
+                            {
+                                <>
+                                    <CardTitle component="h3">Footer configuration</CardTitle>
+                                </>
+                            }
                         </CardHeader>
                         <Divider component="div" />
                         <CardBody>
@@ -572,7 +600,7 @@ const SystemConfigForm = ({
                                                 id="publicConfig.footer.text"
                                                 name="publicConfig.footer.text"
                                                 value={values?.publicConfig?.footer?.text}
-                                                onChange={onChange}
+                                                onChange={(event, value) => onChange(value, event)}
                                             />
                                         </FormGroup>
                                     </GridItem>
@@ -632,19 +660,28 @@ const SystemConfigForm = ({
                 </GridItem>
                 <GridItem md={6}>
                     <Card isFlat data-testid="login-notice-config">
-                        <CardHeader>
-                            <CardHeaderMain>
-                                <CardTitle component="h3">Login configuration</CardTitle>
-                            </CardHeaderMain>
-                            <CardActions>
-                                <Switch
-                                    id="publicConfig.loginNotice.enabled"
-                                    label="Enabled"
-                                    labelOff="Disabled"
-                                    isChecked={values?.publicConfig?.loginNotice?.enabled}
-                                    onChange={onChange}
-                                />
-                            </CardActions>
+                        <CardHeader
+                            actions={{
+                                actions: (
+                                    <>
+                                        <Switch
+                                            id="publicConfig.loginNotice.enabled"
+                                            label="Enabled"
+                                            labelOff="Disabled"
+                                            isChecked={values?.publicConfig?.loginNotice?.enabled}
+                                            onChange={(event, value) => onChange(value, event)}
+                                        />
+                                    </>
+                                ),
+                                hasNoOffset: false,
+                                className: undefined,
+                            }}
+                        >
+                            {
+                                <>
+                                    <CardTitle component="h3">Login configuration</CardTitle>
+                                </>
+                            }
                         </CardHeader>
                         <Divider component="div" />
                         <CardBody>
@@ -659,7 +696,7 @@ const SystemConfigForm = ({
                                         id="publicConfig.loginNotice.text"
                                         name="publicConfig.loginNotice.text"
                                         value={values?.publicConfig?.loginNotice?.text}
-                                        onChange={onChange}
+                                        onChange={(event, value) => onChange(value, event)}
                                     />
                                 </FormGroup>
                             </FormSection>
@@ -669,25 +706,34 @@ const SystemConfigForm = ({
                 {isTelemetryConfigured && (
                     <GridItem md={6}>
                         <Card isFlat data-testid="telemetry-config">
-                            <CardHeader>
-                                <CardHeaderMain>
-                                    <CardTitle component="h3">
-                                        Online Telemetry Data Collection
-                                    </CardTitle>
-                                </CardHeaderMain>
-                                <CardActions>
-                                    <Switch
-                                        id="publicConfig.telemetry.enabled"
-                                        label="Enabled"
-                                        labelOff="Disabled"
-                                        isChecked={values?.publicConfig?.telemetry?.enabled}
-                                        onChange={onChange}
-                                    />
-                                </CardActions>
+                            <CardHeader
+                                actions={{
+                                    actions: (
+                                        <>
+                                            <Switch
+                                                id="publicConfig.telemetry.enabled"
+                                                label="Enabled"
+                                                labelOff="Disabled"
+                                                isChecked={values?.publicConfig?.telemetry?.enabled}
+                                                onChange={(event, value) => onChange(value, event)}
+                                            />
+                                        </>
+                                    ),
+                                    hasNoOffset: false,
+                                    className: undefined,
+                                }}
+                            >
+                                {
+                                    <>
+                                        <CardTitle component="h3">
+                                            Online Telemetry Data Collection
+                                        </CardTitle>
+                                    </>
+                                }
                             </CardHeader>
                             <Divider component="div" />
                             <CardBody>
-                                <p className="pf-u-mb-sm">
+                                <p className="pf-v5-u-mb-sm">
                                     Online telemetry data collection allows Red Hat to use
                                     anonymized information to enhance your user experience. Consult
                                     the documentation to see what is collected, and for information

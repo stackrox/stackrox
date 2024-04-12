@@ -22,11 +22,11 @@ function ImportPolicyJSONSuccess({
                 been imported:
                 <Flex
                     direction={{ default: 'column' }}
-                    className="pf-u-mt-md"
+                    className="pf-v5-u-mt-md"
                     data-testid="policies-imported"
                 >
                     {policies.map(({ id, name }, idx) => (
-                        <FlexItem key={id} className={idx === 0 ? '' : 'pf-u-pt-sm'}>
+                        <FlexItem key={id} className={idx === 0 ? '' : 'pf-v5-u-pt-sm'}>
                             <Link to={`${policiesBasePath}/${id}`}>{name}</Link>
                         </FlexItem>
                     ))}

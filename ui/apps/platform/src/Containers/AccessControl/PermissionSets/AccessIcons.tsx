@@ -3,13 +3,18 @@ import { CheckIcon, TimesIcon } from '@patternfly/react-icons';
 
 import { AccessLevel } from 'services/RolesService';
 
+import { Icon } from '@patternfly/react-core';
 import { getIsReadAccess, getIsWriteAccess } from './permissionSets.utils';
 
 const forbiddenIcon = (
-    <TimesIcon aria-label="forbidden" color="var(--pf-global--danger-color--100)" size="sm" />
+    <Icon size="sm">
+        <TimesIcon color="var(--pf-v5-global--danger-color--100)" aria-label="forbidden" />
+    </Icon>
 );
 const permittedIcon = (
-    <CheckIcon aria-label="permitted" color="var(--pf-global--success-color--100)" size="sm" />
+    <Icon size="sm">
+        <CheckIcon color="var(--pf-v5-global--success-color--100)" aria-label="permitted" />
+    </Icon>
 );
 
 export type AccessIconProps = {

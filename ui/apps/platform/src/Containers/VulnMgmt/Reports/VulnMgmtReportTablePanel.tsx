@@ -6,7 +6,6 @@ import {
     Bullseye,
     Button,
     ButtonVariant,
-    DropdownItem,
     Divider,
     PageSection,
     PageSectionVariants,
@@ -15,8 +14,9 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { SearchIcon } from '@patternfly/react-icons';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import usePermissions from 'hooks/usePermissions';
@@ -230,7 +230,7 @@ function ReportingTablePanel({
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             itemCount={reportCount}
                             page={currentPage}
@@ -255,7 +255,7 @@ function ReportingTablePanel({
             )}
             <Divider component="div" />
             <PageSection isFilled hasOverflowScroll>
-                <TableComposable variant="compact">
+                <Table variant="compact">
                     <Thead>
                         <Tr>
                             <Th
@@ -315,7 +315,9 @@ function ReportingTablePanel({
 
                                 actionItems.push({
                                     title: (
-                                        <div className="pf-u-danger-color-100">Delete report</div>
+                                        <div className="pf-v5-u-danger-color-100">
+                                            Delete report
+                                        </div>
                                     ),
                                     onClick: () => onClickDelete([report.id]),
                                 });
@@ -364,7 +366,7 @@ function ReportingTablePanel({
                             </Tr>
                         )}
                     </Tbody>
-                </TableComposable>
+                </Table>
             </PageSection>
             <ConfirmationModal
                 ariaLabel="Confirm deleting reports"

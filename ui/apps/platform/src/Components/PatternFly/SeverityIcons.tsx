@@ -7,6 +7,7 @@ import {
     UnknownIcon,
 } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
+import { Icon } from '@patternfly/react-core';
 
 import {
     CRITICAL_SEVERITY_COLOR,
@@ -22,28 +23,40 @@ import { PolicySeverity } from 'types/policy.proto';
 // Color can be overridden by passing the standard `color` prop to the icon component.
 // For example, colors={count === 0 ? noViolationsColor: undefined} prop.
 
-export const CriticalSeverityIcon = (props) => (
-    <CriticalRiskIcon {...props} color={props.color ?? CRITICAL_SEVERITY_COLOR} />
+export const CriticalSeverityIcon = ({ color, ...props }: SVGIconProps) => (
+    <>
+        <Icon>
+            <CriticalRiskIcon color={color ?? CRITICAL_SEVERITY_COLOR} {...props} />
+        </Icon>
+    </>
 );
 
-export const ImportantSeverityIcon = (props) => (
-    <AngleDoubleUpIcon {...props} color={props.color ?? IMPORTANT_HIGH_SEVERITY_COLOR} />
+export const ImportantSeverityIcon = ({ color, ...props }: SVGIconProps) => (
+    <Icon>
+        <AngleDoubleUpIcon color={color ?? IMPORTANT_HIGH_SEVERITY_COLOR} {...props} />
+    </Icon>
 );
 
 export const HighSeverityIcon = ImportantSeverityIcon; // High is for policy severity
 
-export const ModerateSeverityIcon = (props) => (
-    <EqualsIcon {...props} color={props.color ?? MODERATE_MEDIUM_SEVERITY_COLOR} />
+export const ModerateSeverityIcon = ({ color, ...props }: SVGIconProps) => (
+    <Icon>
+        <EqualsIcon color={color ?? MODERATE_MEDIUM_SEVERITY_COLOR} {...props} />
+    </Icon>
 );
 
 export const MediumSeverityIcon = ModerateSeverityIcon; // Medium is for policy severity
 
-export const LowSeverityIcon = (props) => (
-    <AngleDoubleDownIcon {...props} color={props.color ?? LOW_SEVERITY_COLOR} />
+export const LowSeverityIcon = ({ color, ...props }: SVGIconProps) => (
+    <Icon>
+        <AngleDoubleDownIcon color={color ?? LOW_SEVERITY_COLOR} {...props} />
+    </Icon>
 );
 
-export const UnknownSeverityIcon = (props) => (
-    <UnknownIcon {...props} color={props.color ?? UNKNOWN_SEVERITY_COLOR} />
+export const UnknownSeverityIcon = ({ color, ...props }: SVGIconProps) => (
+    <Icon>
+        <UnknownIcon color={color ?? UNKNOWN_SEVERITY_COLOR} {...props} />
+    </Icon>
 );
 
 const SeverityIcons: Record<

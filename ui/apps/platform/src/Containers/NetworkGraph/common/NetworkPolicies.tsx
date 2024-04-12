@@ -8,12 +8,12 @@ import {
     Divider,
     EmptyState,
     EmptyStateVariant,
-    SelectOption,
     Spinner,
     Stack,
     StackItem,
-    Title,
+    EmptyStateHeader,
 } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import download from 'utils/download';
@@ -86,7 +86,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
     if (isLoading) {
         return (
             <Bullseye>
-                <Spinner isSVG size="lg" />
+                <Spinner size="lg" />
             </Bullseye>
         );
     }
@@ -97,7 +97,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                 isInline
                 variant={AlertVariant.danger}
                 title={getAxiosErrorMessage(error)}
-                className="pf-u-mb-lg"
+                className="pf-v5-u-mb-lg"
             />
         );
     }
@@ -106,7 +106,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
 
     if (networkPolicyErrors.length > 0) {
         policyErrorBanner = (
-            <AlertGroup className="pf-u-mb-lg">
+            <AlertGroup className="pf-v5-u-mb-lg">
                 {networkPolicyErrors.map((networkPolicyError) => (
                     <Alert
                         isInline
@@ -126,9 +126,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                 {policyErrorBanner}
                 <Bullseye>
                     <EmptyState variant={EmptyStateVariant.xs}>
-                        <Title headingLevel="h4" size="md">
-                            No network policies
-                        </Title>
+                        <EmptyStateHeader titleText="No network policies" headingLevel="h4" />
                     </EmptyState>
                 </Bullseye>
             </>
@@ -136,7 +134,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
     }
 
     return (
-        <div className="pf-u-h-100 pf-u-p-md">
+        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
             {policyErrorBanner}
             <Stack hasGutter>
                 <StackItem>
@@ -164,31 +162,31 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                         </>
                     </SelectSingle>
                 </StackItem>
-                {selectedNetworkPolicy && (
-                    <StackItem>
-                        <div className="pf-u-h-100">
-                            <CodeEditor
-                                isDarkTheme={customDarkMode}
-                                customControls={
-                                    <CodeEditorDarkModeControl
-                                        isDarkMode={customDarkMode}
-                                        onToggleDarkMode={onToggleDarkMode}
-                                    />
-                                }
-                                isCopyEnabled
-                                isLineNumbersVisible
-                                isReadOnly
-                                code={selectedNetworkPolicy.yaml}
-                                language={Language.yaml}
-                                height="300px"
-                            />
-                        </div>
-                    </StackItem>
-                )}
-                {selectedNetworkPolicy && (
-                    <StackItem>
-                        <Button onClick={exportYAMLHandler}>Export YAML</Button>
-                    </StackItem>
+                {!!selectedNetworkPolicy?.yaml && (
+                    <>
+                        <StackItem>
+                            <div className="pf-v5-u-h-100">
+                                <CodeEditor
+                                    isDarkTheme={customDarkMode}
+                                    customControls={
+                                        <CodeEditorDarkModeControl
+                                            isDarkMode={customDarkMode}
+                                            onToggleDarkMode={onToggleDarkMode}
+                                        />
+                                    }
+                                    isCopyEnabled
+                                    isLineNumbersVisible
+                                    isReadOnly
+                                    code={selectedNetworkPolicy.yaml}
+                                    language={Language.yaml}
+                                    height="300px"
+                                />
+                            </div>
+                        </StackItem>
+                        <StackItem>
+                            <Button onClick={exportYAMLHandler}>Export YAML</Button>
+                        </StackItem>
+                    </>
                 )}
             </Stack>
         </div>

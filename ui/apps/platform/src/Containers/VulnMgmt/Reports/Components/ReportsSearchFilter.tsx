@@ -6,6 +6,7 @@ import {
     FlexItem,
     InputGroup,
     TextInput,
+    InputGroupItem,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 
@@ -45,22 +46,26 @@ function ReportsSearchFilter({
             <FlexItem spacer={{ default: 'spacerNone' }}>
                 {selectedAttribute === 'Report Name' && (
                     <InputGroup>
-                        <TextInput
-                            name="reportNameSearchInput"
-                            id="reportNameSearchInput"
-                            type="search"
-                            aria-label="Report name search input"
-                            placeholder="Filter by report name"
-                            onChange={handleInputChange}
-                            value={inputValue}
-                        />
-                        <Button
-                            variant={ButtonVariant.control}
-                            aria-label="Perform search"
-                            onClick={() => handleSearchChange(inputValue)}
-                        >
-                            <SearchIcon />
-                        </Button>
+                        <InputGroupItem isFill>
+                            <TextInput
+                                name="reportNameSearchInput"
+                                id="reportNameSearchInput"
+                                type="search"
+                                aria-label="Report name search input"
+                                placeholder="Filter by report name"
+                                onChange={(_event, value) => handleInputChange(value)}
+                                value={inputValue}
+                            />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                            <Button
+                                variant={ButtonVariant.control}
+                                aria-label="Perform search"
+                                onClick={() => handleSearchChange(inputValue)}
+                            >
+                                <SearchIcon />
+                            </Button>
+                        </InputGroupItem>
                     </InputGroup>
                 )}
             </FlexItem>

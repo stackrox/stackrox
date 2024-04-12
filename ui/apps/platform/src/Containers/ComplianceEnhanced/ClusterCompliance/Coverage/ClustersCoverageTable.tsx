@@ -16,7 +16,7 @@ import {
     ToolbarItem,
     Tooltip,
 } from '@patternfly/react-core';
-import { TableComposable, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
+import { Table, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
 import { CubesIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -96,7 +96,7 @@ function ClustersCoverageTable() {
                                     {`${passCount} / ${totalCount} checks are passing for this cluster`}
                                 </div>
                             }
-                            reference={() =>
+                            triggerRef={() =>
                                 document.getElementById(
                                     `progress-bar-${index}`
                                 ) as HTMLButtonElement
@@ -112,7 +112,7 @@ function ClustersCoverageTable() {
         <Tr>
             <Td colSpan={3}>
                 <Bullseye>
-                    <Spinner isSVG />
+                    <Spinner />
                 </Bullseye>
             </Td>
         </Tr>
@@ -171,7 +171,7 @@ function ClustersCoverageTable() {
                             <ToolbarItem>
                                 <CoverageTableViewToggleGroup />
                             </ToolbarItem>
-                            <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                                 <Pagination
                                     isCompact
                                     itemCount={clusterScanStatsCount ?? 0}
@@ -184,7 +184,7 @@ function ClustersCoverageTable() {
                         </ToolbarContent>
                     </Toolbar>
 
-                    <TableComposable>
+                    <Table>
                         <Thead noWrap>
                             <Tr>
                                 <Th sort={getSortParams('Cluster')}>Cluster</Th>
@@ -200,7 +200,7 @@ function ClustersCoverageTable() {
                             </Tr>
                         </Thead>
                         <Tbody>{renderTableBodyContent()}</Tbody>
-                    </TableComposable>
+                    </Table>
                 </>
             )}
         </>
