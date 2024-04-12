@@ -36,7 +36,7 @@ func TestGoogle(t *testing.T) {
 
 	_, creator := google.Creator()
 
-	registry, err := creator(integration, nil)
+	registry, err := creator(integration)
 	require.NoError(t, err)
 
 	scanner, err := newScanner(integration)
