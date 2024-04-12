@@ -223,7 +223,7 @@ func (i *imageScanCommand) Scan() error {
 		}),
 	)
 	if err != nil {
-		return errors.Wrapf(err, "scaning image failed after %d retries", i.retryCount)
+		return errors.Wrapf(err, "scanning image failed after %d retries", i.retryCount)
 	}
 	return nil
 }

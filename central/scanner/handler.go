@@ -77,15 +77,15 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 
 	scannerV4IndexerCert, err := mtls.IssueNewCert(mtls.ScannerV4IndexerSubject)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not issue certifiate for Scanner V4 Indexer")
+		return nil, errors.Wrap(err, "could not issue certificate for Scanner V4 Indexer")
 	}
 	scannerV4MatcherCert, err := mtls.IssueNewCert(mtls.ScannerV4MatcherSubject)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not issue certifiate for Scanner V4 Matcher")
+		return nil, errors.Wrap(err, "could not issue certificate for Scanner V4 Matcher")
 	}
 	scannerV4DBCert, err := mtls.IssueNewCert(mtls.ScannerV4DBSubject)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not issue certifiate for Scanner V4 DB")
+		return nil, errors.Wrap(err, "could not issue certificate for Scanner V4 DB")
 	}
 
 	flavor := defaults.GetImageFlavorFromEnv()

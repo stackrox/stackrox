@@ -36,7 +36,7 @@ func PredMatcher(desc string, checker interface{}) gomock.Matcher {
 	}
 
 	if ty.NumOut() != 1 {
-		panic("function for predicate matcher must have exactly one output paramer")
+		panic("function for predicate matcher must have exactly one output parameter")
 	}
 
 	outTy := ty.Out(0)
