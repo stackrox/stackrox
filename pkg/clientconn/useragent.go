@@ -2,10 +2,9 @@ package clientconn
 
 import (
 	"fmt"
-	"os"
 	"runtime"
-	"strconv"
 
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/version"
 )
 
@@ -31,13 +30,8 @@ func init() {
 // e.g. grpc-go/1.50.1.
 func SetUserAgent(agent string) {
 	var ci string
-	if v, ok := os.LookupEnv("CI"); ok {
-		// Do not set CI if CI=false.
-		if value, err := strconv.ParseBool(v); err == nil && !value {
-			ci = ""
-		} else {
-			ci = " CI"
-		}
+	if testutils.IsRunningInCI() {
+		ci = " CI"
 	}
 	userAgent = fmt.Sprintf("%s/%s (%s; %s)%s", agent, version.GetMainVersion(), runtime.GOOS, runtime.GOARCH, ci)
 }

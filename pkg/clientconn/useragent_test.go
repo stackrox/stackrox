@@ -4,18 +4,19 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSetUserAgent(t *testing.T) {
 	ua := GetUserAgent()
 	assert.True(t, strings.HasPrefix(ua, "StackRox/"))
-	assert.NotContains(t, ua, "CI")
+	assert.Equal(t, testutils.IsRunningInCI(), strings.Contains(ua, "CI"))
 
 	SetUserAgent("abc")
 	ua = GetUserAgent()
 	assert.True(t, strings.HasPrefix(ua, "abc/"))
-	assert.NotContains(t, ua, "CI")
+	assert.Equal(t, testutils.IsRunningInCI(), strings.Contains(ua, "CI"))
 
 	for ci, expected := range map[string]bool{
 		"yes":   true,
@@ -28,6 +29,6 @@ func TestSetUserAgent(t *testing.T) {
 		t.Setenv("CI", ci)
 		SetUserAgent("test")
 		ua = GetUserAgent()
-		assert.Equal(t, expected, strings.Contains(ua, " CI"))
+		assert.Equal(t, expected, strings.Contains(ua, " CI"), ci)
 	}
 }

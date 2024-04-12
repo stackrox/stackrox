@@ -12,6 +12,6 @@ func IsRunningInCI() bool {
 		return false
 	}
 
-	b, _ := strconv.ParseBool(v)
-	return b
+	b, err := strconv.ParseBool(v)
+	return err != nil || b
 }
