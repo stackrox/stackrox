@@ -48,4 +48,7 @@ const (
 
 	// ScannerV4Supported identifies the capability of Central to support Scanner V4 related requests from Sensor.
 	ScannerV4Supported = "ScannerV4Supported"
+
+	// NetworkGraphInternalEntitiesSupported identifies the capability of Central (UI) to display internal entities in the network graph.
+	NetworkGraphInternalEntitiesSupported = "NetworkGraphInternalEntitiesSupported"
 )
