@@ -73,6 +73,18 @@ spec:
           mountPath: /etc/pki/ca-trust
         - name: tmp-volume
           mountPath: /tmp
+
+        - mountPath: /tmp/rhcos/etc # FIXME: all of the following mounts are only needed if the node indexer is enabled
+          name: etc-ro              # FIXME: Also, mount to /host instead of /tmp/rhcos, make path configurable in config.yaml
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /tmp/rhcos/usr
+          name: usr-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /tmp/rhcos/sys
+          name: sys-ro
+          readOnly: true
       volumes:
       - name: config
         configMap:
@@ -92,3 +104,13 @@ spec:
       - name: tmp-volume
         emptyDir:
           medium: Memory
+
+      - hostPath:    # FIXME: all of the following mounts are only needed if the node indexer is enabled
+          path: /etc
+        name: etc-ro
+      - hostPath:
+          path: /usr
+        name: usr-ro
+      - hostPath:
+          path: /sys/
+        name: sys-ro

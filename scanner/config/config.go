@@ -44,6 +44,13 @@ var (
 			},
 			VulnerabilitiesURL: "https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulns.json.zst",
 		},
+		NodeIndexer: NodeIndexerConfig{
+			Enable: false,
+			Database: Database{
+				ConnString:   "host=/var/run/postgresql",
+				PasswordFile: "",
+			},
+		},
 		// Default is empty.
 		MTLS: MTLSConfig{
 			CertsDir: "",
@@ -92,6 +99,10 @@ func (c *Config) validate() error {
 
 	if err := c.Proxy.validate(); err != nil {
 		return fmt.Errorf("proxy: %w", err)
+	}
+
+	if err := c.NodeIndexer.validate(); err != nil {
+		return fmt.Errorf("nodeindexer: %w", err)
 	}
 
 	return nil
