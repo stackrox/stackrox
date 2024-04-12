@@ -345,7 +345,7 @@ func getLayerRequest(ctx context.Context, httpClient *http.Client, imgRef name.R
 	}
 	utils.IgnoreError(res.Body.Close)
 	if res.StatusCode != http.StatusPartialContent {
-		zlog.Warn(ctx).
+		zlog.Debug(ctx).
 			Int("status_code", res.StatusCode).
 			Int("len", int(res.ContentLength)).
 			Str("url", u.String()).
