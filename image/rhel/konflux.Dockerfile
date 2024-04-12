@@ -2,6 +2,7 @@ ARG ROCKSDB_BUILDER_STAGE_PATH="/mnt/rocksdb"
 ARG GO_BUILDER_STAGE_PATH="/mnt/go"
 ARG FINAL_STAGE_PATH="/mnt/final"
 
+FROM scratch AS scratch-alias
 
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/ubi:latest AS rocksdb-builder-base
@@ -47,7 +48,7 @@ RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
 RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
 
 
-FROM scratch AS rocksdb-builder
+FROM scratch-alias AS rocksdb-builder
 
 ARG ROCKSDB_BUILDER_STAGE_PATH
 COPY --from=rpm-installer "$ROCKSDB_BUILDER_STAGE_PATH" /
@@ -60,7 +61,7 @@ COPY .konflux/rocksdb ./
 RUN PORTABLE=1 TRY_SSE_ETC=0 TRY_SSE42="-msse4.2" TRY_PCLMUL="-mpclmul" CXXFLAGS="-fPIC" make --jobs=6 static_lib
 
 
-FROM scratch AS go-builder
+FROM scratch-alias AS go-builder
 
 ARG GO_BUILDER_STAGE_PATH
 COPY --from=rpm-installer "$GO_BUILDER_STAGE_PATH" /
@@ -117,7 +118,7 @@ ENV ROX_PRODUCT_BRANDING="STACKROX_BRANDING"
 RUN make -C ui build
 
 
-FROM scratch
+FROM scratch-alias
 
 ARG FINAL_STAGE_PATH
 COPY --from=rpm-installer "$FINAL_STAGE_PATH" /
