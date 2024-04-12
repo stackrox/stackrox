@@ -409,7 +409,7 @@ func printWarnings(logger logger.Logger, warnings []string) {
 	if len(warnings) == 0 {
 		return
 	}
-	logger.WarnfLn("The following warnings occured:")
+	logger.WarnfLn("The following warnings occurred:")
 	for _, msg := range warnings {
 		logger.WarnfLn("%s", msg)
 	}

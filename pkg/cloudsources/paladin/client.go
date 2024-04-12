@@ -133,7 +133,7 @@ func (a *Asset) GetID() string {
 	idParts := strings.Split(a.ID, "/")
 
 	if len(idParts) != 8 {
-		log.Warnf("Received unkown ID for AKS cluster from Paladin %q. This might lead to incorrect matching",
+		log.Warnf("Received unknown ID for AKS cluster from Paladin %q. This might lead to incorrect matching",
 			a.ID)
 		return a.ID
 	}

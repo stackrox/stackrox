@@ -277,7 +277,7 @@ func (i *imageCheckCommand) getAlerts(req *v1.BuildDetectionRequest) ([]*storage
 	return response.GetAlerts(), err
 }
 
-// legacyPrint supports the old printing behavior of the --json format to ensure backwards compatability
+// legacyPrint supports the old printing behavior of the --json format to ensure backwards compatibility
 func legacyPrint(alerts []*storage.Alert, failViolations bool, numBuildBreakingPolicies int, out io.Writer) error {
 	err := report.JSON(out, alerts)
 	if err != nil {
