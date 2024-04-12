@@ -13,8 +13,8 @@ const IntegrationsSection = ({
     id,
 }: IntegrationsSectionProps): ReactElement => {
     return (
-        <PageSection variant="light" id={id} className="pf-u-mb-xl">
-            <Title headingLevel="h2" className="pf-u-mb-md">
+        <PageSection variant="light" id={id} className="pf-v5-u-mb-xl">
+            <Title headingLevel="h2" className="pf-v5-u-mb-md">
                 {headerName}
             </Title>
             <Gallery hasGutter>{children}</Gallery>

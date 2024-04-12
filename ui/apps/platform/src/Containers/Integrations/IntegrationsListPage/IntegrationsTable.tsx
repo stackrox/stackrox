@@ -9,7 +9,7 @@ import {
     PageSectionVariants,
     Title,
 } from '@patternfly/react-core';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { useParams, Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 
@@ -137,7 +137,7 @@ function IntegrationsTable({
                 variant={PageSectionVariants.light}
             >
                 {integrations.length > 0 ? (
-                    <TableComposable variant="compact" isStickyHeader>
+                    <Table variant="compact" isStickyHeader>
                         <Thead>
                             <Tr>
                                 {hasMultipleDelete && !isReadOnly && (
@@ -179,7 +179,7 @@ function IntegrationsTable({
                                     },
                                     {
                                         title: (
-                                            <div className="pf-u-danger-color-100">
+                                            <div className="pf-v5-u-danger-color-100">
                                                 Delete Integration
                                             </div>
                                         ),
@@ -239,17 +239,17 @@ function IntegrationsTable({
                                         <Td
                                             actions={{
                                                 items: actionItems,
-                                                disable:
+                                                isDisabled:
                                                     !permissions[source].write ||
                                                     !isUserResource(integration.traits),
                                             }}
-                                            className="pf-u-text-align-right"
+                                            className="pf-v5-u-text-align-right"
                                         />
                                     </Tr>
                                 );
                             })}
                         </Tbody>
-                    </TableComposable>
+                    </Table>
                 ) : (
                     <EmptyStateTemplate
                         title="No integrations of this type are currently configured."

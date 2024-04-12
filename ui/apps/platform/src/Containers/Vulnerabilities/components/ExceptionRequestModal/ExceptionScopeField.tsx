@@ -1,5 +1,12 @@
 import React from 'react';
-import { FormGroup, FormGroupProps, Radio } from '@patternfly/react-core';
+import {
+    FormGroup,
+    FormGroupProps,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    Radio,
+} from '@patternfly/react-core';
 
 import { useFormik } from 'formik';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -20,16 +27,7 @@ function ExceptionScopeField({ fieldId, label, scopeContext, formik }: Exception
     const isImageWithoutTag = scopeContext !== 'GLOBAL' && scopeContext.imageName.tag === '';
 
     return (
-        <FormGroup
-            fieldId={fieldId}
-            label={label}
-            isRequired
-            helperText={
-                isImageWithoutTag
-                    ? `This image does not have a tag and the exception will apply to all tags within ${scopeContext.imageName.registry}/${scopeContext.imageName.remote}`
-                    : undefined
-            }
-        >
+        <FormGroup fieldId={fieldId} label={label} isRequired>
             {scopeContext === 'GLOBAL' && (
                 <Radio
                     id="scope-global"
@@ -78,6 +76,15 @@ function ExceptionScopeField({ fieldId, label, scopeContext, formik }: Exception
                     label={`Only ${scopeContext.imageName.registry}/${scopeContext.imageName.remote}:${scopeContext.imageName.tag}`}
                 />
             )}
+            <FormHelperText>
+                <HelperText>
+                    <HelperTextItem>
+                        {isImageWithoutTag
+                            ? `This image does not have a tag and the exception will apply to all tags within ${scopeContext.imageName.registry}/${scopeContext.imageName.remote}`
+                            : undefined}
+                    </HelperTextItem>
+                </HelperText>
+            </FormHelperText>
         </FormGroup>
     );
 }

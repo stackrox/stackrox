@@ -116,7 +116,7 @@ function ManageStandardsModal({
                             name={id}
                             label={name}
                             isChecked={values[id]}
-                            onChange={(value) => {
+                            onChange={(_event, value) => {
                                 return setFieldValue(id, value);
                             }}
                         />
@@ -128,7 +128,7 @@ function ManageStandardsModal({
                     title="Unable to save changes"
                     variant="danger"
                     isInline
-                    className="pf-u-mt-lg"
+                    className="pf-v5-u-mt-lg"
                 >
                     {errorMessage}
                 </Alert>

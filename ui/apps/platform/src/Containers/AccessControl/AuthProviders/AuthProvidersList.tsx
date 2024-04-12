@@ -3,7 +3,7 @@ import pluralize from 'pluralize';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { Button, Modal, ModalVariant } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
@@ -15,7 +15,7 @@ import { getOriginLabel } from '../traits';
 // TODO import from where?
 const unselectedRowStyle = {};
 const selectedRowStyle = {
-    borderLeft: '3px solid var(--pf-global--primary-color--100)',
+    borderLeft: '3px solid var(--pf-v5-global--primary-color--100)',
 };
 
 function getAuthProviderTypeLabel(type: string, availableTypes: AuthProviderInfo[]): string {
@@ -57,7 +57,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
 
     return (
         <>
-            <TableComposable variant="compact">
+            <Table variant="compact">
                 <Thead>
                     <Tr>
                         <Th width={15}>Name</Th>
@@ -117,13 +117,13 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                             },
                                         ],
                                     }}
-                                    className="pf-u-text-align-right"
+                                    className="pf-v5-u-text-align-right"
                                 />
                             </Tr>
                         );
                     })}
                 </Tbody>
-            </TableComposable>
+            </Table>
             <Modal
                 variant={ModalVariant.small}
                 title="Permanently delete auth provider?"

@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { FormEvent } from 'react';
 import {
     Button,
     FormGroup,
-    SelectOption,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    Icon,
     TextInput,
     ValidatedOptions,
 } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
@@ -71,7 +75,7 @@ function ByNameSelector({
     }
 
     function onChangeValue(resourceSelector, valueIndex) {
-        return (value: string) => {
+        return (event: FormEvent<HTMLInputElement>, value: string) => {
             const newSelector = cloneDeep(resourceSelector);
             newSelector.rule.values[valueIndex].value = value;
             handleChange(entityType, newSelector);
@@ -99,7 +103,7 @@ function ByNameSelector({
                     const inputAriaLabel = `Select value ${index + 1} of ${
                         scopedResourceSelector.rule.values.length
                     } for the ${lowerCaseEntity} name`;
-                    const inputClassName = 'pf-u-flex-grow-1 pf-u-w-auto';
+                    const inputClassName = 'pf-v5-u-flex-grow-1 pf-v5-u-w-auto';
                     const inputOnChange = onChangeValue(scopedResourceSelector, index);
                     const errorMessage = parseInlineRuleError(validationErrors, index);
                     const inputValidated = errorMessage
@@ -122,8 +126,6 @@ function ByNameSelector({
                                 <FormGroup
                                     className="rule-selector-name-value-input"
                                     fieldId={inputId}
-                                    helperTextInvalid={errorMessage}
-                                    validated={inputValidated}
                                 >
                                     <TextInput
                                         id={inputId}
@@ -137,6 +139,13 @@ function ByNameSelector({
                                         value={value}
                                         isDisabled={isDisabled}
                                     />
+                                    <FormHelperText>
+                                        <HelperText>
+                                            <HelperTextItem variant={inputValidated}>
+                                                {errorMessage}
+                                            </HelperTextItem>
+                                        </HelperText>
+                                    </FormHelperText>
                                 </FormGroup>
                             </div>
                             {!isDisabled && (
@@ -146,11 +155,13 @@ function ByNameSelector({
                                     variant="plain"
                                     onClick={() => onDeleteValue(index)}
                                 >
-                                    <TrashIcon
-                                        className="pf-u-flex-shrink-1"
-                                        style={{ cursor: 'pointer' }}
-                                        color="var(--pf-global--Color--dark-200)"
-                                    />
+                                    <Icon>
+                                        <TrashIcon
+                                            color="var(--pf-v5-global--Color--dark-200)"
+                                            className="pf-v5-u-flex-shrink-1"
+                                            style={{ cursor: 'pointer' }}
+                                        />
+                                    </Icon>
                                 </Button>
                             )}
                         </div>

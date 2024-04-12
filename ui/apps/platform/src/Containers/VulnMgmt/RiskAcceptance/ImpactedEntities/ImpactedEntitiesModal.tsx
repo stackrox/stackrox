@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 import { Flex, FlexItem, Modal, ModalVariant, Title } from '@patternfly/react-core';
-import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import entityTypes from 'constants/entityTypes';
@@ -16,12 +16,12 @@ function EntityName({ entity, entityType }) {
         </Link>
     ) : (
         <Flex direction={{ default: 'column' }}>
-            <FlexItem className="pf-u-mb-0">
+            <FlexItem className="pf-v5-u-mb-0">
                 <Link to={`${vulnManagementPath}/deployment/${entity.id as string}`}>
                     {entity.name}
                 </Link>
             </FlexItem>
-            <FlexItem className="pf-u-color-400 pf-u-font-size-xs">
+            <FlexItem className="pf-v5-u-color-400 pf-v5-u-font-size-xs">
                 {`in "${entity.clusterName as string}/${entity.namespace as string}"`}
             </FlexItem>
         </Flex>
@@ -50,7 +50,7 @@ function ImpactedEntitiesModal({
 
     return (
         <Modal variant={ModalVariant.small} header={header} isOpen={isOpen} onClose={onClose}>
-            <TableComposable aria-label="Simple table" variant="compact">
+            <Table aria-label="Simple table" variant="compact">
                 <Thead>
                     <Tr>
                         <Th modifier="fitContent">Name</Th>
@@ -65,7 +65,7 @@ function ImpactedEntitiesModal({
                         </Tr>
                     ))}
                 </Tbody>
-            </TableComposable>
+            </Table>
         </Modal>
     );
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import PropTypes from 'prop-types';
 import { scaleLinear } from 'd3-scale';
 import uniq from 'lodash/uniq';
@@ -45,6 +45,8 @@ const ClusteredEventMarker = ({
     size,
     margin,
 }) => {
+    const popoverRef = useRef(null);
+
     // the "container" argument is a reference to the container for the D3-related element
     function onUpdate(container) {
         const width = getWidth(mainViewSelector);
@@ -73,29 +75,42 @@ const ClusteredEventMarker = ({
             translateY={translateY}
             onUpdate={onUpdate}
         >
-            <ClusteredEventsTooltip events={events}>
+            <ClusteredEventsTooltip events={events} popoverRef={popoverRef}>
                 <g>
                     {clusterEventType === clusteredEventTypes.GENERIC && (
-                        <ClusteredGenericEvent size={size} numEvents={numEvents} />
+                        <ClusteredGenericEvent size={size} numEvents={numEvents} ref={popoverRef} />
                     )}
                     {clusterEventType === clusteredEventTypes.POLICY_VIOLATION && (
-                        <ClusteredPolicyViolationEvent size={size} numEvents={numEvents} />
+                        <ClusteredPolicyViolationEvent
+                            size={size}
+                            numEvents={numEvents}
+                            ref={popoverRef}
+                        />
                     )}
                     {clusterEventType === clusteredEventTypes.PROCESS_ACTIVITY && (
-                        <ClusteredProcessActivityEvent size={size} numEvents={numEvents} />
+                        <ClusteredProcessActivityEvent
+                            size={size}
+                            numEvents={numEvents}
+                            ref={popoverRef}
+                        />
                     )}
                     {clusterEventType === clusteredEventTypes.PROCESS_IN_BASELINE_ACTIVITY && (
                         <ClusteredProcessActivityEvent
                             size={size}
                             inBaseline
                             numEvents={numEvents}
+                            ref={popoverRef}
                         />
                     )}
                     {clusterEventType === clusteredEventTypes.RESTART && (
-                        <ClusteredRestartEvent size={size} numEvents={numEvents} />
+                        <ClusteredRestartEvent size={size} numEvents={numEvents} ref={popoverRef} />
                     )}
                     {clusterEventType === clusteredEventTypes.TERMINATION && (
-                        <ClusteredTerminationEvent size={size} numEvents={numEvents} />
+                        <ClusteredTerminationEvent
+                            size={size}
+                            numEvents={numEvents}
+                            ref={popoverRef}
+                        />
                     )}
                 </g>
             </ClusteredEventsTooltip>

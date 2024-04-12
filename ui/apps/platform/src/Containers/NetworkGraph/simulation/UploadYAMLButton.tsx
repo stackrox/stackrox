@@ -1,12 +1,9 @@
-import { Button, FileUpload } from '@patternfly/react-core';
+import { Button, DropEvent, FileUpload } from '@patternfly/react-core';
 import { FileUploadIcon } from '@patternfly/react-icons';
 import React from 'react';
 
 type UploadYAMLButtonProps = {
-    onFileInputChange: (
-        _event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>,
-        file: File
-    ) => void;
+    onFileInputChange: (_event: DropEvent, file: File) => void;
 };
 
 function UploadYAMLButton({ onFileInputChange }: UploadYAMLButtonProps) {
@@ -21,7 +18,7 @@ function UploadYAMLButton({ onFileInputChange }: UploadYAMLButtonProps) {
             >
                 Upload YAML
             </Button>
-            <div className="pf-u-hidden">
+            <div className="pf-v5-u-hidden">
                 <FileUpload
                     id="upload-network-policy"
                     filenamePlaceholder="Drag and drop a YAML or upload one"

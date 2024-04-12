@@ -201,7 +201,7 @@ function EcrIntegrationForm({
                             type="text"
                             id="config.name"
                             value={values.config.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -217,7 +217,7 @@ function EcrIntegrationForm({
                             type="text"
                             id="config.ecr.registryId"
                             value={values.config.ecr.registryId}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -237,7 +237,7 @@ function EcrIntegrationForm({
                             type="text"
                             id="config.ecr.endpoint"
                             value={values.config.ecr.endpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable || values.config.ecr.useAssumeRole}
                         />
@@ -254,7 +254,7 @@ function EcrIntegrationForm({
                             type="text"
                             id="config.ecr.region"
                             value={values.config.ecr.region}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -269,7 +269,7 @@ function EcrIntegrationForm({
                                 label="Update stored credentials"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -286,7 +286,7 @@ function EcrIntegrationForm({
                                 id="config.ecr.useIam"
                                 aria-label="use container iam role"
                                 isChecked={values.config.ecr.useIam}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -306,7 +306,7 @@ function EcrIntegrationForm({
                                     type="password"
                                     id="config.ecr.accessKeyId"
                                     value={values.config.ecr.accessKeyId}
-                                    onChange={onChange}
+                                    onChange={(event, value) => onChange(value, event)}
                                     onBlur={handleBlur}
                                     isDisabled={!isEditable || !values.updatePassword}
                                 />
@@ -323,7 +323,7 @@ function EcrIntegrationForm({
                                     type="password"
                                     id="config.ecr.secretAccessKey"
                                     value={values.config.ecr.secretAccessKey}
-                                    onChange={onChange}
+                                    onChange={(event, value) => onChange(value, event)}
                                     onBlur={handleBlur}
                                     isDisabled={!isEditable || !values.updatePassword}
                                 />
@@ -345,7 +345,7 @@ function EcrIntegrationForm({
                             id="config.ecr.useAssumeRole"
                             aria-label="use assume role"
                             isChecked={values.config.ecr.useAssumeRole}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable || values.config.ecr.endpoint !== ''}
                         />
@@ -362,7 +362,7 @@ function EcrIntegrationForm({
                                     type="text"
                                     id="config.ecr.assumeRoleId"
                                     value={values.config.ecr.assumeRoleId}
-                                    onChange={onChange}
+                                    onChange={(event, value) => onChange(value, event)}
                                     onBlur={handleBlur}
                                     isDisabled={!isEditable}
                                 />
@@ -377,7 +377,7 @@ function EcrIntegrationForm({
                                     type="text"
                                     id="config.ecr.assumeRoleExternalId"
                                     value={values.config.ecr.assumeRoleExternalId}
-                                    onChange={onChange}
+                                    onChange={(event, value) => onChange(value, event)}
                                     onBlur={handleBlur}
                                     isDisabled={!isEditable}
                                 />
@@ -394,7 +394,7 @@ function EcrIntegrationForm({
                             id="config.skipTestIntegration"
                             aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

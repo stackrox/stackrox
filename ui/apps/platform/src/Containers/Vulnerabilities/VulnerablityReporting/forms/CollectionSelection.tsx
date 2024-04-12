@@ -1,15 +1,11 @@
 import React, { useMemo, useState, ReactElement, useCallback } from 'react';
+import { Button, ButtonVariant, Flex, FlexItem, ValidatedOptions } from '@patternfly/react-core';
 import {
-    Button,
-    ButtonVariant,
-    Flex,
-    FlexItem,
     Select,
     SelectOption,
     SelectProps,
     SelectVariant,
-    ValidatedOptions,
-} from '@patternfly/react-core';
+} from '@patternfly/react-core/deprecated';
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/uniqBy';
 
@@ -170,7 +166,7 @@ function CollectionSelection({
                         placeholderText="Select a collection"
                         variant={SelectVariant.typeahead}
                         isOpen={isOpen}
-                        onToggle={onToggle}
+                        onToggle={(_e, isExpanded) => onToggle(isExpanded)}
                         onTypeaheadInputChanged={(value) => {
                             setSearch(value);
                             onValidateField(id);

@@ -7,10 +7,13 @@ import {
     EmptyStateVariant,
     Flex,
     FormGroup,
+    EmptyStateHeader,
+    EmptyStateFooter,
+    Icon,
 } from '@patternfly/react-core';
 import { CubesIcon, MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
-import { BaseCellProps, TableComposable, Tbody, Td, Tr } from '@patternfly/react-table';
+import { BaseCellProps, Table, Tbody, Td, Tr } from '@patternfly/react-table';
 
 type BacklogTableProps<Item> = {
     type: 'selected' | 'deselected';
@@ -41,9 +44,13 @@ function BacklogTable<Item>({
 }: BacklogTableProps<Item>) {
     const actionIcon =
         type === 'selected' ? (
-            <MinusCircleIcon color="var(--pf-global--danger-color--200)" />
+            <Icon>
+                <MinusCircleIcon color="var(--pf-v5-global--danger-color--200)" />
+            </Icon>
         ) : (
-            <PlusCircleIcon color="var(--pf-global--primary-color--100)" />
+            <Icon>
+                <PlusCircleIcon color="var(--pf-v5-global--primary-color--100)" />
+            </Icon>
         );
 
     const itemsToDisplay = items.filter(searchFilter);
@@ -54,7 +61,7 @@ function BacklogTable<Item>({
                 <>
                     {label}
                     {showBadge && (
-                        <Badge className="pf-u-ml-sm" isRead>
+                        <Badge className="pf-v5-u-ml-sm" isRead>
                             {items.length}
                         </Badge>
                     )}
@@ -62,7 +69,7 @@ function BacklogTable<Item>({
             }
         >
             {itemsToDisplay.length > 0 ? (
-                <TableComposable aria-label={label}>
+                <Table aria-label={label}>
                     <Tbody>
                         {itemsToDisplay.map((item) => (
                             <Tr key={rowKey(item)}>
@@ -76,7 +83,7 @@ function BacklogTable<Item>({
                                         variant="link"
                                         onClick={() => listAction(item)}
                                         icon={actionIcon}
-                                        className="pf-u-text-nowrap"
+                                        className="pf-v5-u-text-nowrap"
                                         isInline
                                     >
                                         {buttonText}
@@ -85,11 +92,13 @@ function BacklogTable<Item>({
                             </Tr>
                         ))}
                     </Tbody>
-                </TableComposable>
+                </Table>
             ) : (
                 <EmptyState variant={EmptyStateVariant.xs}>
-                    <EmptyStateIcon icon={CubesIcon} />
-                    <p>No items remaining</p>
+                    <EmptyStateHeader icon={<EmptyStateIcon icon={CubesIcon} />} />
+                    <EmptyStateFooter>
+                        <p>No items remaining</p>
+                    </EmptyStateFooter>
                 </EmptyState>
             )}
         </FormGroup>

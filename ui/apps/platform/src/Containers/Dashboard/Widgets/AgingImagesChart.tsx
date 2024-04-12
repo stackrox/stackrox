@@ -63,7 +63,7 @@ const labelLinkCallback = ({ datum }: ChartLabelProps, chartData: ChartData[]) =
     return typeof datum === 'number' ? chartData[datum - 1]?.labelLink ?? '' : '';
 };
 
-const labelTextCallback = ({ datum }: ChartLabelProps, chartData: ChartData[]) => {
+const labelTextCallback = ({ datum }: { datum?: number }, chartData: ChartData[]) => {
     return typeof datum === 'number' ? chartData[datum - 1]?.labelText ?? '' : '';
 };
 

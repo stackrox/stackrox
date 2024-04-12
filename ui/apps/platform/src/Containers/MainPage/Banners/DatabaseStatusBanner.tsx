@@ -1,6 +1,6 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 import { useSelector } from 'react-redux';
-import { AlertVariant, Banner } from '@patternfly/react-core';
+import { Banner } from '@patternfly/react-core';
 
 import useInterval from 'hooks/useInterval';
 import { selectors } from 'reducers';
@@ -31,8 +31,8 @@ function DatabaseStatusBanner(): ReactElement | null {
 
     if (isServerReachable && !isDatabaseAvailable) {
         return (
-            <Banner className="pf-u-text-align-center" variant={AlertVariant.danger}>
-                <span className="pf-u-text-align-center">
+            <Banner className="pf-v5-u-text-align-center" variant={'red'}>
+                <span className="pf-v5-u-text-align-center">
                     The database is currently not available. If this problem persists, please
                     contact support.
                 </span>

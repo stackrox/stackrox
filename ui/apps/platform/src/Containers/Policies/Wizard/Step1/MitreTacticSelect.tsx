@@ -1,5 +1,6 @@
 import React, { ReactElement, useState } from 'react';
-import { Flex, Select, SelectOption } from '@patternfly/react-core';
+import { Flex } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { MitreAttackVector } from 'types/mitre.proto';
 
@@ -39,7 +40,7 @@ function MitreTacticSelect({
             isDisabled={isDisabled}
             isOpen={isOpen}
             onSelect={onSelect}
-            onToggle={setIsOpen}
+            onToggle={(_event, val) => setIsOpen(val)}
             placeholderText={label}
             selections={tacticId}
         >

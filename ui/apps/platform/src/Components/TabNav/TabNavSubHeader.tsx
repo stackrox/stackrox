@@ -8,13 +8,13 @@ type TabNavSubHeaderProps = {
 
 function TabNavSubHeader({ description, actions }: TabNavSubHeaderProps) {
     return (
-        <PageSection variant="light" className="pf-u-py-0">
+        <PageSection variant="light" className="pf-v5-u-py-0">
             <Toolbar inset={{ default: 'insetNone' }}>
                 <ToolbarContent>
                     <ToolbarItem>
-                        <div className="pf-u-font-size-sm">{description}</div>
+                        <div className="pf-v5-u-font-size-sm">{description}</div>
                     </ToolbarItem>
-                    <ToolbarItem alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem align={{ default: 'alignRight' }}>
                         <Flex>{actions}</Flex>
                     </ToolbarItem>
                 </ToolbarContent>

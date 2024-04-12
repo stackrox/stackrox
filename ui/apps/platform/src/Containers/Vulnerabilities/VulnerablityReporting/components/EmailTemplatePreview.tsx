@@ -36,7 +36,7 @@ function EmailTemplatePreview({
 
     return (
         <Flex
-            className="pf-u-py-lg"
+            className="pf-v5-u-py-lg"
             spaceItems={{ default: 'spaceItemsMd' }}
             direction={{ default: 'column' }}
         >

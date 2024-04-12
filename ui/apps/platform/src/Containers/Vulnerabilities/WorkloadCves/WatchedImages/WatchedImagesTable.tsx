@@ -1,6 +1,6 @@
 import React, { CSSProperties } from 'react';
-import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
-import { Bullseye, Button } from '@patternfly/react-core';
+import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Bullseye, Button, Icon } from '@patternfly/react-core';
 import { MinusCircleIcon } from '@patternfly/react-icons';
 
 import { WatchedImage } from 'types/image.proto';
@@ -33,12 +33,12 @@ function WatchedImagesTable({
                 </Bullseye>
             )}
             {watchedImages.length > 0 && (
-                <TableComposable
+                <Table
                     aria-labelledby={props['aria-labelledby']}
                     variant="compact"
                     style={
                         {
-                            '--pf-c-table--m-compact--cell--first-last-child--PaddingLeft': '0',
+                            '--pf-v5-c-table--m-compact--cell--first-last-child--PaddingLeft': '0',
                         } as CSSProperties
                     }
                 >
@@ -54,13 +54,15 @@ function WatchedImagesTable({
                                 <Td dataLabel="Image">{name}</Td>
                                 <Td
                                     dataLabel="Remove watched image"
-                                    className="pf-u-text-align-right"
+                                    className="pf-v5-u-text-align-right"
                                 >
                                     <Button
                                         variant="link"
                                         isInline
                                         icon={
-                                            <MinusCircleIcon color="var(--pf-global--Color--200)" />
+                                            <Icon>
+                                                <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                                            </Icon>
                                         }
                                         onClick={() => unwatchImage(name)}
                                         disabled={isUnwatchInProgress}
@@ -71,7 +73,7 @@ function WatchedImagesTable({
                             </Tr>
                         ))}
                     </Tbody>
-                </TableComposable>
+                </Table>
             )}
         </div>
     );

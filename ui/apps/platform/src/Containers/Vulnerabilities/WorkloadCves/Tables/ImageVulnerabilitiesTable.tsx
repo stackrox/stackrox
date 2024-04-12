@@ -4,7 +4,7 @@ import {
     ActionsColumn,
     ExpandableRowContent,
     IAction,
-    TableComposable,
+    Table,
     Tbody,
     Td,
     Th,
@@ -102,7 +102,7 @@ function ImageVulnerabilitiesTable({
         (showExceptionDetailsLink ? 1 : 0);
 
     return (
-        <TableComposable variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
@@ -203,9 +203,9 @@ function ImageVulnerabilitiesTable({
                                     />
                                 )}
                                 {createTableActions && (
-                                    <Td className="pf-u-px-0">
+                                    <Td className="pf-v5-u-px-0">
                                         <ActionsColumn
-                                            menuAppendTo={() => document.body}
+                                            // menuAppendTo={() => document.body}
                                             items={createTableActions({
                                                 cve,
                                                 summary,
@@ -221,7 +221,7 @@ function ImageVulnerabilitiesTable({
                                     <ExpandableRowContent>
                                         {summary && image ? (
                                             <>
-                                                <p className="pf-u-mb-md">{summary}</p>
+                                                <p className="pf-v5-u-mb-md">{summary}</p>
                                                 <ImageComponentVulnerabilitiesTable
                                                     imageMetadataContext={image}
                                                     componentVulnerabilities={imageComponents}
@@ -237,7 +237,7 @@ function ImageVulnerabilitiesTable({
                     );
                 }
             )}
-        </TableComposable>
+        </Table>
     );
 }
 

@@ -9,6 +9,9 @@ import {
     Form,
     FormGroup,
     TextInput,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
 } from '@patternfly/react-core';
 import { FormikProvider, useFormik } from 'formik';
 
@@ -64,7 +67,7 @@ function CreatePolicyCategoryModal({
 
     const { values, handleChange, handleSubmit, resetForm, isValid } = formik;
 
-    function onChange(_value, event) {
+    function onChange(event: React.FormEvent) {
         handleChange(event);
     }
 
@@ -86,18 +89,20 @@ function CreatePolicyCategoryModal({
             <ModalBoxBody>
                 <FormikProvider value={formik}>
                     <Form onSubmit={handleSubmit}>
-                        <FormGroup
-                            fieldId="name"
-                            label="Category name"
-                            isRequired
-                            helperText="Provide a descriptive and unique category name."
-                        >
+                        <FormGroup fieldId="name" label="Category name" isRequired>
                             <TextInput
                                 id="name"
                                 type="text"
                                 value={values.name}
                                 onChange={onChange}
                             />
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem>
+                                        Provide a descriptive and unique category name.
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                         </FormGroup>
                     </Form>
                 </FormikProvider>

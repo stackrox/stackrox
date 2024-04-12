@@ -1,4 +1,4 @@
-import React, { useCallback, ReactElement } from 'react';
+import React, { useCallback, ReactElement, BaseSyntheticEvent } from 'react';
 import { Form, Radio } from '@patternfly/react-core';
 import { Field } from 'formik';
 
@@ -31,7 +31,7 @@ function DuplicatePolicyForm({
     //   and then notified the parent
     const changeText = useCallback(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (handler: any, name: string) => (value: string) => {
+        (handler: any, name: string) => (_: BaseSyntheticEvent, value: any) => {
             handler(name)(value);
             updateResolution(name, value);
         },
@@ -39,7 +39,7 @@ function DuplicatePolicyForm({
     );
 
     return (
-        <Form data-testid="dupe-policy-form" className="pf-u-mt-md">
+        <Form data-testid="dupe-policy-form" className="pf-v5-u-mt-md">
             {!showKeepBothPolicies && (
                 <RenamePolicySection changeRadio={changeRadio} changeText={changeText} />
             )}

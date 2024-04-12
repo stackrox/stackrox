@@ -1,14 +1,5 @@
 import React, { useCallback } from 'react';
-import {
-    ActionsColumn,
-    IAction,
-    TableComposable,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ActionsColumn, IAction, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 import { format } from 'date-fns';
 import { Link, generatePath } from 'react-router-dom';
@@ -55,7 +46,7 @@ function ScanResultsOverviewTable() {
                 <Tr>
                     <Td colSpan={8}>
                         <Bullseye>
-                            <Spinner isSVG />
+                            <Spinner />
                         </Bullseye>
                     </Td>
                 </Tr>
@@ -109,7 +100,7 @@ function ScanResultsOverviewTable() {
                 setPage={setPage}
                 setPerPage={setPerPage}
             />
-            <TableComposable borders={false}>
+            <Table borders={false}>
                 <Thead noWrap>
                     <Tr>
                         <Th sort={getSortParams('Scan Name')}>Scan</Th>
@@ -121,7 +112,7 @@ function ScanResultsOverviewTable() {
                     </Tr>
                 </Thead>
                 <Tbody>{renderTableContent()}</Tbody>
-            </TableComposable>
+            </Table>
         </>
     );
 }

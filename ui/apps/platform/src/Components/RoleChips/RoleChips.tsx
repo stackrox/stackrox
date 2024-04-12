@@ -13,8 +13,8 @@ function RoleChips({ roleNames }: RoleChipsProps): ReactElement {
     return (
         <Flex spaceItems={{ default: 'spaceItemsSm' }}>
             {roleNames.map((roleName) => (
-                <div className="pf-c-chip" key={roleName}>
-                    <span className="pf-c-chip__text">{roleName}</span>
+                <div className="pf-v5-c-chip" key={roleName}>
+                    <span className="pf-v5-c-chip__text">{roleName}</span>
                 </div>
             ))}
         </Flex>

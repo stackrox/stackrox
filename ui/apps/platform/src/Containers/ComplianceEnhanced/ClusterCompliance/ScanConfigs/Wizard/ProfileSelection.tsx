@@ -12,15 +12,7 @@ import {
     Text,
     Title,
 } from '@patternfly/react-core';
-import {
-    ExpandableRowContent,
-    TableComposable,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { SearchIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -114,8 +106,8 @@ function ProfileSelection({
                         <Td colSpan={2}></Td>
                         <Td dataLabel="Profile details" colSpan={4}>
                             <ExpandableRowContent>
-                                <Text className="pf-u-font-weight-bold">{title}</Text>
-                                <Divider component="div" className="pf-u-my-md" />
+                                <Text className="pf-v5-u-font-weight-bold">{title}</Text>
+                                <Divider component="div" className="pf-v5-u-my-md" />
                                 <Text>{description}</Text>
                             </ExpandableRowContent>
                         </Td>
@@ -131,7 +123,7 @@ function ProfileSelection({
                 <Tr>
                     <Td colSpan={6}>
                         <Bullseye>
-                            <Spinner isSVG />
+                            <Spinner />
                         </Bullseye>
                     </Td>
                 </Tr>
@@ -173,7 +165,7 @@ function ProfileSelection({
     return (
         <>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">Profiles</Title>
                     </FlexItem>
@@ -181,7 +173,7 @@ function ProfileSelection({
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Form className="pf-u-py-lg pf-u-px-lg" ref={alertRef}>
+            <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" ref={alertRef}>
                 {formikTouched.profiles && formikValues.profiles.length === 0 && (
                     <Alert
                         title="At least one profile is required to proceed"
@@ -189,7 +181,7 @@ function ProfileSelection({
                         isInline
                     />
                 )}
-                <TableComposable>
+                <Table>
                     <Thead noWrap>
                         <Tr>
                             <Th />
@@ -201,7 +193,7 @@ function ProfileSelection({
                         </Tr>
                     </Thead>
                     {renderTableBodyContent()}
-                </TableComposable>
+                </Table>
             </Form>
         </>
     );

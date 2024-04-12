@@ -99,11 +99,11 @@ function ExceptionRequestForm({
         <>
             <Form
                 onSubmit={handleSubmit}
-                className="pf-u-display-flex pf-u-flex-direction-column"
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
                 style={{ minHeight: 0 }}
             >
                 <Tabs
-                    className="pf-u-flex-shrink-0"
+                    className="pf-v5-u-flex-shrink-0"
                     activeKey={activeKeyTab}
                     onSelect={(_, tab) => setActiveKeyTab(tab)}
                 >
@@ -112,7 +112,7 @@ function ExceptionRequestForm({
                 </Tabs>
                 <TabContent
                     id="options"
-                    className="pf-u-flex-1"
+                    className="pf-v5-u-flex-1"
                     hidden={activeKeyTab !== 'options'}
                 >
                     <Flex
@@ -135,7 +135,7 @@ function ExceptionRequestForm({
                                 name="comment"
                                 isRequired
                                 onBlur={handleBlur('comment')}
-                                onChange={(value) => setFieldValue('comment', value)}
+                                onChange={(_event, value) => setFieldValue('comment', value)}
                                 validated={touched.comment && errors.comment ? 'error' : 'default'}
                             />
                         </FormGroup>
@@ -143,7 +143,7 @@ function ExceptionRequestForm({
                 </TabContent>
                 <TabContent
                     id="cves"
-                    className="pf-u-flex-1"
+                    className="pf-v5-u-flex-1"
                     hidden={activeKeyTab !== 'cves'}
                     style={{ overflowY: 'auto' }}
                 >

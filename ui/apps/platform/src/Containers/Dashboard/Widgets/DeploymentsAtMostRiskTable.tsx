@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Truncate } from '@patternfly/react-core';
-import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
 import { ListDeployment } from 'types/deployment.proto';
 import { riskBasePath } from 'routePaths';
@@ -33,12 +33,12 @@ function DeploymentsAtMostRiskTable({
     searchFilter,
 }: DeploymentsAtMostRiskTableProps) {
     return (
-        <TableComposable aria-label="Deployments at most risk" variant="compact" borders={false}>
+        <Table aria-label="Deployments at most risk" variant="compact" borders={false}>
             <Thead>
                 <Tr>
-                    <Th className="pf-u-pl-0">{columnNames.deployment}</Th>
+                    <Th className="pf-v5-u-pl-0">{columnNames.deployment}</Th>
                     <Th>{columnNames.resourceLocation}</Th>
-                    <Th className="pf-u-pr-0 pf-u-text-align-center-on-md">
+                    <Th className="pf-v5-u-pr-0 pf-v5-u-text-align-center-on-md">
                         {columnNames.riskPriority}
                     </Th>
                 </Tr>
@@ -52,7 +52,7 @@ function DeploymentsAtMostRiskTable({
                     });
                     return (
                         <Tr key={deploymentId}>
-                            <Td className="pf-u-pl-0" dataLabel={columnNames.deployment}>
+                            <Td className="pf-v5-u-pl-0" dataLabel={columnNames.deployment}>
                                 <Link
                                     to={riskPageLinkToDeployment(deploymentId, name, searchFilter)}
                                 >
@@ -68,7 +68,7 @@ function DeploymentsAtMostRiskTable({
                             </Td>
                             <Td
                                 width={20}
-                                className="pf-u-pr-0 pf-u-text-align-center-on-md"
+                                className="pf-v5-u-pr-0 pf-v5-u-text-align-center-on-md"
                                 dataLabel={columnNames.riskPriority}
                             >
                                 {priority}
@@ -77,7 +77,7 @@ function DeploymentsAtMostRiskTable({
                     );
                 })}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

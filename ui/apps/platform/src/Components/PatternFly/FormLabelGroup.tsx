@@ -1,5 +1,12 @@
 import React, { ReactElement } from 'react';
-import { FormGroup, FormGroupProps, ValidatedOptions } from '@patternfly/react-core';
+import {
+    FormGroup,
+    FormGroupProps,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    ValidatedOptions,
+} from '@patternfly/react-core';
 import { FormikTouched, FormikErrors } from 'formik';
 import get from 'lodash/get';
 
@@ -8,6 +15,7 @@ export interface FormLabelGroupProps<T> extends FormGroupProps {
     touched?: FormikTouched<T>;
     errors: FormikErrors<T>;
     children: ReactElement;
+    helperText?: string;
 }
 
 function FormLabelGroup<T>({
@@ -15,20 +23,24 @@ function FormLabelGroup<T>({
     touched,
     errors,
     children,
+    helperText,
     ...rest
 }: FormLabelGroupProps<T>): ReactElement {
     const error = get(errors, fieldId);
     const isTouched = touched && get(touched, fieldId);
     const showError = touched === undefined ? error : isTouched && error;
+    const validated = showError ? ValidatedOptions.error : ValidatedOptions.default;
 
     return (
-        <FormGroup
-            fieldId={fieldId}
-            helperTextInvalid={error}
-            validated={showError ? ValidatedOptions.error : ValidatedOptions.default}
-            {...rest}
-        >
+        <FormGroup fieldId={fieldId} {...rest}>
             {children}
+            <FormHelperText>
+                <HelperText id={`${fieldId}-helper`}>
+                    <HelperTextItem variant={validated}>
+                        {showError ? error : helperText}
+                    </HelperTextItem>
+                </HelperText>
+            </FormHelperText>
         </FormGroup>
     );
 }

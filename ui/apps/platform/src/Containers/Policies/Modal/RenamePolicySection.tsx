@@ -1,10 +1,17 @@
 import React from 'react';
-import { FormGroup, Radio, TextInput } from '@patternfly/react-core';
+import {
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    Radio,
+    TextInput,
+} from '@patternfly/react-core';
 import { Field } from 'formik';
 
 type RenamePolicySectionProps = {
     changeRadio: (handler, name, value) => () => void;
-    changeText: (handler, name) => (value) => void;
+    changeText: (handler, name) => (_, value) => void;
 };
 
 const RenamePolicySection = ({ changeRadio, changeText }: RenamePolicySectionProps) => {
@@ -28,12 +35,7 @@ const RenamePolicySection = ({ changeRadio, changeText }: RenamePolicySectionPro
                     const validated =
                         form.touched.newName && form.errors.newName ? 'error' : 'default';
                     return (
-                        <FormGroup
-                            helperTextInvalid={form.errors.newName}
-                            fieldId="policy-rename"
-                            validated={validated}
-                            className="pf-u-pt-sm"
-                        >
+                        <FormGroup fieldId="policy-rename" className="pf-v5-u-pt-sm">
                             <TextInput
                                 name={field.name}
                                 value={field.value}
@@ -44,6 +46,13 @@ const RenamePolicySection = ({ changeRadio, changeText }: RenamePolicySectionPro
                                 isDisabled={isDisabled}
                                 validated={validated}
                             />
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem variant={validated}>
+                                        {form.errors.newName}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                         </FormGroup>
                     );
                 }}

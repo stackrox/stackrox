@@ -55,7 +55,7 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
     return (
         <>
             <PageTitle title={title} />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
                     <BreadcrumbItemLink to={integrationsListPath}>{typeLabel}</BreadcrumbItemLink>

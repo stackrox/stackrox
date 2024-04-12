@@ -1,15 +1,11 @@
 import React, { useMemo, useState, ReactElement, useCallback } from 'react';
+import { Button, ButtonVariant, Flex, FlexItem, ValidatedOptions } from '@patternfly/react-core';
 import {
-    Button,
-    ButtonVariant,
-    Flex,
-    FlexItem,
     Select,
     SelectOption,
     SelectProps,
     SelectVariant,
-    ValidatedOptions,
-} from '@patternfly/react-core';
+} from '@patternfly/react-core/deprecated';
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/uniqBy';
 
@@ -118,7 +114,7 @@ function CollectionSelection({
             <Flex alignItems={{ default: 'alignItemsFlexEnd' }}>
                 <FlexItem>
                     <FormLabelGroup
-                        className="pf-u-mb-md"
+                        className="pf-v5-u-mb-md"
                         isRequired
                         label="Configure report scope"
                         fieldId="scopeId"
@@ -136,7 +132,7 @@ function CollectionSelection({
                             placeholderText="Select a collection"
                             variant={SelectVariant.typeahead}
                             isOpen={isOpen}
-                            onToggle={onToggle}
+                            onToggle={() => onToggle}
                             onTypeaheadInputChanged={setSearch}
                             loadingVariant={selectLoadingVariant}
                             onBlur={() => setSearch('')}
@@ -161,7 +157,7 @@ function CollectionSelection({
                 {allowCreate && (
                     <FlexItem>
                         <Button
-                            className="pf-u-mb-md"
+                            className="pf-v5-u-mb-md"
                             variant={ButtonVariant.secondary}
                             onClick={onToggleCollectionModal}
                         >

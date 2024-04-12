@@ -6,10 +6,6 @@ import {
     AlertGroup,
     Breadcrumb,
     BreadcrumbItem,
-    Dropdown,
-    DropdownItem,
-    DropdownSeparator,
-    DropdownToggle,
     Label,
     Title,
     Toolbar,
@@ -18,6 +14,12 @@ import {
     Divider,
     PageSection,
 } from '@patternfly/react-core';
+import {
+    Dropdown,
+    DropdownItem,
+    DropdownSeparator,
+    DropdownToggle,
+} from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -151,8 +153,8 @@ function PolicyDetail({
 
     return (
         <>
-            <PageSection variant="light" isFilled id="policy-page" className="pf-u-pb-0">
-                <Breadcrumb className="pf-u-mb-md">
+            <PageSection variant="light" isFilled id="policy-page" className="pf-v5-u-pb-0">
+                <Breadcrumb className="pf-v5-u-mb-md">
                     <BreadcrumbItemLink to={policiesBasePath}>Policies</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{name}</BreadcrumbItem>
                 </Breadcrumb>
@@ -168,15 +170,15 @@ function PolicyDetail({
                                 <Label color="green">Enabled</Label>
                             )}
                         </ToolbarItem>
-                        <ToolbarItem alignment={{ default: 'alignRight' }}>
+                        <ToolbarItem align={{ default: 'alignRight' }}>
                             <Dropdown
                                 onSelect={onSelectActions}
                                 position="right"
                                 toggle={
                                     <DropdownToggle
                                         isDisabled={isRequesting}
-                                        isPrimary
-                                        onToggle={onToggleActions}
+                                        toggleVariant="primary"
+                                        onToggle={(_event, isOpen) => onToggleActions(isOpen)}
                                         toggleIndicator={CaretDownIcon}
                                     >
                                         Actions
@@ -241,12 +243,12 @@ function PolicyDetail({
                     </ToolbarContent>
                 </Toolbar>
             </PageSection>
-            <PageSection variant="light" isFilled className="pf-u-pt-0">
+            <PageSection variant="light" isFilled className="pf-v5-u-pt-0">
                 {requestError}
-                <Title headingLevel="h2" className="pf-u-mb-md">
+                <Title headingLevel="h2" className="pf-v5-u-mb-md">
                     Policy details
                 </Title>
-                <Divider component="div" className="pf-u-pb-md" />
+                <Divider component="div" className="pf-v5-u-pb-md" />
                 <PolicyDetailContent policy={policy} />
                 <AlertGroup isToast isLiveRegion>
                     {toasts.map(({ key, variant, title, children }: Toast) => (

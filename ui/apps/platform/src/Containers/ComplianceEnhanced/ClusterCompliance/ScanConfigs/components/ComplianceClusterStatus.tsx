@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Button, Popover } from '@patternfly/react-core';
+import { Button, Icon, Popover } from '@patternfly/react-core';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
@@ -17,11 +17,19 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
     function getClusterStatusObject(errors: string[]): ClusterStatusObject {
         return errors && errors.length && errors[0] !== ''
             ? {
-                  icon: <ExclamationCircleIcon color="var(--pf-global--danger-color--100)" />,
+                  icon: (
+                      <Icon>
+                          <ExclamationCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                      </Icon>
+                  ),
                   statusText: 'Unhealthy',
               }
             : {
-                  icon: <CheckCircleIcon color="var(--pf-global--success-color--100)" />,
+                  icon: (
+                      <Icon>
+                          <CheckCircleIcon color="var(--pf-v5-global--success-color--100)" />
+                      </Icon>
+                  ),
                   statusText: 'Healthy',
               };
     }
@@ -36,7 +44,7 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
             headerContent={<div>{errors.length === 1 ? 'Error' : 'Errors'}</div>}
             bodyContent={<div>{errors.join(', ')}</div>}
         >
-            <Button variant="link" className="pf-u-p-0">
+            <Button variant="link" className="pf-v5-u-p-0">
                 <IconText icon={statusObj.icon} text={statusObj.statusText} />
             </Button>
         </Popover>

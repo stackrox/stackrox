@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
-import { Badge, SelectOption } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Badge } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
+import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import SelectSingle from 'Components/SelectSingle';
 import { accessControl as accessTypeLabels } from 'messages/common';
@@ -31,25 +32,25 @@ function PermissionsTable({
     const resourceToAccessEntries = Object.entries(resourceToAccess);
 
     return (
-        <TableComposable variant="compact" isStickyHeader>
+        <Table variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
                     <Th width={20}>
                         Resource
-                        <Badge isRead className="pf-u-ml-sm">
+                        <Badge isRead className="pf-v5-u-ml-sm">
                             {resourceToAccessEntries.length}
                         </Badge>
                     </Th>
                     <Th width={40}>Description</Th>
                     <Th width={10}>
                         Read
-                        <Badge isRead className="pf-u-ml-sm">
+                        <Badge isRead className="pf-v5-u-ml-sm">
                             {getReadAccessCount(resourceToAccess)}
                         </Badge>
                     </Th>
                     <Th width={10}>
                         Write
-                        <Badge isRead className="pf-u-ml-sm">
+                        <Badge isRead className="pf-v5-u-ml-sm">
                             {getWriteAccessCount(resourceToAccess)}
                         </Badge>
                     </Th>
@@ -67,7 +68,7 @@ function PermissionsTable({
                         }
                     >
                         <Td dataLabel="Resource">
-                            <p className="pf-u-font-weight-bold">{resource}</p>
+                            <p className="pf-v5-u-font-weight-bold">{resource}</p>
                             <p>
                                 {resourceSubstitutions[resource] && (
                                     <>Replaces {resourceSubstitutions[resource].join(', ')}</>
@@ -119,7 +120,7 @@ function PermissionsTable({
                     </Tr>
                 ))}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

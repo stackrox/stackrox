@@ -1,15 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Flex, pluralize, Truncate } from '@patternfly/react-core';
-import {
-    TableComposable,
-    Thead,
-    Tr,
-    Th,
-    Tbody,
-    Td,
-    ExpandableRowContent,
-} from '@patternfly/react-table';
+import { Table, Thead, Tr, Th, Tbody, Td, ExpandableRowContent } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import useSet from 'hooks/useSet';
@@ -84,7 +76,7 @@ function AffectedDeploymentsTable({
     return (
         // TODO UX question - Collapse to cards, or allow headers to overflow?
         // <TableComposable gridBreakPoint="grid-xl">
-        <TableComposable variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
@@ -179,7 +171,7 @@ function AffectedDeploymentsTable({
                     </Tbody>
                 );
             })}
-        </TableComposable>
+        </Table>
     );
 }
 

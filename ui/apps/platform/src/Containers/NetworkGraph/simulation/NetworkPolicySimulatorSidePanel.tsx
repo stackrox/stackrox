@@ -5,6 +5,7 @@ import {
     Button,
     Checkbox,
     Divider,
+    DropEvent,
     Flex,
     FlexItem,
     Popover,
@@ -105,10 +106,7 @@ function NetworkPolicySimulatorSidePanel({
     );
     const { data: currentNetworkPolicies } = useRestQuery(fetchNetworkPolicies);
 
-    function handleFileInputChange(
-        _event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>,
-        file: File
-    ) {
+    function handleFileInputChange(_event: DropEvent, file: File) {
         if (file && !file.name.includes('.yaml')) {
             setNetworkPolicyModification({
                 state: 'UPLOAD',
@@ -178,7 +176,7 @@ function NetworkPolicySimulatorSidePanel({
     if (simulator.isLoading) {
         return (
             <Bullseye>
-                <Spinner isSVG size="lg" />
+                <Spinner size="lg" />
             </Bullseye>
         );
     }
@@ -195,12 +193,12 @@ function NetworkPolicySimulatorSidePanel({
                 <Flex
                     direction={{ default: 'column' }}
                     spaceItems={{ default: 'spaceItemsSm' }}
-                    className="pf-u-p-md pf-u-pb-sm pf-u-mb-0"
+                    className="pf-v5-u-p-md pf-v5-u-pb-sm pf-v5-u-mb-0"
                 >
                     <FlexItem>
                         <TextContent>
                             <Text component={TextVariants.h2}>Generated network policies</Text>
-                            <Text component={TextVariants.h3} className="pf-u-m-0">
+                            <Text component={TextVariants.h3} className="pf-v5-u-m-0">
                                 Scope of baseline:
                             </Text>
                         </TextContent>
@@ -219,7 +217,7 @@ function NetworkPolicySimulatorSidePanel({
                                     justifyContent={{ default: 'justifyContentFlexEnd' }}
                                     alignItems={{ default: 'alignItemsCenter' }}
                                     spaceItems={{ default: 'spaceItemsNone' }}
-                                    className="pf-u-flex-1"
+                                    className="pf-v5-u-flex-1"
                                 >
                                     <Button
                                         variant="link"
@@ -245,7 +243,7 @@ function NetworkPolicySimulatorSidePanel({
                                         }
                                     >
                                         <button
-                                            className="pf-u-color-200"
+                                            className="pf-v5-u-color-200"
                                             type="button"
                                             aria-label="More info on comparing changes"
                                         >
@@ -291,11 +289,11 @@ function NetworkPolicySimulatorSidePanel({
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsFlexEnd' }}
-                    className="pf-u-p-lg pf-u-mb-0"
+                    className="pf-v5-u-p-lg pf-v5-u-mb-0"
                 >
                     <FlexItem>
                         <TextContent>
-                            <Text component={TextVariants.h2} className="pf-u-font-size-xl">
+                            <Text component={TextVariants.h2} className="pf-v5-u-font-size-xl">
                                 Network Policy Simulator
                             </Text>
                         </TextContent>
@@ -303,7 +301,7 @@ function NetworkPolicySimulatorSidePanel({
                 </Flex>
                 <Divider component="div" />
                 <Stack hasGutter>
-                    <StackItem className="pf-u-p-md">
+                    <StackItem className="pf-v5-u-p-md">
                         <Alert
                             variant={simulator.error ? 'danger' : 'success'}
                             isInline
@@ -344,11 +342,11 @@ function NetworkPolicySimulatorSidePanel({
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsFlexEnd' }}
-                    className="pf-u-p-lg pf-u-mb-0"
+                    className="pf-v5-u-p-lg pf-v5-u-mb-0"
                 >
                     <FlexItem>
                         <TextContent>
-                            <Text component={TextVariants.h2} className="pf-u-font-size-xl">
+                            <Text component={TextVariants.h2} className="pf-v5-u-font-size-xl">
                                 Network Policy Simulator
                             </Text>
                         </TextContent>
@@ -356,7 +354,7 @@ function NetworkPolicySimulatorSidePanel({
                 </Flex>
                 <Divider component="div" />
                 <Stack hasGutter>
-                    <StackItem className="pf-u-p-md">
+                    <StackItem className="pf-v5-u-p-md">
                         <Alert
                             variant={simulator.error ? 'danger' : 'success'}
                             isInline
@@ -394,11 +392,11 @@ function NetworkPolicySimulatorSidePanel({
                 <Flex
                     direction={{ default: 'column' }}
                     spaceItems={{ default: 'spaceItemsSm' }}
-                    className="pf-u-p-md pf-u-pb-sm pf-u-mb-0"
+                    className="pf-v5-u-p-md pf-v5-u-pb-sm pf-v5-u-mb-0"
                 >
                     <TextContent>
                         <Text component={TextVariants.h2}>Generate network policies</Text>
-                        <Text component={TextVariants.h3} className="pf-u-m-0">
+                        <Text component={TextVariants.h3} className="pf-v5-u-m-0">
                             Scope of baseline:
                         </Text>
                     </TextContent>
@@ -428,7 +426,7 @@ function NetworkPolicySimulatorSidePanel({
                     id={tabs.SIMULATE_NETWORK_POLICIES}
                     hidden={activeKeyTab !== tabs.SIMULATE_NETWORK_POLICIES}
                 >
-                    <div className="pf-u-p-lg pf-u-h-100">
+                    <div className="pf-v5-u-p-lg pf-v5-u-h-100">
                         <Stack hasGutter>
                             <StackItem>
                                 <Stack hasGutter>
@@ -436,20 +434,20 @@ function NetworkPolicySimulatorSidePanel({
                                         <TextContent>
                                             <Text
                                                 component={TextVariants.h2}
-                                                className="pf-u-font-size-lg"
+                                                className="pf-v5-u-font-size-lg"
                                             >
                                                 Generate network policies from the baseline
                                                 <Popover
                                                     showClose={false}
                                                     bodyContent={
                                                         <div>
-                                                            <p className="pf-u-mb-sm">
+                                                            <p className="pf-v5-u-mb-sm">
                                                                 A baseline is considered the trusted
                                                                 traffic (incoming and outgoing) for
                                                                 a given entity, like a cluster,
                                                                 namespace, or deployment.
                                                             </p>
-                                                            <p className="pf-u-mb-sm">
+                                                            <p className="pf-v5-u-mb-sm">
                                                                 It is automatically generated for
                                                                 every deployment, by collecting
                                                                 incoming and outgoing traffic during
@@ -468,7 +466,7 @@ function NetworkPolicySimulatorSidePanel({
                                                         type="button"
                                                         aria-label="More info on network baselines"
                                                         onClick={(e) => e.preventDefault()}
-                                                        className="pf-u-mx-sm pf-u-mt-xs"
+                                                        className="pf-v5-u-mx-sm pf-v5-u-mt-xs"
                                                     >
                                                         <HelpIcon />
                                                     </button>
@@ -492,7 +490,9 @@ function NetworkPolicySimulatorSidePanel({
                                         <Checkbox
                                             label="Exclude ports & protocols"
                                             isChecked={isExcludingPortsAndProtocols}
-                                            onChange={setIsExcludingPortsAndProtocols}
+                                            onChange={(_event, val) =>
+                                                setIsExcludingPortsAndProtocols(val)
+                                            }
                                             id="controlled-check-1"
                                             name="check1"
                                         />
@@ -516,7 +516,7 @@ function NetworkPolicySimulatorSidePanel({
                                         <TextContent>
                                             <Text
                                                 component={TextVariants.h2}
-                                                className="pf-u-font-size-lg"
+                                                className="pf-v5-u-font-size-lg"
                                             >
                                                 Upload a network policy YAML
                                             </Text>

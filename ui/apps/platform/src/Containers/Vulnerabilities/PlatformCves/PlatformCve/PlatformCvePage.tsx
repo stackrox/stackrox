@@ -39,7 +39,7 @@ function PlatformCvePage() {
     return (
         <>
             <PageTitle title={`Platform CVEs - PlatformCVE ${cveName}`} />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>CVEs</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
@@ -52,8 +52,8 @@ function PlatformCvePage() {
                 <CvePageHeader data={platformCveMetadata} />
             </PageSection>
             <Divider component="div" />
-            <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
-                <div className="pf-u-background-color-100 pf-u-flex-grow-1"></div>
+            <PageSection className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1">
+                <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1"></div>
             </PageSection>
         </>
     );

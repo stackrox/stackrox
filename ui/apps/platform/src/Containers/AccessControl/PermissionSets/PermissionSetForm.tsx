@@ -8,6 +8,9 @@ import {
     Button,
     Form,
     FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
     Label,
     TextInput,
     Title,
@@ -118,7 +121,7 @@ function PermissionSetForm({
 
     return (
         <Form id="permission-set-form">
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">
@@ -131,14 +134,14 @@ function PermissionSetForm({
                         </ToolbarItem>
                     )}
                     {action !== 'create' && (
-                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
                             <ToolbarItem>
                                 {isActionable ? (
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
                                         isDisabled={!hasWriteAccessForPage || action === 'edit'}
-                                        isSmall
+                                        size="sm"
                                     >
                                         Edit permission set
                                     </Button>
@@ -151,31 +154,31 @@ function PermissionSetForm({
                 </ToolbarContent>
             </Toolbar>
             {alertSubmit}
-            <FormGroup
-                label="Name"
-                fieldId="name"
-                isRequired
-                validated={nameValidatedState}
-                helperTextInvalid={nameErrorMessage}
-                className="pf-m-horizontal"
-            >
+            <FormGroup label="Name" fieldId="name" isRequired className="pf-m-horizontal">
                 <TextInput
                     type="text"
                     id="name"
                     value={values.name}
                     validated={nameValidatedState}
-                    onChange={onChange}
+                    onChange={(event, _value) => onChange(_value, event)}
                     isDisabled={isViewing}
                     isRequired
                     className="pf-m-limit-width"
                 />
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem variant={nameValidatedState}>
+                            {nameErrorMessage}
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
             </FormGroup>
             <FormGroup label="Description" fieldId="description" className="pf-m-horizontal">
                 <TextInput
                     type="text"
                     id="description"
                     value={values.description}
-                    onChange={onChange}
+                    onChange={(event, _value) => onChange(_value, event)}
                     isDisabled={isViewing}
                 />
             </FormGroup>
@@ -192,7 +195,7 @@ function PermissionSetForm({
                     </p>
                     <p>
                         <strong>{defaultMinimalReadAccessResources.join(', ')}</strong>
-                        <Badge isRead className="pf-u-ml-sm">
+                        <Badge isRead className="pf-v5-u-ml-sm">
                             {defaultMinimalReadAccessResources.length}
                         </Badge>
                     </p>
@@ -215,13 +218,13 @@ function PermissionSetForm({
                                     onClick={onClickSubmit}
                                     isDisabled={!dirty || !isValid || isSubmitting}
                                     isLoading={isSubmitting}
-                                    isSmall
+                                    size="sm"
                                 >
                                     Save
                                 </Button>
                             </ToolbarItem>
                             <ToolbarItem>
-                                <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                <Button variant="tertiary" onClick={onClickCancel} size="sm">
                                     Cancel
                                 </Button>
                             </ToolbarItem>

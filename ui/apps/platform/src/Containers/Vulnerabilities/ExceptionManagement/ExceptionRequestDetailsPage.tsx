@@ -124,7 +124,7 @@ function ExceptionRequestDetailsPage() {
     if (loading && !vulnerabilityException) {
         return (
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner />
             </Bullseye>
         );
     }
@@ -184,7 +184,7 @@ function ExceptionRequestDetailsPage() {
                     submit a new request
                 </Alert>
             )}
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={exceptionManagementPath}>
                         Exception management
@@ -225,13 +225,13 @@ function ExceptionRequestDetailsPage() {
                     )}
                 </Flex>
             </PageSection>
-            <PageSection className="pf-u-p-0">
+            <PageSection className="pf-v5-u-p-0">
                 {isApprovedPendingUpdate && (
                     <Tabs
                         activeKey={selectedContext}
                         onSelect={handleTabClick}
                         component="nav"
-                        className="pf-u-pl-lg pf-u-background-color-100"
+                        className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
                     >
                         <Tab
                             eventKey="PENDING_UPDATE"

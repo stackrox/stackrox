@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Divider, Select, SelectOption } from '@patternfly/react-core';
+import { Divider } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { DiscoveredClusterType, isType, types } from 'services/DiscoveredClusterService';
 
@@ -51,7 +52,7 @@ function SearchFilterTypes({
             placeholderText="Filter by type"
             aria-label="Type filter menu items"
             toggleAriaLabel="Type filter menu toggle"
-            onToggle={setIsOpen}
+            onToggle={(_event, val) => setIsOpen(val)}
             onSelect={onSelect}
             selections={typesSelected ?? optionAll}
             isDisabled={isDisabled}

@@ -94,7 +94,7 @@ describe('Collection permission checks', () => {
 
         const linkSelector = collectionSelectors.tableLinkByName(collectionName);
         // Ensure that menu options in table rows are available
-        cy.get(`tr:has(${linkSelector}) button[aria-label="Actions"]`).click();
+        cy.get(`tr:has(${linkSelector}) button[aria-label="Kebab toggle"]`).click();
         cy.get(`tr:has(${linkSelector}) button:contains("Edit collection")`);
         cy.get(`tr:has(${linkSelector}) button:contains("Clone collection")`);
         cy.get(`tr:has(${linkSelector}) button:contains("Delete collection")`);

@@ -165,7 +165,7 @@ function GenericWebhookIntegrationForm({
                                 type="text"
                                 id="notifier.name"
                                 value={values.notifier.name}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -182,7 +182,7 @@ function GenericWebhookIntegrationForm({
                                 type="text"
                                 id="notifier.generic.endpoint"
                                 value={values.notifier.generic.endpoint}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -196,7 +196,7 @@ function GenericWebhookIntegrationForm({
                                 label="Skip TLS verification"
                                 id="notifier.generic.skipTLSVerify"
                                 isChecked={values.notifier.generic.skipTLSVerify}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -210,7 +210,7 @@ function GenericWebhookIntegrationForm({
                                 label="Enable audit logging"
                                 id="notifier.generic.auditLoggingEnabled"
                                 isChecked={values.notifier.generic.auditLoggingEnabled}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -226,7 +226,7 @@ function GenericWebhookIntegrationForm({
                                 type="text"
                                 id="notifier.generic.caCert"
                                 value={values.notifier.generic.caCert}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -246,7 +246,7 @@ function GenericWebhookIntegrationForm({
                                 id="notifier.generic.username"
                                 value={values.notifier.generic.username}
                                 placeholder="example, postmaster@example.com"
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -262,7 +262,9 @@ function GenericWebhookIntegrationForm({
                                     label="Update password"
                                     id="updatePassword"
                                     isChecked={values.updatePassword}
-                                    onChange={onUpdateCredentialsChange}
+                                    onChange={(event, value) =>
+                                        onUpdateCredentialsChange(value, event)
+                                    }
                                     onBlur={handleBlur}
                                     isDisabled={!isEditable}
                                 />
@@ -286,7 +288,7 @@ function GenericWebhookIntegrationForm({
                                 type="password"
                                 id="notifier.generic.password"
                                 value={values.notifier.generic.password}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable || !values.updatePassword}
                                 placeholder={
@@ -296,7 +298,7 @@ function GenericWebhookIntegrationForm({
                                 }
                             />
                         </FormLabelGroup>
-                        <FormSection title="Headers" titleElement="h3" className="pf-u-mt-0">
+                        <FormSection title="Headers" titleElement="h3" className="pf-v5-u-mt-0">
                             <FieldArray
                                 name="notifier.generic.headers"
                                 render={(arrayHelpers) => (
@@ -323,7 +325,9 @@ function GenericWebhookIntegrationForm({
                                                                         values.notifier.generic
                                                                             .headers[`${index}`].key
                                                                     }
-                                                                    onChange={onChange}
+                                                                    onChange={(event, value) =>
+                                                                        onChange(value, event)
+                                                                    }
                                                                     onBlur={handleBlur}
                                                                     isDisabled={!isEditable}
                                                                 />
@@ -345,7 +349,9 @@ function GenericWebhookIntegrationForm({
                                                                             .headers[`${index}`]
                                                                             .value
                                                                     }
-                                                                    onChange={onChange}
+                                                                    onChange={(event, value) =>
+                                                                        onChange(value, event)
+                                                                    }
                                                                     onBlur={handleBlur}
                                                                     isDisabled={!isEditable}
                                                                 />
@@ -378,7 +384,7 @@ function GenericWebhookIntegrationForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({
@@ -396,7 +402,11 @@ function GenericWebhookIntegrationForm({
                                 )}
                             />
                         </FormSection>
-                        <FormSection title="Extra Fields" titleElement="h3" className="pf-u-mt-0">
+                        <FormSection
+                            title="Extra Fields"
+                            titleElement="h3"
+                            className="pf-v5-u-mt-0"
+                        >
                             <FieldArray
                                 name="notifier.generic.extraFields"
                                 render={(arrayHelpers) => (
@@ -424,7 +434,9 @@ function GenericWebhookIntegrationForm({
                                                                             .extraFields[`${index}`]
                                                                             .key
                                                                     }
-                                                                    onChange={onChange}
+                                                                    onChange={(event, value) =>
+                                                                        onChange(value, event)
+                                                                    }
                                                                     onBlur={handleBlur}
                                                                     isDisabled={!isEditable}
                                                                 />
@@ -446,7 +458,9 @@ function GenericWebhookIntegrationForm({
                                                                             .extraFields[`${index}`]
                                                                             .value
                                                                     }
-                                                                    onChange={onChange}
+                                                                    onChange={(event, value) =>
+                                                                        onChange(value, event)
+                                                                    }
                                                                     onBlur={handleBlur}
                                                                     isDisabled={!isEditable}
                                                                 />
@@ -479,7 +493,7 @@ function GenericWebhookIntegrationForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({

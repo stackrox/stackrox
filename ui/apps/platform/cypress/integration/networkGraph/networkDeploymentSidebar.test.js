@@ -48,24 +48,24 @@ describe('Network Graph deployment sidebar', () => {
         cy.get(`${networkGraphSelectors.drawerTabs} .pf-m-current`).contains('Details');
 
         cy.get(
-            '.pf-c-expandable-section .pf-c-expandable-section__toggle-text:contains("Network security")'
+            '.pf-v5-c-expandable-section .pf-v5-c-expandable-section__toggle-text:contains("Network security")'
         );
         cy.get(
-            '.pf-c-expandable-section .pf-c-expandable-section__toggle-text:contains("Deployment overview")'
+            '.pf-v5-c-expandable-section .pf-v5-c-expandable-section__toggle-text:contains("Deployment overview")'
         );
         cy.get(
-            '.pf-c-expandable-section .pf-c-expandable-section__toggle-text:contains("Port configurations")'
+            '.pf-v5-c-expandable-section .pf-v5-c-expandable-section__toggle-text:contains("Port configurations")'
         );
         cy.get(
-            '.pf-c-expandable-section .pf-c-expandable-section__toggle-text:contains("Container configurations")'
+            '.pf-v5-c-expandable-section .pf-v5-c-expandable-section__toggle-text:contains("Container configurations")'
         );
 
         // check list of containers in Container Config section
-        cy.get('.pf-c-expandable-section:contains("Container configurations")').find(
-            '[data-testid="deployment-container-config"] .pf-c-expandable-section__toggle-text:contains("collector")'
+        cy.get('.pf-v5-c-expandable-section:contains("Container configurations")').find(
+            '[data-testid="deployment-container-config"] .pf-v5-c-expandable-section__toggle-text:contains("collector")'
         );
-        cy.get('.pf-c-expandable-section:contains("Container configurations")').find(
-            '[data-testid="deployment-container-config"] .pf-c-expandable-section__toggle-text:contains("compliance")'
+        cy.get('.pf-v5-c-expandable-section:contains("Container configurations")').find(
+            '[data-testid="deployment-container-config"] .pf-v5-c-expandable-section__toggle-text:contains("compliance")'
         );
     });
 });

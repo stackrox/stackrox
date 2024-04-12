@@ -18,7 +18,7 @@ import {
     Text,
     TextContent,
     TextVariants,
-    Title,
+    EmptyStateHeader,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, ExclamationTriangleIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
@@ -58,16 +58,16 @@ function DetailSection({ title, children }) {
     return (
         <ExpandableSection
             isExpanded={isExpanded}
-            onToggle={onToggle}
+            onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
             toggleContent={
                 <TextContent>
-                    <Text component={TextVariants.h1} className="pf-u-font-size-lg">
+                    <Text component={TextVariants.h1} className="pf-v5-u-font-size-lg">
                         {title}
                     </Text>
                 </TextContent>
             }
         >
-            <div className="pf-u-px-sm pf-u-pb-md">{children}</div>
+            <div className="pf-v5-u-px-sm pf-v5-u-pb-md">{children}</div>
         </ExpandableSection>
     );
 }
@@ -92,7 +92,7 @@ function DeploymentDetails({
     };
 
     return (
-        <div className="pf-u-h-100 pf-u-p-md">
+        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
             <ul>
                 <li>
                     <DetailSection title="Network security">
@@ -284,7 +284,7 @@ function DeploymentDetails({
                         </DescriptionList>
                     </DetailSection>
                 </li>
-                <Divider component="li" className="pf-u-mb-sm" />
+                <Divider component="li" className="pf-v5-u-mb-sm" />
                 <li>
                     <DetailSection title="Deployment overview">
                         <Stack hasGutter>
@@ -377,7 +377,7 @@ function DeploymentDetails({
                         </Stack>
                     </DetailSection>
                 </li>
-                <Divider component="li" className="pf-u-mb-sm" />
+                <Divider component="li" className="pf-v5-u-mb-sm" />
                 <li>
                     <DetailSection title="Port configurations">
                         {deployment.ports.length ? (
@@ -392,14 +392,15 @@ function DeploymentDetails({
                             </Stack>
                         ) : (
                             <EmptyState variant={EmptyStateVariant.xs}>
-                                <Title headingLevel="h4" size="md">
-                                    No ports available
-                                </Title>
+                                <EmptyStateHeader
+                                    titleText="No ports available"
+                                    headingLevel="h4"
+                                />
                             </EmptyState>
                         )}
                     </DetailSection>
                 </li>
-                <Divider component="li" className="pf-u-mb-sm" />
+                <Divider component="li" className="pf-v5-u-mb-sm" />
                 <li>
                     <DetailSection title="Container configurations">
                         {deployment.containers.length ? (
@@ -414,9 +415,10 @@ function DeploymentDetails({
                             </Stack>
                         ) : (
                             <EmptyState variant={EmptyStateVariant.xs}>
-                                <Title headingLevel="h4" size="md">
-                                    No containers available
-                                </Title>
+                                <EmptyStateHeader
+                                    titleText="No containers available"
+                                    headingLevel="h4"
+                                />
                             </EmptyState>
                         )}
                     </DetailSection>

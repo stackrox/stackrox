@@ -103,7 +103,7 @@ function AdministrationEventsPage(): ReactElement {
             <PageSection component="div">
                 {isLoading && !lastUpdatedTime ? (
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner />
                     </Bullseye>
                 ) : errorMessage ? (
                     <Alert

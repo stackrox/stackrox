@@ -12,7 +12,7 @@ import {
 import { NetworkPolicyModification } from 'types/networkPolicy.proto';
 import useFetchNotifiers from 'hooks/useFetchNotifiers';
 import useTableSelection from 'hooks/useTableSelection';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { notifyNetworkPolicyModification } from 'services/NetworkService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -65,12 +65,12 @@ function NotifyYAMLModal({
     if (isLoading) {
         content = (
             <Bullseye>
-                <Spinner isSVG size="lg" />
+                <Spinner size="lg" />
             </Bullseye>
         );
     } else {
         content = (
-            <TableComposable aria-label="Notifiers table" variant="compact" borders>
+            <Table aria-label="Notifiers table" variant="compact" borders>
                 <Thead>
                     <Tr>
                         <Th
@@ -100,7 +100,7 @@ function NotifyYAMLModal({
                         );
                     })}
                 </Tbody>
-            </TableComposable>
+            </Table>
         );
     }
 
@@ -124,7 +124,7 @@ function NotifyYAMLModal({
                     isInline
                     variant={AlertVariant.danger}
                     title={errorMessage}
-                    className="pf-u-mb-lg"
+                    className="pf-v5-u-mb-lg"
                 />
             )}
             {content}

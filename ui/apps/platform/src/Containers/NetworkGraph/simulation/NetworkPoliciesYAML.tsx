@@ -51,14 +51,14 @@ function NetworkPoliciesYAML({
         <CodeEditorControl
             icon={<DownloadIcon />}
             aria-label={labels.downloadYAML}
-            toolTipText={labels.downloadYAML}
+            tooltipProps={{ content: labels.downloadYAML }}
             onClick={downloadYAMLHandler('networkPolicy', yaml)}
             isVisible
         />
     );
 
     return (
-        <div className="network-policies-yaml pf-u-h-100">
+        <div className="network-policies-yaml pf-v5-u-h-100">
             <CodeEditor
                 isDarkTheme={customDarkMode}
                 customControls={[

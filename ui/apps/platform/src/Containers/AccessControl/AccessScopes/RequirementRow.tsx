@@ -1,5 +1,5 @@
 import React, { ReactElement, useRef, useState } from 'react';
-import { Button, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
+import { Button, Icon, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
 import {
     CheckCircleIcon,
     MinusCircleIcon,
@@ -82,21 +82,23 @@ function RequirementRow({
             <Td dataLabel="Values" modifier="breakWord">
                 {isKeyInSet &&
                     values.map((value, indexValue) => (
-                        <div key={value} className="pf-u-display-flex">
-                            <span className="pf-u-flex-basis-0 pf-u-flex-grow-1 pf-u-flex-shrink-1 pf-u-text-break-word">
+                        <div key={value} className="pf-v5-u-display-flex">
+                            <span className="pf-v5-u-flex-basis-0 pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1 pf-v5-u-text-break-word">
                                 {getValueText(value)}
                             </span>
-                            <span className="pf-u-flex-shrink-0 pf-u-pl-sm">
+                            <span className="pf-v5-u-flex-shrink-0 pf-v5-u-pl-sm">
                                 {isRequirementActive && isEditableOperator && (
                                     <Tooltip content="Delete value">
                                         <Button
                                             aria-label="Delete value"
                                             variant="plain"
-                                            className="pf-m-smallest pf-u-mr-sm"
+                                            className="pf-m-smallest pf-v5-u-mr-sm"
                                             isDisabled={values.length === 1}
                                             onClick={() => handleValueDelete(indexValue)}
                                         >
-                                            <MinusCircleIcon color="var(--pf-global--danger-color--100)" />
+                                            <Icon>
+                                                <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                                            </Icon>
                                         </Button>
                                     </Tooltip>
                                 )}
@@ -105,41 +107,43 @@ function RequirementRow({
                     ))}
                 {isRequirementActive && (
                     <>
-                        <div className="pf-u-display-flex pf-u-align-items-center">
-                            <span className="pf-u-flex-basis-0 pf-u-flex-grow-1 pf-u-flex-shrink-1">
+                        <div className="pf-v5-u-display-flex pf-v5-u-align-items-center">
+                            <span className="pf-v5-u-flex-basis-0 pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1">
                                 <TextInput
                                     aria-label="Type a value"
                                     value={valueInput}
                                     validated={validatedValue}
-                                    onChange={setValueInput}
+                                    onChange={(_event, val) => setValueInput(val)}
                                     onKeyDown={onKeyDown}
                                     ref={refValueInput}
                                     className="pf-m-small"
                                 />
                             </span>
-                            <span className="pf-u-flex-shrink-0 pf-u-pl-sm">
+                            <span className="pf-v5-u-flex-shrink-0 pf-v5-u-pl-sm">
                                 {isRequirementActive && (
                                     <Tooltip content="Add value (press Enter)">
                                         <Button
                                             aria-label="Add value (press Enter)"
                                             variant="plain"
-                                            className="pf-m-smallest pf-u-mr-sm"
+                                            className="pf-m-smallest pf-v5-u-mr-sm"
                                             isDisabled={isDisabledAddValue}
                                             onClick={onAddValue}
                                         >
-                                            <PlusCircleIcon color="var(--pf-global--primary-color--100)" />
+                                            <Icon>
+                                                <PlusCircleIcon color="var(--pf-v5-global--primary-color--100)" />
+                                            </Icon>
                                         </Button>
                                     </Tooltip>
                                 )}
                             </span>
                         </div>
                         {isInvalidValue && (
-                            <div className="pf-u-font-size-sm pf-u-danger-color-100">
+                            <div className="pf-v5-u-font-size-sm pf-v5-u-danger-color-100">
                                 Invalid label value
                             </div>
                         )}
                         {isDuplicateValue && (
-                            <div className="pf-u-font-size-sm pf-u-danger-color-100">
+                            <div className="pf-v5-u-font-size-sm pf-v5-u-danger-color-100">
                                 Duplicate label value
                             </div>
                         )}
@@ -147,18 +151,20 @@ function RequirementRow({
                 )}
             </Td>
             {hasAction && (
-                <Td dataLabel="Action" className="pf-u-text-align-right">
+                <Td dataLabel="Action" className="pf-v5-u-text-align-right">
                     {isRequirementActive ? (
                         <>
                             <Tooltip key="OK" content="OK">
                                 <Button
                                     aria-label="OK"
                                     variant="plain"
-                                    className="pf-m-smallest pf-u-mr-sm"
+                                    className="pf-m-smallest pf-v5-u-mr-sm"
                                     isDisabled={values.length === 0 || valueInput.length !== 0}
                                     onClick={handleRequirementOK}
                                 >
-                                    <CheckCircleIcon color="var(--pf-global--primary-color--100)" />
+                                    <Icon>
+                                        <CheckCircleIcon color="var(--pf-v5-global--primary-color--100)" />
+                                    </Icon>
                                 </Button>
                             </Tooltip>
                             <Tooltip key="Cancel" content="Cancel">
@@ -168,7 +174,9 @@ function RequirementRow({
                                     className="pf-m-smallest"
                                     onClick={handleRequirementCancel}
                                 >
-                                    <TimesCircleIcon color="var(--pf-global--color--100)" />
+                                    <Icon>
+                                        <TimesCircleIcon color="var(--pf-v5-global--color--100)" />
+                                    </Icon>
                                 </Button>
                             </Tooltip>
                         </>
@@ -179,11 +187,13 @@ function RequirementRow({
                                     <Button
                                         aria-label="Edit rule"
                                         variant="plain"
-                                        className="pf-m-smallest pf-u-mr-sm"
+                                        className="pf-m-smallest pf-v5-u-mr-sm"
                                         isDisabled={activity === 'DISABLED'}
                                         onClick={handleRequirementEdit}
                                     >
-                                        <PencilAltIcon color="var(--pf-global--primary-color--100)" />
+                                        <Icon>
+                                            <PencilAltIcon color="var(--pf-v5-global--primary-color--100)" />
+                                        </Icon>
                                     </Button>
                                 </Tooltip>
                             )}
@@ -195,7 +205,9 @@ function RequirementRow({
                                     isDisabled={activity === 'DISABLED'}
                                     onClick={handleRequirementDelete}
                                 >
-                                    <MinusCircleIcon color="var(--pf-global--danger-color--100)" />
+                                    <Icon>
+                                        <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                                    </Icon>
                                 </Button>
                             </Tooltip>
                         </>

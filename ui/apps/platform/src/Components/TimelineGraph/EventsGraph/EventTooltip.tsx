@@ -10,6 +10,7 @@ import DefaultTooltipFields from './EventTooltipFields/DefaultTooltipFields';
 
 export type EventTooltipProps = Event & {
     children: ReactElement;
+    popoverRef: React.RefObject<never>;
 };
 
 const EventTooltip = ({
@@ -22,6 +23,7 @@ const EventTooltip = ({
     reason,
     timestamp,
     children,
+    popoverRef,
 }: EventTooltipProps): ReactElement => {
     let tooltipBody: ReactElement;
 
@@ -48,6 +50,7 @@ const EventTooltip = ({
         <Tooltip
             isContentLeftAligned
             content={<DetailedTooltipContent title={name} body={tooltipBody} />}
+            triggerRef={popoverRef}
         >
             {children}
         </Tooltip>

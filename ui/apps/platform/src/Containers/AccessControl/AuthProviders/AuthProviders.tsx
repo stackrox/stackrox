@@ -4,18 +4,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { Bullseye, Button, PageSection, pluralize, Spinner, Title } from '@patternfly/react-core';
 import {
-    Bullseye,
-    Button,
     Dropdown,
     DropdownItem,
     DropdownPosition,
     DropdownToggle,
-    PageSection,
-    pluralize,
-    Spinner,
-    Title,
-} from '@patternfly/react-core';
+} from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -169,14 +164,16 @@ function AuthProviders(): ReactElement {
                         actionComponent={
                             hasWriteAccessForPage && (
                                 <Dropdown
-                                    className="auth-provider-dropdown pf-u-ml-md"
+                                    className="auth-provider-dropdown pf-v5-u-ml-md"
                                     onSelect={onClickCreate}
                                     position={DropdownPosition.right}
                                     toggle={
                                         <DropdownToggle
-                                            onToggle={onToggleCreateMenu}
+                                            onToggle={(_event, isOpen) =>
+                                                onToggleCreateMenu(isOpen)
+                                            }
                                             toggleIndicator={CaretDownIcon}
-                                            isPrimary
+                                            toggleVariant="primary"
                                         >
                                             Create auth provider
                                         </DropdownToggle>
@@ -201,7 +198,7 @@ function AuthProviders(): ReactElement {
             <PageSection variant={isList ? 'default' : 'light'}>
                 {isFetchingAuthProviders || isFetchingRoles ? (
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner />
                     </Bullseye>
                 ) : isList ? (
                     <PageSection variant="light">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { SearchFilter } from 'types/search';
 
@@ -22,7 +22,7 @@ function CVESeverityDropdown({ searchFilter, onSelect }: CVESeverityDropdownProp
             variant="checkbox"
             aria-label="CVE severity filter menu items"
             toggleAriaLabel="CVE severity filter menu toggle"
-            onToggle={onCveSeverityToggle}
+            onToggle={(_event, isOpen: boolean) => onCveSeverityToggle(isOpen)}
             onSelect={(e, selection) => {
                 onSelect('SEVERITY', (e.target as HTMLInputElement).checked, selection as string);
             }}

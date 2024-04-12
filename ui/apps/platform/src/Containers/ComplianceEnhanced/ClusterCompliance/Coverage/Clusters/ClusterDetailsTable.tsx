@@ -15,7 +15,7 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import omit from 'lodash/omit';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -160,7 +160,7 @@ function ClusterDetailsTable({
                 <Tr key={checkName}>
                     <Td modifier="truncate">
                         <Text>{checkName}</Text>
-                        <Text component={TextVariants.small} className="pf-u-color-200">
+                        <Text component={TextVariants.small} className="pf-v5-u-color-200">
                             {rationale}
                         </Text>
                     </Td>
@@ -186,7 +186,7 @@ function ClusterDetailsTable({
         <Tr>
             <Td colSpan={2}>
                 <Bullseye>
-                    <Spinner isSVG />
+                    <Spinner />
                 </Bullseye>
             </Td>
         </Tr>
@@ -242,12 +242,12 @@ function ClusterDetailsTable({
 
     return (
         <>
-            <Title headingLevel="h2" className="pf-u-px-md">
+            <Title headingLevel="h2" className="pf-v5-u-px-md">
                 {scanName}
             </Title>
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarItem variant="search-filter" className="pf-u-flex-grow-1">
+                    <ToolbarItem variant="search-filter" className="pf-v5-u-flex-grow-1">
                         <SearchInput
                             aria-label="Filter results by check"
                             placeholder="Filter results by check"
@@ -260,7 +260,7 @@ function ClusterDetailsTable({
                     <ToolbarItem>
                         <CheckStatusDropdown searchFilter={searchFilter} onSelect={onSelect} />
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             itemCount={scanResultsCount ?? 0}
                             page={page}
@@ -272,7 +272,7 @@ function ClusterDetailsTable({
                 </ToolbarContent>
             </Toolbar>
 
-            <TableComposable>
+            <Table>
                 <Thead noWrap>
                     <Tr>
                         <Th width={90} sort={getSortParams('Compliance Check Name')}>
@@ -282,7 +282,7 @@ function ClusterDetailsTable({
                     </Tr>
                 </Thead>
                 <Tbody>{renderTableBodyContent()}</Tbody>
-            </TableComposable>
+            </Table>
 
             {selectedCheckResult && (
                 <CheckStatusModal

@@ -4,9 +4,10 @@
 // TODO: remove lint override after @typescript-eslint deps can be resolved to ^5.2.x
 /* eslint-disable react/prop-types */
 import React, { useState } from 'react';
-import { Button, Select, SelectOption, TextInput } from '@patternfly/react-core';
+import { Button, TextInput } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import {
-    TableComposable,
+    Table,
     Tbody,
     // TbodyProps,
     Td,
@@ -218,7 +219,7 @@ function DelegatedRegistriesTable({
     // end of TODO section (https://issues.redhat.com/browse/ROX-19275):
 
     return (
-        <TableComposable
+        <Table
             aria-label="Delegated registry exceptions table"
             // className={(isDragging && styles.modifiers.dragOver) || ''}
         >
@@ -264,7 +265,7 @@ function DelegatedRegistriesTable({
                                     id={`${registry.uuid as string}-path-input`}
                                     name={`${registry.uuid as string}-path-input`}
                                     value={registry.path}
-                                    onChange={(value) => handlePathChange(rowIndex, value)}
+                                    onChange={(_event, value) => handlePathChange(rowIndex, value)}
                                 />
                             </Td>
                             <Td dataLabel="Destination cluster (CLI/API only)">
@@ -300,7 +301,7 @@ function DelegatedRegistriesTable({
                     );
                 })}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

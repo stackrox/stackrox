@@ -13,7 +13,7 @@ function ContainerCommandInfo({ command }: ContainerCommandInfoProps) {
                 <CardBody>
                     <List isPlain>
                         {command.map((cmd) => (
-                            <ListItem>{cmd}</ListItem>
+                            <ListItem key={cmd}>{cmd}</ListItem>
                         ))}
                     </List>
                 </CardBody>

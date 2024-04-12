@@ -1,14 +1,6 @@
 import React from 'react';
 import { gql } from '@apollo/client';
-import {
-    ExpandableRowContent,
-    TableComposable,
-    Tbody,
-    Td,
-    Thead,
-    Th,
-    Tr,
-} from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
@@ -98,7 +90,7 @@ function AffectedImagesTable({
     const expandedRowSet = useSet<string>();
 
     return (
-        <TableComposable variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
@@ -187,7 +179,7 @@ function AffectedImagesTable({
                     </Tbody>
                 );
             })}
-        </TableComposable>
+        </Table>
     );
 }
 

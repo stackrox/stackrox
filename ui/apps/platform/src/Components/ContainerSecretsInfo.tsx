@@ -37,7 +37,7 @@ function ContainerSecretInfo({ secrets }: ContainerSecretInfoProps) {
                 <Stack hasGutter>
                     {secrets.length > 0 ? (
                         secrets.map((secret, index) => (
-                            <StackItem>
+                            <StackItem key={secret.name}>
                                 <ExpandableSection
                                     toggleText={secret.name}
                                     onToggle={() => setToggleAtIndex(index)}
@@ -46,7 +46,7 @@ function ContainerSecretInfo({ secrets }: ContainerSecretInfoProps) {
                                 >
                                     <DescriptionList
                                         isCompact
-                                        className="pf-u-background-color-200 pf-u-p-md"
+                                        className="pf-v5-u-background-color-200 pf-v5-u-p-md"
                                     >
                                         <DescriptionListGroup>
                                             <DescriptionListTerm>Source</DescriptionListTerm>

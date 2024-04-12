@@ -85,7 +85,7 @@ function TeamsIntegrationForm({
                             id="name"
                             value={values.name}
                             placeholder="(example, Teams Integration)"
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -103,7 +103,7 @@ function TeamsIntegrationForm({
                             type="text"
                             id="labelDefault"
                             value={values.labelDefault}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -118,7 +118,7 @@ function TeamsIntegrationForm({
                             type="text"
                             id="labelKey"
                             value={values.labelKey}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
