@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
@@ -30,6 +31,7 @@ type eventPipeline struct {
 	reprocessor reprocessor.Handler
 
 	offlineMode *atomic.Bool
+	pubSub      *internalmessage.MessageSubscriber
 
 	eventsC chan *message.ExpiringMessage
 	stopper concurrency.Stopper
