@@ -1891,10 +1891,6 @@ slack_prow_notice() {
             # send to #acs-release-notifications
             webhook_url="${RELEASE_WORKFLOW_NOTIFY_WEBHOOK}"
         fi
-    elif is_nightly_run; then
-        build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*stackrox*night*"
-        # send to #acs-nightly-ci-runs
-        webhook_url="${NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK}"
     else
         die "unexpected"
     fi

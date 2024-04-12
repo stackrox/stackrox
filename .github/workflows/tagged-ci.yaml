@@ -16,7 +16,6 @@ jobs:
           ref: ${{ github.ref_name }}
       - name: Slack
         env:
-          NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK: ${{ secrets.NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK }}
           RELEASE_WORKFLOW_NOTIFY_WEBHOOK: ${{ secrets.RELEASE_WORKFLOW_NOTIFY_WEBHOOK }}
           SLACK_MAIN_WEBHOOK: ${{ secrets.SLACK_MAIN_WEBHOOK }}
         run: |
