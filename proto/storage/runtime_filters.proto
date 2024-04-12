@@ -53,4 +53,3 @@ message RuntimeFilterData {
   string status = 3;
   string resource_collection_id = 4;
 }
-
