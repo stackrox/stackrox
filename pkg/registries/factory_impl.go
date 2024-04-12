@@ -13,7 +13,6 @@ var disableRepoListForAll = env.DisableRegistryRepoList.BooleanSetting()
 type factoryImpl struct {
 	creators                map[string]types.Creator
 	creatorsWithoutRepoList map[string]types.Creator
-	metricsHandler          *types.MetricsHandler
 }
 
 type registryWithDataSource struct {
@@ -47,7 +46,6 @@ func (e *factoryImpl) CreateRegistry(source *storage.ImageIntegration, options .
 	if !exists {
 		return nil, fmt.Errorf("registry with type '%s' does not exist", source.GetType())
 	}
-	options = append(options, types.WithMetricsHandler(e.metricsHandler))
 	integration, err := creator(source, options...)
 	if err != nil {
 		return nil, err

@@ -24,12 +24,9 @@ type Set interface {
 }
 
 // NewSet returns a new Set instance.
-func NewSet(reporter integrationhealth.Reporter, metricsHandler *types.MetricsHandler,
-	creatorOpts ...types.CreatorOption,
-) Set {
+func NewSet(reporter integrationhealth.Reporter, creatorOpts ...types.CreatorOption) Set {
 	registryFactory := registries.NewFactory(registries.FactoryOptions{
 		CreatorFuncsWithoutRepoList: registries.AllCreatorFuncsWithoutRepoList,
-		MetricsHandler:              metricsHandler,
 	})
 
 	registrySet := registries.NewSet(registryFactory, creatorOpts...)

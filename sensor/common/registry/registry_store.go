@@ -79,19 +79,26 @@ type CheckTLS func(ctx context.Context, origAddr string) (bool, error)
 // If checkTLS is nil, tlscheck.CheckTLS is used by default.
 func NewRegistryStore(checkTLS CheckTLS) *Store {
 	regFactory := registries.NewFactory(registries.FactoryOptions{
-		CreatorFuncs:   registries.AllCreatorFuncsWithoutRepoList,
-		MetricsHandler: metrics.Singleton(),
+		CreatorFuncs: registries.AllCreatorFuncsWithoutRepoList,
 	})
 
 	store := &Store{
-		factory:                     regFactory,
-		store:                       make(map[string]registries.Set),
-		checkTLSFunc:                tlscheck.CheckTLS,
-		globalRegistries:            registries.NewSet(regFactory, types.WithGCPTokenManager(gcp.Singleton())),
-		centralRegistryIntegrations: registries.NewSet(regFactory, types.WithGCPTokenManager(gcp.Singleton())),
-		clusterLocalRegistryHosts:   set.NewStringSet(),
-		tlsCheckResults:             expiringcache.NewExpiringCache(tlsCheckTTL),
-		knownSecretIDs:              set.NewStringSet(),
+		factory:      regFactory,
+		store:        make(map[string]registries.Set),
+		checkTLSFunc: tlscheck.CheckTLS,
+		globalRegistries: registries.NewSet(
+			regFactory,
+			types.WithMetricsHandler(metrics.Singleton()),
+			types.WithGCPTokenManager(gcp.Singleton()),
+		),
+		centralRegistryIntegrations: registries.NewSet(
+			regFactory,
+			types.WithMetricsHandler(metrics.Singleton()),
+			types.WithGCPTokenManager(gcp.Singleton()),
+		),
+		clusterLocalRegistryHosts: set.NewStringSet(),
+		tlsCheckResults:           expiringcache.NewExpiringCache(tlsCheckTTL),
+		knownSecretIDs:            set.NewStringSet(),
 	}
 
 	if checkTLS != nil {

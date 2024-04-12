@@ -56,7 +56,6 @@ func NewFactory(opts FactoryOptions) Factory {
 	reg := &factoryImpl{
 		creators:                make(map[string]types.Creator),
 		creatorsWithoutRepoList: make(map[string]types.Creator),
-		metricsHandler:          opts.MetricsHandler,
 	}
 
 	creatorFuncs := AllCreatorFuncs

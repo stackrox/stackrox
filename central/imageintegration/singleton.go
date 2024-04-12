@@ -20,7 +20,7 @@ var (
 func initialize() {
 	metricsHandler := types.NewMetricsHandler(metrics.CentralSubsystem)
 	// This is the set of image integrations currently active, and the ToNotify that updates that set.
-	is = integration.NewSet(reporter.Singleton(), metricsHandler, types.WithGCPTokenManager(gcp.Singleton()))
+	is = integration.NewSet(reporter.Singleton(), types.WithMetricsHandler(metricsHandler), types.WithGCPTokenManager(gcp.Singleton()))
 	vulDefsProvider = scanners.NewVulnDefsInfoProvider(is.ScannerSet())
 }
 
