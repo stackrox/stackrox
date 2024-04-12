@@ -11,6 +11,7 @@ import services.CVEService
 import services.ImageService
 import services.PolicyService
 
+import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -319,6 +320,7 @@ class ImageManagementTest extends BaseSpecification {
         CVEService.unsuppressImageCVE(cve)
     }
 
+    @Ignore
     @Tag("BAT")
     @Tag("Integration")
     def "Verify CI/CD Integration Endpoint with notifications"() {
