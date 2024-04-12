@@ -44,6 +44,7 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceProfileResults",
 			"/v2.ComplianceResultsService/GetComplianceClusterStats",
 			"/v2.ComplianceResultsService/GetComplianceProfileCheckStats",
+			"/v2.ComplianceResultsService/GetComplianceProfileCheckClusterResult",
 		},
 	})
 )
@@ -426,6 +427,51 @@ func (s *serviceImpl) GetComplianceProfileCheckStats(ctx context.Context, reques
 	}
 
 	return storagetov2.ComplianceV2ProfileResults(scanResults), nil
+}
+
+// GetComplianceProfileCheckClusterResult retrieves cluster status for a specific check result
+func (s *serviceImpl) GetComplianceProfileCheckClusterResult(ctx context.Context, request *v2.ComplianceProfileCheckRequest) (*v2.ListComplianceCheckClusterResponse, error) {
+	if request.GetProfileName() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
+	}
+
+	if request.GetCheckName() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Compliance check name is required")
+	}
+
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	// Add the scan config name as an exact match
+	parsedQuery = search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, request.GetProfileName()).
+			AddExactMatches(search.ComplianceOperatorCheckName, request.GetCheckName()).
+			ProtoQuery(),
+		parsedQuery,
+	)
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
+
+	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
+	}
+
+	resultCount, err := s.complianceResultsDS.CountCheckResults(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", parsedQuery)
+	}
+
+	return &v2.ListComplianceCheckClusterResponse{
+		CheckResults: storagetov2.ComplianceV2CheckClusterResults(scanResults),
+		ProfileName:  request.GetProfileName(),
+		CheckName:    request.GetCheckName(),
+		TotalCount:   int32(resultCount),
+	}, nil
 }
 
 func (s *serviceImpl) mapScanConfigToID(ctx context.Context, scanResults []*storage.ComplianceOperatorCheckResultV2) (map[string]string, error) {

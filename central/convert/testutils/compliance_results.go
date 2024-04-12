@@ -177,7 +177,7 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 				{
 					CheckId:   complianceCheckID1,
 					CheckName: complianceCheckName1,
-					Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
+					Clusters: []*v2.ClusterCheckStatus{
 						{
 							Cluster: &v2.ComplianceScanCluster{
 								ClusterId:   fixtureconsts.Cluster1,
@@ -201,7 +201,7 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 				{
 					CheckId:   complianceCheckID2,
 					CheckName: complianceCheckName2,
-					Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
+					Clusters: []*v2.ClusterCheckStatus{
 						{
 							Cluster: &v2.ComplianceScanCluster{
 								ClusterId:   fixtureconsts.Cluster2,
@@ -223,7 +223,7 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 				{
 					CheckId:   complianceCheckID2,
 					CheckName: complianceCheckName2,
-					Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
+					Clusters: []*v2.ClusterCheckStatus{
 						{
 							Cluster: &v2.ComplianceScanCluster{
 								ClusterId:   fixtureconsts.Cluster1,
@@ -245,7 +245,7 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 				{
 					CheckId:   complianceCheckID3,
 					CheckName: complianceCheckName3,
-					Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
+					Clusters: []*v2.ClusterCheckStatus{
 						{
 							Cluster: &v2.ComplianceScanCluster{
 								ClusterId:   fixtureconsts.Cluster1,
@@ -527,7 +527,7 @@ func GetConvertedComplianceResult(_ *testing.T) *v2.ComplianceCheckResult {
 	return &v2.ComplianceCheckResult{
 		CheckId:   complianceCheckID1,
 		CheckName: complianceCheckName1,
-		Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
+		Clusters: []*v2.ClusterCheckStatus{
 			{
 				Cluster: &v2.ComplianceScanCluster{
 					ClusterId:   fixtureconsts.Cluster1,
