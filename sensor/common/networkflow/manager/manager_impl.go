@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
@@ -555,7 +556,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 				log.Debugf("Not showing flow on the network graph: %v", err)
 				return
 			}
-			if !isExternal {
+			if !isExternal && centralcaps.Has(centralsensor.NetworkGraphInternalEntitiesSupported) {
+				// Central without the capability would crash the UI if we make it display "Internal Entities".
 				entityType = networkgraph.InternalEntities()
 			}
 
@@ -571,6 +573,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 				entitiesName = "External Entities"
 			}
 			if conn.incoming {
+				// Keep internal wording even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
 				log.Debugf("Incoming connection to container %s/%s from %s:%s. "+
 					"Marking it as '%s' in the network graph.",
 					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), strconv.Itoa(int(port)), entitiesName)
@@ -581,6 +584,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			}
 
 			if !status.used {
+				// Count internal metrics even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
 				if isExternal {
 					flowMetrics.ExternalFlowCounter.With(metricDirection).Inc()
 				} else {
