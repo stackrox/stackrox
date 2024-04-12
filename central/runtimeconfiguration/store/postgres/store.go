@@ -21,13 +21,13 @@ import (
 )
 
 const (
-	baseTable = "runtime_configuration"
+	baseTable = "runtime_filter_data"
 	storeName = "RuntimeFilterData"
 )
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.RuntimeConfigurationSchema
+	schema         = pkgSchema.RuntimeFilterDataSchema
 	targetResource = resources.Administration
 )
 
@@ -46,7 +46,6 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
@@ -60,8 +59,8 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoRuntimeConfiguration,
-		copyFromRuntimeConfiguration,
+		insertIntoRuntimeFilterData,
+		copyFromRuntimeFilterData,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
@@ -83,7 +82,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoRuntimeConfiguration(batch *pgx.Batch, obj *storage.RuntimeFilterData) error {
+func insertIntoRuntimeFilterData(batch *pgx.Batch, obj *storage.RuntimeFilterData) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -96,13 +95,13 @@ func insertIntoRuntimeConfiguration(batch *pgx.Batch, obj *storage.RuntimeFilter
 		serialized,
 	}
 
-	finalStr := "INSERT INTO runtime_configuration (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO runtime_filter_data (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func copyFromRuntimeConfiguration(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.RuntimeFilterData) error {
+func copyFromRuntimeFilterData(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.RuntimeFilterData) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -148,7 +147,7 @@ func copyFromRuntimeConfiguration(ctx context.Context, s pgSearch.Deleter, tx *p
 			// clear the inserts and vals for the next batch
 			deletes = deletes[:0]
 
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"runtime_configuration"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"runtime_filter_data"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
 			// clear the input rows for the next batch
@@ -171,11 +170,11 @@ func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableRuntimeConfiguration(ctx, db)
+	dropTableRuntimeFilterData(ctx, db)
 }
 
-func dropTableRuntimeConfiguration(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS runtime_configuration CASCADE")
+func dropTableRuntimeFilterData(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS runtime_filter_data CASCADE")
 
 }
 

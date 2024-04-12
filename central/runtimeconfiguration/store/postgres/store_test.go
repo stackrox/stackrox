@@ -16,35 +16,35 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type RuntimeConfigurationStoreSuite struct {
+type RuntimeFilterDataStoreSuite struct {
 	suite.Suite
 	store  Store
 	testDB *pgtest.TestPostgres
 }
 
-func TestRuntimeConfigurationStore(t *testing.T) {
-	suite.Run(t, new(RuntimeConfigurationStoreSuite))
+func TestRuntimeFilterDataStore(t *testing.T) {
+	suite.Run(t, new(RuntimeFilterDataStoreSuite))
 }
 
-func (s *RuntimeConfigurationStoreSuite) SetupSuite() {
+func (s *RuntimeFilterDataStoreSuite) SetupSuite() {
 
 	s.testDB = pgtest.ForT(s.T())
 	s.store = New(s.testDB.DB)
 }
 
-func (s *RuntimeConfigurationStoreSuite) SetupTest() {
+func (s *RuntimeFilterDataStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.testDB.Exec(ctx, "TRUNCATE runtime_configuration CASCADE")
-	s.T().Log("runtime_configuration", tag)
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE runtime_filter_data CASCADE")
+	s.T().Log("runtime_filter_data", tag)
 	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 
-func (s *RuntimeConfigurationStoreSuite) TearDownSuite() {
+func (s *RuntimeFilterDataStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *RuntimeConfigurationStoreSuite) TestStore() {
+func (s *RuntimeFilterDataStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
