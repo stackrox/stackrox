@@ -81,7 +81,7 @@ func TestMappingUpdate(t *testing.T) {
 
 func TestV4VulnUpdate(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "test.json.zst")
-	u := newUpdater(file.New(filePath), &http.Client{Timeout: 50 * time.Second}, v4VulnURL, 1*time.Hour)
+	u := newUpdater(file.New(filePath), &http.Client{Timeout: 1 * time.Minute}, v4VulnURL, 1*time.Hour)
 
 	// Should fetch first time.
 	require.NoError(t, u.doUpdate())
