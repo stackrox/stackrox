@@ -116,10 +116,10 @@ func (mr *MockStoreMockRecorder) Exists(ctx, id any) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockStore) Get(ctx context.Context, id string) (*storage.ProcessListeningOnPortStorage, bool, error) {
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.RuntimeFilterData, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(*storage.ProcessListeningOnPortStorage)
+	ret0, _ := ret[0].(*storage.RuntimeFilterData)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -132,10 +132,10 @@ func (mr *MockStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 }
 
 // GetByQuery mocks base method.
-func (m *MockStore) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ProcessListeningOnPortStorage, error) {
+func (m *MockStore) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.RuntimeFilterData, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByQuery", ctx, query)
-	ret0, _ := ret[0].([]*storage.ProcessListeningOnPortStorage)
+	ret0, _ := ret[0].([]*storage.RuntimeFilterData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -162,10 +162,10 @@ func (mr *MockStoreMockRecorder) GetIDs(ctx any) *gomock.Call {
 }
 
 // GetMany mocks base method.
-func (m *MockStore) GetMany(ctx context.Context, identifiers []string) ([]*storage.ProcessListeningOnPortStorage, []int, error) {
+func (m *MockStore) GetMany(ctx context.Context, identifiers []string) ([]*storage.RuntimeFilterData, []int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMany", ctx, identifiers)
-	ret0, _ := ret[0].([]*storage.ProcessListeningOnPortStorage)
+	ret0, _ := ret[0].([]*storage.RuntimeFilterData)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -175,21 +175,6 @@ func (m *MockStore) GetMany(ctx context.Context, identifiers []string) ([]*stora
 func (mr *MockStoreMockRecorder) GetMany(ctx, identifiers any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, identifiers)
-}
-
-// GetProcessListeningOnPort mocks base method.
-func (m *MockStore) GetProcessListeningOnPort(ctx context.Context, deploymentID string) ([]*storage.ProcessListeningOnPort, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProcessListeningOnPort", ctx, deploymentID)
-	ret0, _ := ret[0].([]*storage.ProcessListeningOnPort)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetProcessListeningOnPort indicates an expected call of GetProcessListeningOnPort.
-func (mr *MockStoreMockRecorder) GetProcessListeningOnPort(ctx, deploymentID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessListeningOnPort", reflect.TypeOf((*MockStore)(nil).GetProcessListeningOnPort), ctx, deploymentID)
 }
 
 // Search mocks base method.
@@ -208,7 +193,7 @@ func (mr *MockStoreMockRecorder) Search(ctx, q any) *gomock.Call {
 }
 
 // Upsert mocks base method.
-func (m *MockStore) Upsert(ctx context.Context, obj *storage.ProcessListeningOnPortStorage) error {
+func (m *MockStore) Upsert(ctx context.Context, obj *storage.RuntimeFilterData) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", ctx, obj)
 	ret0, _ := ret[0].(error)
@@ -222,7 +207,7 @@ func (mr *MockStoreMockRecorder) Upsert(ctx, obj any) *gomock.Call {
 }
 
 // UpsertMany mocks base method.
-func (m *MockStore) UpsertMany(ctx context.Context, objs []*storage.ProcessListeningOnPortStorage) error {
+func (m *MockStore) UpsertMany(ctx context.Context, objs []*storage.RuntimeFilterData) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertMany", ctx, objs)
 	ret0, _ := ret[0].(error)
@@ -236,7 +221,7 @@ func (mr *MockStoreMockRecorder) UpsertMany(ctx, objs any) *gomock.Call {
 }
 
 // Walk mocks base method.
-func (m *MockStore) Walk(ctx context.Context, fn func(*storage.ProcessListeningOnPortStorage) error) error {
+func (m *MockStore) Walk(ctx context.Context, fn func(*storage.RuntimeFilterData) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Walk", ctx, fn)
 	ret0, _ := ret[0].(error)
@@ -250,7 +235,7 @@ func (mr *MockStoreMockRecorder) Walk(ctx, fn any) *gomock.Call {
 }
 
 // WalkByQuery mocks base method.
-func (m *MockStore) WalkByQuery(ctx context.Context, query *v1.Query, fn func(*storage.ProcessListeningOnPortStorage) error) error {
+func (m *MockStore) WalkByQuery(ctx context.Context, query *v1.Query, fn func(*storage.RuntimeFilterData) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WalkByQuery", ctx, query, fn)
 	ret0, _ := ret[0].(error)
