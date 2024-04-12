@@ -344,7 +344,7 @@ export function deleteIntegrationInTable(integrationSource, integrationType, int
         cy.get(
             `tr:contains("${integrationName}") button[role="menuitem"]:contains("Delete Integration")`
         ).click(); // TODO Title Case
-        cy.get('button:contains("Delete")').click(); // confirmation modal
+        cy.get('.pf-v5-c-modal-box__footer button:contains("Delete")').click(); // confirmation modal
     }, routeMatcherMap);
 }
 
