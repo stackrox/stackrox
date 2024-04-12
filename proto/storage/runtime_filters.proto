@@ -39,3 +39,18 @@ message RuntimeFilteringConfiguration {
   repeated RuntimeFilter runtime_filters = 1;
   repeated ResourceCollection resource_collections = 2;
 }
+
+message RuntimeFilterData {
+  enum RuntimeFilterFeatures {
+    EXTERNAL_IPS = 0;
+    PROCESSES = 1;
+    NETWORK_CONNECTIONS = 2;
+    LISTENING_ENDPOINTS = 3;
+  }
+
+  string id = 1; // @gotags: search:"Collection ID" sql:"pk"
+  RuntimeFilterFeatures feature = 2;
+  string status = 3;
+  string resource_collection_id = 4;
+}
+

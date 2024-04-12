@@ -90,6 +90,7 @@ func init() {
 		&storage.ResourceCollection{}:                           resources.WorkflowAdministration,
 		&storage.Risk{}:                                         resources.DeploymentExtension,
 		&storage.Role{}:                                         resources.Access,
+		&storage.RuntimeFilterData{}:                            resources.Administration,
 		&storage.ComplianceOperatorScanSettingBindingV2{}:       resources.Compliance,
 		&storage.SecuredUnits{}:                                 resources.Administration,
 		&storage.SensorUpgradeConfig{}:                          resources.Administration,
