@@ -26,19 +26,20 @@ message ComplianceScanCluster {
   string cluster_name = 2;
 }
 
+// ClusterCheckStatus groups the result of the check by cluster
+message ClusterCheckStatus {
+  ComplianceScanCluster cluster = 1;
+  ComplianceCheckStatus status = 2;
+  google.protobuf.Timestamp created_time = 3;
+  string check_uid = 4;
+}
+
 // Next tag: 11
 // ComplianceCheckResult provides the results of a compliance check against a rule
 message ComplianceCheckResult {
   string check_id = 1;
   string check_name = 2;
 
-  // ClusterCheckStatus groups the result of the check by cluster
-  message ClusterCheckStatus {
-    ComplianceScanCluster cluster = 1;
-    ComplianceCheckStatus status = 2;
-    google.protobuf.Timestamp created_time = 3;
-    string check_uid = 4;
-  }
   repeated ClusterCheckStatus clusters = 3;
   string description = 4;
   string instructions = 5;
@@ -134,6 +135,14 @@ message ListComplianceScanResultsResponse {
 // ListComplianceCheckScanStatsResponse provides stats per cluster
 message ListComplianceClusterOverallStatsResponse {
   repeated ComplianceClusterOverallStats scan_stats = 1;
+}
+
+// ListComplianceCheckScanStatsResponse provides stats per cluster
+message ListComplianceCheckClusterResponse {
+  repeated ClusterCheckStatus check_results = 1;
+  string profile_name = 2;
+  string check_name = 3;
+  int32 total_count = 4;
 }
 
 // ComplianceScanResultsCount gives count of scan results
@@ -243,6 +252,11 @@ service ComplianceResultsService {
 
   rpc GetComplianceClusterStats(ComplianceClusterStatsRequest) returns (ListComplianceClusterOverallStatsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/totals/clusters"};
+  }
+
+  // GetComplianceProfileCheckClusterResult lists status of a check per cluster
+  rpc GetComplianceProfileCheckClusterResult(ComplianceProfileCheckRequest) returns (ListComplianceCheckClusterResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/results/profile/{profile_name}/checks/{check_name}"};
   }
 
   rpc GetComplianceOverallClusterCount(RawQuery) returns (CountComplianceScanResults) {
