@@ -8,7 +8,7 @@ import weak "google/api/annotations.proto";
 option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
-// Next available tag: 71
+// Next available tag: 72
 enum SearchCategory {
   SEARCH_UNSET = 0;
   ALERTS = 1;
@@ -81,6 +81,7 @@ enum SearchCategory {
   CLOUD_SOURCES = 68;
   DISCOVERED_CLUSTERS = 69;
   RUNTIME_CONFIGURATION = 70;
+  RUNTIME_CONFIGURATION_COLLECTIONS = 71;
 }
 
 enum SearchDataType {
