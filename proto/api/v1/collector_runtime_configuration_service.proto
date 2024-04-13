@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package v1;
 
-import weak "google/api/annotations.proto";
 import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
 import "storage/runtime_filters.proto";
 
 option go_package = "v1";
@@ -19,7 +19,7 @@ service CollectorRuntimeConfigurationService {
     option (google.api.http) = {get: "/v1/collector_runtime_configuration"};
   }
 
-  rpc PostCollectorRuntimeConfiguration(Empty) returns(Empty) {
+  rpc PostCollectorRuntimeConfiguration(Empty) returns (Empty) {
     option (google.api.http) = {
       post: "/v1/collector_runtime_configuration"
       body: "*"
