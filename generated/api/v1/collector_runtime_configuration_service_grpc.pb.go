@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	CollectorRuntimeConfigurationService_GetCollectorRuntimeConfiguration_FullMethodName = "/v1.CollectorRuntimeConfigurationService/GetCollectorRuntimeConfiguration"
+	CollectorRuntimeConfigurationService_GetCollectorRuntimeConfiguration_FullMethodName  = "/v1.CollectorRuntimeConfigurationService/GetCollectorRuntimeConfiguration"
+	CollectorRuntimeConfigurationService_PostCollectorRuntimeConfiguration_FullMethodName = "/v1.CollectorRuntimeConfigurationService/PostCollectorRuntimeConfiguration"
 )
 
 // CollectorRuntimeConfigurationServiceClient is the client API for CollectorRuntimeConfigurationService service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CollectorRuntimeConfigurationServiceClient interface {
 	GetCollectorRuntimeConfiguration(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetCollectorRuntimeConfigurationResponse, error)
+	PostCollectorRuntimeConfiguration(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type collectorRuntimeConfigurationServiceClient struct {
@@ -46,11 +48,21 @@ func (c *collectorRuntimeConfigurationServiceClient) GetCollectorRuntimeConfigur
 	return out, nil
 }
 
+func (c *collectorRuntimeConfigurationServiceClient) PostCollectorRuntimeConfiguration(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, CollectorRuntimeConfigurationService_PostCollectorRuntimeConfiguration_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CollectorRuntimeConfigurationServiceServer is the server API for CollectorRuntimeConfigurationService service.
 // All implementations should embed UnimplementedCollectorRuntimeConfigurationServiceServer
 // for forward compatibility
 type CollectorRuntimeConfigurationServiceServer interface {
 	GetCollectorRuntimeConfiguration(context.Context, *Empty) (*GetCollectorRuntimeConfigurationResponse, error)
+	PostCollectorRuntimeConfiguration(context.Context, *Empty) (*Empty, error)
 }
 
 // UnimplementedCollectorRuntimeConfigurationServiceServer should be embedded to have forward compatible implementations.
@@ -59,6 +71,9 @@ type UnimplementedCollectorRuntimeConfigurationServiceServer struct {
 
 func (UnimplementedCollectorRuntimeConfigurationServiceServer) GetCollectorRuntimeConfiguration(context.Context, *Empty) (*GetCollectorRuntimeConfigurationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCollectorRuntimeConfiguration not implemented")
+}
+func (UnimplementedCollectorRuntimeConfigurationServiceServer) PostCollectorRuntimeConfiguration(context.Context, *Empty) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostCollectorRuntimeConfiguration not implemented")
 }
 
 // UnsafeCollectorRuntimeConfigurationServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -90,6 +105,24 @@ func _CollectorRuntimeConfigurationService_GetCollectorRuntimeConfiguration_Hand
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CollectorRuntimeConfigurationService_PostCollectorRuntimeConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CollectorRuntimeConfigurationServiceServer).PostCollectorRuntimeConfiguration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CollectorRuntimeConfigurationService_PostCollectorRuntimeConfiguration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CollectorRuntimeConfigurationServiceServer).PostCollectorRuntimeConfiguration(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CollectorRuntimeConfigurationService_ServiceDesc is the grpc.ServiceDesc for CollectorRuntimeConfigurationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -100,6 +133,10 @@ var CollectorRuntimeConfigurationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCollectorRuntimeConfiguration",
 			Handler:    _CollectorRuntimeConfigurationService_GetCollectorRuntimeConfiguration_Handler,
+		},
+		{
+			MethodName: "PostCollectorRuntimeConfiguration",
+			Handler:    _CollectorRuntimeConfigurationService_PostCollectorRuntimeConfiguration_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

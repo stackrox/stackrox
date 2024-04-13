@@ -18,4 +18,11 @@ service CollectorRuntimeConfigurationService {
   rpc GetCollectorRuntimeConfiguration(Empty) returns (GetCollectorRuntimeConfigurationResponse) {
     option (google.api.http) = {get: "/v1/collector_runtime_configuration"};
   }
+
+  rpc PostCollectorRuntimeConfiguration(Empty) returns(Empty) {
+    option (google.api.http) = {
+      post: "/v1/collector_runtime_configuration"
+      body: "*"
+    };
+  }
 }

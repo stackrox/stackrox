@@ -31,6 +31,36 @@
         "tags": [
           "CollectorRuntimeConfigurationService"
         ]
+      },
+      "post": {
+        "operationId": "CollectorRuntimeConfigurationService_PostCollectorRuntimeConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          }
+        ],
+        "tags": [
+          "CollectorRuntimeConfigurationService"
+        ]
       }
     }
   },
@@ -245,6 +275,9 @@
           "type": "string"
         }
       }
+    },
+    "v1Empty": {
+      "type": "object"
     },
     "v1GetCollectorRuntimeConfigurationResponse": {
       "type": "object",
