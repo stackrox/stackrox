@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package v1;
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+import "storage/runtime_filters.proto";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+message GetCollectorRuntimeConfigurationResponse {
+  storage.RuntimeFilteringConfiguration collector_runtime_configuration = 1;
+}
+
+// CollectorRuntimeConfigurationService can be used to update and check the Collector runtime configuration
+service CollectorRuntimeConfigurationService {
+  rpc GetCollectorRuntimeConfiguration(Empty) returns (GetCollectorRuntimeConfigurationResponse) {
+    option (google.api.http) = {get: "/v1/collector_runtime_configuration"};
+  }
+}
