@@ -75,10 +75,8 @@ issues:
 		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
 		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestFailedStatuses(statuses, userComments))
 		log.Printf("#%d will be commented with: %s", prNumber, strings.Join(newComments, ", "))
-		for _, newComment := range newComments {
-			if err := createComment(ctx, client, prNumber, newComment); err != nil {
-				log.Printf("#%d could not create a comment '%s': %v", prNumber, newComment, err)
-			}
+		if err := createComment(ctx, client, prNumber, strings.Join(newComments, "\n")); err != nil {
+			log.Printf("#%d could not create a comment: %v", prNumber, err)
 		}
 	}
 }
