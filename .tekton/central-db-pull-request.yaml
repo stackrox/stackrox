@@ -247,11 +247,18 @@ spec:
         workspace: workspace
 
     - name: determine-image-tag
-      runAfter: clone-repository
+      params:
+        - name: image
+          value: $(params.output-image)
+      runAfter:
+      - clone-repository
       taskSpec:
         params:
           - name: image
-            value: $(params.output-image)
+            description: Image without tag
+        results:
+          - name: image-with-tag
+            description: Fully Qualified Image Name with tag
         steps:
           - name: determine-image-tag
             image: registry.access.redhat.com/ubi8-minimal:latest
@@ -264,9 +271,6 @@ spec:
               microdnf install -y git make
               echo "DEBUG: $(make tag)"
               echo "${IMAGE}-$(make tag)" > "$(results.image-with-tag.path)"
-        results:
-          - name: image-with-tag
-            description: Fully Qualified Image Name with tag
       workspaces:
       - name: source
         workspace: workspace
