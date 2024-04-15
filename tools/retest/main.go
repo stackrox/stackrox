@@ -23,6 +23,12 @@ func main() {
 	// Use installation transport with client.
 	client := github.NewClient(nil).WithAuthToken(os.Getenv("GITHUB_TOKEN"))
 
+	user, _, err := client.Users.Get(ctx, "")
+	if err != nil {
+		log.Fatalf("could not get user: %v", err)
+	}
+	log.Printf("Logged as %s: %s", user.GetLogin(), user.GetHTMLURL())
+
 	// TODO(janisz): handle pagination
 	search, _, err := client.Search.Issues(ctx, `repo:stackrox/stackrox label:auto-retest state:open type:pr status:failure`, nil)
 	if err != nil {
@@ -33,18 +39,18 @@ func main() {
 issues:
 	for _, pr := range search.Issues {
 		prNumber := pr.GetNumber()
-		log.Printf("#%d retrieving...", prNumber)
+		log.Printf("#%d retrieving...: %s", prNumber, pr.GetHTMLURL())
 		prDetails, _, err := client.PullRequests.Get(ctx, S, S, prNumber)
 		if err != nil {
 			log.Printf("#%d could not get PR details: %v", prNumber, err)
 			continue
 		}
-		commentsBodies, err := commentsForPR(ctx, client, prNumber)
+		userComments, allComments, err := commentsForPrByUser(ctx, client, prNumber, user.GetID())
 		if err != nil {
-			log.Printf("#%d could not get comments: %v", prNumber, err)
+			log.Printf("#%d could not get allComments: %v", prNumber, err)
 			continue
 		}
-		log.Printf("#%d has %d comments", prNumber, len(commentsBodies))
+		log.Printf("#%d has %d allComments by %s and %d in total", prNumber, len(userComments), user.GetLogin(), len(allComments))
 		checks, err := checksForCommit(ctx, client, prDetails.GetHead().GetSHA())
 		if err != nil {
 			log.Printf("#%d could not get checks: %v", prNumber, err)
@@ -65,9 +71,9 @@ issues:
 			continue
 		}
 		log.Printf("#%d has %d statuses", prNumber, len(statuses))
-		jobsToRetest := jobsToRetestFromComments(commentsBodies)
+		jobsToRetest := jobsToRetestFromComments(userComments, allComments)
 		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
-		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestFailedStatuses(statuses, commentsBodies))
+		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestFailedStatuses(statuses, userComments))
 		log.Printf("#%d will be commented with: %s", prNumber, strings.Join(newComments, ", "))
 		for _, newComment := range newComments {
 			if err := createComment(ctx, client, prNumber, newComment); err != nil {
@@ -103,11 +109,9 @@ func commentsToCreate(statuses map[string]string, jobsToRetest []string, shouldR
 	return comments
 }
 
-func jobsToRetestFromComments(comments []string) []string {
+func jobsToRetestFromComments(userComments, allComments []string) []string {
 	testedJobs := map[string]int{}
-	jobsToRetest := map[string]int{}
-
-	for _, c := range comments {
+	for _, c := range userComments {
 		testJobMatch := testJob.FindStringSubmatch(c)
 		if len(testJobMatch) == 2 {
 			job := testJobMatch[1]
@@ -117,7 +121,10 @@ func jobsToRetestFromComments(comments []string) []string {
 			testedJobs[job]++
 			continue
 		}
+	}
 
+	jobsToRetest := map[string]int{}
+	for _, c := range allComments {
 		matched := restestNTimes.FindStringSubmatch(c)
 		if len(matched) != 3 {
 			continue
@@ -186,16 +193,20 @@ func createComment(ctx context.Context, client *github.Client, prNumber int, com
 	return nil
 }
 
-func commentsForPR(ctx context.Context, client *github.Client, prNumber int) ([]string, error) {
+func commentsForPrByUser(ctx context.Context, client *github.Client, prNumber int, userId int64) ([]string, []string, error) {
 	comments, _, err := client.Issues.ListComments(ctx, S, S, prNumber, nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	commentsBodies := make([]string, 0, len(comments))
+	userComments := make([]string, 0, len(comments))
+	allComments := make([]string, 0, len(comments))
 	for _, comment := range comments {
-		commentsBodies = append(commentsBodies, *comment.Body)
+		if comment.User.GetID() == userId {
+			userComments = append(userComments, *comment.Body)
+		}
+		allComments = append(allComments, *comment.Body)
 	}
-	return commentsBodies, nil
+	return userComments, allComments, nil
 }
 
 func checksForCommit(ctx context.Context, client *github.Client, lastCommit string) (map[string]bool, error) {

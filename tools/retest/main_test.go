@@ -8,45 +8,53 @@ import (
 
 func Test_retestNTimes(t *testing.T) {
 	tests := []struct {
-		name     string
-		comments []string
-		want     []string
+		name         string
+		userComments []string
+		allComments  []string
+		want         []string
 	}{
 		{
-			name:     "nil",
-			comments: nil,
-			want:     []string{},
+			name:        "nil",
+			allComments: nil,
+			want:        []string{},
 		},
 		{
-			name:     "empty",
-			comments: nil,
-			want:     []string{},
+			name:        "empty",
+			allComments: nil,
+			want:        []string{},
 		},
 		{
-			name:     "not matching regexp",
-			comments: []string{"lorem ipsum"},
-			want:     []string{},
+			name:        "not matching regexp",
+			allComments: []string{"lorem ipsum"},
+			want:        []string{},
 		},
 		{
-			name:     "request test 10 times",
-			comments: []string{"/retest-times 10 job-name-1"},
+			name:        "request test 10 times",
+			allComments: []string{"/retest-times 10 job-name-1"},
 			want: []string{
 				"job-name-1",
 			},
 		},
 		{
-			name:     "too many",
-			comments: []string{"/retest-times 101 job-name-1"},
-			want:     []string{},
+			name:        "too many",
+			allComments: []string{"/retest-times 101 job-name-1"},
+			want:        []string{},
 		},
 		{
-			name:     "invalid number",
-			comments: []string{"/retest-times 99999999999999999999999 job-name-1"},
-			want:     []string{},
+			name:        "invalid number",
+			allComments: []string{"/retest-times 99999999999999999999999 job-name-1"},
+			want:        []string{},
 		},
 		{
 			name: "request test 10 times, with 5 already done",
-			comments: []string{
+			userComments: []string{
+				"/test job-name-1",
+				"/test job-name-1",
+				"/test job-name-1",
+				"/test job-name-1",
+				"/test job-name-1",
+			},
+			allComments: []string{
 				"/retest-times 10 job-name-1",
 				"/test job-name-1",
 				"/test job-name-1",
@@ -60,7 +68,14 @@ func Test_retestNTimes(t *testing.T) {
 		},
 		{
 			name: "request test 10 times, with 3 already done and other as well",
-			comments: []string{
+			userComments: []string{
+				"/test job-name-1",
+				"/test job-name-2",
+				"/test job-name-3",
+				"/test job-name-1",
+				"/test job-name-1",
+			},
+			allComments: []string{
 				"/retest-times 10 job-name-1",
 				"/test job-name-1",
 				"/test job-name-2",
@@ -74,7 +89,14 @@ func Test_retestNTimes(t *testing.T) {
 		},
 		{
 			name: "request test 10 times for multiple jobs",
-			comments: []string{
+			userComments: []string{
+				"/test job-name-2",
+				"/test job-name-3",
+				"/test job-name-3",
+				"/test job-name-3",
+				"/test job-name-3",
+			},
+			allComments: []string{
 				"/retest-times 10 job-name-1",
 				"/test job-name-2",
 				"/test job-name-3",
@@ -91,7 +113,12 @@ func Test_retestNTimes(t *testing.T) {
 		},
 		{
 			name: "request test 10 times for multiple jobs",
-			comments: []string{
+			userComments: []string{
+				"/test job-name-1",
+				"/test job-name-2",
+				"/test job-name-1",
+			},
+			allComments: []string{
 				"/retest-times 1 job-name-1",
 				"/test job-name-1",
 				"/test job-name-2",
@@ -101,10 +128,32 @@ func Test_retestNTimes(t *testing.T) {
 			},
 			want: []string{},
 		},
+		{
+			name:         "request test 1 and one retested by another user",
+			userComments: []string{},
+			allComments: []string{
+				"/retest-times 1 job-name-1",
+				"/test job-name-1",
+			},
+			want: []string{
+				"job-name-1",
+			},
+		},
+		{
+			name: "request test 1 and one retested by current user",
+			userComments: []string{
+				"/test job-name-1",
+			},
+			allComments: []string{
+				"/retest-times 1 job-name-1",
+				"/test job-name-1",
+			},
+			want: []string{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := jobsToRetestFromComments(tt.comments)
+			got := jobsToRetestFromComments(tt.userComments, tt.allComments)
 			assert.Equal(t, tt.want, got)
 		})
 	}
