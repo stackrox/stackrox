@@ -268,7 +268,9 @@ spec:
             script: |
               #!/usr/bin/env bash
               set -euo pipefail
-              microdnf upgrade -y --nobest && microdnf install -y git make
+              pwd
+              ls -lisa
+              microdnf install -y git make
               echo "DEBUG: $(make tag)"
               echo "${IMAGE}-$(make tag)" > "$(results.image-with-tag.path)"
       workspaces:
