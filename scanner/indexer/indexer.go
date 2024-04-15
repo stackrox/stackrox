@@ -19,22 +19,14 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/alpine"
 	ccpostgres "github.com/quay/claircore/datastore/postgres"
-	"github.com/quay/claircore/dpkg"
-	"github.com/quay/claircore/gobin"
 	ccindexer "github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libindex"
-	"github.com/quay/claircore/nodejs"
 	"github.com/quay/claircore/pkg/ctxlock"
-	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
-	"github.com/quay/claircore/rpm"
-	"github.com/quay/claircore/ruby"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
@@ -46,20 +38,20 @@ import (
 // ecosystems specifies the package ecosystems to use for indexing.
 func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
 	es := []*ccindexer.Ecosystem{
-		alpine.NewEcosystem(ctx),
-		dpkg.NewEcosystem(ctx),
-		gobin.NewEcosystem(ctx),
-		java.NewEcosystem(ctx),
-		python.NewEcosystem(ctx),
-		rhcc.NewEcosystem(ctx),
+		//alpine.NewEcosystem(ctx),
+		//dpkg.NewEcosystem(ctx),
+		//gobin.NewEcosystem(ctx),
+		//java.NewEcosystem(ctx),
+		//python.NewEcosystem(ctx),
+		//rhcc.NewEcosystem(ctx),
 		rhel.NewEcosystem(ctx),
-		rpm.NewEcosystem(ctx),
-		ruby.NewEcosystem(ctx),
+		//rpm.NewEcosystem(ctx),
+		//ruby.NewEcosystem(ctx),
 		// rhcos.NewEcosystem(ctx), // FIXME: Finish and add this scanner
 	}
-	if env.ScannerV4NodeJSSupport.BooleanSetting() {
-		es = append(es, nodejs.NewEcosystem(ctx))
-	}
+	//if env.ScannerV4NodeJSSupport.BooleanSetting() {
+	//	es = append(es, nodejs.NewEcosystem(ctx))
+	//}
 	return es
 }
 
