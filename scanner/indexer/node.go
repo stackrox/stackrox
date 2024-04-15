@@ -16,6 +16,7 @@ import (
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/internal/httputil"
@@ -125,7 +126,8 @@ func newNodeLibindex(ctx context.Context, _ config.NodeIndexerConfig, client *ht
 		Resolvers: nil,
 	}
 
-	indexer, err := libindex.NewNodeScan(ctx, &opts, client)
+	zlog.Info(ctx).Msgf("Setting mount host path to %s", env.NodeScanningV4HostPath.Setting())
+	indexer, err := libindex.NewNodeScan(ctx, &opts, client, env.NodeScanningV4HostPath.Setting())
 	if err != nil {
 		return nil, fmt.Errorf("creating libindex: %w", err)
 	}
