@@ -247,7 +247,7 @@ func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, con
 	req := &v4.GetVulnerabilitiesRequest{HashId: hashID, Contents: contents}
 	var vr *v4.VulnerabilityReport
 	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetVulnerabilities", func() (err error) {
-		vr, err = c.matcher.GetVulnerabilitiesForManifest(ctx, req)
+		vr, err = c.matcher.GetVulnerabilities(ctx, req)
 		return err
 	})
 	if err != nil {
@@ -305,7 +305,7 @@ func (c *gRPCScanner) IndexAndScanNode(ctx context.Context) (*v4.VulnerabilityRe
 	if err != nil {
 		return nil, fmt.Errorf("creating node index report: %w", err)
 	}
-	return c.getVulnerabilities(ctx, nr.GetHashId(), nil)
+	return c.getVulnerabilitiesForManifest(ctx, nr.GetHashId(), nil)
 }
 
 func getImageManifestID(ref name.Digest) string {

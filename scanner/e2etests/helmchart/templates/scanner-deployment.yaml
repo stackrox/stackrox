@@ -130,7 +130,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: use-privileged-scc
+  name: scannerv4-privileged-scc
   namespace: {{ .Release.Namespace }}
 rules:
 - apiGroups:
@@ -146,12 +146,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: scanner-use-scc
+  name: scanner-v4-use-scc
   namespace: {{ .Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: use-privileged-scc
+  name: scannerv4-privileged-scc
 subjects:
 - kind: ServiceAccount
   name: scannerpriv
