@@ -203,9 +203,9 @@ spec:
         value: $(params.revision)
       # A shallow repo clone is sufficient for central-db build.
       - name: depth
-        value: "1"
+        value: "0"
       - name: fetchTags
-        value: "false"
+        value: "true"
       runAfter:
       - init
       taskRef:
@@ -261,17 +261,14 @@ spec:
             description: Fully Qualified Image Name with tag
         steps:
           - name: determine-image-tag
-            image: registry.access.redhat.com/ubi8:latest
+            image: quay.io/stackrox-io/apollo-ci:stackrox-build-0.3.66
             env:
               - name: IMAGE
                 value: $(params.image)
             script: |
               #!/usr/bin/env bash
               set -euo pipefail
-              dnf install -y git make
               cd "$(workspaces.source.path)/source"
-              pwd
-              ls -lisa
               echo "DEBUG: $(make tag)"
               echo "${IMAGE}-$(make tag)" > "$(results.image-with-tag.path)"
       workspaces:
