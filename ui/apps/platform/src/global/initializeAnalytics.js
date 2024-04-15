@@ -59,7 +59,15 @@ export function initializeAnalytics(writeKey, userId) {
             };
             analytics._writeKey = writeKey;
             analytics.SNIPPET_VERSION = '4.15.3';
-            analytics.load(writeKey);
+            analytics.load(writeKey, {
+                cdnURL: 'console.redhat.com/connections/cdn',
+                integrations: {
+                    'Segment.io': {
+                        apiHost: 'console.redhat.com/connections/api/v1',
+                        protocol: 'https',
+                    },
+                },
+            });
             analytics.page();
             analytics.identify(userId);
         }
