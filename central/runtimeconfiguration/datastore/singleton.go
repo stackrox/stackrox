@@ -13,7 +13,7 @@ var (
 )
 
 func initialize() {
-	store := pgStore.NewFullStore(globaldb.GetPostgres())
+	store := pgStore.New(globaldb.GetPostgres())
 	pool := globaldb.GetPostgres()
 	dataStore = New(store, pool)
 }

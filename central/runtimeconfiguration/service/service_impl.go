@@ -4,8 +4,9 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	datastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
+	datastore "github.com/stackrox/rox/central/runtimeconfiguration/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -44,59 +45,63 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetCollectorRuntimeConfiguration returns the runtime configuration for collector
 func (s *serviceImpl) GetCollectorRuntimeConfiguration(
-	ctx context.Context,
+	ctx context.Context, _ *v1.Empty,
 ) (*v1.GetCollectorRuntimeConfigurationResponse, error) {
 
 	runtimeFilterRule := storage.RuntimeFilter_RuntimeFilterRule{
-￼		ResourceCollectionId: "abcd",
-￼		Status: "off",
-￼	}
-￼
-￼	rules := []*storage.RuntimeFilter_RuntimeFilterRule{&runtimeFilterRule}
-￼
-￼	runtimeFilter := storage.RuntimeFilter{
-￼		Feature: storage.RuntimeFilter_PROCESSES,
-￼		DefaultStatus: "on",
-￼		Rules: rules,
-￼	}
-￼
-￼	resourceSelector := storage.ResourceSelector{
-￼		Rules: []*storage.SelectorRule{
-￼			&storage.SelectorRule{
-￼				FieldName: "Namespace",
-￼				Operator: storage.BooleanOperator_OR,
-￼				Values: []*storage.RuleValue{
-￼					&storage.RuleValue{
-￼						Value: "webapp",
-￼						MatchType: storage.MatchType_EXACT,
-￼					},
-￼				},
-￼			},
-￼		},
-￼	}
-￼
-￼	resourceSelectors := []*storage.ResourceSelector{&resourceSelector}
-￼
-￼	resourceCollection := storage.ResourceCollection{
-￼		Id: "abcd",
-￼		Name: "Fake collection",
-￼		ResourceSelectors: resourceSelectors,
-￼	}
-￼
-￼	runtimeFilters := []*storage.RuntimeFilter{&runtimeFilter}
-￼	resourceCollections := []*storage.ResourceCollection{&resourceCollection}
-￼
-￼	runtimeFilteringConfiguration := &storage.RuntimeFilteringConfiguration{
-￼		RuntimeFilters: runtimeFilters,
-￼		ResourceCollections: resourceCollections,
-￼	}
+		ResourceCollectionId: "abcd",
+		Status:               "off",
+	}
 
-	return runtimeFilteringConfiguration, nil
+	rules := []*storage.RuntimeFilter_RuntimeFilterRule{&runtimeFilterRule}
+
+	runtimeFilter := storage.RuntimeFilter{
+		Feature:       storage.RuntimeFilter_PROCESSES,
+		DefaultStatus: "on",
+		Rules:         rules,
+	}
+
+	resourceSelector := storage.ResourceSelector{
+		Rules: []*storage.SelectorRule{
+			{
+				FieldName: "Namespace",
+				Operator:  storage.BooleanOperator_OR,
+				Values: []*storage.RuleValue{
+					{
+						Value:     "webapp",
+						MatchType: storage.MatchType_EXACT,
+					},
+				},
+			},
+		},
+	}
+
+	resourceSelectors := []*storage.ResourceSelector{&resourceSelector}
+
+	resourceCollection := storage.ResourceCollection{
+		Id:                "abcd",
+		Name:              "Fake collection",
+		ResourceSelectors: resourceSelectors,
+	}
+
+	runtimeFilters := []*storage.RuntimeFilter{&runtimeFilter}
+	resourceCollections := []*storage.ResourceCollection{&resourceCollection}
+
+	runtimeFilteringConfiguration := &storage.RuntimeFilteringConfiguration{
+		RuntimeFilters:      runtimeFilters,
+		ResourceCollections: resourceCollections,
+	}
+
+	getCollectorRuntimeConfigurationResponse := v1.GetCollectorRuntimeConfigurationResponse{
+		CollectorRuntimeConfiguration: runtimeFilteringConfiguration,
+	}
+
+	return &getCollectorRuntimeConfigurationResponse, nil
 }
 
 func (s *serviceImpl) PostCollectorRuntimeConfiguration(
 	ctx context.Context,
-	_ storage.RuntimeFilteringConfiguration,
-) error {
-	return nil
+	_ *v1.Empty,
+) (*v1.Empty, error) {
+	return nil, nil
 }
