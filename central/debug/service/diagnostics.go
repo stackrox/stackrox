@@ -245,10 +245,10 @@ func getClusterCandidate(conn connection.SensorConnection, clusterNameMap map[st
 }
 
 func checkClusterExcluded(opts debugDumpOptions, clusterName string) bool {
-	if opts.clusters != nil && sliceutils.Find(opts.clusters, clusterName) == -1 {
+	if opts.clusters != nil && slices.Index(opts.clusters, clusterName) == -1 {
 		return true
 	}
-	if opts.excludeClusters != nil && sliceutils.Find(opts.excludeClusters, clusterName) != -1 {
+	if opts.excludeClusters != nil && slices.Index(opts.excludeClusters, clusterName) != -1 {
 		return true
 	}
 	return false
