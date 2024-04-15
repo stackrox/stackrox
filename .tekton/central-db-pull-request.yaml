@@ -278,7 +278,7 @@ spec:
     - name: build-container
       params:
       - name: IMAGE
-        value: $(tasks.determine-image-tag.results.image-with-tag)
+        value: docker://$(tasks.determine-image-tag.results.image-with-tag)
       - name: DOCKERFILE
         value: $(params.dockerfile)
       - name: CONTEXT
@@ -314,7 +314,7 @@ spec:
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
-        value: $(tasks.build-container.results.IMAGE_URL)
+        value: $(tasks.determine-image-tag.results.image-with-tag)
       - name: BASE_IMAGES
         value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
       runAfter:
