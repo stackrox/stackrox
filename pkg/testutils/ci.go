@@ -5,7 +5,10 @@ import (
 	"strconv"
 )
 
-// IsRunningInCI returns true if a test invocation happens in CI.
+// IsRunningInCI returns true if the process is invoked within a CI environment.
+// This determination is made based on the existence of the 'CI' environment
+// variable, unless when the value of this variable could be parsed as boolean
+// false.
 func IsRunningInCI() bool {
 	v, set := os.LookupEnv("CI")
 	if !set {

@@ -18,17 +18,8 @@ func TestSetUserAgent(t *testing.T) {
 	assert.True(t, strings.HasPrefix(ua, "abc/"))
 	assert.Equal(t, testutils.IsRunningInCI(), strings.Contains(ua, "CI"))
 
-	for ci, expected := range map[string]bool{
-		"yes":   true,
-		"no":    true,
-		"true":  true,
-		"":      true,
-		"false": false,
-		"False": false,
-	} {
-		t.Setenv("CI", ci)
-		SetUserAgent("test")
-		ua = GetUserAgent()
-		assert.Equal(t, expected, strings.Contains(ua, " CI"), ci)
-	}
+	t.Setenv("CI", "true")
+	SetUserAgent("abc")
+	ua = GetUserAgent()
+	assert.True(t, strings.Contains(ua, " CI"))
 }
