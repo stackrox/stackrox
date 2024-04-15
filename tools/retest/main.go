@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -67,17 +68,27 @@ issues:
 
 		statuses, err := statusesForPR(ctx, client, prDetails.GetStatusesURL())
 		if err != nil {
-			log.Printf("#%d could not statuses: %v", prNumber, err)
+			log.Printf("#%d could not get statuses: %v", prNumber, err)
 			continue
 		}
 		log.Printf("#%d has %d statuses", prNumber, len(statuses))
-		jobsToRetest := jobsToRetestFromComments(userComments, allComments)
+		jobsToRetest, err := jobsToRetestFromComments(userComments, allComments)
+		if err != nil {
+			log.Printf("#%d could not get jobs to retest: %v", prNumber, err)
+			for _, c := range userComments {
+				if c == err.Error() {
+					continue issues
+				}
+			}
+			errorComment := fmt.Sprintf(":x: There was an error with a comment. "+
+				"Please eddit or remove it and issue a proper command\n%s", err.Error())
+			createComment(ctx, client, prNumber, errorComment)
+			continue
+		}
 		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
 		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestFailedStatuses(statuses, userComments))
 		log.Printf("#%d will be commented with: %s", prNumber, strings.Join(newComments, ", "))
-		if err := createComment(ctx, client, prNumber, strings.Join(newComments, "\n")); err != nil {
-			log.Printf("#%d could not create a comment: %v", prNumber, err)
-		}
+		createComment(ctx, client, prNumber, strings.Join(newComments, "\n"))
 	}
 }
 
@@ -107,7 +118,7 @@ func commentsToCreate(statuses map[string]string, jobsToRetest []string, shouldR
 	return comments
 }
 
-func jobsToRetestFromComments(userComments, allComments []string) []string {
+func jobsToRetestFromComments(userComments, allComments []string) ([]string, error) {
 	testedJobs := map[string]int{}
 	for _, c := range userComments {
 		testJobMatch := testJob.FindStringSubmatch(c)
@@ -130,12 +141,10 @@ func jobsToRetestFromComments(userComments, allComments []string) []string {
 		job := matched[2]
 		t, err := strconv.Atoi(matched[1])
 		if err != nil {
-			log.Printf("got an error in a comment %s: %s", c, err)
-			continue
+			return nil, fmt.Errorf("got an error in a comment %q: %w", c, err)
 		}
 		if t < 1 || t > 100 {
-			log.Printf("invalid retest number requested: %s", c)
-			continue
+			return nil, fmt.Errorf("invalid retest number requested: %q", c)
 		}
 		if _, ok := jobsToRetest[job]; !ok {
 			jobsToRetest[job] = 0
@@ -153,7 +162,7 @@ func jobsToRetestFromComments(userComments, allComments []string) []string {
 	}
 	slices.Sort(missingTests)
 
-	return missingTests
+	return missingTests, nil
 }
 
 const retestComment = "/retest"
@@ -179,16 +188,16 @@ func shouldRetestFailedStatuses(statuses map[string]string, comments []string) b
 
 //region Github client helper
 
-func createComment(ctx context.Context, client *github.Client, prNumber int, comment string) error {
+func createComment(ctx context.Context, client *github.Client, prNumber int, comment string) {
 	issueComment := &github.IssueComment{
 		Body: &comment,
 	}
 	c, _, err := client.Issues.CreateComment(ctx, S, S, prNumber, issueComment)
 	if err != nil {
-		return err
+		log.Printf("#%d could not create a comment: %v", prNumber, err)
+		return
 	}
 	log.Printf("#%d commented: %s", prNumber, c.GetHTMLURL())
-	return nil
 }
 
 func commentsForPrByUser(ctx context.Context, client *github.Client, prNumber int, userId int64) ([]string, []string, error) {

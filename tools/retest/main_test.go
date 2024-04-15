@@ -12,6 +12,7 @@ func Test_retestNTimes(t *testing.T) {
 		userComments []string
 		allComments  []string
 		want         []string
+		error        string
 	}{
 		{
 			name:        "nil",
@@ -38,12 +39,12 @@ func Test_retestNTimes(t *testing.T) {
 		{
 			name:        "too many",
 			allComments: []string{"/retest-times 101 job-name-1"},
-			want:        []string{},
+			error:       `invalid retest number requested: "/retest-times 101 job-name-1"`,
 		},
 		{
 			name:        "invalid number",
 			allComments: []string{"/retest-times 99999999999999999999999 job-name-1"},
-			want:        []string{},
+			error:       `got an error in a comment "/retest-times 99999999999999999999999 job-name-1": strconv.Atoi: parsing "99999999999999999999999": value out of range`,
 		},
 		{
 			name: "request test 10 times, with 5 already done",
@@ -153,7 +154,12 @@ func Test_retestNTimes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := jobsToRetestFromComments(tt.userComments, tt.allComments)
+			got, err := jobsToRetestFromComments(tt.userComments, tt.allComments)
+			if tt.error == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tt.error)
+			}
 			assert.Equal(t, tt.want, got)
 		})
 	}
