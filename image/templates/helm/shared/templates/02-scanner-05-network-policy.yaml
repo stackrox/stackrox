@@ -25,7 +25,6 @@ spec:
       protocol: TCP
     - port: 8443
       protocol: TCP
-{{ if or (eq ._rox.scanner.mode "slim") ._rox.env.openshift }}
   - from:
     - podSelector:
         matchLabels:
@@ -35,7 +34,6 @@ spec:
       protocol: TCP
     - port: 8443
       protocol: TCP
-{{ end }}
   policyTypes:
     - Ingress
 
