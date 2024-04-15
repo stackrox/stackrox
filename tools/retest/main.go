@@ -201,12 +201,26 @@ func commentsForPrByUser(ctx context.Context, client *github.Client, prNumber in
 	userComments := make([]string, 0, len(comments))
 	allComments := make([]string, 0, len(comments))
 	for _, comment := range comments {
+		c := splitMultilineComment(comment.GetBody())
 		if comment.User.GetID() == userId {
-			userComments = append(userComments, *comment.Body)
+			userComments = append(userComments, c...)
 		}
-		allComments = append(allComments, *comment.Body)
+		allComments = append(allComments, c...)
 	}
 	return userComments, allComments, nil
+}
+
+func splitMultilineComment(comment string) []string {
+	split := strings.Split(comment, "\n")
+	result := make([]string, 0, len(split))
+	for _, c := range split {
+		trimmed := strings.TrimSpace(c)
+		if trimmed == "" {
+			continue
+		}
+		result = append(result, trimmed)
+	}
+	return result
 }
 
 func checksForCommit(ctx context.Context, client *github.Client, lastCommit string) (map[string]bool, error) {

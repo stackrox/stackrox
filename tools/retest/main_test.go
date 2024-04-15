@@ -293,3 +293,46 @@ func Test_commentsToCreate(t *testing.T) {
 		})
 	}
 }
+
+func Test_splitMultilineComment(t *testing.T) {
+	tests := []struct {
+		comment string
+		want    []string
+	}{
+		{
+			comment: "",
+			want:    []string{},
+		},
+		{
+			comment: "a\nb\nc",
+			want:    []string{"a", "b", "c"},
+		},
+		{
+			comment: "a \nb \t \n c \t \n \t",
+			want:    []string{"a", "b", "c"},
+		},
+		{
+			comment: `
+				/retest-times 1 job-name-1
+				/test job-name-1
+				/test job-name-2
+				/test job-name-1
+				/retest-times 1 job-name-1
+				/retest-times 1 job-name-2
+			`,
+			want: []string{
+				"/retest-times 1 job-name-1",
+				"/test job-name-1",
+				"/test job-name-2",
+				"/test job-name-1",
+				"/retest-times 1 job-name-1",
+				"/retest-times 1 job-name-2",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.comment, func(t *testing.T) {
+			assert.Equal(t, tt.want, splitMultilineComment(tt.comment))
+		})
+	}
+}
