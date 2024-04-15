@@ -1,30 +1,24 @@
 import React from 'react';
-import { Bullseye, Divider, Spinner } from '@patternfly/react-core';
+import { Bullseye, Spinner } from '@patternfly/react-core';
 
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLPagination from 'hooks/useURLPagination';
 
-import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import { QuerySearchFilter } from '../../types';
 
-export type NodesTableContainerProps = {
-    filterToolbar: TableEntityToolbarProps['filterToolbar'];
-    entityToggleGroup: TableEntityToolbarProps['entityToggleGroup'];
+export type NodesTableProps = {
     querySearchFilter: QuerySearchFilter;
     isFiltered: boolean;
-    rowCount: number;
     pagination: ReturnType<typeof useURLPagination>;
 };
 
-function NodesTableContainer({
-    filterToolbar,
-    entityToggleGroup,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+function NodesTable({
+    /* eslint-disable @typescript-eslint/no-unused-vars */
     querySearchFilter,
     isFiltered,
-    rowCount,
     pagination,
-}: NodesTableContainerProps) {
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+}: NodesTableProps) {
     // TODO - Placeholders for query results
     const data = [];
     const previousData = undefined;
@@ -35,14 +29,6 @@ function NodesTableContainer({
 
     return (
         <>
-            <TableEntityToolbar
-                filterToolbar={filterToolbar}
-                entityToggleGroup={entityToggleGroup}
-                pagination={pagination}
-                tableRowCount={rowCount}
-                isFiltered={isFiltered}
-            />
-            <Divider component="div" />
             {loading && !tableData && (
                 <Bullseye>
                     <Spinner />
@@ -60,4 +46,4 @@ function NodesTableContainer({
     );
 }
 
-export default NodesTableContainer;
+export default NodesTable;
