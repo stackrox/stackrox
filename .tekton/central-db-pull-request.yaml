@@ -261,7 +261,7 @@ spec:
             description: Fully Qualified Image Name with tag
         steps:
           - name: determine-image-tag
-            image: quay.io/stackrox-io/apollo-ci:stackrox-build-0.3.66
+            image: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.21
             env:
               - name: IMAGE
                 value: $(params.image)
