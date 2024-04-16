@@ -83,7 +83,7 @@ spec:
       - name: git-url
         value: $(tasks.clone-repository.results.url)?rev=$(tasks.clone-repository.results.commit)
       - name: image-url
-        value: $(tasks.build-container.results.IMAGE_URL)
+        value: $(params.output-image)
       - name: build-task-status
         value: $(tasks.build-container.status)
       workspaces:
@@ -278,7 +278,7 @@ spec:
     - name: build-container
       params:
       - name: IMAGE
-        value: $(tasks.determine-image-tag.results.image-with-tag)
+        value: $(params.output-image)
       - name: DOCKERFILE
         value: $(params.dockerfile)
       - name: CONTEXT
@@ -314,7 +314,7 @@ spec:
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
-        value: $(tasks.determine-image-tag.results.image-with-tag)
+        value: $(params.output-image)
       - name: BASE_IMAGES
         value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
       runAfter:
