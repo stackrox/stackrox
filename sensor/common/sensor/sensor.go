@@ -272,14 +272,8 @@ func (s *Sensor) Start() {
 	okSig := s.centralConnectionFactory.OkSignal()
 	errSig := s.centralConnectionFactory.StopSignal()
 
-	err = s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(message internalmessage.SensorInternalMessage) {
+	err = s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(message *internalmessage.SensorInternalMessage) {
 		if message.IsExpired() {
-			return
-		}
-
-		v, ok := (message).(*internalmessage.SensorInternalTextMessage)
-		if !ok {
-			log.Warnf("Soft restart message has wrong type")
 			return
 		}
 
@@ -289,7 +283,7 @@ func (s *Sensor) Start() {
 			log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
 			return
 		}
-		s.centralCommunication.Stop(errors.Wrap(errForcedConnectionRestart, v.Text))
+		s.centralCommunication.Stop(errors.Wrap(errForcedConnectionRestart, message.Text))
 	})
 
 	if err != nil {
