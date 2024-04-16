@@ -40,3 +40,13 @@ if [[ "${JOB_NAME:-}" =~ ocp-4-.*-perf-scale- ]]; then
     set_ci_shared_export WORKER_NODE_COUNT 9
     set_ci_shared_export WORKER_NODE_TYPE n1-standard-8
 fi
+
+if [[ "${JOB_NAME:-}" =~ -eks- ]]; then
+    info "Provide access for the CI user to EKS"
+    # shellcheck disable=SC2034
+    AWS_ACCESS_KEY_ID="$(cat /tmp/vault/stackrox-stackrox-e2e-tests/AWS_ACCESS_KEY_ID)"
+    # shellcheck disable=SC2034
+    AWS_SECRET_ACCESS_KEY="$(cat /tmp/vault/stackrox-stackrox-e2e-tests/AWS_SECRET_ACCESS_KEY)"
+    aws sts get-caller-identity | jq -r '.Arn'
+    set_ci_shared_export USER_ARNS "$(aws sts get-caller-identity | jq -r '.Arn')"
+fi
