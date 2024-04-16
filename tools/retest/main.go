@@ -15,16 +15,13 @@ import (
 	"github.com/google/go-github/v60/github"
 )
 
-const (
-	s              = "stackrox"
-	githubTokenEnv = "GITHUB_TOKEN"
-)
+const s = "stackrox"
 
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 	// Use installation transport with client.
-	client := github.NewClient(nil).WithAuthToken(os.Getenv(githubTokenEnv))
+	client := github.NewClient(nil).WithAuthToken(os.Getenv("GITHUB_TOKEN"))
 	if err := run(ctx, client); err != nil {
 		log.Fatalf(err.Error())
 	}
