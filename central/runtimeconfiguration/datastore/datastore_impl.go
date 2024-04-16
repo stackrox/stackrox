@@ -120,11 +120,39 @@ func convertRuntimeConfigurationToRuntimeConfigurationTable(runtimeConfiguration
 	return runtimeFiltersRows
 }
 
+func (ds *datastoreImpl) clearTables(ctx context.Context) error {
+	ids, err1 := ds.storage.GetIDs(ctx)
+	err2 := ds.storage.DeleteMany(ctx, ids)
+
+	ids, err3 := ds.rcStorage.GetIDs(ctx)
+	err4 := ds.rcStorage.DeleteMany(ctx, ids)
+
+	if err1 != nil {
+		return err1
+	}
+	if err2 != nil {
+		return err2
+	}
+	if err3 != nil {
+		return err3
+	}
+	if err4 != nil {
+		return err4
+	}
+
+	return nil
+}
+
 func (ds *datastoreImpl) SetRuntimeConfiguration(ctx context.Context, runtimeConfiguration *storage.RuntimeFilteringConfiguration) error {
 	runtimeConfigurationRows := convertRuntimeConfigurationToRuntimeConfigurationTable(runtimeConfiguration)
 
+	err := ds.clearTables(ctx)
+	if err != nil {
+		return err
+	}
+
 	log.Infof("Upserting %+v rows", len(runtimeConfigurationRows))
-	err := ds.storage.UpsertMany(ctx, runtimeConfigurationRows)
+	err = ds.storage.UpsertMany(ctx, runtimeConfigurationRows)
 	if err != nil {
 		return err
 	}
