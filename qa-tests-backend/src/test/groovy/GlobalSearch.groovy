@@ -5,7 +5,6 @@ import static util.Helpers.withRetry
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 
 import objects.Deployment
-import util.Env
 
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -25,23 +24,16 @@ class GlobalSearch extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 30
 
     def setupSpec() {
-        if (Env.get("ROX_POSTGRES_DATASTORE", null) == "true") {
-            EXPECTED_DEPLOYMENT_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.CLUSTERS,
-                                              SearchServiceOuterClass.SearchCategory.NAMESPACES,
-                                              SearchServiceOuterClass.SearchCategory.IMAGES,
-                                              SearchServiceOuterClass.SearchCategory.DEPLOYMENTS,
-                                              SearchServiceOuterClass.SearchCategory.ALERTS)
-            EXPECTED_IMAGE_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.CLUSTERS,
-                                         SearchServiceOuterClass.SearchCategory.NAMESPACES,
-                                         SearchServiceOuterClass.SearchCategory.IMAGES,
-                                         SearchServiceOuterClass.SearchCategory.DEPLOYMENTS)
-        } else {
-            EXPECTED_DEPLOYMENT_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.IMAGES,
-                                              SearchServiceOuterClass.SearchCategory.DEPLOYMENTS,
-                                              SearchServiceOuterClass.SearchCategory.ALERTS)
-            EXPECTED_IMAGE_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.IMAGES,
-                                         SearchServiceOuterClass.SearchCategory.DEPLOYMENTS)
-        }
+        EXPECTED_DEPLOYMENT_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.CLUSTERS,
+                                          SearchServiceOuterClass.SearchCategory.NAMESPACES,
+                                          SearchServiceOuterClass.SearchCategory.IMAGES,
+                                          SearchServiceOuterClass.SearchCategory.DEPLOYMENTS,
+                                          SearchServiceOuterClass.SearchCategory.ALERTS)
+        EXPECTED_IMAGE_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.CLUSTERS,
+                                     SearchServiceOuterClass.SearchCategory.NAMESPACES,
+                                     SearchServiceOuterClass.SearchCategory.IMAGES,
+                                     SearchServiceOuterClass.SearchCategory.DEPLOYMENTS)
+
         orchestrator.createDeployment(DEPLOYMENT)
         assert Services.waitForDeployment(DEPLOYMENT)
         // Wait for the latest tag violation since we try to search by it.

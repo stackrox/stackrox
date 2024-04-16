@@ -22,26 +22,6 @@ class VulnMgmtTest extends BaseSpecification {
             "quay.io/rhacs-eng/qa:barchart-"+
             "-dockerup--ce6c28c63fa9a043214f4cccf036990dbd2bb0e47820af015de8dfb5dc68dd9a"
 
-    private static final EMBEDDED_IMAGE_QUERY = """
-    query getImage(\$id: ID!, \$query: String) {
-      result: image(id: \$id) {
-        scan {
-          components(query: \$query) {
-            vulns(query: \$query) {
-              ...cveFields
-            }
-          }
-        }
-      }
-    }
-
-fragment cveFields on EmbeddedVulnerability {
-  cve
-  cvss
-  severity
-}
-"""
-
     private static final EMBEDDED_IMAGE_POSTGRES_QUERY = """
     query getImage(\$id: ID!, \$query: String) {
       result: fullImage(id: \$id) {
@@ -62,21 +42,6 @@ fragment cveFields on EmbeddedVulnerability {
 }
 """
 
-    private static final TOPLEVEL_IMAGE_QUERY = """
-    query getImage(\$id: ID!, \$query: String) {
-      result: image(id: \$id) {
-        vulns(query: \$query) {
-          ...cveFields
-        }
-      }
-    }
-
-    fragment cveFields on EmbeddedVulnerability {
-      cvss
-      severity
-    }
-    """
-
     private static final TOPLEVEL_IMAGE_POSTGRES_QUERY = """
     query getImage(\$id: ID!, \$query: String) {
       result: image(id: \$id) {
@@ -91,27 +56,6 @@ fragment cveFields on EmbeddedVulnerability {
       severity
     }
     """
-
-    private static final IMAGE_FIXABLE_CVE_QUERY = """
-query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: String) {
-  result: image(id: \$id) {
-    vulnerabilities: vulns(
-      query: \$vulnQuery
-      scopeQuery: \$scopeQuery
-    ) {
-      ...cveFields
-      __typename
-    }
-    __typename
-  }
-}
-
-fragment cveFields on EmbeddedVulnerability {
-  cve
-  cvss
-  severity
-}
-"""
 
     private static final IMAGE_FIXABLE_CVE_POSTGRES_QUERY = """
 query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: String) {
@@ -133,27 +77,6 @@ fragment cveFields on ImageVulnerability {
 }
 """
 
-    private static final COMPONENT_FIXABLE_CVE_QUERY = """
-query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: String) {
-  result: component(id: \$id) {
-    vulnerabilities: vulns(
-      query: \$vulnQuery
-      scopeQuery: \$scopeQuery
-    ) {
-      ...cveFields
-      __typename
-    }
-    __typename
-  }
-}
-
-fragment cveFields on EmbeddedVulnerability {
-  cve
-  cvss
-  severity
-}
-"""
-
     private static final COMPONENT_FIXABLE_CVE_POSTGRES_QUERY = """
 query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: String) {
   result: imageComponent(id: \$id) {
@@ -170,22 +93,6 @@ query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: Stri
 
 fragment cveFields on ImageVulnerability {
   cve
-  cvss
-  severity
-}
-"""
-
-    private static final COMPONENT_SUBCVE_QUERY = """
-query getComponentSubEntityCVE(\$id: ID!, \$query: String, \$scopeQuery: String) {
-  result: component(id: \$id) {
-    vulns(query: \$query, scopeQuery: \$scopeQuery) {
-      ...cveFields
-    }
-    __typename
-  }
-}
-
-fragment cveFields on EmbeddedVulnerability {
   cvss
   severity
 }
@@ -213,35 +120,31 @@ fragment cveFields on ImageVulnerability {
     }
 
     def getEmbeddedImageQuery() {
-        return isPostgresRun() ? EMBEDDED_IMAGE_POSTGRES_QUERY : EMBEDDED_IMAGE_QUERY
+        return EMBEDDED_IMAGE_POSTGRES_QUERY
     }
 
     def getTopLevelImageQuery() {
-        return isPostgresRun() ? TOPLEVEL_IMAGE_POSTGRES_QUERY : TOPLEVEL_IMAGE_QUERY
+        return TOPLEVEL_IMAGE_POSTGRES_QUERY
     }
 
     def getImageFixableCVEQuery() {
-        return isPostgresRun() ? IMAGE_FIXABLE_CVE_POSTGRES_QUERY : IMAGE_FIXABLE_CVE_QUERY
+        return IMAGE_FIXABLE_CVE_POSTGRES_QUERY
     }
 
     def getComponentFixableCVEQuery() {
-        return isPostgresRun() ? COMPONENT_FIXABLE_CVE_POSTGRES_QUERY : COMPONENT_FIXABLE_CVE_QUERY
+        return COMPONENT_FIXABLE_CVE_POSTGRES_QUERY
     }
 
     def getComponentSubCVEQuery() {
-        return isPostgresRun() ? COMPONENT_SUBCVE_POSTGRES_QUERY : COMPONENT_SUBCVE_QUERY
+        return COMPONENT_SUBCVE_POSTGRES_QUERY
     }
 
     def getRHELComponentID() {
-        return isPostgresRun() ?
-            "ncurses-base#5.9-14.20130511.el7_4#centos:7" :
-            "bmN1cnNlcy1iYXNl:NS45LTE0LjIwMTMwNTExLmVsN180"
+        return "ncurses-base#5.9-14.20130511.el7_4#centos:7"
     }
 
     def getUbuntuComponentID() {
-        return isPostgresRun() ?
-            "ncurses#5.9+20140118-1ubuntu1#ubuntu:14.04" :
-            "bmN1cnNlcw:NS45KzIwMTQwMTE4LTF1YnVudHUx"
+        return "ncurses#5.9+20140118-1ubuntu1#ubuntu:14.04"
     }
 
     @Unroll
