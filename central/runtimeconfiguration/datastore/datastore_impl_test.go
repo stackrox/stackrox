@@ -14,7 +14,6 @@ import (
 	postgresStore "github.com/stackrox/rox/central/runtimeconfiguration/store/postgres"
 	runtimeCollectionsStore "github.com/stackrox/rox/central/runtimeconfigurationcollection/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-
 	// "github.com/stackrox/rox/pkg/fixtures"
 	// "github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
