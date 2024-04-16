@@ -17,14 +17,14 @@ message RuntimeFiltersACK {
   }
 }
 
-message RuntimeFilter {
-  enum RuntimeFilterFeatures {
-    EXTERNAL_IPS = 0;
-    PROCESSES = 1;
-    NETWORK_CONNECTIONS = 2;
-    LISTENING_ENDPOINTS = 3;
-  }
+enum RuntimeFilterFeatures {
+  EXTERNAL_IPS = 0;
+  PROCESSES = 1;
+  NETWORK_CONNECTIONS = 2;
+  LISTENING_ENDPOINTS = 3;
+}
 
+message RuntimeFilter {
   message RuntimeFilterRule {
     string resource_collection_id = 1;
     string status = 2;
@@ -41,13 +41,6 @@ message RuntimeFilteringConfiguration {
 }
 
 message RuntimeFilterData {
-  enum RuntimeFilterFeatures {
-    EXTERNAL_IPS = 0;
-    PROCESSES = 1;
-    NETWORK_CONNECTIONS = 2;
-    LISTENING_ENDPOINTS = 3;
-  }
-
   string id = 1; // @gotags: search:"Collection ID" sql:"pk"
   RuntimeFilterFeatures feature = 2;
   string status = 3;
