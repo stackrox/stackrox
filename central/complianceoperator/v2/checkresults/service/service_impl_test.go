@@ -340,15 +340,15 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceOverallClusterStats
 func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterStats() {
 	testCases := []struct {
 		desc         string
-		request      *apiV2.ComplianceClusterStatsRequest
+		request      *apiV2.ComplianceProfileResultsRequest
 		expectedResp []*apiV2.ComplianceClusterOverallStats
 		expectedErr  error
 		setMocks     func()
 	}{
 		{
-			desc: "Empty query",
-			request: &apiV2.ComplianceClusterStatsRequest{
-				Query: &apiV2.RawQuery{Query: ""},
+			desc: "Empty query just profile",
+			request: &apiV2.ComplianceProfileResultsRequest{
+				ProfileName: "test-profile",
 			},
 			expectedErr: nil,
 			expectedResp: []*apiV2.ComplianceClusterOverallStats{
@@ -357,7 +357,13 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterStats() {
 				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster3),
 			},
 			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				expectedQ := search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "test-profile").ProtoQuery(),
+					search.EmptyQuery(),
+				)
+
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+
 				results := []*datastore.ResultStatusCountByCluster{
 					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1),
 					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster2),
@@ -371,10 +377,9 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterStats() {
 		},
 		{
 			desc: "Query with search field",
-			request: &apiV2.ComplianceClusterStatsRequest{
-				ProfileName:  "test-profile",
-				ScanConfigId: "test-id",
-				Query:        &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
+			request: &apiV2.ComplianceProfileResultsRequest{
+				ProfileName: "test-profile",
+				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			},
 			expectedErr: nil,
 			expectedResp: []*apiV2.ComplianceClusterOverallStats{
@@ -384,11 +389,6 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterStats() {
 				expectedQ := search.ConjunctionQuery(
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "test-profile").ProtoQuery(),
 					search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
-				)
-
-				expectedQ = search.ConjunctionQuery(
-					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfig, "test-id").ProtoQuery(),
-					expectedQ,
 				)
 
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
@@ -402,15 +402,12 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterStats() {
 		},
 		{
 			desc: "Query with non-existent field",
-			request: &apiV2.ComplianceClusterStatsRequest{
+			request: &apiV2.ComplianceProfileResultsRequest{
 				Query: &apiV2.RawQuery{Query: "Cluster ID:id"},
 			},
-			expectedErr: errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
+			expectedErr: errors.Wrap(errox.InvalidArgs, "Profile name is required"),
 			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
-					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
 
-				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(nil, nil).Times(1)
 			},
 		},
 	}
