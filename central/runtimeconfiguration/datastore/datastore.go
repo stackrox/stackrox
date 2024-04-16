@@ -1,12 +1,12 @@
 package datastore
 
 import (
-	// "context"
+	"context"
 	// "testing"
 	// "time"
 
 	store "github.com/stackrox/rox/central/runtimeconfiguration/store/postgres"
-	// "github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 )
 
@@ -14,6 +14,8 @@ import (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
+	GetRuntimeConfiguration(ctx context.Context) (*storage.RuntimeFilteringConfiguration, error)
+	SetRuntimeConfiguration(ctx context.Context, runtimeConfiguration *storage.RuntimeFilteringConfiguration) error
 }
 
 // New creates a data store object to access the database. Since some
