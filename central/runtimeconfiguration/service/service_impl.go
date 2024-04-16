@@ -58,7 +58,10 @@ func (s *serviceImpl) GetCollectorRuntimeConfiguration(
 
 func (s *serviceImpl) PostCollectorRuntimeConfiguration(
 	ctx context.Context,
-	_ *v1.Empty,
+	request *v1.PostCollectorRuntimeConfigurationRequest,
 ) (*v1.Empty, error) {
-	return nil, nil
+
+	err := s.dataStore.SetRuntimeConfiguration(ctx, request.CollectorRuntimeConfiguration)
+
+	return nil, err
 }
