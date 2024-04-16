@@ -268,7 +268,7 @@ message ComplianceOperatorSuiteV2 {
 }
 
 message ComplianceOperatorRemediationV2 {
-  string id = 1; // @gotags: sql:"pk,id,type(uuid)"
+  string id = 1;
   string name = 2;
   string compliance_check_result_name = 3;
   bool apply = 4;

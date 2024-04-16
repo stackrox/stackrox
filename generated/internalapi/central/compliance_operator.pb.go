@@ -3285,7 +3285,7 @@ func (m *ComplianceOperatorSuiteV2) Clone() *ComplianceOperatorSuiteV2 {
 }
 
 type ComplianceOperatorRemediationV2 struct {
-	Id                        string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"` // @gotags: sql:"pk,id,type(uuid)"
+	Id                        string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name                      string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	ComplianceCheckResultName string   `protobuf:"bytes,3,opt,name=compliance_check_result_name,json=complianceCheckResultName,proto3" json:"compliance_check_result_name,omitempty"`
 	Apply                     bool     `protobuf:"varint,4,opt,name=apply,proto3" json:"apply,omitempty"`
