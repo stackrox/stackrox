@@ -269,8 +269,8 @@ spec:
               #!/usr/bin/env bash
               set -euo pipefail
               cd "$(workspaces.source.path)/source"
-              echo "DEBUG: 4-4-x-409-g7c8a8bdbd6"
-              echo "${IMAGE}-4-4-x-409-g7c8a8bdbd6" > "$(results.image-with-tag.path)"
+              echo "DEBUG: nothing"
+              echo "${IMAGE}" > "$(results.image-with-tag.path)"
       workspaces:
       - name: source
         workspace: workspace
