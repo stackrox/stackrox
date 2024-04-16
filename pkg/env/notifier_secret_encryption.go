@@ -5,5 +5,5 @@ var (
 	EncNotifierCreds = RegisterBooleanSetting("ROX_ENC_NOTIFIER_CREDS", false)
 
 	// CleanupNotifierCreds controls the cleanup of secrets
-	CleanupNotifierCreds = RegisterBooleanSetting("ROX_CLEANUP_NOTIFIER_CREDS", false)
+	CleanupNotifierCreds = RegisterBooleanSetting("ROX_CLEANUP_NOTIFIER_CREDS", true)
 )
