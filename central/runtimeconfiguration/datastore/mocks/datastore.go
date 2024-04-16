@@ -10,6 +10,10 @@
 package mocks
 
 import (
+	context "context"
+	reflect "reflect"
+
+	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -34,4 +38,33 @@ func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
+}
+
+// GetRuntimeConfiguration mocks base method.
+func (m *MockDataStore) GetRuntimeConfiguration(ctx context.Context) (*storage.RuntimeFilteringConfiguration, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRuntimeConfiguration", ctx)
+	ret0, _ := ret[0].(*storage.RuntimeFilteringConfiguration)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRuntimeConfiguration indicates an expected call of GetRuntimeConfiguration.
+func (mr *MockDataStoreMockRecorder) GetRuntimeConfiguration(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRuntimeConfiguration", reflect.TypeOf((*MockDataStore)(nil).GetRuntimeConfiguration), ctx)
+}
+
+// SetRuntimeConfiguration mocks base method.
+func (m *MockDataStore) SetRuntimeConfiguration(ctx context.Context, runtimeConfiguration *storage.RuntimeFilteringConfiguration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetRuntimeConfiguration", ctx, runtimeConfiguration)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetRuntimeConfiguration indicates an expected call of SetRuntimeConfiguration.
+func (mr *MockDataStoreMockRecorder) SetRuntimeConfiguration(ctx, runtimeConfiguration any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRuntimeConfiguration", reflect.TypeOf((*MockDataStore)(nil).SetRuntimeConfiguration), ctx, runtimeConfiguration)
 }
