@@ -8,7 +8,6 @@ import {
     List,
     ListItem,
     PageSection,
-    Text,
     TextInput,
     ToggleGroup,
     ToggleGroupItem,
