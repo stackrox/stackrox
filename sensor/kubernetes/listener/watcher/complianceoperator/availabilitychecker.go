@@ -51,7 +51,7 @@ func (w *availabilityChecker) Available(client client.Interface) bool {
 		return false
 	}
 	for _, r := range w.resources {
-		if !utils.ResourceExists(resourceList, r.Name) {
+		if !utils.ResourceExists(resourceList, r.Name, w.gv.String()) {
 			return false
 		}
 	}

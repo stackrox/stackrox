@@ -86,7 +86,7 @@ func (k *listenerImpl) handleAllEvents() {
 		log.Errorf("Unable to add the Resource to the CRD Watcher: %v", err)
 	}
 	if err := crdWatcher.Watch(k.crdWatcherStatusC); err != nil {
-		log.Errorf("failed to start watching the CRDs: %v", err)
+		log.Errorf("Failed to start watching the CRDs: %v", err)
 	}
 	crdHandlerFn := func(status *watcher.Status) {
 		if status.Available {
@@ -161,18 +161,18 @@ func (k *listenerImpl) handleAllEvents() {
 		} else {
 			osConfigFactory = osConfigExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), noResyncPeriod)
 
-			if listenerUtils.ResourceExists(resourceList, osClusterOperatorsResourceName) {
+			if listenerUtils.ResourceExists(resourceList, osClusterOperatorsResourceName, osConfigGroupVersion) {
 				log.Infof("Initializing %q informer", osClusterOperatorsResourceName)
 				handle(k.context, osConfigFactory.Config().V1().ClusterOperators().Informer(), dispatchers.ForClusterOperators(), k.outputQueue, nil, noDependencyWaitGroup, stopSignal, &eventLock)
 			}
 
 			if env.RegistryMirroringEnabled.BooleanSetting() {
-				if listenerUtils.ResourceExists(resourceList, osImageDigestMirrorSetsResourceName) {
+				if listenerUtils.ResourceExists(resourceList, osImageDigestMirrorSetsResourceName, osConfigGroupVersion) {
 					log.Infof("Initializing %q informer", osImageDigestMirrorSetsResourceName)
 					handle(k.context, osConfigFactory.Config().V1().ImageDigestMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 				}
 
-				if listenerUtils.ResourceExists(resourceList, osImageTagMirrorSetsResourceName) {
+				if listenerUtils.ResourceExists(resourceList, osImageTagMirrorSetsResourceName, osConfigGroupVersion) {
 					log.Infof("Initializing %q informer", osImageTagMirrorSetsResourceName)
 					handle(k.context, osConfigFactory.Config().V1().ImageTagMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 				}
@@ -187,7 +187,7 @@ func (k *listenerImpl) handleAllEvents() {
 		} else {
 			osOperatorFactory = osOperatorExtVersions.NewSharedInformerFactory(k.client.OpenshiftOperator(), noResyncPeriod)
 
-			if listenerUtils.ResourceExists(resourceList, osImageContentSourcePoliciesResourceName) {
+			if listenerUtils.ResourceExists(resourceList, osImageContentSourcePoliciesResourceName, osOperatorAlphaGroupVersion) {
 				log.Infof("Initializing %q informer", osImageContentSourcePoliciesResourceName)
 				handle(k.context, osOperatorFactory.Operator().V1alpha1().ImageContentSourcePolicies().Informer(), dispatchers.ForRegistryMirrors(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 			}
