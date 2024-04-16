@@ -28,6 +28,9 @@ spec:
       - name: scanner
         image: "{{ ( printf "%s/%s:%s" .Values.app.scanner.image.registry .Values.app.scanner.image.name .Values.app.scanner.image.tag ) }}"
         imagePullPolicy: IfNotPresent
+        securityContext:
+          privileged: true
+          readOnlyRootFilesystem: true
         command:
           - entrypoint.sh
         args:
@@ -87,7 +90,10 @@ spec:
           readOnly: true
           mountPropagation: HostToContainer
         - mountPath: /host/sys
-          name: sys-ro
+          name: root-ro
+          readOnly: true
+        - mountPath: /host/root
+          name: root-ro
           readOnly: true
       volumes:
       - name: config
@@ -118,6 +124,9 @@ spec:
       - hostPath:
           path: /sys/
         name: sys-ro
+      - hostPath:
+          path: /root/
+        name: root-ro
 ---
 ### FIXME: Remove/Remodel this
 apiVersion: v1
