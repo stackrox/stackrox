@@ -272,17 +272,24 @@ func (s *Sensor) Start() {
 	okSig := s.centralConnectionFactory.OkSignal()
 	errSig := s.centralConnectionFactory.StopSignal()
 
-	err = s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(message *internalmessage.SensorInternalMessage) {
+	err = s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(message internalmessage.SensorInternalMessage) {
 		if message.IsExpired() {
 			return
 		}
+
+		v, ok := (message).(*internalmessage.SensorInternalTextMessage)
+		if !ok {
+			log.Warnf("Soft restart message has wrong type")
+			return
+		}
+
 		s.centralCommunicationLock.Lock()
 		defer s.centralCommunicationLock.Unlock()
 		if s.centralCommunication == nil {
 			log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
 			return
 		}
-		s.centralCommunication.Stop(errors.Wrap(errForcedConnectionRestart, message.Text))
+		s.centralCommunication.Stop(errors.Wrap(errForcedConnectionRestart, v.Text))
 	})
 
 	if err != nil {
@@ -440,9 +447,10 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// suddenly broke.
 		centralCommunication := NewCentralCommunication(s.reconnect.Load(), s.reconcile.Load(), s.components...)
 		syncDone := concurrency.NewSignal()
-		s.centralCommunicationLock.Mutex.Lock()
-		s.centralCommunication = centralCommunication
-		s.centralCommunicationLock.Mutex.Unlock()
+		concurrency.WithLock1(s.centralCommunicationLock, func() bool {
+			s.centralCommunication = centralCommunication
+			return true
+		})
 		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
 		go s.notifySyncDone(&syncDone, centralCommunication)
 		// Reset the exponential back-off if the connection succeeds
@@ -458,9 +466,9 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 						log.Warnf("Sensor cannot reconcile due to: %v", err)
 					}
 					s.reconcile.Store(false)
-					log.Infof("Communication with Central stopped with error: %s. Retrying.", err)
+					log.Infof("Communication with Central stopped with error: %v. Retrying.", err)
 				}
-				log.Infof("Communication with Central stopped: %s. Retrying.", err)
+				log.Infof("Communication with Central stopped: %v. Retrying.", err)
 			} else {
 				log.Info("Communication with Central stopped. Retrying.")
 			}
