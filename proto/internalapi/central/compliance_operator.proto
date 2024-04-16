@@ -271,8 +271,14 @@ message ComplianceOperatorRemediationV2 {
   string id = 1;
   string name = 2;
   string compliance_check_result_name = 3;
+  // apply is used by the compliance operator to apply a remediation
   bool apply = 4;
-  string current = 5;
-  string outdated = 6;
-  string type = 7;
+  // current holds the object which currently remediates the check result. It is saved in a "current" field because
+  // Compliance Operator can ship new remediations in a following versions.
+  // See: https://docs.openshift.com/container-platform/4.15/security/compliance_operator/co-scans/compliance-operator-remediation.html#compliance-updating_compliance-remediation
+  string current_object = 5;
+  // outdated is an old remediation object when a new remediation was added to the "current" field in the compliance operator.
+  // See: https://docs.openshift.com/container-platform/4.15/security/compliance_operator/co-scans/compliance-operator-remediation.html#compliance-updating_compliance-remediation
+  string outdated_object = 6;
+  string enforcement_type = 7;
 }
