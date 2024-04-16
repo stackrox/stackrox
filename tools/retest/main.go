@@ -15,25 +15,32 @@ import (
 	"github.com/google/go-github/v60/github"
 )
 
-const S = "stackrox"
+const (
+	s              = "stackrox"
+	githubTokenEnv = "GITHUB_TOKEN"
+)
 
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
-
 	// Use installation transport with client.
-	client := github.NewClient(nil).WithAuthToken(os.Getenv("GITHUB_TOKEN"))
+	client := github.NewClient(nil).WithAuthToken(os.Getenv(githubTokenEnv))
+	if err := run(ctx, client); err != nil {
+		log.Fatalf(err.Error())
+	}
+}
 
+func run(ctx context.Context, client *github.Client) error {
 	user, _, err := client.Users.Get(ctx, "")
 	if err != nil {
-		log.Fatalf("could not get user: %v", err)
+		return fmt.Errorf("could not get user: %w", err)
 	}
 	log.Printf("Logged as %s: %s", user.GetLogin(), user.GetHTMLURL())
 
 	// TODO(janisz): handle pagination
 	search, _, err := client.Search.Issues(ctx, `repo:stackrox/stackrox label:auto-retest state:open type:pr status:failure`, nil)
 	if err != nil {
-		log.Fatalf("could not find issues: %v", err)
+		return fmt.Errorf("could not find issues: %w", err)
 	}
 	log.Printf("Found %d PRs", search.GetTotal())
 
@@ -41,7 +48,7 @@ issues:
 	for _, pr := range search.Issues {
 		prNumber := pr.GetNumber()
 		log.Printf("#%d retrieving...: %s", prNumber, pr.GetHTMLURL())
-		prDetails, _, err := client.PullRequests.Get(ctx, S, S, prNumber)
+		prDetails, _, err := client.PullRequests.Get(ctx, s, s, prNumber)
 		if err != nil {
 			log.Printf("#%d could not get PR details: %v", prNumber, err)
 			continue
@@ -90,6 +97,7 @@ issues:
 		log.Printf("#%d will be commented with: %s", prNumber, strings.Join(newComments, ", "))
 		createComment(ctx, client, prNumber, strings.Join(newComments, "\n"))
 	}
+	return nil
 }
 
 var (
@@ -192,7 +200,7 @@ func createComment(ctx context.Context, client *github.Client, prNumber int, com
 	issueComment := &github.IssueComment{
 		Body: &comment,
 	}
-	c, _, err := client.Issues.CreateComment(ctx, S, S, prNumber, issueComment)
+	c, _, err := client.Issues.CreateComment(ctx, s, s, prNumber, issueComment)
 	if err != nil {
 		log.Printf("#%d could not create a comment: %v", prNumber, err)
 		return
@@ -201,7 +209,7 @@ func createComment(ctx context.Context, client *github.Client, prNumber int, com
 }
 
 func commentsForPrByUser(ctx context.Context, client *github.Client, prNumber int, userId int64) ([]string, []string, error) {
-	comments, _, err := client.Issues.ListComments(ctx, S, S, prNumber, nil)
+	comments, _, err := client.Issues.ListComments(ctx, s, s, prNumber, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -233,7 +241,7 @@ func splitMultilineComment(comment string) []string {
 func checksForCommit(ctx context.Context, client *github.Client, lastCommit string) (map[string]bool, error) {
 	completed := "completed"
 	latest := "latest"
-	checks, _, err := client.Checks.ListCheckRunsForRef(ctx, S, S, lastCommit, &github.ListCheckRunsOptions{
+	checks, _, err := client.Checks.ListCheckRunsForRef(ctx, s, s, lastCommit, &github.ListCheckRunsOptions{
 		Status: &completed,
 		Filter: &latest,
 	})
