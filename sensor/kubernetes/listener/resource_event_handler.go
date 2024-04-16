@@ -91,8 +91,6 @@ func (k *listenerImpl) handleAllEvents() {
 	crdHandlerFn := func(status *watcher.Status) {
 		if status.Available {
 			log.Infof("Resources %v became available", status.Resources)
-		} else {
-			log.Infof("Resources %v became unavailable", status.Resources)
 		}
 	}
 	if coAvailabilityChecker.Available(k.client) {
