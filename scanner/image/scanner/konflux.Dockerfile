@@ -27,9 +27,9 @@ LABEL \
     com.redhat.component="rhacs-scanner-v4-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
     description="This image supports image scanning v4 for Red Hat Advanced Cluster Security for Kubernetes" \
-    io.k8s.description="This image supports image scanning for Red Hat Advanced Cluster Security for Kubernetes" \
+    io.k8s.description="This image supports image scanning v4 for Red Hat Advanced Cluster Security for Kubernetes" \
     io.k8s.display-name="scanner-v4" \
-    io.openshift.tags="rhacs,scanner,stackrox" \
+    io.openshift.tags="rhacs,scanner-v4,stackrox" \
     maintainer="Red Hat, Inc." \
     name="rhacs-scanner-v4-rhel8" \
     source-location="https://github.com/stackrox/stackrox" \
