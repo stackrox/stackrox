@@ -1,8 +1,10 @@
 import React from 'react';
-import { Flex, Skeleton, Title, LabelGroup, Label } from '@patternfly/react-core';
-
+import { Flex, Title, LabelGroup, Label } from '@patternfly/react-core';
 import { gql } from '@apollo/client';
+
 import { getDateTime } from 'utils/dateUtils';
+
+import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 
 export const nodeMetadataFragment = gql`
     fragment NodeMetadata on Node {
@@ -31,14 +33,10 @@ export type NodePageHeaderProps = {
 function NodePageHeader({ data }: NodePageHeaderProps) {
     if (!data) {
         return (
-            <Flex
-                direction={{ default: 'column' }}
-                spaceItems={{ default: 'spaceItemsXs' }}
-                className="pf-u-w-50"
-            >
-                <Skeleton screenreaderText="Loading Node name" fontSize="2xl" />
-                <Skeleton screenreaderText="Loading Node metadata" height="40px" />
-            </Flex>
+            <HeaderLoadingSkeleton
+                nameScreenreaderText="Loading Node name"
+                metadataScreenreaderText="Loading Node metadata"
+            />
         );
     }
 
