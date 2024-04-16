@@ -59,7 +59,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         }
     }"""
 
-    private static final String GET_POSTGRES_IMAGE_INFO_FROM_VULN_QUERY = """
+    private static final String GET_IMAGE_INFO_FROM_VULN_QUERY = """
     query getCve(\$id: ID!) {
         result: imageVulnerability(id: \$id) {
         cve
@@ -165,7 +165,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
      int retries = 30, int interval = 4) {
         Timer t = new Timer(retries, interval)
         def objId = cveId + "#" + os
-        def graphQLQuery = GET_POSTGRES_IMAGE_INFO_FROM_VULN_QUERY
+        def graphQLQuery = GET_IMAGE_INFO_FROM_VULN_QUERY
         while (t.IsValid()) {
             def result2Ret = gqlService.Call(graphQLQuery, [id: objId])
             assert result2Ret.getCode() == 200

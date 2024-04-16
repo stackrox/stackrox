@@ -422,6 +422,10 @@ class BaseSpecification extends Specification {
         orchestrator.deleteSecret("gcr-image-pull-secret", Constants.ORCHESTRATOR_NAMESPACE)
     }
 
+    static Boolean isPostgresRun() {
+        return Env.get("ROX_POSTGRES_DATASTORE", null) == "true"
+    }
+
     static Boolean isRaceBuild() {
         return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOB_NAME == "race-condition-qa-e2e-tests"
     }

@@ -22,7 +22,7 @@ class VulnMgmtTest extends BaseSpecification {
             "quay.io/rhacs-eng/qa:barchart-"+
             "-dockerup--ce6c28c63fa9a043214f4cccf036990dbd2bb0e47820af015de8dfb5dc68dd9a"
 
-    private static final EMBEDDED_IMAGE_POSTGRES_QUERY = """
+    private static final EMBEDDED_IMAGE_QUERY = """
     query getImage(\$id: ID!, \$query: String) {
       result: fullImage(id: \$id) {
         scan {
@@ -42,7 +42,7 @@ fragment cveFields on EmbeddedVulnerability {
 }
 """
 
-    private static final TOPLEVEL_IMAGE_POSTGRES_QUERY = """
+    private static final TOPLEVEL_IMAGE_QUERY = """
     query getImage(\$id: ID!, \$query: String) {
       result: image(id: \$id) {
         vulns: imageVulnerabilities(query: \$query) {
@@ -57,7 +57,7 @@ fragment cveFields on EmbeddedVulnerability {
     }
     """
 
-    private static final IMAGE_FIXABLE_CVE_POSTGRES_QUERY = """
+    private static final IMAGE_FIXABLE_CVE_QUERY = """
 query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: String) {
   result: image(id: \$id) {
     vulnerabilities: imageVulnerabilities(
@@ -77,7 +77,7 @@ fragment cveFields on ImageVulnerability {
 }
 """
 
-    private static final COMPONENT_FIXABLE_CVE_POSTGRES_QUERY = """
+    private static final COMPONENT_FIXABLE_CVE_QUERY = """
 query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: String) {
   result: imageComponent(id: \$id) {
     vulnerabilities: imageVulnerabilities(
@@ -98,7 +98,7 @@ fragment cveFields on ImageVulnerability {
 }
 """
 
-    private static final COMPONENT_SUBCVE_POSTGRES_QUERY = """
+    private static final COMPONENT_SUBCVE_QUERY = """
 query getComponentSubEntityCVE(\$id: ID!, \$query: String, \$scopeQuery: String) {
   result: imageComponent(id: \$id) {
     vulns: imageVulnerabilities(query: \$query, scopeQuery: \$scopeQuery) {
@@ -120,23 +120,23 @@ fragment cveFields on ImageVulnerability {
     }
 
     def getEmbeddedImageQuery() {
-        return EMBEDDED_IMAGE_POSTGRES_QUERY
+        return EMBEDDED_IMAGE_QUERY
     }
 
     def getTopLevelImageQuery() {
-        return TOPLEVEL_IMAGE_POSTGRES_QUERY
+        return TOPLEVEL_IMAGE_QUERY
     }
 
     def getImageFixableCVEQuery() {
-        return IMAGE_FIXABLE_CVE_POSTGRES_QUERY
+        return IMAGE_FIXABLE_CVE_QUERY
     }
 
     def getComponentFixableCVEQuery() {
-        return COMPONENT_FIXABLE_CVE_POSTGRES_QUERY
+        return COMPONENT_FIXABLE_CVE_QUERY
     }
 
     def getComponentSubCVEQuery() {
-        return COMPONENT_SUBCVE_POSTGRES_QUERY
+        return COMPONENT_SUBCVE_QUERY
     }
 
     def getRHELComponentID() {
