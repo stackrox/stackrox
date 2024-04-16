@@ -13,15 +13,15 @@ import (
 )
 
 type datastoreImpl struct {
-	storage store.Store
+	storage   store.Store
 	rcStorage runtimeCollectionsStore.Store
-	pool    postgres.DB
+	pool      postgres.DB
 }
 
- var (
+var (
 	// Add in SAC later
-	//rcSAC = sac.ForResource(resources.Administration)
-	log   = logging.LoggerForModule()
+	// rcSAC = sac.ForResource(resources.Administration)
+	log = logging.LoggerForModule()
 )
 
 func newDatastoreImpl(
@@ -30,9 +30,9 @@ func newDatastoreImpl(
 	pool postgres.DB,
 ) *datastoreImpl {
 	return &datastoreImpl{
-		storage: storage,
+		storage:   storage,
 		rcStorage: rcStorage,
-		pool:    pool,
+		pool:      pool,
 	}
 }
 
@@ -40,30 +40,30 @@ func (ds *datastoreImpl) getResourceCollections(ctx context.Context) ([]*storage
 	resourceCollections := make([]*storage.ResourceCollection, 0)
 
 	err := ds.rcStorage.Walk(ctx,
-                func(resourceCollection *storage.ResourceCollection) error {
+		func(resourceCollection *storage.ResourceCollection) error {
 			resourceCollections = append(resourceCollections, resourceCollection)
-                        return nil
-                })
+			return nil
+		})
 
 	return resourceCollections, err
 }
 
 func (ds *datastoreImpl) GetRuntimeConfiguration(ctx context.Context) (*storage.RuntimeFilteringConfiguration, error) {
 	runtimeFilters := make([]*storage.RuntimeFilter, 0)
-	runtimeFilteringMap := make(map[storage.RuntimeFilterFeatures]storage.RuntimeFilter)
+	runtimeFilteringMap := make(map[storage.RuntimeFilterFeatures]*storage.RuntimeFilter)
 
 	err := ds.storage.Walk(ctx,
-                func(runtimeConfigurationRow *storage.RuntimeFilterData) error {
+		func(runtimeConfigurationRow *storage.RuntimeFilterData) error {
 			if runtimeConfigurationRow.ResourceCollectionId == "" {
-				runtimeFilteringMap[runtimeConfigurationRow.Feature] = storage.RuntimeFilter{
-					DefaultStatus:	runtimeConfigurationRow.Status,
-					Feature:	runtimeConfigurationRow.Feature,
-					Rules:		make([]*storage.RuntimeFilter_RuntimeFilterRule, 0),
+				runtimeFilteringMap[runtimeConfigurationRow.Feature] = &storage.RuntimeFilter{
+					DefaultStatus: runtimeConfigurationRow.Status,
+					Feature:       runtimeConfigurationRow.Feature,
+					Rules:         make([]*storage.RuntimeFilter_RuntimeFilterRule, 0),
 				}
 			} else {
 				rule := storage.RuntimeFilter_RuntimeFilterRule{
-					ResourceCollectionId:	runtimeConfigurationRow.ResourceCollectionId,
-					Status:			runtimeConfigurationRow.Status,
+					ResourceCollectionId: runtimeConfigurationRow.ResourceCollectionId,
+					Status:               runtimeConfigurationRow.Status,
 				}
 				rules := runtimeFilteringMap[runtimeConfigurationRow.Feature].Rules
 				rules = append(rules, &rule)
@@ -73,17 +73,21 @@ func (ds *datastoreImpl) GetRuntimeConfiguration(ctx context.Context) (*storage.
 
 			}
 
-                        return nil
-                })
+			return nil
+		})
 
-	for _, runtimeFilter := range runtimeFilteringMap{
-		runtimeFilters = append(runtimeFilters, &runtimeFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, runtimeFilter := range runtimeFilteringMap {
+		runtimeFilters = append(runtimeFilters, runtimeFilter)
 	}
 
 	resourceCollections, err := ds.getResourceCollections(ctx)
 
 	runtimeFilteringConfiguration := storage.RuntimeFilteringConfiguration{
-		RuntimeFilters: runtimeFilters,
+		RuntimeFilters:      runtimeFilters,
 		ResourceCollections: resourceCollections,
 	}
 
@@ -96,17 +100,17 @@ func convertRuntimeConfigurationToRuntimeConfigurationTable(runtimeConfiguration
 	runtimeFilters := runtimeConfiguration.RuntimeFilters
 	for _, runtimeFilter := range runtimeFilters {
 		runtimeFiltersRow := storage.RuntimeFilterData{
-			Id:		uuid.NewV4().String(),
-			Feature:	runtimeFilter.Feature,
-			Status:		runtimeFilter.DefaultStatus,
+			Id:      uuid.NewV4().String(),
+			Feature: runtimeFilter.Feature,
+			Status:  runtimeFilter.DefaultStatus,
 		}
 		runtimeFiltersRows = append(runtimeFiltersRows, &runtimeFiltersRow)
 		for _, rule := range runtimeFilter.Rules {
 			runtimeFiltersRow2 := storage.RuntimeFilterData{
-				Id:			uuid.NewV4().String(),
-				Feature:		runtimeFilter.Feature,
-				Status:			rule.Status,
-				ResourceCollectionId:	rule.ResourceCollectionId,
+				Id:                   uuid.NewV4().String(),
+				Feature:              runtimeFilter.Feature,
+				Status:               rule.Status,
+				ResourceCollectionId: rule.ResourceCollectionId,
 			}
 			runtimeFiltersRows = append(runtimeFiltersRows, &runtimeFiltersRow2)
 		}
@@ -120,8 +124,11 @@ func (ds *datastoreImpl) SetRuntimeConfiguration(ctx context.Context, runtimeCon
 	runtimeConfigurationRows := convertRuntimeConfigurationToRuntimeConfigurationTable(runtimeConfiguration)
 
 	log.Infof("Upserting %+v rows", len(runtimeConfigurationRows))
-	ds.storage.UpsertMany(ctx, runtimeConfigurationRows)
-	ds.rcStorage.UpsertMany(ctx, runtimeConfiguration.ResourceCollections)
+	err := ds.storage.UpsertMany(ctx, runtimeConfigurationRows)
+	if err != nil {
+		return err
+	}
+	err = ds.rcStorage.UpsertMany(ctx, runtimeConfiguration.ResourceCollections)
 
-	return nil
+	return err
 }
