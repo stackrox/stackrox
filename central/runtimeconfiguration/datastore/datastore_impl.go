@@ -2,44 +2,50 @@ package datastore
 
 import (
 	"context"
-	// "fmt"
-	// "sort"
-	//"time"
 
 	// "github.com/jackc/pgx/v5"
-	// "github.com/stackrox/rox/central/metrics"
-	// countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/runtimeconfiguration/store"
+	runtimeCollectionsStore "github.com/stackrox/rox/central/runtimeconfigurationcollection/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
-	// "github.com/stackrox/rox/pkg/postgres/pgutils"
-	// "github.com/stackrox/rox/pkg/protocompat"
-	// "github.com/stackrox/rox/pkg/sac"
-	//"github.com/stackrox/rox/pkg/sac/resources"
-	// "github.com/stackrox/rox/pkg/search"
-	//"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 type datastoreImpl struct {
 	storage store.Store
+	rcStorage runtimeCollectionsStore.Store
 	pool    postgres.DB
 }
 
  var (
+	// Add in SAC later
 	//rcSAC = sac.ForResource(resources.Administration)
 	log   = logging.LoggerForModule()
 )
 
 func newDatastoreImpl(
 	storage store.Store,
+	rcStorage runtimeCollectionsStore.Store,
 	pool postgres.DB,
 ) *datastoreImpl {
 	return &datastoreImpl{
 		storage: storage,
+		rcStorage: rcStorage,
 		pool:    pool,
 	}
+}
+
+func (ds *datastoreImpl) getResourceCollections(ctx context.Context) ([]*storage.ResourceCollection, error) {
+	resourceCollections := make([]*storage.ResourceCollection, 0)
+
+	err := ds.rcStorage.Walk(ctx,
+                func(resourceCollection *storage.ResourceCollection) error {
+			resourceCollections = append(resourceCollections, resourceCollection)
+                        return nil
+                })
+
+	return resourceCollections, err
 }
 
 func (ds *datastoreImpl) GetRuntimeConfiguration(ctx context.Context) (*storage.RuntimeFilteringConfiguration, error) {
@@ -48,7 +54,6 @@ func (ds *datastoreImpl) GetRuntimeConfiguration(ctx context.Context) (*storage.
 
 	err := ds.storage.Walk(ctx,
                 func(runtimeConfigurationRow *storage.RuntimeFilterData) error {
-			log.Infof("Row= %+V", runtimeConfigurationRow)
 			if runtimeConfigurationRow.ResourceCollectionId == "" {
 				runtimeFilteringMap[runtimeConfigurationRow.Feature] = storage.RuntimeFilter{
 					DefaultStatus:	runtimeConfigurationRow.Status,
@@ -73,13 +78,14 @@ func (ds *datastoreImpl) GetRuntimeConfiguration(ctx context.Context) (*storage.
 
 	for _, runtimeFilter := range runtimeFilteringMap{
 		runtimeFilters = append(runtimeFilters, &runtimeFilter)
-		log.Infof("runtimeFilter= %+v", runtimeFilter)
 	}
+
+	resourceCollections, err := ds.getResourceCollections(ctx)
 
 	runtimeFilteringConfiguration := storage.RuntimeFilteringConfiguration{
 		RuntimeFilters: runtimeFilters,
+		ResourceCollections: resourceCollections,
 	}
-	log.Infof("Got %+v runtimeFilters", len(runtimeFilters))
 
 	return &runtimeFilteringConfiguration, err
 }
@@ -115,6 +121,7 @@ func (ds *datastoreImpl) SetRuntimeConfiguration(ctx context.Context, runtimeCon
 
 	log.Infof("Upserting %+v rows", len(runtimeConfigurationRows))
 	ds.storage.UpsertMany(ctx, runtimeConfigurationRows)
+	ds.rcStorage.UpsertMany(ctx, runtimeConfiguration.ResourceCollections)
 
 	return nil
 }

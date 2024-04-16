@@ -6,6 +6,7 @@ import (
 	// "time"
 
 	store "github.com/stackrox/rox/central/runtimeconfiguration/store/postgres"
+	collectionsStore "github.com/stackrox/rox/central/runtimeconfigurationcollection/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 )
@@ -23,9 +24,11 @@ type DataStore interface {
 // ProcessIndicator datastore are needed.
 func New(
 	configStore store.Store,
+	collectionStore collectionsStore.Store,
+
 	pool postgres.DB,
 ) DataStore {
-	ds := newDatastoreImpl(configStore, pool)
+	ds := newDatastoreImpl(configStore, collectionStore, pool)
 	return ds
 }
 
