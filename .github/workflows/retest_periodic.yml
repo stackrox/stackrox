@@ -1,6 +1,5 @@
 name: Auto /retest
 on:
-  pull_request:
   workflow_dispatch:
   schedule:
   - cron: 5 * * * *
