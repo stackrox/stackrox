@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/installmethod"
+	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
@@ -117,9 +118,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	localScan := scan.NewLocalScan(storeProvider.Registries(), storeProvider.RegistryMirrors())
 	delegatedRegistryHandler := delegatedregistry.NewHandler(storeProvider.Registries(), localScan)
 
+	pubSub := internalmessage.NewMessageSubscriber()
+
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan)
 	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
-	pipeline := eventpipeline.New(cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize)
+	pipeline := eventpipeline.New(cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize, pubSub)
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
 	imageService := image.NewService(imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors())
@@ -206,6 +209,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		policyDetector,
 		imageService,
 		cfg.centralConnFactory,
+		pubSub,
 		components...,
 	)
 
