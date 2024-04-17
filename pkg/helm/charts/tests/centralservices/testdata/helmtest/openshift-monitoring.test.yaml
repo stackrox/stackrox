@@ -38,6 +38,13 @@ tests:
           ]
         .networkpolicys["central-monitoring-tls"] | assertThat(. != null)
 
+    - name: "network policies are disabled"
+      values:
+        system:
+          enableNetworkPolicies: false
+      expect: |
+        .networkpolicys["central-monitoring-tls"] | assertThat(. == null)
+
 - name: "When enabled"
   set:
     monitoring.openshift.enabled: true
@@ -105,7 +112,14 @@ tests:
             assertThat(.targetPort == "monitoring-tls"),
             assertThat(.port == 9091)
           ]
-        .networkpolicys["scanner-v4-matcher-monitoring-tls"] | assertThat(. != null)
+
+    - name: "network policies are disabled"
+      values:
+        system:
+          enableNetworkPolicies: false
+      expect: |
+        .networkpolicys["central-monitoring-tls"] | assertThat(. == null)
+        .networkpolicys["scanner-v4-matcher-monitoring-tls"] | assertThat(. == null)
 
 - name: "When enabled via default value"
   set:

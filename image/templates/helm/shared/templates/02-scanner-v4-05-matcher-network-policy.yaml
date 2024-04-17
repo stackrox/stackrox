@@ -1,5 +1,5 @@
 {{- include "srox.init" . -}}
-{{- if ._rox.scannerV4._matcherEnabled }}
+{{- if and ._rox.scannerV4._matcherEnabled ._rox.system.enableNetworkPolicies }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
