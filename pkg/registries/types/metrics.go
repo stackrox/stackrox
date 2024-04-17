@@ -6,9 +6,11 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -100,4 +102,16 @@ func (m *MetricsHandler) RoundTripper(base http.RoundTripper, registryType strin
 		),
 		labelOpt,
 	)
+}
+
+func (m *MetricsHandler) TestCollectRequestCounter(t *testing.T) int {
+	return testutil.CollectAndCount(m.requestCounter)
+}
+
+func (m *MetricsHandler) TestCollectTimeoutCounter(t *testing.T) int {
+	return testutil.CollectAndCount(m.timeoutCounter)
+}
+
+func (m *MetricsHandler) TestCollectHistogramCounter(t *testing.T) int {
+	return testutil.CollectAndCount(m.durationHistogram)
 }
