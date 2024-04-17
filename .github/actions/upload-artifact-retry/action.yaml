@@ -7,10 +7,6 @@ inputs:
   path:
     description: Artifact path
     required: true
-  retries:
-    description: Retry count (max 5)
-    required: false
-    default: 1
 runs:
   using: composite
   steps:
@@ -19,12 +15,16 @@ runs:
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
+      continue-on-error: true
     - name: upload-artifact-try2
+      if: steps.upload-artifact-try1.outcome == failure
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
+      continue-on-error: true
     - name: upload-artifact-try3
+      if: steps.upload-artifact-try2.outcome == failure
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.name }}
