@@ -27,6 +27,12 @@
 #confirmNewClusterName: null
 #
 ## Custom labels associated with a secured cluster in StackRox.
+##
+## For example:
+##
+## clusterLabels:
+##   someKey: someStringValue
+##
 #clusterLabels: {}
 #
 ## The gRPC endpoint for accessing StackRox Central.
