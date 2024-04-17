@@ -103,6 +103,7 @@ func TestParse(t *testing.T) {
 		if got, want := s.Get("severity"), "Important"; got != want {
 			t.Fatalf("unexpected severity: got: %s, want: %s", got, want)
 		}
+		// TODO: add test for CVE ID.
 	}
 
 	const (

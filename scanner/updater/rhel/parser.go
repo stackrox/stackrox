@@ -134,6 +134,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 // related CVEs' scores.
 func severity(ctx context.Context, def oval.Definition) string {
 	var cvss3, cvss2 struct {
+		cve    string
 		score  float64
 		vector string
 	}
@@ -159,6 +160,7 @@ func severity(ctx context.Context, def oval.Definition) string {
 				continue
 			}
 			if parsedScore > cvss3.score {
+				cvss3.cve = cve.CveID
 				cvss3.score = parsedScore
 				cvss3.vector = vector
 			}
@@ -180,6 +182,7 @@ func severity(ctx context.Context, def oval.Definition) string {
 				continue
 			}
 			if parsedScore > cvss2.score {
+				cvss2.cve = cve.CveID
 				cvss2.score = parsedScore
 				cvss2.vector = vector
 			}
@@ -196,6 +199,13 @@ func severity(ctx context.Context, def oval.Definition) string {
 	if cvss2.score > 0 && cvss2.vector != "" {
 		severity.Add("cvss2_score", fmt.Sprintf("%.1f", cvss2.score))
 		severity.Add("cvss2_vector", cvss2.vector)
+	}
+	if cvss2.cve != "" {
+		severity.Add("cve", cvss2.cve)
+	}
+	// Prefer the CVE ID of the CVSS 3.x score over the 2.x score's.
+	if cvss3.cve != "" {
+		severity.Add("cve", cvss3.cve)
 	}
 	return severity.Encode()
 }
