@@ -52,6 +52,7 @@ type centralCommunicationImpl struct {
 }
 
 var (
+	errForcedConnectionRestart       = errors.New("forced connection restart")
 	errCantReconcile                 = errors.New("unable to reconcile")
 	errLargePayload                  = errors.Wrap(errCantReconcile, "deduper payload too large")
 	errTimeoutWaitingForDeduperState = errors.Wrap(errCantReconcile, "timeout reached while waiting for the DeduperState")
