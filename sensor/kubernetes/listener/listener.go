@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
@@ -20,7 +21,7 @@ var (
 )
 
 // New returns a new kubernetes listener.
-func New(client client.Interface, configHandler config.Handler, nodeName string, traceWriter io.Writer, queue component.Resolver, storeProvider *resources.StoreProvider) component.ContextListener {
+func New(client client.Interface, configHandler config.Handler, nodeName string, traceWriter io.Writer, queue component.Resolver, storeProvider *resources.StoreProvider, pubSub *internalmessage.MessageSubscriber) component.ContextListener {
 	k := &listenerImpl{
 		client:             client,
 		stopSig:            concurrency.NewSignal(),
@@ -31,6 +32,7 @@ func New(client client.Interface, configHandler config.Handler, nodeName string,
 		storeProvider:      storeProvider,
 		mayCreateHandlers:  concurrency.NewSignal(),
 		crdWatcherStatusC:  make(chan *watcher.Status),
+		pubSub:             pubSub,
 	}
 	k.mayCreateHandlers.Signal()
 	return k

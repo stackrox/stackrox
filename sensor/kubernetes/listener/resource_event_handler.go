@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
@@ -91,6 +92,13 @@ func (k *listenerImpl) handleAllEvents() {
 	crdHandlerFn := func(status *watcher.Status) {
 		if status.Available {
 			log.Infof("Resources %v became available", status.Resources)
+			if err := k.pubSub.Publish(&internalmessage.SensorInternalMessage{
+				Kind:     internalmessage.SensorMessageSoftRestart,
+				Text:     "The resources for the Compliance Operator have been detected in the cluster. Sensor will restart the connection to reconcile resources with Central.",
+				Validity: k.context,
+			}); err != nil {
+				log.Errorf("Unable to publish message %s: %v", internalmessage.SensorMessageSoftRestart, err)
+			}
 		}
 	}
 	if coAvailabilityChecker.Available(k.client) {
@@ -109,6 +117,13 @@ func (k *listenerImpl) handleAllEvents() {
 		crdHandlerFn = func(status *watcher.Status) {
 			if !status.Available {
 				log.Infof("Resources %v became unavailable", status.Resources)
+				if err := k.pubSub.Publish(&internalmessage.SensorInternalMessage{
+					Kind:     internalmessage.SensorMessageSoftRestart,
+					Text:     "The resources for the Compliance Operator have been removed from the cluster. Sensor will restart the connection to reconcile resources with Central.",
+					Validity: k.context,
+				}); err != nil {
+					log.Errorf("Unable to publish message %s: %v", internalmessage.SensorMessageSoftRestart, err)
+				}
 			}
 		}
 	}
