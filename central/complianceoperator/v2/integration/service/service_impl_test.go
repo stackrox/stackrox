@@ -96,6 +96,7 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 						StatusErrors: []string{"Error 1", "Error 2", "Error 3"},
 					},
 				},
+				TotalCount: 6,
 			}
 
 			s.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return(mockClusterName, true, nil).Times(1)
@@ -109,6 +110,9 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 					StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
 				},
 				}, nil).Times(1)
+
+			s.complianceIntegrationDataStore.EXPECT().CountIntegrations(allAccessContext, tc.expectedQ).
+				Return(6, nil).Times(1)
 
 			configs, err := s.service.ListComplianceIntegrations(allAccessContext, tc.query)
 			s.NoError(err)
