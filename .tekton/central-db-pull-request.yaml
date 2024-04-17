@@ -269,8 +269,8 @@ spec:
               #!/usr/bin/env bash
               set -euo pipefail
               cd "$(workspaces.source.path)/source"
-              echo "DEBUG: nothing"
               echo "${IMAGE}" > "$(results.image-with-tag.path)"
+              cat "$(results.image-with-tag.path)"
       workspaces:
       - name: source
         workspace: workspace
@@ -314,7 +314,7 @@ spec:
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
-        value: $(params.output-image)
+        value: $(tasks.determine-image-tag.results.image-with-tag)
       - name: BASE_IMAGES
         value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
       runAfter:
