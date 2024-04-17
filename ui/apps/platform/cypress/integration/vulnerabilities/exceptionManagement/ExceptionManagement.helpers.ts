@@ -54,7 +54,7 @@ function assertClipboardWriteAndVisitRequestPage(id) {
                 cy.stub(clipboard, 'writeText').as('writeText');
             });
         cy.get('button[aria-label="Copy"]').click();
-        cy.get('@writeText').should('have.been.calledOnceWith', `${url}`);
+        cy.get('@writeText').should('have.been.calledOnceWith', url);
 
         visit(url);
     });
