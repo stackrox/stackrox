@@ -26,7 +26,7 @@ spec:
   - name: image-expires-after
     value: '13w'
   - name: output-image
-    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/central-db:{{revision}}
+    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/central-db
   - name: path-context
     value: .
   - name: revision
@@ -81,7 +81,7 @@ spec:
       - name: git-url
         value: $(tasks.clone-repository.results.url)?rev=$(tasks.clone-repository.results.commit)
       - name: image-url
-        value: $(params.output-image)
+        value: $(tasks.build-container.results.IMAGE_URL)
       - name: build-task-status
         value: $(tasks.build-container.status)
       workspaces:
@@ -238,10 +238,39 @@ spec:
       - name: source
         workspace: workspace
 
+    - name: determine-image-tag
+      params:
+        - name: image
+          value: $(params.output-image)
+      runAfter:
+      - clone-repository
+      taskSpec:
+        params:
+          - name: image
+            description: Image without tag
+        results:
+          - name: image-with-tag
+            description: Fully Qualified Image Name with identifying tag
+        steps:
+          - name: determine-image-tag
+            image: quay.io/stackrox-io/apollo-ci:stackrox-build-0.3.66
+            env:
+              - name: IMAGE
+                value: $(params.image)
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+              cd "$(workspaces.source.path)/source"
+              echo -n "${IMAGE}:$(make tag)" > "$(results.image-with-tag.path)"
+              cat "$(results.image-with-tag.path)"
+      workspaces:
+      - name: source
+        workspace: workspace
+
     - name: build-container
       params:
       - name: IMAGE
-        value: $(params.output-image)
+        value: $(tasks.determine-image-tag.results.image-with-tag)
       - name: DOCKERFILE
         value: $(params.dockerfile)
       - name: CONTEXT
@@ -256,6 +285,7 @@ spec:
         value: $(tasks.clone-repository.results.commit)
       runAfter:
       - prefetch-dependencies
+      - determine-image-tag
       taskRef:
         params:
         - name: name
@@ -276,7 +306,7 @@ spec:
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
-        value: $(params.output-image)
+        value: $(tasks.determine-image-tag.results.image-with-tag)
       - name: BASE_IMAGES
         value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
       runAfter:

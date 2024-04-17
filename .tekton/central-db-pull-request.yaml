@@ -83,7 +83,7 @@ spec:
       - name: git-url
         value: $(tasks.clone-repository.results.url)?rev=$(tasks.clone-repository.results.commit)
       - name: image-url
-        value: $(params.output-image)
+        value: $(tasks.build-container.results.IMAGE_URL)
       - name: build-task-status
         value: $(tasks.build-container.status)
       workspaces:
