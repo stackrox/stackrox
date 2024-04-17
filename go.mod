@@ -101,7 +101,7 @@ require (
 	github.com/russellhaering/goxmldsig v1.4.0
 	github.com/segmentio/analytics-go/v3 v3.3.0
 	github.com/sergi/go-diff v1.3.1
-	github.com/sigstore/cosign/v2 v2.2.2
+	github.com/sigstore/cosign/v2 v2.2.4
 	github.com/sigstore/sigstore v1.8.3
 	github.com/sourcegraph/conc v0.3.0
 	github.com/spf13/cobra v1.8.0
@@ -483,6 +483,10 @@ replace (
 	//       the library solves with autosensing + caching, and what we don't
 	//       want to reimplement in our code.
 	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.0.0-20240305225512-3737c3c758df
+
+	// The upgrade breaks our existing unit tests and can only be done once we migrated
+	// from gogoproto to a new protolibrary.
+	google.golang.org/grpc => google.golang.org/grpc v1.61.1
 
 	// Both github.com/go-yaml/yaml/v2 and github.com/go-yaml/yaml/v3 do not provide go.sum
 	// so dependabot is not able to check dependecies.
