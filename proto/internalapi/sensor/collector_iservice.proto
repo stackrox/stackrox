@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package sensor;
+
+import "internalapi/central/runtime_filters.proto";
+
+option go_package = "sensor";
+
+message MsgToCollector {
+  oneof msg {
+    central.RuntimeFiltersUpdate runtime_filters_update = 1;
+  }
+}
+
+message RuntimeFiltersRequest {}
+
+message MsgFromCollector {
+    oneof msg {
+        RuntimeFiltersRequest runtime_filters_request = 1;
+    }
+}
+
+service CollectorService {
+  rpc Communicate(stream MsgFromCollector) returns (stream MsgFromCollector);
+}

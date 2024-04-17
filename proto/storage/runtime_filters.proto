@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package storage;
+
+option cc_enable_arenas = true;
+option go_package = "storage";
+
+message RuntimeFilter {
+  enum RuntimeFilterFeatures {
+    EXTERNAL_IPS = 0;
+    PROCESSES = 1;
+  }
+
+  enum RuntimeFiltersType {
+    STRING = 0; // Exact match by comparing namespaces to the string directly.
+    REGEX = 1;  // Regex applied to namespaces in search of a match.
+  }
+
+  enum RuntimeFiltersEntity {
+    NAMESPACE = 0;
+    DEPLOYMENT = 1;
+  }
+
+  RuntimeFilterFeatures feature = 1;
+  string pattern = 2;
+  RuntimeFiltersType type = 3;
+  RuntimeFiltersEntity entity = 4;
+}
+
+message RuntimeFilters {
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
+  string cluster_name = 2; // @gotags: search:"Cluster Name,store"
+  RuntimeFilter filter = 3; // @gotags: search:"Runtime Filter,store"
+}
