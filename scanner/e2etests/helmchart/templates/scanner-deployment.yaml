@@ -21,8 +21,6 @@ spec:
       securityContext:
         fsGroup: 0 # 65534  # Set the group ownership to the `nobody` group, see dockerfile. # FIXME: Reactivate
         runAsUser: 0
-        privileged: true
-        readOnlyRootFilesystem: true
       serviceAccountName: scannerpriv # FIXME: Use correct one here
       containers:
       - name: scanner
