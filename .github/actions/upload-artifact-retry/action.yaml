@@ -1,4 +1,4 @@
-name: Upload Artifact and retry
+name: Upload artifact and retry
 description: Retry wrapper of upload-artifact
 inputs:
   name:
