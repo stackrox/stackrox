@@ -269,7 +269,7 @@ spec:
               #!/usr/bin/env bash
               set -euo pipefail
               cd "$(workspaces.source.path)/source"
-              echo "${IMAGE}" > "$(results.image-with-tag.path)"
+              echo -n "${IMAGE}" > "$(results.image-with-tag.path)"
               cat "$(results.image-with-tag.path)"
       workspaces:
       - name: source
@@ -278,7 +278,7 @@ spec:
     - name: build-container
       params:
       - name: IMAGE
-        value: $(params.output-image)
+        value: $(task.determine-image-tag.results.image-with-tag)
       - name: DOCKERFILE
         value: $(params.dockerfile)
       - name: CONTEXT
