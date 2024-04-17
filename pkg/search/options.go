@@ -235,6 +235,7 @@ var (
 	ComplianceOperatorProfileRef             = newFieldLabel("Profile Ref ID")
 	ComplianceOperatorScanRef                = newFieldLabel("Scan Ref ID")
 	ComplianceOperatorRuleRef                = newFieldLabel("Rule Ref ID")
+	ComplianceOperatorRemediationName        = newFieldLabel("Compliance Remediation Name")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")
