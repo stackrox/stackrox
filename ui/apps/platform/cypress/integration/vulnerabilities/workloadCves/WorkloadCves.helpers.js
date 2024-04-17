@@ -1,5 +1,6 @@
 import { addDays, format } from 'date-fns';
 import { getDescriptionListGroup } from '../../../helpers/formHelpers';
+import { interactAndWaitForResponses } from '../../../helpers/request';
 import { visit } from '../../../helpers/visit';
 import { hasFeatureFlag } from '../../../helpers/features';
 import { selectors } from './WorkloadCves.selectors';
@@ -240,7 +241,7 @@ export function visitAnyImageSinglePage() {
  * @param {string=} param.scopeLabel
  * @param {string=} param.expiryLabel
  */
-export function fillAndSubmitExceptionForm({ comment, scopeLabel, expiryLabel }) {
+export function fillAndSubmitExceptionForm({ comment, scopeLabel, expiryLabel }, method = 'POST') {
     cy.get(selectors.exceptionOptionsTab).click();
     if (expiryLabel) {
         cy.get(`label:contains('${expiryLabel}')`).click();
@@ -249,8 +250,19 @@ export function fillAndSubmitExceptionForm({ comment, scopeLabel, expiryLabel })
         cy.get(`label:contains('${scopeLabel}')`).click();
     }
     cy.get('textarea[name="comment"]').type(comment);
-    cy.get('button:contains("Submit request")').click();
-    cy.get('header').contains(/Request .* has been submitted/);
+
+    // Return interception in case caller needs exception id.
+    const key =
+        method === 'PATCH' ? 'PATCH_vulnerability-exceptions' : 'POST_vulnerability-exceptions';
+    const routeMatcherMapToPostVulnerabilityException = {
+        [key]: {
+            method,
+            url: '/v2/vulnerability-exceptions/*', // deferral, and so on
+        },
+    };
+    return interactAndWaitForResponses(() => {
+        cy.get('button:contains("Submit request")').click();
+    }, routeMatcherMapToPostVulnerabilityException);
 }
 
 /**
@@ -262,6 +274,8 @@ export function fillAndSubmitExceptionForm({ comment, scopeLabel, expiryLabel })
  * @param {string=} params.expiry
  */
 export function verifyExceptionConfirmationDetails(params) {
+    cy.get('header').contains(/Request .* has been submitted/);
+
     const { expectedAction, cves, scope, expiry } = params;
     getDescriptionListGroup('Requested action', expectedAction);
     getDescriptionListGroup('Requested', getDateString(new Date()));
