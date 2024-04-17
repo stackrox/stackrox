@@ -715,57 +715,6 @@ patch_down_central() {
 patch_down_central_directly() {
    local central_namespace="$1"
 
-   "${ORCH_CMD}" -n "${central_namespace}" patch deployment/central --patch-file=<(cat <<EOF
-spec:
-  template:
-    spec:
-      containers:
-        - name: central
-          resources:
-            requests:
-              memory: 1Gi
-              cpu: 1000m
-EOF
-    )
-
-   "${ORCH_CMD}" -n "${central_namespace}" patch deployment/central-db --patch-file=<(cat <<EOF
-spec:
-  template:
-    spec:
-      containers:
-        - name: central-db
-          resources:
-            memory: 1Gi
-            cpu: 500m
-EOF
-    )
-
-   "${ORCH_CMD}" -n "${central_namespace}" patch deployment/scanner --patch-file=<(cat <<EOF
-spec:
-  template:
-    spec:
-      containers:
-        - name: scanner
-          resources:
-            requests:
-              memory: 500Mi
-              cpu: 500m
-EOF
-    )
-
-   "${ORCH_CMD}" -n "${central_namespace}" patch deployment/scanner-db --patch-file=<(cat <<EOF
-spec:
-  template:
-    spec:
-      containers:
-        - name: db
-          resources:
-            requests:
-              memory: 500Mi
-              cpu: 400m
-EOF
-    )
-
     if "$ORCH_CMD" -n "${central_namespace}" get hpa scanner-v4-indexer >/dev/null 2>&1; then
         "${ORCH_CMD}" -n "${central_namespace}" patch "hpa/scanner-v4-indexer" --patch-file <(cat <<EOF
 spec:
@@ -787,17 +736,6 @@ EOF
         "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/scanner-v4-indexer" --patch-file <(cat <<EOF
 spec:
   replicas: 1
-  template:
-    spec:
-      containers:
-        - name: indexer
-          resources:
-            requests:
-              memory: "4300Mi"
-              cpu: "1000m"
-            limits:
-              memory: "4600Mi"
-              cpu: "1000m"
 EOF
         )
     fi
@@ -805,34 +743,6 @@ EOF
         "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/scanner-v4-matcher" --patch-file <(cat <<EOF
 spec:
   replicas: 1
-  template:
-    spec:
-      containers:
-        - name: matcher
-          resources:
-            requests:
-              memory: "2000Mi"
-              cpu: "400m"
-            limits:
-              memory: "2000Mi"
-              cpu: "6000m"
-EOF
-        )
-    fi
-    if "${ORCH_CMD}" -n "${central_namespace}" get deploy/scanner-v4-db >/dev/null 2>&1; then
-        "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/scanner-v4-db" --patch-file <(cat <<EOF
-spec:
-  template:
-    spec:
-      containers:
-        - name: db
-          resources:
-            requests:
-              memory: "500Mi"
-              cpu: "300m"
-            limits:
-              memory: "1000Mi"
-              cpu: "1000m"
 EOF
         )
     fi
@@ -857,20 +767,6 @@ patch_down_sensor() {
 patch_down_sensor_directly() {
    local sensor_namespace="$1"
 
-    "${ORCH_CMD}" -n "${sensor_namespace}" patch "deploy/sensor" --patch-file <(cat <<EOF
-spec:
-  template:
-    spec:
-      containers:
-        - name: sensor
-          resources:
-            requests:
-              cpu: "1500m"
-            limits:
-              cpu: "2000m"
-EOF
-    )
-
     if "$ORCH_CMD" -n "${sensor_namespace}" get hpa scanner >/dev/null 2>&1; then
         "${ORCH_CMD}" -n "${sensor_namespace}" patch "hpa/scanner" --patch-file <(cat <<EOF
 spec:
@@ -887,38 +783,10 @@ spec:
 EOF
         )
     fi
-    if "${ORCH_CMD}" -n "${central_namespace}" get deploy/scanner-v4-db >/dev/null 2>&1; then
-        "${ORCH_CMD}" -n "${sensor_namespace}" patch "deploy/scanner-v4-db" --patch-file <(cat <<EOF
-spec:
-  template:
-    spec:
-      containers:
-        - name: db
-          resources:
-            requests:
-              memory: "500Mi"
-              cpu: "300m"
-            limits:
-              memory: "1000Mi"
-              cpu: "1000m"
-EOF
-        )
-    fi
     if "${ORCH_CMD}" -n "${central_namespace}" get deploy/scanner-v4-indexer >/dev/null 2>&1; then
         "${ORCH_CMD}" -n "${sensor_namespace}" patch "deploy/scanner-v4-indexer" --patch-file <(cat <<EOF
 spec:
   replicas: 1
-  template:
-    spec:
-      containers:
-        - name: indexer
-          resources:
-            requests:
-              memory: "4300Mi"
-              cpu: "1000m"
-            limits:
-              memory: "4600Mi"
-              cpu: "1000m"
 EOF
         )
     fi
