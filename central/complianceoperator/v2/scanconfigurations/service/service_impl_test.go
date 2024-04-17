@@ -292,6 +292,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 				Configurations: []*apiV2.ComplianceScanConfigurationStatus{
 					getTestAPIStatusRec(createdTime, lastUpdatedTime),
 				},
+				TotalCount: 6,
 			}
 
 			s.scanConfigDatastore.EXPECT().GetScanConfigurations(allAccessContext, tc.expectedQ).
@@ -362,6 +363,10 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 					},
 				},
 			}, nil).Times(1)
+
+			s.scanConfigDatastore.EXPECT().CountScanConfigurations(allAccessContext, tc.expectedQ).
+				Return(6, nil).Times(1)
+
 			configs, err := s.service.ListComplianceScanConfigurations(allAccessContext, tc.query)
 			s.Require().NoError(err)
 			s.Require().EqualValues(expectedResp, configs)
