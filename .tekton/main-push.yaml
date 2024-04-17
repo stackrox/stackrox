@@ -68,14 +68,22 @@ spec:
   taskRunSpecs:
   - pipelineTaskName: build-container
     stepSpecs:
-    # Provision more CPU to speed up build compared to the defaults.
-    # https://github.com/redhat-appstudio/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L126
     - name: build
+      # CPU requests are increased to speed up builds compared to the defaults.
+      # Defaults: https://github.com/redhat-appstudio/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L126
+      #
+      # Memory is increased for UI builds to succeed. Otherwise, there's an error like this in logs:
+      # [build] @stackrox/platform-app: The build failed because the process exited too early. This probably means the system ran out of memory or someone called `kill -9` on the process.
+      #
+      # Not using buildah-6gb/-8gb/... because these don't have memory requests equal to limits which still occasionally
+      # leads to failing builds.
       computeResources:
         limits:
           cpu: 4
+          memory: 6Gi
         requests:
           cpu: 4
+          memory: 6Gi
   - pipelineTaskName: clamav-scan
     stepSpecs:
     # Provision more CPU to speed up ClamAV scan compared to the defaults.
@@ -356,12 +364,10 @@ spec:
       - fetch-external-networks
       taskRef:
         params:
-        # buildah with more memory is needed for UI builds to succeed. Otherwise, there's an error like this in logs:
-        # [build] @stackrox/platform-app: The build failed because the process exited too early. This probably means the system ran out of memory or someone called `kill -9` on the process.
         - name: name
-          value: buildah-6gb
+          value: buildah
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-6gb:0.1@sha256:00a55fa4b456fba946076c74698e65c655e9d58d2623570db6275d059b22a76a
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:ed7655b42cfff0e17c961c6d81afa682c8d9ea588e741d0414c50181d1757693
         - name: kind
           value: task
         resolver: bundles
