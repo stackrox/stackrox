@@ -7,6 +7,9 @@ import {
     BreadcrumbItem,
     Skeleton,
     Bullseye,
+    Tab,
+    Tabs,
+    TabsComponent,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
@@ -14,10 +17,15 @@ import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import useURLStringUnion from 'hooks/useURLStringUnion';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import ClusterPageHeader, { ClusterMetadata, clusterMetadataFragment } from './ClusterPageHeader';
 import { getOverviewPagePath } from '../../utils/searchUtils';
+import { detailsTabValues } from '../../types';
+
+import ClusterPageHeader, { ClusterMetadata, clusterMetadataFragment } from './ClusterPageHeader';
+import ClusterPageDetails from './ClusterPageDetails';
+import ClusterPageVulnerabilities from './ClusterPageVulnerabilities';
 
 const platformCvesClusterOverviewPath = getOverviewPagePath('Platform', {
     entityTab: 'Cluster',
@@ -42,6 +50,11 @@ function ClusterPage() {
             variables: { id: clusterId },
         }
     );
+
+    const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
+
+    const vulnTabKey = detailsTabValues[0];
+    const detailTabKey = detailsTabValues[1];
 
     const clusterName = data?.cluster?.name ?? '';
 
@@ -73,9 +86,34 @@ function ClusterPage() {
                     </Bullseye>
                 </PageSection>
             ) : (
-                <PageSection variant="light">
-                    <ClusterPageHeader data={data?.cluster} />
-                </PageSection>
+                <>
+                    <PageSection variant="light">
+                        <ClusterPageHeader data={data?.cluster} />
+                    </PageSection>
+                    <PageSection padding={{ default: 'noPadding' }}>
+                        <Tabs
+                            activeKey={activeTabKey}
+                            onSelect={(e, key) => {
+                                setActiveTabKey(key);
+                                // pagination.setPage(1);
+                            }}
+                            component={TabsComponent.nav}
+                            className="pf-v5-u-pl-md pf-v5-u-background-color-100"
+                            role="region"
+                        >
+                            <Tab eventKey={vulnTabKey} title={vulnTabKey} />
+                            <Tab eventKey={detailTabKey} title={detailTabKey} />
+                        </Tabs>
+                    </PageSection>
+                    <PageSection
+                        isFilled
+                        padding={{ default: 'noPadding' }}
+                        className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
+                    >
+                        {activeTabKey === vulnTabKey && <ClusterPageVulnerabilities />}
+                        {activeTabKey === detailTabKey && <ClusterPageDetails />}
+                    </PageSection>
+                </>
             )}
         </>
     );
