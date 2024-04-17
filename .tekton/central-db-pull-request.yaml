@@ -173,12 +173,10 @@ spec:
 
     tasks:
 
-    # Init
-    # echo "Determine if Image Already Exists"
-    # Build the image when image does not exists or rebuild is set to true
+    # Init determines whether the image should be built (when image does not exists or rebuild is set to true).
     #
-    # This will break if the params.output-image does not include the revision or $(make tag) result.
-    # We have 'rebuild' set to 'true' in our pipelines, so might not be an issue after all.
+    # This task breaks a bit if the params.output-image does not include the revision or $(make tag) result.
+    # Because we have 'rebuild' set to 'true' in our pipelines, the image will be built in any case.
     - name: init
       params:
       - name: image-url
@@ -201,7 +199,6 @@ spec:
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
-      # A shallow repo clone is sufficient for central-db build.
       - name: depth
         value: "0"
       - name: fetchTags
@@ -258,7 +255,7 @@ spec:
             description: Image without tag
         results:
           - name: image-with-tag
-            description: Fully Qualified Image Name with tag
+            description: Fully Qualified Image Name with identifying tag
         steps:
           - name: determine-image-tag
             image: quay.io/stackrox-io/apollo-ci:stackrox-build-0.3.66
