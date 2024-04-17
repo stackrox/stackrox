@@ -55,3 +55,8 @@ tests:
       my-label2: my value 2
   expect: |
     helmClusterConfig | .clusterConfig.clusterLabels | assertThat(length == 2)
+
+- name: fails with invalid cluster labels
+  values:
+    clusterLabels: a-string-even-though-a-dict-is-expected
+  expectError: true
