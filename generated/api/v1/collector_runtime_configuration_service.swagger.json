@@ -54,7 +54,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1Empty"
+              "$ref": "#/definitions/v1PostCollectorRuntimeConfigurationRequest"
             }
           }
         ],
@@ -205,7 +205,7 @@
       "type": "object",
       "properties": {
         "feature": {
-          "$ref": "#/definitions/storageRuntimeFilterRuntimeFilterFeatures"
+          "$ref": "#/definitions/storageRuntimeFilterFeatures"
         },
         "defaultStatus": {
           "type": "string"
@@ -218,7 +218,7 @@
         }
       }
     },
-    "storageRuntimeFilterRuntimeFilterFeatures": {
+    "storageRuntimeFilterFeatures": {
       "type": "string",
       "enum": [
         "EXTERNAL_IPS",
@@ -280,6 +280,14 @@
       "type": "object"
     },
     "v1GetCollectorRuntimeConfigurationResponse": {
+      "type": "object",
+      "properties": {
+        "collectorRuntimeConfiguration": {
+          "$ref": "#/definitions/storageRuntimeFilteringConfiguration"
+        }
+      }
+    },
+    "v1PostCollectorRuntimeConfigurationRequest": {
       "type": "object",
       "properties": {
         "collectorRuntimeConfiguration": {

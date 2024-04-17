@@ -52,7 +52,7 @@ func local_request_CollectorRuntimeConfigurationService_GetCollectorRuntimeConfi
 }
 
 func request_CollectorRuntimeConfigurationService_PostCollectorRuntimeConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, client CollectorRuntimeConfigurationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Empty
+	var protoReq PostCollectorRuntimeConfigurationRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -69,7 +69,7 @@ func request_CollectorRuntimeConfigurationService_PostCollectorRuntimeConfigurat
 }
 
 func local_request_CollectorRuntimeConfigurationService_PostCollectorRuntimeConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, server CollectorRuntimeConfigurationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Empty
+	var protoReq PostCollectorRuntimeConfigurationRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)

@@ -28,7 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CollectorRuntimeConfigurationServiceClient interface {
 	GetCollectorRuntimeConfiguration(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetCollectorRuntimeConfigurationResponse, error)
-	PostCollectorRuntimeConfiguration(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
+	PostCollectorRuntimeConfiguration(ctx context.Context, in *PostCollectorRuntimeConfigurationRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type collectorRuntimeConfigurationServiceClient struct {
@@ -48,7 +48,7 @@ func (c *collectorRuntimeConfigurationServiceClient) GetCollectorRuntimeConfigur
 	return out, nil
 }
 
-func (c *collectorRuntimeConfigurationServiceClient) PostCollectorRuntimeConfiguration(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+func (c *collectorRuntimeConfigurationServiceClient) PostCollectorRuntimeConfiguration(ctx context.Context, in *PostCollectorRuntimeConfigurationRequest, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, CollectorRuntimeConfigurationService_PostCollectorRuntimeConfiguration_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -62,7 +62,7 @@ func (c *collectorRuntimeConfigurationServiceClient) PostCollectorRuntimeConfigu
 // for forward compatibility
 type CollectorRuntimeConfigurationServiceServer interface {
 	GetCollectorRuntimeConfiguration(context.Context, *Empty) (*GetCollectorRuntimeConfigurationResponse, error)
-	PostCollectorRuntimeConfiguration(context.Context, *Empty) (*Empty, error)
+	PostCollectorRuntimeConfiguration(context.Context, *PostCollectorRuntimeConfigurationRequest) (*Empty, error)
 }
 
 // UnimplementedCollectorRuntimeConfigurationServiceServer should be embedded to have forward compatible implementations.
@@ -72,7 +72,7 @@ type UnimplementedCollectorRuntimeConfigurationServiceServer struct {
 func (UnimplementedCollectorRuntimeConfigurationServiceServer) GetCollectorRuntimeConfiguration(context.Context, *Empty) (*GetCollectorRuntimeConfigurationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCollectorRuntimeConfiguration not implemented")
 }
-func (UnimplementedCollectorRuntimeConfigurationServiceServer) PostCollectorRuntimeConfiguration(context.Context, *Empty) (*Empty, error) {
+func (UnimplementedCollectorRuntimeConfigurationServiceServer) PostCollectorRuntimeConfiguration(context.Context, *PostCollectorRuntimeConfigurationRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PostCollectorRuntimeConfiguration not implemented")
 }
 
@@ -106,7 +106,7 @@ func _CollectorRuntimeConfigurationService_GetCollectorRuntimeConfiguration_Hand
 }
 
 func _CollectorRuntimeConfigurationService_PostCollectorRuntimeConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(PostCollectorRuntimeConfigurationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func _CollectorRuntimeConfigurationService_PostCollectorRuntimeConfiguration_Han
 		FullMethod: CollectorRuntimeConfigurationService_PostCollectorRuntimeConfiguration_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CollectorRuntimeConfigurationServiceServer).PostCollectorRuntimeConfiguration(ctx, req.(*Empty))
+		return srv.(CollectorRuntimeConfigurationServiceServer).PostCollectorRuntimeConfiguration(ctx, req.(*PostCollectorRuntimeConfigurationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
