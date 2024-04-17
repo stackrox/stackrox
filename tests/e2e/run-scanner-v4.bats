@@ -700,7 +700,7 @@ _deploy_stackrox() {
 # shellcheck disable=SC2120
 _deploy_central() {
     local central_namespace=${1:-stackrox}
-    CENTRAL_ROLLOUT_WAIT_TIMEOUT="10m" deploy_central "${central_namespace}"
+    deploy_central "${central_namespace}"
     patch_down_central "${central_namespace}"
 }
 
