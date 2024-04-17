@@ -10,7 +10,7 @@ import (
 	// Tool dependencies, not used anywhere in the code.
 	_ "github.com/bufbuild/buf/cmd/buf"
 	_ "github.com/favadi/protoc-go-inject-tag"
-	_ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway"
 	_ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger"
+	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway"
 	_ "google.golang.org/grpc/cmd/protoc-gen-go-grpc"
 )
