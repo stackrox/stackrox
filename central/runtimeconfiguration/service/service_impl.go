@@ -4,8 +4,11 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	deleConnection "github.com/stackrox/rox/central/delegatedregistryconfig/util/connection"
 	datastore "github.com/stackrox/rox/central/runtimeconfiguration/datastore"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -27,7 +30,8 @@ var (
 )
 
 type serviceImpl struct {
-	dataStore datastore.DataStore
+	dataStore   datastore.DataStore
+	connManager connection.Manager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -59,6 +63,20 @@ func (s *serviceImpl) GetCollectorRuntimeConfiguration(
 	return &getCollectorRuntimeConfigurationResponse, err
 }
 
+func (s *serviceImpl) broadcast(ctx context.Context, msg *central.MsgToSensor) error {
+	for _, conn := range s.connManager.GetActiveConnections() {
+		if !deleConnection.ValidForDelegation(conn) {
+			continue
+		}
+
+		err := conn.InjectMessage(ctx, msg)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *serviceImpl) PostCollectorRuntimeConfiguration(
 	ctx context.Context,
 	request *v1.PostCollectorRuntimeConfigurationRequest,
@@ -66,6 +84,18 @@ func (s *serviceImpl) PostCollectorRuntimeConfiguration(
 
 	log.Infof("request.CollectorRuntimeConfiguration= %+v", request.CollectorRuntimeConfiguration)
 	err := s.dataStore.SetRuntimeConfiguration(ctx, request.CollectorRuntimeConfiguration)
+
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_RuntimeFilteringConfiguration{
+			RuntimeFilteringConfiguration: request.CollectorRuntimeConfiguration,
+		},
+	}
+
+	err2 := s.broadcast(ctx, msg)
+
+	if err2 != nil {
+		return nil, err2
+	}
 
 	return &v1.Empty{}, err
 }

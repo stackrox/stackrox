@@ -4,6 +4,7 @@ import (
 	"context"
 
 	datastore "github.com/stackrox/rox/central/runtimeconfiguration/datastore"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -17,8 +18,9 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(store datastore.DataStore) Service {
+func New(store datastore.DataStore, connManager connection.Manager) Service {
 	return &serviceImpl{
-		dataStore: store,
+		dataStore:   store,
+		connManager: connManager,
 	}
 }
