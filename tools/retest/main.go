@@ -20,7 +20,6 @@ const s = "stackrox"
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
-	// Use installation transport with client.
 	client := github.NewClient(nil).WithAuthToken(os.Getenv("GITHUB_TOKEN"))
 	if err := run(ctx, client); err != nil {
 		log.Fatalf(err.Error())
@@ -30,7 +29,7 @@ func main() {
 func run(ctx context.Context, client *github.Client) error {
 	user, _, err := client.Users.Get(ctx, "")
 	if err != nil {
-		return fmt.Errorf("could not get user: %w", err)
+		return fmt.Errorf("could not get current user: %w", err)
 	}
 	log.Printf("Logged as %s: %s", user.GetLogin(), user.GetHTMLURL())
 
@@ -85,7 +84,7 @@ issues:
 				}
 			}
 			errorComment := fmt.Sprintf(":x: There was an error with a comment. "+
-				"Please eddit or remove it and issue a proper command\n%s", err.Error())
+				"Please edit or remove it and issue a proper command\n%s", err.Error())
 			createComment(ctx, client, prNumber, errorComment)
 			continue
 		}
