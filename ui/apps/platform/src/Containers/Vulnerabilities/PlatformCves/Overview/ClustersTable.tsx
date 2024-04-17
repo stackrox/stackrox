@@ -4,14 +4,9 @@ import { Table, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
 import { Link } from 'react-router-dom';
 import { gql, useQuery } from '@apollo/client';
 
+import TbodyTableState from 'Components/TableStateTemplates/TbodyTableState';
 import useURLPagination from 'hooks/useURLPagination';
 import { ClusterType } from 'types/cluster.proto';
-import {
-    TbodyLoading,
-    TbodyError,
-    TbodyEmpty,
-    TbodyFilteredEmpty,
-} from 'Components/TableStateTemplates';
 import { getTableUIState } from 'utils/getTableUIState';
 import { ensureExhaustive } from 'utils/type.utils';
 
@@ -118,29 +113,31 @@ function ClustersTable({ querySearchFilter, isFiltered, pagination }: ClustersTa
                     <Th>Kubernetes version</Th>
                 </Tr>
             </Thead>
-            {tableState.type === 'LOADING' && <TbodyLoading colSpan={colSpan} />}
-            {tableState.type === 'ERROR' && (
-                <TbodyError colSpan={colSpan} error={tableState.error} />
-            )}
-            {tableState.type === 'EMPTY' && (
-                <TbodyEmpty colSpan={colSpan} message="No secured clusters have been detected" />
-            )}
-            {tableState.type === 'FILTERED_EMPTY' && <TbodyFilteredEmpty colSpan={colSpan} />}
-            {tableState.type === 'COMPLETE' &&
-                tableState.data.map(({ id, name, clusterVulnerabilityCount, type, status }) => (
-                    <Tbody key={id}>
-                        <Tr>
-                            <Td dataLabel="Cluster" modifier="nowrap">
-                                <Link to={getPlatformEntityPagePath('Cluster', id)}>{name}</Link>
-                            </Td>
-                            <Td dataLabel="CVEs">{pluralize(clusterVulnerabilityCount, 'CVE')}</Td>
-                            <Td dataLabel="Cluster type">{displayClusterType(type)}</Td>
-                            <Td dataLabel="Kubernetes version">
-                                {status?.orchestratorMetadata?.version ?? 'UNKNOWN'}
-                            </Td>
-                        </Tr>
-                    </Tbody>
-                ))}
+            <TbodyTableState
+                tableState={tableState}
+                colSpan={colSpan}
+                emptyProps={{ message: 'No secured clusters have been detected' }}
+                renderWith={({ data }) =>
+                    data.map(({ id, name, clusterVulnerabilityCount, type, status }) => (
+                        <Tbody key={id}>
+                            <Tr>
+                                <Td dataLabel="Cluster" modifier="nowrap">
+                                    <Link to={getPlatformEntityPagePath('Cluster', id)}>
+                                        {name}
+                                    </Link>
+                                </Td>
+                                <Td dataLabel="CVEs">
+                                    {pluralize(clusterVulnerabilityCount, 'CVE')}
+                                </Td>
+                                <Td dataLabel="Cluster type">{displayClusterType(type)}</Td>
+                                <Td dataLabel="Kubernetes version">
+                                    {status?.orchestratorMetadata?.version ?? 'Unavailable'}
+                                </Td>
+                            </Tr>
+                        </Tbody>
+                    ))
+                }
+            />
         </Table>
     );
 }
