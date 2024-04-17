@@ -6,7 +6,7 @@ import { gql } from '@apollo/client';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import DateDistance from '../../components/DateDistance';
 import EmptyTableResults from '../components/EmptyTableResults';
-import { getEntityPagePath } from '../../utils/searchUtils';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 export type DeploymentResources = {
@@ -61,7 +61,13 @@ function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTabl
                     >
                         <Tr>
                             <Td>
-                                <Link to={getEntityPagePath('Deployment', id, vulnerabilityState)}>
+                                <Link
+                                    to={getWorkloadEntityPagePath(
+                                        'Deployment',
+                                        id,
+                                        vulnerabilityState
+                                    )}
+                                >
                                     {name}
                                 </Link>
                             </Td>

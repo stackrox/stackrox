@@ -19,7 +19,7 @@ import useSet from 'hooks/useSet';
 import useMap from 'hooks/useMap';
 import { VulnerabilityState } from 'types/cve.proto';
 import { VulnerabilitySeverityLabel } from '../../types';
-import { getEntityPagePath } from '../../utils/searchUtils';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import TooltipTh from '../components/TooltipTh';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../../components/DynamicIcon';
@@ -239,7 +239,11 @@ function CVEsTable({
                                         vulnerabilityState={vulnerabilityState}
                                     >
                                         <Link
-                                            to={getEntityPagePath('CVE', cve, vulnerabilityState)}
+                                            to={getWorkloadEntityPagePath(
+                                                'CVE',
+                                                cve,
+                                                vulnerabilityState
+                                            )}
                                         >
                                             {cve}
                                         </Link>

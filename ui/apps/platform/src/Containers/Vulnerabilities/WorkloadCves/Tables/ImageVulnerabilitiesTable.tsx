@@ -19,7 +19,7 @@ import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/Vulnera
 import { VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import useMap from 'hooks/useMap';
-import { getEntityPagePath } from '../../utils/searchUtils';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
@@ -171,7 +171,11 @@ function ImageVulnerabilitiesTable({
                                         vulnerabilityState={vulnerabilityState}
                                     >
                                         <Link
-                                            to={getEntityPagePath('CVE', cve, vulnerabilityState)}
+                                            to={getWorkloadEntityPagePath(
+                                                'CVE',
+                                                cve,
+                                                vulnerabilityState
+                                            )}
                                         >
                                             {cve}
                                         </Link>
