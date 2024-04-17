@@ -1145,27 +1145,28 @@ handle_e2e_progress_failures() {
     local check_deployment=false
 
     if [[ -f "${STATE_IMAGES_AVAILABLE}" ]]; then
-        save_junit_success "${images_available[@]}" || true
+        save_junit_success "${images_available[@]}"
         check_deployment=true
     else
         local build_results="state unknown"
         if [[ -f "${STATE_BUILD_WORKFLOW}" ]]; then
             build_results="$(cat "${STATE_BUILD_WORKFLOW}")"
         fi
-        save_junit_failure "${images_available[@]}" << __EO_BUILD_RESULTS__
+        read -r -d '' build_details <<- _EO_DETAILS_ || true
 Check the build workflow runs:
 ${build_results}
-__EO_BUILD_RESULTS__
+_EO_DETAILS_
+        save_junit_failure "${images_available[@]}" "${build_details}"
     fi
 
     if $check_deployment; then
         if [[ -f "${STATE_DEPLOYED}" ]]; then
-            save_junit_success "${stackrox_deployed[@]}" || true
+            save_junit_success "${stackrox_deployed[@]}"
         else
-            save_junit_failure "${stackrox_deployed[@]}" "Check the build log" || true
+            save_junit_failure "${stackrox_deployed[@]}" "Check the build log"
         fi
     else
-        save_junit_skipped "${stackrox_deployed[@]}" || true
+        save_junit_skipped "${stackrox_deployed[@]}"
     fi
 }
 

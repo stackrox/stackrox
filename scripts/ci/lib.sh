@@ -529,11 +529,13 @@ poll_for_system_test_images() {
         done
 
         {
+            echo
             info "Workflow status for build.yaml:"
             check-workflow-run \
               --workflow=build.yaml \
               --head-SHA="${commit_sha}"
 
+            echo
             info "Workflow status for scanner-build.yaml:"
             check-workflow-run \
               --workflow=scanner-build.yaml \
