@@ -17,14 +17,14 @@ runs:
         path: ${{ inputs.path }}
       continue-on-error: true
     - name: upload-artifact-try2
-      if: steps.upload-artifact-try1.outcome == "failure"
+      if: steps.upload-artifact-try1.outcome == 'failure'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
       continue-on-error: true
     - name: upload-artifact-try3
-      if: steps.upload-artifact-try2.outcome == "failure"
+      if: steps.upload-artifact-try2.outcome == 'failure'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.name }}
