@@ -27,7 +27,7 @@ func TestIntegration(t *testing.T) {
 			case "/repos/stackrox/stackrox/issues/2/comments":
 				b, err := io.ReadAll(r.Body)
 				assert.NoError(t, err)
-				assert.JSONEq(t, `{"body":"/test job-name-1"}`, string(b))
+				assert.JSONEq(t, `{"body":"/test job-name-1\n/test job-name-2"}`, string(b))
 				_, err = w.Write([]byte(`{"html_url": "some url"}`))
 				assert.NoError(t, err)
 			case "/repos/stackrox/stackrox/issues/500/comments":
@@ -89,7 +89,7 @@ func TestIntegration(t *testing.T) {
     {
         "id": 1,
         "html_url": "https://github.com/octocat/Hello-World/issues/1347#issuecomment-1",
-        "body": "/retest-times 10 job-name-1",
+        "body": "/retest-times 10 job-name-1\n/retest-times 20 job-name-2\n",
         "user": {
             "login": "octocat",
             "html_url": "https://github.com/octocat"
