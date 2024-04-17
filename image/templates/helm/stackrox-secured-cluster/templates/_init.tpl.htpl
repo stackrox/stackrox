@@ -66,6 +66,13 @@
 
 {{- include "srox.checkVersionRequirements" $ -}}
 
+{{/* Sanity checks.*/}}
+{{- if not (kindIs "invalid" ._rox.clusterLabels) }}
+  {{- if not (kindIs "map" ._rox.clusterLabels) }}
+    {{ include "srox.fail" (printf "type mismatch: clusterLabels is a %s, but must be a dict" (kindOf ._rox.clusterLabels)) }}
+  {{- end }}
+{{- end }}
+
 {{/*
     API Server setup. The problem with `.Capabilities.APIVersions` is that Helm does not
     allow setting overrides for those when using `helm template` or `--dry-run`. Thus,
