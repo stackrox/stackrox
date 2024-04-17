@@ -352,8 +352,8 @@ func sourceAddr(ctx context.Context) net.Addr {
 type WithGet http.Header
 
 // Get implements HeaderGetter interface.
-func (md WithGet) Get(key string) []string {
-	return http.Header(md).Values(key)
+func (h WithGet) Get(key string) []string {
+	return http.Header(h).Values(key)
 }
 
 // GetFirst returns the first value of the header by key, or empty string.
