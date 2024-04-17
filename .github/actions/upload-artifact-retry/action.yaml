@@ -1,0 +1,31 @@
+name: Upload artifact and retry
+description: Retry wrapper of upload-artifact
+inputs:
+  name:
+    description: Artifact name
+    required: true
+  path:
+    description: Artifact path
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: upload-artifact-try1
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+      continue-on-error: true
+    - name: upload-artifact-try2
+      if: steps.upload-artifact-try1.outcome == 'failure'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+      continue-on-error: true
+    - name: upload-artifact-try3
+      if: steps.upload-artifact-try2.outcome == 'failure'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
