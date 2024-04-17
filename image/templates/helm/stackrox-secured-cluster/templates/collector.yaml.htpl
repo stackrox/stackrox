@@ -65,6 +65,8 @@ spec:
           value: {{ ._rox.sensor.endpoint }}
         - name: SNI_HOSTNAME
           value: "sensor.stackrox.svc"
+        - name: ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED
+          value: [< .FeatureFlags.ROX_RUNTIME_FILTERS >]
         {{- include "srox.envVars" (list . "daemonset" "collector" "collector") | nindent 8 }}
         resources:
           {{- ._rox.collector._resources | nindent 10 }}
@@ -100,6 +102,14 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
+        [<- if .FeatureFlags.ROX_RUNTIME_FILTERS >]
+        - mountPath: /host/run/containerd/containerd.sock
+          name: containerd-sock
+          mountPropagation: HostToContainer
+        - mountPath: /host/run/crio/crio.sock
+          name: crio-sock
+          mountPropagation: HostToContainer
+        [<- end >]
       {{- end }}
       - command:
         - stackrox/compliance
@@ -227,3 +237,11 @@ spec:
       - name: cache-volume
         emptyDir:
           sizeLimit: 200Mi
+      [<- if .FeatureFlags.ROX_RUNTIME_FILTERS >]
+      - name: containerd-sock
+        hostPath:
+          path: /run/containerd/containerd.sock
+      - name: crio-sock
+        hostPath:
+          path: /run/crio/crio.sock
+      [<- end >]
