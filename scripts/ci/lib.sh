@@ -512,6 +512,10 @@ poll_for_system_test_images() {
     tag="$(make --quiet --no-print-directory tag)"
     local start_time
     start_time="$(date '+%s')"
+    local commit_sha
+    commit_sha="$(get_commit_sha)"
+
+    (cd ./tools/check-workflow-run && go install .) || true
 
     while true; do
         local all_exist=true
@@ -524,6 +528,18 @@ poll_for_system_test_images() {
             fi
         done
 
+        {
+            info "Workflow status for build.yaml:"
+            check-workflow-run \
+              --workflow=build.yaml \
+              --head-SHA="${commit_sha}"
+
+            info "Workflow status for scanner-build.yaml:"
+            check-workflow-run \
+              --workflow=scanner-build.yaml \
+              --head-SHA="${commit_sha}"
+        } | tee "${STATE_BUILD_WORKFLOW}" || true
+
         if $all_exist; then
             info "All images exist"
             break
@@ -531,6 +547,7 @@ poll_for_system_test_images() {
         if (( $(date '+%s') - start_time > time_limit )); then
            die "ERROR: Timed out waiting for images after ${time_limit} seconds"
         fi
+
         sleep 60
     done
 

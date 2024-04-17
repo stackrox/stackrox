@@ -1148,8 +1148,14 @@ handle_e2e_progress_failures() {
         save_junit_success "${images_available[@]}" || true
         check_deployment=true
     else
-        save_junit_failure "${images_available[@]}" \
-            "Did the images build OK? If yes then the poll_for_system_test_images() timeout might need to be increased."
+        local build_results="state unknown"
+        if [[ -f "${STATE_BUILD_WORKFLOW}" ]]; then
+            build_results="$(cat "${STATE_BUILD_WORKFLOW}")"
+        fi
+        save_junit_failure "${images_available[@]}" << __EO_BUILD_RESULTS__
+Check the build workflow runs:
+${build_results}
+__EO_BUILD_RESULTS__
     fi
 
     if $check_deployment; then
