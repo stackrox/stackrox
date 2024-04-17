@@ -173,10 +173,6 @@ spec:
 
     tasks:
 
-    # Init determines whether the image should be built (when image does not exists or rebuild is set to true).
-    #
-    # This task breaks a bit if the params.output-image does not include the revision or $(make tag) result.
-    # Because we have 'rebuild' set to 'true' in our pipelines, the image will be built in any case.
     - name: init
       params:
       - name: image-url
