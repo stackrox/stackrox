@@ -9,7 +9,7 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
-import { getEntityPagePath } from '../../utils/searchUtils';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import { DynamicColumnIcon } from '../../components/DynamicIcon';
 
 import EmptyTableResults from '../components/EmptyTableResults';
@@ -191,7 +191,13 @@ function DeploymentVulnerabilitiesTable({
                                     cve={cve}
                                     vulnerabilityState={vulnerabilityState}
                                 >
-                                    <Link to={getEntityPagePath('CVE', cve, vulnerabilityState)}>
+                                    <Link
+                                        to={getWorkloadEntityPagePath(
+                                            'CVE',
+                                            cve,
+                                            vulnerabilityState
+                                        )}
+                                    >
                                         {cve}
                                     </Link>
                                 </PendingExceptionLabelLayout>

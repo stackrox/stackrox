@@ -58,10 +58,8 @@ export function getOverviewPagePath(
     return `${baseUrlForCveMap[cveBase]}${getQueryString(pageSearch)}`;
 }
 
-export type EntityTab = 'CVE' | 'Image' | 'Deployment';
-
-export function getEntityPagePath(
-    workloadCveEntity: EntityTab,
+export function getWorkloadEntityPagePath(
+    workloadCveEntity: WorkloadEntityTab,
     id: string,
     vulnerabilityState: VulnerabilityState | undefined, // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     queryOptions?: qs.ParsedQs
@@ -76,6 +74,22 @@ export function getEntityPagePath(
             return `${vulnerabilitiesWorkloadCvesPath}/deployments/${id}${queryString}`;
         default:
             return ensureExhaustive(workloadCveEntity);
+    }
+}
+
+export function getPlatformEntityPagePath(
+    platformCveEntity: PlatformEntityTab,
+    id: string,
+    queryOptions?: qs.ParsedQs
+): string {
+    const queryString = getQueryString(queryOptions);
+    switch (platformCveEntity) {
+        case 'CVE':
+            return `${vulnerabilitiesPlatformCvesPath}/cves/${id}${queryString}`;
+        case 'Cluster':
+            return `${vulnerabilitiesPlatformCvesPath}/clusters/${id}${queryString}`;
+        default:
+            return ensureExhaustive(platformCveEntity);
     }
 }
 
@@ -163,6 +177,13 @@ export function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<Fix
     }
 
     return hiddenStatuses;
+}
+
+// Returns a search filter string using regex search modifiers
+export function getRegexScopedQueryString(searchFilter: QuerySearchFilter): string {
+    const searchFilterWithRegex = applyRegexSearchModifiers(searchFilter);
+
+    return getRequestQueryStringForSearchFilter(searchFilterWithRegex);
 }
 
 // Returns a search filter string that scopes results to a Vulnerability state (e.g. 'OBSERVED')

@@ -28,7 +28,7 @@ import {
 } from '../../utils/sortUtils';
 import { CVEListQueryResult, cveListQuery } from '../../WorkloadCves/Tables/CVEsTable';
 import { VulnerabilitySeverityLabel } from '../../types';
-import { getEntityPagePath } from '../../utils/searchUtils';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import CvssFormatted from '../../components/CvssFormatted';
 import DateDistance from '../../components/DateDistance';
@@ -166,7 +166,7 @@ function RequestCVEsTable({
                                         IMAGE: queryObject.Image,
                                     },
                                 };
-                                const cveURL = getEntityPagePath(
+                                const cveURL = getWorkloadEntityPagePath(
                                     'CVE',
                                     cve,
                                     vulnerabilityState,

@@ -7,7 +7,7 @@ import { gql } from '@apollo/client';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { VulnerabilityState } from 'types/cve.proto';
-import { getEntityPagePath } from '../../utils/searchUtils';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DeploymentComponentVulnerabilitiesTable, {
@@ -131,7 +131,11 @@ function AffectedDeploymentsTable({
                                     spaceItems={{ default: 'spaceItemsNone' }}
                                 >
                                     <Link
-                                        to={getEntityPagePath('Deployment', id, vulnerabilityState)}
+                                        to={getWorkloadEntityPagePath(
+                                            'Deployment',
+                                            id,
+                                            vulnerabilityState
+                                        )}
                                     >
                                         <Truncate position="middle" content={name} />
                                     </Link>

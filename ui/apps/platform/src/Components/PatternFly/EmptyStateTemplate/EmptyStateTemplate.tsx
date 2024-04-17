@@ -8,7 +8,7 @@ import {
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 
-type EmptyStateTemplateProps = {
+export type EmptyStateTemplateProps = {
     children?: ReactNode;
     title: string;
     headingLevel: 'h1' | 'h2' | 'h3' | 'h4';
