@@ -16,7 +16,7 @@ import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 

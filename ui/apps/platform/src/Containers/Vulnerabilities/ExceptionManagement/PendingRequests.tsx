@@ -23,7 +23,7 @@ import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import useURLSort from 'hooks/useURLSort';
 import PageTitle from 'Components/PageTitle';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import {
     RequestExpires,
     RequestIDLink,

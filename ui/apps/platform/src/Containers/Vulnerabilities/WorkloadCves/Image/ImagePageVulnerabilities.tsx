@@ -23,7 +23,7 @@ import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied } from 'utils/searchUtils';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';

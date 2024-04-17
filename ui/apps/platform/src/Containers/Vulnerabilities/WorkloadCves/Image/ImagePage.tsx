@@ -24,7 +24,7 @@ import isEmpty from 'lodash/isEmpty';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLPagination from 'hooks/useURLPagination';
 

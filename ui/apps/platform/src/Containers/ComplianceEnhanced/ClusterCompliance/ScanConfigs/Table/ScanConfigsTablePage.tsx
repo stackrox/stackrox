@@ -32,7 +32,7 @@ import {
     complianceEnhancedScanConfigsPath,
 } from 'routePaths';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import TabNavHeader from 'Components/TabNav/TabNavHeader';
 import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
 import useRestQuery from 'hooks/useRestQuery';

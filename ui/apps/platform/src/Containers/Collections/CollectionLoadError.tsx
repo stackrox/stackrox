@@ -3,7 +3,7 @@ import { Bullseye, Title } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type CollectionLoadErrorProps = {

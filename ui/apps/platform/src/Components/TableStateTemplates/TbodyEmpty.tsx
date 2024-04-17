@@ -4,7 +4,7 @@ import { FileAltIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate, {
     EmptyStateTemplateProps,
-} from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+} from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 
 import { TbodyFullCentered } from './TbodyFullCentered';
 

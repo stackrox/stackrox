@@ -14,7 +14,7 @@ import {
     VulnerabilityState,
 } from 'services/VulnerabilityExceptionService';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
 import {

@@ -5,7 +5,7 @@ import { MinusCircleIcon } from '@patternfly/react-icons';
 
 import { WatchedImage } from 'types/image.proto';
 import { UseRestMutationReturn } from 'hooks/useRestMutation';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { Empty } from 'services/types';
 
 export type WatchedImagesTableProps = {

@@ -15,7 +15,7 @@ import {
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { SearchIcon } from '@patternfly/react-icons';
 
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useTableSelection from 'hooks/useTableSelection';
 import { ComplianceProfileSummary } from 'services/ComplianceEnhancedService';
 

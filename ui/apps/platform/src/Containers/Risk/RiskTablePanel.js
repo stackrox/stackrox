@@ -6,7 +6,7 @@ import useDeepCompareEffect from 'use-deep-compare-effect';
 import { Bullseye } from '@patternfly/react-core';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import TableHeader from 'Components/TableHeader';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
