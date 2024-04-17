@@ -111,7 +111,8 @@
                 "COMPLIANCE_SUITES",
                 "CLOUD_SOURCES",
                 "DISCOVERED_CLUSTERS",
-                "RUNTIME_CONFIGURATION"
+                "RUNTIME_CONFIGURATION",
+                "RUNTIME_CONFIGURATION_COLLECTIONS"
               ]
             },
             "collectionFormat": "multi"
@@ -222,7 +223,8 @@
                 "COMPLIANCE_SUITES",
                 "CLOUD_SOURCES",
                 "DISCOVERED_CLUSTERS",
-                "RUNTIME_CONFIGURATION"
+                "RUNTIME_CONFIGURATION",
+                "RUNTIME_CONFIGURATION_COLLECTIONS"
               ]
             },
             "collectionFormat": "multi"
@@ -327,7 +329,8 @@
                 "COMPLIANCE_SUITES",
                 "CLOUD_SOURCES",
                 "DISCOVERED_CLUSTERS",
-                "RUNTIME_CONFIGURATION"
+                "RUNTIME_CONFIGURATION",
+                "RUNTIME_CONFIGURATION_COLLECTIONS"
               ]
             },
             "collectionFormat": "multi"
@@ -481,10 +484,11 @@
         "COMPLIANCE_SUITES",
         "CLOUD_SOURCES",
         "DISCOVERED_CLUSTERS",
-        "RUNTIME_CONFIGURATION"
+        "RUNTIME_CONFIGURATION",
+        "RUNTIME_CONFIGURATION_COLLECTIONS"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 71"
+      "title": "Next available tag: 72"
     },
     "v1SearchOptionsResponse": {
       "type": "object",
