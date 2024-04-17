@@ -194,7 +194,7 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 		return pathutil.NewAugmentedObj(image), nil
 	}
 
-	img := image.Clone()
+	img := shallowCopyImage(image)
 
 	// When evaluating policies, the evaluator will stop when any of the objects within the path
 	// are nil and immediately return, not matching. Within the image signature criteria, we have
@@ -263,4 +263,26 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 	}
 
 	return obj, nil
+}
+
+func shallowCopyImage(image *storage.Image) storage.Image {
+	return storage.Image{
+		Id:                        image.Id,
+		Name:                      image.Name,
+		Names:                     image.Names,
+		Metadata:                  image.Metadata,
+		Scan:                      image.Scan,
+		SignatureVerificationData: image.SignatureVerificationData,
+		Signature:                 image.Signature,
+		SetComponents:             image.SetComponents,
+		SetCves:                   image.SetCves,
+		SetFixable:                image.SetFixable,
+		LastUpdated:               image.LastUpdated,
+		NotPullable:               image.NotPullable,
+		IsClusterLocal:            image.IsClusterLocal,
+		Priority:                  image.Priority,
+		RiskScore:                 image.RiskScore,
+		SetTopCvss:                image.SetTopCvss,
+		Notes:                     image.Notes,
+	}
 }
