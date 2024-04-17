@@ -1,11 +1,13 @@
 package internalmessage
 
-import "context"
+import (
+	"github.com/stackrox/rox/pkg/concurrency"
+)
 
 // SensorInternalMessage is the implementation data structure for text based internal messages.
 type SensorInternalMessage struct {
 	Kind     string
-	Validity context.Context
+	Validity concurrency.Waitable
 	Text     string
 }
 

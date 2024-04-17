@@ -441,9 +441,8 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// suddenly broke.
 		centralCommunication := NewCentralCommunication(s.reconnect.Load(), s.reconcile.Load(), s.components...)
 		syncDone := concurrency.NewSignal()
-		concurrency.WithLock1(s.centralCommunicationLock, func() bool {
+		concurrency.WithLock(s.centralCommunicationLock, func() {
 			s.centralCommunication = centralCommunication
-			return true
 		})
 		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
 		go s.notifySyncDone(&syncDone, centralCommunication)
