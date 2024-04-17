@@ -35,7 +35,6 @@ import {
     userBasePath,
     violationsPath,
     vulnManagementPath,
-    vulnManagementReportsPath,
     vulnManagementRiskAcceptancePath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
@@ -211,11 +210,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
             () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
         ),
         path: vulnerabilityReportsPath,
-    },
-    // Reports must precede generic Vulnerability Management.
-    'vulnerability-management/reports': {
-        component: asyncComponent(() => import('Containers/VulnMgmt/Reports/VulnMgmtReports')),
-        path: vulnManagementReportsPath,
     },
     // Risk Acceptance must precede generic Vulnerability Management.
     'vulnerability-management/risk-acceptance': {

@@ -1,7 +1,7 @@
 import { distanceInWordsStrict, format, addDays } from 'date-fns';
 
 import dateTimeFormat, { dateFormat, timeFormat } from 'constants/dateTimeFormat';
-import { IntervalType } from 'types/report.proto';
+import { IntervalType } from 'services/ReportsService.types';
 
 type DateLike = string | number | Date;
 
