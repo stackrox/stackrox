@@ -67,8 +67,6 @@ export const selectors = {
     markCveFalsePositiveModal: '*[role="dialog"]:contains("Request false positive for")',
     exceptionOptionsTab: 'button[role="tab"]:contains("Options")',
     cveSelectionTab: 'button[role="tab"]:contains("CVE selections")',
-    copyToClipboardButton: 'button[aria-label="Copy"]',
-    copyToClipboardTooltipText: 'div[role="tooltip"]',
 
     // Watched image selectors
     watchedImageLabel: `.pf-v5-c-label:contains("${watchedImageLabelText}")`,

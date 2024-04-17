@@ -3,9 +3,11 @@ import { hasFeatureFlag } from '../../../helpers/features';
 import { cancelAllCveExceptions } from '../workloadCves/WorkloadCves.helpers';
 import { deferAndVisitRequestDetails, approveRequest } from './ExceptionManagement.helpers';
 
-const comment = 'Defer me';
-const expiry = 'When all CVEs are fixable';
-const scope = 'All images';
+const deferralProps = {
+    comment: 'Defer me',
+    expiry: 'When all CVEs are fixable',
+    scope: 'All images',
+};
 
 describe('Exception Management Request Details Page', () => {
     withAuth();
@@ -25,11 +27,6 @@ describe('Exception Management Request Details Page', () => {
             hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             cancelAllCveExceptions();
-            deferAndVisitRequestDetails({
-                comment,
-                expiry,
-                scope,
-            });
         }
     });
 
@@ -43,6 +40,7 @@ describe('Exception Management Request Details Page', () => {
     });
 
     it('should be able to approve a request if approval permissions are granted', () => {
+        deferAndVisitRequestDetails(deferralProps);
         approveRequest();
     });
 });
