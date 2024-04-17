@@ -7,9 +7,11 @@ import {
 } from '../workloadCves/WorkloadCves.helpers';
 import { deferAndVisitRequestDetails } from './ExceptionManagement.helpers';
 
-const comment = 'Defer me';
-const expiry = 'When any CVE is fixable';
-const scope = 'All images';
+const deferralProps = {
+    comment: 'Defer me',
+    expiry: 'When any CVE is fixable',
+    scope: 'All images',
+};
 
 describe('Exception Management Request Details Page', () => {
     withAuth();
@@ -29,11 +31,6 @@ describe('Exception Management Request Details Page', () => {
             hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             cancelAllCveExceptions();
-            deferAndVisitRequestDetails({
-                comment,
-                expiry,
-                scope,
-            });
         }
     });
 
@@ -47,6 +44,8 @@ describe('Exception Management Request Details Page', () => {
     });
 
     it('should be able to update a pending request', () => {
+        deferAndVisitRequestDetails(deferralProps);
+
         const newExpiry = 'When all CVEs are fixable';
         const newComment = 'Updated';
 
@@ -63,7 +62,7 @@ describe('Exception Management Request Details Page', () => {
         cy.get('dl.vulnerability-exception-request-overview')
             .contains('dt', 'Latest comment')
             .next('dd')
-            .should('contain.text', comment);
+            .should('contain.text', deferralProps.comment);
 
         cy.wait('@getAffectedImagesCount');
         cy.wait('@getImageCVEList');
@@ -71,10 +70,13 @@ describe('Exception Management Request Details Page', () => {
         // update deferral
         cy.get('button:contains("Update request")').click();
         cy.get('div[role="dialog"]').should('exist');
-        fillAndSubmitExceptionForm({
-            comment: newComment,
-            expiryLabel: newExpiry,
-        });
+        fillAndSubmitExceptionForm(
+            {
+                comment: newComment,
+                expiryLabel: newExpiry,
+            },
+            'PATCH'
+        );
 
         cy.get('button:contains("Close")').click();
         cy.get('div[role="dialog"]').should('not.exist');
