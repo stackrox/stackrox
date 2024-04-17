@@ -53,10 +53,11 @@ func CLIEnvironment() Environment {
 		} else {
 			colorPrinter = printer.DefaultColorPrinter()
 		}
+		environIO := cliIO.DefaultIO()
 		singleton = &cliEnvironmentImpl{
-			io:              cliIO.DefaultIO(),
+			io:              environIO,
 			colorfulPrinter: colorPrinter,
-			logger:          logger.NewLogger(cliIO.DefaultIO(), colorPrinter),
+			logger:          logger.NewLogger(environIO, colorPrinter),
 		}
 	})
 	return singleton
