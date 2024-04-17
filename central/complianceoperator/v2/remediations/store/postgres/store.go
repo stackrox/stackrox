@@ -93,7 +93,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	}
 	var deniedIDs []string
 	for _, obj := range objs {
-		subScopeChecker := scopeChecker.ClusterID(obj.GetEnforcementType())
+		subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId())
 		if !subScopeChecker.IsAllowed() {
 			deniedIDs = append(deniedIDs, obj.GetId())
 		}
@@ -116,12 +116,11 @@ func insertIntoComplianceOperatorRemediationV2(batch *pgx.Batch, obj *storage.Co
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		obj.GetComplianceCheckResultName(),
-		obj.GetEnforcementType(),
 		obj.GetClusterId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_remediation_v2 (Id, Name, ComplianceCheckResultName, EnforcementType, ClusterId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ComplianceCheckResultName = EXCLUDED.ComplianceCheckResultName, EnforcementType = EXCLUDED.EnforcementType, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_remediation_v2 (Id, Name, ComplianceCheckResultName, ClusterId, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ComplianceCheckResultName = EXCLUDED.ComplianceCheckResultName, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -142,7 +141,6 @@ func copyFromComplianceOperatorRemediationV2(ctx context.Context, s pgSearch.Del
 		"id",
 		"name",
 		"compliancecheckresultname",
-		"enforcementtype",
 		"clusterid",
 		"serialized",
 	}
@@ -162,7 +160,6 @@ func copyFromComplianceOperatorRemediationV2(ctx context.Context, s pgSearch.Del
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetName(),
 			obj.GetComplianceCheckResultName(),
-			obj.GetEnforcementType(),
 			obj.GetClusterId(),
 			serialized,
 		})

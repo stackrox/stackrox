@@ -187,7 +187,7 @@ func (s *ComplianceOperatorRemediationV2StoreSuite) getTestData(access ...storag
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys(objA.GetEnforcementType()),
+					sac.ClusterScopeKeys(objA.GetClusterId()),
 				)),
 			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
@@ -200,7 +200,7 @@ func (s *ComplianceOperatorRemediationV2StoreSuite) getTestData(access ...storag
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys(objA.GetEnforcementType()),
+					sac.ClusterScopeKeys(objA.GetClusterId()),
 				)),
 			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
@@ -226,7 +226,7 @@ func (s *ComplianceOperatorRemediationV2StoreSuite) getTestData(access ...storag
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys(objA.GetEnforcementType()),
+					sac.ClusterScopeKeys(objA.GetClusterId()),
 					sac.NamespaceScopeKeys("unknown ns"),
 				)),
 			expectedObjIDs:         []string{objA.GetId()},

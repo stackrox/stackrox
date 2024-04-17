@@ -2218,8 +2218,8 @@ type ComplianceOperatorRemediationV2 struct {
 	// outdated is an old remediation object when a new remediation was added to the "current" field in the compliance operator.
 	// See: https://docs.openshift.com/container-platform/4.15/security/compliance_operator/co-scans/compliance-operator-remediation.html#compliance-updating_compliance-remediation
 	OutdatedObject       string   `protobuf:"bytes,6,opt,name=outdated_object,json=outdatedObject,proto3" json:"outdated_object,omitempty"`
-	EnforcementType      string   `protobuf:"bytes,7,opt,name=enforcement_type,json=enforcementType,proto3" json:"enforcement_type,omitempty" search:"Cluster ID,hidden"` // @gotags: search:"Cluster ID,hidden"
-	ClusterId            string   `protobuf:"bytes,8,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden"`                   // @gotags: search:"Cluster ID,hidden"
+	EnforcementType      string   `protobuf:"bytes,7,opt,name=enforcement_type,json=enforcementType,proto3" json:"enforcement_type,omitempty"`
+	ClusterId            string   `protobuf:"bytes,8,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden"` // @gotags: search:"Cluster ID,hidden"
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

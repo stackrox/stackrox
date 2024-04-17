@@ -256,6 +256,6 @@ message ComplianceOperatorRemediationV2 {
   // outdated is an old remediation object when a new remediation was added to the "current" field in the compliance operator.
   // See: https://docs.openshift.com/container-platform/4.15/security/compliance_operator/co-scans/compliance-operator-remediation.html#compliance-updating_compliance-remediation
   string outdated_object = 6;
-  string enforcement_type = 7; // @gotags: search:"Cluster ID,hidden"
+  string enforcement_type = 7;
   string cluster_id = 8; // @gotags: search:"Cluster ID,hidden"
 }

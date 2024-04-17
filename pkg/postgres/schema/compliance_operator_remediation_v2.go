@@ -47,7 +47,6 @@ type ComplianceOperatorRemediationV2 struct {
 	ID                        string `gorm:"column:id;type:uuid;primaryKey"`
 	Name                      string `gorm:"column:name;type:varchar"`
 	ComplianceCheckResultName string `gorm:"column:compliancecheckresultname;type:varchar"`
-	EnforcementType           string `gorm:"column:enforcementtype;type:varchar;index:complianceoperatorremediationv2_sac_filter,type:hash"`
 	ClusterID                 string `gorm:"column:clusterid;type:varchar;index:complianceoperatorremediationv2_sac_filter,type:hash"`
 	Serialized                []byte `gorm:"column:serialized;type:bytea"`
 }
