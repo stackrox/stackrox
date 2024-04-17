@@ -23,7 +23,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// Next available tag: 70
+// Next available tag: 71
 type SearchCategory int32
 
 const (
