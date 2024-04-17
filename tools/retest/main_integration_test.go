@@ -34,7 +34,7 @@ func TestIntegration(t *testing.T) {
 				b, err := io.ReadAll(r.Body)
 				assert.NoError(t, err)
 				assert.JSONEq(t,
-					`{"body":":x: There was an error with a comment. Please eddit or remove it and issue a proper command\ngot an error in a comment \"/retest-times 10000000000000000000000000000 job-name-1\": strconv.Atoi: parsing \"10000000000000000000000000000\": value out of range"}`,
+					`{"body":":x: There was an error with a comment. Please edit or remove it and issue a proper command\ngot an error in a comment \"/retest-times 10000000000000000000000000000 job-name-1\": strconv.Atoi: parsing \"10000000000000000000000000000\": value out of range"}`,
 					string(b))
 				_, err = w.Write([]byte(`{"html_url": "some url"}`))
 				assert.NoError(t, err)
@@ -124,7 +124,7 @@ func TestIntegration(t *testing.T) {
     {
         "id": 1,
         "html_url": "https://github.com/octocat/Hello-World/issues/1347#issuecomment-2",
-        "body": ":x: There was an error with a comment. Please eddit or remove it and issue a proper command\ngot an error in a comment \"/retest-times 10000000000000000000000000000 job-name-1\": strconv.Atoi: parsing \"10000000000000000000000000000\": value out of range",
+        "body": ":x: There was an error with a comment. Please edit or remove it and issue a proper command\ngot an error in a comment \"/retest-times 10000000000000000000000000000 job-name-1\": strconv.Atoi: parsing \"10000000000000000000000000000\": value out of range",
         "user": {
             "login": "octocat",
             "html_url": "https://github.com/octocat"

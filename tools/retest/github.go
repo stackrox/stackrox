@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log/slog"
+	"log"
 	"net/http"
 	"strings"
 
@@ -15,10 +15,10 @@ func createComment(ctx context.Context, client *github.Client, prNumber int, com
 	}
 	c, _, err := client.Issues.CreateComment(ctx, s, s, prNumber, issueComment)
 	if err != nil {
-		slog.ErrorContext(ctx, "#%d could not create a comment: %v", prNumber, err)
+		log.Printf("#%d could not create a comment: %v", prNumber, err)
 		return
 	}
-	slog.InfoContext(ctx, "#%d commented: %s", prNumber, c.GetHTMLURL())
+	log.Printf("#%d commented: %s", prNumber, c.GetHTMLURL())
 }
 
 func commentsForPrByUser(ctx context.Context, client *github.Client, prNumber int, userId int64) ([]string, []string, error) {
