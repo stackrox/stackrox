@@ -4,26 +4,15 @@ package datastore
 
 import (
 	"context"
-	// "fmt"
-	// "math/rand"
-	// "sync"
 	"testing"
-	// "time"
 
 	runtimeStore "github.com/stackrox/rox/central/runtimeconfiguration/store"
 	postgresStore "github.com/stackrox/rox/central/runtimeconfiguration/store/postgres"
 	runtimeCollectionsStore "github.com/stackrox/rox/central/runtimeconfigurationcollection/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	// "github.com/stackrox/rox/pkg/fixtures"
-	// "github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	// "github.com/stackrox/rox/pkg/process/id"
-	// "github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
-	// "github.com/stackrox/rox/pkg/sac/resources"
-	// "github.com/stackrox/rox/pkg/search"
-	// "github.com/stackrox/rox/pkg/set"
-	// "github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -57,7 +46,8 @@ func (suite *RuntimeConfigurationTestSuite) TearDownTest() {
 	suite.postgres.Teardown(suite.T())
 }
 
-// TestSetRuntimeConfiguration:
+// TestSetRuntimeConfiguration: Writes a config to the database, reads the database
+// and makes sure that the data retrieved is the same that was inserted
 func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfiguration() {
 
 	runtimeFilterRule := storage.RuntimeFilter_RuntimeFilterRule{
