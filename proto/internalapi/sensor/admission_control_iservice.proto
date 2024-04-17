@@ -5,7 +5,7 @@ package sensor;
 import "google/protobuf/empty.proto";
 import "internalapi/sensor/admission_control.proto";
 
-option go_package = "./internalapi/central;sensor";
+option go_package = "./internalapi/sensor;sensor";
 
 message MsgFromAdmissionControl {}
 

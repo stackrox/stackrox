@@ -4,7 +4,7 @@ package sensor;
 
 import "storage/deployment.proto";
 
-option go_package = "./internalapi/central;sensor";
+option go_package = "./internalapi/sensor;sensor";
 
 message GetDeploymentForPodRequest {
   string pod_name = 1;

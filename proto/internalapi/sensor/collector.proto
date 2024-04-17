@@ -3,7 +3,7 @@ syntax = "proto3";
 package sensor;
 
 option cc_enable_arenas = true;
-option go_package = "./internalapi/central;sensor";
+option go_package = "./internalapi/sensor;sensor";
 
 // A request message sent by collector to register with Sensor. Typically the first message in any streams.
 message CollectorRegisterRequest {

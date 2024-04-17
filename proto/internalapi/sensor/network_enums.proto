@@ -3,7 +3,7 @@ syntax = "proto3";
 package sensor;
 
 option cc_enable_arenas = true;
-option go_package = "./internalapi/central;sensor";
+option go_package = "./internalapi/sensor;sensor";
 option java_package = "io.stackrox.proto.api.v1";
 
 enum ClientServerRole {
