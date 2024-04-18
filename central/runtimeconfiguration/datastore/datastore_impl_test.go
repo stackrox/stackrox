@@ -10,7 +10,6 @@ import (
 	postgresStore "github.com/stackrox/rox/central/runtimeconfiguration/store/postgres"
 	runtimeCollectionsStore "github.com/stackrox/rox/central/runtimeconfigurationcollection/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -61,8 +60,6 @@ var (
 		ResourceCollectionId: "asdf",
 		Status:               "off",
 	}
-
-	oneRule = []*storage.RuntimeFilter_RuntimeFilterRule{&runtimeFilterRuleCluster1}
 
 	rules = []*storage.RuntimeFilter_RuntimeFilterRule{
 		&runtimeFilterRuleCluster1,
@@ -160,8 +157,8 @@ var (
 		},
 	}
 
-	resourceSelectorsCluster1 = []*storage.ResourceSelector{&resourceSelectorCluster1}
-	resourceSelectorsWebappAndMarketing = []*storage.ResourceSelector{&resourceSelectorWebappAndMarketing}
+	resourceSelectorsCluster1            = []*storage.ResourceSelector{&resourceSelectorCluster1}
+	resourceSelectorsWebappAndMarketing  = []*storage.ResourceSelector{&resourceSelectorWebappAndMarketing}
 	resourceSelectorsMarketingDepartment = []*storage.ResourceSelector{&resourceSelectorMarketingDepartment}
 
 	resourceCollectionCluster1 = storage.ResourceCollection{
@@ -186,6 +183,7 @@ var (
 		&runtimeFilterExternalIPs,
 		&runtimeFilterProcess,
 		&runtimeFilterNetworkConnections,
+		&runtimeFilterListeningEndpoints,
 	}
 
 	runtimeFiltersDefaultOnly = []*storage.RuntimeFilter{&runtimeFilterProcess}
@@ -202,9 +200,8 @@ var (
 	}
 
 	runtimeFilteringConfigurationDefaultOnly = &storage.RuntimeFilteringConfiguration{
-		RuntimeFilters:      runtimeFiltersDefaultOnly,
+		RuntimeFilters: runtimeFiltersDefaultOnly,
 	}
-
 )
 
 // TestSetRuntimeConfiguration: Writes a config to the database, reads the database
