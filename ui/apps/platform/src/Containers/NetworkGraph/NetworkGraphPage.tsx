@@ -200,10 +200,65 @@ function NetworkGraphPage() {
                 .then((values) => {
                     // get policy nodes from policy graph API response
                     const { nodes: policyNodes } = values[1].response;
-                    // transform policy data to DataModel
-                    const { policyDataModel, policyNodeMap } = transformPolicyData(policyNodes);
                     // get active nodes from network flow graph API response
                     const { nodes: activeNodes } = values[0].response;
+
+                    /*
+                    FIX for 4.3.x central <-> 4.4.x sensor mismatch that causes the Network Graph to not render
+
+                    This is a patch to fix a compatibility issue between central and sensor, where sensor sends an entity
+                    type of `5`, which is not understood by central and passed to the UI directly as a numeric value
+                    instead of being converted to a string enum of `INTERNAL_ENTITIES` as it is in central >= 4.4.0
+
+                    The fix is to convert all of these numeric value types to the external entity type of `INTERNET` immediately when
+                    the graph responses are received, which will be equivalent to the behavior pre-4.4.
+
+                    To do so, we iterate through both the policy and active nodes:
+
+                        If there is an INTERNET entity type in the nodes, save it, as we need to use this as the entity for all
+                            nodes with an invalid entity type. Otherwise, there will be two instances of the "External Entities"
+                            node displayed in the graph.
+
+                        Any nodes with an entity type of `5` or `INTERNAL_ENTITIES` are invalid and need to be added to a list
+                            to be converted to the INTERNET entity type.
+
+                    Then iterate through the invalid entity nodes:
+
+                        If there is an existing INTERNET entity type in the nodes, set the `entity` 
+                            field of each invalid node to the saved INTERNET entity.
+
+                        If there is no INTERNET entity type in the nodes, we convert the entity type to `INTERNET`
+                            directly, as all entities with type `5` will share the same ID.
+                   */
+                    let existingInternetEntityNode: any;
+                    const invalidEntityNodes: any[] = [];
+                    [...policyNodes, ...activeNodes].forEach((node) => {
+                        if (node?.entity?.type === 'INTERNET') {
+                            existingInternetEntityNode = node;
+                        }
+                        if (
+                            node?.entity?.type === 5 ||
+                            node?.entity?.type === 'INTERNAL_ENTITIES'
+                        ) {
+                            invalidEntityNodes.push(node);
+                        }
+                    });
+                    invalidEntityNodes.forEach((node) => {
+                        if (existingInternetEntityNode) {
+                            // Use the existing INTERNET entity node if it exists
+                            // eslint-disable-next-line no-param-reassign
+                            node.entity = existingInternetEntityNode.entity;
+                        } else {
+                            // Otherwise, convert the type to INTERNET which represent a generic external entity
+                            // eslint-disable-next-line no-param-reassign
+                            node.entity.type = 'INTERNET';
+                        }
+                    });
+                    /* end FIX */
+
+                    // transform policy data to DataModel
+                    const { policyDataModel, policyNodeMap } = transformPolicyData(policyNodes);
+
                     // transform active data to DataModel
                     const { activeDataModel, activeEdgeMap, activeNodeMap } = transformActiveData(
                         activeNodes,
