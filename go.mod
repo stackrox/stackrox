@@ -483,6 +483,11 @@ replace (
 	//       want to reimplement in our code.
 	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.0.0-20240305225512-3737c3c758df
 
+	// grpc has updated protobuf dependency to v2 that causes test failures.
+	// We need to upgrad to v2 in order to fix issues. For now let's stick with older verison.
+	// See: https://github.com/grpc/grpc-go/pull/6919
+	google.golang.org/grpc => google.golang.org/grpc v1.61.1
+
 	// Both github.com/go-yaml/yaml/v2 and github.com/go-yaml/yaml/v3 do not provide go.sum
 	// so dependabot is not able to check dependecies.
 	// See https://github.com/go-yaml/yaml/issues/772
