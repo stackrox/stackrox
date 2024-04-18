@@ -5,7 +5,7 @@ package compliance;
 import "google/protobuf/timestamp.proto";
 import "storage/compliance.proto";
 
-option go_package = "compliance";
+option go_package = "./internalapi/compliance;compliance";
 option java_package = "io.stackrox.proto.compliance";
 
 // Next Available Tag: 2
