@@ -12,13 +12,19 @@ export type ComponentLocationProps = {
 function ComponentLocation({ location, source }: ComponentLocationProps) {
     return (
         <Flex spaceItems={{ default: 'spaceItemsXs' }} alignItems={{ default: 'alignItemsCenter' }}>
-            <Truncate content={location || 'N/A'} position="middle" />
-            {source === 'OS' && location === '' && (
-                <Tooltip content="Location is unavailable for operating system packages">
-                    <Icon>
-                        <InfoCircleIcon color="var(--pf-v5-global--info-color--100)" />
-                    </Icon>
-                </Tooltip>
+            {location ? (
+                <Truncate content={location} position="middle" />
+            ) : (
+                <>
+                    <span>N/A</span>
+                    {source === 'OS' && (
+                        <Tooltip content="Location is unavailable for operating system packages">
+                            <Icon>
+                                <InfoCircleIcon color="var(--pf-v5-global--info-color--100)" />
+                            </Icon>
+                        </Tooltip>
+                    )}
+                </>
             )}
         </Flex>
     );

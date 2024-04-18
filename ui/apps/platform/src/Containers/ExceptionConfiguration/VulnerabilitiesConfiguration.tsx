@@ -65,7 +65,6 @@ function NumericSetting({
                         <TextInput
                             id={`${fieldId}.numDays`}
                             type="number"
-                            style={{ width: '100px' }}
                             value={value}
                             onChange={(e) => handleChange(e)}
                             isDisabled={!isSettingEnabled || isDisabled}
@@ -73,11 +72,15 @@ function NumericSetting({
                         />
                         <span>days</span>
                     </Flex>
-                    <FormHelperText>
-                        <HelperText>
-                            <HelperTextItem variant={validated}>{helperTextInvalid}</HelperTextItem>
-                        </HelperText>
-                    </FormHelperText>
+                    {helperTextInvalid && (
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem variant={validated}>
+                                    {helperTextInvalid}
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
+                    )}
                 </FormGroup>
             </GridItem>
             <GridItem span={4} md={8} xl={9}>

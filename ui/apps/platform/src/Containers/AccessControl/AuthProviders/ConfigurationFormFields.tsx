@@ -122,7 +122,9 @@ function ConfigurationFormFields({
                                             showIssuerError ? ValidatedOptions.error : 'default'
                                         }
                                     >
-                                        {configErrors?.issuer || (
+                                        {showIssuerError ? (
+                                            configErrors?.issuer
+                                        ) : (
                                             <span className="pf-v5-u-font-size-sm">
                                                 for example,{' '}
                                                 <kbd className="pf-v5-u-font-size-xs">
@@ -154,7 +156,7 @@ function ConfigurationFormFields({
                                             showClientIdError ? ValidatedOptions.error : 'default'
                                         }
                                     >
-                                        {configErrors?.client_id || ''}
+                                        {showClientIdError ? configErrors?.client_id : ''}
                                     </HelperTextItem>
                                 </HelperText>
                             </FormHelperText>
@@ -212,7 +214,9 @@ function ConfigurationFormFields({
                                             showIssuerError ? ValidatedOptions.error : 'default'
                                         }
                                     >
-                                        {configErrors?.issuer || (
+                                        {showIssuerError ? (
+                                            configErrors?.issuer
+                                        ) : (
                                             <span className="pf-v5-u-font-size-sm">
                                                 for example,{' '}
                                                 <kbd className="pf-v5-u-font-size-xs">
@@ -244,7 +248,7 @@ function ConfigurationFormFields({
                                             showClientIdError ? ValidatedOptions.error : 'default'
                                         }
                                     >
-                                        {configErrors?.client_id || ''}
+                                        {showClientIdError ? configErrors?.client_id : ''}
                                     </HelperTextItem>
                                 </HelperText>
                             </FormHelperText>
@@ -291,7 +295,9 @@ function ConfigurationFormFields({
                                                 : 'default'
                                         }
                                     >
-                                        {configErrors?.client_secret || (
+                                        {showClientSecretError ? (
+                                            configErrors?.client_secret
+                                        ) : (
                                             <span className="pf-v5-u-font-size-sm">
                                                 {clientSecretHelperText}
                                             </span>
@@ -383,7 +389,9 @@ function ConfigurationFormFields({
                                             showSpIssuerError ? ValidatedOptions.error : 'default'
                                         }
                                     >
-                                        {configErrors?.sp_issuer || (
+                                        {showSpIssuerError ? (
+                                            configErrors?.sp_issuer
+                                        ) : (
                                             <span className="pf-v5-u-font-size-sm">
                                                 for example,{' '}
                                                 <kbd className="pf-v5-u-font-size-xs">
@@ -448,7 +456,9 @@ function ConfigurationFormFields({
                                                         : 'default'
                                                 }
                                             >
-                                                {configErrors?.idp_metadata_url || (
+                                                {showIdpMetadataUrlError ? (
+                                                    configErrors?.idp_metadata_url
+                                                ) : (
                                                     <span className="pf-v5-u-font-size-sm">
                                                         for example,{' '}
                                                         <kbd className="pf-v5-u-font-size-xs">
@@ -492,7 +502,9 @@ function ConfigurationFormFields({
                                                         : 'default'
                                                 }
                                             >
-                                                {configErrors?.idp_issuer || (
+                                                {showIdpIssuerError ? (
+                                                    configErrors?.idp_issuer
+                                                ) : (
                                                     <span className="pf-v5-u-font-size-sm">
                                                         for example,{' '}
                                                         <kbd className="pf-v5-u-font-size-xs">
@@ -537,7 +549,9 @@ function ConfigurationFormFields({
                                                         : 'default'
                                                 }
                                             >
-                                                {configErrors?.idp_sso_url || (
+                                                {showIdpSsoUrlError ? (
+                                                    configErrors?.idp_sso_url
+                                                ) : (
                                                     <span className="pf-v5-u-font-size-sm">
                                                         for example,{' '}
                                                         <kbd className="pf-v5-u-font-size-xs">
@@ -609,7 +623,9 @@ function ConfigurationFormFields({
                                                         : 'default'
                                                 }
                                             >
-                                                {configErrors?.idp_cert_pem || ''}
+                                                {showIdpCertPemError
+                                                    ? configErrors?.idp_cert_pem
+                                                    : ''}
                                             </HelperTextItem>
                                         </HelperText>
                                     </FormHelperText>
@@ -658,7 +674,7 @@ function ConfigurationFormFields({
                                         showUserPkiKeysError ? ValidatedOptions.error : 'default'
                                     }
                                 >
-                                    {configErrors?.keys || ''}
+                                    {showUserPkiKeysError ? configErrors?.keys : ''}
                                 </HelperTextItem>
                             </HelperText>
                         </FormHelperText>
@@ -683,7 +699,9 @@ function ConfigurationFormFields({
                                 <HelperTextItem
                                     variant={showAudienceError ? ValidatedOptions.error : 'default'}
                                 >
-                                    {configErrors?.audience || (
+                                    {showAudienceError ? (
+                                        configErrors?.audience
+                                    ) : (
                                         <span className="pf-v5-u-font-size-sm">
                                             for example,{' '}
                                             <kbd className="pf-v5-u-font-size-xs">
