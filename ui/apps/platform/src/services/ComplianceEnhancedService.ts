@@ -39,6 +39,8 @@ export type MonthlySchedule = ScheduleBase & {
 
 export type Schedule = UnsetSchedule | DailySchedule | WeeklySchedule | MonthlySchedule;
 
+export type IntervalType = Schedule['intervalType'];
+
 // API types for Scan Configs:
 // https://github.com/stackrox/stackrox/blob/master/proto/api/v2/compliance_scan_configuration_service
 type BaseComplianceScanConfigurationSettings = {
