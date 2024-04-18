@@ -33,7 +33,7 @@ func run(ctx context.Context, client *github.Client) error {
 	log.Printf("Logged as %s: %s", user.GetLogin(), user.GetHTMLURL())
 
 	// TODO(janisz): handle pagination
-	search, _, err := client.Search.Issues(ctx, `repo:stackrox/stackrox label:auto-retest state:open type:pr status:failure`, nil)
+	search, _, err := client.Search.Issues(ctx, `repo:stackrox/stackrox label:auto-retest state:open type:pr`, nil)
 	if err != nil {
 		return fmt.Errorf("could not find issues: %w", err)
 	}
@@ -89,7 +89,6 @@ issues:
 		}
 		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
 		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestFailedStatuses(statuses, userComments))
-		log.Printf("#%d will be commented with: %s", prNumber, strings.Join(newComments, ", "))
 		createComment(ctx, client, prNumber, strings.Join(newComments, "\n"))
 	}
 	return nil
