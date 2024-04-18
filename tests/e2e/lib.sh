@@ -1148,9 +1148,9 @@ handle_e2e_progress_failures() {
         save_junit_success "${images_available[@]}"
         check_deployment=true
     else
-        local build_results="state unknown"
-        if [[ -f "${STATE_BUILD_WORKFLOW}" ]]; then
-            build_results="$(cat "${STATE_BUILD_WORKFLOW}")"
+        local build_results="build results are unknown"
+        if [[ -f "${STATE_BUILD_RESULTS}" ]]; then
+            build_results="$(cat "${STATE_BUILD_RESULTS}")"
         fi
         read -r -d '' build_details <<- _EO_DETAILS_ || true
 Check the build workflow runs:
