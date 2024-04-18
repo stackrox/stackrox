@@ -14,8 +14,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
-	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"k8s.io/client-go/kubernetes"
 	v1Listers "k8s.io/client-go/listers/core/v1"
@@ -96,13 +96,13 @@ func NewDispatcherRegistry(
 
 		traceWriter: traceWriter,
 
-		complianceOperatorResultDispatcher:              complianceOperatorDispatchers.NewResultDispatcher(),
-		complianceOperatorRulesDispatcher:               complianceOperatorDispatchers.NewRulesDispatcher(),
-		complianceOperatorProfileDispatcher:             complianceOperatorDispatchers.NewProfileDispatcher(),
-		complianceOperatorScanSettingBindingsDispatcher: complianceOperatorDispatchers.NewScanSettingBindingsDispatcher(),
-		complianceOperatorScanDispatcher:                complianceOperatorDispatchers.NewScanDispatcher(),
-		complianceOperatorTailoredProfileDispatcher:     complianceOperatorDispatchers.NewTailoredProfileDispatcher(profileLister),
-		complianceOperatorSuiteDispatcher:               complianceOperatorDispatchers.NewSuitesDispatcher(),
+		complianceOperatorResultDispatcher:              dispatchers.NewResultDispatcher(),
+		complianceOperatorRulesDispatcher:               dispatchers.NewRulesDispatcher(),
+		complianceOperatorProfileDispatcher:             dispatchers.NewProfileDispatcher(),
+		complianceOperatorScanSettingBindingsDispatcher: dispatchers.NewScanSettingBindingsDispatcher(),
+		complianceOperatorScanDispatcher:                dispatchers.NewScanDispatcher(),
+		complianceOperatorTailoredProfileDispatcher:     dispatchers.NewTailoredProfileDispatcher(profileLister),
+		complianceOperatorSuiteDispatcher:               dispatchers.NewSuitesDispatcher(),
 	}
 }
 
@@ -121,13 +121,13 @@ type registryImpl struct {
 	osRegistryMirrorDispatcher *registryMirrorDispatcher
 	traceWriter                io.Writer
 
-	complianceOperatorResultDispatcher              *complianceOperatorDispatchers.ResultDispatcher
-	complianceOperatorProfileDispatcher             *complianceOperatorDispatchers.ProfileDispatcher
-	complianceOperatorScanSettingBindingsDispatcher *complianceOperatorDispatchers.ScanSettingBindings
-	complianceOperatorRulesDispatcher               *complianceOperatorDispatchers.RulesDispatcher
-	complianceOperatorScanDispatcher                *complianceOperatorDispatchers.ScanDispatcher
-	complianceOperatorTailoredProfileDispatcher     *complianceOperatorDispatchers.TailoredProfileDispatcher
-	complianceOperatorSuiteDispatcher               *complianceOperatorDispatchers.SuitesDispatcher
+	complianceOperatorResultDispatcher              *dispatchers.ResultDispatcher
+	complianceOperatorProfileDispatcher             *dispatchers.ProfileDispatcher
+	complianceOperatorScanSettingBindingsDispatcher *dispatchers.ScanSettingBindings
+	complianceOperatorRulesDispatcher               *dispatchers.RulesDispatcher
+	complianceOperatorScanDispatcher                *dispatchers.ScanDispatcher
+	complianceOperatorTailoredProfileDispatcher     *dispatchers.TailoredProfileDispatcher
+	complianceOperatorSuiteDispatcher               *dispatchers.SuitesDispatcher
 }
 
 func wrapWithDumpingDispatcher(d Dispatcher, w io.Writer) Dispatcher {
