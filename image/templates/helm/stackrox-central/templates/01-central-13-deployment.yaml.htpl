@@ -91,7 +91,7 @@ spec:
           value: {{ ._rox.central.telemetry.storage.key | quote }}
         {{- end }}
         - name: ROX_TELEMETRY_API_WHITELIST
-          value: "/api/splunk/ta/*"
+          value: "/api/splunk/ta/*,/v1/auth/m2m/exchange"
         {{- /* Otherwise... */}}
         {{- else }}
         {{- /* ... if telemetry.enabled is false, configure the key to disable
