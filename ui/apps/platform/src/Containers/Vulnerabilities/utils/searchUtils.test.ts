@@ -1,4 +1,8 @@
-import { getPlatformEntityPagePath, getWorkloadEntityPagePath } from './searchUtils';
+import {
+    getNodeEntityPagePath,
+    getPlatformEntityPagePath,
+    getWorkloadEntityPagePath,
+} from './searchUtils';
 
 const workloadUrlBase = '/main/vulnerabilities/workload-cves';
 
@@ -90,6 +94,34 @@ describe('getPlatformEntityPagePath', () => {
             })
         ).toEqual(
             `${platformUrlBase}/clusters/cluster-123-456?s[SEVERITY][0]=CRITICAL&s[NAMESPACE][0]=stackrox`
+        );
+    });
+});
+
+const nodeUrlBase = '/main/vulnerabilities/node-cves';
+
+describe('getNodeEntityPagePath', () => {
+    it('should return the correct path for CVE entity', () => {
+        expect(getNodeEntityPagePath('CVE', 'CVE-123-456')).toEqual(
+            `${nodeUrlBase}/cves/CVE-123-456`
+        );
+
+        expect(
+            getNodeEntityPagePath('CVE', 'CVE-123-456', { s: { SEVERITY: ['CRITICAL'] } })
+        ).toEqual(`${nodeUrlBase}/cves/CVE-123-456?s[SEVERITY][0]=CRITICAL`);
+    });
+
+    it('should return the correct path for Node entity', () => {
+        expect(getNodeEntityPagePath('Node', 'node-123-456')).toEqual(
+            `${nodeUrlBase}/nodes/node-123-456`
+        );
+
+        expect(
+            getNodeEntityPagePath('Node', 'node-123-456', {
+                s: { SEVERITY: ['CRITICAL'], NAMESPACE: ['stackrox'] },
+            })
+        ).toEqual(
+            `${nodeUrlBase}/nodes/node-123-456?s[SEVERITY][0]=CRITICAL&s[NAMESPACE][0]=stackrox`
         );
     });
 });
