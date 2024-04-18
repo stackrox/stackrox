@@ -1383,6 +1383,12 @@
         },
         "profileName": {
           "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
         }
       },
       "title": "ComplianceProfileScanStats provides scan stats overview based on profile"

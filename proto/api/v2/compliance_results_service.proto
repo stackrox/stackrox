@@ -83,6 +83,8 @@ message ComplianceScanResultsOverview {
 message ComplianceProfileScanStats {
   repeated ComplianceCheckStatusCount check_stats = 1;
   string profile_name = 2;
+  string title = 3;
+  string version = 4;
 }
 
 // Group the number of occurrences by status
