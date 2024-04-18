@@ -58,7 +58,6 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 			rp.Path = ri.HTTPRequest.URL.Path
 		}
 		rp.Code = grpcError.ErrToHTTPStatus(err)
-		rp.Header = requestinfo.WithGet(ri.HTTPRequest.Headers)
 	} else {
 		rp.Method = grpcFullMethod
 		rp.Path = grpcFullMethod
@@ -73,11 +72,15 @@ func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *Re
 		log.Debug("Cannot identify user from context: ", iderr)
 	}
 	header := requestinfo.WithGet(r.Header)
+	var path string
+	if r.URL != nil {
+		path = r.URL.Path
+	}
 	return &RequestParams{
 		UserAgent: getUserAgent(header),
 		UserID:    id,
 		Method:    r.Method,
-		Path:      r.URL.Path,
+		Path:      path,
 		Code:      status,
 		HTTPReq:   r,
 		Header:    header,
