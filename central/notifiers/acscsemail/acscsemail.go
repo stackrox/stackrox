@@ -50,6 +50,10 @@ func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer
 }
 
 func init() {
+	if !features.ACSCSEmailNotifier.Enabled() {
+		return
+	}
+
 	cryptoKey := ""
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {
@@ -58,10 +62,9 @@ func init() {
 			utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
 		}
 	}
-	if features.ACSCSEmailNotifier.Enabled() {
-		notifiers.Add(notifiers.ACSCSEmailType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-			g, err := newACSCSEmail(notifier, cryptocodec.Singleton(), cryptoKey)
-			return g, err
-		})
-	}
+
+	notifiers.Add(notifiers.ACSCSEmailType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+		g, err := newACSCSEmail(notifier, cryptocodec.Singleton(), cryptoKey)
+		return g, err
+	})
 }
