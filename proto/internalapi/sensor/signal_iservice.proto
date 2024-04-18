@@ -7,7 +7,7 @@ import "api/v1/signal.proto";
 import "internalapi/sensor/collector.proto";
 
 option cc_enable_arenas = true;
-option go_package = "sensor";
+option go_package = "./internalapi/sensor;sensor";
 
 // A single message in the event stream between Collector and Sensor.
 message SignalStreamMessage {

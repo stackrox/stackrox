@@ -4,7 +4,7 @@ package central;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "central";
+option go_package = "./internalapi/central;central";
 
 message CancelPullTelemetryDataRequest {
   string request_id = 1;
