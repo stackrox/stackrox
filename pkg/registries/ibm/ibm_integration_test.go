@@ -28,7 +28,7 @@ func TestIBM(t *testing.T) {
 				ApiKey:   apiToken,
 			},
 		},
-	}, false)
+	}, false, nil)
 	require.NoError(t, err)
 
 	image, err := utils.GenerateImageFromString(testImage)

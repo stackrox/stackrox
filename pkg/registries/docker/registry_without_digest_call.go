@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/registries/types"
 )
 
 // manifestFuncs explicitly lists the container image manifest handlers.
@@ -24,8 +25,10 @@ type RegistryWithoutManifestCall struct {
 }
 
 // NewRegistryWithoutManifestCall creates a new basic docker registry without a manifest digest call
-func NewRegistryWithoutManifestCall(integration *storage.ImageIntegration, disableRepoList bool) (*RegistryWithoutManifestCall, error) {
-	dockerRegistry, err := NewDockerRegistry(integration, disableRepoList)
+func NewRegistryWithoutManifestCall(integration *storage.ImageIntegration,
+	disableRepoList bool, metricsHandler *types.MetricsHandler,
+) (*RegistryWithoutManifestCall, error) {
+	dockerRegistry, err := NewDockerRegistry(integration, disableRepoList, metricsHandler)
 	if err != nil {
 		return nil, err
 	}

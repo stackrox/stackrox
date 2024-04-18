@@ -21,7 +21,7 @@ func TestRHEL(t *testing.T) {
 				Endpoint: "registry.access.redhat.com",
 			},
 		},
-	}, nil)
+	})
 	require.NoError(t, err)
 
 	m, err := reg.Metadata(&storage.Image{
