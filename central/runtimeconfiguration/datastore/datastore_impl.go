@@ -45,6 +45,10 @@ func (ds *datastoreImpl) getResourceCollections(ctx context.Context) ([]*storage
 			return nil
 		})
 
+	if len(resourceCollections) == 0 {
+		resourceCollections = nil
+	}
+
 	return resourceCollections, err
 }
 
@@ -70,7 +74,6 @@ func (ds *datastoreImpl) GetRuntimeConfiguration(ctx context.Context) (*storage.
 				runtimeFilter := runtimeFilteringMap[runtimeConfigurationRow.Feature]
 				runtimeFilter.Rules = rules
 				runtimeFilteringMap[runtimeConfigurationRow.Feature] = runtimeFilter
-
 			}
 
 			return nil
@@ -81,7 +84,14 @@ func (ds *datastoreImpl) GetRuntimeConfiguration(ctx context.Context) (*storage.
 	}
 
 	for _, runtimeFilter := range runtimeFilteringMap {
+		if len(runtimeFilter.Rules) == 0 {
+			runtimeFilter.Rules = nil
+		}
 		runtimeFilters = append(runtimeFilters, runtimeFilter)
+	}
+
+	if len(runtimeFilters) == 0 {
+		runtimeFilters = nil
 	}
 
 	resourceCollections, err := ds.getResourceCollections(ctx)
@@ -97,24 +107,26 @@ func (ds *datastoreImpl) GetRuntimeConfiguration(ctx context.Context) (*storage.
 func convertRuntimeConfigurationToRuntimeConfigurationTable(runtimeConfiguration *storage.RuntimeFilteringConfiguration) []*storage.RuntimeFilterData {
 	runtimeFiltersRows := make([]*storage.RuntimeFilterData, 0)
 
-	runtimeFilters := runtimeConfiguration.RuntimeFilters
-	for _, runtimeFilter := range runtimeFilters {
-		runtimeFiltersRow := storage.RuntimeFilterData{
-			Id:      uuid.NewV4().String(),
-			Feature: runtimeFilter.Feature,
-			Status:  runtimeFilter.DefaultStatus,
-		}
-		runtimeFiltersRows = append(runtimeFiltersRows, &runtimeFiltersRow)
-		for _, rule := range runtimeFilter.Rules {
-			runtimeFiltersRow2 := storage.RuntimeFilterData{
-				Id:                   uuid.NewV4().String(),
-				Feature:              runtimeFilter.Feature,
-				Status:               rule.Status,
-				ResourceCollectionId: rule.ResourceCollectionId,
+	if runtimeConfiguration.RuntimeFilters != nil {
+		runtimeFilters := runtimeConfiguration.RuntimeFilters
+		for _, runtimeFilter := range runtimeFilters {
+			runtimeFiltersRow := storage.RuntimeFilterData{
+				Id:      uuid.NewV4().String(),
+				Feature: runtimeFilter.Feature,
+				Status:  runtimeFilter.DefaultStatus,
 			}
-			runtimeFiltersRows = append(runtimeFiltersRows, &runtimeFiltersRow2)
-		}
+			runtimeFiltersRows = append(runtimeFiltersRows, &runtimeFiltersRow)
+			for _, rule := range runtimeFilter.Rules {
+				runtimeFiltersRow2 := storage.RuntimeFilterData{
+					Id:                   uuid.NewV4().String(),
+					Feature:              runtimeFilter.Feature,
+					Status:               rule.Status,
+					ResourceCollectionId: rule.ResourceCollectionId,
+				}
+				runtimeFiltersRows = append(runtimeFiltersRows, &runtimeFiltersRow2)
+			}
 
+		}
 	}
 
 	return runtimeFiltersRows

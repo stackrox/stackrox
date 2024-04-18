@@ -46,25 +46,78 @@ func (suite *RuntimeConfigurationTestSuite) TearDownTest() {
 	suite.postgres.Teardown(suite.T())
 }
 
-// TestSetRuntimeConfiguration: Writes a config to the database, reads the database
-// and makes sure that the data retrieved is the same that was inserted
-func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfiguration() {
-
-	runtimeFilterRule := storage.RuntimeFilter_RuntimeFilterRule{
+var (
+	runtimeFilterRuleCluster1 = storage.RuntimeFilter_RuntimeFilterRule{
 		ResourceCollectionId: "abcd",
 		Status:               "off",
 	}
 
-	rules := []*storage.RuntimeFilter_RuntimeFilterRule{&runtimeFilterRule}
+	runtimeFilterRuleWebappAndMarketing = storage.RuntimeFilter_RuntimeFilterRule{
+		ResourceCollectionId: "qwerty",
+		Status:               "on",
+	}
 
-	runtimeFilter := storage.RuntimeFilter{
-		Feature:       storage.RuntimeFilterFeatures_PROCESSES,
-		DefaultStatus: "on",
+	runtimeFilterRuleMarketingDepartment = storage.RuntimeFilter_RuntimeFilterRule{
+		ResourceCollectionId: "asdf",
+		Status:               "off",
+	}
+
+	oneRule = []*storage.RuntimeFilter_RuntimeFilterRule{&runtimeFilterRuleCluster1}
+
+	rules = []*storage.RuntimeFilter_RuntimeFilterRule{
+		&runtimeFilterRuleCluster1,
+		&runtimeFilterRuleWebappAndMarketing,
+		&runtimeFilterRuleMarketingDepartment,
+	}
+
+	runtimeFilterExternalIPs = storage.RuntimeFilter{
+		Feature:       storage.RuntimeFilterFeatures_EXTERNAL_IPS,
+		DefaultStatus: "off",
 		Rules:         rules,
 	}
 
-	resourceSelector := storage.ResourceSelector{
+	runtimeFilterProcess = storage.RuntimeFilter{
+		Feature:       storage.RuntimeFilterFeatures_PROCESSES,
+		DefaultStatus: "on",
+	}
+
+	runtimeFilterNetworkConnections = storage.RuntimeFilter{
+		Feature:       storage.RuntimeFilterFeatures_NETWORK_CONNECTIONS,
+		DefaultStatus: "on",
+	}
+
+	runtimeFilterListeningEndpoints = storage.RuntimeFilter{
+		Feature:       storage.RuntimeFilterFeatures_LISTENING_ENDPOINTS,
+		DefaultStatus: "on",
+	}
+
+	resourceSelectorCluster1 = storage.ResourceSelector{
 		Rules: []*storage.SelectorRule{
+			{
+				FieldName: "Clster",
+				Operator:  storage.BooleanOperator_OR,
+				Values: []*storage.RuleValue{
+					{
+						Value:     "cluster-1",
+						MatchType: storage.MatchType_EXACT,
+					},
+				},
+			},
+		},
+	}
+
+	resourceSelectorWebappAndMarketing = storage.ResourceSelector{
+		Rules: []*storage.SelectorRule{
+			{
+				FieldName: "Clster",
+				Operator:  storage.BooleanOperator_OR,
+				Values: []*storage.RuleValue{
+					{
+						Value:     "cluster-1",
+						MatchType: storage.MatchType_EXACT,
+					},
+				},
+			},
 			{
 				FieldName: "Namespace",
 				Operator:  storage.BooleanOperator_OR,
@@ -73,31 +126,116 @@ func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfiguration() {
 						Value:     "webapp",
 						MatchType: storage.MatchType_EXACT,
 					},
+					{
+						Value:     "marketing.*",
+						MatchType: storage.MatchType_REGEX,
+					},
 				},
 			},
 		},
 	}
 
-	resourceSelectors := []*storage.ResourceSelector{&resourceSelector}
-
-	resourceCollection := storage.ResourceCollection{
-		Id:                "abcd",
-		Name:              "Fake collection",
-		ResourceSelectors: resourceSelectors,
+	resourceSelectorMarketingDepartment = storage.ResourceSelector{
+		Rules: []*storage.SelectorRule{
+			{
+				FieldName: "Clster",
+				Operator:  storage.BooleanOperator_OR,
+				Values: []*storage.RuleValue{
+					{
+						Value:     "cluster-1",
+						MatchType: storage.MatchType_EXACT,
+					},
+				},
+			},
+			{
+				FieldName: "Namespace",
+				Operator:  storage.BooleanOperator_OR,
+				Values: []*storage.RuleValue{
+					{
+						Value:     "marketing-department",
+						MatchType: storage.MatchType_EXACT,
+					},
+				},
+			},
+		},
 	}
 
-	runtimeFilters := []*storage.RuntimeFilter{&runtimeFilter}
-	resourceCollections := []*storage.ResourceCollection{&resourceCollection}
+	resourceSelectorsCluster1 = []*storage.ResourceSelector{&resourceSelectorCluster1}
+	resourceSelectorsWebappAndMarketing = []*storage.ResourceSelector{&resourceSelectorWebappAndMarketing}
+	resourceSelectorsMarketingDepartment = []*storage.ResourceSelector{&resourceSelectorMarketingDepartment}
 
-	runtimeFilteringConfiguration := &storage.RuntimeFilteringConfiguration{
+	resourceCollectionCluster1 = storage.ResourceCollection{
+		Id:                "abcd",
+		Name:              "Cluster 1",
+		ResourceSelectors: resourceSelectorsCluster1,
+	}
+
+	resourceCollectionWebappAndMarketing = storage.ResourceCollection{
+		Id:                "qwerty",
+		Name:              "Webapp and marketing",
+		ResourceSelectors: resourceSelectorsWebappAndMarketing,
+	}
+
+	resourceCollectionMarketingDepartment = storage.ResourceCollection{
+		Id:                "asdf",
+		Name:              "Marketing Department",
+		ResourceSelectors: resourceSelectorsMarketingDepartment,
+	}
+
+	runtimeFilters = []*storage.RuntimeFilter{
+		&runtimeFilterExternalIPs,
+		&runtimeFilterProcess,
+		&runtimeFilterNetworkConnections,
+	}
+
+	runtimeFiltersDefaultOnly = []*storage.RuntimeFilter{&runtimeFilterProcess}
+
+	resourceCollections = []*storage.ResourceCollection{
+		&resourceCollectionCluster1,
+		&resourceCollectionWebappAndMarketing,
+		&resourceCollectionMarketingDepartment,
+	}
+
+	runtimeFilteringConfiguration = &storage.RuntimeFilteringConfiguration{
 		RuntimeFilters:      runtimeFilters,
 		ResourceCollections: resourceCollections,
 	}
 
+	runtimeFilteringConfigurationDefaultOnly = &storage.RuntimeFilteringConfiguration{
+		RuntimeFilters:      runtimeFiltersDefaultOnly,
+	}
+
+)
+
+// TestSetRuntimeConfiguration: Writes a config to the database, reads the database
+// and makes sure that the data retrieved is the same that was inserted
+func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfiguration() {
 	suite.NoError(suite.datastore.SetRuntimeConfiguration(suite.hasAllCtx, runtimeFilteringConfiguration))
 
 	fetchedRuntimeConfiguration, err := suite.datastore.GetRuntimeConfiguration(suite.hasAllCtx)
 	suite.NoError(err)
 
 	suite.Equal(runtimeFilteringConfiguration, fetchedRuntimeConfiguration)
+}
+
+// TestSetRuntimeConfigurationNil: Attempts to write an empty config to the database.
+func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfigurationNil() {
+	runtimeFilteringConfigurationNil := &storage.RuntimeFilteringConfiguration{}
+	suite.NoError(suite.datastore.SetRuntimeConfiguration(suite.hasAllCtx, runtimeFilteringConfigurationNil))
+
+	fetchedRuntimeConfiguration, err := suite.datastore.GetRuntimeConfiguration(suite.hasAllCtx)
+	suite.NoError(err)
+
+	suite.Equal(runtimeFilteringConfigurationNil, fetchedRuntimeConfiguration)
+}
+
+// TestSetRuntimeConfigurationDefaultOnly: Writes a config to the database without any rules, reads the database
+// and makes sure that the data retrieved is the same that was inserted
+func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfigurationDefaultOnly() {
+	suite.NoError(suite.datastore.SetRuntimeConfiguration(suite.hasAllCtx, runtimeFilteringConfigurationDefaultOnly))
+
+	fetchedRuntimeConfiguration, err := suite.datastore.GetRuntimeConfiguration(suite.hasAllCtx)
+	suite.NoError(err)
+
+	suite.Equal(runtimeFilteringConfigurationDefaultOnly, fetchedRuntimeConfiguration)
 }
