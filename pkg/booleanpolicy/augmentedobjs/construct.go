@@ -265,8 +265,8 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 	return obj, nil
 }
 
-func shallowCopyImage(image *storage.Image) storage.Image {
-	return storage.Image{
+func shallowCopyImage(image *storage.Image) *storage.Image {
+	return &storage.Image{
 		Id:                        image.Id,
 		Name:                      image.Name,
 		Names:                     image.Names,
