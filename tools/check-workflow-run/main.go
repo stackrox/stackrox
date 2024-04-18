@@ -48,7 +48,7 @@ func main() {
 
 	conclusion := lastRun.GetConclusion()
 	if *generateProwError && conclusion != "" && conclusion != "success" {
-		fmt.Println("ERROR: this workflow did not complete successfully")
+		fmt.Printf("ERROR: %s did not complete successfully\n", *workflowFileName)
 	}
 
 	fmt.Printf("status: %v\nconclusion: %v\nURL: %v\n",
