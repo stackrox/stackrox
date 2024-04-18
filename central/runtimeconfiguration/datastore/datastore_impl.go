@@ -107,6 +107,7 @@ func (ds *datastoreImpl) GetRuntimeConfiguration(ctx context.Context) (*storage.
 func convertRuntimeConfigurationToRuntimeConfigurationTable(runtimeConfiguration *storage.RuntimeFilteringConfiguration) []*storage.RuntimeFilterData {
 	runtimeFiltersRows := make([]*storage.RuntimeFilterData, 0)
 
+	log.Infof("runtimeConfiguration.RuntimeFilters= %+v", runtimeConfiguration.RuntimeFilters)
 	if runtimeConfiguration.RuntimeFilters != nil {
 		runtimeFilters := runtimeConfiguration.RuntimeFilters
 		for _, runtimeFilter := range runtimeFilters {
@@ -156,6 +157,7 @@ func (ds *datastoreImpl) clearTables(ctx context.Context) error {
 }
 
 func (ds *datastoreImpl) SetRuntimeConfiguration(ctx context.Context, runtimeConfiguration *storage.RuntimeFilteringConfiguration) error {
+	log.Infof("runtimeConfiguration= %+v", runtimeConfiguration)
 	runtimeConfigurationRows := convertRuntimeConfigurationToRuntimeConfigurationTable(runtimeConfiguration)
 
 	err := ds.clearTables(ctx)
@@ -164,10 +166,13 @@ func (ds *datastoreImpl) SetRuntimeConfiguration(ctx context.Context, runtimeCon
 	}
 
 	log.Infof("Upserting %+v rows", len(runtimeConfigurationRows))
+	log.Infof("runtimeConfigurationRows= %+v", runtimeConfigurationRows)
 	err = ds.storage.UpsertMany(ctx, runtimeConfigurationRows)
 	if err != nil {
 		return err
 	}
+	log.Infof("Upserting %+v collections", len(runtimeConfiguration.ResourceCollections))
+	log.Infof("runtimeConfiguration.ResourceCollections= %+v", runtimeConfiguration.ResourceCollections)
 	err = ds.rcStorage.UpsertMany(ctx, runtimeConfiguration.ResourceCollections)
 
 	return err
