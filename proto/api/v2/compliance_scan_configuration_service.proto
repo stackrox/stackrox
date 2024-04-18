@@ -62,9 +62,9 @@ message ComplianceScanConfigurationsCount {
   int32 count = 1;
 }
 
-// Next available tag: 2
 message ListComplianceScanConfigurationsResponse {
   repeated ComplianceScanConfigurationStatus configurations = 1;
+  int32 total_count = 2;
 }
 
 service ComplianceScanConfigurationService {

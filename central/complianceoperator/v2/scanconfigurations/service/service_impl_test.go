@@ -261,20 +261,23 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 	lastUpdatedTime := timestamp.Now().GoTime()
 
 	testCases := []struct {
-		desc      string
-		query     *apiV2.RawQuery
-		expectedQ *v1.Query
+		desc           string
+		query          *apiV2.RawQuery
+		expectedQ      *v1.Query
+		expectedCountQ *v1.Query
 	}{
 		{
-			desc:      "Empty query",
-			query:     &apiV2.RawQuery{Query: ""},
-			expectedQ: search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			desc:           "Empty query",
+			query:          &apiV2.RawQuery{Query: ""},
+			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			expectedCountQ: search.EmptyQuery(),
 		},
 		{
 			desc:  "Query with search field",
 			query: &apiV2.RawQuery{Query: "Cluster ID:id"},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
 				WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			expectedCountQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery(),
 		},
 		{
 			desc: "Query with custom pagination",
@@ -282,7 +285,8 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 				Query:      "",
 				Pagination: &apiV2.Pagination{Limit: 1},
 			},
-			expectedQ: search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery(),
+			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery(),
+			expectedCountQ: search.EmptyQuery(),
 		},
 	}
 
@@ -292,6 +296,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 				Configurations: []*apiV2.ComplianceScanConfigurationStatus{
 					getTestAPIStatusRec(createdTime, lastUpdatedTime),
 				},
+				TotalCount: 6,
 			}
 
 			s.scanConfigDatastore.EXPECT().GetScanConfigurations(allAccessContext, tc.expectedQ).
@@ -362,6 +367,10 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 					},
 				},
 			}, nil).Times(1)
+
+			s.scanConfigDatastore.EXPECT().CountScanConfigurations(allAccessContext, tc.expectedCountQ).
+				Return(6, nil).Times(1)
+
 			configs, err := s.service.ListComplianceScanConfigurations(allAccessContext, tc.query)
 			s.Require().NoError(err)
 			s.Require().EqualValues(expectedResp, configs)
