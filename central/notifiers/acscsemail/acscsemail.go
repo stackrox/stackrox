@@ -50,7 +50,7 @@ func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer
 }
 
 func init() {
-	if !features.ACSCSEmailNotifier.Enabled() {
+	if !features.ACSCSEmailNotifier.Enabled() || !env.ManagedCentral.BooleanSetting() {
 		return
 	}
 
