@@ -484,7 +484,7 @@ replace (
 	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.0.0-20240305225512-3737c3c758df
 
 	// grpc has updated protobuf dependency to v2 that causes test failures.
-	// We need to upgrad to v2 in order to fix issues. For now let's stick with older verison.
+	// We need to upgrade to v2 in order to fix issues. For now let's stick with older version.
 	// See: https://github.com/grpc/grpc-go/pull/6919
 	google.golang.org/grpc => google.golang.org/grpc v1.61.1
 
