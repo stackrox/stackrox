@@ -514,6 +514,52 @@ poll_for_system_test_images() {
     touch "${STATE_IMAGES_AVAILABLE}"
 }
 
+image_prefetcher_start() {
+    local ns="prefetch-images"
+    local name="$1"
+    local image_prefetcher_deploy="$2"
+    local manifest
+    manifest=$(mktemp)
+    # TODO(porridge): retrieve from go.mod file once there is an official registry with image tags matching git tags.
+    local image_prefetcher_version="v0.0.11"
+    case "${CI_JOB_NAME}" in
+    gke-*|*-gke-*)
+        flavor=vanilla
+        ;;
+    *)
+        flavor=ocp
+        ;;
+    esac
+
+    # daemonset
+    ${image_prefetcher_deploy} "$name" $image_prefetcher_version $flavor stackrox > "$manifest"
+
+    # image list
+    local image_tag_list
+    image_tag_list=$(mktemp)
+    populate_image_list "${image_tag_list}"
+    # convert format from "basename tag" to "quay.io/.../basename:tag" expected by pre-fetcher
+    local image_list
+    image_list=$(mktemp)
+    awk '{print "quay.io/rhacs-eng/" $1 ":" $2}' "$image_tag_list" > "$image_list"
+    rm -f "$image_tag_list"
+    echo "---" >> "$manifest"
+    kubectl create --dry-run=client -o yaml --namespace=$ns configmap "$name" --from-file="images.txt=$image_list" >> "$manifest"
+
+    # pull secret
+    NAMESPACE=$ns make -C operator stackrox-image-pull-secret
+
+    # apply daemonset and configmap
+    retry 5 true kubectl apply --namespace=$ns -f "$manifest"
+    rm -f "$image_list" "$manifest"
+}
+
+image_prefetcher_await() {
+    local ns="prefetch-images"
+    local name="$1"
+    kubectl rollout status daemonset "$name" -n "$ns" --timeout 15m
+}
+
 populate_image_list() {
     local image_list="$1"
 
