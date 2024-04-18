@@ -93,6 +93,22 @@ export function getPlatformEntityPagePath(
     }
 }
 
+export function getNodeEntityPagePath(
+    nodeCveEntity: NodeEntityTab,
+    id: string,
+    queryOptions?: qs.ParsedQs
+): string {
+    const queryString = getQueryString(queryOptions);
+    switch (nodeCveEntity) {
+        case 'CVE':
+            return `${vulnerabilitiesNodeCvesPath}/cves/${id}${queryString}`;
+        case 'Node':
+            return `${vulnerabilitiesNodeCvesPath}/nodes/${id}${queryString}`;
+        default:
+            return ensureExhaustive(nodeCveEntity);
+    }
+}
+
 export function fixableStatusToFixability(fixableStatus: FixableStatus): 'true' | 'false' {
     return fixableStatus === 'Fixable' ? 'true' : 'false';
 }
