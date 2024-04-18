@@ -14,7 +14,7 @@ function ClusterStatusPill({ healthStatus }: ClusterStatusPillProps): ReactEleme
     const scannerHealthStatus = healthStatus?.scannerHealthStatus || 'UNINITIALIZED';
 
     return (
-        <div className="border inline rounded-full decoration-clone leading-looser text-sm py-1">
+        <div className="border inline rounded-full decoration-clone leading-looser text-sm py-1 word-break">
             <div className="inline border-r pl-2 pr-3 w-full whitespace-nowrap">
                 <CollectorStatus healthStatus={healthStatus} isList />
             </div>

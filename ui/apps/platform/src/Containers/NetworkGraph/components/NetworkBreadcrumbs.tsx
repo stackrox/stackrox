@@ -43,36 +43,34 @@ function NetworkBreadcrumbs({
     };
 
     return (
-        <>
-            <Breadcrumb>
-                <BreadcrumbItem isDropdown>
-                    <ClusterSelector
-                        clusters={clusters}
-                        selectedClusterName={selectedCluster?.name ?? ''}
-                        searchFilter={searchFilter}
-                        setSearchFilter={onChange}
-                    />
-                </BreadcrumbItem>
-                <BreadcrumbItem isDropdown>
-                    <NamespaceSelector
-                        namespaces={namespaces}
-                        selectedNamespaces={selectedNamespaces}
-                        selectedDeployments={selectedDeployments}
-                        deploymentsByNamespace={deploymentsByNamespace}
-                        searchFilter={searchFilter}
-                        setSearchFilter={onChange}
-                    />
-                </BreadcrumbItem>
-                <BreadcrumbItem isDropdown>
-                    <DeploymentSelector
-                        deploymentsByNamespace={deploymentsByNamespace}
-                        selectedDeployments={selectedDeployments}
-                        searchFilter={searchFilter}
-                        setSearchFilter={onChange}
-                    />
-                </BreadcrumbItem>
-            </Breadcrumb>
-        </>
+        <Breadcrumb>
+            <BreadcrumbItem isDropdown>
+                <ClusterSelector
+                    clusters={clusters}
+                    selectedClusterName={selectedCluster?.name ?? ''}
+                    searchFilter={searchFilter}
+                    setSearchFilter={onChange}
+                />
+            </BreadcrumbItem>
+            <BreadcrumbItem isDropdown>
+                <NamespaceSelector
+                    namespaces={namespaces}
+                    selectedNamespaces={selectedNamespaces}
+                    selectedDeployments={selectedDeployments}
+                    deploymentsByNamespace={deploymentsByNamespace}
+                    searchFilter={searchFilter}
+                    setSearchFilter={onChange}
+                />
+            </BreadcrumbItem>
+            <BreadcrumbItem isDropdown>
+                <DeploymentSelector
+                    deploymentsByNamespace={deploymentsByNamespace}
+                    selectedDeployments={selectedDeployments}
+                    searchFilter={searchFilter}
+                    setSearchFilter={onChange}
+                />
+            </BreadcrumbItem>
+        </Breadcrumb>
     );
 }
 

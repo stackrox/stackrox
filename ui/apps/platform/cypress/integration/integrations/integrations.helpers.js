@@ -376,7 +376,7 @@ export function revokeAuthProvidersIntegrationInTable(integrationType, integrati
     getTableRowActionButtonByName(integrationName).click();
     interactAndWaitForResponses(() => {
         cy.get('button:contains("Delete Integration")').click(); // row actions
-        cy.get('button:contains("Delete")').click(); // confirmation modal
+        cy.get('.pf-v5-c-modal-box__footer button:contains("Delete")').click(); // confirmation modal
     }, routeMatcherMap);
 }
 

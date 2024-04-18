@@ -437,7 +437,7 @@ function AuthProviderForm({
                                 <FormHelperText>
                                     <HelperText>
                                         <HelperTextItem variant={nameValidated}>
-                                            {errors.name || ''}
+                                            {errors.name ? errors.name : ''}
                                         </HelperTextItem>
                                     </HelperText>
                                 </FormHelperText>
