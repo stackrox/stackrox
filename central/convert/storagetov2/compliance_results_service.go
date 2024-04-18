@@ -201,12 +201,14 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 }
 
 // ComplianceV2ProfileStats converts the counts to the v2 stats
-func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByProfile) []*v2.ComplianceProfileScanStats {
+func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByProfile, profileMap map[string]*storage.ComplianceOperatorProfileV2) []*v2.ComplianceProfileScanStats {
 	var convertedResults []*v2.ComplianceProfileScanStats
 
 	for _, resultCount := range resultCounts {
 		convertedResults = append(convertedResults, &v2.ComplianceProfileScanStats{
 			ProfileName: resultCount.ProfileName,
+			Title:       profileMap[resultCount.ProfileName].GetTitle(),
+			Version:     profileMap[resultCount.ProfileName].GetProfileVersion(),
 			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  int32(resultCount.FailCount),

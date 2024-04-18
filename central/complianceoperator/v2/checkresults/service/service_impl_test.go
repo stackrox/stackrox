@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	resultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
+	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	convertUtils "github.com/stackrox/rox/central/convert/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -67,6 +68,7 @@ type ComplianceResultsServiceTestSuite struct {
 	resultDatastore *resultMocks.MockDataStore
 	scanConfigDS    *scanConfigMocks.MockDataStore
 	integrationDS   *integrationMocks.MockDataStore
+	profilsDS       *profileDatastore.MockDataStore
 	service         Service
 }
 
@@ -85,8 +87,9 @@ func (s *ComplianceResultsServiceTestSuite) SetupTest() {
 	s.resultDatastore = resultMocks.NewMockDataStore(s.mockCtrl)
 	s.scanConfigDS = scanConfigMocks.NewMockDataStore(s.mockCtrl)
 	s.integrationDS = integrationMocks.NewMockDataStore(s.mockCtrl)
+	s.profilsDS = profileDatastore.NewMockDataStore(s.mockCtrl)
 
-	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS)
+	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS, s.profilsDS)
 }
 
 func (s *ComplianceResultsServiceTestSuite) TearDownTest() {
@@ -686,7 +689,30 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileScanStats() 
 					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "ocp4-node"),
 				}
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), search.EmptyQuery(), search.ComplianceOperatorProfileName)
+
+				profiles_ocp := []*storage.ComplianceOperatorProfileV2{{
+					Name:           "ocp4",
+					ProfileVersion: "test_version_ocp4",
+					Title:          "test_title_ocp4",
+				}}
+				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
+					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery()).Return(profiles_ocp, nil).Times(1)
+				profiles := []*storage.ComplianceOperatorProfileV2{{
+					Name:           "rhcos4-moderate",
+					ProfileVersion: "test_version_rhcos4-moderate",
+					Title:          "test_title_rhcos4-moderate",
+				}}
+				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
+					AddExactMatches(search.ComplianceOperatorProfileName, "rhcos4-moderate").ProtoQuery()).Return(profiles, nil).Times(1)
+				profiles = []*storage.ComplianceOperatorProfileV2{{
+					Name:           "ocp4-node",
+					ProfileVersion: "test_version_ocp4-node",
+					Title:          "test_title_ocp4-node",
+				}}
+				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
+					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-node").ProtoQuery()).Return(profiles, nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+
 			},
 		},
 		{
@@ -705,6 +731,13 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileScanStats() 
 					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "ocp4-node"),
 				}
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorProfileName)
+
+				profiles := []*storage.ComplianceOperatorProfileV2{{
+					Name:           "ocp4-node",
+					ProfileVersion: "test_version_ocp4-node",
+					Title:          "test_title_ocp4-node",
+				}}
+				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Return(profiles, nil).AnyTimes()
 				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 			},
 		},
@@ -719,6 +752,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileScanStats() 
 
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorProfileName)
 				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(nil, nil).Times(1)
+				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 			},
 		},
 	}
@@ -735,7 +769,8 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileScanStats() 
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				s.Require().ElementsMatch(tc.expectedResp, results.GetScanStats())
+
 			}
 		})
 	}
@@ -776,6 +811,28 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileStats() {
 				}
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorProfileName)
 				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+
+				profiles_ocp := []*storage.ComplianceOperatorProfileV2{{
+					Name:           "ocp4",
+					ProfileVersion: "test_version_ocp4",
+					Title:          "test_title_ocp4",
+				}}
+				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
+					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery()).Return(profiles_ocp, nil).Times(1)
+				profiles := []*storage.ComplianceOperatorProfileV2{{
+					Name:           "rhcos4-moderate",
+					ProfileVersion: "test_version_rhcos4-moderate",
+					Title:          "test_title_rhcos4-moderate",
+				}}
+				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
+					AddExactMatches(search.ComplianceOperatorProfileName, "rhcos4-moderate").ProtoQuery()).Return(profiles, nil).Times(1)
+				profiles = []*storage.ComplianceOperatorProfileV2{{
+					Name:           "ocp4-node",
+					ProfileVersion: "test_version_ocp4-node",
+					Title:          "test_title_ocp4-node",
+				}}
+				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
+					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-node").ProtoQuery()).Return(profiles, nil).Times(1)
 			},
 		},
 		{
@@ -802,6 +859,13 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileStats() {
 				}
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorProfileName)
 				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+				profiles := []*storage.ComplianceOperatorProfileV2{{
+					Name:           "ocp4-node",
+					ProfileVersion: "test_version_ocp4-node",
+					Title:          "test_title_ocp4-node",
+				}}
+				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
+					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-node").ProtoQuery()).Return(profiles, nil).Times(1)
 			},
 		},
 		{
