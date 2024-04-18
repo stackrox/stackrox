@@ -43,7 +43,7 @@ are inferred from the `deploy/{k8s,openshift}/central-deploy` directory.
   `GOOGLE_CREDENTIALS_GCR_SCANNER_V2`, `EMAIL_NOTIFIER_PASSWORD`,
   `MAILGUN_PASSWORD`, `JIRA_TOKEN`, `DTR_REGISTRY_PASSWORD`, `QUAY_PASSWORD`
   - Create a `qa-tests-backend/qa-test-settings.properties` file that contains environment variable assignments.
-  - Copy environment variable settings from the [StackRox 1Password Vault](https://stackrox.1password.com)
+  - Copy environment variable settings from [BitWarden](https://vault.bitwarden.com/#/vault?itemId=da41ea10-15fa-44e2-988e-af260101b26e)
 
 ### Custom configuration
 - If you have deployed the cluster differently or need to use a custom environment variable configuration:
@@ -54,10 +54,11 @@ are inferred from the `deploy/{k8s,openshift}/central-deploy` directory.
   - Environment Variables:
     - `CLUSTER`: Either `OPENSHIFT` or `K8S`
     - `API_HOSTNAME`: hostname central is running; default `localhost`
-    - `PORT`: central port; default `8000`
+    - `API_PORT`: central port; default `8000`
     - `ROX_USERNAME`: default `admin`
     - `ROX_PASSWORD`: default read from deploy dir based on specified `CLUSTER`
     - `KUBECONFIG`: kubeconfig file to use
+    - `POD_SECURITY_POLICIES`: set to `false` if the underlying kubernetes cluster does not support pod security policies
 
   - module : `qa-test-backend.test`
 - Save the configuration and run the test.
