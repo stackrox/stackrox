@@ -57,6 +57,22 @@ func (mr *MockReportGetterMockRecorder) GetIndexReport(arg0, arg1 any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReport", reflect.TypeOf((*MockReportGetter)(nil).GetIndexReport), arg0, arg1)
 }
 
+// GetIndexReportFromHash mocks base method.
+func (m *MockReportGetter) GetIndexReportFromHash(ctx context.Context, hash string) (*claircore.IndexReport, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIndexReportFromHash", ctx, hash)
+	ret0, _ := ret[0].(*claircore.IndexReport)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetIndexReportFromHash indicates an expected call of GetIndexReportFromHash.
+func (mr *MockReportGetterMockRecorder) GetIndexReportFromHash(ctx, hash any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReportFromHash", reflect.TypeOf((*MockReportGetter)(nil).GetIndexReportFromHash), ctx, hash)
+}
+
 // MockIndexer is a mock of Indexer interface.
 type MockIndexer struct {
 	ctrl     *gomock.Controller
@@ -108,6 +124,22 @@ func (m *MockIndexer) GetIndexReport(arg0 context.Context, arg1 string) (*clairc
 func (mr *MockIndexerMockRecorder) GetIndexReport(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReport", reflect.TypeOf((*MockIndexer)(nil).GetIndexReport), arg0, arg1)
+}
+
+// GetIndexReportFromHash mocks base method.
+func (m *MockIndexer) GetIndexReportFromHash(ctx context.Context, hash string) (*claircore.IndexReport, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIndexReportFromHash", ctx, hash)
+	ret0, _ := ret[0].(*claircore.IndexReport)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetIndexReportFromHash indicates an expected call of GetIndexReportFromHash.
+func (mr *MockIndexerMockRecorder) GetIndexReportFromHash(ctx, hash any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReportFromHash", reflect.TypeOf((*MockIndexer)(nil).GetIndexReportFromHash), ctx, hash)
 }
 
 // IndexContainerImage mocks base method.

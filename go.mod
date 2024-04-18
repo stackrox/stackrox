@@ -496,4 +496,5 @@ replace (
 replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230714151239-78b1f5f70b8a
+	github.com/quay/claircore => github.com/Maddosaurus/claircore v0.0.0-20240417084307-4a563e7cac0d
 )

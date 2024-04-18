@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
@@ -59,4 +60,10 @@ func (r *remoteIndexer) GetIndexReport(ctx context.Context, hashID string) (*cla
 	ir.Success = resp.GetSuccess()
 	ir.Err = resp.GetErr()
 	return ir, true, nil
+}
+
+// GetIndexReportFromHash .
+// FIXME: Implement
+func (r *remoteIndexer) GetIndexReportFromHash(_ context.Context, _ string) (*claircore.IndexReport, bool, error) {
+	return nil, false, errors.New("Not Implemented")
 }

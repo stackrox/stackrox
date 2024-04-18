@@ -20,8 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Matcher_GetVulnerabilities_FullMethodName = "/scanner.v4.Matcher/GetVulnerabilities"
-	Matcher_GetMetadata_FullMethodName        = "/scanner.v4.Matcher/GetMetadata"
+	Matcher_GetVulnerabilities_FullMethodName            = "/scanner.v4.Matcher/GetVulnerabilities"
+	Matcher_GetVulnerabilitiesForManifest_FullMethodName = "/scanner.v4.Matcher/GetVulnerabilitiesForManifest"
+	Matcher_GetMetadata_FullMethodName                   = "/scanner.v4.Matcher/GetMetadata"
 )
 
 // MatcherClient is the client API for Matcher service.
@@ -30,6 +31,8 @@ const (
 type MatcherClient interface {
 	// GetVulnerabilities returns a VulnerabilityReport for a previously indexed manifest.
 	GetVulnerabilities(ctx context.Context, in *GetVulnerabilitiesRequest, opts ...grpc.CallOption) (*VulnerabilityReport, error)
+	// GetVulnerabilitiesForManifest returns a report for a given manifest ID
+	GetVulnerabilitiesForManifest(ctx context.Context, in *GetVulnerabilitiesRequest, opts ...grpc.CallOption) (*VulnerabilityReport, error)
 	// GetMetadata returns information on vulnerability metadata, ek.g., last update timestamp.
 	GetMetadata(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Metadata, error)
 }
@@ -51,6 +54,15 @@ func (c *matcherClient) GetVulnerabilities(ctx context.Context, in *GetVulnerabi
 	return out, nil
 }
 
+func (c *matcherClient) GetVulnerabilitiesForManifest(ctx context.Context, in *GetVulnerabilitiesRequest, opts ...grpc.CallOption) (*VulnerabilityReport, error) {
+	out := new(VulnerabilityReport)
+	err := c.cc.Invoke(ctx, Matcher_GetVulnerabilitiesForManifest_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *matcherClient) GetMetadata(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Metadata, error) {
 	out := new(Metadata)
 	err := c.cc.Invoke(ctx, Matcher_GetMetadata_FullMethodName, in, out, opts...)
@@ -66,6 +78,8 @@ func (c *matcherClient) GetMetadata(ctx context.Context, in *emptypb.Empty, opts
 type MatcherServer interface {
 	// GetVulnerabilities returns a VulnerabilityReport for a previously indexed manifest.
 	GetVulnerabilities(context.Context, *GetVulnerabilitiesRequest) (*VulnerabilityReport, error)
+	// GetVulnerabilitiesForManifest returns a report for a given manifest ID
+	GetVulnerabilitiesForManifest(context.Context, *GetVulnerabilitiesRequest) (*VulnerabilityReport, error)
 	// GetMetadata returns information on vulnerability metadata, ek.g., last update timestamp.
 	GetMetadata(context.Context, *emptypb.Empty) (*Metadata, error)
 }
@@ -76,6 +90,9 @@ type UnimplementedMatcherServer struct {
 
 func (UnimplementedMatcherServer) GetVulnerabilities(context.Context, *GetVulnerabilitiesRequest) (*VulnerabilityReport, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVulnerabilities not implemented")
+}
+func (UnimplementedMatcherServer) GetVulnerabilitiesForManifest(context.Context, *GetVulnerabilitiesRequest) (*VulnerabilityReport, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVulnerabilitiesForManifest not implemented")
 }
 func (UnimplementedMatcherServer) GetMetadata(context.Context, *emptypb.Empty) (*Metadata, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMetadata not implemented")
@@ -110,6 +127,24 @@ func _Matcher_GetVulnerabilities_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Matcher_GetVulnerabilitiesForManifest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVulnerabilitiesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MatcherServer).GetVulnerabilitiesForManifest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Matcher_GetVulnerabilitiesForManifest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MatcherServer).GetVulnerabilitiesForManifest(ctx, req.(*GetVulnerabilitiesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Matcher_GetMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -138,6 +173,10 @@ var Matcher_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetVulnerabilities",
 			Handler:    _Matcher_GetVulnerabilities_Handler,
+		},
+		{
+			MethodName: "GetVulnerabilitiesForManifest",
+			Handler:    _Matcher_GetVulnerabilitiesForManifest_Handler,
 		},
 		{
 			MethodName: "GetMetadata",

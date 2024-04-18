@@ -2,7 +2,9 @@ package client
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
+	"math/rand"
 	"net/url"
 	"time"
 
@@ -46,6 +48,12 @@ type Scanner interface {
 	// GetMatcherMetadata returns metadata from the matcher.
 	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
 
+	// CreateNodeIndexReport indexes the node the target indexer is running on
+	CreateNodeIndexReport(ctx context.Context) (*v4.IndexReport, error)
+
+	// IndexAndScanNode indexes the node and matches vulnerabilities in one call
+	IndexAndScanNode(ctx context.Context) (*v4.VulnerabilityReport, error)
+
 	// Close cleans up any resources used by the implementation.
 	Close() error
 }
@@ -53,6 +61,7 @@ type Scanner interface {
 // gRPCScanner A scanner client implementation based on gRPC endpoints.
 type gRPCScanner struct {
 	indexer         v4.IndexerClient
+	nodeIndexer     v4.NodeIndexerClient
 	matcher         v4.MatcherClient
 	gRPCConnections []*grpc.ClientConn
 }
@@ -79,10 +88,12 @@ func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
 		connList = append(connList, mConn)
 	}
 	indexerClient := v4.NewIndexerClient(iConn)
+	nodeIndexerClient := v4.NewNodeIndexerClient(iConn)
 	matcherClient := v4.NewMatcherClient(mConn)
 	return &gRPCScanner{
 		gRPCConnections: connList,
 		indexer:         indexerClient,
+		nodeIndexer:     nodeIndexerClient,
 		matcher:         matcherClient,
 	}, nil
 }
@@ -246,6 +257,21 @@ func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, con
 	return vr, nil
 }
 
+func (c *gRPCScanner) getVulnerabilitiesForManifest(ctx context.Context, hashID string, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
+	zlog.Info(ctx).Msgf("in getVulnerabilitiesForManifest with manifestID: %s", hashID) // FIXME
+	req := &v4.GetVulnerabilitiesRequest{HashId: hashID, Contents: contents}
+	var vr *v4.VulnerabilityReport
+	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetVulnerabilities", func() (err error) {
+		vr, err = c.matcher.GetVulnerabilitiesForManifest(ctx, req)
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get vulns: %w", err)
+	}
+
+	return vr, nil
+}
+
 func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "GetMatcherMetadata")
 	var m *v4.Metadata
@@ -258,6 +284,28 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, err
 		return nil, fmt.Errorf("get metadata: %w", err)
 	}
 	return m, nil
+}
+
+func (c *gRPCScanner) CreateNodeIndexReport(ctx context.Context) (*v4.IndexReport, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "CreateNodeIndexReport")
+
+	// Generate random SHA to use as HashId // FIXME: temporary for tests. Find way to properly calc the hashId.
+	data := make([]byte, 10)
+	_, _ = rand.Read(data)
+	randomSha := fmt.Sprintf("%x", sha256.Sum256(data))
+
+	r := &v4.CreateNodeIndexReportRequest{
+		HashId: "SCANNER_v4:" + randomSha, // FIXME: This parameter is unused and can go
+	}
+	return c.nodeIndexer.CreateNodeIndexReport(ctx, r)
+}
+
+func (c *gRPCScanner) IndexAndScanNode(ctx context.Context) (*v4.VulnerabilityReport, error) {
+	nr, err := c.CreateNodeIndexReport(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("creating node index report: %w", err)
+	}
+	return c.getVulnerabilitiesForManifest(ctx, nr.GetHashId(), nil)
 }
 
 func getImageManifestID(ref name.Digest) string {

@@ -44,6 +44,13 @@ var (
 			},
 			VulnerabilitiesURL: "https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulns.json.zst",
 		},
+		NodeIndexer: NodeIndexerConfig{
+			Enable: false,
+			Database: Database{
+				ConnString:   "host=/var/run/postgresql",
+				PasswordFile: "",
+			},
+		},
 		// Default is empty.
 		MTLS: MTLSConfig{
 			CertsDir: "",
@@ -58,14 +65,15 @@ var (
 // Config represents the Scanner configuration parameters.
 type Config struct {
 	// StackRoxServices indicates the Scanner is deployed alongside StackRox services.
-	StackRoxServices bool          `yaml:"stackrox_services"`
-	Indexer          IndexerConfig `yaml:"indexer"`
-	Matcher          MatcherConfig `yaml:"matcher"`
-	HTTPListenAddr   string        `yaml:"http_listen_addr"`
-	GRPCListenAddr   string        `yaml:"grpc_listen_addr"`
-	MTLS             MTLSConfig    `yaml:"mtls"`
-	Proxy            ProxyConfig   `yaml:"proxy"`
-	LogLevel         LogLevel      `yaml:"log_level"`
+	StackRoxServices bool              `yaml:"stackrox_services"`
+	Indexer          IndexerConfig     `yaml:"indexer"`
+	Matcher          MatcherConfig     `yaml:"matcher"`
+	NodeIndexer      NodeIndexerConfig `yaml:"nodeindexer"`
+	HTTPListenAddr   string            `yaml:"http_listen_addr"`
+	GRPCListenAddr   string            `yaml:"grpc_listen_addr"`
+	MTLS             MTLSConfig        `yaml:"mtls"`
+	Proxy            ProxyConfig       `yaml:"proxy"`
+	LogLevel         LogLevel          `yaml:"log_level"`
 }
 
 func (c *Config) validate() error {
@@ -91,6 +99,10 @@ func (c *Config) validate() error {
 
 	if err := c.Proxy.validate(); err != nil {
 		return fmt.Errorf("proxy: %w", err)
+	}
+
+	if err := c.NodeIndexer.validate(); err != nil {
+		return fmt.Errorf("nodeindexer: %w", err)
 	}
 
 	return nil
@@ -147,6 +159,28 @@ func (c *IndexerConfig) validate() error {
 		if _, err := os.Stat(c.NameToReposFile); err != nil {
 			return fmt.Errorf("name_to_repos_file: %w", err)
 		}
+	}
+
+	return nil
+}
+
+// NodeIndexerConfig .
+type NodeIndexerConfig struct {
+	// StackRoxServices specifies whether Indexer is deployed alongside StackRox services.
+	StackRoxServices bool
+	// Database provides indexer's database configuration.
+	Database Database `yaml:"database"`
+	// Enable if false disables the Indexer service.
+	Enable bool `yaml:"enable"`
+}
+
+func (c *NodeIndexerConfig) validate() error {
+	if !c.Enable {
+		return nil
+	}
+
+	if err := c.Database.validate(); err != nil {
+		return fmt.Errorf("database: %w", err)
 	}
 
 	return nil

@@ -23,6 +23,9 @@ service Matcher {
   // GetVulnerabilities returns a VulnerabilityReport for a previously indexed manifest.
   rpc GetVulnerabilities(GetVulnerabilitiesRequest) returns (VulnerabilityReport);
 
+  // GetVulnerabilitiesForManifest returns a report for a given manifest ID
+  rpc GetVulnerabilitiesForManifest(GetVulnerabilitiesRequest) returns (VulnerabilityReport);
+
   // GetMetadata returns information on vulnerability metadata, ek.g., last update timestamp.
   rpc GetMetadata(google.protobuf.Empty) returns (Metadata);
 }

@@ -56,6 +56,21 @@ func (mr *MockScannerMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockScanner)(nil).Close))
 }
 
+// CreateNodeIndexReport mocks base method.
+func (m *MockScanner) CreateNodeIndexReport(ctx context.Context) (*v4.IndexReport, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateNodeIndexReport", ctx)
+	ret0, _ := ret[0].(*v4.IndexReport)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateNodeIndexReport indicates an expected call of CreateNodeIndexReport.
+func (mr *MockScannerMockRecorder) CreateNodeIndexReport(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNodeIndexReport", reflect.TypeOf((*MockScanner)(nil).CreateNodeIndexReport), ctx)
+}
+
 // GetImageIndex mocks base method.
 func (m *MockScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error) {
 	m.ctrl.T.Helper()
@@ -130,4 +145,19 @@ func (m *MockScanner) IndexAndScanImage(arg0 context.Context, arg1 name.Digest, 
 func (mr *MockScannerMockRecorder) IndexAndScanImage(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexAndScanImage", reflect.TypeOf((*MockScanner)(nil).IndexAndScanImage), arg0, arg1, arg2)
+}
+
+// IndexAndScanNode mocks base method.
+func (m *MockScanner) IndexAndScanNode(ctx context.Context) (*v4.VulnerabilityReport, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IndexAndScanNode", ctx)
+	ret0, _ := ret[0].(*v4.VulnerabilityReport)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IndexAndScanNode indicates an expected call of IndexAndScanNode.
+func (mr *MockScannerMockRecorder) IndexAndScanNode(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexAndScanNode", reflect.TypeOf((*MockScanner)(nil).IndexAndScanNode), ctx)
 }

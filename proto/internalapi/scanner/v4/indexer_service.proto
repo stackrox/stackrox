@@ -51,6 +51,9 @@ service Indexer {
   // GetIndexReport returns one index report.
   rpc GetIndexReport(GetIndexReportRequest) returns (IndexReport);
 
+  // GetIndexReportFromHash returns one index report, converting the given string into a digest directly.
+  rpc GetIndexReportFromHash(GetIndexReportRequest) returns (IndexReport);
+
   // GetOrCreateIndexReport creates an index report for the specified resource,
   // if it does not already exist, and returns the report.
   // This essentially combines GetIndexReport and CreateIndexReport.
