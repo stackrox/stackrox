@@ -515,8 +515,6 @@ poll_for_system_test_images() {
     local commit_sha
     commit_sha="$(get_commit_sha)"
 
-    (cd ./tools/check-workflow-run && go install .) || true
-
     while true; do
         local all_exist=true
         for image in "${reqd_images[@]}"
