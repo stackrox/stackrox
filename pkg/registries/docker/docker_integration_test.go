@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/stackrox/rox/pkg/registries/types"
 )
 
 func TestGetMetadataIntegration(t *testing.T) {

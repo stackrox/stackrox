@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func dummyTimeoutRoundTripper() promhttp.RoundTripperFunc {
@@ -39,7 +40,8 @@ func TestMetricsRoundTripperTimeoutCounter(t *testing.T) {
 	handler := NewMetricsHandler("timeout")
 
 	transport := handler.RoundTripper(dummyTimeoutRoundTripper(), "docker")
-	transport.RoundTrip(&http.Request{})
+	_, err := transport.RoundTrip(&http.Request{})
+	require.Error(t, err)
 
 	assert.Equal(t, 1, testutil.CollectAndCount(handler.timeoutCounter))
 	assert.Equal(t, 1.0, testutil.ToFloat64(handler.timeoutCounter.WithLabelValues("docker")))
