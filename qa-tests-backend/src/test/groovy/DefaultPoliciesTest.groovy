@@ -244,7 +244,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         policyName                                      | deploymentName | testId | flaky
 
-        "Secure Spork (ssh) Port Exposed"               | NGINX_LATEST   | "C311" | false
+        "Secure Shell (ssh) Port Exposed"               | NGINX_LATEST   | "C311" | false
 
         "Latest tag"                                    | NGINX_LATEST   | ""     | false
 
