@@ -119,4 +119,7 @@ var (
 	// DelegateWatchedImageReprocessing when set to true reprocessing of watched images may be delegated to secured clusters based
 	// on the delegated scanning config.
 	DelegateWatchedImageReprocessing = registerFeature("Enables delegating scans for watched images during reprocessing", "ROX_DELEGATE_WATCHED_IMAGE_REPROCESSING", true)
+
+	// CollectorRuntimeConfig enables filtering of runtime events.
+	CollectorRuntimeConfig = registerFeature("Enable collector runtime configuration", "ROX_COLLECTOR_RUNTIME_CONFIG", false)
 )
