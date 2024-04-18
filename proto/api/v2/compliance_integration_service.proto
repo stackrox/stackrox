@@ -26,6 +26,7 @@ message ComplianceIntegrationStatusRequest {
 
 message ListComplianceIntegrationsResponse {
   repeated ComplianceIntegration integrations = 1;
+  int32 total_count = 2;
 }
 
 // CountComplianceIntegrationsResponse gives count of compliance integrations
