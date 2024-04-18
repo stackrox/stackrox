@@ -8,10 +8,10 @@ import { Truncate } from '@patternfly/react-core';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import TooltipTh from 'Components/TooltipTh';
+import DateDistance from 'Components/DateDistance';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import EmptyTableResults from '../components/EmptyTableResults';
-import DateDistance from '../../../../Components/DateDistance';
 import { VulnerabilitySeverityLabel } from '../../types';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 

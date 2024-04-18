@@ -4,7 +4,7 @@ import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
-import DateDistance from '../../../../Components/DateDistance';
+import DateDistance from 'Components/DateDistance';
 import EmptyTableResults from '../components/EmptyTableResults';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';

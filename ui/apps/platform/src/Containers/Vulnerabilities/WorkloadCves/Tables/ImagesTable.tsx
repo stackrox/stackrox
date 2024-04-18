@@ -8,10 +8,10 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { EyeIcon } from '@patternfly/react-icons';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import TooltipTh from 'Components/TooltipTh';
+import DateDistance from 'Components/DateDistance';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import EmptyTableResults from '../components/EmptyTableResults';
-import DateDistance from '../../../../Components/DateDistance';
 import { VulnerabilitySeverityLabel, WatchStatus } from '../../types';
 import ImageScanningErrorLabel from '../components/ImageScanningErrorLabelLayout';
 

@@ -17,7 +17,7 @@ import { getTableUIState } from 'utils/getTableUIState';
 import TooltipTh from 'Components/TooltipTh';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
-import DateDistance from '../../../../Components/DateDistance';
+import DateDistance from 'Components/DateDistance';
 import { getNodeEntityPagePath, getRegexScopedQueryString } from '../../utils/searchUtils';
 import PartialCVEDataAlert from '../../WorkloadCves/components/PartialCVEDataAlert';
 import { getScoreVersionsForTopCVSS, sortCveDistroList } from '../../utils/sortUtils';

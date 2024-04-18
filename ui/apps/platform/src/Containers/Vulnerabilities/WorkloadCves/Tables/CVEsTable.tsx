@@ -21,10 +21,10 @@ import { VulnerabilityState } from 'types/cve.proto';
 import TooltipTh from 'Components/TooltipTh';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
+import DateDistance from 'Components/DateDistance';
 import { VulnerabilitySeverityLabel } from '../../types';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import DateDistance from '../../../../Components/DateDistance';
 import {
     getScoreVersionsForTopCVSS,
     sortCveDistroList,

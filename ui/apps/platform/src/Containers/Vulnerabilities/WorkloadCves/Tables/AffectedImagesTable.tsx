@@ -9,6 +9,7 @@ import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/Vulner
 import { VulnerabilityState } from 'types/cve.proto';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
+import DateDistance from 'Components/DateDistance';
 import {
     getAnyVulnerabilityIsFixable,
     getHighestCvssScore,
@@ -22,7 +23,6 @@ import ImageComponentVulnerabilitiesTable, {
     imageMetadataContextFragment,
 } from './ImageComponentVulnerabilitiesTable';
 import EmptyTableResults from '../components/EmptyTableResults';
-import DateDistance from '../../../../Components/DateDistance';
 import { WatchStatus } from '../../types';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
