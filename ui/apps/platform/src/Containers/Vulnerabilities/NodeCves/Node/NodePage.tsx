@@ -104,6 +104,9 @@ function NodePage() {
                         isFilled
                         padding={{ default: 'noPadding' }}
                         className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
+                        aria-label={activeTabKey}
+                        role="tabpanel"
+                        tabIndex={0}
                     >
                         {activeTabKey === vulnTabKey && <NodePageVulnerabilities />}
                         {activeTabKey === detailTabKey && <NodePageDetails />}
