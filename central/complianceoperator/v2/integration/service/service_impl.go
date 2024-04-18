@@ -69,6 +69,9 @@ func (s *serviceImpl) ListComplianceIntegrations(ctx context.Context, req *v2.Ra
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
+	// To get total count, need the parsed query without the paging.
+	countQuery := parsedQuery.Clone()
+
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, req.GetPagination(), maxPaginationLimit)
 
@@ -82,7 +85,12 @@ func (s *serviceImpl) ListComplianceIntegrations(ctx context.Context, req *v2.Ra
 		return nil, errors.Wrap(err, "failed to convert compliance integrations.")
 	}
 
-	return &v2.ListComplianceIntegrationsResponse{Integrations: apiIntegrations}, nil
+	integrationCount, err := s.complianceMetaDataStore.CountIntegrations(ctx, countQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to determine number of compliance operator integrations")
+	}
+
+	return &v2.ListComplianceIntegrationsResponse{Integrations: apiIntegrations, TotalCount: int32(integrationCount)}, nil
 }
 
 // GetComplianceIntegrationsCount returns counts of profiles matching query
