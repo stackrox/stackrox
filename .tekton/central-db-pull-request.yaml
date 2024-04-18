@@ -220,25 +220,6 @@ spec:
       - name: basic-auth
         workspace: git-auth
 
-    - name: prefetch-dependencies
-      params:
-      - name: input
-        value: $(params.prefetch-input)
-      runAfter:
-      - clone-repository
-      taskRef:
-        params:
-        - name: name
-          value: prefetch-dependencies
-        - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-prefetch-dependencies:0.1@sha256:7f231be4e2be643c42d2d31d776512deb0ab3068bcfe3755678a225dcf5cb14b
-        - name: kind
-          value: task
-        resolver: bundles
-      workspaces:
-      - name: source
-        workspace: workspace
-
     - name: determine-image-tag
       params:
         - name: image
@@ -262,8 +243,26 @@ spec:
               #!/usr/bin/env bash
               set -euo pipefail
               cd "$(workspaces.source.path)/source"
-              echo -n "${IMAGE}:$(make tag)" > "$(results.image-with-tag.path)"
-              cat "$(results.image-with-tag.path)"
+              echo -n "${IMAGE}:$(make --quiet --no-print-directory tag)" | tee "$(results.image-with-tag.path)"
+      workspaces:
+      - name: source
+        workspace: workspace
+
+    - name: prefetch-dependencies
+      params:
+      - name: input
+        value: $(params.prefetch-input)
+      runAfter:
+      - determine-image-tag
+      taskRef:
+        params:
+        - name: name
+          value: prefetch-dependencies
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-prefetch-dependencies:0.1@sha256:7f231be4e2be643c42d2d31d776512deb0ab3068bcfe3755678a225dcf5cb14b
+        - name: kind
+          value: task
+        resolver: bundles
       workspaces:
       - name: source
         workspace: workspace
@@ -286,7 +285,6 @@ spec:
         value: $(tasks.clone-repository.results.commit)
       runAfter:
       - prefetch-dependencies
-      - determine-image-tag
       taskRef:
         params:
         - name: name
