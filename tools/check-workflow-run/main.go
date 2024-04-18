@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	headSHA          = flag.String("head-SHA", "", "the SHA for the workflow run")
-	workflowFileName = flag.String("workflow", "build.yaml", "the workflow of interest")
+	headSHA           = flag.String("head-SHA", "", "the SHA for the workflow run")
+	workflowFileName  = flag.String("workflow", "build.yaml", "the workflow of interest")
+	generateProwError = flag.Bool("prow-error", true, "generate output that will stand out in prow")
 )
 
 // lookup useful information for a github action workflows most recent run
@@ -45,6 +46,11 @@ func main() {
 
 	lastRun := runs.WorkflowRuns[*runs.TotalCount-1]
 
+	conclusion := lastRun.GetConclusion()
+	if *generateProwError && conclusion != "" && conclusion != "success" {
+		fmt.Println("ERROR: this workflow did not complete successfully")
+	}
+
 	fmt.Printf("status: %v\nconclusion: %v\nURL: %v\n",
-		lastRun.GetStatus(), lastRun.GetConclusion(), lastRun.GetHTMLURL())
+		lastRun.GetStatus(), conclusion, lastRun.GetHTMLURL())
 }
