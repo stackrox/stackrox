@@ -381,13 +381,13 @@ func (suite *scanTestSuite) TestEnrichMultipleRegistries() {
 	_, err = scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, "", "", false)
 	suite.Require().NoError(err)
 	suite.Require().True(reg1.metadataInvoked)
-	suite.Require().False(reg1.configInvoked)
+	suite.Require().False(reg1.usedForScan)
 
 	suite.Require().True(reg2.metadataInvoked)
-	suite.Require().True(reg2.configInvoked)
+	suite.Require().True(reg2.usedForScan)
 
 	suite.Require().False(reg3.metadataInvoked)
-	suite.Require().False(reg3.configInvoked)
+	suite.Require().False(reg3.usedForScan)
 }
 
 func (suite *scanTestSuite) TestEnrichNoRegistries() {
@@ -442,7 +442,7 @@ func (suite *scanTestSuite) TestEnrichNoRegistriesFailure() {
 
 	mirrorStore.EXPECT().PullSources(containerImg.GetName().GetFullName())
 	_, err = scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, "", "", false)
-	suite.Require().ErrorContains(err, "unable to create no auth registry")
+	suite.Require().ErrorContains(err, "unable to create no auth integration")
 }
 
 func (suite *scanTestSuite) TestGetRegistries() {
@@ -578,7 +578,9 @@ func successfulScan(_ context.Context, _ *storage.Image,
 	reg registryTypes.ImageRegistry, _ scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error) {
 
 	if reg != nil {
-		reg.Config()
+		if r, ok := reg.(*fakeRegistry); ok {
+			r.usedForScan = true
+		}
 	}
 	return &scannerclient.ImageAnalysis{
 		ScanStatus: scannerV1.ScanStatus_SUCCEEDED,
@@ -651,7 +653,7 @@ func failCreateNoAuthImageRegistry(context.Context, *storage.ImageName, registri
 
 type fakeRegistry struct {
 	metadataInvoked bool
-	configInvoked   bool
+	usedForScan     bool
 	registryTypes.Registry
 	fail bool
 }
@@ -665,7 +667,6 @@ func (f *fakeRegistry) Metadata(_ *storage.Image) (*storage.ImageMetadata, error
 }
 
 func (f *fakeRegistry) Config() *registryTypes.Config {
-	f.configInvoked = true
 	return nil
 }
 
