@@ -224,7 +224,7 @@ function NetworkGraphPage() {
 
                     Then iterate through the invalid entity nodes:
 
-                        If there is an existing INTERNET entity type in the nodes, set the `entity` 
+                        If there is an existing INTERNET entity type in the nodes, set the `entity`
                             field of each invalid node to the saved INTERNET entity.
 
                         If there is no INTERNET entity type in the nodes, we convert the entity type to `INTERNET`
