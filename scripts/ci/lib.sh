@@ -476,53 +476,26 @@ poll_for_system_test_images() {
 
     require_environment "QUAY_RHACS_ENG_BEARER_TOKEN"
 
-    # Require images based on the job
-    case "$CI_JOB_NAME" in
-        *-operator-e2e-tests)
-            reqd_images=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index"
-                         "main" "central-db" "collector" "collector-slim"
-                         "scanner" "scanner-db" "scanner-v4" "scanner-v4-db")
-            ;;
-        *-race-condition-qa-e2e-tests)
-            reqd_images=("main-rcd" "roxctl")
-            if is_in_PR_context && ! pr_has_label "ci-build-race-condition-debug"; then
-                echo "ERROR: Your PR is missing the \"ci-build-race-condition-debug\" label."
-                echo "ERROR: This label is required to build the images for $CI_JOB_NAME."
-                # Quietly continue to allow labels added after tests start.
-                # Otherwise this message will surface in the Prow log when
-                # images timeout out below.
-            fi
-            ;;
-        *)
-            reqd_images=("main" "roxctl")
-            ;;
-    esac
+    local image_list
+    image_list="$(mktemp)"
+    populate_image_list "${image_list}"
+    info "Will poll for: $(awk 'print $1' "${image_list}")"
 
-    if [[ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]] && [[ ! " ${reqd_images[*]} " =~ " central-db " ]]; then
-        reqd_images+=("central-db")
-    fi
-
-    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
-        reqd_images+=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index")
-    fi
-
-    info "Will poll for: ${reqd_images[*]}"
-
-    local tag
-    tag="$(make --quiet --no-print-directory tag)"
     local start_time
     start_time="$(date '+%s')"
 
     while true; do
         local all_exist=true
-        for image in "${reqd_images[@]}"
+        local tag
+        local image
+        while read -r image tag
         do
             if ! check_rhacs_eng_image_exists "$image" "$tag"; then
                 info "$image does not exist"
                 all_exist=false
                 break
             fi
-        done
+        done < "$image_list"
 
         if $all_exist; then
             info "All images exist"
@@ -541,18 +514,77 @@ poll_for_system_test_images() {
     touch "${STATE_IMAGES_AVAILABLE}"
 }
 
+populate_image_list() {
+    local image_list="$1"
+
+    local tag
+    tag="$(make --quiet --no-print-directory tag)"
+    local operator_metadata_tag
+    operator_metadata_tag="$(echo "v${tag}" | sed 's,x,0,')"
+    local operator_controller_tag="${tag//x/0}"
+
+    # Require images based on the job
+    case "$CI_JOB_NAME" in
+        *-operator-e2e-tests)
+            cat >> "${image_list}" << END
+stackrox-operator ${operator_controller_tag}
+stackrox-operator-bundle ${operator_metadata_tag}
+stackrox-operator-index ${operator_metadata_tag}
+main ${tag}
+central-db ${tag}
+collector ${tag}
+collector-slim ${tag}
+scanner ${tag}
+scanner-db ${tag}
+scanner-v4 ${tag}
+scanner-v4-db ${tag}
+END
+            ;;
+        *-race-condition-qa-e2e-tests)
+            cat >> "${image_list}" << END
+main ${tag}-rcd
+roxctl ${tag}
+END
+            if is_in_PR_context && ! pr_has_label "ci-build-race-condition-debug"; then
+                echo "ERROR: Your PR is missing the \"ci-build-race-condition-debug\" label."
+                echo "ERROR: This label is required to build the images for $CI_JOB_NAME."
+                # Quietly continue to allow labels added after tests start.
+                # Otherwise this message will surface in the Prow log when
+                # images timeout out below.
+            fi
+            ;;
+        *)
+            cat >> "${image_list}" << END
+main ${tag}
+roxctl ${tag}
+END
+            ;;
+    esac
+
+    if [[ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]]; then
+            cat >> "${image_list}" << END
+central-db ${tag}
+END
+    fi
+
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
+            cat >> "${image_list}" << END
+stackrox-operator ${operator_controller_tag}
+stackrox-operator-bundle ${operator_metadata_tag}
+stackrox-operator-index ${operator_metadata_tag}
+END
+    fi
+
+    # Remove duplicates.
+    unique="$(mktemp)"
+    sort -u "${image_list}" > "${unique}"
+    cat "${unique}" > "${image_list}"
+    rm -f "${unique}"
+}
+
 check_rhacs_eng_image_exists() {
     local name="$1"
     local tag="$2"
-
-    if [[ "$name" =~ stackrox-operator-(bundle|index) ]]; then
-        tag="$(echo "v${tag}" | sed 's,x,0,')"
-    elif [[ "$name" == "stackrox-operator" ]]; then
-        tag="${tag//x/0}"
-    elif [[ "$name" == "main-rcd" ]]; then
-        name="main"
-        tag="${tag}-rcd"
-    fi
 
     local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"
     info "Checking for $name using $url"
