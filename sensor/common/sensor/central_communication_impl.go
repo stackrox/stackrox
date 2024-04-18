@@ -64,7 +64,10 @@ func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, cen
 	go s.sendEvents(client, centralReachable, syncDone, configHandler, detector, s.receiver.Stop, s.sender.Stop)
 }
 
-func (s *centralCommunicationImpl) Stop(_ error) {
+func (s *centralCommunicationImpl) Stop(err error) {
+	if err != nil {
+		log.Errorf("Stopping connection due to error: %v", err)
+	}
 	s.stopper.Client().Stop()
 }
 
