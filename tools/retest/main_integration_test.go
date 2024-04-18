@@ -44,7 +44,7 @@ func TestIntegration(t *testing.T) {
 		}
 
 		switch r.RequestURI {
-		case `/search/issues?q=repo%3Astackrox%2Fstackrox+label%3Aauto-retest+state%3Aopen+type%3Apr+status%3Afailure`:
+		case `/search/issues?q=repo%3Astackrox%2Fstackrox+label%3Aauto-retest+state%3Aopen+type%3Apr`:
 			_, err := w.Write([]byte(`
 {
   "total_count": 2,

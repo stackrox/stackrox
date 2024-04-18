@@ -10,6 +10,11 @@ import (
 )
 
 func createComment(ctx context.Context, client *github.Client, prNumber int, comment string) {
+	if comment == "" {
+		log.Printf("#%d not commented", prNumber)
+		return
+	}
+	log.Printf("#%d will be commented with: %s", prNumber, comment)
 	issueComment := &github.IssueComment{
 		Body: &comment,
 	}
