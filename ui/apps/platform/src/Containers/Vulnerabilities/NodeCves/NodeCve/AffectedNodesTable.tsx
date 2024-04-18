@@ -18,7 +18,7 @@ import { severityRankings } from 'constants/vulnerabilities';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 
-import CvssFormatted from '../../components/CvssFormatted';
+import CvssFormatted from 'Components/CvssFormatted';
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
 import NodeComponentsTable from './NodeComponentsTable';
 

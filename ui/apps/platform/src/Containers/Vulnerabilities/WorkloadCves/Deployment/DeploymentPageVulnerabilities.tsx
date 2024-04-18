@@ -27,6 +27,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
+import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
     SearchOption,
     COMPONENT_SEARCH_OPTION,
@@ -34,7 +35,6 @@ import {
     IMAGE_CVE_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
 } from '../../searchOptions';
-import { DynamicTableLabel } from '../../components/DynamicIcon';
 import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {

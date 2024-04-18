@@ -17,6 +17,7 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
+import CvssFormatted from 'Components/CvssFormatted';
 import {
     aggregateByCVSS,
     aggregateByCreatedTime,
@@ -30,8 +31,7 @@ import { CVEListQueryResult, cveListQuery } from '../../WorkloadCves/Tables/CVEs
 import { VulnerabilitySeverityLabel } from '../../types';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import CvssFormatted from '../../components/CvssFormatted';
-import DateDistance from '../../components/DateDistance';
+import DateDistance from '../../../../Components/DateDistance';
 
 import { getImageScopeSearchValue } from '../utils';
 

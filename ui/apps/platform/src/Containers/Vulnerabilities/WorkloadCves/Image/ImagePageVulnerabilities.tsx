@@ -29,6 +29,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 
+import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
     SearchOption,
     IMAGE_CVE_SEARCH_OPTION,
@@ -44,7 +45,6 @@ import ImageVulnerabilitiesTable, {
     ImageVulnerability,
     imageVulnerabilitiesFragment,
 } from '../Tables/ImageVulnerabilitiesTable';
-import { DynamicTableLabel } from '../../components/DynamicIcon';
 import {
     getHiddenSeverities,
     getHiddenStatuses,

@@ -19,8 +19,10 @@ import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/Vulnera
 import { VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import useMap from 'hooks/useMap';
+import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import CvssFormatted from 'Components/CvssFormatted';
+import TooltipTh from 'Components/TooltipTh';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
-import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
     ImageMetadataContext,
@@ -28,14 +30,12 @@ import ImageComponentVulnerabilitiesTable, {
 } from './ImageComponentVulnerabilitiesTable';
 
 import EmptyTableResults from '../components/EmptyTableResults';
-import DateDistance from '../../components/DateDistance';
-import CvssFormatted from '../../components/CvssFormatted';
+import DateDistance from '../../../../Components/DateDistance';
 import { getAnyVulnerabilityIsFixable } from './table.utils';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../components/CVESelectionTh';
 import CVESelectionTd from '../components/CVESelectionTd';
-import TooltipTh from '../components/TooltipTh';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../components/PartialCVEDataAlert';

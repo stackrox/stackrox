@@ -6,12 +6,12 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Truncate } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
+import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import TooltipTh from 'Components/TooltipTh';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
-import DateDistance from '../../components/DateDistance';
-import TooltipTh from '../components/TooltipTh';
+import DateDistance from '../../../../Components/DateDistance';
 import { VulnerabilitySeverityLabel } from '../../types';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
