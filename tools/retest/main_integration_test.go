@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -199,4 +200,27 @@ func TestIntegration(t *testing.T) {
 	err = run(context.Background(), client)
 	assert.NoError(t, err)
 
+}
+
+//go:embed testdata/statuses.json
+var statusesResponse []byte
+
+func TestGetStatuses(t *testing.T) {
+	var server *httptest.Server
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		t.Logf("%s %s", r.Method, r.RequestURI)
+		_, err := w.Write(statusesResponse)
+		assert.NoError(t, err)
+	}
+	server = httptest.NewServer(http.HandlerFunc(handler))
+	t.Cleanup(server.Close)
+
+	client := github.NewClient(server.Client())
+	baseUrl, err := url.Parse(server.URL + "/")
+	assert.NoError(t, err)
+	client.BaseURL = baseUrl
+
+	statuses, err := statusesForPR(context.Background(), client, baseUrl.String())
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{"gke-upgrade-tests": "success"}, statuses)
 }
