@@ -94,7 +94,7 @@ func (k *listenerImpl) handleAllEvents() {
 			log.Infof("Resources %v became available", status.Resources)
 			if err := k.pubSub.Publish(&internalmessage.SensorInternalMessage{
 				Kind:     internalmessage.SensorMessageSoftRestart,
-				Text:     "The resources for the Compliance Operator have been detected in the cluster. Sensor will restart the connection to reconcile resources with Central.",
+				Text:     "Compliance Operator resources have been updated. Connection will restart to force reconciliation with Central",
 				Validity: k.context,
 			}); err != nil {
 				log.Errorf("Unable to publish message %s: %v", internalmessage.SensorMessageSoftRestart, err)
@@ -119,7 +119,7 @@ func (k *listenerImpl) handleAllEvents() {
 				log.Infof("Resources %v became unavailable", status.Resources)
 				if err := k.pubSub.Publish(&internalmessage.SensorInternalMessage{
 					Kind:     internalmessage.SensorMessageSoftRestart,
-					Text:     "The resources for the Compliance Operator have been removed from the cluster. Sensor will restart the connection to reconcile resources with Central.",
+					Text:     "Compliance Operator resources have been removed. Connection will restart to force reconciliation with Central",
 					Validity: k.context,
 				}); err != nil {
 					log.Errorf("Unable to publish message %s: %v", internalmessage.SensorMessageSoftRestart, err)
