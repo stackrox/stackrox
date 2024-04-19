@@ -68,7 +68,7 @@ import AffectedDeploymentsTable, {
 import AffectedImages from '../SummaryCards/AffectedImages';
 import BySeveritySummaryCard, {
     ResourceCountsByCveSeverity,
-} from '../SummaryCards/BySeveritySummaryCard';
+} from '../../components/BySeveritySummaryCard';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
