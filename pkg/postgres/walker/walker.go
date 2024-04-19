@@ -353,7 +353,7 @@ func typeIsEnum(typ reflect.Type) bool {
 func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 	for i := 0; i < original.NumField(); i++ {
 		structField := original.Field(i)
-		if structField.Tag.Get("protobuf") == "" && structField.Tag.Get("protobuf_oneof") == "" {
+		if protoreflect.IsInternalGeneratorField(structField) {
 			continue
 		}
 		opts := getPostgresOptions(structField.Tag.Get("sql"), schema.Parent == nil, ctx.ignorePK, ctx.ignoreUnique, ctx.ignoreFKs, ctx.ignoreIndex)
