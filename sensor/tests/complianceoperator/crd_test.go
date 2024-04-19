@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
 
-func Test_ComplianceOperatorV2CRDsDetection(t *testing.T) {
+func Test_ComplianceOperatorCRDsDetection(t *testing.T) {
 	t.Setenv(env.ConnectionRetryInitialInterval.EnvVar(), "1s")
 	t.Setenv(env.ConnectionRetryMaxInterval.EnvVar(), "2s")
 
@@ -25,14 +25,27 @@ func Test_ComplianceOperatorV2CRDsDetection(t *testing.T) {
 	require.NoError(t, err)
 
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
+		// Wait for the first sync
 		testContext.WaitForSyncEvent(t, 10*time.Second)
 		testContext.GetFakeCentral().ClearReceivedBuffer()
-		// Create CO CRDs
-		deleteFn, err := testContext.ApplyWithManifestDir(context.Background(), "../../../tests/complianceoperator/crds", "*")
+
+		// Create the Compliance Operator CRDs
+		deleteCRDsFn, err := testContext.ApplyWithManifestDir(context.Background(), "../../../tests/complianceoperator/crds", "*")
 		require.NoError(t, err)
+
+		// Just in case the tests fails we don't want to leave resources behind
 		defer func() {
-			utils.IgnoreError(deleteFn)
+			utils.IgnoreError(deleteCRDsFn)
 		}()
+
+		// Sensor should sync again after the CRDs are detected
+		testContext.WaitForSyncEvent(t, 10*time.Second)
+		testContext.GetFakeCentral().ClearReceivedBuffer()
+
+		// Delete the Compliance Operator CRDs
+		require.NoError(t, deleteCRDsFn())
+
+		// Sensor should sync again after the CRDs removal is detected
 		testContext.WaitForSyncEvent(t, 10*time.Second)
 	}))
 
