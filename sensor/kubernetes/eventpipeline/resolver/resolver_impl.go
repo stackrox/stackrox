@@ -27,11 +27,12 @@ type Queue interface {
 }
 
 type deploymentRef struct {
-	context        context.Context
-	id             string
-	action         central.ResourceAction
-	forceDetection bool
-	skipResolving  bool
+	context          context.Context
+	id               string
+	action           central.ResourceAction
+	forceDetection   bool
+	skipResolving    bool
+	deploymentTiming *central.Timing
 }
 
 // GetKey returns the key to index the deploymentRef in the queue
@@ -175,6 +176,7 @@ func (r *resolverImpl) runPullAndResolve() {
 		}
 		msg := component.NewEvent()
 		msg.Context = ref.context
+		msg.DeploymentTiming = ref.deploymentTiming
 		if r.resolveDeployment(msg, ref) {
 			r.outputQueue.Send(msg)
 		}
@@ -196,11 +198,12 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 
 			for _, id := range referenceIds {
 				ref := &deploymentRef{
-					context:        msg.Context,
-					id:             id,
-					action:         deploymentReference.ParentResourceAction,
-					skipResolving:  deploymentReference.SkipResolving,
-					forceDetection: deploymentReference.ForceDetection,
+					context:          msg.Context,
+					deploymentTiming: msg.DeploymentTiming,
+					id:               id,
+					action:           deploymentReference.ParentResourceAction,
+					skipResolving:    deploymentReference.SkipResolving,
+					forceDetection:   deploymentReference.ForceDetection,
 				}
 				if features.SensorAggregateDeploymentReferenceOptimization.Enabled() && r.deploymentRefQueue != nil {
 					r.deploymentRefQueue.Push(ref)
