@@ -329,9 +329,16 @@ function QuayIntegrationForm({
                     </FormLabelGroup>
                     {values.config.categories.includes('REGISTRY') && (
                         <Grid hasGutter>
+                            <GridItem span={12}>
+                                <Alert
+                                    variant="info"
+                                    isInline
+                                    title="Use your Quay.io or Quay robot account username and password"
+                                />
+                            </GridItem>
                             <GridItem span={12} lg={6}>
                                 <FormLabelGroup
-                                    label="Robot username"
+                                    label="Username"
                                     fieldId="config.quay.registryRobotCredentials.username"
                                     touched={touched}
                                     errors={errors}
@@ -353,7 +360,7 @@ function QuayIntegrationForm({
                             </GridItem>
                             <GridItem span={12} lg={6}>
                                 <FormLabelGroup
-                                    label="Robot password"
+                                    label="Password"
                                     fieldId="config.quay.registryRobotCredentials.password"
                                     touched={touched}
                                     errors={errors}
