@@ -47,7 +47,7 @@ func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	return nil
 }
 
@@ -55,39 +55,39 @@ func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 
-// type connectionManager struct {
-//	connectionLock sync.RWMutex
-//	connectionMap  map[string]sensor.CollectorService_CommunicateServer
-//}
-//
-// func newConnectionManager() *connectionManager {
-//	return &connectionManager{
-//		connectionMap: make(map[string]sensor.CollectorService_CommunicateServer),
-//	}
-//}
-//
-// func (c *connectionManager) add(node string, connection sensor.CollectorService_CommunicateServer) {
-//	c.connectionLock.Lock()
-//	defer c.connectionLock.Unlock()
-//
-//	c.connectionMap[node] = connection
-//}
-//
-// func (c *connectionManager) remove(node string) {
-//	c.connectionLock.Lock()
-//	defer c.connectionLock.Unlock()
-//
-//	delete(c.connectionMap, node)
-//}
-//
-// func (c *connectionManager) forEach(fn func(node string, server sensor.CollectorService_CommunicateServer)) {
-//	c.connectionLock.RLock()
-//	defer c.connectionLock.RUnlock()
-//
-//	for node, server := range c.connectionMap {
-//		fn(node, server)
-//	}
-//}
+ type connectionManager struct {
+	connectionLock sync.RWMutex
+	connectionMap  map[string]sensor.CollectorService_CommunicateServer
+}
+
+ func newConnectionManager() *connectionManager {
+	return &connectionManager{
+		connectionMap: make(map[string]sensor.CollectorService_CommunicateServer),
+	}
+}
+
+ func (c *connectionManager) add(node string, connection sensor.CollectorService_CommunicateServer) {
+	c.connectionLock.Lock()
+	defer c.connectionLock.Unlock()
+
+	c.connectionMap[node] = connection
+}
+
+ func (c *connectionManager) remove(node string) {
+	c.connectionLock.Lock()
+	defer c.connectionLock.Unlock()
+
+	delete(c.connectionMap, node)
+}
+
+ func (c *connectionManager) forEach(fn func(node string, server sensor.CollectorService_CommunicateServer)) {
+	c.connectionLock.RLock()
+	defer c.connectionLock.RUnlock()
+
+	for node, server := range c.connectionMap {
+		fn(node, server)
+	}
+}
 
 //// GetScrapeConfig returns the scrape configuration for the given node name and scrape ID.
 // func (s *serviceImpl) GetScrapeConfig(_ context.Context, nodeName string) (*sensor.MsgToCollector_ScrapeConfig, error) {
@@ -104,30 +104,30 @@ func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
 //	}, nil
 //}
 
-// func (s *serviceImpl) startSendingLoop() {
-//	//	for msg := range s.collectorC {
-//	//		if msg.Broadcast {
-//	//			s.connectionManager.forEach(func(node string, server sensor.CollectorService_CommunicateServer) {
-//	//				err := server.Send(msg.Msg)
-//	//				if err != nil {
-//	//					log.Errorf("Error sending broadcast MessageToCollectorWithAddress to node %q: %v", node, err)
-//	//					return
-//	//				}
-//	//			})
-//	//		} else {
-//	//			con, ok := s.connectionManager.connectionMap[msg.Hostname]
-//	//			if !ok {
-//	//				log.Errorf("Unable to find connection to compliance: %q", msg.Hostname)
-//	//				return
-//	//			}
-//	//			err := con.Send(msg.Msg)
-//	//			if err != nil {
-//	//				log.Errorf("Error sending MessageToCollectorWithAddress to node %q: %v", msg.Hostname, err)
-//	//				return
-//	//			}
-//	//		}
-//	//	}
-//}
+ func (s *serviceImpl) startSendingLoop() {
+		for msg := range s.collectorC {
+			if msg.Broadcast {
+				s.connectionManager.forEach(func(node string, server sensor.CollectorService_CommunicateServer) {
+					err := server.Send(msg.Msg)
+					if err != nil {
+						log.Errorf("Error sending broadcast MessageToCollectorWithAddress to node %q: %v", node, err)
+						return
+					}
+				})
+			} else {
+				con, ok := s.connectionManager.connectionMap[msg.Hostname]
+				if !ok {
+					log.Errorf("Unable to find connection to compliance: %q", msg.Hostname)
+					return
+				}
+				err := con.Send(msg.Msg)
+				if err != nil {
+					log.Errorf("Error sending MessageToCollectorWithAddress to node %q: %v", msg.Hostname, err)
+					return
+				}
+			}
+		}
+}
 
 // func (s *serviceImpl) RunScrape(msg *sensor.MsgToCollector) int {
 //	var count int
