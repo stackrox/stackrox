@@ -148,5 +148,5 @@ func (s *serviceImpl) PostCollectorRuntimeConfiguration(
 		return nil, err2
 	}
 
-	return &v1.Empty{}, err
+	return &v1.Empty{}, err2
 }
