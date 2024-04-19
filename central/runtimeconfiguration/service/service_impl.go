@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
+	// "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -65,11 +65,14 @@ func (s *serviceImpl) GetCollectorRuntimeConfiguration(
 }
 
 func (s *serviceImpl) broadcast(ctx context.Context, msg *central.MsgToSensor) error {
+	log.Info("In broadcast")
 	for _, conn := range s.connManager.GetActiveConnections() {
+		log.Info("About to check ValidForDelegation")
 		if !deleConnection.ValidForDelegation(conn) {
 			continue
 		}
 
+		log.Info("About to InjectMessage")
 		err := conn.InjectMessage(ctx, msg)
 		if err != nil {
 			return err
@@ -84,63 +87,65 @@ func (s *serviceImpl) PostCollectorRuntimeConfiguration(
 ) (*v1.Empty, error) {
 
 	log.Infof("request.CollectorRuntimeConfiguration= %+v", request.CollectorRuntimeConfiguration)
-	// err := s.dataStore.SetRuntimeConfiguration(ctx, request.CollectorRuntimeConfiguration)
-
-	// msg := &central.MsgToSensor{
-	//	Msg: &central.MsgToSensor_RuntimeFilteringConfiguration{
-	//		RuntimeFilteringConfiguration: request.CollectorRuntimeConfiguration,
-	//	},
-	//}
-
-	runtimeFilterRule := storage.RuntimeFilter_RuntimeFilterRule{
-		ResourceCollectionId: "abcd",
-		Status:               "off",
-	}
-
-	rules := []*storage.RuntimeFilter_RuntimeFilterRule{&runtimeFilterRule}
-
-	runtimeFilter := storage.RuntimeFilter{
-		Feature:       storage.RuntimeFilterFeatures_PROCESSES,
-		DefaultStatus: "on",
-		Rules:         rules,
-	}
-
-	resourceSelector := storage.ResourceSelector{
-		Rules: []*storage.SelectorRule{
-			{
-				FieldName: "Namespace",
-				Operator:  storage.BooleanOperator_OR,
-				Values: []*storage.RuleValue{
-					{
-						Value:     "webapp",
-						MatchType: storage.MatchType_EXACT,
-					},
-				},
-			},
-		},
-	}
-
-	resourceSelectors := []*storage.ResourceSelector{&resourceSelector}
-
-	resourceCollection := storage.ResourceCollection{
-		Id:                "abcd",
-		Name:              "Fake collection",
-		ResourceSelectors: resourceSelectors,
-	}
-
-	runtimeFilters := []*storage.RuntimeFilter{&runtimeFilter}
-	resourceCollections := []*storage.ResourceCollection{&resourceCollection}
-
-	collectorRuntimeConfiguration := &storage.RuntimeFilteringConfiguration{
-		RuntimeFilters:      runtimeFilters,
-		ResourceCollections: resourceCollections,
-	}
+	err := s.dataStore.SetRuntimeConfiguration(ctx, request.CollectorRuntimeConfiguration)
 
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_RuntimeFilteringConfiguration{
-			RuntimeFilteringConfiguration: collectorRuntimeConfiguration,
+			RuntimeFilteringConfiguration: request.CollectorRuntimeConfiguration,
 		},
 	}
+
+	s.connManager.BroadcastMessage(msg)
+
+	// runtimeFilterRule := storage.RuntimeFilter_RuntimeFilterRule{
+	//	ResourceCollectionId: "abcd",
+	//	Status:               "off",
+	//}
+
+	// rules := []*storage.RuntimeFilter_RuntimeFilterRule{&runtimeFilterRule}
+
+	// runtimeFilter := storage.RuntimeFilter{
+	//	Feature:       storage.RuntimeFilterFeatures_PROCESSES,
+	//	DefaultStatus: "on",
+	//	Rules:         rules,
+	//}
+
+	// resourceSelector := storage.ResourceSelector{
+	//	Rules: []*storage.SelectorRule{
+	//		{
+	//			FieldName: "Namespace",
+	//			Operator:  storage.BooleanOperator_OR,
+	//			Values: []*storage.RuleValue{
+	//				{
+	//					Value:     "webapp",
+	//					MatchType: storage.MatchType_EXACT,
+	//				},
+	//			},
+	//		},
+	//	},
+	//}
+
+	// resourceSelectors := []*storage.ResourceSelector{&resourceSelector}
+
+	// resourceCollection := storage.ResourceCollection{
+	//	Id:                "abcd",
+	//	Name:              "Fake collection",
+	//	ResourceSelectors: resourceSelectors,
+	//}
+
+	// runtimeFilters := []*storage.RuntimeFilter{&runtimeFilter}
+	// resourceCollections := []*storage.ResourceCollection{&resourceCollection}
+
+	// collectorRuntimeConfiguration := &storage.RuntimeFilteringConfiguration{
+	//	RuntimeFilters:      runtimeFilters,
+	//	ResourceCollections: resourceCollections,
+	//}
+
+	// msg := &central.MsgToSensor{
+	//	Msg: &central.MsgToSensor_RuntimeFilteringConfiguration{
+	//		RuntimeFilteringConfiguration: collectorRuntimeConfiguration,
+	//	},
+	//}
 
 	err2 := s.broadcast(ctx, msg)
 
@@ -148,5 +153,5 @@ func (s *serviceImpl) PostCollectorRuntimeConfiguration(
 		return nil, err2
 	}
 
-	return &v1.Empty{}, err2
+	return &v1.Empty{}, err
 }
