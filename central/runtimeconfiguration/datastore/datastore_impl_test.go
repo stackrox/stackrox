@@ -94,7 +94,7 @@ var (
 				FieldName: "Clster",
 				Values: []*storage.RuleValue{
 					{
-						Value:     "cluster-1",
+						Value: "cluster-1",
 					},
 				},
 			},
@@ -261,7 +261,7 @@ func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfigurationDefaultOn
 // TestSetRuntimeConfigurationIncomplete: Some fields are nil
 func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfigurationIncomplete() {
 	runtimeFilteringConfigurationIncomplete := &storage.RuntimeFilteringConfiguration{
-		ResourceCollections:	[]*storage.ResourceCollection{&resourceCollectionIncomplete},
+		ResourceCollections: []*storage.ResourceCollection{&resourceCollectionIncomplete},
 	}
 
 	suite.NoError(suite.datastore.SetRuntimeConfiguration(suite.hasAllCtx, runtimeFilteringConfigurationIncomplete))
