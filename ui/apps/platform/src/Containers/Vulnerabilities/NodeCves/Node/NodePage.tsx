@@ -16,7 +16,7 @@ import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -104,6 +104,9 @@ function NodePage() {
                         isFilled
                         padding={{ default: 'noPadding' }}
                         className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
+                        aria-label={activeTabKey}
+                        role="tabpanel"
+                        tabIndex={0}
                     >
                         {activeTabKey === vulnTabKey && <NodePageVulnerabilities />}
                         {activeTabKey === detailTabKey && <NodePageDetails />}

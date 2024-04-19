@@ -3,7 +3,7 @@ import { Divider, Toolbar, ToolbarItem, ToolbarContent, Pagination } from '@patt
 
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 
-import { DynamicTableLabel } from './DynamicIcon';
+import { DynamicTableLabel } from 'Components/DynamicIcon';
 
 export type TableEntityToolbarProps = {
     /** The toolbar component used for searching, filtering, and displaying filter chips */

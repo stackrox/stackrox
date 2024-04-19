@@ -3,7 +3,7 @@ import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
-import DateDistance from '../../components/DateDistance';
+import DateDistance from 'Components/DateDistance';
 import EmptyTableResults from '../components/EmptyTableResults';
 import ImageNameLink from '../components/ImageNameLink';
 

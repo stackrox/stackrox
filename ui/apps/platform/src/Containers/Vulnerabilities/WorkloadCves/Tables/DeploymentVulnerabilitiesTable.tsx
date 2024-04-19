@@ -9,8 +9,9 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
+import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import DateDistance from 'Components/DateDistance';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
-import { DynamicColumnIcon } from '../../components/DynamicIcon';
 
 import EmptyTableResults from '../components/EmptyTableResults';
 import DeploymentComponentVulnerabilitiesTable, {
@@ -19,7 +20,6 @@ import DeploymentComponentVulnerabilitiesTable, {
     deploymentComponentVulnerabilitiesFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
-import DateDistance from '../../components/DateDistance';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
 

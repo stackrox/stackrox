@@ -14,12 +14,12 @@ import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
 import { getTableUIState } from 'utils/getTableUIState';
 
-import DateDistance from '../../components/DateDistance';
+import TooltipTh from 'Components/TooltipTh';
+import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import CvssFormatted from 'Components/CvssFormatted';
+import DateDistance from 'Components/DateDistance';
 import { getNodeEntityPagePath, getRegexScopedQueryString } from '../../utils/searchUtils';
-import TooltipTh from '../../WorkloadCves/components/TooltipTh';
-import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import PartialCVEDataAlert from '../../WorkloadCves/components/PartialCVEDataAlert';
-import CvssFormatted from '../../components/CvssFormatted';
 import { getScoreVersionsForTopCVSS, sortCveDistroList } from '../../utils/sortUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { QuerySearchFilter } from '../../types';

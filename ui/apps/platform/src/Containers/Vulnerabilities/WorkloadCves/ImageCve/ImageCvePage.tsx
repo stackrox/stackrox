@@ -33,6 +33,7 @@ import { Pagination as PaginationParam } from 'services/types';
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import useAnalytics, { WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED } from 'hooks/useAnalytics';
 
+import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
     SearchOption,
     IMAGE_SEARCH_OPTION,
@@ -51,7 +52,6 @@ import {
     parseWorkloadQuerySearchFilter,
 } from '../../utils/searchUtils';
 import { getDefaultWorkloadSortOption } from '../../utils/sortUtils';
-import { DynamicTableLabel } from '../../components/DynamicIcon';
 import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
 
 import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';

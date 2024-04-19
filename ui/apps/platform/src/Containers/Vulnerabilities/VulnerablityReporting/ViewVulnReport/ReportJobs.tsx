@@ -44,7 +44,7 @@ import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityRepor
 import useAuthStatus from 'hooks/useAuthStatus';
 
 import DeleteModal from 'Components/PatternFly/DeleteModal';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';

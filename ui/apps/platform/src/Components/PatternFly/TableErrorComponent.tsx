@@ -3,7 +3,7 @@ import { Bullseye } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 
 type TableErrorComponentProps = {
     error: Error;

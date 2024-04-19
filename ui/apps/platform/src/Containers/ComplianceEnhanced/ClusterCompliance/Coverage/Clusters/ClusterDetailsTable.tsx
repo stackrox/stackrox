@@ -18,7 +18,7 @@ import { SearchIcon } from '@patternfly/react-icons';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import omit from 'lodash/omit';
 
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import IconText from 'Components/PatternFly/IconText/IconText';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useRestQuery from 'hooks/useRestQuery';

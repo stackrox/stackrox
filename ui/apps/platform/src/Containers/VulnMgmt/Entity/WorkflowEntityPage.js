@@ -7,7 +7,7 @@ import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import { useTheme } from 'Containers/ThemeProvider';
 import queryService from 'utils/queryService';
 
