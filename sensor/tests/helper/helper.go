@@ -962,6 +962,16 @@ func (c *TestContext) ApplyResourceAndWait(ctx context.Context, t *testing.T, ns
 	return fn, nil
 }
 
+// ApplyWithManifestDir applies all the yaml files located in 'dirPath' that match 'pattern'.
+func (c *TestContext) ApplyWithManifestDir(ctx context.Context, dirPath string, pattern string) (func() error, error) {
+	if err := decoder.ApplyWithManifestDir(ctx, c.r, dirPath, pattern, []resources.CreateOption{}); err != nil {
+		return nil, err
+	}
+	return func() error {
+		return decoder.DeleteWithManifestDir(ctx, c.r, dirPath, pattern, []resources.DeleteOption{})
+	}, nil
+}
+
 // ApplyResource creates a Kubernetes resource in namespace `ns` from a resource definition (see
 // `K8sResourceInfo` for more details). Once the resource is applied, the `obj` will be populated
 // with the properties from the resource definition. In case the creation fails (due to the client
