@@ -6,7 +6,7 @@ toolchain go1.21.7
 
 require (
 	cloud.google.com/go/artifactregistry v1.14.7
-	cloud.google.com/go/compute/metadata v0.2.3
+	cloud.google.com/go/compute/metadata v0.3.0
 	cloud.google.com/go/containeranalysis v0.11.4
 	cloud.google.com/go/securitycenter v1.27.0
 	cloud.google.com/go/storage v1.39.1
@@ -131,7 +131,7 @@ require (
 	golang.org/x/time v0.5.0
 	golang.org/x/tools v0.20.0
 	golang.stackrox.io/grpc-http1 v0.3.11
-	google.golang.org/api v0.172.0
+	google.golang.org/api v0.174.0
 	google.golang.org/genproto v0.0.0-20240311173647-c811ad7063a7
 	google.golang.org/grpc v1.63.2
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
@@ -159,7 +159,8 @@ require (
 
 require (
 	cloud.google.com/go v0.112.1 // indirect
-	cloud.google.com/go/compute v1.25.0 // indirect
+	cloud.google.com/go/auth v0.2.0 // indirect
+	cloud.google.com/go/auth/oauth2adapt v0.2.0 // indirect
 	cloud.google.com/go/iam v1.1.6 // indirect
 	cloud.google.com/go/longrunning v0.5.5 // indirect
 	dario.cat/mergo v1.0.0 // indirect
@@ -404,7 +405,7 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240311173647-c811ad7063a7 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240415180920-8c6c420018be // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
