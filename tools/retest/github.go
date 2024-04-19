@@ -4,7 +4,9 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"slices"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v60/github"
 )
@@ -75,8 +77,9 @@ func checksForCommit(ctx context.Context, client *github.Client, lastCommit stri
 }
 
 type Status struct {
-	Context string `json:"context"`
-	State   string `json:"state"`
+	Context   string    `json:"context"`
+	State     string    `json:"state"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func statusesForPR(ctx context.Context, client *github.Client, url string) (map[string]string, error) {
@@ -89,6 +92,10 @@ func statusesForPR(ctx context.Context, client *github.Client, url string) (map[
 	if err != nil {
 		return nil, err
 	}
+
+	slices.SortFunc(statuses, func(a, b Status) int {
+		return a.UpdatedAt.Compare(b.UpdatedAt)
+	})
 
 	result := map[string]string{}
 	for _, status := range statuses {
