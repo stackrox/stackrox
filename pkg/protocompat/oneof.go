@@ -25,7 +25,11 @@ func GetOneOfFieldTypes(msgType reflect.Type, fieldIndex int) []reflect.Type {
 	}
 
 	slices.SortFunc(oneOfFieldTypes, func(a reflect.Type, b reflect.Type) int {
-		return strings.Compare(a.Name(), b.Name())
+		if a.Kind() != reflect.Ptr || b.Kind() != reflect.Ptr {
+			return 0
+		}
+
+		return strings.Compare(a.Elem().Name(), b.Elem().Name())
 	})
 
 	return oneOfFieldTypes
