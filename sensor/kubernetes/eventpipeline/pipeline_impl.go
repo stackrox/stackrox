@@ -250,5 +250,9 @@ func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImage
 func (p *eventPipeline) processRuntimeFilterConfiguration(req *storage.RuntimeFilteringConfiguration) error {
 	log.Infof("In processRuntimeFilterConfiguration msg is %+v", req)
 
+	msg := component.NewEvent()
+	msg.Context = p.getCurrentContext()
+
+
 	return nil
 }
