@@ -75,7 +75,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 
 	logger := ctrl.Log.WithName("controllers").WithName(gvk.Kind)
 
-	actionConfigGetter, err := client.NewActionConfigGetter(mgr.GetConfig(), mgr.GetRESTMapper(), logger)
+	actionConfigGetter, err := client.NewActionConfigGetter(mgr.GetConfig(), mgr.GetRESTMapper())
 	if err != nil {
 		return fmt.Errorf("creating action config getter: %w", err)
 	}
