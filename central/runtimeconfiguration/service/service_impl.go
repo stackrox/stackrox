@@ -67,5 +67,5 @@ func (s *serviceImpl) PostCollectorRuntimeConfiguration(
 	log.Infof("request.CollectorRuntimeConfiguration= %+v", request.CollectorRuntimeConfiguration)
 	err := s.dataStore.SetRuntimeConfiguration(ctx, request.CollectorRuntimeConfiguration)
 
-	return nil, err
+	return &v1.Empty{}, err
 }

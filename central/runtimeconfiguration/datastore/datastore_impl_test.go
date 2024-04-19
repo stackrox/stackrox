@@ -88,6 +88,27 @@ var (
 		DefaultStatus: "on",
 	}
 
+	resourceSelectorIncomplete = storage.ResourceSelector{
+		Rules: []*storage.SelectorRule{
+			{
+				FieldName: "Clster",
+				Values: []*storage.RuleValue{
+					{
+						Value:     "cluster-1",
+					},
+				},
+			},
+		},
+	}
+
+	resourceSelectorsIncomplete = []*storage.ResourceSelector{&resourceSelectorIncomplete}
+
+	resourceCollectionIncomplete = storage.ResourceCollection{
+		Id:                "b703d50e-b003-4a6a-bf1b-7ab36c9af184",
+		Name:              "Incomplete",
+		ResourceSelectors: resourceSelectorsIncomplete,
+	}
+
 	resourceSelectorCluster1 = storage.ResourceSelector{
 		Rules: []*storage.SelectorRule{
 			{
@@ -235,4 +256,18 @@ func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfigurationDefaultOn
 	suite.NoError(err)
 
 	suite.Equal(runtimeFilteringConfigurationDefaultOnly, fetchedRuntimeConfiguration)
+}
+
+// TestSetRuntimeConfigurationIncomplete: Some fields are nil
+func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfigurationIncomplete() {
+	runtimeFilteringConfigurationIncomplete := &storage.RuntimeFilteringConfiguration{
+		ResourceCollections:	[]*storage.ResourceCollection{&resourceCollectionIncomplete},
+	}
+
+	suite.NoError(suite.datastore.SetRuntimeConfiguration(suite.hasAllCtx, runtimeFilteringConfigurationIncomplete))
+
+	fetchedRuntimeConfiguration, err := suite.datastore.GetRuntimeConfiguration(suite.hasAllCtx)
+	suite.NoError(err)
+
+	suite.Equal(runtimeFilteringConfigurationIncomplete, fetchedRuntimeConfiguration)
 }
