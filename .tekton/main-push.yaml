@@ -79,10 +79,10 @@ spec:
       computeResources:
         limits:
           cpu: 4
-          memory: 6Gi
+          memory: 7Gi
         requests:
           cpu: 4
-          memory: 6Gi
+          memory: 7Gi
   - pipelineTaskName: clamav-scan
     stepSpecs:
     # Provision more CPU to speed up ClamAV scan compared to the defaults.
