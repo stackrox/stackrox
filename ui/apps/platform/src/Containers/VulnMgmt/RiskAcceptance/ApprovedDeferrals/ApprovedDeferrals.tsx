@@ -5,7 +5,7 @@ import usePagination from 'hooks/patternfly/usePagination';
 import queryService from 'utils/queryService';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 import ApprovedDeferralsTable from './ApprovedDeferralsTable';
 

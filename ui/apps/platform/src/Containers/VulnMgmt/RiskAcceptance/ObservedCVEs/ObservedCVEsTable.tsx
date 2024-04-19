@@ -27,7 +27,7 @@ import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/Vulner
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
 import usePermissions from 'hooks/usePermissions';
 import { SearchFilter } from 'types/search';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { GetSortParams } from 'hooks/patternfly/useTableSort';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';

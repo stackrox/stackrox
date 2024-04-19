@@ -17,10 +17,10 @@ import {
 } from 'Components/TableStateTemplates';
 import { getTableUIState } from 'utils/getTableUIState';
 
+import TooltipTh from 'Components/TooltipTh';
+import CvssFormatted from 'Components/CvssFormatted';
+import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import PartialCVEDataAlert from '../../WorkloadCves/components/PartialCVEDataAlert';
-import TooltipTh from '../../WorkloadCves/components/TooltipTh';
-import CvssFormatted from '../../components/CvssFormatted';
-import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import { sortCveDistroList } from '../../utils/sortUtils';
 import { getPlatformEntityPagePath, getRegexScopedQueryString } from '../../utils/searchUtils';
 import { QuerySearchFilter } from '../../types';

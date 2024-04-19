@@ -20,7 +20,7 @@ import { useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 
 import PageTitle from 'Components/PageTitle';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { searchCategories } from 'constants/entityTypes';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';

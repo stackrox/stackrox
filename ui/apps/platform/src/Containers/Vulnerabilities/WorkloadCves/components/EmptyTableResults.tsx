@@ -3,7 +3,7 @@ import { Bullseye, Button, Text } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 import { Tbody, Tr, Td } from '@patternfly/react-table';
 
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useURLSearch from 'hooks/useURLSearch';
 
 export type EmptyTableResultsProps = {

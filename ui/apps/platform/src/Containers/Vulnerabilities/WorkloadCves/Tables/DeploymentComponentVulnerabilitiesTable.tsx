@@ -5,6 +5,7 @@ import { gql } from '@apollo/client';
 import useTableSort from 'hooks/patternfly/useTableSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { VulnerabilityState } from 'types/cve.proto';
+import CvssFormatted from 'Components/CvssFormatted';
 import ImageNameLink from '../components/ImageNameLink';
 import {
     imageMetadataContextFragment,
@@ -16,7 +17,6 @@ import {
 import FixedByVersion from '../components/FixedByVersion';
 import DockerfileLayer from '../components/DockerfileLayer';
 import ComponentLocation from '../components/ComponentLocation';
-import CvssFormatted from '../../components/CvssFormatted';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
 export { imageMetadataContextFragment };

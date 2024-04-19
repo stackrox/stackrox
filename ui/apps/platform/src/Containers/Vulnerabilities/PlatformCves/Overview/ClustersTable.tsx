@@ -15,7 +15,7 @@ import {
 import { getTableUIState } from 'utils/getTableUIState';
 import { ensureExhaustive } from 'utils/type.utils';
 
-import { DynamicColumnIcon } from '../../components/DynamicIcon';
+import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import { getPlatformEntityPagePath, getRegexScopedQueryString } from '../../utils/searchUtils';
 import { QuerySearchFilter } from '../../types';
 

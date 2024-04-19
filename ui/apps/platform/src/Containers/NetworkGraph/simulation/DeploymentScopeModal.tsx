@@ -13,7 +13,7 @@ import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
 
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useTableSort from 'hooks/patternfly/useTableSort';
 import { SearchFilter } from 'types/search';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
