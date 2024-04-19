@@ -216,11 +216,11 @@ func TestGetStatuses(t *testing.T) {
 	t.Cleanup(server.Close)
 
 	client := github.NewClient(server.Client())
-	parse, err := url.Parse(server.URL + "/")
+	baseUrl, err := url.Parse(server.URL + "/")
 	assert.NoError(t, err)
-	client.BaseURL = parse
+	client.BaseURL = baseUrl
 
-	statuses, err := statusesForPR(context.Background(), client, server.URL)
+	statuses, err := statusesForPR(context.Background(), client, baseUrl.String())
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]string{"gke-upgrade-tests": "success"}, statuses)
 }
