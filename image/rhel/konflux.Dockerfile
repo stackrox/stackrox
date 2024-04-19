@@ -150,7 +150,7 @@ LABEL \
     # TODO(ROX-20236): release label is required by EC, figure what to put in the release version on rebuilds.
     release="0" \
     source-location="https://github.com/stackrox/stackrox" \
-    summary="Main Image for RHACS" \
+    summary="Main Image for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     vendor="Red Hat, Inc." \
     # We must set version label to prevent inheriting value set in the base stage.
