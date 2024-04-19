@@ -2,6 +2,8 @@ package protocompat
 
 import (
 	"reflect"
+	"slices"
+	"strings"
 
 	"github.com/gogo/protobuf/proto"
 )
@@ -21,6 +23,10 @@ func GetOneOfFieldTypes(msgType reflect.Type, fieldIndex int) []reflect.Type {
 
 		oneOfFieldTypes = append(oneOfFieldTypes, oneOfField.Type)
 	}
+
+	slices.SortFunc(oneOfFieldTypes, func(a reflect.Type, b reflect.Type) int {
+		return strings.Compare(a.Name(), b.Name())
+	})
 
 	return oneOfFieldTypes
 }
