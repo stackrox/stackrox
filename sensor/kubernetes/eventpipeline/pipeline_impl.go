@@ -253,6 +253,5 @@ func (p *eventPipeline) processRuntimeFilterConfiguration(req *storage.RuntimeFi
 	msg := component.NewEvent()
 	msg.Context = p.getCurrentContext()
 
-
 	return nil
 }

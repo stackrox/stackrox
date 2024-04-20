@@ -28,6 +28,7 @@ type Service interface {
 // to the input channel.
 func NewService(collectorC <-chan common.MessageToCollectorWithAddress) Service {
 	return &serviceImpl{
-		collectorC: collectorC,
+		collectorC:        collectorC,
+		connectionManager: newConnectionManager(),
 	}
 }
