@@ -14,11 +14,16 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	// "github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	// "github.com/stackrox/rox/sensor/common/orchestrator"
 	"google.golang.org/grpc"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // CollectorService is the struct that manages the collector configuration
@@ -51,7 +56,9 @@ func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor) error {
+	log.Info("In ProcessMessage")
 	if msg.GetRuntimeFilteringConfiguration() != nil {
+		log.Infof("msg= %+v", msg)
 		s.collectorC <- common.MessageToCollectorWithAddress{
 			Msg: &sensor.MsgToCollector{
 				Msg: &sensor.MsgToCollector_RuntimeFilteringConfiguration{
@@ -121,9 +128,13 @@ func (c *connectionManager) forEach(fn func(node string, server sensor.Collector
 //}
 
 func (s *serviceImpl) startSendingLoop() {
+	log.Info("In startSendingLoop")
 	for msg := range s.collectorC {
 		if msg.Broadcast {
+			log.Info("Sending runtimeconfig broadcast message")
+			log.Infof("msg is %+v", msg)
 			s.connectionManager.forEach(func(node string, server sensor.CollectorService_CommunicateServer) {
+				log.Infof("node= %+v", node)
 				err := server.Send(msg.Msg)
 				if err != nil {
 
@@ -160,8 +171,10 @@ func (s *serviceImpl) startSendingLoop() {
 //}
 
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
+	log.Info("In Communicate")
 	incomingMD := metautils.ExtractIncoming(server.Context())
 	hostname := incomingMD.Get("rox-collector-nodename")
+	log.Infof("Collector hostname= %+v", hostname)
 	if hostname == "" {
 		return errors.New("collector did not transmit a hostname in initial metadata")
 	}
