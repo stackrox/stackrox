@@ -26,7 +26,7 @@ type Service interface {
 
 // NewService returns the CollectorServiceServer API for Sensor to use, outputs any received CollectorReturns
 // to the input channel.
-func NewService(collectorC <-chan common.MessageToCollectorWithAddress) Service {
+func NewService(collectorC chan common.MessageToCollectorWithAddress) Service {
 	return &serviceImpl{
 		collectorC:        collectorC,
 		connectionManager: newConnectionManager(),

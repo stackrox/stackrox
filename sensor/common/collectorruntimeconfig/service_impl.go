@@ -8,27 +8,24 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-
 	// "github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
+	// "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
-
 	// "github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
-
 	// "github.com/stackrox/rox/sensor/common/orchestrator"
 	"google.golang.org/grpc"
 )
 
-// CollectorService is the struct that manages the compliance results and audit log events
+// CollectorService is the struct that manages the collector configuration
 type serviceImpl struct {
 	sensor.UnimplementedCollectorServiceServer
 
-	collectorC <-chan common.MessageToCollectorWithAddress
+	collectorC chan common.MessageToCollectorWithAddress
 
 	connectionManager *connectionManager
 }
@@ -43,6 +40,7 @@ func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (s *serviceImpl) Start() error {
+	s.collectorC = make(chan common.MessageToCollectorWithAddress)
 	return nil
 }
 
@@ -53,16 +51,17 @@ func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor) error {
-        if msg.GetRuntimeFilteringConfiguration() != nil {
-		s.complianceC <- common.MessageToCollectorWithAddress{
-	                Msg: &sensor.MsgToCollector{
-	                        Msg: &storage.RuntimeFilteringConfigruation{
-					&msg.RuntimeFilteringsConfiguration,
-	                        },
-	                },
-	                Hostname:  nodeName,
-	                Broadcast: nodeName == "",
-	        }
+	if msg.GetRuntimeFilteringConfiguration() != nil {
+		s.collectorC <- common.MessageToCollectorWithAddress{
+			Msg: &sensor.MsgToCollector{
+				Msg: &sensor.MsgToCollector_RuntimeFilteringConfiguration{
+					RuntimeFilteringConfiguration: msg.GetRuntimeFilteringConfiguration(),
+				},
+			},
+			//Hostname:  nodeName,
+			//Broadcast: nodeName == "",
+			Broadcast: true,
+		}
 	}
 
 	return nil
@@ -139,7 +138,7 @@ func (s *serviceImpl) startSendingLoop() {
 			}
 			err := con.Send(msg.Msg)
 			if err != nil {
-				//log.Errorf("Error sending MessageToCollectorWithAddress to node %q: %v", msg.Hostname, err)
+				// log.Errorf("Error sending MessageToCollectorWithAddress to node %q: %v", msg.Hostname, err)
 				return
 			}
 		}
@@ -166,8 +165,6 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 	if hostname == "" {
 		return errors.New("collector did not transmit a hostname in initial metadata")
 	}
-
-
 
 	s.connectionManager.add(hostname, server)
 	defer s.connectionManager.remove(hostname)
