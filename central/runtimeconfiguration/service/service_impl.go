@@ -64,23 +64,6 @@ func (s *serviceImpl) GetCollectorRuntimeConfiguration(
 	return &getCollectorRuntimeConfigurationResponse, err
 }
 
-func (s *serviceImpl) broadcast(ctx context.Context, msg *central.MsgToSensor) error {
-	log.Info("In broadcast")
-	for _, conn := range s.connManager.GetActiveConnections() {
-		log.Info("About to check ValidForDelegation")
-		if !deleConnection.ValidForDelegation(conn) {
-			continue
-		}
-
-		log.Info("About to InjectMessage")
-		err := conn.InjectMessage(ctx, msg)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (s *serviceImpl) PostCollectorRuntimeConfiguration(
 	ctx context.Context,
 	request *v1.PostCollectorRuntimeConfigurationRequest,
@@ -96,62 +79,6 @@ func (s *serviceImpl) PostCollectorRuntimeConfiguration(
 	}
 
 	s.connManager.BroadcastMessage(msg)
-
-	// runtimeFilterRule := storage.RuntimeFilter_RuntimeFilterRule{
-	//	ResourceCollectionId: "abcd",
-	//	Status:               "off",
-	//}
-
-	// rules := []*storage.RuntimeFilter_RuntimeFilterRule{&runtimeFilterRule}
-
-	// runtimeFilter := storage.RuntimeFilter{
-	//	Feature:       storage.RuntimeFilterFeatures_PROCESSES,
-	//	DefaultStatus: "on",
-	//	Rules:         rules,
-	//}
-
-	// resourceSelector := storage.ResourceSelector{
-	//	Rules: []*storage.SelectorRule{
-	//		{
-	//			FieldName: "Namespace",
-	//			Operator:  storage.BooleanOperator_OR,
-	//			Values: []*storage.RuleValue{
-	//				{
-	//					Value:     "webapp",
-	//					MatchType: storage.MatchType_EXACT,
-	//				},
-	//			},
-	//		},
-	//	},
-	//}
-
-	// resourceSelectors := []*storage.ResourceSelector{&resourceSelector}
-
-	// resourceCollection := storage.ResourceCollection{
-	//	Id:                "abcd",
-	//	Name:              "Fake collection",
-	//	ResourceSelectors: resourceSelectors,
-	//}
-
-	// runtimeFilters := []*storage.RuntimeFilter{&runtimeFilter}
-	// resourceCollections := []*storage.ResourceCollection{&resourceCollection}
-
-	// collectorRuntimeConfiguration := &storage.RuntimeFilteringConfiguration{
-	//	RuntimeFilters:      runtimeFilters,
-	//	ResourceCollections: resourceCollections,
-	//}
-
-	// msg := &central.MsgToSensor{
-	//	Msg: &central.MsgToSensor_RuntimeFilteringConfiguration{
-	//		RuntimeFilteringConfiguration: collectorRuntimeConfiguration,
-	//	},
-	//}
-
-	err2 := s.broadcast(ctx, msg)
-
-	if err2 != nil {
-		return nil, err2
-	}
 
 	return &v1.Empty{}, err
 }
