@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
+	"github.com/stackrox/rox/sensor/common/collectorruntimeconfig"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/delegatedregistry"
@@ -105,6 +106,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	complianceMultiplexer := compliance.NewMultiplexer()
 	// TODO(ROX-16931): Turn auditLogEventsInput and auditLogCollectionManager into ComplianceComponents if possible
 	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, complianceMultiplexer.ComplianceC())
+	var collectorC chan common.MessageToCollectorWithAddress
+	collectorRuntimeConfigService := collectorruntimeconfig.NewService(collectorC)
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig, auditLogCollectionManager)
 	enforcer, err := enforcer.New(cfg.k8sClient)
@@ -158,6 +161,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		imageService,
 		enhancer,
 		complianceService,
+		collectorRuntimeConfigService,
 	}
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
 	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher)

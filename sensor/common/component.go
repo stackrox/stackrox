@@ -87,6 +87,15 @@ type ComplianceComponent interface {
 	ComplianceC() <-chan MessageToComplianceWithAddress
 }
 
+// CollectorComponent is a sensor component that can communicate with collector. All the messages intended for
+// collector are returned by CollectorC(). It must be started before the compliance.Multiplexer or we panic.
+type CollectorComponent interface {
+	SensorComponent
+	Stopped() concurrency.ReadOnlyErrorSignal
+
+	CollectorC() chan MessageToCollectorWithAddress
+}
+
 // CentralGRPCConnAware allows to set gRPC connections in sensor components.
 // The connection is injected on sensor startup before the Start method gets called.
 type CentralGRPCConnAware interface {
