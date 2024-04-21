@@ -2,10 +2,8 @@ package collectorruntimeconfig
 
 import (
 	"context"
-	// "sync/atomic"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	// "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/sensor/common"
 )
@@ -24,8 +22,7 @@ type Service interface {
 	// RunScrape(msg *sensor.MsgToCollector) int
 }
 
-// NewService returns the CollectorServiceServer API for Sensor to use, outputs any received CollectorReturns
-// to the input channel.
+// NewService returns the CollectorServiceServer API for Sensor to use.
 func NewService(collectorC chan common.MessageToCollectorWithAddress) Service {
 	return &serviceImpl{
 		collectorC:        collectorC,
