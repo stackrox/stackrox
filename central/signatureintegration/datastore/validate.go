@@ -41,7 +41,7 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 	return multiErr
 }
 
-func validateCosignVerification(config *storage.CosignPublicKeyVerification) error {
+func validateCosignVerification(config *storage.Cosign) error {
 	var multiErr error
 
 	publicKeys := config.GetPublicKeys()

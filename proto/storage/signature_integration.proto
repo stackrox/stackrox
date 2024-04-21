@@ -9,13 +9,19 @@ message SignatureIntegration {
   string id = 1; // @gotags: sql:"pk"
   string name = 2; // @gotags: sql:"unique"
 
-  CosignPublicKeyVerification cosign = 3;
+  Cosign cosign = 3;
 }
 
-message CosignPublicKeyVerification {
+message Cosign {
   message PublicKey {
     string name = 1;
     string public_key_pem_enc = 2;
   }
   repeated PublicKey public_keys = 3;
+
+  message Certificate {
+    string certificate_pem_enc = 1;
+    string certificate_chain_pem_enc = 2;
+  }
+  repeated Certificate certificates = 4;
 }

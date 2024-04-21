@@ -20,6 +20,7 @@ import (
 	"github.com/sigstore/cosign/v2/pkg/cosign"
 	"github.com/sigstore/cosign/v2/pkg/oci"
 	ociremote "github.com/sigstore/cosign/v2/pkg/oci/remote"
+	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
@@ -36,7 +37,7 @@ type cosignPublicKeySignatureFetcher struct {
 
 var _ SignatureFetcher = (*cosignPublicKeySignatureFetcher)(nil)
 
-func newCosignPublicKeySignatureFetcher() *cosignPublicKeySignatureFetcher {
+func newCosignSignatureFetcher() *cosignPublicKeySignatureFetcher {
 	return &cosignPublicKeySignatureFetcher{
 		registryRateLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 	}
@@ -111,13 +112,29 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 				fullImageName, err)
 			continue
 		}
-		// Since we are only focusing on public keys, we are ignoring the certificate / rekor bundles associated with
-		// the signature.
+
+		certPEM, err := certificateToPEM(signedPayload)
+		if err != nil {
+			log.Errorf("Error during unmarshalling of certificate to PEM for image %q: %v",
+				fullImageName, err)
+			continue
+		}
+
+		chainPEM, err := certificateChainToPEM(signedPayload)
+		if err != nil {
+			log.Errorf("Error during unmarshalling of certificate chain to PEM for iamge %q: %v",
+				fullImageName, err)
+			continue
+		}
+
+		// Since we do not yet have support for rekor bundles, we skip those.
 		cosignSignatures = append(cosignSignatures, &storage.Signature{
 			Signature: &storage.Signature_Cosign{
 				Cosign: &storage.CosignSignature{
 					RawSignature:     rawSig,
 					SignaturePayload: signedPayload.Payload,
+					CertPem:          certPEM,
+					ChainPem:         chainPEM,
 				},
 			},
 		})
@@ -129,6 +146,29 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 	}
 
 	return cosignSignatures, nil
+}
+
+func certificateToPEM(sp cosign.SignedPayload) ([]byte, error) {
+	if sp.Cert == nil {
+		return nil, nil
+	}
+
+	pem, err := cryptoutils.MarshalCertificateToPEM(sp.Cert)
+	if err != nil {
+		return nil, err
+	}
+	return pem, nil
+}
+
+func certificateChainToPEM(sp cosign.SignedPayload) ([]byte, error) {
+	if len(sp.Chain) == 0 {
+		return nil, nil
+	}
+	pem, err := cryptoutils.MarshalCertificatesToPEM(sp.Chain)
+	if err != nil {
+		return nil, err
+	}
+	return pem, nil
 }
 
 // makeTransientErrorRetryable ensures that only transient errors are made retryable.

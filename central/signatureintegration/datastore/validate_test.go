@@ -11,16 +11,16 @@ var (
 	goodName                   = "Sheer Heart Attack"
 	goodID                     = "io.stackrox.signatureintegration.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13"
 	badID                      = "Killer Queen"
-	badEmptyCosignConfig       = &storage.CosignPublicKeyVerification{}
-	badPEMEncodingCosignConfig = &storage.CosignPublicKeyVerification{
-		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+	badEmptyCosignConfig       = &storage.Cosign{}
+	badPEMEncodingCosignConfig = &storage.Cosign{
+		PublicKeys: []*storage.Cosign_PublicKey{
 			{
 				PublicKeyPemEnc: "this is not PEM encoded",
 			},
 		},
 	}
-	goodCosignConfig = &storage.CosignPublicKeyVerification{
-		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+	goodCosignConfig = &storage.Cosign{
+		PublicKeys: []*storage.Cosign_PublicKey{
 			{
 				Name:            "key name",
 				PublicKeyPemEnc: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAryQICCl6NZ5gDKrnSztO\n3Hy8PEUcuyvg/ikC+VcIo2SFFSf18a3IMYldIugqqqZCs4/4uVW3sbdLs/6PfgdX\n7O9D22ZiFWHPYA2k2N744MNiCD1UE+tJyllUhSblK48bn+v1oZHCM0nYQ2NqUkvS\nj+hwUU3RiWl7x3D2s9wSdNt7XUtW05a/FXehsPSiJfKvHJJnGOX0BgTvkLnkAOTd\nOrUZ/wK69Dzu4IvrN4vs9Nes8vbwPa/ddZEzGR0cQMt0JBkhk9kU/qwqUseP1QRJ\n5I1jR4g8aYPL/ke9K35PxZWuDp3U0UPAZ3PjFAh+5T+fc7gzCs9dPzSHloruU+gl\nFQIDAQAB\n-----END PUBLIC KEY-----",

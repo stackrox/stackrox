@@ -6,7 +6,7 @@ import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.ScopeOuterClass
-import io.stackrox.proto.storage.SignatureIntegrationOuterClass.CosignPublicKeyVerification
+import io.stackrox.proto.storage.SignatureIntegrationOuterClass.Cosign
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.SignatureIntegration
 
 import objects.Deployment
@@ -356,15 +356,15 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
 
     // Helper to create a signature integration with given name and public keys.
     private static String createSignatureIntegration(String integrationName, Map<String, String> namedPublicKeys) {
-        List<CosignPublicKeyVerification.PublicKey> publicKeys = namedPublicKeys.collect {
-            CosignPublicKeyVerification.PublicKey.newBuilder()
+        List<Cosign.PublicKey> publicKeys = namedPublicKeys.collect {
+            Cosign.PublicKey.newBuilder()
                     .setName(it.key).setPublicKeyPemEnc(it.value)
                     .build()
         }
         String signatureIntegrationID = SignatureIntegrationService.createSignatureIntegration(
                 SignatureIntegration.newBuilder()
                         .setName(integrationName)
-                        .setCosign(CosignPublicKeyVerification.newBuilder()
+                        .setCosign(Cosign.newBuilder()
                                 .addAllPublicKeys(publicKeys)
                                 .build()
                         )

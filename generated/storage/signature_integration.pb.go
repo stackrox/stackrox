@@ -23,12 +23,12 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type SignatureIntegration struct {
-	Id                   string                       `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name                 string                       `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
-	Cosign               *CosignPublicKeyVerification `protobuf:"bytes,3,opt,name=cosign,proto3" json:"cosign,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
-	XXX_unrecognized     []byte                       `json:"-"`
-	XXX_sizecache        int32                        `json:"-"`
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
+	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Cosign               *Cosign  `protobuf:"bytes,3,opt,name=cosign,proto3" json:"cosign,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *SignatureIntegration) Reset()         { *m = SignatureIntegration{} }
@@ -78,7 +78,7 @@ func (m *SignatureIntegration) GetName() string {
 	return ""
 }
 
-func (m *SignatureIntegration) GetCosign() *CosignPublicKeyVerification {
+func (m *SignatureIntegration) GetCosign() *Cosign {
 	if m != nil {
 		return m.Cosign
 	}
@@ -99,25 +99,26 @@ func (m *SignatureIntegration) Clone() *SignatureIntegration {
 	return cloned
 }
 
-type CosignPublicKeyVerification struct {
-	PublicKeys           []*CosignPublicKeyVerification_PublicKey `protobuf:"bytes,3,rep,name=public_keys,json=publicKeys,proto3" json:"public_keys,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                                 `json:"-"`
-	XXX_unrecognized     []byte                                   `json:"-"`
-	XXX_sizecache        int32                                    `json:"-"`
+type Cosign struct {
+	PublicKeys           []*Cosign_PublicKey   `protobuf:"bytes,3,rep,name=public_keys,json=publicKeys,proto3" json:"public_keys,omitempty"`
+	Certificates         []*Cosign_Certificate `protobuf:"bytes,4,rep,name=certificates,proto3" json:"certificates,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *CosignPublicKeyVerification) Reset()         { *m = CosignPublicKeyVerification{} }
-func (m *CosignPublicKeyVerification) String() string { return proto.CompactTextString(m) }
-func (*CosignPublicKeyVerification) ProtoMessage()    {}
-func (*CosignPublicKeyVerification) Descriptor() ([]byte, []int) {
+func (m *Cosign) Reset()         { *m = Cosign{} }
+func (m *Cosign) String() string { return proto.CompactTextString(m) }
+func (*Cosign) ProtoMessage()    {}
+func (*Cosign) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b3165e7a4c19e14a, []int{1}
 }
-func (m *CosignPublicKeyVerification) XXX_Unmarshal(b []byte) error {
+func (m *Cosign) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CosignPublicKeyVerification) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Cosign) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_CosignPublicKeyVerification.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Cosign.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -127,45 +128,58 @@ func (m *CosignPublicKeyVerification) XXX_Marshal(b []byte, deterministic bool) 
 		return b[:n], nil
 	}
 }
-func (m *CosignPublicKeyVerification) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CosignPublicKeyVerification.Merge(m, src)
+func (m *Cosign) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Cosign.Merge(m, src)
 }
-func (m *CosignPublicKeyVerification) XXX_Size() int {
+func (m *Cosign) XXX_Size() int {
 	return m.Size()
 }
-func (m *CosignPublicKeyVerification) XXX_DiscardUnknown() {
-	xxx_messageInfo_CosignPublicKeyVerification.DiscardUnknown(m)
+func (m *Cosign) XXX_DiscardUnknown() {
+	xxx_messageInfo_Cosign.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_CosignPublicKeyVerification proto.InternalMessageInfo
+var xxx_messageInfo_Cosign proto.InternalMessageInfo
 
-func (m *CosignPublicKeyVerification) GetPublicKeys() []*CosignPublicKeyVerification_PublicKey {
+func (m *Cosign) GetPublicKeys() []*Cosign_PublicKey {
 	if m != nil {
 		return m.PublicKeys
 	}
 	return nil
 }
 
-func (m *CosignPublicKeyVerification) MessageClone() proto.Message {
+func (m *Cosign) GetCertificates() []*Cosign_Certificate {
+	if m != nil {
+		return m.Certificates
+	}
+	return nil
+}
+
+func (m *Cosign) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *CosignPublicKeyVerification) Clone() *CosignPublicKeyVerification {
+func (m *Cosign) Clone() *Cosign {
 	if m == nil {
 		return nil
 	}
-	cloned := new(CosignPublicKeyVerification)
+	cloned := new(Cosign)
 	*cloned = *m
 
 	if m.PublicKeys != nil {
-		cloned.PublicKeys = make([]*CosignPublicKeyVerification_PublicKey, len(m.PublicKeys))
+		cloned.PublicKeys = make([]*Cosign_PublicKey, len(m.PublicKeys))
 		for idx, v := range m.PublicKeys {
 			cloned.PublicKeys[idx] = v.Clone()
+		}
+	}
+	if m.Certificates != nil {
+		cloned.Certificates = make([]*Cosign_Certificate, len(m.Certificates))
+		for idx, v := range m.Certificates {
+			cloned.Certificates[idx] = v.Clone()
 		}
 	}
 	return cloned
 }
 
-type CosignPublicKeyVerification_PublicKey struct {
+type Cosign_PublicKey struct {
 	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	PublicKeyPemEnc      string   `protobuf:"bytes,2,opt,name=public_key_pem_enc,json=publicKeyPemEnc,proto3" json:"public_key_pem_enc,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -173,18 +187,18 @@ type CosignPublicKeyVerification_PublicKey struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CosignPublicKeyVerification_PublicKey) Reset()         { *m = CosignPublicKeyVerification_PublicKey{} }
-func (m *CosignPublicKeyVerification_PublicKey) String() string { return proto.CompactTextString(m) }
-func (*CosignPublicKeyVerification_PublicKey) ProtoMessage()    {}
-func (*CosignPublicKeyVerification_PublicKey) Descriptor() ([]byte, []int) {
+func (m *Cosign_PublicKey) Reset()         { *m = Cosign_PublicKey{} }
+func (m *Cosign_PublicKey) String() string { return proto.CompactTextString(m) }
+func (*Cosign_PublicKey) ProtoMessage()    {}
+func (*Cosign_PublicKey) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b3165e7a4c19e14a, []int{1, 0}
 }
-func (m *CosignPublicKeyVerification_PublicKey) XXX_Unmarshal(b []byte) error {
+func (m *Cosign_PublicKey) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CosignPublicKeyVerification_PublicKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Cosign_PublicKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_CosignPublicKeyVerification_PublicKey.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Cosign_PublicKey.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -194,40 +208,108 @@ func (m *CosignPublicKeyVerification_PublicKey) XXX_Marshal(b []byte, determinis
 		return b[:n], nil
 	}
 }
-func (m *CosignPublicKeyVerification_PublicKey) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CosignPublicKeyVerification_PublicKey.Merge(m, src)
+func (m *Cosign_PublicKey) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Cosign_PublicKey.Merge(m, src)
 }
-func (m *CosignPublicKeyVerification_PublicKey) XXX_Size() int {
+func (m *Cosign_PublicKey) XXX_Size() int {
 	return m.Size()
 }
-func (m *CosignPublicKeyVerification_PublicKey) XXX_DiscardUnknown() {
-	xxx_messageInfo_CosignPublicKeyVerification_PublicKey.DiscardUnknown(m)
+func (m *Cosign_PublicKey) XXX_DiscardUnknown() {
+	xxx_messageInfo_Cosign_PublicKey.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_CosignPublicKeyVerification_PublicKey proto.InternalMessageInfo
+var xxx_messageInfo_Cosign_PublicKey proto.InternalMessageInfo
 
-func (m *CosignPublicKeyVerification_PublicKey) GetName() string {
+func (m *Cosign_PublicKey) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *CosignPublicKeyVerification_PublicKey) GetPublicKeyPemEnc() string {
+func (m *Cosign_PublicKey) GetPublicKeyPemEnc() string {
 	if m != nil {
 		return m.PublicKeyPemEnc
 	}
 	return ""
 }
 
-func (m *CosignPublicKeyVerification_PublicKey) MessageClone() proto.Message {
+func (m *Cosign_PublicKey) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *CosignPublicKeyVerification_PublicKey) Clone() *CosignPublicKeyVerification_PublicKey {
+func (m *Cosign_PublicKey) Clone() *Cosign_PublicKey {
 	if m == nil {
 		return nil
 	}
-	cloned := new(CosignPublicKeyVerification_PublicKey)
+	cloned := new(Cosign_PublicKey)
+	*cloned = *m
+
+	return cloned
+}
+
+type Cosign_Certificate struct {
+	CertificatePemEnc      string   `protobuf:"bytes,1,opt,name=certificate_pem_enc,json=certificatePemEnc,proto3" json:"certificate_pem_enc,omitempty"`
+	CertificateChainPemEnc string   `protobuf:"bytes,2,opt,name=certificate_chain_pem_enc,json=certificateChainPemEnc,proto3" json:"certificate_chain_pem_enc,omitempty"`
+	XXX_NoUnkeyedLiteral   struct{} `json:"-"`
+	XXX_unrecognized       []byte   `json:"-"`
+	XXX_sizecache          int32    `json:"-"`
+}
+
+func (m *Cosign_Certificate) Reset()         { *m = Cosign_Certificate{} }
+func (m *Cosign_Certificate) String() string { return proto.CompactTextString(m) }
+func (*Cosign_Certificate) ProtoMessage()    {}
+func (*Cosign_Certificate) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b3165e7a4c19e14a, []int{1, 1}
+}
+func (m *Cosign_Certificate) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *Cosign_Certificate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_Cosign_Certificate.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *Cosign_Certificate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Cosign_Certificate.Merge(m, src)
+}
+func (m *Cosign_Certificate) XXX_Size() int {
+	return m.Size()
+}
+func (m *Cosign_Certificate) XXX_DiscardUnknown() {
+	xxx_messageInfo_Cosign_Certificate.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Cosign_Certificate proto.InternalMessageInfo
+
+func (m *Cosign_Certificate) GetCertificatePemEnc() string {
+	if m != nil {
+		return m.CertificatePemEnc
+	}
+	return ""
+}
+
+func (m *Cosign_Certificate) GetCertificateChainPemEnc() string {
+	if m != nil {
+		return m.CertificateChainPemEnc
+	}
+	return ""
+}
+
+func (m *Cosign_Certificate) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *Cosign_Certificate) Clone() *Cosign_Certificate {
+	if m == nil {
+		return nil
+	}
+	cloned := new(Cosign_Certificate)
 	*cloned = *m
 
 	return cloned
@@ -235,8 +317,9 @@ func (m *CosignPublicKeyVerification_PublicKey) Clone() *CosignPublicKeyVerifica
 
 func init() {
 	proto.RegisterType((*SignatureIntegration)(nil), "storage.SignatureIntegration")
-	proto.RegisterType((*CosignPublicKeyVerification)(nil), "storage.CosignPublicKeyVerification")
-	proto.RegisterType((*CosignPublicKeyVerification_PublicKey)(nil), "storage.CosignPublicKeyVerification.PublicKey")
+	proto.RegisterType((*Cosign)(nil), "storage.Cosign")
+	proto.RegisterType((*Cosign_PublicKey)(nil), "storage.Cosign.PublicKey")
+	proto.RegisterType((*Cosign_Certificate)(nil), "storage.Cosign.Certificate")
 }
 
 func init() {
@@ -244,25 +327,28 @@ func init() {
 }
 
 var fileDescriptor_b3165e7a4c19e14a = []byte{
-	// 273 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0x2e, 0x2e, 0xc9, 0x2f,
-	0x4a, 0x4c, 0x4f, 0xd5, 0x2f, 0xce, 0x4c, 0xcf, 0x4b, 0x2c, 0x29, 0x2d, 0x4a, 0x8d, 0xcf, 0xcc,
-	0x2b, 0x49, 0x4d, 0x2f, 0x4a, 0x2c, 0xc9, 0xcc, 0xcf, 0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17,
-	0x62, 0x87, 0x2a, 0x52, 0xaa, 0xe0, 0x12, 0x09, 0x86, 0xa9, 0xf3, 0x44, 0x28, 0x13, 0xe2, 0xe3,
-	0x62, 0xca, 0x4c, 0x91, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x0c, 0x62, 0xca, 0x4c, 0x11, 0x12, 0xe2,
-	0x62, 0xc9, 0x4b, 0xcc, 0x4d, 0x95, 0x60, 0x02, 0x8b, 0x80, 0xd9, 0x42, 0x36, 0x5c, 0x6c, 0xc9,
-	0xf9, 0x20, 0x5b, 0x24, 0x98, 0x15, 0x18, 0x35, 0xb8, 0x8d, 0x54, 0xf4, 0xa0, 0xa6, 0xea, 0x39,
-	0x83, 0x85, 0x03, 0x4a, 0x93, 0x72, 0x32, 0x93, 0xbd, 0x53, 0x2b, 0xc3, 0x52, 0x8b, 0x32, 0xd3,
-	0x32, 0x93, 0xc1, 0x26, 0x07, 0x41, 0xf5, 0x28, 0xed, 0x61, 0xe4, 0x92, 0xc6, 0xa3, 0x4e, 0xc8,
-	0x9f, 0x8b, 0xbb, 0x00, 0x2c, 0x11, 0x9f, 0x9d, 0x5a, 0x59, 0x2c, 0xc1, 0xac, 0xc0, 0xac, 0xc1,
-	0x6d, 0xa4, 0x47, 0x8c, 0x15, 0x7a, 0x70, 0xd1, 0x20, 0xae, 0x02, 0x18, 0xb3, 0x58, 0xca, 0x87,
-	0x8b, 0x13, 0x2e, 0x01, 0xf7, 0x0f, 0x23, 0x92, 0x7f, 0xb4, 0xb9, 0x84, 0x10, 0x36, 0xc6, 0x17,
-	0xa4, 0xe6, 0xc6, 0xa7, 0xe6, 0x25, 0x43, 0x7d, 0xcc, 0x0f, 0x37, 0x28, 0x20, 0x35, 0xd7, 0x35,
-	0x2f, 0xd9, 0xc9, 0xee, 0xc4, 0x23, 0x39, 0xc6, 0x0b, 0x8f, 0xe4, 0x18, 0x1f, 0x3c, 0x92, 0x63,
-	0x9c, 0xf1, 0x58, 0x8e, 0x81, 0x4b, 0x32, 0x33, 0x5f, 0xaf, 0xb8, 0x24, 0x31, 0x39, 0xbb, 0x28,
-	0xbf, 0x02, 0x12, 0xcc, 0x30, 0xc7, 0x46, 0x09, 0xea, 0xe9, 0x43, 0x99, 0xd6, 0x50, 0x3a, 0x89,
-	0x0d, 0xac, 0xc2, 0x18, 0x10, 0x00, 0x00, 0xff, 0xff, 0xde, 0xfc, 0xaa, 0x73, 0xaf, 0x01, 0x00,
-	0x00,
+	// 330 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x91, 0xdf, 0x4a, 0xf3, 0x30,
+	0x14, 0xc0, 0xbf, 0x74, 0x63, 0x1f, 0x3b, 0x15, 0xc7, 0xa2, 0x48, 0x37, 0xa1, 0x8c, 0x79, 0xe1,
+	0x40, 0xc8, 0x60, 0x5e, 0xa9, 0xa0, 0xe0, 0xf0, 0x42, 0xf4, 0x62, 0xd4, 0x3b, 0x6f, 0x4a, 0x96,
+	0xc5, 0x19, 0xe6, 0x92, 0xd2, 0x66, 0xb0, 0xbd, 0x89, 0x8f, 0xe4, 0x8d, 0xe0, 0x23, 0xc8, 0x7c,
+	0x11, 0x59, 0x9a, 0x75, 0xb1, 0x57, 0x3d, 0x9c, 0xf3, 0xfb, 0x9d, 0x3f, 0x0d, 0x9c, 0x64, 0x5a,
+	0xa5, 0x74, 0xca, 0xfb, 0x99, 0x98, 0x4a, 0xaa, 0x17, 0x29, 0x8f, 0x85, 0xd4, 0x7c, 0x9a, 0x52,
+	0x2d, 0x94, 0x24, 0x49, 0xaa, 0xb4, 0xc2, 0xff, 0x2d, 0xd4, 0x65, 0x70, 0xf8, 0xb4, 0xe5, 0xee,
+	0x77, 0x18, 0xde, 0x07, 0x4f, 0x4c, 0x02, 0xd4, 0x41, 0xbd, 0x7a, 0xe4, 0x89, 0x09, 0xc6, 0x50,
+	0x95, 0x74, 0xce, 0x03, 0xcf, 0x64, 0x4c, 0x8c, 0x4f, 0xa1, 0xc6, 0xd4, 0x66, 0x4a, 0x50, 0xe9,
+	0xa0, 0x9e, 0x3f, 0x68, 0x10, 0xdb, 0x95, 0x0c, 0x4d, 0x3a, 0xb2, 0xe5, 0xee, 0xa7, 0x07, 0xb5,
+	0x3c, 0x85, 0x2f, 0xc1, 0x4f, 0x16, 0xe3, 0x37, 0xc1, 0xe2, 0x19, 0x5f, 0x65, 0x41, 0xa5, 0x53,
+	0xe9, 0xf9, 0x83, 0x56, 0x49, 0x24, 0x23, 0x83, 0x3c, 0xf0, 0x55, 0x04, 0xc9, 0x36, 0xcc, 0xf0,
+	0x0d, 0xec, 0x31, 0x9e, 0x6a, 0xf1, 0x22, 0x18, 0xd5, 0x3c, 0x0b, 0xaa, 0x46, 0x3e, 0x2e, 0xcb,
+	0xc3, 0x1d, 0x13, 0xfd, 0x11, 0xda, 0x8f, 0x50, 0x2f, 0x3a, 0x17, 0x17, 0x21, 0xe7, 0xa2, 0x33,
+	0xc0, 0xbb, 0xed, 0xe2, 0x84, 0xcf, 0x63, 0x2e, 0x99, 0xbd, 0xb9, 0x51, 0x6c, 0x32, 0xe2, 0xf3,
+	0x3b, 0xc9, 0xda, 0x4b, 0xf0, 0x9d, 0x51, 0x98, 0xc0, 0x81, 0x33, 0xac, 0x90, 0xf3, 0xf6, 0x4d,
+	0xa7, 0x94, 0xeb, 0xf8, 0x02, 0x5a, 0x2e, 0xcf, 0x5e, 0xa9, 0x90, 0xa5, 0x91, 0x47, 0x0e, 0x30,
+	0xdc, 0xd4, 0x73, 0xf5, 0xf6, 0xfa, 0x63, 0x1d, 0xa2, 0xaf, 0x75, 0x88, 0xbe, 0xd7, 0x21, 0x7a,
+	0xff, 0x09, 0xff, 0x41, 0x4b, 0x28, 0x92, 0x69, 0xca, 0x66, 0xa9, 0x5a, 0xe6, 0x4f, 0xbc, 0xfd,
+	0x2b, 0xcf, 0x4d, 0xd2, 0xb7, 0xe1, 0x95, 0xfd, 0x8e, 0x6b, 0x86, 0x38, 0xff, 0x0d, 0x00, 0x00,
+	0xff, 0xff, 0xa6, 0x25, 0x74, 0x2f, 0x2b, 0x02, 0x00, 0x00,
 }
 
 func (m *SignatureIntegration) Marshal() (dAtA []byte, err error) {
@@ -318,7 +404,7 @@ func (m *SignatureIntegration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CosignPublicKeyVerification) Marshal() (dAtA []byte, err error) {
+func (m *Cosign) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -328,12 +414,12 @@ func (m *CosignPublicKeyVerification) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CosignPublicKeyVerification) MarshalTo(dAtA []byte) (int, error) {
+func (m *Cosign) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *CosignPublicKeyVerification) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Cosign) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -341,6 +427,20 @@ func (m *CosignPublicKeyVerification) MarshalToSizedBuffer(dAtA []byte) (int, er
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Certificates) > 0 {
+		for iNdEx := len(m.Certificates) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Certificates[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintSignatureIntegration(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
 	}
 	if len(m.PublicKeys) > 0 {
 		for iNdEx := len(m.PublicKeys) - 1; iNdEx >= 0; iNdEx-- {
@@ -359,7 +459,7 @@ func (m *CosignPublicKeyVerification) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *CosignPublicKeyVerification_PublicKey) Marshal() (dAtA []byte, err error) {
+func (m *Cosign_PublicKey) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -369,12 +469,12 @@ func (m *CosignPublicKeyVerification_PublicKey) Marshal() (dAtA []byte, err erro
 	return dAtA[:n], nil
 }
 
-func (m *CosignPublicKeyVerification_PublicKey) MarshalTo(dAtA []byte) (int, error) {
+func (m *Cosign_PublicKey) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *CosignPublicKeyVerification_PublicKey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Cosign_PublicKey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -394,6 +494,47 @@ func (m *CosignPublicKeyVerification_PublicKey) MarshalToSizedBuffer(dAtA []byte
 		i -= len(m.Name)
 		copy(dAtA[i:], m.Name)
 		i = encodeVarintSignatureIntegration(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *Cosign_Certificate) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Cosign_Certificate) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Cosign_Certificate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.CertificateChainPemEnc) > 0 {
+		i -= len(m.CertificateChainPemEnc)
+		copy(dAtA[i:], m.CertificateChainPemEnc)
+		i = encodeVarintSignatureIntegration(dAtA, i, uint64(len(m.CertificateChainPemEnc)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.CertificatePemEnc) > 0 {
+		i -= len(m.CertificatePemEnc)
+		copy(dAtA[i:], m.CertificatePemEnc)
+		i = encodeVarintSignatureIntegration(dAtA, i, uint64(len(m.CertificatePemEnc)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -435,7 +576,7 @@ func (m *SignatureIntegration) Size() (n int) {
 	return n
 }
 
-func (m *CosignPublicKeyVerification) Size() (n int) {
+func (m *Cosign) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -447,13 +588,19 @@ func (m *CosignPublicKeyVerification) Size() (n int) {
 			n += 1 + l + sovSignatureIntegration(uint64(l))
 		}
 	}
+	if len(m.Certificates) > 0 {
+		for _, e := range m.Certificates {
+			l = e.Size()
+			n += 1 + l + sovSignatureIntegration(uint64(l))
+		}
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
 	return n
 }
 
-func (m *CosignPublicKeyVerification_PublicKey) Size() (n int) {
+func (m *Cosign_PublicKey) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -464,6 +611,26 @@ func (m *CosignPublicKeyVerification_PublicKey) Size() (n int) {
 		n += 1 + l + sovSignatureIntegration(uint64(l))
 	}
 	l = len(m.PublicKeyPemEnc)
+	if l > 0 {
+		n += 1 + l + sovSignatureIntegration(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *Cosign_Certificate) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CertificatePemEnc)
+	if l > 0 {
+		n += 1 + l + sovSignatureIntegration(uint64(l))
+	}
+	l = len(m.CertificateChainPemEnc)
 	if l > 0 {
 		n += 1 + l + sovSignatureIntegration(uint64(l))
 	}
@@ -602,7 +769,7 @@ func (m *SignatureIntegration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Cosign == nil {
-				m.Cosign = &CosignPublicKeyVerification{}
+				m.Cosign = &Cosign{}
 			}
 			if err := m.Cosign.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -630,7 +797,7 @@ func (m *SignatureIntegration) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CosignPublicKeyVerification) Unmarshal(dAtA []byte) error {
+func (m *Cosign) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -653,10 +820,10 @@ func (m *CosignPublicKeyVerification) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: CosignPublicKeyVerification: wiretype end group for non-group")
+			return fmt.Errorf("proto: Cosign: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CosignPublicKeyVerification: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Cosign: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 3:
@@ -688,8 +855,42 @@ func (m *CosignPublicKeyVerification) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.PublicKeys = append(m.PublicKeys, &CosignPublicKeyVerification_PublicKey{})
+			m.PublicKeys = append(m.PublicKeys, &Cosign_PublicKey{})
 			if err := m.PublicKeys[len(m.PublicKeys)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Certificates", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSignatureIntegration
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSignatureIntegration
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSignatureIntegration
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Certificates = append(m.Certificates, &Cosign_Certificate{})
+			if err := m.Certificates[len(m.Certificates)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -715,7 +916,7 @@ func (m *CosignPublicKeyVerification) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CosignPublicKeyVerification_PublicKey) Unmarshal(dAtA []byte) error {
+func (m *Cosign_PublicKey) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -807,6 +1008,121 @@ func (m *CosignPublicKeyVerification_PublicKey) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.PublicKeyPemEnc = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSignatureIntegration(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSignatureIntegration
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Cosign_Certificate) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSignatureIntegration
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Certificate: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Certificate: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CertificatePemEnc", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSignatureIntegration
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSignatureIntegration
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSignatureIntegration
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CertificatePemEnc = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CertificateChainPemEnc", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSignatureIntegration
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSignatureIntegration
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSignatureIntegration
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CertificateChainPemEnc = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

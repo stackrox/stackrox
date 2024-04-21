@@ -160,7 +160,18 @@
     }
   },
   "definitions": {
-    "CosignPublicKeyVerificationPublicKey": {
+    "CosignCertificate": {
+      "type": "object",
+      "properties": {
+        "certificatePemEnc": {
+          "type": "string"
+        },
+        "certificateChainPemEnc": {
+          "type": "string"
+        }
+      }
+    },
+    "CosignPublicKey": {
       "type": "object",
       "properties": {
         "name": {
@@ -207,13 +218,19 @@
         }
       }
     },
-    "storageCosignPublicKeyVerification": {
+    "storageCosign": {
       "type": "object",
       "properties": {
         "publicKeys": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/CosignPublicKeyVerificationPublicKey"
+            "$ref": "#/definitions/CosignPublicKey"
+          }
+        },
+        "certificates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CosignCertificate"
           }
         }
       }
@@ -228,7 +245,7 @@
           "type": "string"
         },
         "cosign": {
-          "$ref": "#/definitions/storageCosignPublicKeyVerification"
+          "$ref": "#/definitions/storageCosign"
         }
       }
     },
