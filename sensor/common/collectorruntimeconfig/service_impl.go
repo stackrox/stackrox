@@ -2,23 +2,18 @@ package collectorruntimeconfig
 
 import (
 	"context"
-	// "sync/atomic"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	// "github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	// "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
-	// "github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
-	// "github.com/stackrox/rox/sensor/common/orchestrator"
 	"google.golang.org/grpc"
 )
 
@@ -36,12 +31,6 @@ type serviceImpl struct {
 }
 
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
-	// switch e {
-	// case common.SensorComponentEventCentralReachable:
-	//	s.offlineMode.Store(false)
-	// case common.SensorComponentEventOfflineMode:
-	//	s.offlineMode.Store(true)
-	//}
 }
 
 func (s *serviceImpl) Start() error {
@@ -65,8 +54,6 @@ func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor) error {
 					RuntimeFilteringConfiguration: msg.GetRuntimeFilteringConfiguration(),
 				},
 			},
-			//Hostname:  nodeName,
-			//Broadcast: nodeName == "",
 			Broadcast: true,
 		}
 	}
@@ -112,21 +99,6 @@ func (c *connectionManager) forEach(fn func(node string, server sensor.Collector
 	}
 }
 
-//// GetScrapeConfig returns the scrape configuration for the given node name and scrape ID.
-// func (s *serviceImpl) GetScrapeConfig(_ context.Context, nodeName string) (*sensor.MsgToCollector_ScrapeConfig, error) {
-//	nodeScrapeConfig, err := s.orchestrator.GetNodeScrapeConfig(nodeName)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	rt, _ := k8sutil.ParseContainerRuntimeString(nodeScrapeConfig.ContainerRuntimeVersion)
-//
-//	return &sensor.MsgToCollector_ScrapeConfig{
-//		ContainerRuntime: rt,
-//		IsMasterNode:     nodeScrapeConfig.IsMasterNode,
-//	}, nil
-//}
-
 func (s *serviceImpl) startSendingLoop() {
 	log.Info("In startSendingLoop")
 	for msg := range s.collectorC {
@@ -141,40 +113,28 @@ func (s *serviceImpl) startSendingLoop() {
 					return
 				}
 			})
-		} else {
+		} else { // Probably everything will be sent as a broadcast so there is no need for this
 			con, ok := s.connectionManager.connectionMap[msg.Hostname]
 			if !ok {
-				////log.Errorf("Unable to find connection to compliance: %q", msg.Hostname)
+				log.Errorf("Unable to find connection to collector: %q", msg.Hostname)
 				return
 			}
 			err := con.Send(msg.Msg)
 			if err != nil {
-				// log.Errorf("Error sending MessageToCollectorWithAddress to node %q: %v", msg.Hostname, err)
+				log.Errorf("Error sending MessageToCollectorWithAddress to node %q: %v", msg.Hostname, err)
 				return
 			}
 		}
 	}
 }
 
-// func (s *serviceImpl) RunScrape(msg *sensor.MsgToCollector) int {
-//	var count int
-//
-//	s.connectionManager.forEach(func(node string, server sensor.CollectorService_CommunicateServer) {
-//		err := server.Send(msg)
-//		if err != nil {
-//			log.Errorf("Error sending compliance request to node %q: %v", node, err)
-//			return
-//		}
-//		count++
-//	})
-//	return count
-//}
-
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
 	log.Info("In Communicate")
 	incomingMD := metautils.ExtractIncoming(server.Context())
 	hostname := incomingMD.Get("rox-collector-nodename")
+	complianceHostname := incomingMD.Get("rox-compliance-nodename")
 	log.Infof("Collector hostname= %+v", hostname)
+	log.Infof("Compliance hostname= %+v", complianceHostname) // Just as a test
 	if hostname == "" {
 		return errors.New("collector did not transmit a hostname in initial metadata")
 	}
@@ -182,55 +142,8 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 	s.connectionManager.add(hostname, server)
 	defer s.connectionManager.remove(hostname)
 
-	// conf, err := s.GetScrapeConfig(server.Context(), hostname)
-	// if err != nil {
-	//	log.Errorf("getting scrape config for %q: %v", hostname, err)
-	//	conf = &sensor.MsgToCollector_ScrapeConfig{
-	//		ContainerRuntime: storage.ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME,
-	//	}
-	//}
-
-	// err = server.Send(&sensor.MsgToCollector{
-	//	Msg: &sensor.MsgToCollector_Config{
-	//		Config: conf,
-	//	},
-	// })
-	// if err != nil {
-	//	return errors.Wrapf(err, "sending config to %q", hostname)
-	//}
-
-	//// Set up this node to start collecting audit log events if it's a master node. It may send a message if the feature is already enabled
-	// if conf.GetIsMasterNode() {
-	//	log.Infof("Adding node %s to list of eligible compliance nodes for audit log collection because it is on a master node", hostname)
-	//	s.auditLogCollectionManager.AddEligibleCollectorNode(hostname, server)
-	//	defer s.auditLogCollectionManager.RemoveEligibleCollectorNode(hostname)
-	//}
-
 	go s.startSendingLoop()
 
-	// for {
-	//	msg, err := server.Recv()
-	//	if err != nil {
-	//		log.Errorf("receiving from compliance %q: %v", hostname, err)
-	//		return err
-	//	}
-	//	switch t := msg.Msg.(type) {
-	//	case *sensor.MsgFromCollector_Return:
-	//		log.Infof("Received compliance return from %q", msg.GetNode())
-	//		s.output <- t.Return
-	//	case *sensor.MsgFromCollector_AuditEvents:
-	//		// if we are offline we do not send more audit logs to the manager nor the detector.
-	//		// Upon reconnection Central will sync the last state and Sensor will request to Collector to start
-	//		// sending the audit logs based on that state.
-	//		if s.offlineMode.Load() {
-	//			continue
-	//		}
-	//		s.auditEvents <- t.AuditEvents
-	//		s.auditLogCollectionManager.AuditMessagesChan() <- msg
-	//	case *sensor.MsgFromCollector_NodeInventory:
-	//		s.nodeInventories <- t.NodeInventory
-	//	}
-	//}
 	return nil
 }
 

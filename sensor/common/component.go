@@ -71,7 +71,8 @@ type MessageToComplianceWithAddress struct {
 	Broadcast bool
 }
 
-// MessageToCollectorWithAddress adds the Hostname to sensor.MsgToCompliance so we know where to send it to.
+// This is probably not needed as we will just always use broadcast.
+// MessageToCollectorWithAddress adds the Hostname to sensor.MsgToCollector so we know where to send it to.
 type MessageToCollectorWithAddress struct {
 	Msg       *sensor.MsgToCollector
 	Hostname  string
@@ -88,7 +89,7 @@ type ComplianceComponent interface {
 }
 
 // CollectorComponent is a sensor component that can communicate with collector. All the messages intended for
-// collector are returned by CollectorC(). It must be started before the compliance.Multiplexer or we panic.
+// collector are returned by CollectorC(). It must be started before the collector.Multiplexer or we panic.
 type CollectorComponent interface {
 	SensorComponent
 	Stopped() concurrency.ReadOnlyErrorSignal
