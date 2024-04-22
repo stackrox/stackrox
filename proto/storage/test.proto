@@ -134,6 +134,11 @@ message TestSingleUUIDKeyStruct {
   }
 
   bytes bytess = 16;
+
+  oneof oneof_two {
+    string oneof_two_string = 17;
+    int64 oneof_two_int = 18;
+  }
 }
 
 message TestStruct {
