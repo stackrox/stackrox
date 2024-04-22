@@ -19,7 +19,7 @@ metadata:
   namespace: rh-acs-tenant
 
 spec:
-
+  serviceAccountName: appstudio-pipeline
   params:
   - name: dockerfile
     value: image/postgres/konflux.Dockerfile
@@ -226,7 +226,6 @@ spec:
           value: $(params.output-image)
       runAfter:
       - clone-repository
-      serviceAccountName: appstudio-pipeline
       taskSpec:
         params:
           - name: image
