@@ -1139,7 +1139,7 @@ db_backup_and_restore_test() {
 handle_e2e_progress_failures() {
     info "Checking for progress events"
 
-    local images_available=("Image_Availability" "Were the required images built successfully by github actions?")
+    local images_available=("Image_Availability" "Were the required images built successfully by GitHub Actions?")
     local stackrox_deployed=("Stackrox_Deployment" "Was Stackrox deployed to the cluster?")
 
     local check_deployment=false
@@ -1153,7 +1153,7 @@ handle_e2e_progress_failures() {
             build_results="$(cat "${STATE_BUILD_RESULTS}")"
         fi
         read -r -d '' build_details <<- _EO_DETAILS_ || true
-Check the build workflow runs:
+Check the build workflow runs on GitHub:
 ${build_results}
 _EO_DETAILS_
         save_junit_failure "${images_available[@]}" "${build_details}"

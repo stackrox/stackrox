@@ -567,13 +567,13 @@ check_build_workflows() {
 
     {
         echo
-        info "Workflow status for build.yaml:"
+        info "GitHub Actions workflow status for build.yaml:"
         check-workflow-run \
             --workflow=build.yaml \
             --head-SHA="${commit_sha}"
 
         echo
-        info "Workflow status for scanner-build.yaml:"
+        info "GitHub Actions workflow status for scanner-build.yaml:"
         check-workflow-run \
             --workflow=scanner-build.yaml \
             --head-SHA="${commit_sha}"

@@ -26,7 +26,8 @@ func main() {
 	}
 
 	client := github.NewClient(nil)
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute())
+	defer cancel()
 
 	runs, _, err := client.Actions.ListWorkflowRunsByFileName(
 		ctx, "stackrox", "stackrox", *workflowFileName,
@@ -48,7 +49,7 @@ func main() {
 
 	conclusion := lastRun.GetConclusion()
 	if *generateProwError && conclusion != "" && conclusion != "success" {
-		fmt.Printf("ERROR: %s did not complete successfully\n", *workflowFileName)
+		fmt.Printf("ERROR: GitHub Actions workflow %s did not complete successfully\n", *workflowFileName)
 	}
 
 	fmt.Printf("status: %v\nconclusion: %v\nURL: %v\n",
