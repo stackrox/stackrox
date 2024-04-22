@@ -226,6 +226,7 @@ spec:
           value: $(params.output-image)
       runAfter:
       - clone-repository
+      serviceAccountName: appstudio-pipeline
       taskSpec:
         params:
           - name: image
@@ -244,8 +245,6 @@ spec:
               set -euo pipefail
               cd "$(workspaces.source.path)/source"
               echo -n "${IMAGE%%:*}:$(make --quiet --no-print-directory tag)" | tee "$(results.image-with-tag.path)"
-        imagePullSecrets:
-          - name: brew-registry-redhat-io-pull-secret
       workspaces:
       - name: source
         workspace: workspace
