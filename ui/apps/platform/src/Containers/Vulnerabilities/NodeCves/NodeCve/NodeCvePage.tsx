@@ -1,6 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { gql, useQuery } from '@apollo/client';
-import { PageSection, Breadcrumb, Divider, BreadcrumbItem, Skeleton } from '@patternfly/react-core';
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    Divider,
+    Flex,
+    PageSection,
+    Pagination,
+    Skeleton,
+    Split,
+    SplitItem,
+    Title,
+    pluralize,
+} from '@patternfly/react-core';
 import { useParams } from 'react-router-dom';
 
 import PageTitle from 'Components/PageTitle';
@@ -9,12 +21,15 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getTableUIState } from 'utils/getTableUIState';
+import { getHasSearchApplied } from 'utils/searchUtils';
+import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
     getOverviewPagePath,
     getRegexScopedQueryString,
     parseWorkloadQuerySearchFilter,
 } from '../../utils/searchUtils';
 import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
+import { DEFAULT_PAGE_SIZE } from '../../constants';
 import AffectedNodesTable, { AffectedNode, affectedNodeFragment } from './AffectedNodesTable';
 
 const workloadCveOverviewCvePath = getOverviewPagePath('Node', {
@@ -43,7 +58,8 @@ function NodeCvePage() {
         CVE: [exactCveIdSearchRegex],
     });
 
-    const { page, perPage } = useURLPagination(20);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_PAGE_SIZE);
+    const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const [nodeCveMetadata, setNodeCveMetadata] = useState<CveMetadata>();
     const nodeCveName = nodeCveMetadata?.cve;
@@ -84,6 +100,7 @@ function NodeCvePage() {
     });
 
     const nodeData = affectedNodesRequest.data?.nodes ?? affectedNodesRequest.previousData?.nodes;
+    const nodeCount = 50; // TODO
 
     const tableState = getTableUIState({
         isLoading: affectedNodesRequest.loading,
@@ -110,8 +127,32 @@ function NodeCvePage() {
                 <CvePageHeader data={nodeCveMetadata} />
             </PageSection>
             <Divider component="div" />
-            <PageSection className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1">
-                <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1 pf-v5-u-p-md">
+            <PageSection className="pf-v5-u-flex-grow-1">
+                <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1 pf-v5-u-p-lg">
+                    <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+                        <SplitItem isFilled>
+                            <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                                <Title headingLevel="h2">
+                                    {pluralize(nodeCount, 'node')} affected
+                                </Title>
+                                {isFiltered && <DynamicTableLabel />}
+                            </Flex>
+                        </SplitItem>
+                        <SplitItem>
+                            <Pagination
+                                itemCount={nodeCount}
+                                perPage={perPage}
+                                page={page}
+                                onSetPage={(_, newPage) => setPage(newPage)}
+                                onPerPageSelect={(_, newPerPage) => {
+                                    if (nodeCount < (page - 1) * newPerPage) {
+                                        setPage(1);
+                                    }
+                                    setPerPage(newPerPage);
+                                }}
+                            />
+                        </SplitItem>
+                    </Split>
                     <AffectedNodesTable tableState={tableState} />
                 </div>
             </PageSection>

@@ -42,6 +42,7 @@ import {
     IMAGE_SEARCH_OPTION,
 } from '../searchOptions';
 import { getTableUIState } from '../../../utils/getTableUIState';
+import { DEFAULT_PAGE_SIZE } from '../constants';
 
 const searchOptions: SearchOption[] = [
     REQUEST_NAME_SEARCH_OPTION,
@@ -58,7 +59,7 @@ const defaultSortOption = {
 
 function ApprovedFalsePositives() {
     const { searchFilter, setSearchFilter } = useURLSearch();
-    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
