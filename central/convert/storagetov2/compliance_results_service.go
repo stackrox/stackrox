@@ -243,15 +243,10 @@ func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByPro
 }
 
 // ComplianceV2ProfileResults converts the counts to the v2 stats
-func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfile) *v2.ComplianceProfileResults {
+func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfile) []*v2.ComplianceCheckResultStatusCount {
 	var profileResults []*v2.ComplianceCheckResultStatusCount
 
-	var profileName string
 	for _, resultCount := range resultCounts {
-		if profileName == "" {
-			profileName = resultCount.ProfileName
-		}
-
 		profileResults = append(profileResults, &v2.ComplianceCheckResultStatusCount{
 			CheckName: resultCount.CheckName,
 			Rationale: resultCount.CheckRationale,
@@ -289,10 +284,7 @@ func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfi
 		})
 	}
 
-	return &v2.ComplianceProfileResults{
-		ProfileResults: profileResults,
-		ProfileName:    profileName,
-	}
+	return profileResults
 }
 
 // ComplianceV2CheckClusterResults converts the storage check results to v2 scan results

@@ -277,11 +277,14 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceOverallClusterStats
 			},
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+
 				results := []*datastore.ResultStatusCountByCluster{
 					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1),
 					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster2),
 					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster3),
 				}
+
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), search.EmptyQuery(), search.ClusterID)
 				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster1).Return([]*storage.ComplianceIntegration{integration1}, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster2).Return([]*storage.ComplianceIntegration{integration2}, nil).Times(1)
@@ -299,9 +302,12 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceOverallClusterStats
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).
 					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
 
+				countQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery()
+
 				results := []*datastore.ResultStatusCountByCluster{
 					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1),
 				}
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ClusterID)
 				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster1).Return([]*storage.ComplianceIntegration{integration1}, nil).Times(1)
 			},
@@ -313,7 +319,9 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceOverallClusterStats
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
 					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				countQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery()
 
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ClusterID)
 				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(nil, nil).Times(1)
 			},
 		},
@@ -362,6 +370,8 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterStats() {
 					search.EmptyQuery(),
 				)
 
+				countQuery := expectedQ.Clone()
+
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResultStatusCountByCluster{
@@ -369,6 +379,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterStats() {
 					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster2),
 					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster3),
 				}
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ClusterID)
 				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster1).Return([]*storage.ComplianceIntegration{integration1}, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster2).Return([]*storage.ComplianceIntegration{integration2}, nil).Times(1)
@@ -391,11 +402,14 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterStats() {
 					search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
 				)
 
+				countQuery := expectedQ.Clone()
+
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResultStatusCountByCluster{
 					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1),
 				}
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ClusterID)
 				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster1).Return([]*storage.ComplianceIntegration{integration1}, nil).Times(1)
 			},
@@ -447,7 +461,7 @@ func (s *ComplianceResultsServiceTestSuite) GetComplianceOverallClusterCount() {
 			},
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
-				s.resultDatastore.EXPECT().ComplianceClusterStatsCount(gomock.Any(), expectedQ).Return(3, nil).Times(1)
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), expectedQ, search.ClusterID).Return(3, nil).Times(1)
 			},
 		},
 		{
@@ -460,7 +474,7 @@ func (s *ComplianceResultsServiceTestSuite) GetComplianceOverallClusterCount() {
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).
 					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
-				s.resultDatastore.EXPECT().ComplianceClusterStatsCount(gomock.Any(), expectedQ).Return(1, nil).Times(1)
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), expectedQ, search.ClusterID).Return(1, nil).Times(1)
 			},
 		},
 		{
@@ -671,6 +685,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileScanStats() 
 					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "rhcos4-moderate"),
 					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "ocp4-node"),
 				}
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), search.EmptyQuery(), search.ComplianceOperatorProfileName)
 				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 			},
 		},
@@ -684,10 +699,12 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileScanStats() 
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).
 					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				countQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery()
 
 				results := []*datastore.ResourceResultCountByProfile{
 					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "ocp4-node"),
 				}
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorProfileName)
 				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 			},
 		},
@@ -698,7 +715,9 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileScanStats() 
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
 					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				countQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery()
 
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorProfileName)
 				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(nil, nil).Times(1)
 			},
 		},
@@ -747,6 +766,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileStats() {
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery(),
 					search.EmptyQuery(),
 				)
+				countQuery := expectedQ.Clone()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResourceResultCountByProfile{
@@ -754,6 +774,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileStats() {
 					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "rhcos4-moderate"),
 					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "ocp4-node"),
 				}
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorProfileName)
 				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 			},
 		},
@@ -773,11 +794,13 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileStats() {
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery(),
 					expectedQ,
 				)
+				countQuery := expectedQ.Clone()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResourceResultCountByProfile{
 					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "ocp4-node"),
 				}
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorProfileName)
 				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 			},
 		},
@@ -815,7 +838,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 	testCases := []struct {
 		desc         string
 		query        *apiV2.ComplianceProfileResultsRequest
-		expectedResp *apiV2.ComplianceProfileResults
+		expectedResp *apiV2.ListComplianceProfileResults
 		expectedErr  error
 		setMocks     func()
 	}{
@@ -832,11 +855,13 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery(),
 					search.EmptyQuery(),
 				)
+				countQuery := expectedQ.Clone()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResourceResultsByProfile{
 					convertUtils.GetComplianceStorageProfileResults(s.T(), "ocp4"),
 				}
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorCheckName).Return(1, nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 			},
 		},
@@ -854,11 +879,13 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery(),
 					expectedQ,
 				)
+				countQuery := expectedQ.Clone()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResourceResultsByProfile{
 					convertUtils.GetComplianceStorageProfileResults(s.T(), "ocp4"),
 				}
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorCheckName).Return(1, nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 			},
 		},
@@ -894,7 +921,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckStats()
 	testCases := []struct {
 		desc         string
 		query        *apiV2.ComplianceProfileCheckRequest
-		expectedResp *apiV2.ComplianceProfileResults
+		expectedResp *apiV2.ListComplianceProfileResults
 		expectedErr  error
 		setMocks     func()
 	}{
@@ -1011,12 +1038,13 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckCluster
 						AddExactMatches(search.ComplianceOperatorCheckName, "check-name").ProtoQuery(),
 					search.EmptyQuery(),
 				)
+				countQuery := expectedQ.Clone()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).
 					Return([]*storage.ComplianceOperatorCheckResultV2{convertUtils.GetComplianceStorageResult(s.T())}, nil).
 					Times(1)
-				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), expectedQ).Return(7, nil).Times(1)
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), countQuery).Return(7, nil).Times(1)
 			},
 		},
 		{
@@ -1040,12 +1068,13 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckCluster
 						AddExactMatches(search.ComplianceOperatorCheckName, "check-name").ProtoQuery(),
 					expectedQ,
 				)
+				countQuery := expectedQ.Clone()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).
 					Return([]*storage.ComplianceOperatorCheckResultV2{convertUtils.GetComplianceStorageResult(s.T())}, nil).
 					Times(1)
-				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), expectedQ).Return(3, nil).Times(1)
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), countQuery).Return(3, nil).Times(1)
 			},
 		},
 		{
