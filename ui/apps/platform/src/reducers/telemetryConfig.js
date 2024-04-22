@@ -19,11 +19,12 @@ export const fetchTelemetryConfigThunk = () => {
 
         try {
             const result = await fetchTelemetryConfig();
+            const { storageKeyV1, endpoint, userId } = result.response;
             const { app: appState } = getState();
             const telemetryEnabled =
                 appState?.publicConfig?.publicConfig?.telemetry?.enabled !== false;
             if (telemetryEnabled) {
-                initializeAnalytics(result.response.storageKeyV1, result.response.userId);
+                initializeAnalytics(storageKeyV1, endpoint, userId);
             }
 
             dispatch({
