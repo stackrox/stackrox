@@ -8,7 +8,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
-func oneOfFieldTypeSorter(a reflect.Type, b reflect.Type) int {
+func oneOfFieldTypeCmp(a reflect.Type, b reflect.Type) int {
 	if a.Kind() != reflect.Ptr || b.Kind() != reflect.Ptr {
 		return 0
 	}
@@ -32,7 +32,7 @@ func GetOneOfTypesByFieldIndex(msgType reflect.Type, fieldIndex int) []reflect.T
 		oneOfFieldTypes = append(oneOfFieldTypes, oneOfField.Type)
 	}
 
-	slices.SortFunc(oneOfFieldTypes, oneOfFieldTypeSorter)
+	slices.SortFunc(oneOfFieldTypes, oneOfFieldTypeCmp)
 
 	return oneOfFieldTypes
 }
@@ -49,7 +49,7 @@ func GetOneOfTypesByInterface(msgType reflect.Type, oneOfInterfaceType reflect.T
 		oneOfFieldTypes = append(oneOfFieldTypes, oneOfField.Type)
 	}
 
-	slices.SortFunc(oneOfFieldTypes, oneOfFieldTypeSorter)
+	slices.SortFunc(oneOfFieldTypes, oneOfFieldTypeCmp)
 
 	return oneOfFieldTypes
 }
