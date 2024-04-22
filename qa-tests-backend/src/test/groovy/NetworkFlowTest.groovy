@@ -551,7 +551,6 @@ class NetworkFlowTest extends BaseSpecification {
                 log.debug("All edges of 'INTERNET_EXTERNAL_SOURCE_ID' " +
                     "${Constants.INTERNET_EXTERNAL_SOURCE_ID}: ${outNodes}")
 
-
                 // Debug dump all incoming edges to deploymentUid
                 def targetId = currentGraph.nodesList.findIndexOf {
                     node -> node.deploymentId == deploymentUid
@@ -559,8 +558,7 @@ class NetworkFlowTest extends BaseSpecification {
                 List<NetworkNode> nginxEdges = currentGraph.nodesList.findAll {
                     node -> node.outEdges.containsKey(targetId)
                 }
-                log.debug("All edges of ${NGINXCONNECTIONTARGET} " + "${deploymentUid}: ${nginxEdges}")
-
+                log.debug("All edges of ${NGINXCONNmakECTIONTARGET} ${deploymentUid}: ${nginxEdges}")
             }
             assert edges
         }
