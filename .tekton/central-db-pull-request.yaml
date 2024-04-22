@@ -241,6 +241,7 @@ spec:
             script: |
               #!/usr/bin/env bash
               set -euo pipefail
+              microdnf install -y shadow-utils
               microdnf install -y git make
               cd "$(workspaces.source.path)/source"
               echo -n "${IMAGE%%:*}:$(make --quiet --no-print-directory -f make/tag.mk tag)" | tee "$(results.image-with-tag.path)"
