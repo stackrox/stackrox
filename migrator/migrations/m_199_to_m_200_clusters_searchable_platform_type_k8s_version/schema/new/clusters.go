@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -23,15 +22,9 @@ var (
 
 	// ClustersSchema is the go schema for table `clusters`.
 	ClustersSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("clusters")
-		if schema != nil {
-			return schema
-		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Cluster)(nil)), "clusters")
+		schema := walker.Walk(reflect.TypeOf((*storage.Cluster)(nil)), "clusters")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTERS, "cluster", (*storage.Cluster)(nil)))
 		schema.ScopingResource = resources.Cluster
-		RegisterTable(schema, CreateTableClustersStmt)
-		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTERS, schema)
 		return schema
 	}()
 )
