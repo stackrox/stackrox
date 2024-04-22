@@ -4,11 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/generated/storage"
 	oldSchema "github.com/stackrox/rox/migrator/migrations/m_199_to_m_200_clusters_searchable_platform_type_k8s_version/schema/old"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -35,6 +37,14 @@ func (s *migrationTestSuite) TearDownSuite() {
 }
 
 func (s *migrationTestSuite) TestMigration() {
+	clusters := []*storage.Cluster{
+		s.getTestCluster("generic-1", storage.ClusterType_GENERIC_CLUSTER, "9.0"),
+		s.getTestCluster("generic-2", storage.ClusterType_GENERIC_CLUSTER, "9.0"),
+		s.getTestCluster("kubernetes-1", storage.ClusterType_KUBERNETES_CLUSTER, "9.0"),
+		s.getTestCluster("kubernetes-2", storage.ClusterType_KUBERNETES_CLUSTER, "9.5"),
+		s.getTestCluster("openshift-1", storage.ClusterType_OPENSHIFT_CLUSTER, "9.5"),
+		s.getTestCluster("openshift4-1", storage.ClusterType_OPENSHIFT4_CLUSTER, "9.5"),
+	}
 	// TODO(dont-merge): instantiate any store required for the pre-migration dataset push to DB
 
 	// TODO(dont-merge): push the pre-migration dataset to DB
@@ -56,6 +66,20 @@ func (s *migrationTestSuite) TestMigration() {
 	// TODO(dont-merge): validate that pre-migration queries and statements execute against the
 	// post-migration database to ensure backwards compatibility
 
+}
+
+func (s *migrationTestSuite) getTestCluster(name string, platformType storage.ClusterType, k8sVersion string) *storage.Cluster {
+	return &storage.Cluster{
+		Id:        uuid.NewV4().String(),
+		Name:      name,
+		Type:      platformType,
+		MainImage: "quay.io/stackrox-io/main",
+		Status: &storage.ClusterStatus{
+			OrchestratorMetadata: &storage.OrchestratorMetadata{
+				Version: k8sVersion,
+			},
+		},
+	}
 }
 
 // TODO(dont-merge): remove any pending TODO
