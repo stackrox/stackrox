@@ -29,6 +29,7 @@ import {
     parseWorkloadQuerySearchFilter,
 } from '../../utils/searchUtils';
 import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
+import { DEFAULT_PAGE_SIZE } from '../../constants';
 import AffectedNodesTable, { AffectedNode, affectedNodeFragment } from './AffectedNodesTable';
 
 const workloadCveOverviewCvePath = getOverviewPagePath('Node', {
@@ -57,7 +58,7 @@ function NodeCvePage() {
         CVE: [exactCveIdSearchRegex],
     });
 
-    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_PAGE_SIZE);
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const [nodeCveMetadata, setNodeCveMetadata] = useState<CveMetadata>();

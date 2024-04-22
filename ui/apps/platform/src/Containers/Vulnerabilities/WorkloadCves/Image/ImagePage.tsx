@@ -39,6 +39,7 @@ import ImageDetailBadges, {
     imageDetailsFragment,
 } from '../components/ImageDetailBadges';
 import getImageScanMessage from '../utils/getImageScanMessage';
+import { DEFAULT_PAGE_SIZE } from '../../constants';
 
 const workloadCveOverviewImagePath = getOverviewPagePath('Workload', {
     vulnerabilityState: 'OBSERVED',
@@ -82,7 +83,7 @@ function ImagePage() {
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
     const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
 
-    const pagination = useURLPagination(20);
+    const pagination = useURLPagination(DEFAULT_PAGE_SIZE);
 
     const imageData = data && data.image;
     const imageName = imageData?.name
