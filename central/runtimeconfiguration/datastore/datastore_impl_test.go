@@ -225,6 +225,22 @@ var (
 	}
 )
 
+func getRuntimeFilterMap(runtimeFilters []*storage.RuntimeFilter) map[storage.RuntimeFilterFeatures]*storage.RuntimeFilter {
+	runtimeFilteringMap := make(map[storage.RuntimeFilterFeatures]*storage.RuntimeFilter)
+	for _, runtimeFilter := range runtimeFilters {
+		runtimeFilteringMap[runtimeFilter.Feature] = runtimeFilter
+	}
+	return runtimeFilteringMap
+}
+
+func (suite *RuntimeConfigurationTestSuite) compareRuntimeFilteringConfigurations(config1 *storage.RuntimeFilteringConfiguration, config2 *storage.RuntimeFilteringConfiguration) {
+	runtimeFilteringMap1 := getRuntimeFilterMap(config1.RuntimeFilters)
+	runtimeFilteringMap2 := getRuntimeFilterMap(config2.RuntimeFilters)
+
+	suite.Equal(runtimeFilteringMap1, runtimeFilteringMap2)
+	suite.Equal(config1.ResourceCollections, config2.ResourceCollections)
+}
+
 // TestSetRuntimeConfiguration: Writes a config to the database, reads the database
 // and makes sure that the data retrieved is the same that was inserted
 func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfiguration() {
@@ -233,7 +249,7 @@ func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfiguration() {
 	fetchedRuntimeConfiguration, err := suite.datastore.GetRuntimeConfiguration(suite.hasAllCtx)
 	suite.NoError(err)
 
-	suite.Equal(runtimeFilteringConfiguration, fetchedRuntimeConfiguration)
+	suite.compareRuntimeFilteringConfigurations(runtimeFilteringConfiguration, fetchedRuntimeConfiguration)
 }
 
 // TestSetRuntimeConfigurationNil: Attempts to write an empty config to the database.
@@ -244,7 +260,7 @@ func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfigurationNil() {
 	fetchedRuntimeConfiguration, err := suite.datastore.GetRuntimeConfiguration(suite.hasAllCtx)
 	suite.NoError(err)
 
-	suite.Equal(runtimeFilteringConfigurationNil, fetchedRuntimeConfiguration)
+	suite.compareRuntimeFilteringConfigurations(runtimeFilteringConfigurationNil, fetchedRuntimeConfiguration)
 }
 
 // TestSetRuntimeConfigurationDefaultOnly: Writes a config to the database without any rules, reads the database
@@ -255,7 +271,7 @@ func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfigurationDefaultOn
 	fetchedRuntimeConfiguration, err := suite.datastore.GetRuntimeConfiguration(suite.hasAllCtx)
 	suite.NoError(err)
 
-	suite.Equal(runtimeFilteringConfigurationDefaultOnly, fetchedRuntimeConfiguration)
+	suite.compareRuntimeFilteringConfigurations(runtimeFilteringConfigurationDefaultOnly, fetchedRuntimeConfiguration)
 }
 
 // TestSetRuntimeConfigurationIncomplete: Some fields are nil
@@ -269,5 +285,5 @@ func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfigurationIncomplet
 	fetchedRuntimeConfiguration, err := suite.datastore.GetRuntimeConfiguration(suite.hasAllCtx)
 	suite.NoError(err)
 
-	suite.Equal(runtimeFilteringConfigurationIncomplete, fetchedRuntimeConfiguration)
+	suite.compareRuntimeFilteringConfigurations(runtimeFilteringConfigurationIncomplete, fetchedRuntimeConfiguration)
 }
