@@ -28,7 +28,7 @@ spec:
   - name: image-expires-after
     value: '13w'
   - name: output-image
-    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/central-db
+    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/central-db:placeholder-image-tag
   - name: path-context
     value: .
   - name: revision
@@ -243,7 +243,7 @@ spec:
               #!/usr/bin/env bash
               set -euo pipefail
               cd "$(workspaces.source.path)/source"
-              echo -n "${IMAGE}:$(make --quiet --no-print-directory tag)" | tee "$(results.image-with-tag.path)"
+              echo -n "${IMAGE%%:*}:$(make --quiet --no-print-directory tag)" | tee "$(results.image-with-tag.path)"
             imagePullSecrets:
               - name: brew-registry-redhat-io-pull-secret
       workspaces:
