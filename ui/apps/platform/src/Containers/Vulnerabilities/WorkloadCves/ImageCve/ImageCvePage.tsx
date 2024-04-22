@@ -53,6 +53,7 @@ import {
 } from '../../utils/searchUtils';
 import { getDefaultWorkloadSortOption } from '../../utils/sortUtils';
 import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
+import { DEFAULT_PAGE_SIZE } from '../../constants';
 
 import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import AffectedImagesTable, {
@@ -191,7 +192,7 @@ function ImageCvePage() {
         },
         currentVulnerabilityState
     );
-    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_PAGE_SIZE);
 
     const [entityTab] = useURLStringUnion('entityTab', imageCveEntities);
 

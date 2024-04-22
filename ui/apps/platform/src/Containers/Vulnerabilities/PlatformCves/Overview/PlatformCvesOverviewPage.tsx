@@ -16,6 +16,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
 import TableEntityToolbar from 'Containers/Vulnerabilities/components/TableEntityToolbar';
+import { DEFAULT_PAGE_SIZE } from '../../constants';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import { parseWorkloadQuerySearchFilter } from '../../utils/searchUtils';
 import { platformEntityTabValues } from '../../types';
@@ -26,7 +27,7 @@ import CVEsTable from './CVEsTable';
 function PlatformCvesOverviewPage() {
     const [activeEntityTabKey] = useURLStringUnion('entityTab', platformEntityTabValues);
     const { searchFilter } = useURLSearch();
-    const pagination = useURLPagination(20);
+    const pagination = useURLPagination(DEFAULT_PAGE_SIZE);
 
     // TODO - Need an equivalent function implementation for filter sanitization for Platform CVEs
     const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
