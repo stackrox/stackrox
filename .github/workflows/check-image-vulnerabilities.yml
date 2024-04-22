@@ -32,6 +32,7 @@ jobs:
       # ACS-CS dogfooding instance.
       ROX_ENDPOINT: "acs-cii18grublkv81uil8gg.acs.rhcloud.com"
     permissions:
+      # Needed for stackrox/central-login to create the JWT token.
       id-token: write
     strategy:
       matrix:
