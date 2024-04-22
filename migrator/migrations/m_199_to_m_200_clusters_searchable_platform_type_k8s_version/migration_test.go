@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package m199tom200
 
 import (
@@ -6,11 +8,16 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	oldSchema "github.com/stackrox/rox/migrator/migrations/m_199_to_m_200_clusters_searchable_platform_type_k8s_version/schema/old"
+	previousStore "github.com/stackrox/rox/migrator/migrations/m_199_to_m_200_clusters_searchable_platform_type_k8s_version/store/previous"
+	updatedStore "github.com/stackrox/rox/migrator/migrations/m_199_to_m_200_clusters_searchable_platform_type_k8s_version/store/updated"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -45,9 +52,9 @@ func (s *migrationTestSuite) TestMigration() {
 		s.getTestCluster("openshift-1", storage.ClusterType_OPENSHIFT_CLUSTER, "9.5"),
 		s.getTestCluster("openshift4-1", storage.ClusterType_OPENSHIFT4_CLUSTER, "9.5"),
 	}
-	// TODO(dont-merge): instantiate any store required for the pre-migration dataset push to DB
 
-	// TODO(dont-merge): push the pre-migration dataset to DB
+	prevStore := previousStore.New(s.db)
+	require.NoError(s.T(), prevStore.UpsertMany(s.ctx, clusters))
 
 	dbs := &types.Databases{
 		GormDB:     s.db.GetGormDB(),
@@ -57,15 +64,33 @@ func (s *migrationTestSuite) TestMigration() {
 
 	s.Require().NoError(migration.Run(dbs))
 
-	// TODO(dont-merge): instantiate any store required for the post-migration dataset pull from DB
+	newStore := updatedStore.New(s.db)
+	result, err := newStore.GetByQuery(s.ctx, search.EmptyQuery())
+	assert.NoError(s.T(), err)
+	assert.ElementsMatch(s.T(), collectIDs(clusters...), collectIDs(result...))
 
-	// TODO(dont-merge): pull the post-migration dataset from DB
+	result, err = newStore.GetByQuery(s.ctx,
+		search.NewQueryBuilder().AddExactMatches(search.PlatformType, storage.ClusterType_KUBERNETES_CLUSTER.String()).ProtoQuery())
+	assert.NoError(s.T(), err)
+	assert.ElementsMatch(s.T(), collectIDs(clusters[2], clusters[3]), collectIDs(result...))
 
-	// TODO(dont-merge): validate that the post-migration dataset has the expected content
+	result, err = newStore.GetByQuery(s.ctx,
+		search.NewQueryBuilder().AddExactMatches(search.PlatformType, storage.ClusterType_OPENSHIFT4_CLUSTER.String()).ProtoQuery())
+	assert.NoError(s.T(), err)
+	assert.ElementsMatch(s.T(), collectIDs(clusters[5]), collectIDs(result...))
 
-	// TODO(dont-merge): validate that pre-migration queries and statements execute against the
-	// post-migration database to ensure backwards compatibility
+	result, err = newStore.GetByQuery(s.ctx,
+		search.NewQueryBuilder().AddExactMatches(search.KubernetesVersion, "9.5").ProtoQuery())
+	assert.NoError(s.T(), err)
+	assert.ElementsMatch(s.T(), collectIDs(clusters[3], clusters[4], clusters[5]), collectIDs(result...))
+}
 
+func collectIDs(objs ...*storage.Cluster) []string {
+	var ids []string
+	for _, obj := range objs {
+		ids = append(ids, obj.GetId())
+	}
+	return ids
 }
 
 func (s *migrationTestSuite) getTestCluster(name string, platformType storage.ClusterType, k8sVersion string) *storage.Cluster {
@@ -73,6 +98,7 @@ func (s *migrationTestSuite) getTestCluster(name string, platformType storage.Cl
 		Id:        uuid.NewV4().String(),
 		Name:      name,
 		Type:      platformType,
+		Labels:    map[string]string{"key": "val"},
 		MainImage: "quay.io/stackrox-io/main",
 		Status: &storage.ClusterStatus{
 			OrchestratorMetadata: &storage.OrchestratorMetadata{
@@ -81,5 +107,3 @@ func (s *migrationTestSuite) getTestCluster(name string, platformType storage.Cl
 		},
 	}
 }
-
-// TODO(dont-merge): remove any pending TODO
