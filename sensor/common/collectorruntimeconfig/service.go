@@ -18,8 +18,6 @@ type Service interface {
 
 	sensor.CollectorServiceServer
 	common.SensorComponent
-
-	// RunScrape(msg *sensor.MsgToCollector) int
 }
 
 // NewService returns the CollectorServiceServer API for Sensor to use.
