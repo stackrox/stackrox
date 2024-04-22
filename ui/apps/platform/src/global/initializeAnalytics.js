@@ -53,7 +53,7 @@ export function initializeAnalytics(writeKey, proxyApiEndpoint, userId) {
                 t.type = 'text/javascript';
                 t.async = !0;
 
-                const cdnBaseUrl = config.cdnUrl || 'cdn.segment.com';
+                const cdnBaseUrl = config?.cdnUrl || 'cdn.segment.com';
                 t.src = `https://${cdnBaseUrl}/analytics.js/v1/${key}/analytics.min.js`;
 
                 const n = document.getElementsByTagName('script')[0];
@@ -70,7 +70,6 @@ export function initializeAnalytics(writeKey, proxyApiEndpoint, userId) {
                     integrations: {
                         'Segment.io': {
                             apiHost: `${proxyApiBaseUrl}/v1`,
-                            protocol: 'https',
                         },
                     },
                 };
