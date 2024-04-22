@@ -235,7 +235,7 @@ spec:
             description: Fully Qualified Image Name with identifying tag
         steps:
           - name: determine-image-tag
-            image: quay.io/stackrox-io/apollo-ci:stackrox-build-0.3.66
+            image: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.21
             env:
               - name: IMAGE
                 value: $(params.image)
@@ -244,6 +244,8 @@ spec:
               set -euo pipefail
               cd "$(workspaces.source.path)/source"
               echo -n "${IMAGE}:$(make --quiet --no-print-directory tag)" | tee "$(results.image-with-tag.path)"
+            imagePullSecrets:
+              - name: brew-registry-redhat-io-pull-secret
       workspaces:
       - name: source
         workspace: workspace
