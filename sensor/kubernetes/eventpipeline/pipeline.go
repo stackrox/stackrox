@@ -35,7 +35,7 @@ import (
 func New(client client.Interface, configHandler config.Handler, detector detector.Detector, reprocessor reprocessor.Handler, nodeName string, traceWriter io.Writer, storeProvider *resources.StoreProvider, queueSize int, pubSub *internalmessage.MessageSubscriber) common.SensorComponent {
 	outputQueue := output.New(detector, queueSize)
 	depResolver := resolver.New(outputQueue, storeProvider, queueSize)
-	resourceListener := listener.New(client, configHandler, nodeName, traceWriter, depResolver, storeProvider)
+	resourceListener := listener.New(client, configHandler, nodeName, traceWriter, depResolver, storeProvider, pubSub)
 
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)
@@ -50,6 +50,5 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 		detector:    detector,
 		reprocessor: reprocessor,
 		offlineMode: offlineMode,
-		pubSub:      pubSub,
 	}
 }
