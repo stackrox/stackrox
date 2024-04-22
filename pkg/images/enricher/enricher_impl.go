@@ -217,6 +217,7 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 
 	e.useExistingSignature(image, existingImage, option)
 	e.useExistingSignatureVerificationData(image, existingImage, option, hasChangedNames)
+	e.useExistingImageName(image, existingImage, option)
 	return e.useExistingScan(image, existingImage, option)
 }
 
@@ -546,6 +547,13 @@ func (e *enricherImpl) useExistingSignatureVerificationData(img *storage.Image, 
 
 	if existingImg.GetSignatureVerificationData() != nil {
 		img.SignatureVerificationData = existingImg.GetSignatureVerificationData()
+	}
+}
+
+func (e *enricherImpl) useExistingImageName(img *storage.Image, existingImg *storage.Image, option FetchOption) {
+	// We only want to overwrite the top-level image name if we are ignoring cached values.
+	if !option.forceRefetchCachedValues() {
+		img.Name = existingImg.Name
 	}
 }
 
