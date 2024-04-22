@@ -135,7 +135,11 @@ const SystemConfigForm = ({
                     const isTelemetryEnabledCurr = data.publicConfig?.telemetry?.enabled;
                     const isTelemetryEnabledPrev = publicConfig.telemetry?.enabled;
                     if (isTelemetryEnabledCurr && isTelemetryConfigured) {
-                        initializeAnalytics(telemetryConfig.storageKeyV1, telemetryConfig.userId);
+                        initializeAnalytics(
+                            telemetryConfig.storageKeyV1,
+                            telemetryConfig.endpoint,
+                            telemetryConfig.userId
+                        );
                     }
 
                     dispatch(action);
