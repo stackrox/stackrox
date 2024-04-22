@@ -53,14 +53,17 @@ func main() {
 		sharedClientInterface = client.MustCreateInterface()
 	}
 	clientconn.SetUserAgent(clientconn.Sensor)
-	centralConnFactory, err := centralclient.NewCentralConnectionFactory(env.CentralEndpoint.Setting())
+	centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())
 	if err != nil {
-		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing gRPC client to endpoint %s", env.CentralEndpoint.Setting()))
+		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing central HTTP client for endpoint %s", env.CentralEndpoint.Setting()))
 	}
+	centralConnFactory := centralclient.NewCentralConnectionFactory(centralClient)
+	certLoader := centralclient.RemoteCertLoader(centralClient)
 
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(sharedClientInterface).
 		WithCentralConnectionFactory(centralConnFactory).
+		WithCertLoader(certLoader).
 		WithWorkloadManager(workloadManager))
 	utils.CrashOnError(err)
 
