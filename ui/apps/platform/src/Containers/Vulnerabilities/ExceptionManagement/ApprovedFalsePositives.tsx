@@ -24,7 +24,7 @@ import useURLSort from 'hooks/useURLSort';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import PageTitle from 'Components/PageTitle';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import {
     RequestIDLink,
     RequestedAction,

@@ -73,7 +73,6 @@ export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const violationsBasePath = `${mainPath}/violations`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
-export const vulnManagementReportsPath = `${vulnManagementPath}/reports`;
 export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
 export const vulnerabilityNamespaceViewPath = `${vulnerabilitiesWorkloadCvesPath}/namespace-view`;
@@ -182,8 +181,6 @@ export type RouteKey =
     | 'user'
     | 'violations'
     | 'vulnerabilities/reports' // add prefix because reports might become ambiguous in the future
-    // Reports must precede generic Vulnerability Management in Body and so here for consistency.
-    | 'vulnerability-management/reports'
     // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
     | 'vulnerability-management/risk-acceptance'
     | 'vulnerability-management'
@@ -346,11 +343,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
-    // Reports must precede generic Vulnerability Management in Body and so here for consistency.
-    'vulnerability-management/reports': {
-        featureFlagRequirements: allDisabled(['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS']),
-        resourceAccessRequirements: everyResource(['Integration', 'WorkflowAdministration']),
-    },
     // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
     'vulnerability-management/risk-acceptance': {
         resourceAccessRequirements: everyResource([
@@ -444,8 +436,6 @@ export const urlEntityTypes: Record<string, string> = {
 
 const vulnManagementPathToLabelMap: Record<string, string> = {
     [vulnManagementPath]: 'Dashboard',
-    // TODO: add mapping for Deferrals
-    [vulnManagementReportsPath]: 'Reporting',
     [vulnManagementRiskAcceptancePath]: 'Risk Acceptance',
 };
 

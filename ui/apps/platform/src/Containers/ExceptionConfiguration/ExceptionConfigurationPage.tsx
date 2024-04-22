@@ -3,7 +3,7 @@ import { Bullseye, PageSection, Spinner, Tab, Tabs, Title } from '@patternfly/re
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import PageTitle from 'Components/PageTitle';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { useVulnerabilitiesExceptionConfig } from './useVulnerabilitiesExceptionConfig';

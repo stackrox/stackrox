@@ -7,7 +7,7 @@ import weak "google/api/annotations.proto";
 import "internalapi/central/telemetry.proto";
 import "storage/telemetry.proto";
 
-option go_package = "v1";
+option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 message ConfigureTelemetryRequest {

@@ -8,7 +8,7 @@ import "storage/container_runtime.proto";
 import "storage/kube_event.proto";
 import "storage/node.proto";
 
-option go_package = "sensor";
+option go_package = "./internalapi/sensor;sensor";
 
 message GetScrapeConfigRequest {
   string node_name = 1;

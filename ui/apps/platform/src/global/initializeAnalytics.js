@@ -7,7 +7,7 @@
 // the code below is generated from segment api with the exception of the writeKey/userId parameters as well as the analyticsIdentity call
 // segment intends for the write key to be hardcoded but we are pulling it from the telemetry config service call and adding it using a parameter
 
-export function initializeAnalytics(writeKey, userId) {
+export function initializeAnalytics(writeKey, proxyApiEndpoint, userId) {
     const analytics = (window.analytics = window.analytics || []);
     if (!analytics.initialize) {
         if (analytics.invoked) {
@@ -48,18 +48,38 @@ export function initializeAnalytics(writeKey, userId) {
                 const key = analytics.methods[e];
                 analytics[key] = analytics.factory(key);
             }
-            analytics.load = function (key, e) {
+            analytics.load = function (key, config) {
                 const t = document.createElement('script');
                 t.type = 'text/javascript';
                 t.async = !0;
-                t.src = `https://cdn.segment.com/analytics.js/v1/${key}/analytics.min.js`;
+
+                const cdnBaseUrl = config?.cdnUrl || 'cdn.segment.com';
+                t.src = `https://${cdnBaseUrl}/analytics.js/v1/${key}/analytics.min.js`;
+
                 const n = document.getElementsByTagName('script')[0];
                 n.parentNode.insertBefore(t, n);
-                analytics._loadOptions = e;
+                analytics._loadOptions = config;
             };
             analytics._writeKey = writeKey;
             analytics.SNIPPET_VERSION = '4.15.3';
-            analytics.load(writeKey);
+
+            let analyticsLoadConfig;
+            if (proxyApiEndpoint) {
+                const proxyApiBaseUrl = proxyApiEndpoint.replace(/^https?:\/\//, '');
+                analyticsLoadConfig = {
+                    integrations: {
+                        'Segment.io': {
+                            apiHost: `${proxyApiBaseUrl}/v1`,
+                        },
+                    },
+                };
+
+                if (proxyApiEndpoint.includes('console.redhat.com')) {
+                    analyticsLoadConfig.cdnUrl = 'console.redhat.com/connections/cdn';
+                }
+            }
+
+            analytics.load(writeKey, analyticsLoadConfig);
             analytics.page();
             analytics.identify(userId);
         }

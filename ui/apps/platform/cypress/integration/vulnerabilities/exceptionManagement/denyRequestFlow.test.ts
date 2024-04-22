@@ -3,9 +3,11 @@ import { hasFeatureFlag } from '../../../helpers/features';
 import { cancelAllCveExceptions } from '../workloadCves/WorkloadCves.helpers';
 import { deferAndVisitRequestDetails, denyRequest } from './ExceptionManagement.helpers';
 
-const comment = 'Defer me';
-const expiry = 'When all CVEs are fixable';
-const scope = 'All images';
+const deferralProps = {
+    comment: 'Defer me',
+    expiry: 'When all CVEs are fixable',
+    scope: 'All images',
+};
 
 describe('Exception Management Request Details Page', () => {
     withAuth();
@@ -25,11 +27,6 @@ describe('Exception Management Request Details Page', () => {
             hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             cancelAllCveExceptions();
-            deferAndVisitRequestDetails({
-                comment,
-                expiry,
-                scope,
-            });
         }
     });
 
@@ -43,12 +40,14 @@ describe('Exception Management Request Details Page', () => {
     });
 
     it('should be able to deny a request if approval permissions are granted', () => {
+        deferAndVisitRequestDetails(deferralProps);
         denyRequest();
         // should not be able to cancel a denied request
         cy.get('button:contains("Cancel request")').should('not.exist');
     });
 
     it('should be able to see how many CVEs will be affected by a denial', () => {
+        deferAndVisitRequestDetails(deferralProps);
         cy.get('table tbody tr:not(".pf-v5-c-table__expandable-row")').then((rows) => {
             const numCVEs = rows.length;
             cy.get('button:contains("Deny request")').click();

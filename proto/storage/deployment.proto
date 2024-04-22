@@ -9,7 +9,7 @@ import "storage/labels.proto";
 import "storage/rbac.proto";
 import "storage/taints.proto";
 
-option go_package = "storage";
+option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
 // Next available tag: 35

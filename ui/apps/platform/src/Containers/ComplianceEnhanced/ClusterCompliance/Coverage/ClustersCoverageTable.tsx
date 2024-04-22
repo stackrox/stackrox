@@ -19,7 +19,7 @@ import {
 import { Table, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
 import { CubesIcon } from '@patternfly/react-icons';
 
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import {

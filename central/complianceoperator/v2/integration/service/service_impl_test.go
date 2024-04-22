@@ -58,20 +58,23 @@ func (s *ComplianceIntegrationServiceTestSuite) SetupSuite() {
 func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 	testCases := []struct {
-		desc      string
-		query     *apiV2.RawQuery
-		expectedQ *v1.Query
+		desc           string
+		query          *apiV2.RawQuery
+		expectedQ      *v1.Query
+		expectedCountQ *v1.Query
 	}{
 		{
-			desc:      "Empty query",
-			query:     &apiV2.RawQuery{Query: ""},
-			expectedQ: search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			desc:           "Empty query",
+			query:          &apiV2.RawQuery{Query: ""},
+			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			expectedCountQ: search.EmptyQuery(),
 		},
 		{
 			desc:  "Query with search field",
 			query: &apiV2.RawQuery{Query: "Cluster ID:id"},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
 				WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			expectedCountQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery(),
 		},
 		{
 			desc: "Query with custom pagination",
@@ -79,7 +82,8 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 				Query:      "",
 				Pagination: &apiV2.Pagination{Limit: 1},
 			},
-			expectedQ: search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery(),
+			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery(),
+			expectedCountQ: search.EmptyQuery(),
 		},
 	}
 
@@ -96,6 +100,7 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 						StatusErrors: []string{"Error 1", "Error 2", "Error 3"},
 					},
 				},
+				TotalCount: 6,
 			}
 
 			s.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return(mockClusterName, true, nil).Times(1)
@@ -109,6 +114,9 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 					StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
 				},
 				}, nil).Times(1)
+
+			s.complianceIntegrationDataStore.EXPECT().CountIntegrations(allAccessContext, tc.expectedCountQ).
+				Return(6, nil).Times(1)
 
 			configs, err := s.service.ListComplianceIntegrations(allAccessContext, tc.query)
 			s.NoError(err)

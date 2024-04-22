@@ -14,9 +14,11 @@ import {
     VulnerabilityState,
 } from 'services/VulnerabilityExceptionService';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
+import CvssFormatted from 'Components/CvssFormatted';
+import DateDistance from 'Components/DateDistance';
 import {
     aggregateByCVSS,
     aggregateByCreatedTime,
@@ -28,10 +30,8 @@ import {
 } from '../../utils/sortUtils';
 import { CVEListQueryResult, cveListQuery } from '../../WorkloadCves/Tables/CVEsTable';
 import { VulnerabilitySeverityLabel } from '../../types';
-import { getEntityPagePath } from '../../utils/searchUtils';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import CvssFormatted from '../../components/CvssFormatted';
-import DateDistance from '../../components/DateDistance';
 
 import { getImageScopeSearchValue } from '../utils';
 
@@ -166,7 +166,7 @@ function RequestCVEsTable({
                                         IMAGE: queryObject.Image,
                                     },
                                 };
-                                const cveURL = getEntityPagePath(
+                                const cveURL = getWorkloadEntityPagePath(
                                     'CVE',
                                     cve,
                                     vulnerabilityState,

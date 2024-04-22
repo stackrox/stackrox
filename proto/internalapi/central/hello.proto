@@ -4,7 +4,7 @@ package central;
 
 import "storage/cluster.proto";
 
-option go_package = "central";
+option go_package = "./internalapi/central;central";
 
 message HelmManagedConfigInit {
   storage.CompleteClusterConfig cluster_config = 1;

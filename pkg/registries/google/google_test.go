@@ -55,6 +55,7 @@ func TestGoogleMatch(t *testing.T) {
 	reg, err := docker.NewDockerRegistryWithConfig(
 		&docker.Config{Endpoint: "us.gcr.io"},
 		&storage.ImageIntegration{},
+		nil,
 	)
 	require.NoError(t, err)
 

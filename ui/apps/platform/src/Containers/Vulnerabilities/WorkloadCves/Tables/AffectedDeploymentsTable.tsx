@@ -7,8 +7,9 @@ import { gql } from '@apollo/client';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { VulnerabilityState } from 'types/cve.proto';
-import { getEntityPagePath } from '../../utils/searchUtils';
-import { DynamicColumnIcon } from '../../components/DynamicIcon';
+import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import DateDistance from 'Components/DateDistance';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DeploymentComponentVulnerabilitiesTable, {
     DeploymentComponentVulnerability,
@@ -17,7 +18,6 @@ import DeploymentComponentVulnerabilitiesTable, {
     imageMetadataContextFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import DateDistance from '../../components/DateDistance';
 import { VulnerabilitySeverityLabel } from '../../types';
 
 export type DeploymentForCve = {
@@ -131,7 +131,11 @@ function AffectedDeploymentsTable({
                                     spaceItems={{ default: 'spaceItemsNone' }}
                                 >
                                     <Link
-                                        to={getEntityPagePath('Deployment', id, vulnerabilityState)}
+                                        to={getWorkloadEntityPagePath(
+                                            'Deployment',
+                                            id,
+                                            vulnerabilityState
+                                        )}
                                     >
                                         <Truncate position="middle" content={name} />
                                     </Link>

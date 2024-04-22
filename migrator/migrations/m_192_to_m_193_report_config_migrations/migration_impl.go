@@ -256,12 +256,23 @@ func updateTables(tx *gorm.DB, reportConfigs []*updatedSchema.ReportConfiguratio
 		}
 		reportConfigs = reportConfigs[batchSize:]
 	}
+	if len(reportConfigs) > 0 {
+		if err := tx.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableReportConfigurationsStmt.GormModel).Create(&reportConfigs).Error; err != nil {
+			return errors.Wrap(err, "failed to upsert converted report snapshots")
+		}
+	}
+
 	for len(snapshots) >= batchSize {
 		updateSnapshot := snapshots[0:batchSize]
 		if err := tx.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableReportSnapshotsStmt.GormModel).Create(&updateSnapshot).Error; err != nil {
 			return errors.Wrap(err, "failed to upsert converted report snapshots")
 		}
 		snapshots = snapshots[batchSize:]
+	}
+	if len(snapshots) > 0 {
+		if err := tx.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableReportSnapshotsStmt.GormModel).Create(&snapshots).Error; err != nil {
+			return errors.Wrap(err, "failed to upsert converted report snapshots")
+		}
 	}
 
 	for len(notifiers) > batchSize {
@@ -271,19 +282,6 @@ func updateTables(tx *gorm.DB, reportConfigs []*updatedSchema.ReportConfiguratio
 		}
 		notifiers = notifiers[batchSize:]
 	}
-
-	if len(reportConfigs) > 0 {
-		if err := tx.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableReportConfigurationsStmt.GormModel).Create(&reportConfigs).Error; err != nil {
-			return errors.Wrap(err, "failed to upsert converted report snapshots")
-		}
-	}
-
-	if len(snapshots) > 0 {
-		if err := tx.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableReportSnapshotsStmt.GormModel).Create(&snapshots).Error; err != nil {
-			return errors.Wrap(err, "failed to upsert converted report snapshots")
-		}
-	}
-
 	if len(notifiers) > 0 {
 		if err := tx.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableReportConfigurationsStmt.Children[0].GormModel).Create(&notifiers).Error; err != nil {
 			return errors.Wrap(err, "failed to upsert converted report notifier configurations")

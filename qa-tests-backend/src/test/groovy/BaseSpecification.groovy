@@ -49,8 +49,8 @@ class BaseSpecification extends Specification {
     static final String RUN_ID
 
     public static final String UNRESTRICTED_SCOPE_ID = isPostgresRun() ?
-        "ffffffff-ffff-fff4-f5ff-ffffffffffff" :
-        "io.stackrox.authz.accessscope.unrestricted"
+            "ffffffff-ffff-fff4-f5ff-ffffffffffff" :
+            "io.stackrox.authz.accessscope.unrestricted"
 
     static {
         String idStr

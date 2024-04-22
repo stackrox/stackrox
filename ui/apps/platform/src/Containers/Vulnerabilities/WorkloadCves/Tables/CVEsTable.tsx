@@ -18,13 +18,13 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import useMap from 'hooks/useMap';
 import { VulnerabilityState } from 'types/cve.proto';
+import TooltipTh from 'Components/TooltipTh';
+import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import CvssFormatted from 'Components/CvssFormatted';
+import DateDistance from 'Components/DateDistance';
 import { VulnerabilitySeverityLabel } from '../../types';
-import { getEntityPagePath } from '../../utils/searchUtils';
-import TooltipTh from '../components/TooltipTh';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import { DynamicColumnIcon } from '../../components/DynamicIcon';
-import DateDistance from '../../components/DateDistance';
-import CvssFormatted from '../../components/CvssFormatted';
 import {
     getScoreVersionsForTopCVSS,
     sortCveDistroList,
@@ -239,7 +239,11 @@ function CVEsTable({
                                         vulnerabilityState={vulnerabilityState}
                                     >
                                         <Link
-                                            to={getEntityPagePath('CVE', cve, vulnerabilityState)}
+                                            to={getWorkloadEntityPagePath(
+                                                'CVE',
+                                                cve,
+                                                vulnerabilityState
+                                            )}
                                         >
                                             {cve}
                                         </Link>

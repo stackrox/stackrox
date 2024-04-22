@@ -14,7 +14,7 @@ import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { addDays } from 'date-fns';
 import { useFormik } from 'formik';
 
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useRestQuery from 'hooks/useRestQuery';
 import { fetchVulnerabilitiesExceptionConfig } from 'services/ExceptionConfigService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';

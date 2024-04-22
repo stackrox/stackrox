@@ -15,14 +15,15 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
+import TableEntityToolbar from '../../components/TableEntityToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import NodeCveFilterToolbar from '../components/NodeCveFilterToolbar';
 import { NODE_CVE_SEARCH_OPTION } from '../../searchOptions';
 import { parseWorkloadQuerySearchFilter } from '../../utils/searchUtils';
 import { nodeEntityTabValues } from '../../types';
 
-import CVEsTableContainer from './CVEsTableContainer';
-import NodesTableContainer from './NodesTableContainer';
+import CVEsTable from './CVEsTable';
+import NodesTable from './NodesTable';
 
 const searchOptions = [NODE_CVE_SEARCH_OPTION];
 
@@ -78,23 +79,29 @@ function NodeCvesOverviewPage() {
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>
+                            <TableEntityToolbar
+                                filterToolbar={filterToolbar}
+                                entityToggleGroup={entityToggleGroup}
+                                pagination={pagination}
+                                tableRowCount={
+                                    activeEntityTabKey === 'CVE'
+                                        ? entityCounts.CVE
+                                        : entityCounts.Node
+                                }
+                                isFiltered={isFiltered}
+                            />
+                            <Divider component="div" />
                             {activeEntityTabKey === 'CVE' && (
-                                <CVEsTableContainer
-                                    filterToolbar={filterToolbar}
-                                    entityToggleGroup={entityToggleGroup}
+                                <CVEsTable
                                     querySearchFilter={querySearchFilter}
                                     isFiltered={isFiltered}
-                                    rowCount={entityCounts.CVE}
                                     pagination={pagination}
                                 />
                             )}
                             {activeEntityTabKey === 'Node' && (
-                                <NodesTableContainer
-                                    filterToolbar={filterToolbar}
-                                    entityToggleGroup={entityToggleGroup}
+                                <NodesTable
                                     querySearchFilter={querySearchFilter}
                                     isFiltered={isFiltered}
-                                    rowCount={entityCounts.Node}
                                     pagination={pagination}
                                 />
                             )}

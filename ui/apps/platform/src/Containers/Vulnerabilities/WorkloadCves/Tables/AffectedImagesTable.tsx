@@ -7,13 +7,15 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { VulnerabilityState } from 'types/cve.proto';
+import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import CvssFormatted from 'Components/CvssFormatted';
+import DateDistance from 'Components/DateDistance';
 import {
     getAnyVulnerabilityIsFixable,
     getHighestCvssScore,
     getHighestVulnerabilitySeverity,
 } from './table.utils';
 import ImageNameLink from '../components/ImageNameLink';
-import { DynamicColumnIcon } from '../../components/DynamicIcon';
 
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
@@ -21,8 +23,6 @@ import ImageComponentVulnerabilitiesTable, {
     imageMetadataContextFragment,
 } from './ImageComponentVulnerabilitiesTable';
 import EmptyTableResults from '../components/EmptyTableResults';
-import DateDistance from '../../components/DateDistance';
-import CvssFormatted from '../../components/CvssFormatted';
 import { WatchStatus } from '../../types';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 

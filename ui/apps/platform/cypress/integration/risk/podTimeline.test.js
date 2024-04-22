@@ -298,7 +298,10 @@ describe('Risk Event Timeline for Pod', () => {
                 'fafd4c56-a4e0-5fd9-aed2-c77b462ca637',
                 fixtureForDeploymentEventTimeline
             ).then((formattedEventTime) => {
-                cy.get(selectors.tooltip.body).should('contain', formattedEventTime);
+                cy.get(selectors.tooltip.body, { timeout: 10000 }).should(
+                    'contain',
+                    formattedEventTime
+                );
             });
         });
 

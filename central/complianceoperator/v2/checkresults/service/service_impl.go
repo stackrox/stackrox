@@ -219,7 +219,11 @@ func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, quer
 }
 
 // GetComplianceClusterStats lists current scan stats grouped by cluster
-func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2.ComplianceClusterStatsRequest) (*v2.ListComplianceClusterOverallStatsResponse, error) {
+func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2.ComplianceProfileResultsRequest) (*v2.ListComplianceClusterOverallStatsResponse, error) {
+	if request.GetProfileName() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
+	}
+
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
@@ -230,14 +234,6 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 		// Add the profile name as an exact match
 		parsedQuery = search.ConjunctionQuery(
 			search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, request.GetProfileName()).ProtoQuery(),
-			parsedQuery,
-		)
-	}
-
-	if request.GetScanConfigId() != "" {
-		// Add the scan config name as an exact match
-		parsedQuery = search.ConjunctionQuery(
-			search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfig, request.GetScanConfigId()).ProtoQuery(),
 			parsedQuery,
 		)
 	}

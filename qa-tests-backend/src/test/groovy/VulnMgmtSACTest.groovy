@@ -66,22 +66,6 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
     """
 
-    private static final GET_COMPONENTS_QUERY = """
-    query getComponents(\$query: String, \$pagination: Pagination)
-    {
-        results: components(query: \$query, pagination: \$pagination) {
-            ...componentFields
-            __typename
-        }
-        count: componentCount(query: \$query)
-    }
-
-    fragment componentFields on EmbeddedImageScanComponent {
-        name
-        version
-    }
-    """
-
     private static final GET_IMAGE_COMPONENTS_QUERY = """
     query getComponents(\$query: String, \$pagination: Pagination)
     {
@@ -167,19 +151,19 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
 
     def getImageCVEQuery() {
-        return isPostgresRun() ? GET_IMAGE_CVES_QUERY : GET_CVES_QUERY
+        return GET_IMAGE_CVES_QUERY
     }
 
     def getNodeCVEQuery() {
-        return isPostgresRun() ? GET_NODE_CVES_QUERY : GET_CVES_QUERY
+        return GET_NODE_CVES_QUERY
     }
 
     def getImageComponentQuery() {
-        return isPostgresRun() ? GET_IMAGE_COMPONENTS_QUERY : GET_COMPONENTS_QUERY
+        return GET_IMAGE_COMPONENTS_QUERY
     }
 
     def getNodeComponentQuery() {
-        return isPostgresRun() ? GET_NODE_COMPONENTS_QUERY : GET_COMPONENTS_QUERY
+        return GET_NODE_COMPONENTS_QUERY
     }
 
     @Unroll
@@ -286,8 +270,8 @@ class VulnMgmtSACTest extends BaseSpecification {
         def imageComponentQuery = getImageComponentQuery()
         def nodeCveQuery = getNodeCVEQuery()
         def nodeComponentQuery = getNodeComponentQuery()
-        def imageBaseQuery = isPostgresRun() ? imageQuery : baseQuery
-        def nodeBaseQuery = isPostgresRun() ? nodeQuery : baseQuery
+        def imageBaseQuery = imageQuery
+        def nodeBaseQuery = nodeQuery
         def baseImageVulnCallResult = gqlService.Call(imageCveQuery, [query: imageBaseQuery])
         assert baseImageVulnCallResult.hasNoErrors()
         def baseImageComponentCallResult = gqlService.Call(imageComponentQuery, [query: imageBaseQuery])
