@@ -234,15 +234,16 @@ spec:
             description: Fully Qualified Image Name with identifying tag
         steps:
           - name: determine-image-tag
-            image: registry.access.redhat.com/ubi8-minimal:latest
+            image: registry.access.redhat.com/ubi8:latest
             env:
               - name: IMAGE
                 value: $(params.image)
             script: |
               #!/usr/bin/env bash
               set -euo pipefail
-              microdnf install -y shadow-utils
-              microdnf install -y git make
+              dnf repolist
+              dnf upgrade -y --nobest
+              dnf install -y git make
               cd "$(workspaces.source.path)/source"
               echo -n "${IMAGE%%:*}:$(make --quiet --no-print-directory -f make/tag.mk tag)" | tee "$(results.image-with-tag.path)"
       workspaces:
