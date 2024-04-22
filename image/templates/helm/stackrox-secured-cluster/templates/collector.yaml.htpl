@@ -103,12 +103,16 @@ spec:
           name: certs
           readOnly: true
         [<- if .FeatureFlags.ROX_RUNTIME_FILTERS >]
+        {{- if ._rox.collector.containerdEnable }}
         - mountPath: /host/run/containerd/containerd.sock
           name: containerd-sock
           mountPropagation: HostToContainer
+        {{- end }}
+        {{- if ._rox.collector.crioEnable }}
         - mountPath: /host/run/crio/crio.sock
           name: crio-sock
           mountPropagation: HostToContainer
+        {{- end }}
         [<- end >]
       {{- end }}
       - command:
@@ -238,10 +242,14 @@ spec:
         emptyDir:
           sizeLimit: 200Mi
       [<- if .FeatureFlags.ROX_RUNTIME_FILTERS >]
+      {{- if ._rox.collector.containerdEnable }}
       - name: containerd-sock
         hostPath:
           path: /run/containerd/containerd.sock
+      {{- end }}
+      {{- if ._rox.collector.crioEnable }}
       - name: crio-sock
         hostPath:
           path: /run/crio/crio.sock
+      {{- end }}
       [<- end >]
