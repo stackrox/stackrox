@@ -4,8 +4,6 @@ import qs from 'qs';
 import { SearchFilter, ApiSortOption } from 'types/search';
 import { SlimUser } from 'types/user.proto';
 import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { mockGetComplianceScanResultsOverview } from 'Containers/ComplianceEnhanced/MockData/complianceResultsServiceMocks';
-import { mockListComplianceProfiles } from 'Containers/ComplianceEnhanced/MockData/complianceProfileServiceMocks';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import { Empty } from './types';
 
@@ -117,16 +115,6 @@ export interface ComplianceClusterOverallStats {
     clusterErrors: string[];
 }
 
-export interface ComplianceScanResultsOverview {
-    scanStats: ComplianceScanStatsShim;
-    profileName: string[];
-    cluster: ComplianceScanCluster[];
-}
-
-export interface ListComplianceScanResultsOverviewResponse {
-    scanOverviews: ComplianceScanResultsOverview[];
-}
-
 export type ClusterCheckStatus = {
     cluster: ComplianceScanCluster;
     status: ComplianceCheckStatus;
@@ -198,38 +186,6 @@ export interface ComplianceIntegration {
     clusterName: string;
     namespace: string;
     statusErrors: string[];
-}
-
-export function complianceResultsOverview(
-    searchFilter: SearchFilter,
-    sortOption: ApiSortOption,
-    page?: number,
-    pageSize?: number
-): CancellableRequest<ComplianceScanResultsOverview[]> {
-    let offset: number | undefined;
-    if (typeof page === 'number' && typeof pageSize === 'number') {
-        offset = page > 0 ? page * pageSize : 0;
-    }
-    const query = {
-        query: getRequestQueryStringForSearchFilter(searchFilter),
-        pagination: { offset, limit: pageSize, sortOption },
-    };
-    // TODO: remove disabled linter rule when service updated
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const params = qs.stringify({ query }, { allowDots: true });
-    return makeCancellableAxiosRequest((signal) => {
-        return new Promise((resolve, reject) => {
-            if (!signal.aborted) {
-                setTimeout(() => {
-                    resolve(
-                        mockGetComplianceScanResultsOverview() as ComplianceScanResultsOverview[]
-                    );
-                }, 2000);
-            } else {
-                reject(new Error('Request was aborted'));
-            }
-        });
-    });
 }
 
 /**
@@ -478,22 +434,6 @@ export function runComplianceScanConfiguration(scanConfigId: string) {
     return axios.post<Empty>(`${scanScheduleUrl}/${scanConfigId}/run`).then((response) => {
         return response.data;
     });
-}
-
-export function listComplianceProfiles(): Promise<ComplianceProfile[]> {
-    // TODO: delete the below code once the actual API is ready
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(mockListComplianceProfiles() as ComplianceProfile[]);
-        }, 1000);
-    });
-
-    // TODO: Uncomment the below code once the actual API is ready
-    // return axios
-    //     .get<{ profiles: ComplianceProfile[] }>(complianceProfileServiceUrl)
-    //     .then((response) => {
-    //         return response?.data?.profiles ?? [];
-    //     });
 }
 
 export function listComplianceSummaries(clusterIds): Promise<ComplianceProfileSummary[]> {
