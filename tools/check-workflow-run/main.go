@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/google/go-github/v61/github"
-	flag "github.com/spf13/pflag"
 )
 
 var (
@@ -26,7 +27,7 @@ func main() {
 	}
 
 	client := github.NewClient(nil)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
 	runs, _, err := client.Actions.ListWorkflowRunsByFileName(
