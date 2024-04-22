@@ -1,10 +1,11 @@
 import React from 'react';
 import { Route, Switch } from 'react-router-dom';
 
-import { complianceEnhancedCoveragePath, complianceEnhancedCoverageClustersPath } from 'routePaths';
+import { complianceEnhancedCoveragePath } from 'routePaths';
 
 import CoveragesPage from './CoveragesPage';
 import ClusterDetails from './Clusters/ClusterDetails';
+import { clusterDetailsRoute } from './compliance.coverage.routes';
 
 function CoveragePage() {
     /*
@@ -18,7 +19,7 @@ function CoveragePage() {
             <Route exact path={complianceEnhancedCoveragePath}>
                 <CoveragesPage />
             </Route>
-            <Route path={complianceEnhancedCoverageClustersPath}>
+            <Route path={clusterDetailsRoute}>
                 <ClusterDetails />
             </Route>
         </Switch>

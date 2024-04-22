@@ -18,10 +18,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import {
-    complianceEnhancedScanConfigsPath,
-    complianceEnhancedScanConfigDetailPath,
-} from 'routePaths';
+import { complianceEnhancedSchedulesPath } from 'routePaths';
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import LinkShim from 'Components/PatternFly/LinkShim';
@@ -31,6 +28,8 @@ import {
     ComplianceScanConfigurationStatus,
 } from 'services/ComplianceEnhancedService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
+import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import ScanConfigParameterView from './components/ScanConfigParameterView';
 import ScanConfigProfiles from './components/ScanConfigProfiles';
 import ScanConfigClustersTable from './components/ScanConfigClustersTable';
@@ -81,7 +80,7 @@ function ViewScanConfigDetail({
             <PageTitle title="Compliance Scan Schedule Details" />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={complianceEnhancedScanConfigsPath}>
+                    <BreadcrumbItemLink to={complianceEnhancedSchedulesPath}>
                         Scan schedules
                     </BreadcrumbItemLink>
                     {!isLoading && !error && scanConfig && (
@@ -118,12 +117,9 @@ function ViewScanConfigDetail({
                                     <Button
                                         variant="primary"
                                         component={LinkShim}
-                                        href={`${generatePath(
-                                            complianceEnhancedScanConfigDetailPath,
-                                            {
-                                                scanConfigId: scanConfig.id,
-                                            }
-                                        )}?action=edit`}
+                                        href={`${generatePath(scanConfigDetailsPath, {
+                                            scanConfigId: scanConfig.id,
+                                        })}?action=edit`}
                                         isDisabled={!scanConfig || isTriggeringRescan}
                                     >
                                         Edit scan schedule

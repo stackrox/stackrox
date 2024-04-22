@@ -37,8 +37,8 @@ import { SortOption } from 'types/table';
 import { addRegexPrefixToFilters, searchValueAsArray } from 'utils/searchUtils';
 
 import { getClusterResultsStatusObject } from '../compliance.coverage.utils';
-import CheckStatusDropdown from '../Components/CheckStatusDropdown';
-import CheckStatusModal from '../Components/CheckStatusModal';
+import CheckStatusDropdown from '../components/CheckStatusDropdown';
+import CheckStatusModal from '../components/CheckStatusModal';
 
 type ClusterDetailsTableProps = {
     clusterId: string;

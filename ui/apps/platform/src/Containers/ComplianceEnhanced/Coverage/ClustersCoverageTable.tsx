@@ -22,10 +22,7 @@ import { CubesIcon } from '@patternfly/react-icons';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
-import {
-    complianceEnhancedCoverageClustersPath,
-    complianceEnhancedScanConfigsPath,
-} from 'routePaths';
+import { complianceEnhancedSchedulesPath } from 'routePaths';
 import {
     getAllClustersCombinedStats,
     getAllClustersCombinedStatsCount,
@@ -33,8 +30,9 @@ import {
 import { SortOption } from 'types/table';
 
 import useURLSort from 'hooks/useURLSort';
-import ComplianceClusterStatus from '../ScanConfigs/components/ComplianceClusterStatus';
-import CoverageTableViewToggleGroup from './Components/CoverageTableViewToggleGroup';
+import ComplianceClusterStatus from '../Schedules/components/ComplianceClusterStatus';
+import CoverageTableViewToggleGroup from './components/CoverageTableViewToggleGroup';
+import { clusterDetailsRoute } from './compliance.coverage.routes';
 import {
     calculateCompliancePercentage,
     getCompliancePfClassName,
@@ -72,7 +70,7 @@ function ClustersCoverageTable() {
                 <Tr key={cluster.clusterId}>
                     <Td dataLabel="Cluster">
                         <Link
-                            to={generatePath(complianceEnhancedCoverageClustersPath, {
+                            to={generatePath(clusterDetailsRoute, {
                                 clusterId: cluster.clusterId,
                             })}
                         >
@@ -135,7 +133,7 @@ function ClustersCoverageTable() {
                                 </Text>
                             </FlexItem>
                             <FlexItem>
-                                <Link to={complianceEnhancedScanConfigsPath}>
+                                <Link to={complianceEnhancedSchedulesPath}>
                                     Go to scan schedules
                                 </Link>
                             </FlexItem>
