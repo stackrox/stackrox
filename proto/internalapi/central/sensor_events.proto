@@ -100,6 +100,7 @@ message SensorEvent {
     ComplianceOperatorScanV2 compliance_operator_scan_v2 = 30;
     ComplianceOperatorScanSettingBindingV2 compliance_operator_scan_setting_binding_v2 = 31;
     ComplianceOperatorSuiteV2 compliance_operator_suite_v2 = 32;
+    ComplianceOperatorRemediationV2 compliance_operator_remediation_v2 = 33;
   }
 }
 

@@ -79,7 +79,7 @@ func (k *listenerImpl) handleAllEvents() {
 	clusterID := clusterid.Get()
 
 	var crdSharedInformerFactory dynamicinformer.DynamicSharedInformerFactory
-	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer, complianceSuiteInformer cache.SharedIndexInformer
+	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer, complianceSuiteInformer, complianceRemediationInformer cache.SharedIndexInformer
 	var profileLister cache.GenericLister
 	crdWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod))
 	coAvailabilityChecker := complianceOperatorAvailabilityChecker.NewComplianceOperatorAvailabilityChecker()
@@ -113,6 +113,7 @@ func (k *listenerImpl) handleAllEvents() {
 		complianceScanInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceScan.GroupVersionResource()).Informer()
 		complianceTailoredProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfile.GroupVersionResource()).Informer()
 		complianceSuiteInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceSuite.GroupVersionResource()).Informer()
+		complianceRemediationInformer = crdSharedInformerFactory.ForResource(complianceoperator.Remediation.GroupVersionResource()).Informer()
 		// Override the crdHandlerFn to only handle when the resources become unavailable
 		crdHandlerFn = func(status *watcher.Status) {
 			if !status.Available {
@@ -215,6 +216,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, complianceScanSettingBindingsInformer, dispatchers.ForComplianceOperatorScanSettingBindings(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 		handle(k.context, complianceScanInformer, dispatchers.ForComplianceOperatorScans(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 		handle(k.context, complianceSuiteInformer, dispatchers.ForComplianceOperatorSuites(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+		handle(k.context, complianceRemediationInformer, dispatchers.ForComplianceOperatorRemediations(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 	}
 
 	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {

@@ -106,6 +106,20 @@ func (mr *MockDispatcherRegistryMockRecorder) ForComplianceOperatorProfiles() *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForComplianceOperatorProfiles", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForComplianceOperatorProfiles))
 }
 
+// ForComplianceOperatorRemediations mocks base method.
+func (m *MockDispatcherRegistry) ForComplianceOperatorRemediations() resources.Dispatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForComplianceOperatorRemediations")
+	ret0, _ := ret[0].(resources.Dispatcher)
+	return ret0
+}
+
+// ForComplianceOperatorRemediations indicates an expected call of ForComplianceOperatorRemediations.
+func (mr *MockDispatcherRegistryMockRecorder) ForComplianceOperatorRemediations() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForComplianceOperatorRemediations", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForComplianceOperatorRemediations))
+}
+
 // ForComplianceOperatorResults mocks base method.
 func (m *MockDispatcherRegistry) ForComplianceOperatorResults() resources.Dispatcher {
 	m.ctrl.T.Helper()
