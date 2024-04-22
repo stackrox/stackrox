@@ -64,7 +64,14 @@ func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, cen
 	go s.sendEvents(client, centralReachable, syncDone, configHandler, detector, s.receiver.Stop, s.sender.Stop)
 }
 
-func (s *centralCommunicationImpl) Stop(_ error) {
+func (s *centralCommunicationImpl) Stop(err error) {
+	if err != nil {
+		if errors.Is(err, errForcedConnectionRestart) {
+			log.Infof("Connection restart requested: %v", err)
+		} else {
+			log.Errorf("Stopping connection due to error: %v", err)
+		}
+	}
 	s.stopper.Client().Stop()
 }
 
