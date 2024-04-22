@@ -20,7 +20,7 @@ import { Collection } from 'services/CollectionsService';
 import { SearchFilter } from 'types/search';
 import { collectionsBasePath } from 'routePaths';
 import { getTableUIState } from 'utils/getTableUIState';
-import TbodyTableState from 'Components/TableStateTemplates/TbodyTableState';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 
 export type CollectionsTableProps = {
     isLoading: boolean;
@@ -146,7 +146,7 @@ function CollectionsTable({
                         <Td />
                     </Tr>
                 </Thead>
-                <TbodyTableState
+                <TbodyUnified
                     tableState={tableState}
                     colSpan={hasWriteAccess ? 3 : 2}
                     errorProps={{
@@ -174,7 +174,7 @@ function CollectionsTable({
                             setSearchValue('');
                         },
                     }}
-                    renderWith={({ data }) => (
+                    renderer={({ data }) => (
                         <Tbody>
                             {data.map((collection) => {
                                 const { id, name, description } = collection;

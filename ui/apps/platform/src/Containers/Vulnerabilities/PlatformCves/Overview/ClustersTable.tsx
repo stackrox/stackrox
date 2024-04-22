@@ -4,7 +4,7 @@ import { Table, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
 import { Link } from 'react-router-dom';
 import { gql, useQuery } from '@apollo/client';
 
-import TbodyTableState from 'Components/TableStateTemplates/TbodyTableState';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useURLPagination from 'hooks/useURLPagination';
 import { ClusterType } from 'types/cluster.proto';
 import { getTableUIState } from 'utils/getTableUIState';
@@ -113,11 +113,11 @@ function ClustersTable({ querySearchFilter, isFiltered, pagination }: ClustersTa
                     <Th>Kubernetes version</Th>
                 </Tr>
             </Thead>
-            <TbodyTableState
+            <TbodyUnified
                 tableState={tableState}
                 colSpan={colSpan}
                 emptyProps={{ message: 'No secured clusters have been detected' }}
-                renderWith={({ data }) =>
+                renderer={({ data }) =>
                     data.map(({ id, name, clusterVulnerabilityCount, type, status }) => (
                         <Tbody key={id}>
                             <Tr>

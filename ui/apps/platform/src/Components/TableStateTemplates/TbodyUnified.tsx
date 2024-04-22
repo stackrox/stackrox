@@ -8,14 +8,14 @@ import { TbodyError, TbodyErrorProps } from './TbodyError';
 import { TbodyFilteredEmpty, TbodyFilteredEmptyProps } from './TbodyFilteredEmpty';
 import { TbodyLoading, TbodyLoadingProps } from './TbodyLoading';
 
-export type TbodyTableStateProps<T> = {
+export type TbodyUnifiedProps<T> = {
     /** The lifecycle state of a table data request */
     tableState: TableUIState<T>;
     colSpan: number;
     /**
      *  A function that renders the table body with the data. Can be a render prop or a component.
      */
-    renderWith: (props: { data: T[] }) => React.ReactNode;
+    renderer: (props: { data: T[] }) => React.ReactNode;
     /** Props passed to the table loading state */
     loadingProps?: Omit<TbodyLoadingProps, 'colSpan'>;
     /** Props passed to the table error state */
@@ -30,15 +30,15 @@ export type TbodyTableStateProps<T> = {
  * A component that encapsulates the rendering logic for table bodies based on the
  * lifecycle state of a table data request.
  */
-function TbodyTableState<T>({
+function TbodyUnified<T>({
     tableState,
     colSpan,
-    renderWith,
+    renderer,
     loadingProps,
     errorProps,
     emptyProps,
     filteredEmptyProps,
-}: TbodyTableStateProps<T>) {
+}: TbodyUnifiedProps<T>) {
     const { type } = tableState;
     switch (type) {
         /*
@@ -64,10 +64,10 @@ function TbodyTableState<T>({
         */
         case 'COMPLETE':
         case 'POLLING':
-            return <>{renderWith({ data: tableState.data })}</>;
+            return <>{renderer({ data: tableState.data })}</>;
         default:
             return ensureExhaustive(type);
     }
 }
 
-export default TbodyTableState;
+export default TbodyUnified;

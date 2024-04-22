@@ -3,7 +3,7 @@ import React from 'react';
 import ComponentTestProviders from 'test-utils/ComponentProviders';
 
 import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
-import TbodyTableState from './TbodyTableState';
+import TbodyUnified from './TbodyUnified';
 
 function setup(tableState, otherProps) {
     cy.mount(
@@ -14,7 +14,7 @@ function setup(tableState, otherProps) {
                         <Th>Test Column</Th>
                     </Tr>
                 </Thead>
-                <TbodyTableState tableState={tableState} {...otherProps} />
+                <TbodyUnified tableState={tableState} {...otherProps} />
             </Table>
         </ComponentTestProviders>
     );
@@ -22,7 +22,7 @@ function setup(tableState, otherProps) {
 
 const data = [{ value: 'Test Value' }];
 const setupProps = {
-    renderWith: ({ data }) => (
+    renderer: ({ data }) => (
         <Tbody>
             <Tr>
                 <Td>{data[0].value}</Td>
