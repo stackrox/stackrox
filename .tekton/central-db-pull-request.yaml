@@ -19,7 +19,6 @@ metadata:
   namespace: rh-acs-tenant
 
 spec:
-  serviceAccountName: appstudio-pipeline
   params:
   - name: dockerfile
     value: image/postgres/konflux.Dockerfile
@@ -235,15 +234,16 @@ spec:
             description: Fully Qualified Image Name with identifying tag
         steps:
           - name: determine-image-tag
-            image: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.21
+            image: registry.access.redhat.com/ubi8-minimal:latest
             env:
               - name: IMAGE
                 value: $(params.image)
             script: |
               #!/usr/bin/env bash
               set -euo pipefail
+              microdnf install -y git make
               cd "$(workspaces.source.path)/source"
-              echo -n "${IMAGE%%:*}:$(make --quiet --no-print-directory tag)" | tee "$(results.image-with-tag.path)"
+              echo -n "${IMAGE%%:*}:$(make --quiet --no-print-directory -f make/tag.mk tag)" | tee "$(results.image-with-tag.path)"
       workspaces:
       - name: source
         workspace: workspace

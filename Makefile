@@ -26,9 +26,7 @@ SILENT ?= @
 # TODO: [ROX-19070] Update postgres store test generation to work for foreign keys
 UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
-ifeq ($(TAG),)
-TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
-endif
+include make/tag.mk
 
 # Set expiration on Quay.io for non-release tags.
 ifeq ($(findstring x,$(TAG)),x)
@@ -705,10 +703,6 @@ clean-image:
 	git clean -xdf image/ui image/rhel/ui image/rhel/docs
 	rm -f $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/postgres/bundle.tar.gz
 	rm -rf $(CURDIR)/image/rhel/scripts
-
-.PHONY: tag
-tag:
-	@echo $(TAG)
 
 .PHONY: shortcommit
 shortcommit:
