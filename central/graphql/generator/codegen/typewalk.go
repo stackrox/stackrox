@@ -123,7 +123,7 @@ func (ctx *walkState) walkType(typeDesc typeDescriptor) {
 }
 
 func (ctx *walkState) walkField(td *typeData, p reflect.Type, sf reflect.StructField) {
-	if protoreflect.IsInternalGeneratorField(sf) {
+	if !td.IsInputType && protoreflect.IsInternalGeneratorField(sf) {
 		return
 	}
 	if strings.HasPrefix(sf.Name, "DEPRECATED") {
