@@ -44,7 +44,7 @@ function NodePageHeader({ data }: NodePageHeaderProps) {
 
     return (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
-            <Title headingLevel="h1" className="pf-u-mb-sm">
+            <Title headingLevel="h1" className="pf-v5-u-mb-sm">
                 {data.name}
             </Title>
             <LabelGroup numLabels={numLabels}>

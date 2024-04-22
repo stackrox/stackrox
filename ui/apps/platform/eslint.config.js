@@ -19,6 +19,8 @@ const pluginTypeScriptESLint = require('@typescript-eslint/eslint-plugin');
 
 const { browser: browserGlobals, jest: jestGlobals, node: nodeGlobals } = require('globals');
 
+const disallowPf4Plugin = require('./eslint-plugins/disallowPf4Plugin');
+
 const parserAndOptions = {
     parser: parserTypeScriptESLint,
     parserOptions: {
@@ -36,6 +38,7 @@ module.exports = [
             'coverage/**',
             'react-app-rewired/**',
             'scripts/**',
+            'eslint-plugins/**',
             'src/setupProxy.js',
             'src/setupTests.js',
             'cypress.d.ts',
@@ -519,6 +522,8 @@ module.exports = [
     {
         files: ['src/*.{ts,tsx}', 'src/*/**/*.{js,ts,tsx}'], // product files, except for unit tests (including mockData and test-utils folders)
 
+        ignores: ['eslint-plugins/disallowPf4Plugin.js'],
+
         languageOptions: {
             ...parserAndOptions,
             globals: {
@@ -533,8 +538,11 @@ module.exports = [
             'jsx-a11y': pluginAccessibility,
             react: pluginReact,
             'react-hooks': pluginReactHooks,
+            'disallow-pf4': disallowPf4Plugin,
         },
         rules: {
+            'disallow-pf4/no-pf4-utility-classes': 'error',
+
             'no-restricted-imports': [
                 'error',
                 {
