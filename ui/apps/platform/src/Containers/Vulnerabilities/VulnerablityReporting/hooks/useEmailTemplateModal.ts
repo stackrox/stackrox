@@ -1,18 +1,18 @@
 import { Dispatch, SetStateAction, useState } from 'react';
-import { DeliveryDestination } from '../forms/useReportFormValues';
+import { NotifierConfiguration } from 'services/ReportsService.types';
 
 export type UseEmailTemplateModalResult = {
     isEmailTemplateModalOpen: boolean;
     closeEmailTemplateModal: () => void;
     selectedEmailSubject: string;
     selectedEmailBody: string;
-    selectedDeliveryDestination: DeliveryDestination | null;
-    setSelectedDeliveryDestination: Dispatch<SetStateAction<DeliveryDestination | null>>;
+    selectedDeliveryDestination: NotifierConfiguration | null;
+    setSelectedDeliveryDestination: Dispatch<SetStateAction<NotifierConfiguration | null>>;
 };
 
 function useEmailTemplateModal(): UseEmailTemplateModalResult {
     const [selectedDeliveryDestination, setSelectedDeliveryDestination] =
-        useState<DeliveryDestination | null>(null);
+        useState<NotifierConfiguration | null>(null);
 
     function closeEmailTemplateModal() {
         setSelectedDeliveryDestination(null);
@@ -21,8 +21,8 @@ function useEmailTemplateModal(): UseEmailTemplateModalResult {
     return {
         isEmailTemplateModalOpen: !!selectedDeliveryDestination,
         closeEmailTemplateModal,
-        selectedEmailSubject: selectedDeliveryDestination?.customSubject || '',
-        selectedEmailBody: selectedDeliveryDestination?.customBody || '',
+        selectedEmailSubject: selectedDeliveryDestination?.emailConfig?.customSubject ?? '',
+        selectedEmailBody: selectedDeliveryDestination?.emailConfig?.customBody ?? '',
         selectedDeliveryDestination,
         setSelectedDeliveryDestination,
     };
