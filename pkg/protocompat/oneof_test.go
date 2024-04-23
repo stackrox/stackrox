@@ -25,7 +25,7 @@ func testHelperGetFieldProtoName(field reflect.StructField) string {
 	return ""
 }
 
-func TestGetOneOfFieldTypes(t *testing.T) {
+func TestGetOneOfTypesByFieldIndex(t *testing.T) {
 	msg := storage.TestSingleUUIDKeyStruct{}
 
 	msgType := reflect.TypeOf(msg)
@@ -40,7 +40,7 @@ func TestGetOneOfFieldTypes(t *testing.T) {
 		fieldType, err := msgType.FieldByName(oneOfFieldName)
 		assert.NotNil(t, err)
 
-		oneOfFieldSubTypes := GetOneOfFieldTypes(msgType, fieldType.Index[0])
+		oneOfFieldSubTypes := GetOneOfTypesByFieldIndex(msgType, fieldType.Index[0])
 		for _, subType := range oneOfFieldSubTypes {
 			subTypeElem := subType.Elem()
 			for subTypeFieldIndex := 0; subTypeFieldIndex < subTypeElem.NumField(); subTypeFieldIndex++ {
@@ -52,5 +52,37 @@ func TestGetOneOfFieldTypes(t *testing.T) {
 		}
 
 		assert.Equal(t, 0, oneOfFieldNamesSet.Cardinality(), fmt.Sprintf("Not all oneof fields are found for %q field", fieldType.Name))
+	}
+}
+
+func TestGetOneOfTypesByInterface(t *testing.T) {
+	msg := storage.TestSingleUUIDKeyStruct{}
+
+	msgType := reflect.TypeOf(msg)
+	assert.NotNil(t, msgType)
+
+	fieldOneof, found := msgType.FieldByName("Oneof")
+	assert.True(t, found)
+	fieldOneofTwo, found := msgType.FieldByName("OneofTwo")
+	assert.True(t, found)
+
+	fieldsToTest := map[reflect.Type]set.StringSet{
+		fieldOneof.Type:    set.NewStringSet("oneofstring", "oneofnested"),
+		fieldOneofTwo.Type: set.NewStringSet("oneof_two_string", "oneof_two_int"),
+	}
+
+	for oneOfFieldType, oneOfFieldNamesSet := range fieldsToTest {
+		oneOfFieldSubTypes := GetOneOfTypesByInterface(msgType, oneOfFieldType)
+		for _, subType := range oneOfFieldSubTypes {
+			subTypeElem := subType.Elem()
+			for subTypeFieldIndex := 0; subTypeFieldIndex < subTypeElem.NumField(); subTypeFieldIndex++ {
+				protoFieldName := testHelperGetFieldProtoName(subTypeElem.Field(subTypeFieldIndex))
+
+				assert.True(t, oneOfFieldNamesSet.Contains(protoFieldName), fmt.Sprintf("Field %q is not expected for %q field interface", protoFieldName, oneOfFieldType.Name()))
+				oneOfFieldNamesSet.Remove(protoFieldName)
+			}
+		}
+
+		assert.Equal(t, 0, oneOfFieldNamesSet.Cardinality(), fmt.Sprintf("Not all oneof fields are found for %q field interface", oneOfFieldType.Name()))
 	}
 }
