@@ -129,7 +129,7 @@ func (ctx *walkState) walkField(td *typeData, p reflect.Type, sf reflect.StructF
 	if strings.HasPrefix(sf.Name, "DEPRECATED") {
 		return
 	}
-	ctx.typeQueue = append(ctx.typeQueue, typeDescriptor{ty: sf.Type})
+	ctx.typeQueue = append(ctx.typeQueue, typeDescriptor{ty: sf.Type, isInputType: td.IsInputType})
 	if !rejectedField(p, sf, ctx.skipFields) {
 		td.FieldData = append(td.FieldData, fieldData{
 			Name: sf.Name,
