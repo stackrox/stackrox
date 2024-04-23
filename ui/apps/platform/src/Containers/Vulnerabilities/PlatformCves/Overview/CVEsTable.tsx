@@ -4,69 +4,21 @@ import { Text } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td, ExpandableRowContent } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
 import sum from 'lodash/sum';
-import noop from 'lodash/noop';
 
 import useURLPagination from 'hooks/useURLPagination';
 import useSet from 'hooks/useSet';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
-import {
-    TbodyLoading,
-    TbodyError,
-    TbodyEmpty,
-    TbodyFilteredEmpty,
-} from 'Components/TableStateTemplates';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import TooltipTh from 'Components/TooltipTh';
 import CvssFormatted from 'Components/CvssFormatted';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import PartialCVEDataAlert from '../../WorkloadCves/components/PartialCVEDataAlert';
 import { sortCveDistroList } from '../../utils/sortUtils';
-import { getPlatformEntityPagePath, getRegexScopedQueryString } from '../../utils/searchUtils';
+import { getPlatformEntityPagePath } from '../../utils/searchUtils';
 import { QuerySearchFilter } from '../../types';
-
-// TODO Validate types with BE implementation
-type PlatformCVE = {
-    cve: string;
-    isFixable: boolean;
-    cveType: string;
-    cvss: number;
-    scoreVersion: string;
-    distroTuples: {
-        summary: string;
-        operatingSystem: string;
-        cvss: number;
-        scoreVersion: string;
-    }[];
-    clusterCountByType: {
-        generic: number;
-        kubernetes: number;
-        openshift: number;
-        openshift4: number;
-    };
-};
-
-const cveListQuery = gql`
-    query getPlatformCves($query: String, $pagination: Pagination) {
-        platformCVEs(query: $query, pagination: $pagination) {
-            cve
-            isFixable
-            cveType
-            cvss
-            scoreVersion
-            distroTuples {
-                summary
-                operatingSystem
-            }
-            clusterCountByType {
-                generic
-                kubernetes
-                openshift
-                openshift4
-            }
-        }
-    }
-`;
+import usePlatformCves from './usePlatformCves';
 
 const totalClusterCountQuery = gql`
     query getTotalClusterCount {
@@ -83,27 +35,11 @@ export type CVEsTableProps = {
 function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps) {
     const { page, perPage } = pagination;
 
-    const { error, loading, data, previousData } = useQuery<
-        {
-            platformCVEs: PlatformCVE[];
-        },
-        {
-            query: string;
-            pagination: {
-                offset: number;
-                limit: number;
-            };
-        }
-    >(cveListQuery, {
-        variables: {
-            query: getRegexScopedQueryString(querySearchFilter),
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-            },
-        },
-    });
-
+    const { data, previousData, error, loading } = usePlatformCves(
+        querySearchFilter,
+        page,
+        perPage
+    );
     const totalClusterCountRequest = useQuery(totalClusterCountQuery);
     const totalClusterCount = totalClusterCountRequest.data?.clusterCount ?? 0;
 
@@ -140,72 +76,74 @@ function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps
                     </TooltipTh>
                 </Tr>
             </Thead>
-            {tableState.type === 'LOADING' && <TbodyLoading colSpan={colSpan} />}
-            {tableState.type === 'ERROR' && (
-                <TbodyError colSpan={colSpan} error={tableState.error} />
-            )}
-            {tableState.type === 'EMPTY' && (
-                <TbodyEmpty
-                    colSpan={colSpan}
-                    message="No Platform CVEs have been reported for your secured clusters"
-                />
-            )}
-            {tableState.type === 'FILTERED_EMPTY' && (
-                <TbodyFilteredEmpty colSpan={colSpan} onClearFilters={noop} />
-            )}
-            {tableState.type === 'COMPLETE' &&
-                tableState.data.map((platformCve, rowIndex) => {
-                    const {
-                        cve,
-                        isFixable,
-                        cveType,
-                        cvss,
-                        scoreVersion,
-                        distroTuples,
-                        clusterCountByType,
-                    } = platformCve;
-                    const isExpanded = expandedRowSet.has(cve);
+            <TbodyUnified
+                tableState={tableState}
+                colSpan={colSpan}
+                emptyProps={{
+                    message: 'No Platform CVEs have been reported for your secured clusters',
+                }}
+                renderer={({ data }) =>
+                    data.map((platformCve, rowIndex) => {
+                        const {
+                            cve,
+                            isFixable,
+                            cveType,
+                            cvss,
+                            scoreVersion,
+                            distroTuples,
+                            clusterCountByType,
+                        } = platformCve;
+                        const isExpanded = expandedRowSet.has(cve);
 
-                    const prioritizedDistros = sortCveDistroList(distroTuples);
-                    const summary =
-                        prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
-                    const affectedClusterCount = sum(Object.values(clusterCountByType));
+                        const prioritizedDistros = sortCveDistroList(distroTuples);
+                        const summary =
+                            prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
+                        const affectedClusterCount = sum(Object.values(clusterCountByType));
 
-                    return (
-                        <Tbody key={cve} isExpanded={isExpanded}>
-                            <Tr>
-                                <Td
-                                    expand={{
-                                        rowIndex,
-                                        isExpanded,
-                                        onToggle: () => expandedRowSet.toggle(cve),
-                                    }}
-                                />
-                                <Td dataLabel="CVE" modifier="nowrap">
-                                    <Link to={getPlatformEntityPagePath('CVE', cve)}>{cve}</Link>
-                                </Td>
-                                <Td dataLabel="CVE status">
-                                    <VulnerabilityFixableIconText isFixable={isFixable} />
-                                </Td>
-                                <Td dataLabel="CVE type">{cveType}</Td>
-                                <Td dataLabel="CVSS">
-                                    <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
-                                </Td>
-                                <Td dataLabel="Affected clusters">
-                                    {affectedClusterCount} / {totalClusterCount} affected clusters
-                                </Td>
-                            </Tr>
-                            <Tr isExpanded={isExpanded}>
-                                <Td />
-                                <Td colSpan={colSpan - 1}>
-                                    <ExpandableRowContent>
-                                        {summary ? <Text>{summary}</Text> : <PartialCVEDataAlert />}
-                                    </ExpandableRowContent>
-                                </Td>
-                            </Tr>
-                        </Tbody>
-                    );
-                })}
+                        return (
+                            <Tbody key={cve} isExpanded={isExpanded}>
+                                <Tr>
+                                    <Td
+                                        expand={{
+                                            rowIndex,
+                                            isExpanded,
+                                            onToggle: () => expandedRowSet.toggle(cve),
+                                        }}
+                                    />
+                                    <Td dataLabel="CVE" modifier="nowrap">
+                                        <Link to={getPlatformEntityPagePath('CVE', cve)}>
+                                            {cve}
+                                        </Link>
+                                    </Td>
+                                    <Td dataLabel="CVE status">
+                                        <VulnerabilityFixableIconText isFixable={isFixable} />
+                                    </Td>
+                                    <Td dataLabel="CVE type">{cveType}</Td>
+                                    <Td dataLabel="CVSS">
+                                        <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
+                                    </Td>
+                                    <Td dataLabel="Affected clusters">
+                                        {affectedClusterCount} / {totalClusterCount} affected
+                                        clusters
+                                    </Td>
+                                </Tr>
+                                <Tr isExpanded={isExpanded}>
+                                    <Td />
+                                    <Td colSpan={colSpan - 1}>
+                                        <ExpandableRowContent>
+                                            {summary ? (
+                                                <Text>{summary}</Text>
+                                            ) : (
+                                                <PartialCVEDataAlert />
+                                            )}
+                                        </ExpandableRowContent>
+                                    </Td>
+                                </Tr>
+                            </Tbody>
+                        );
+                    })
+                }
+            />
         </Table>
     );
 }

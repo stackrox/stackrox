@@ -4,12 +4,6 @@ import { ExpandableRowContent, Table, Thead, Tr, Th, Tbody, Td } from '@patternf
 import { gql } from '@apollo/client';
 import { Link } from 'react-router-dom';
 
-import {
-    TbodyLoading,
-    TbodyError,
-    TbodyEmpty,
-    TbodyFilteredEmpty,
-} from 'Components/TableStateTemplates';
 import { TableUIState } from 'utils/getTableUIState';
 
 import useSet from 'hooks/useSet';
@@ -19,6 +13,7 @@ import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/Vulner
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 
 import CvssFormatted from 'Components/CvssFormatted';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
 import NodeComponentsTable from './NodeComponentsTable';
 
@@ -131,75 +126,72 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
                     <Th>Affected components</Th>
                 </Tr>
             </Thead>
-            {tableState.type === 'LOADING' && <TbodyLoading colSpan={colSpan} />}
-            {tableState.type === 'ERROR' && (
-                <TbodyError colSpan={colSpan} error={tableState.error} />
-            )}
-            {tableState.type === 'EMPTY' && (
-                <TbodyEmpty
-                    colSpan={colSpan}
-                    message="No nodes are detected to have been reported for this CVE"
-                />
-            )}
-            {tableState.type === 'FILTERED_EMPTY' && <TbodyFilteredEmpty colSpan={colSpan} />}
-            {tableState.type === 'COMPLETE' &&
-                tableState.data.map((node, rowIndex) => {
-                    const { id, name, nodeComponents } = node;
-                    const isExpanded = expandedRowSet.has(id);
+            <TbodyUnified
+                tableState={tableState}
+                colSpan={colSpan}
+                emptyProps={{
+                    message: 'No nodes are detected to have been reported for this CVE',
+                }}
+                renderer={({ data }) =>
+                    data.map((node, rowIndex) => {
+                        const { id, name, nodeComponents } = node;
+                        const isExpanded = expandedRowSet.has(id);
 
-                    const vulns = nodeComponents.flatMap(
-                        ({ nodeVulnerabilities }) => nodeVulnerabilities
-                    );
-                    const topSeverity = getHighestVulnerabilitySeverity(vulns);
-                    const isFixable = getAnyVulnerabilityIsFixable(vulns);
-                    const { cvss, scoreVersion } = getHighestCvssScore(vulns);
+                        const vulns = nodeComponents.flatMap(
+                            ({ nodeVulnerabilities }) => nodeVulnerabilities
+                        );
+                        const topSeverity = getHighestVulnerabilitySeverity(vulns);
+                        const isFixable = getAnyVulnerabilityIsFixable(vulns);
+                        const { cvss, scoreVersion } = getHighestCvssScore(vulns);
 
-                    return (
-                        <Tbody key={id} isExpanded={isExpanded}>
-                            <Tr>
-                                <Td
-                                    expand={{
-                                        rowIndex,
-                                        isExpanded,
-                                        onToggle: () => expandedRowSet.toggle(id),
-                                    }}
-                                />
+                        return (
+                            <Tbody key={id} isExpanded={isExpanded}>
+                                <Tr>
+                                    <Td
+                                        expand={{
+                                            rowIndex,
+                                            isExpanded,
+                                            onToggle: () => expandedRowSet.toggle(id),
+                                        }}
+                                    />
 
-                                <Td dataLabel="Node">
-                                    <Link to={getNodeEntityPagePath('Node', id)}>
-                                        <Truncate position="middle" content={name} />
-                                    </Link>
-                                </Td>
-                                <Td dataLabel="CVE severity" modifier="nowrap">
-                                    <VulnerabilitySeverityIconText severity={topSeverity} />
-                                </Td>
-                                <Td dataLabel="CVE status" modifier="nowrap">
-                                    <VulnerabilityFixableIconText isFixable={isFixable} />
-                                </Td>
-                                <Td dataLabel="CVSS score" modifier="nowrap">
-                                    <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
-                                </Td>
-                                <Td dataLabel="Cluster">
-                                    <Truncate position="middle" content={node.cluster.name} />
-                                </Td>
-                                <Td dataLabel="Operating system">{node.operatingSystem}</Td>
-                                <Td dataLabel="Affected components">
-                                    {nodeComponents.length === 1
-                                        ? nodeComponents[0].name
-                                        : pluralize(nodeComponents.length, 'component')}
-                                </Td>
-                            </Tr>
-                            <Tr isExpanded={isExpanded}>
-                                <Td />
-                                <Td colSpan={colSpan - 1}>
-                                    <ExpandableRowContent>
-                                        <NodeComponentsTable />
-                                    </ExpandableRowContent>
-                                </Td>
-                            </Tr>
-                        </Tbody>
-                    );
-                })}
+                                    <Td dataLabel="Node">
+                                        <Link to={getNodeEntityPagePath('Node', id)}>
+                                            <Truncate position="middle" content={name} />
+                                        </Link>
+                                    </Td>
+                                    <Td dataLabel="CVE severity" modifier="nowrap">
+                                        <VulnerabilitySeverityIconText severity={topSeverity} />
+                                    </Td>
+                                    <Td dataLabel="CVE status" modifier="nowrap">
+                                        <VulnerabilityFixableIconText isFixable={isFixable} />
+                                    </Td>
+                                    <Td dataLabel="CVSS score" modifier="nowrap">
+                                        <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
+                                    </Td>
+                                    <Td dataLabel="Cluster">
+                                        <Truncate position="middle" content={node.cluster.name} />
+                                    </Td>
+                                    <Td dataLabel="Operating system">{node.operatingSystem}</Td>
+                                    <Td dataLabel="Affected components">
+                                        {nodeComponents.length === 1
+                                            ? nodeComponents[0].name
+                                            : pluralize(nodeComponents.length, 'component')}
+                                    </Td>
+                                </Tr>
+                                <Tr isExpanded={isExpanded}>
+                                    <Td />
+                                    <Td colSpan={colSpan - 1}>
+                                        <ExpandableRowContent>
+                                            <NodeComponentsTable />
+                                        </ExpandableRowContent>
+                                    </Td>
+                                </Tr>
+                            </Tbody>
+                        );
+                    })
+                }
+            />
         </Table>
     );
 }
