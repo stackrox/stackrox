@@ -558,7 +558,7 @@ class NetworkFlowTest extends BaseSpecification {
                 List<NetworkNode> nginxEdges = currentGraph.nodesList.findAll {
                     node -> node.outEdges.containsKey(targetId)
                 }
-                log.debug("All edges of ${NGINXCONNmakECTIONTARGET} ${deploymentUid}: ${nginxEdges}")
+                log.debug("All edges of ${NGINXCONNECTIONTARGET} ${deploymentUid}: ${nginxEdges}")
             }
             assert edges
         }
