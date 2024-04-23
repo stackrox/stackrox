@@ -7,7 +7,7 @@ jobs:
   upload-dev-vulnerabilities:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.68
       volumes:
         - /tmp:/tmp # make sure Claircore blob can access tmp folder
     steps:
