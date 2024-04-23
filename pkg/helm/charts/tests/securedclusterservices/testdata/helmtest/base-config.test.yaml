@@ -56,7 +56,19 @@ tests:
   expect: |
     helmClusterConfig | .clusterConfig.clusterLabels | assertThat(length == 2)
 
-- name: fails with invalid cluster labels
+- name: fails with cluster labels being a string
   values:
     clusterLabels: a-string-even-though-a-dict-is-expected
+  expectError: true
+
+- name: fails with cluster labels being a dict with a numeric value
+  values:
+    clusterLabels:
+      pi: 3
+  expectError: true
+
+- name: fails with cluster labels being a dict with a boolean value
+  values:
+    clusterLabels:
+      pi-is-rational: false
   expectError: true
