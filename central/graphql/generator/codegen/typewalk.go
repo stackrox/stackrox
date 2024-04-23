@@ -123,13 +123,13 @@ func (ctx *walkState) walkType(typeDesc typeDescriptor) {
 }
 
 func (ctx *walkState) walkField(td *typeData, p reflect.Type, sf reflect.StructField) {
-	if len(sf.Name) > 4 && sf.Name[:4] == "XXX_" {
+	if !td.IsInputType && protoreflect.IsInternalGeneratorField(sf) {
 		return
 	}
 	if strings.HasPrefix(sf.Name, "DEPRECATED") {
 		return
 	}
-	ctx.typeQueue = append(ctx.typeQueue, typeDescriptor{ty: sf.Type})
+	ctx.typeQueue = append(ctx.typeQueue, typeDescriptor{ty: sf.Type, isInputType: td.IsInputType})
 	if !rejectedField(p, sf, ctx.skipFields) {
 		td.FieldData = append(td.FieldData, fieldData{
 			Name: sf.Name,
