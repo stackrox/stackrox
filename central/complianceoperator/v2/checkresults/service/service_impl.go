@@ -160,6 +160,10 @@ func (s *serviceImpl) getProfileStats(ctx context.Context, parsedQuery *v1.Query
 		if err != nil {
 			return nil, errors.Wrap(err, "Unable to retrieve compliance profile")
 		}
+		if len(profileResults) == 0 {
+			return nil, errors.Errorf("Unable to retrieve compliance profile for %s", scan.ProfileName)
+		}
+
 		profileMap[scan.ProfileName] = profileResults[0]
 	}
 
