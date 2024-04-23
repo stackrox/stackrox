@@ -71,6 +71,14 @@
   {{- if not (kindIs "map" ._rox.clusterLabels) }}
     {{ include "srox.fail" (printf "type mismatch: clusterLabels is a %s, but must be a dict" (kindOf ._rox.clusterLabels)) }}
   {{- end }}
+  {{- range $key, $val := ._rox.clusterLabels }}
+    {{- if not (kindIs "string" $key) }}
+      {{ include "srox.fail" (printf "type mismatch: clusterLabels contains the key %v of type %s, but only string keys are allowed" $key (kindOf $key)) }}
+    {{- end }}
+    {{- if not (kindIs "string" $val) }}
+      {{ include "srox.fail" (printf "type mismatch: clusterLabels.%v is of type %s, but only string values are allowed" $key (kindOf $val)) }}
+    {{- end }}
+  {{- end }}
 {{- end }}
 
 {{/*
