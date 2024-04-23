@@ -133,11 +133,11 @@ func (s *serviceImpl) GetComplianceProfileStats(ctx context.Context, request *v2
 
 	profileMap := map[string]*storage.ComplianceOperatorProfileV2{}
 	profileResults, err := s.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorProfileName, scanResults[0].ProfileName).ProtoQuery())
-	if err != nil {
-		return nil, errors.Wrap(err, "Unable to retrieve compliance profile")
+		AddExactMatches(search.ComplianceOperatorProfileName, request.GetProfileName()).ProtoQuery())
+	if err != nil || len(profileResults) == 0 {
+		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile %q", request.GetProfileName())
 	}
-	profileMap[scanResults[0].ProfileName] = profileResults[0]
+	profileMap[request.GetProfileName()] = profileResults[0]
 
 	return &v2.ListComplianceProfileScanStatsResponse{
 		ScanStats: storagetov2.ComplianceV2ProfileStats(scanResults, profileMap),
@@ -163,9 +163,10 @@ func (s *serviceImpl) GetComplianceProfilesStats(ctx context.Context, query *v2.
 	for _, scan := range scanResults {
 		profileResults, err := s.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
 			AddExactMatches(search.ComplianceOperatorProfileName, scan.ProfileName).ProtoQuery())
-		if err != nil {
+		if err != nil || len(profileResults) == 0 {
 			return nil, errors.Wrap(err, "Unable to retrieve compliance profile")
 		}
+
 		profileMap[scan.ProfileName] = profileResults[0]
 	}
 
