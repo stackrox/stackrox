@@ -27,7 +27,7 @@ describe('Collection deployment matching', () => {
 
         visitCollections();
 
-        cy.get('a:contains("Create collection")').click();
+        cy.get('a:contains("Create collection")').first().click();
         cy.get('input[name="name"]').type(sampleCollectionName);
         cy.get('input[name="description"]').type('Matches some stackrox deployments');
 
