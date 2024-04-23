@@ -133,11 +133,11 @@ func (s *serviceImpl) GetComplianceProfileStats(ctx context.Context, request *v2
 
 	profileMap := map[string]*storage.ComplianceOperatorProfileV2{}
 	profileResults, err := s.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorProfileName, scanResults[0].ProfileName).ProtoQuery())
+		AddExactMatches(search.ComplianceOperatorProfileName, request.GetProfileName()).ProtoQuery())
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to retrieve compliance profile")
+		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile %q", request.GetProfileName())
 	}
-	profileMap[scanResults[0].ProfileName] = profileResults[0]
+	profileMap[request.GetProfileName()] = profileResults[0]
 
 	return &v2.ListComplianceProfileScanStatsResponse{
 		ScanStats: storagetov2.ComplianceV2ProfileStats(scanResults, profileMap),
