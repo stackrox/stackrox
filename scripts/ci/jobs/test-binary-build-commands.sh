@@ -11,6 +11,7 @@ make_test_bin() {
 
     make cli_host-arch upgrader
     make cli-install
+    (cd ./tools/check-workflow-run && go install .)
 }
 
 make_test_bin "$*"
