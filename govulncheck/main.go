@@ -46,8 +46,7 @@ type Output struct {
 	Data []map[string]interface{} `json:"data"`
 }
 
-func parseData(config *ExceptionConfig, data map[string]interface{}, osvIDs map[string]struct{},
-	osvEntries map[string]map[string]interface{}) (map[string]interface{}, bool) {
+func parseData(data map[string]interface{}, osvIDs map[string]struct{}, osvEntries map[string]map[string]interface{}) {
 	// OSV entries are now not tied to the module version but rather streamed continuously by govulncheck.
 	// We need to cache every OSV entry detected by govulncheck and in the end only return the
 	// ones which have findings on the module level.
@@ -55,7 +54,7 @@ func parseData(config *ExceptionConfig, data map[string]interface{}, osvIDs map[
 	if exists {
 		osvEntry := keyMap.(map[string]interface{})
 		osvEntries[osvEntry["id"].(string)] = osvEntry
-		return nil, false
+		return
 	}
 
 	// Findings are only created for OSV entries found in the _current_ module version.
@@ -63,29 +62,19 @@ func parseData(config *ExceptionConfig, data map[string]interface{}, osvIDs map[
 	// by it.
 	keyMap, exists = data["finding"]
 	if !exists {
-		return nil, false
+		return
 	}
+
 	findingMap := keyMap.(map[string]interface{})
 	// Since the findings will potentially be duplicated when multiple traces are found
 	// (e.g. when multiple locations within a module are affected), we de-duplicate here.
 	osvID := findingMap["osv"].(string)
 	if _, exists := osvIDs[osvID]; exists {
-		return nil, false
+		return
 	}
-
 	// Add the finding to the list of existing OSV IDs to ensure we do not have duplicates.
 	// Save to do here since we also want to de-duplicate OSV IDs with exceptions.
 	osvIDs[osvID] = struct{}{}
-
-	// If we have an exception based on our exception config, ignore the finding.
-	if hasException(config, osvID) {
-		return nil, false
-	}
-
-	// Return the associated OSV entry to the finding. The reason we return the OSV
-	// entry over the finding is because the OSV entry has all the relevant metadata for
-	// the vulnerability, whereas the finding points to a specific trace within the code.
-	return osvEntries[osvID], true
 }
 
 func hasException(config *ExceptionConfig, id string) bool {
@@ -121,12 +110,19 @@ func collectAffectedVulnerabilities(vulnFile string, exceptionConfig *ExceptionC
 			return nil, fmt.Errorf("error reading vuln file: %w", err)
 		}
 
-		findingMap, valid := parseData(exceptionConfig, data, uniqueOSVIDs, osvEntries)
-		if !valid {
-			continue
-		}
-		output.Data = append(output.Data, findingMap)
+		parseData(data, uniqueOSVIDs, osvEntries)
 	}
+
+	// Go through all the OSV IDs we found in findings and return the associated OSV entry
+	// to the finding. The reason we return the OSV entry over the finding is because the
+	// OSV entry has all the relevant metadata like summary and details for the vulnerability,
+	// whereas the finding points to a specific trace within the code.
+	for osvID := range uniqueOSVIDs {
+		if !hasException(exceptionConfig, osvID) {
+			output.Data = append(output.Data, osvEntries[osvID])
+		}
+	}
+
 	return output, nil
 }
 
