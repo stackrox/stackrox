@@ -41,8 +41,8 @@ endif
 
 $(call go-tool, PROTOC_GEN_GO_BIN, github.com/gogo/protobuf/protoc-gen-gofast)
 $(call go-tool, PROTOC_GEN_GO_GRPC_BIN, google.golang.org/grpc/cmd/protoc-gen-go-grpc, tools/proto)
-$(call go-tool, PROTOC_GEN_SWAGGER, github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger, tools/proto)
-$(call go-tool, PROTOC_GEN_GRPC_GATEWAY, github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway, tools/proto)
+$(call go-tool, PROTOC_GEN_OPENAPIV2, github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2, tools/proto)
+$(call go-tool, PROTOC_GEN_GRPC_GATEWAY, github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway, tools/proto)
 $(call go-tool, PROTOC_GO_INJECT_TAG_BIN, github.com/favadi/protoc-go-inject-tag, tools/proto)
 
 ##############
@@ -115,7 +115,7 @@ M_ARGS = $(ROX_M_ARGS) $(SCANNER_M_ARGS)
 # This is the M_ARGS used for the grpc-gateway invocation. We only map the storage protos, because
 # - the gateway code produces no output (possibly because of a bug) if we pass M_ARGS_STR to it.
 # - the gateway code doesn't need access to anything outside api/v1 except storage. In particular, it should NOT import internalapi protos.
-GATEWAY_M_ARGS = $(foreach proto,$(STORAGE_PROTOS),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
+GATEWAY_M_ARGS = $(foreach proto,$(STORAGE_PROTOS),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto)))) $(SCANNER_M_ARGS)
 
 # Hack: there's no straightforward way to escape a comma in a $(subst ...) command, so we have to resort to this little
 # trick.
@@ -185,6 +185,13 @@ inject-proto-tags: $(PROTOC_GO_INJECT_TAG_BIN)
 	@PATH=$(GOTOOLS_BIN) protoc-go-inject-tag -input "$(GENERATED_BASE_PATH)/*/*/*.pb.go"
 	@PATH=$(GOTOOLS_BIN) protoc-go-inject-tag -input "$(GENERATED_BASE_PATH)/*/*/*/*.pb.go"
 
+cleanup-swagger-json-gotags:
+	@echo "+ $@"
+	$(SILENT)for swagger_json_file in $(shell find $(GENERATED_BASE_PATH) -name '*.swagger.json'); do \
+		jq 'del(.. | select(. | strings | test("@gotags")))' $$swagger_json_file > $$swagger_json_file.tmp; \
+		mv $$swagger_json_file.tmp $$swagger_json_file; \
+	done \
+
 # Generate all of the proto messages with one invocation of
 # protoc when any of the .pb.go sources don't exist or when any of the .proto
 # files change.
@@ -235,13 +242,13 @@ endif
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--grpc-gateway_out=$(GATEWAY_M_ARGS_STR:%=%,)allow_colon_final_segments=true,logtostderr=true:$(GENERATED_BASE_PATH) \
+		--grpc-gateway_out=$(GATEWAY_M_ARGS_STR:%=%,):$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 
 # Generate all of the swagger specifications with one invocation of protoc
 # when any of the .swagger.json sources don't exist or when any of the
 # .proto files change.
-$(GENERATED_BASE_PATH)/api/v1/%.swagger.json: $(PROTO_BASE_PATH)/api/v1/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS) $(PROTOC)
+$(GENERATED_BASE_PATH)/api/v1/%.swagger.json: $(PROTO_BASE_PATH)/api/v1/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_OPENAPIV2) $(ALL_PROTOS) $(PROTOC)
 	@echo "+ $@"
 ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
@@ -252,11 +259,10 @@ endif
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
+		--openapiv2_out=$(GATEWAY_M_ARGS_STR:%=%,)json_names_for_fields=true:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 
-
-$(GENERATED_BASE_PATH)/api/v2/%.swagger.json: $(PROTO_BASE_PATH)/api/v2/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS) $(PROTOC)
+$(GENERATED_BASE_PATH)/api/v2/%.swagger.json: $(PROTO_BASE_PATH)/api/v2/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_OPENAPIV2) $(ALL_PROTOS) $(PROTOC)
 	@echo "+ $@"
 ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
@@ -267,7 +273,7 @@ endif
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
+		--openapiv2_out=$(GATEWAY_M_ARGS_STR:%=%,)json_names_for_fields=true:$(GENERATED_BASE_PATH) \
 		$<
 
 # Generate the docs from the merged swagger specs.

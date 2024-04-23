@@ -319,7 +319,7 @@ go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(ST
 	@echo "+ $@"
 	PATH="$(GOTOOLS_BIN):$(PATH):$(BASE_DIR)/tools/generate-helpers" MOCKGEN_BIN="$(MOCKGEN_BIN)" go generate -v -x ./...
 
-proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS) $(GENERATED_API_SWAGGER_SPECS_V2) inject-proto-tags
+proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS) $(GENERATED_API_SWAGGER_SPECS_V2) inject-proto-tags cleanup-swagger-json-gotags
 	@echo "+ $@"
 	$(SILENT)touch proto-generated-srcs
 	$(SILENT)$(MAKE) clean-obsolete-protos
