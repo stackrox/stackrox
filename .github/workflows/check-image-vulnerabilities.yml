@@ -53,7 +53,7 @@ jobs:
           endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
 
       - name: Install roxctl
-        uses: stackrox/roxctl-installer-action@main
+        uses: stackrox/roxctl-installer-action@v1
         with:
           central-endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
           central-token: ${{ env.ROX_API_TOKEN }}
