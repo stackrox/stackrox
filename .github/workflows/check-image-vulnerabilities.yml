@@ -28,6 +28,8 @@ jobs:
   check-image-vulnerabilities:
     name: Check images in version ${{ inputs.version }} for vulnerabilities
     runs-on: ubuntu-latest
+    env:
+      ROX_ENDPOINT: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
       id-token: write
@@ -50,12 +52,12 @@ jobs:
       - name: Central login
         uses: stackrox/central-login@v1
         with:
-          endpoint: ${{ env.ACS_DOGFOODING_CENTRAL_URL }}
+          endpoint: ${{ env.ROX_ENDPOINT }}
 
       - name: Install roxctl
         uses: stackrox/roxctl-installer-action@main
         with:
-          central-endpoint: ${{ env.ACS_DOGFOODING_CENTRAL_URL }}
+          central-endpoint: ${{ env.ROX_ENDPOINT }}
           central-token: ${{ env.ROX_API_TOKEN }}
 
       - name: Scan images for vulnerabilities
