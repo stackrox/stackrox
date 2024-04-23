@@ -225,6 +225,7 @@ spec:
           value: $(params.output-image)
       runAfter:
       - clone-repository
+      # TODO(ROX-23812): Refactor to a task bundle
       taskSpec:
         params:
           - name: image
