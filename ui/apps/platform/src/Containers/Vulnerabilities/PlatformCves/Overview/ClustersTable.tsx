@@ -8,25 +8,11 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useURLPagination from 'hooks/useURLPagination';
 import { ClusterType } from 'types/cluster.proto';
 import { getTableUIState } from 'utils/getTableUIState';
-import { ensureExhaustive } from 'utils/type.utils';
 
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import { getPlatformEntityPagePath, getRegexScopedQueryString } from '../../utils/searchUtils';
 import { QuerySearchFilter } from '../../types';
-
-function displayClusterType(type: ClusterType): string {
-    switch (type) {
-        case 'GENERIC_CLUSTER':
-            return 'Generic';
-        case 'KUBERNETES_CLUSTER':
-            return 'Kubernetes';
-        case 'OPENSHIFT_CLUSTER':
-        case 'OPENSHIFT4_CLUSTER':
-            return 'OCP';
-        default:
-            return ensureExhaustive(type);
-    }
-}
+import { displayClusterType } from '../utils/stringUtils';
 
 const clusterListQuery = gql`
     query getPlatformClusters($query: String, $pagination: Pagination) {
