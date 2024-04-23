@@ -36,7 +36,7 @@ import {
     IMAGE_SEARCH_OPTION,
 } from '../../searchOptions';
 import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
-import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
+import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
     resourceCountByCveSeverityAndStatusFragment,
     ResourceCountByCveSeverityAndStatus,
