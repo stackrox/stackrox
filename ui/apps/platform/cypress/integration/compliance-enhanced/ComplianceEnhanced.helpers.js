@@ -5,8 +5,8 @@ import { visit } from '../../helpers/visit';
 
 export const basePath = '/main/compliance-enhanced';
 export const statusDashboardPath = `${basePath}/status`;
-export const clusterComplianceCoveragePath = `${basePath}/coverage`;
-export const clusterComplianceScanConfigsPath = `${basePath}/schedules`;
+export const complianceEnhancedCoveragePath = `${basePath}/coverage`;
+export const complianceEnhancedScanConfigsPath = `${basePath}/schedules`;
 
 // visit helpers
 export const scanConfigsAlias = 'configurations';
@@ -50,14 +50,14 @@ export function visitComplianceEnhancedSchedulesFromLeftNav(staticResponseMap) {
 }
 
 export function visitComplianceEnhancedCoverage(staticResponseMap) {
-    visit(clusterComplianceCoveragePath, null, staticResponseMap);
+    visit(complianceEnhancedCoveragePath, null, staticResponseMap);
 
     cy.get(`h1:contains("Cluster compliance")`);
 }
 
 export function visitComplianceEnhancedScanConfigs(staticResponseMap) {
     visit(
-        clusterComplianceScanConfigsPath,
+        complianceEnhancedScanConfigsPath,
         routeMatcherMapForComplianceScanConfigs,
         staticResponseMap
     );

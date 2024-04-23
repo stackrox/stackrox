@@ -6,7 +6,7 @@ import { getHelperElementByLabel, getInputByLabel } from '../../helpers/formHelp
 import {
     visitComplianceEnhancedSchedulesFromLeftNav,
     visitComplianceEnhancedScanConfigs,
-    clusterComplianceScanConfigsPath,
+    complianceEnhancedScanConfigsPath,
 } from './ComplianceEnhanced.helpers';
 
 describe('Compliance Schedules', () => {
@@ -21,7 +21,7 @@ describe('Compliance Schedules', () => {
     it('should visit schedules using the left nav', () => {
         visitComplianceEnhancedSchedulesFromLeftNav();
 
-        cy.location('pathname').should('eq', clusterComplianceScanConfigsPath);
+        cy.location('pathname').should('eq', complianceEnhancedScanConfigsPath);
         cy.title().should('match', getRegExpForTitleWithBranding('Cluster compliance'));
     });
 
