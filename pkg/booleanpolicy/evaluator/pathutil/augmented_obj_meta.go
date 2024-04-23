@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -142,18 +143,9 @@ func (o *AugmentedObjMeta) addPathsForSearchTags(parentType, currentType reflect
 }
 
 func (o *AugmentedObjMeta) addPathsForSearchTagsFromInterface(parentType, currentType reflect.Type, pathUntilThisObj, pathWithinThisObj MetaPath, outputMap *FieldToMetaPathMap, seenAugmentKeys set.StringSet) {
-	ptrToParent := reflect.PtrTo(parentType)
-	method, ok := ptrToParent.MethodByName("XXX_OneofWrappers")
-	if !ok {
-		panic(fmt.Sprintf("XXX_OneofWrappers should exist for all protobuf oneofs, not found for %s", parentType.Name()))
-	}
-	out := method.Func.Call([]reflect.Value{reflect.New(parentType)})
-	actualOneOfFields := out[0].Interface().([]interface{})
-	for _, f := range actualOneOfFields {
-		typ := reflect.TypeOf(f)
-		if typ.Implements(currentType) {
-			o.addPathsForSearchTags(currentType, typ, pathUntilThisObj, pathWithinThisObj, outputMap, seenAugmentKeys)
-		}
+	oneOfTypes := protocompat.GetOneOfTypesByInterface(parentType, currentType)
+	for _, typ := range oneOfTypes {
+		o.addPathsForSearchTags(currentType, typ, pathUntilThisObj, pathWithinThisObj, outputMap, seenAugmentKeys)
 	}
 }
 

@@ -8,7 +8,15 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
-func GetOneOfFieldTypes(msgType reflect.Type, fieldIndex int) []reflect.Type {
+func oneOfFieldTypeCmp(a reflect.Type, b reflect.Type) int {
+	if a.Kind() != reflect.Ptr || b.Kind() != reflect.Ptr {
+		return 0
+	}
+
+	return strings.Compare(a.Elem().Name(), b.Elem().Name())
+}
+
+func GetOneOfTypesByFieldIndex(msgType reflect.Type, fieldIndex int) []reflect.Type {
 	oneOfFieldTypes := make([]reflect.Type, 0)
 
 	structProps := proto.GetProperties(msgType)
@@ -24,13 +32,24 @@ func GetOneOfFieldTypes(msgType reflect.Type, fieldIndex int) []reflect.Type {
 		oneOfFieldTypes = append(oneOfFieldTypes, oneOfField.Type)
 	}
 
-	slices.SortFunc(oneOfFieldTypes, func(a reflect.Type, b reflect.Type) int {
-		if a.Kind() != reflect.Ptr || b.Kind() != reflect.Ptr {
-			return 0
+	slices.SortFunc(oneOfFieldTypes, oneOfFieldTypeCmp)
+
+	return oneOfFieldTypes
+}
+
+func GetOneOfTypesByInterface(msgType reflect.Type, oneOfInterfaceType reflect.Type) []reflect.Type {
+	oneOfFieldTypes := make([]reflect.Type, 0)
+
+	structProps := proto.GetProperties(msgType)
+	for _, oneOfField := range structProps.OneofTypes {
+		if !oneOfField.Type.Implements(oneOfInterfaceType) {
+			continue
 		}
 
-		return strings.Compare(a.Elem().Name(), b.Elem().Name())
-	})
+		oneOfFieldTypes = append(oneOfFieldTypes, oneOfField.Type)
+	}
+
+	slices.SortFunc(oneOfFieldTypes, oneOfFieldTypeCmp)
 
 	return oneOfFieldTypes
 }

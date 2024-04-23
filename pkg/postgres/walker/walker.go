@@ -451,13 +451,11 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 		case reflect.Float32, reflect.Float64:
 			schema.AddFieldWithType(field, postgres.Numeric, opts)
 		case reflect.Interface:
-			// If it is a oneof then call XXX_OneofWrappers to get the types.
-			// The return values is a slice of interfaces that are nil type pointers
 			if structField.Tag.Get("protobuf_oneof") == "" {
 				panic("non-oneof interface is not handled")
 			}
 
-			oneOfFieldTypes := protocompat.GetOneOfFieldTypes(original, i)
+			oneOfFieldTypes := protocompat.GetOneOfTypesByFieldIndex(original, i)
 			for _, oneOfFieldType := range oneOfFieldTypes {
 				handleStruct(ctx, schema, oneOfFieldType.Elem())
 			}
