@@ -12,13 +12,13 @@ const (
 	exceptionsFile = "govulncheck-allowlist.json"
 )
 
-// Exception is the metadata around the vuln's exception
+// Exception is the metadata around the vuln's exception.
 type Exception struct {
 	Reason string     `json:"reason"`
 	Until  *time.Time `json:"until"`
 }
 
-// ExceptionConfig is a wrapper around the vuln exceptions
+// ExceptionConfig is a wrapper around the vuln exceptions.
 type ExceptionConfig struct {
 	Exceptions map[string]*Exception `json:"exceptions"`
 }
@@ -46,24 +46,51 @@ type Output struct {
 	Data []map[string]interface{} `json:"data"`
 }
 
-func parseData(config *ExceptionConfig, data map[string]interface{}) (map[string]interface{}, bool) {
-	keyMap, exists := data["finding"]
+func parseData(config *ExceptionConfig, data map[string]interface{}, osvIDs map[string]struct{},
+	osvEntries map[string]map[string]interface{}) (map[string]interface{}, bool) {
+	// OSV entries are now not tied to the module version but rather streamed continuously by govulncheck.
+	// We need to cache every OSV entry detected by govulncheck and in the end only return the
+	// ones which have findings on the module level.
+	keyMap, exists := data["osv"]
 	if exists {
-		keyMapI := keyMap.(map[string]interface{})
-		return keyMapI, !hasException(config, keyMapI["osv"].(string))
+		osvEntry := keyMap.(map[string]interface{})
+		osvEntries[osvEntry["id"].(string)] = osvEntry
+		return nil, false
 	}
 
-	keyMap, exists = data["osv"]
-	if exists {
-		keyMapI := keyMap.(map[string]interface{})
-		return keyMapI, !hasException(config, keyMapI["id"].(string))
+	// Findings are only created for OSV entries found in the _current_ module version.
+	// Meaning, if we have a finding with a particular OSV ID, the current module is affected
+	// by it.
+	keyMap, exists = data["finding"]
+	if !exists {
+		return nil, false
 	}
-	return nil, false
+	findingMap := keyMap.(map[string]interface{})
+	// Since the findings will potentially be duplicated when multiple traces are found
+	// (e.g. when multiple locations within a module are affected), we de-duplicate here.
+	osvID := findingMap["osv"].(string)
+	if _, exists := osvIDs[osvID]; exists {
+		return nil, false
+	}
+
+	// Add the finding to the list of existing OSV IDs to ensure we do not have duplicates.
+	// Save to do here since we also want to de-duplicate OSV IDs with exceptions.
+	osvIDs[osvID] = struct{}{}
+
+	// If we have an exception based on our exception config, ignore the finding.
+	if hasException(config, osvID) {
+		return nil, false
+	}
+
+	// Return the associated OSV entry to the finding. The reason we return the OSV
+	// entry over the finding is because the OSV entry has all the relevant metadata for
+	// the vulnerability, whereas the finding points to a specific trace within the code.
+	return osvEntries[osvID], true
 }
 
 func hasException(config *ExceptionConfig, id string) bool {
 	if exception, ok := config.Exceptions[id]; ok {
-		// Implies this vuln is excluded forever
+		// Implies this vuln is excluded forever.
 		if exception.Until == nil || exception.Until.After(time.Now()) {
 			return true
 		}
@@ -71,13 +98,10 @@ func hasException(config *ExceptionConfig, id string) bool {
 	return false
 }
 
-func main() {
-	exceptionConfig := readExceptionsFile()
-
-	file, err := os.Open(os.Args[1])
+func collectAffectedVulnerabilities(vulnFile string, exceptionConfig *ExceptionConfig) (*Output, error) {
+	file, err := os.Open(vulnFile)
 	if err != nil {
-		printlnAndExitf("error opening vulns file: %v", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("error opening vuln file: %w", err)
 	}
 	defer func() { _ = file.Close() }()
 
@@ -85,6 +109,8 @@ func main() {
 		Data: make([]map[string]interface{}, 0),
 	}
 	decoder := json.NewDecoder(file)
+	uniqueOSVIDs := map[string]struct{}{}
+	osvEntries := map[string]map[string]interface{}{}
 	for {
 		data := make(map[string]interface{})
 		err := decoder.Decode(&data)
@@ -92,15 +118,30 @@ func main() {
 			if err == io.EOF {
 				break
 			}
-			printlnAndExitf("error reading vulns file: %v", err)
-			os.Exit(1)
+			return nil, fmt.Errorf("error reading vuln file: %w", err)
 		}
 
-		findingMap, valid := parseData(exceptionConfig, data)
+		findingMap, valid := parseData(exceptionConfig, data, uniqueOSVIDs, osvEntries)
 		if !valid {
 			continue
 		}
 		output.Data = append(output.Data, findingMap)
+	}
+	return output, nil
+}
+
+func main() {
+	if len(os.Args) < 2 {
+		printlnAndExitf("Missing vulnerability file in arguments")
+	}
+
+	vulnFile := os.Args[1]
+
+	exceptionConfig := readExceptionsFile()
+
+	output, err := collectAffectedVulnerabilities(vulnFile, exceptionConfig)
+	if err != nil {
+		printlnAndExitf(err.Error())
 	}
 
 	outputBytes, err := json.MarshalIndent(output, "", "  ")
