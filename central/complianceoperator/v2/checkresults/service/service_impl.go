@@ -30,7 +30,6 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Compliance)): {
-			"/v2.ComplianceResultsService/GetComplianceScanResultsOverview",
 			"/v2.ComplianceResultsService/GetComplianceScanResults",
 			"/v2.ComplianceResultsService/GetComplianceProfileStats",
 			"/v2.ComplianceResultsService/GetComplianceProfilesStats",
@@ -81,11 +80,6 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
-func (s *serviceImpl) GetComplianceScanResultsOverview(_ context.Context, _ *v2.RawQuery) (*v2.ListComplianceScanResultsOverviewResponse, error) {
-	return nil, errox.NotImplemented
-}
-
 // GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
 // TODO(ROX-20333):  the most recent portion will come when this ticket is worked once everything is wired up so we can tell
 // what the latest scan is.
@@ -120,17 +114,13 @@ func (s *serviceImpl) GetComplianceProfileStats(ctx context.Context, request *v2
 		parsedQuery,
 	)
 
+	// To get total count, need the parsed query without the paging.
+	countQuery := parsedQuery.Clone()
+
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
 
-	scanResults, err := s.complianceResultsDS.ComplianceProfileResultStats(ctx, parsedQuery)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile scan stats for %+v", request)
-	}
-
-	return &v2.ListComplianceProfileScanStatsResponse{
-		ScanStats: storagetov2.ComplianceV2ProfileStats(scanResults),
-	}, nil
+	return s.getProfileStats(ctx, parsedQuery, countQuery)
 }
 
 // GetComplianceProfilesStats lists current scan stats grouped by profile
@@ -141,16 +131,29 @@ func (s *serviceImpl) GetComplianceProfilesStats(ctx context.Context, query *v2.
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
+	// To get total count, need the parsed query without the paging.
+	countQuery := parsedQuery.Clone()
+
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
+	return s.getProfileStats(ctx, parsedQuery, countQuery)
+}
+
+func (s *serviceImpl) getProfileStats(ctx context.Context, parsedQuery *v1.Query, countQuery *v1.Query) (*v2.ListComplianceProfileScanStatsResponse, error) {
 	scanResults, err := s.complianceResultsDS.ComplianceProfileResultStats(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile scan stats for %+v", query)
+		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile scan stats for %+v", parsedQuery)
+	}
+
+	count, err := s.complianceResultsDS.CountByField(ctx, countQuery, search.ComplianceOperatorProfileName)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for request %v", countQuery)
 	}
 
 	return &v2.ListComplianceProfileScanStatsResponse{
-		ScanStats: storagetov2.ComplianceV2ProfileStats(scanResults),
+		ScanStats:  storagetov2.ComplianceV2ProfileStats(scanResults),
+		TotalCount: int32(count),
 	}, nil
 }
 
@@ -195,12 +198,20 @@ func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, quer
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
+	// To get total count, need the parsed query without the paging.
+	countQuery := parsedQuery.Clone()
+
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
 	scanResults, err := s.complianceResultsDS.ComplianceClusterStats(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", query)
+	}
+
+	count, err := s.complianceResultsDS.CountByField(ctx, countQuery, search.ClusterID)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", query)
 	}
 
 	// Lookup the integrations to get the status
@@ -214,7 +225,8 @@ func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, quer
 	}
 
 	return &v2.ListComplianceClusterOverallStatsResponse{
-		ScanStats: storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
+		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
+		TotalCount: int32(count),
 	}, nil
 }
 
@@ -238,12 +250,20 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 		)
 	}
 
+	// To get total count, need the parsed query without the paging.
+	countQuery := parsedQuery.Clone()
+
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
 
 	scanResults, err := s.complianceResultsDS.ComplianceClusterStats(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for request %v", request)
+	}
+
+	count, err := s.complianceResultsDS.CountByField(ctx, countQuery, search.ClusterID)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", request)
 	}
 
 	// Lookup the integrations to get the status
@@ -257,7 +277,8 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 	}
 
 	return &v2.ListComplianceClusterOverallStatsResponse{
-		ScanStats: storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
+		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
+		TotalCount: int32(count),
 	}, nil
 }
 
@@ -284,7 +305,7 @@ func (s *serviceImpl) GetComplianceOverallClusterCount(ctx context.Context, quer
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
-	count, err := s.complianceResultsDS.ComplianceClusterStatsCount(ctx, parsedQuery)
+	count, err := s.complianceResultsDS.CountByField(ctx, parsedQuery, search.ClusterID)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", query)
 	}
@@ -362,7 +383,7 @@ func (s *serviceImpl) GetComplianceScanConfigurationResultsCount(ctx context.Con
 	}, nil
 }
 
-func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *v2.ComplianceProfileResultsRequest) (*v2.ComplianceProfileResults, error) {
+func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *v2.ComplianceProfileResultsRequest) (*v2.ListComplianceProfileResults, error) {
 	if request.GetProfileName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
 	}
@@ -379,6 +400,9 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 		parsedQuery,
 	)
 
+	// To get total count, need the parsed query without the paging.
+	countQuery := parsedQuery.Clone()
+
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
 
@@ -387,11 +411,20 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile scan stats for %+v", request)
 	}
 
-	return storagetov2.ComplianceV2ProfileResults(scanResults), nil
+	count, err := s.complianceResultsDS.CountByField(ctx, countQuery, search.ComplianceOperatorCheckName)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", request)
+	}
+
+	return &v2.ListComplianceProfileResults{
+		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults),
+		ProfileName:    request.GetProfileName(),
+		TotalCount:     int32(count),
+	}, nil
 }
 
 // GetComplianceProfileCheckStats lists current scan stats grouped by the specified profile and compliance check
-func (s *serviceImpl) GetComplianceProfileCheckStats(ctx context.Context, request *v2.ComplianceProfileCheckRequest) (*v2.ComplianceProfileResults, error) {
+func (s *serviceImpl) GetComplianceProfileCheckStats(ctx context.Context, request *v2.ComplianceProfileCheckRequest) (*v2.ListComplianceProfileResults, error) {
 	if request.GetProfileName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
 	}
@@ -422,7 +455,11 @@ func (s *serviceImpl) GetComplianceProfileCheckStats(ctx context.Context, reques
 		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile check stats for %+v", request)
 	}
 
-	return storagetov2.ComplianceV2ProfileResults(scanResults), nil
+	return &v2.ListComplianceProfileResults{
+		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults),
+		ProfileName:    request.GetProfileName(),
+		TotalCount:     int32(1),
+	}, nil
 }
 
 // GetComplianceProfileCheckClusterResult retrieves cluster status for a specific check result
@@ -449,6 +486,9 @@ func (s *serviceImpl) GetComplianceProfileCheckClusterResult(ctx context.Context
 		parsedQuery,
 	)
 
+	// To get total count, need the parsed query without the paging.
+	countQuery := parsedQuery.Clone()
+
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
 
@@ -457,7 +497,7 @@ func (s *serviceImpl) GetComplianceProfileCheckClusterResult(ctx context.Context
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
 	}
 
-	resultCount, err := s.complianceResultsDS.CountCheckResults(ctx, parsedQuery)
+	resultCount, err := s.complianceResultsDS.CountCheckResults(ctx, countQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", parsedQuery)
 	}

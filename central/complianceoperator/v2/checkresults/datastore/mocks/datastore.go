@@ -16,6 +16,7 @@ import (
 	datastore "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -72,21 +73,6 @@ func (mr *MockDataStoreMockRecorder) ComplianceClusterStats(ctx, query any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComplianceClusterStats", reflect.TypeOf((*MockDataStore)(nil).ComplianceClusterStats), ctx, query)
 }
 
-// ComplianceClusterStatsCount mocks base method.
-func (m *MockDataStore) ComplianceClusterStatsCount(ctx context.Context, query *v1.Query) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ComplianceClusterStatsCount", ctx, query)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ComplianceClusterStatsCount indicates an expected call of ComplianceClusterStatsCount.
-func (mr *MockDataStoreMockRecorder) ComplianceClusterStatsCount(ctx, query any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComplianceClusterStatsCount", reflect.TypeOf((*MockDataStore)(nil).ComplianceClusterStatsCount), ctx, query)
-}
-
 // ComplianceProfileResultStats mocks base method.
 func (m *MockDataStore) ComplianceProfileResultStats(ctx context.Context, query *v1.Query) ([]*datastore.ResourceResultCountByProfile, error) {
 	m.ctrl.T.Helper()
@@ -115,6 +101,21 @@ func (m *MockDataStore) ComplianceProfileResults(ctx context.Context, query *v1.
 func (mr *MockDataStoreMockRecorder) ComplianceProfileResults(ctx, query any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComplianceProfileResults", reflect.TypeOf((*MockDataStore)(nil).ComplianceProfileResults), ctx, query)
+}
+
+// CountByField mocks base method.
+func (m *MockDataStore) CountByField(ctx context.Context, query *v1.Query, field search.FieldLabel) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountByField", ctx, query, field)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountByField indicates an expected call of CountByField.
+func (mr *MockDataStoreMockRecorder) CountByField(ctx, query, field any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountByField", reflect.TypeOf((*MockDataStore)(nil).CountByField), ctx, query, field)
 }
 
 // CountCheckResults mocks base method.

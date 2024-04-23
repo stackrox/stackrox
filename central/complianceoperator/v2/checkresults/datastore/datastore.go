@@ -4,12 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
+	checkResultSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	checkresultsSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore defines the possible interactions with compliance operator check results
@@ -37,21 +38,21 @@ type DataStore interface {
 	// ComplianceProfileResults retrieves the profile results specified by query
 	ComplianceProfileResults(ctx context.Context, query *v1.Query) ([]*ResourceResultsByProfile, error)
 
-	// ComplianceClusterStatsCount retrieves the distinct scan result counts specified by query for the clusters
-	ComplianceClusterStatsCount(ctx context.Context, query *v1.Query) (int, error)
-
 	// CountCheckResults returns number of scan results specified by query
 	CountCheckResults(ctx context.Context, q *v1.Query) (int, error)
 
-	// Delete scan results associated with cluster
+	// DeleteResultsByCluster scan results associated with cluster
 	DeleteResultsByCluster(ctx context.Context, clusterID string) error
 
 	// GetComplianceCheckResult returns the instance of the result specified by ID
 	GetComplianceCheckResult(ctx context.Context, complianceResultID string) (*storage.ComplianceOperatorCheckResultV2, bool, error)
+
+	// CountByField retrieves the distinct scan result counts specified by query based on specified search field
+	CountByField(ctx context.Context, query *v1.Query, field search.FieldLabel) (int, error)
 }
 
 // New returns the datastore wrapper for compliance operator check results
-func New(store store.Store, db postgres.DB, searcher search.Searcher) DataStore {
+func New(store store.Store, db postgres.DB, searcher checkResultSearch.Searcher) DataStore {
 	return &datastoreImpl{store: store, db: db, searcher: searcher}
 }
 

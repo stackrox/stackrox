@@ -72,13 +72,6 @@ message ComplianceScanStatsShim {
   string scan_config_id = 4;
 }
 
-// ComplianceScanResultsOverview provides an overview and stats of the results of a scan configuration
-message ComplianceScanResultsOverview {
-  ComplianceScanStatsShim scan_stats = 1;
-  repeated string profile_name = 2;
-  repeated ComplianceScanCluster cluster = 3;
-}
-
 // ComplianceProfileScanStats provides scan stats overview based on profile
 message ComplianceProfileScanStats {
   repeated ComplianceCheckStatusCount check_stats = 1;
@@ -93,10 +86,11 @@ message ComplianceCheckResultStatusCount {
   repeated ComplianceCheckStatusCount check_stats = 4;
 }
 
-// ComplianceProfileScanStats provides scan stats overview based on profile
-message ComplianceProfileResults {
+// ListComplianceProfileResults provides scan stats overview based on profile
+message ListComplianceProfileResults {
   repeated ComplianceCheckResultStatusCount profile_results = 1;
   string profile_name = 2;
+  int32 total_count = 3;
 }
 
 // ComplianceClusterScanStats provides scan stats overview based on cluster
@@ -112,14 +106,10 @@ message ComplianceClusterOverallStats {
   repeated string cluster_errors = 3;
 }
 
-// ListComplianceScanResultsOverviewResponse provides overviews for scans
-message ListComplianceScanResultsOverviewResponse {
-  repeated ComplianceScanResultsOverview scan_overviews = 1;
-}
-
 // ListComplianceProfileScanStatsResponse provides stats for the profiles within the scans
 message ListComplianceProfileScanStatsResponse {
   repeated ComplianceProfileScanStats scan_stats = 1;
+  int32 total_count = 2;
 }
 
 // ListComplianceClusterScanStatsResponse provides stats for the clusters within the scans
@@ -135,6 +125,7 @@ message ListComplianceScanResultsResponse {
 // ListComplianceCheckScanStatsResponse provides stats per cluster
 message ListComplianceClusterOverallStatsResponse {
   repeated ComplianceClusterOverallStats scan_stats = 1;
+  int32 total_count = 2;
 }
 
 // ListComplianceCheckScanStatsResponse provides stats per cluster
@@ -172,16 +163,6 @@ service ComplianceResultsService {
     option (google.api.http) = {get: "/v2/compliance/scan/result/{id}"};
   }
 
-  // GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
-  // Optional RawQuery query fields can be combined.
-  // Commonly used ones include but are not limited to
-  // - scan: id(s) of the compliance scan
-  // - cluster: id(s) of the cluster
-  // - profile: id(s) of the profile
-  rpc GetComplianceScanResultsOverview(RawQuery) returns (ListComplianceScanResultsOverviewResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/overview"};
-  }
-
   // GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
   // Optional RawQuery query fields can be combined.
   // Commonly used ones include but are not limited to
@@ -200,7 +181,7 @@ service ComplianceResultsService {
 
   // GetComplianceProfileResults retrieves the most recent compliance operator scan results for the specified query
   // Optional RawQuery query fields can be combined.
-  rpc GetComplianceProfileResults(ComplianceProfileResultsRequest) returns (ComplianceProfileResults) {
+  rpc GetComplianceProfileResults(ComplianceProfileResultsRequest) returns (ListComplianceProfileResults) {
     option (google.api.http) = {get: "/v2/compliance/scan/profile/results/{profile_name}"};
   }
 
@@ -225,7 +206,7 @@ service ComplianceResultsService {
   }
 
   // GetComplianceProfileCheckStats lists current stats for a specific cluster check
-  rpc GetComplianceProfileCheckStats(ComplianceProfileCheckRequest) returns (ComplianceProfileResults) {
+  rpc GetComplianceProfileCheckStats(ComplianceProfileCheckRequest) returns (ListComplianceProfileResults) {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/profile/{profile_name}/checks/{check_name}"};
   }
 

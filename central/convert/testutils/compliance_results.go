@@ -408,9 +408,10 @@ func GetComplianceProfileScanV2Count(_ *testing.T, profileName string) *v2.Compl
 }
 
 // GetComplianceProfileResultsV2 returns V2 count matching that from GetComplianceStorageProfileResults
-func GetComplianceProfileResultsV2(_ *testing.T, profileName string) *v2.ComplianceProfileResults {
-	return &v2.ComplianceProfileResults{
+func GetComplianceProfileResultsV2(_ *testing.T, profileName string) *v2.ListComplianceProfileResults {
+	return &v2.ListComplianceProfileResults{
 		ProfileName: profileName,
+		TotalCount:  1,
 		ProfileResults: []*v2.ComplianceCheckResultStatusCount{
 			{
 				CheckName: "check-name",
