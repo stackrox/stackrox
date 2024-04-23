@@ -18,7 +18,7 @@ describe('Create collection', () => {
 
         visitCollections();
 
-        cy.get('a:contains("Create collection")').click();
+        cy.get('a:contains("Create collection")').first().click();
         cy.get('input[name="name"]').type(collectionName);
         cy.get('input[name="description"]').type('A collection for financial data');
 
