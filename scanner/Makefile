@@ -24,7 +24,7 @@ ifeq ($(shell uname -s),Darwin)
 	HOST_OS := darwin
 endif
 
-CGO_ENABLED := 0
+CGO_ENABLED ?= 0
 GOOS := $(HOST_OS)
 
 GO_BUILD_FLAGS = CGO_ENABLED=${CGO_ENABLED} GOOS=${GOOS} GOARCH=${GOARCH}
