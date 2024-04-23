@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { gql, useQuery } from '@apollo/client';
+import React from 'react';
 import {
+    Alert,
     Breadcrumb,
     BreadcrumbItem,
     Divider,
     Flex,
+    Grid,
+    GridItem,
     PageSection,
     Pagination,
     Skeleton,
@@ -17,39 +19,36 @@ import { useParams } from 'react-router-dom';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
+import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import {
+    getHiddenSeverities,
     getOverviewPagePath,
     getRegexScopedQueryString,
     parseWorkloadQuerySearchFilter,
 } from '../../utils/searchUtils';
-import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
+import CvePageHeader from '../../components/CvePageHeader';
 import { DEFAULT_PAGE_SIZE } from '../../constants';
-import AffectedNodesTable, { AffectedNode, affectedNodeFragment } from './AffectedNodesTable';
+import AffectedNodesTable from './AffectedNodesTable';
+import AffectedNodesSummaryCard from './AffectedNodesSummaryCard';
+import useAffectedNodes from './useAffectedNodes';
+import useNodeCveMetadata from './useNodeCveMetadata';
 
 const workloadCveOverviewCvePath = getOverviewPagePath('Node', {
     entityTab: 'CVE',
 });
 
-const affectedNodesQuery = gql`
-    ${affectedNodeFragment}
-    query getAffectedNodes($query: String, $pagination: Pagination) {
-        nodes(query: $query, pagination: $pagination) {
-            ...AffectedNode
-        }
-    }
-`;
-
 function NodeCvePage() {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
 
-    // We needs to scope all queries to the *exact* CVE name so that we don't accidentally get
+    // We need to scope all queries to the *exact* CVE name so that we don't accidentally get
     // data that matches a prefix of the CVE name in the nested fields
     const { cveId } = useParams() as { cveId: string };
     const exactCveIdSearchRegex = `^${cveId}$`;
@@ -60,47 +59,13 @@ function NodeCvePage() {
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_PAGE_SIZE);
     const isFiltered = getHasSearchApplied(querySearchFilter);
+    const hiddenSeverities = getHiddenSeverities(querySearchFilter);
 
-    const [nodeCveMetadata, setNodeCveMetadata] = useState<CveMetadata>();
-    const nodeCveName = nodeCveMetadata?.cve;
+    const { metadataRequest, nodeCount, cveData } = useNodeCveMetadata(cveId, query);
 
-    // TODO - Simulate a loading state, will replace metadata with results from a query
-    useEffect(() => {
-        setTimeout(() => {
-            setNodeCveMetadata({
-                cve: cveId,
-                firstDiscoveredInSystem: '2021-01-01T00:00:00Z',
-                distroTuples: [
-                    {
-                        summary: 'This is a sample description used during development',
-                        link: `https://access.redhat.com/security/cve/${cveId}`,
-                        operatingSystem: 'rhel',
-                    },
-                ],
-            });
-        }, 1500);
-    }, [cveId]);
+    const { affectedNodesRequest, nodeData } = useAffectedNodes(query, page, perPage);
 
-    const affectedNodesRequest = useQuery<
-        {
-            nodes: AffectedNode[];
-        },
-        {
-            query: string;
-            pagination: { limit: number; offset: number };
-        }
-    >(affectedNodesQuery, {
-        variables: {
-            query,
-            pagination: {
-                limit: perPage,
-                offset: (page - 1) * perPage,
-            },
-        },
-    });
-
-    const nodeData = affectedNodesRequest.data?.nodes ?? affectedNodesRequest.previousData?.nodes;
-    const nodeCount = 50; // TODO
+    const nodeCveName = cveData?.cve;
 
     const tableState = getTableUIState({
         isLoading: affectedNodesRequest.loading,
@@ -124,10 +89,60 @@ function NodeCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light">
-                <CvePageHeader data={nodeCveMetadata} />
+                <CvePageHeader data={cveData} />
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-v5-u-flex-grow-1">
+                <div className="pf-v5-u-background-color-100 pf-v5-u-p-lg">
+                    {metadataRequest.error && (
+                        <Alert
+                            title="There was an error loading the summary data for this deployment"
+                            isInline
+                            variant="danger"
+                        >
+                            {getAxiosErrorMessage(metadataRequest.error)}
+                        </Alert>
+                    )}
+                    {metadataRequest.loading && (
+                        <Grid hasGutter>
+                            <GridItem sm={12} md={6} xl2={4}>
+                                <Skeleton
+                                    style={{ height: '120px' }}
+                                    screenreaderText="Loading affected nodes summary"
+                                />
+                            </GridItem>
+                            <GridItem sm={12} md={6} xl2={4}>
+                                <Skeleton
+                                    style={{ height: '120px' }}
+                                    screenreaderText="Loading affected nodes by CVE severity summary"
+                                />
+                            </GridItem>
+                        </Grid>
+                    )}
+                    {metadataRequest.data && (
+                        <Grid hasGutter>
+                            <GridItem sm={12} md={6} xl2={4}>
+                                <AffectedNodesSummaryCard
+                                    affectedNodeCount={nodeCount}
+                                    totalNodeCount={metadataRequest.data.totalNodeCount}
+                                    operatingSystemCount={
+                                        metadataRequest.data.nodeCVE.distroTuples.length
+                                    }
+                                />
+                            </GridItem>
+                            <GridItem sm={12} md={6} xl2={4}>
+                                <BySeveritySummaryCard
+                                    title="Nodes by severity"
+                                    severityCounts={
+                                        metadataRequest.data.nodeCVE.nodeCountBySeverity
+                                    }
+                                    hiddenSeverities={hiddenSeverities}
+                                />
+                            </GridItem>
+                        </Grid>
+                    )}
+                </div>
+                <Divider component="div" />
                 <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1 pf-v5-u-p-lg">
                     <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
                         <SplitItem isFilled>
