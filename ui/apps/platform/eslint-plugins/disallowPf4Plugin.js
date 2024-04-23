@@ -18,18 +18,14 @@ const disallowPf4Plugin = {
                     Literal(node) {
                         if (
                             typeof node.value !== 'string' ||
-                            !(node.value.includes(' pf-u-') || node.value.startsWith('pf-u'))
+                            !(node.value.includes(' pf-u-') || node.value.startsWith('pf-u-'))
                         ) {
                             return;
                         }
 
                         context.report({
                             node,
-                            message: 'Unexpected PatternFly 4 utility class (use PF5)',
-                            fix(fixer) {
-                                const fixedValue = node.value.replaceAll(/pf-u-/g, 'pf-v5-u-');
-                                return fixer.replaceText(node, `"${fixedValue}"`);
-                            },
+                            message: 'Unexpected PatternFly 4 utility class (use PF5 "pf-v5-u-")',
                         });
                     },
                 };
