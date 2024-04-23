@@ -1,3 +1,14 @@
+function checkForPf4UtilityClasses(node, value, context) {
+    if (typeof value !== 'string' || !value.includes('pf-u-')) {
+        return;
+    }
+
+    context.report({
+        node,
+        message: 'Unexpected PatternFly 4 utility class (use PF5 "pf-v5-u-")',
+    });
+}
+
 const disallowPf4Plugin = {
     meta: {
         name: 'disallow-pf4',
@@ -16,18 +27,11 @@ const disallowPf4Plugin = {
             create(context) {
                 return {
                     Literal(node) {
-                        if (
-                            typeof node.value !== 'string' ||
-                            !(node.value.includes(' pf-u-') || node.value.startsWith('pf-u-'))
-                        ) {
-                            return;
-                        }
-
-                        context.report({
-                            node,
-                            message: 'Unexpected PatternFly 4 utility class (use PF5 "pf-v5-u-")',
-                        });
+                        checkForPf4UtilityClasses(node, node.value, context);
                     },
+                    TemplateElement(node) {
+                        checkForPf4UtilityClasses(node, node.value.raw, context);
+                    }
                 };
             },
         },
