@@ -249,16 +249,29 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 	return countResults, nil
 }
 
-// ComplianceClusterStatsCount retrieves the distinct scan result counts specified by query for the clusters
-func (d *datastoreImpl) ComplianceClusterStatsCount(ctx context.Context, query *v1.Query) (int, error) {
+// CountByField retrieves the distinct scan result counts specified by query based on specified search field
+func (d *datastoreImpl) CountByField(ctx context.Context, query *v1.Query, field search.FieldLabel) (int, error) {
 	var err error
 	query, err = withSACFilter(ctx, resources.Compliance, query)
 	if err != nil {
 		return 0, err
 	}
 
-	var results []*clusterStatsCount
-	results, err = pgSearch.RunSelectRequestForSchema[clusterStatsCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query))
+	switch field {
+	case search.ClusterID:
+		return d.countByCluster(ctx, query)
+	case search.ComplianceOperatorProfileName:
+		return d.countByProfile(ctx, query)
+	case search.ComplianceOperatorCheckName:
+		return d.countByCheck(ctx, query)
+	}
+
+	return 0, errors.Errorf("Unable to group result counts by %q", field)
+}
+
+func (d *datastoreImpl) countByCluster(ctx context.Context, query *v1.Query) (int, error) {
+	var results []*clusterCount
+	results, err := pgSearch.RunSelectRequestForSchema[clusterCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ClusterID))
 	if err != nil {
 		return 0, err
 	}
@@ -270,7 +283,41 @@ func (d *datastoreImpl) ComplianceClusterStatsCount(ctx context.Context, query *
 		utils.Should(err)
 		return 0, err
 	}
-	return results[0].ClusterCount, nil
+	return results[0].TotalCount, nil
+}
+
+func (d *datastoreImpl) countByProfile(ctx context.Context, query *v1.Query) (int, error) {
+	var results []*profileCount
+	results, err := pgSearch.RunSelectRequestForSchema[profileCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ComplianceOperatorProfileName))
+	if err != nil {
+		return 0, err
+	}
+	if len(results) == 0 {
+		return 0, nil
+	}
+	if len(results) > 1 {
+		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", query.String())
+		utils.Should(err)
+		return 0, err
+	}
+	return results[0].TotalCount, nil
+}
+
+func (d *datastoreImpl) countByCheck(ctx context.Context, query *v1.Query) (int, error) {
+	var results []*complianceCheckCount
+	results, err := pgSearch.RunSelectRequestForSchema[complianceCheckCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ComplianceOperatorCheckName))
+	if err != nil {
+		return 0, err
+	}
+	if len(results) == 0 {
+		return 0, nil
+	}
+	if len(results) > 1 {
+		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", query.String())
+		utils.Should(err)
+		return 0, err
+	}
+	return results[0].TotalCount, nil
 }
 
 func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int, error) {
@@ -283,10 +330,10 @@ func (d *datastoreImpl) DeleteResultsByCluster(ctx context.Context, clusterID st
 	return err
 }
 
-func withCountQuery(q *v1.Query) *v1.Query {
+func withCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
 	cloned := q.Clone()
 	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.ClusterID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 	}
 	return cloned
 }
