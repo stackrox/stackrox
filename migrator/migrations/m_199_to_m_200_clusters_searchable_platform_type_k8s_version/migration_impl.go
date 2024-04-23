@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	newSchema "github.com/stackrox/rox/migrator/migrations/m_199_to_m_200_clusters_searchable_platform_type_k8s_version/schema/new"
+	oldSchema "github.com/stackrox/rox/migrator/migrations/m_199_to_m_200_clusters_searchable_platform_type_k8s_version/schema/old"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -21,13 +22,13 @@ var (
 func migrate(database *types.Databases) error {
 	ctx := sac.WithAllAccess(context.Background())
 	db := database.GormDB
-	pgutils.CreateTableFromModel(ctx, db, newSchema.CreateTableClustersStmt)
+	pgutils.CreateTableFromModel(ctx, db, oldSchema.CreateTableClustersStmt)
 
 	return populatePlatformTypeAndK8sVersionColumns(ctx, db)
 }
 
 func populatePlatformTypeAndK8sVersionColumns(ctx context.Context, database *gorm.DB) error {
-	db := database.WithContext(ctx).Table(newSchema.ClustersTableName)
+	db := database.WithContext(ctx).Table(oldSchema.ClustersTableName)
 	rows, err := db.Rows()
 	if err != nil {
 		return errors.Wrapf(err, "failed to iterate table %s", newSchema.ClustersTableName)
@@ -37,11 +38,11 @@ func populatePlatformTypeAndK8sVersionColumns(ctx context.Context, database *gor
 	var count int
 
 	for rows.Next() {
-		var obj newSchema.Clusters
+		var obj oldSchema.Clusters
 		if err = db.ScanRows(rows, &obj); err != nil {
 			return errors.Wrap(err, "failed to scan rows")
 		}
-		proto, err := newSchema.ConvertClusterToProto(&obj)
+		proto, err := oldSchema.ConvertClusterToProto(&obj)
 		if err != nil {
 			return errors.Wrapf(err, "failed to convert %+v to proto", obj)
 		}
