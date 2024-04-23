@@ -238,7 +238,7 @@ chart and their default values:
 |`clusterName`| Name of your cluster. | |
 |`confirmNewClusterName`| You don't need to change this unless you upgrade and change the value for `clusterName`. In this case, set it to the new value of `clusterName`. This option exists to prevent you from [accidentally creating a new cluster with a different name](#changing-cluster-after-deployment). | `null` |
 |`centralEndpoint`| Address of the Central endpoint, including the port number (without a trailing slash). If you are using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address with `wss://`. |`central.stackrox.svc:443` |
-|`clusterLabels`| Custom labels associated with a secured cluster. Must be a dictionary of strings. | `{}` |
+|`clusterLabels`| Custom labels associated with a secured cluster. Must be a dictionary where both keys and values are strings. | `{}` |
 |`additionalCAs`| Use it to add (named) PEM-encoded CA certificates for Sensor. | `{}` |
 |`imagePullSecrets.username`| Specify username for accessing image registry. |`null`|
 |`imagePullSecrets.password`| Specify password for accessing image registry. |`null`|
