@@ -22,6 +22,12 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+var (
+	annotation = map[string]string{
+		"owner": "sensor",
+	}
+)
+
 type handlerImpl struct {
 	client                 dynamic.Interface
 	complianceOperatorInfo StatusInfo
@@ -173,11 +179,13 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 
 func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) bool {
 	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron))
+	scanSetting.SetAnnotations(annotation)
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
 	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request))
+	scanSettingBinding.SetAnnotations(annotation)
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
