@@ -129,6 +129,8 @@ spec:
           value: $(params.output-image)
         - name: rebuild
           value: $(params.rebuild)
+        - name: skip-checks
+          value: $(params.skip-checks)
       taskRef:
         params:
           - name: name

@@ -64,7 +64,7 @@ spec:
       secretName: '{{ git_auth_secret }}'
 
   pipelineRef:
-    name: scanner-v4-db
+    name: basic-component
 
 status: { }
 taskRunTemplate: { }

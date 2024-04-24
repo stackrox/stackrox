@@ -269,12 +269,10 @@ spec:
     - fetch-external-networks
     taskRef:
         params:
-        # buildah with more memory is needed for UI builds to succeed. Otherwise, there's an error like this in logs:
-        # [build] @stackrox/platform-app: The build failed because the process exited too early. This probably means the system ran out of memory or someone called `kill -9` on the process.
         - name: name
-          value: buildah-6gb
+          value: buildah
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-6gb:0.1@sha256:00a55fa4b456fba946076c74698e65c655e9d58d2623570db6275d059b22a76a
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:071f2b71f44257b0355bab8dcf5a4b656c13e60463473e4a04409aa03c3aa83d
         - name: kind
           value: task
         resolver: bundles
