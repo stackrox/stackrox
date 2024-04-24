@@ -231,6 +231,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 		imageService,
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
+		collectorRuntimeConfigService,
 	}
 
 	if admCtrlSettingsMgr != nil {
