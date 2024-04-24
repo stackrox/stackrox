@@ -2,6 +2,8 @@ package updater
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -22,24 +24,48 @@ import (
 	_ "github.com/quay/claircore/updater/defaults"
 )
 
+type ExportOptions struct {
+	SplitBundles bool
+}
+
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
 // and then outputting the result as a zstd-compressed file named vulns.json.zst.
-func Export(ctx context.Context, outputDir string) error {
+func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	err := os.MkdirAll(outputDir, 0700)
 	if err != nil {
-		return err
+		return fmt.Errorf("creating output dir: %w", err)
 	}
-	// create output json file
-	outputFile, err := os.Create(filepath.Join(outputDir, "vulns.json.zst"))
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := outputFile.Close(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("Failed to close output file")
-		}
-	}()
 
+	// Map of vulnerability bundles to their updater options.
+	bundles := make(map[string][]updates.ManagerOption)
+
+	// Our own updaters.
+	bundles["manual"], err = manualOpts(ctx)
+	if err != nil {
+		return fmt.Errorf("initializing: manual: %w", err)
+	}
+	bundles["rhel"], err = rhelOpts(ctx)
+	if err != nil {
+		return fmt.Errorf("initializing updater: rhel: %w", err)
+	}
+	bundles["nvd"] = nvdOpts()
+
+	// ClairCore updaters.
+	for _, uSet := range []string{
+		"oracle",
+		"photon",
+		"suse",
+		"aws",
+		"alpine",
+		"debian",
+		"rhcc",
+		"ubuntu",
+		"osv",
+	} {
+		bundles[uSet] = []updates.ManagerOption{updates.WithEnabled([]string{uSet})}
+	}
+
+	// The http client for pulling data from security sources.
 	limiter := rate.NewLimiter(rate.Every(time.Second), 15)
 	httpClient := &http.Client{
 		Transport: &rateLimitedTransport{
@@ -48,44 +74,76 @@ func Export(ctx context.Context, outputDir string) error {
 		},
 	}
 
-	zstdWriter, err := zstd.NewWriter(outputFile)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		closeErr := zstdWriter.Close()
-		if closeErr != nil {
-			zlog.Error(ctx).Err(closeErr).Msg("Failed to closing zstdWriter")
+	// Export to bundle(s).
+	if opts.SplitBundles {
+		for name, o := range bundles {
+			ctx = zlog.ContextWithValues(ctx, "bundle", name)
+			w, err := zstdWriter(filepath.Join(outputDir, fmt.Sprintf("%s.json.zst", name)))
+			if err != nil {
+				return err
+			}
+			err = bundle(ctx, httpClient, w, o)
+			if err != nil {
+				_ = w.Close()
+				return err
+			}
+			if err := w.Close(); err != nil {
+				// Fail to close here means the data might not have been written fully, so we
+				// fail.
+				return fmt.Errorf("failed to close bundle output file: %w", err)
+			}
 		}
-	}()
+	} else {
+		w, err := zstdWriter(filepath.Join(outputDir, "vulns.json.zst"))
+		if err != nil {
+			return err
+		}
+		for name, o := range bundles {
+			ctx = zlog.ContextWithValues(ctx, "bundle", name)
+			err := bundle(ctx, httpClient, w, o)
+			if err != nil {
+				_ = w.Close()
+				return err
+			}
+		}
+		// Fail to close here means the data might not have been written fully, so we
+		// fail.
+		if err := w.Close(); err != nil {
+			return fmt.Errorf("failed to close bundle output file: %w", err)
+		}
+	}
 
-	var opts [][]updates.ManagerOption
+	return nil
+}
 
-	// Manual CVEs.
+func manualOpts(ctx context.Context) ([]updates.ManagerOption, error) {
 	manualSet, err := manual.UpdaterSet(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	opts = append(opts, []updates.ManagerOption{
+	return []updates.ManagerOption{
 		// This is required to prevent default updaters from running.
 		updates.WithEnabled([]string{}),
 		updates.WithOutOfTree(manualSet.Updaters()),
-	})
+	}, nil
 
-	// RHEL custom: Forked from ClairCore.
+}
+
+func rhelOpts(ctx context.Context) ([]updates.ManagerOption, error) {
 	fac, err := rhel.NewFactory(ctx, rhel.DefaultManifest)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	opts = append(opts, []updates.ManagerOption{
+	return []updates.ManagerOption{
 		// This is required to prevent default updaters from running.
 		updates.WithEnabled([]string{}),
 		updates.WithFactories(map[string]driver.UpdaterSetFactory{
 			"rhel-custom": fac,
-		})})
+		})}, nil
+}
 
-	// NVD enricher.
-	opts = append(opts, []updates.ManagerOption{
+func nvdOpts() []updates.ManagerOption {
+	return []updates.ManagerOption{
 		// This is required to prevent default updaters from running.
 		updates.WithEnabled([]string{}),
 		updates.WithFactories(map[string]driver.UpdaterSetFactory{
@@ -108,43 +166,39 @@ func Export(ctx context.Context, outputDir string) error {
 				return nil
 			},
 		}),
-	})
-
-	// ClairCore updaters.
-	for _, uSet := range [][]string{
-		{"oracle"},
-		{"photon"},
-		{"suse"},
-		{"aws"},
-		{"alpine"},
-		{"debian"},
-		{"rhcc"},
-		{"ubuntu"},
-		{"osv"},
-	} {
-		opts = append(opts, []updates.ManagerOption{updates.WithEnabled(uSet)})
 	}
+}
 
-	for _, o := range opts {
-		jsonStore, err := jsonblob.New()
-		if err != nil {
-			return err
-		}
-		mgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient, o...)
-		if err != nil {
-			return err
-		}
-		if err := mgr.Run(ctx); err != nil {
-			return err
-		}
-		if err := jsonStore.Store(zstdWriter); err != nil {
-			return err
-		}
-		if err := zstdWriter.Flush(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("Failed to flush zstd writer")
-		}
+func zstdWriter(filename string) (io.WriteCloser, error) {
+	f, err := os.Create(filename)
+	if err != nil {
+		return nil, err
 	}
+	w, err := zstd.NewWriter(f)
+	if err != nil {
+		_ = f.Close()
+		return nil, err
+	}
+	return w, nil
+}
 
+func bundle(ctx context.Context, client *http.Client, w io.Writer, opts []updates.ManagerOption) error {
+	jsonStore, err := jsonblob.New()
+	if err != nil {
+		return err
+	}
+	mgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), client, opts...)
+	if err != nil {
+		return fmt.Errorf("new manager: %w", err)
+	}
+	err = mgr.Run(ctx)
+	if err != nil {
+		return fmt.Errorf("run: %w", err)
+	}
+	err = jsonStore.Store(w)
+	if err != nil {
+		return fmt.Errorf("json store: %w", err)
+	}
 	return nil
 }
 
