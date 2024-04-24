@@ -12,7 +12,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	newSchema "github.com/stackrox/rox/migrator/migrations/m_199_to_m_200_clusters_searchable_platform_type_k8s_version/schema/new"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -20,13 +19,7 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
-const (
-	baseTable = "clusters"
-	storeName = "Cluster"
-)
-
 var (
-	log            = logging.LoggerForModule()
 	schema         = newSchema.ClustersSchema
 	targetResource = resources.Cluster
 )
