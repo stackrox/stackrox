@@ -1,6 +1,8 @@
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 
+// TODO - classic tests conditionally skip many of these checks when running on OpenShift, we
+//        need to verify if this is still necessary and if so, how to handle it in the new tests
 describe('Node CVEs - CVE Detail Page', () => {
     withAuth();
 
@@ -14,13 +16,26 @@ describe('Node CVEs - CVE Detail Page', () => {
         // check that users without Node access cannot access the Node CVE Detail page directly
     });
 
-    it('should only show relevant filters for the Node CVE Detail page', () => {
+    it('should only show relevant filters for the page', () => {
         // check the advanced filters and ensure only the relevant filters are displayed
     });
 
-    it('should link to the correct pages', () => {
+    it('should link to the overview page from the breadcrumbs', () => {
         // clicking the Node CVEs breadcrumb should navigate to the overview page with the CVE tab selected
+    });
+
+    it('should link to the Node page from the name links in the table', () => {
         // clicking a Node name in the list should navigate to the correct Node details page
+    });
+
+    it('should display the expected Node table columns', () => {
+        // check presence of Node column
+        // check presence of CVE Severity column
+        // check presence of CVE status column
+        // check presence of CVSS column
+        // check presence of cluster column
+        // check presence of Operating System column
+        // check presence of Affected components column
     });
 
     it('should sort Node table columns', () => {
@@ -48,7 +63,7 @@ describe('Node CVEs - CVE Detail Page', () => {
 
     // Note: This might not be reliable in CI due to the low number of Nodes. We may need to mock and/or
     // just test the logic of the pagination in the URL.
-    it('should correctly paginate the Node table', () => {
+    it('should paginate the Node table', () => {
         // visit the location and save the list of Node names with a default perPage
         //   visit the location with perPage=2 in the URL
         //     should only display the first 2 rows of the previous list
@@ -59,7 +74,7 @@ describe('Node CVEs - CVE Detail Page', () => {
         //   go to next page, applying a sort should reset the page to 1
     });
 
-    it('should correctly update summary cards when a filter is applied', () => {
+    it('should update summary cards when a filter is applied', () => {
         // apply a Critical severity filter and ensure that Important/Moderate/Low severities read "Results hidden" in the card
         // clear filters
         // apply a CVE status filter and ensure that the opposite status reads "Results hidden" in the card

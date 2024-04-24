@@ -11,16 +11,25 @@ describe('Node and Platform CVEs - Snooze workflow', () => {
         }
     });
 
-    it('should restrict the snooze UI controls', () => {
-        // check that users without VulnerabilityManagementApprovals write-access:
+    it('should hide the snooze UI controls from users with NO_ACCESS to VulnerabilityManagementApprovals', () => {
+        // check that users without VulnerabilityManagementApprovals access:
         //   - do not see table menu options
         //   - do not see bulk snooze actions
+    });
+
+    it('should hide the snooze UI controls from users with READ_ACCESS to VulnerabilityManagementApprovals', () => {
         // check that users with only read access to VulnerabilityManagementApprovals:
         //   - do not see table menu options
         //   - do not see bulk snooze actions
+    });
+
+    it('should show the snooze UI controls to users with WRITE_ACCESS to VulnerabilityManagementApprovals', () => {
         // check that users with write access to VulnerabilityManagementApprovals:
         //   - see table menu options
         //   - see bulk snooze actions
+    });
+
+    it('should hide the snooze UI controls for users with WRITE_ACCESS when the feature flag is disabled', () => {
         // disable the feature flag (NAME TBD) and check that users with write access to VulnerabilityManagementApprovals:
         //   - do not see table menu options
         //   - do not see bulk snooze actions
