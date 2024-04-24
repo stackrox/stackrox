@@ -91,7 +91,9 @@ func (c *connectionManager) remove(connection sensor.CollectorService_Communicat
 	defer c.connectionLock.Unlock()
 
 	// delete(c.connectionMap, node)
+	log.Info("In remove")
 	delete(c.connectionMap, connection)
+	log.Infof("len(c.connectionMap)= %+v", len(c.connectionMap))
 }
 
 // func (c *connectionManager) forEach(fn func(node string, server sensor.CollectorService_CommunicateServer)) {
@@ -107,6 +109,7 @@ func (s *serviceImpl) startSendingLoop() {
 	log.Info("In startSendingLoop")
 	for msg := range s.collectorC {
 		log.Infof("msg %+v", msg)
+		log.Infof("len(s.connectionManager.connectionMap)= %+v", len(s.connectionManager.connectionMap))
 		for conn := range s.connectionManager.connectionMap {
 			log.Infof("Sending msg")
 			err := conn.Send(msg.Msg)
@@ -158,7 +161,16 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 
 	go s.startSendingLoop()
 
-	return nil
+	for {
+		msg, err := server.Recv()
+		if err != nil {
+			log.Errorf("Receiving message from collector")
+			return err
+		}
+		if msg.GetRuntimeFiltersAck() != nil {
+			log.Infof("Received ack from collector %+v", msg)
+		}
+	}
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
