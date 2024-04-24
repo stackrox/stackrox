@@ -149,6 +149,7 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
+	log.Info("In RegisterServiceServer")
 	sensor.RegisterCollectorServiceServer(grpcServer, s)
 }
 
@@ -159,5 +160,6 @@ func (s *serviceImpl) RegisterServiceHandler(context.Context, *runtime.ServeMux,
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	log.Info("In AuthFuncOverride")
 	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
 }
