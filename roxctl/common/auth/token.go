@@ -45,6 +45,12 @@ func (t tokenMethod) retrieveAuthToken() (string, error) {
 			return "", errors.Wrapf(err, "could not read token from %q", tokenFile)
 		}
 		apiToken = token
+	} else if tokenFileFromEnv := env.TokenFileEnv.Setting(); tokenFileFromEnv != "" {
+		token, err := flags.ReadTokenFromFile(tokenFileFromEnv)
+		if err != nil {
+			return "", errors.Wrapf(err, "could not read token from %q", tokenFileFromEnv)
+		}
+		apiToken = token
 	} else if token := env.TokenEnv.Setting(); token != "" {
 		apiToken = token
 	}
@@ -52,7 +58,8 @@ func (t tokenMethod) retrieveAuthToken() (string, error) {
 	if apiToken == "" {
 		return "", errox.InvalidArgs.New(`No valid token is set.
 Set the token file via the --token-file flag, and ensure only a single authentication token is contained within it.
-Alternatively, provide the value directly by setting the ROX_API_TOKEN environment variable.
+Alternatively, provide the file path by setting the ROX_API_TOKEN_FILE environment variable
+or provide the value directly by setting the ROX_API_TOKEN environment variable.
 `)
 	}
 

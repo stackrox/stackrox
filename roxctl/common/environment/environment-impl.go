@@ -134,7 +134,7 @@ func (w colorWriter) Write(p []byte) (int, error) {
 }
 
 func determineAuthMethod(cliEnv Environment) (auth.Method, error) {
-	if flags.APITokenFile() != "" && flags.Password() != "" {
+	if (flags.APITokenFile() != "" || env.TokenEnv.Setting() != "") && flags.Password() != "" {
 		return nil, errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
 	}
 	switch {
