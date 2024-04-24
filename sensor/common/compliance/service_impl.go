@@ -220,6 +220,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
+	log.Info("In RegisterServiceServer compliance")
 	sensor.RegisterComplianceServiceServer(grpcServer, s)
 }
 
