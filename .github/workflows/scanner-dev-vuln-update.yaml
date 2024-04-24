@@ -55,8 +55,9 @@ jobs:
 
     - name: Run updater
       if: >
-        github.event_name == 'pull_request' &&
-        !contains(github.event.pull_request.labels.*.name, 'scanner-split-vulns')
+        github.event_name == 'schedule' ||
+        (github.event_name == 'pull_request' &&
+         !contains(github.event.pull_request.labels.*.name, 'scanner-split-vulns'))
       run: |
         chmod +x /usr/local/bin/updater
         updater export vulns
