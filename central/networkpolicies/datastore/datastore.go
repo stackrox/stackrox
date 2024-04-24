@@ -47,7 +47,7 @@ type UndoDeploymentDataStore interface {
 	UpsertUndoDeploymentRecord(ctx context.Context, undoRecord *storage.NetworkPolicyApplicationUndoDeploymentRecord) error
 }
 
-// New returns a new Store instance using the provided bolt DB instance.
+// New returns a new Store instance using the provided DB instance.
 func New(storage store.Store, searcher search.Searcher, undoStorage undostore.UndoStore, undoDeploymentStorage undodeploymentstore.UndoDeploymentStore) DataStore {
 	return &datastoreImpl{
 		storage:               storage,
