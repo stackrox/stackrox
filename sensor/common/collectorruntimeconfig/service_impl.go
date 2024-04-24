@@ -111,6 +111,7 @@ func (s *serviceImpl) startSendingLoop() {
 			log.Infof("Sending msg")
 			err := conn.Send(msg.Msg)
 			if err != nil {
+				log.Info("Sending msg failed")
 				return
 			}
 		}
@@ -147,7 +148,7 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 	// complianceHostname := incomingMD.Get("rox-compliance-nodename")
 	// log.Infof("Collector hostname= %+v", hostname)
 	// log.Infof("Compliance hostname= %+v", complianceHostname) // Just as a test
-	//if hostname == "" {
+	// if hostname == "" {
 	//	return errors.New("collector did not transmit a hostname in initial metadata")
 	//}
 
