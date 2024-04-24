@@ -84,7 +84,7 @@ jobs:
         cd scanner
         go build -trimpath -o bin/updater ./cmd/updater
         go clean -cache -modcache
-        ./bin/updater -output-dir=${{ env.ROX_PRODUCT_VERSION }}
+        ./bin/updater export ${{ env.ROX_PRODUCT_VERSION }}
 
         # The vulnerability file created by older versions can remain the name
         # vulns.json.zst in the GCS bucket.
