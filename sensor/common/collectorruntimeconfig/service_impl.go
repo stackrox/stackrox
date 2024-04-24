@@ -79,9 +79,11 @@ func newConnectionManager() *connectionManager {
 func (c *connectionManager) add(connection sensor.CollectorService_CommunicateServer) {
 	c.connectionLock.Lock()
 	defer c.connectionLock.Unlock()
+	log.Infof("In add")
 
 	// c.connectionMap[node] = connection
 	c.connectionMap[connection] = true
+	log.Infof("len(c.connectionMap)= %+v", len(c.connectionMap))
 }
 
 func (c *connectionManager) remove(connection sensor.CollectorService_CommunicateServer) {
@@ -104,7 +106,9 @@ func (c *connectionManager) remove(connection sensor.CollectorService_Communicat
 func (s *serviceImpl) startSendingLoop() {
 	log.Info("In startSendingLoop")
 	for msg := range s.collectorC {
+		log.Infof("msg %+v", msg)
 		for conn := range s.connectionManager.connectionMap {
+			log.Infof("Sending msg")
 			err := conn.Send(msg.Msg)
 			if err != nil {
 				return
@@ -141,8 +145,8 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 	// incomingMD := metautils.ExtractIncoming(server.Context())
 	// hostname := incomingMD.Get("rox-collector-nodename")
 	// complianceHostname := incomingMD.Get("rox-compliance-nodename")
-	//log.Infof("Collector hostname= %+v", hostname)
-	//log.Infof("Compliance hostname= %+v", complianceHostname) // Just as a test
+	// log.Infof("Collector hostname= %+v", hostname)
+	// log.Infof("Compliance hostname= %+v", complianceHostname) // Just as a test
 	//if hostname == "" {
 	//	return errors.New("collector did not transmit a hostname in initial metadata")
 	//}
