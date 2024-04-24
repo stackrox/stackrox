@@ -14,38 +14,38 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func newACSCSEmail(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*email, error) {
-	return &email{
+func newACSCSEmail(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*acscsEmail, error) {
+	return &acscsEmail{
 		notifier: notifier,
 	}, nil
 }
 
-type email struct {
+type acscsEmail struct {
 	notifier *storage.Notifier
 }
 
-func (*email) Close(context.Context) error {
+func (*acscsEmail) Close(context.Context) error {
 	return nil
 }
 
-func (e *email) ProtoNotifier() *storage.Notifier {
+func (e *acscsEmail) ProtoNotifier() *storage.Notifier {
 	return e.notifier
 }
 
 // Test sends a test notification.
-func (e *email) Test(ctx context.Context) *notifiers.NotifierError {
+func (e *acscsEmail) Test(ctx context.Context) *notifiers.NotifierError {
 	return notifiers.NewNotifierError("TODO: not implemented", nil)
 }
 
-func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
+func (e *acscsEmail) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	return errors.New("TODO: not implemented")
 }
 
-func (e *email) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
+func (e *acscsEmail) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
 	return errors.New("TODO: not implemented")
 }
 
-func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, subject, messageText string) error {
+func (e *acscsEmail) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, subject, messageText string) error {
 	return errors.New("TODO: not implemented")
 }
 
