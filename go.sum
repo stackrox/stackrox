@@ -1201,8 +1201,8 @@ github.com/BurntSushi/toml v0.4.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbi
 github.com/BurntSushi/toml v1.3.2 h1:o7IhLm0Msx3BaB+n3Ag7L8EVlByGnpq14C4YWiu/gL8=
 github.com/BurntSushi/toml v1.3.2/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/ComplianceAsCode/compliance-operator v1.4.0 h1:2ZxzcUq8hiLIgdzzC4P19uTLFMwhbMlBeQ3OQp8Rjv0=
-github.com/ComplianceAsCode/compliance-operator v1.4.0/go.mod h1:hqN0ad2t2+yVso6TG+ID8zJp3kGcujoiYx9mdzz0AXY=
+github.com/ComplianceAsCode/compliance-operator v1.4.1 h1:maOHzO/cJIvBMDnEcTF9q/SYysM2kZMyHUoDN+z3GUc=
+github.com/ComplianceAsCode/compliance-operator v1.4.1/go.mod h1:hqN0ad2t2+yVso6TG+ID8zJp3kGcujoiYx9mdzz0AXY=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/DATA-DOG/go-sqlmock v1.5.2 h1:OcvFkGmslmlZibjAjaHm3L//6LiuBgolP7OputlJIzU=
 github.com/DATA-DOG/go-sqlmock v1.5.2/go.mod h1:88MAG/4G7SMwSE3CeA0ZKzrT5CiOU3OJ+JlNzwDqpNU=
