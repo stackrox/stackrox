@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
+	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	complianceConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -49,11 +50,12 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore) Service {
+func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore) Service {
 	return &serviceImpl{
 		complianceResultsDS: complianceResultsDS,
 		scanConfigDS:        scanConfigDS,
 		integrationDS:       integrationDS,
+		profileDS:           profileDS,
 	}
 }
 
@@ -63,6 +65,7 @@ type serviceImpl struct {
 	complianceResultsDS complianceDS.DataStore
 	scanConfigDS        complianceConfigDS.DataStore
 	integrationDS       complianceIntegrationDS.DataStore
+	profileDS           profileDatastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -150,9 +153,22 @@ func (s *serviceImpl) getProfileStats(ctx context.Context, parsedQuery *v1.Query
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for request %v", countQuery)
 	}
+	profileMap := map[string]*storage.ComplianceOperatorProfileV2{}
+	for _, scan := range scanResults {
+		profileResults, err := s.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
+			AddExactMatches(search.ComplianceOperatorProfileName, scan.ProfileName).ProtoQuery())
+		if err != nil {
+			return nil, errors.Wrap(err, "Unable to retrieve compliance profile")
+		}
+		if len(profileResults) == 0 {
+			return nil, errors.Errorf("Unable to retrieve compliance profile for %s", scan.ProfileName)
+		}
+
+		profileMap[scan.ProfileName] = profileResults[0]
+	}
 
 	return &v2.ListComplianceProfileScanStatsResponse{
-		ScanStats:  storagetov2.ComplianceV2ProfileStats(scanResults),
+		ScanStats:  storagetov2.ComplianceV2ProfileStats(scanResults, profileMap),
 		TotalCount: int32(count),
 	}, nil
 }
