@@ -1,6 +1,8 @@
 import static org.junit.Assume.assumeTrue
+import static util.Helpers.withRetry
 
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
+import io.stackrox.proto.storage.ImageOuterClass
 
 import objects.Deployment
 import objects.Job
@@ -45,7 +47,14 @@ class DeploymentTest extends BaseSpecification {
 
     def setupSpec() {
         orchestrator.createDeployment(DEPLOYMENT)
-        ImageService.scanImage(DEPLOYMENT_IMAGE_NAME)
+        // The deployment to image links via CVEs rely on scan data. Retry until
+        // they are retrieved. (ROX-23741).
+        withRetry(3, 10) {
+            ImageOuterClass.Image img = ImageService.scanImage(DEPLOYMENT_IMAGE_NAME, true, true)
+            assert img != null
+            assert !img.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
+            assert !img.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_SCAN_DATA)
+        }
     }
 
     def cleanupSpec() {
