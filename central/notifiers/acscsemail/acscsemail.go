@@ -3,25 +3,40 @@ package acscsemail
 import (
 	"bytes"
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/notifiers/email"
+	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func newACSCSEmail(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*acscsEmail, error) {
+type acscsMessage struct {
+	to         []string
+	subject    string
+	rawMessage []byte
+}
+
+func newACSCSEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,
+	cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*acscsEmail, error) {
 	return &acscsEmail{
-		notifier: notifier,
+		notifier:       notifier,
+		metadataGetter: metadataGetter,
+		mitreStore:     mitreStore,
 	}, nil
 }
 
 type acscsEmail struct {
-	notifier *storage.Notifier
+	notifier       *storage.Notifier
+	metadataGetter notifiers.MetadataGetter
+	mitreStore     mitreDS.AttackReadOnlyDataStore
 }
 
 func (*acscsEmail) Close(context.Context) error {
@@ -34,19 +49,74 @@ func (e *acscsEmail) ProtoNotifier() *storage.Notifier {
 
 // Test sends a test notification.
 func (e *acscsEmail) Test(ctx context.Context) *notifiers.NotifierError {
-	return notifiers.NewNotifierError("TODO: not implemented", nil)
+	subject := "StackRox Test Email"
+	body := fmt.Sprintf("%v\r\n", "This is a test email created to test integration with ACSCS email service")
+	msg := email.Message{
+		To:      []string{e.notifier.GetLabelDefault()},
+		Subject: subject,
+		Body:    body,
+	}
+
+	if err := e.send(ctx, &msg); err != nil {
+		return notifiers.NewNotifierError("send test message to ACSCS email service failed", err)
+	}
+
+	return nil
 }
 
+// AlertNotify takes in an alert, generates a message from it and sends it to the ACSCS email service
 func (e *acscsEmail) AlertNotify(ctx context.Context, alert *storage.Alert) error {
-	return errors.New("TODO: not implemented")
+	subject := notifiers.SummaryForAlert(alert)
+	body, err := email.PlainTextAlert(alert, e.notifier.UiEndpoint, e.mitreStore)
+	if err != nil {
+		return errors.Wrap(err, "failed to generate email text for alert")
+	}
+
+	recipient := e.metadataGetter.GetAnnotationValue(ctx, alert, e.notifier.GetLabelKey(), e.notifier.GetLabelDefault())
+	msg := email.Message{
+		To:        []string{recipient},
+		Subject:   subject,
+		Body:      body,
+		EmbedLogo: false,
+	}
+
+	return e.send(ctx, &msg)
 }
 
 func (e *acscsEmail) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
-	return errors.New("TODO: not implemented")
+	subject := email.NetworkPolicySubject(clusterName)
+	body, err := email.FormatNetworkPolicyYAML(yaml, clusterName)
+	if err != nil {
+		return err
+	}
+
+	msg := email.Message{
+		To:        []string{e.notifier.GetLabelDefault()},
+		Subject:   subject,
+		Body:      body,
+		EmbedLogo: false,
+	}
+
+	return e.send(ctx, &msg)
 }
 
 func (e *acscsEmail) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, subject, messageText string) error {
-	return errors.New("TODO: not implemented")
+	// using empty from here because the From header will be set by the managed service
+	msg := email.BuildReportMessage(recipients, "", subject, messageText, zippedReportData)
+	return e.send(ctx, &msg)
+}
+
+func (e *acscsEmail) send(ctx context.Context, msg *email.Message) error {
+	acscsMessage := acscsMessage{
+		to:      msg.To,
+		subject: msg.Subject,
+		// using ContentBytes instead of Bytes here to allow prepending From,To and Subject headers by the
+		// ACSCS email service implementation
+		rawMessage: msg.ContentBytes(),
+	}
+
+	// TODO: actually implementing this
+	return fmt.Errorf("failed to send alert to ACSCS: %v, TODO: not yet implemented", acscsMessage)
 }
 
 func init() {
@@ -64,7 +134,7 @@ func init() {
 	}
 
 	notifiers.Add(notifiers.ACSCSEmailType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		g, err := newACSCSEmail(notifier, cryptocodec.Singleton(), cryptoKey)
+		g, err := newACSCSEmail(notifier, metadatagetter.Singleton(), mitreDS.Singleton(), cryptocodec.Singleton(), cryptoKey)
 		return g, err
 	})
 }

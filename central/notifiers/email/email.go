@@ -190,7 +190,7 @@ func newEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGette
 	}, nil
 }
 
-type message struct {
+type Message struct {
 	To          []string
 	From        string
 	Subject     string
@@ -232,12 +232,26 @@ func applyRfc5322TextWordWrap(text string) string {
 	return wrappedText
 }
 
-func (m message) Bytes() []byte {
+// Bytes returns the Message bytes including SMTP email headers
+func (m Message) Bytes() []byte {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString(fmt.Sprintf("From: %s\r\n", m.From))
 	buf.WriteString(fmt.Sprintf("To: %s\r\n", strings.Join(m.To, ",")))
 	buf.WriteString(fmt.Sprintf("Subject: %s\r\n", m.Subject))
 
+	m.writeContentBytes(buf)
+	return buf.Bytes()
+}
+
+// ContentBytes returns the Message bytes without the SMTP email headers
+// From, To and Subject
+func (m Message) ContentBytes() []byte {
+	buf := bytes.NewBuffer(nil)
+	m.writeContentBytes(buf)
+	return buf.Bytes()
+}
+
+func (m Message) writeContentBytes(buf *bytes.Buffer) {
 	buf.WriteString("MIME-Version: 1.0\r\n")
 
 	writer := multipart.NewWriter(buf)
@@ -271,38 +285,6 @@ func (m message) Bytes() []byte {
 		buf.WriteString(fmt.Sprintf("\r\n%s\r\n", applyRfc5322LineLengthLimit(base64.StdEncoding.EncodeToString(v))))
 		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
 	}
-	return buf.Bytes()
-}
-
-func (e *email) plainTextAlert(alert *storage.Alert) (string, error) {
-	funcMap := template.FuncMap{
-		"header": func(s string) string {
-			return fmt.Sprintf("\r\n%s\r\n", s)
-		},
-		"subheader": func(s string) string {
-			return fmt.Sprintf("\r\n\t%s\r\n", s)
-		},
-		"line": func(s string) string {
-			return fmt.Sprintf("%s\r\n", s)
-		},
-		"list": func(s string) string {
-			return fmt.Sprintf("\t - %s\r\n", s)
-		},
-		"nestedList": func(s string) string {
-			return fmt.Sprintf("\t\t - %s\r\n", s)
-		},
-		"codeBlock": func(s string) string {
-			return fmt.Sprintf("\n %s \n", s)
-		},
-		"section": func(s string) string {
-			return fmt.Sprintf("\r\n\t\t%s\r\n", s)
-		},
-		"group": func(s string) string {
-			return fmt.Sprintf("\r\n\t\t\t - %s", s)
-		},
-	}
-	alertLink := notifiers.AlertLink(e.notifier.UiEndpoint, alert)
-	return notifiers.FormatAlert(alert, alertLink, funcMap, e.mitreStore)
 }
 
 func (*email) Close(context.Context) error {
@@ -312,7 +294,7 @@ func (*email) Close(context.Context) error {
 // AlertNotify takes in an alert and generates the email.
 func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	subject := notifiers.SummaryForAlert(alert)
-	body, err := e.plainTextAlert(alert)
+	body, err := PlainTextAlert(alert, e.notifier.UiEndpoint, e.mitreStore)
 	if err != nil {
 		return err
 	}
@@ -330,34 +312,17 @@ func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer
 	} else {
 		from = e.config.GetSender()
 	}
-	if subject == "" {
-		subject = fmt.Sprintf("%s Image Vulnerability Report for %s", branding.GetProductNameShort(), time.Now().Format("02-January-2006"))
-	}
-	msg := message{
-		To:        recipients,
-		From:      from,
-		Subject:   subject,
-		Body:      messageText,
-		EmbedLogo: true,
-	}
 
-	if zippedReportData != nil {
-		msg.Attachments = map[string][]byte{
-			fmt.Sprintf("%s_Vulnerability_Report_%s.zip", branding.GetProductNameShort(), time.Now().Format("02_January_2006")): zippedReportData.Bytes(),
-		}
-	}
+	msg := BuildReportMessage(recipients, from, subject, messageText, zippedReportData)
+
 	return e.send(ctx, &msg)
 }
 
 // NetworkPolicyYAMLNotify takes in a yaml file and generates the email message.
 func (e *email) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
-	subject := fmt.Sprintf("New network policy YAML for cluster '%s' needs to be applied", clusterName)
+	subject := NetworkPolicySubject(clusterName)
 
-	body, err := notifiers.FormatNetworkPolicyYAML(yaml, clusterName, template.FuncMap{
-		"codeBlock": func(s string) string {
-			return s
-		},
-	})
+	body, err := FormatNetworkPolicyYAML(yaml, clusterName)
 	if err != nil {
 		return err
 	}
@@ -383,7 +348,7 @@ func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) 
 		from = e.config.GetSender()
 	}
 
-	msg := message{
+	msg := Message{
 		To:        []string{recipient},
 		From:      from,
 		Subject:   subject,
@@ -393,7 +358,7 @@ func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) 
 	return e.send(ctx, &msg)
 }
 
-func (e *email) send(ctx context.Context, m *message) error {
+func (e *email) send(ctx context.Context, m *Message) error {
 	conn, auth, err := e.connection(ctx)
 	if err != nil {
 		return createError("Connection failed", err, e.notifier.GetName())
@@ -586,5 +551,70 @@ func init() {
 	notifiers.Add(notifiers.EmailType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		e, err := newEmail(notifier, metadatagetter.Singleton(), mitreDS.Singleton(), cryptocodec.Singleton(), cryptoKey)
 		return e, err
+	})
+}
+
+func PlainTextAlert(alert *storage.Alert, uiEndpoint string, mitreStore mitreDS.AttackReadOnlyDataStore) (string, error) {
+	funcMap := template.FuncMap{
+		"header": func(s string) string {
+			return fmt.Sprintf("\r\n%s\r\n", s)
+		},
+		"subheader": func(s string) string {
+			return fmt.Sprintf("\r\n\t%s\r\n", s)
+		},
+		"line": func(s string) string {
+			return fmt.Sprintf("%s\r\n", s)
+		},
+		"list": func(s string) string {
+			return fmt.Sprintf("\t - %s\r\n", s)
+		},
+		"nestedList": func(s string) string {
+			return fmt.Sprintf("\t\t - %s\r\n", s)
+		},
+		"codeBlock": func(s string) string {
+			return fmt.Sprintf("\n %s \n", s)
+		},
+		"section": func(s string) string {
+			return fmt.Sprintf("\r\n\t\t%s\r\n", s)
+		},
+		"group": func(s string) string {
+			return fmt.Sprintf("\r\n\t\t\t - %s", s)
+		},
+	}
+	alertLink := notifiers.AlertLink(uiEndpoint, alert)
+	return notifiers.FormatAlert(alert, alertLink, funcMap, mitreStore)
+}
+
+func BuildReportMessage(recipients []string, from, subject, messageText string, zippedReportData *bytes.Buffer) Message {
+	if subject == "" {
+		subject = fmt.Sprintf("%s Image Vulnerability Report for %s", branding.GetProductNameShort(), time.Now().Format("02-January-2006"))
+	}
+
+	msg := Message{
+		To:        recipients,
+		From:      from,
+		Subject:   subject,
+		Body:      messageText,
+		EmbedLogo: true,
+	}
+
+	if zippedReportData != nil {
+		msg.Attachments = map[string][]byte{
+			fmt.Sprintf("%s_Vulnerability_Report_%s.zip", branding.GetProductNameShort(), time.Now().Format("02_January_2006")): zippedReportData.Bytes(),
+		}
+	}
+
+	return msg
+}
+
+func NetworkPolicySubject(clusterName string) string {
+	return fmt.Sprintf("New network policy YAML for cluster '%s' needs to be applied", clusterName)
+}
+
+func FormatNetworkPolicyYAML(yaml string, clusterName string) (string, error) {
+	return notifiers.FormatNetworkPolicyYAML(yaml, clusterName, template.FuncMap{
+		"codeBlock": func(s string) string {
+			return s
+		},
 	})
 }

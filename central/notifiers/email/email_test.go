@@ -17,7 +17,7 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 	_, err := rand.Read(content)
 	assert.NoError(t, err)
 
-	msg := &message{
+	msg := &Message{
 		To:      []string{"foo@stackrox.com", "bar@stackrox.com"},
 		From:    "xyz@stackrox.com",
 		Subject: "Test Email",
@@ -51,7 +51,7 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 }
 
 func TestEmailMsgNoAttachments(t *testing.T) {
-	msg := &message{
+	msg := &Message{
 		To:        []string{"foo@stackrox.com", "bar@stackrox.com"},
 		From:      "xyz@stackrox.com",
 		Subject:   "Test Email",
