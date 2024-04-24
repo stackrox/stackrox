@@ -38,7 +38,7 @@ func upgrade(dbClone string) error {
 		return errors.Wrap(err, "failed to get version from the database")
 	}
 
-	// If Postgres has no version and we have no bolt then we have no populated databases at all and thus don't
+	// If Postgres has no version, then we have no populated databases at all and thus don't
 	// need to migrate
 	if ver.SeqNum == 0 && ver.MainVersion == "0" {
 		log.WriteToStderr("Fresh install of the database. There is no data to migrate...")
