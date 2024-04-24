@@ -11,10 +11,8 @@ ifeq ($(findstring :, $(GOPATH)), $(colon))
 GOPATH := $(firstword $(subst :, ,$(GOPATH)))
 endif
 
-export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOBIN GOPROXY
-ifeq ($(CGO_ENABLED),)
-CGO_ENABLED := 1
-endif
+export CGO_ENABLED ?= 1
+export DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOBIN GOPROXY
 
 # Update the arch to arm64 but only for Macs running on Apple Silicon (M1)
 ifeq ($(GOARCH),)
