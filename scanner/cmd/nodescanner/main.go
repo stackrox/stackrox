@@ -13,12 +13,22 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/rhel"
 	rpm2 "github.com/quay/claircore/rpm"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/scanner/mappers"
 )
 
 func main() {
+	report := &claircore.IndexReport{
+		Packages:      map[string]*claircore.Package{},
+		Environments:  map[string][]*claircore.Environment{},
+		Distributions: map[string]*claircore.Distribution{},
+		Repositories:  map[string]*claircore.Repository{},
+		Files:         map[string]claircore.File{},
+	}
+
 	h := getRandomSHA256()
 	c := http.DefaultClient
 	ctx := context.TODO()
@@ -87,9 +97,18 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// to json
-	reportJSON, err := json.MarshalIndent(ir, "", "  ")
+	report = controller.MergeSR(report, []*claircore.IndexReport{ir})
+	report.Success = true
+	report.State = controller.IndexFinished.String()
+
+	// convert and marshal to json
+	r, err := mappers.ToProtoV4IndexReport(report)
+	if err != nil {
+		panic(err)
+	}
+	reportJSON, err := json.MarshalIndent(r, "", "  ")
 	fmt.Println(string(reportJSON))
+
 }
 
 func getRandomSHA256() string {
