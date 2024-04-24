@@ -110,7 +110,9 @@ function ClusterPage() {
                         padding={{ default: 'noPadding' }}
                         className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
                     >
-                        {activeTabKey === vulnTabKey && <ClusterPageVulnerabilities />}
+                        {activeTabKey === vulnTabKey && (
+                            <ClusterPageVulnerabilities clusterId={clusterId} />
+                        )}
                         {activeTabKey === detailTabKey && <ClusterPageDetails />}
                     </PageSection>
                 </>

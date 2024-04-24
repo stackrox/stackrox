@@ -12,8 +12,9 @@ import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
-import PartialCVEDataAlert from '../../WorkloadCves/components/PartialCVEDataAlert';
+import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import { getScoreVersionsForTopCVSS, sortCveDistroList } from '../../utils/sortUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { QuerySearchFilter } from '../../types';
