@@ -20,7 +20,8 @@ import {
     clustersBasePath,
     collectionsBasePath,
     complianceBasePath,
-    complianceEnhancedClusterComplianceBasePath,
+    complianceEnhancedCoveragePath,
+    complianceEnhancedSchedulesPath,
     configManagementPath,
     dashboardPath,
     exceptionConfigurationPath,
@@ -134,10 +135,14 @@ const navDescriptions: NavDescription[] = [
         children: [
             {
                 type: 'link',
-                content: (
-                    <NavigationContent variant="TechPreview">Cluster Compliance</NavigationContent>
-                ),
-                path: complianceEnhancedClusterComplianceBasePath,
+                content: 'Coverage',
+                path: complianceEnhancedCoveragePath,
+                routeKey: 'compliance-enhanced',
+            },
+            {
+                type: 'link',
+                content: 'Schedules',
+                path: complianceEnhancedSchedulesPath,
                 routeKey: 'compliance-enhanced',
             },
         ],

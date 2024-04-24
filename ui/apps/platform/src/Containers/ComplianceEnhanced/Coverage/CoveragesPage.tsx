@@ -3,7 +3,7 @@ import { Button, Divider, PageSection } from '@patternfly/react-core';
 
 import TabNavHeader from 'Components/TabNav/TabNavHeader';
 import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
-import { complianceEnhancedCoveragePath, complianceEnhancedScanConfigsPath } from 'routePaths';
+import { complianceEnhancedCoveragePath, complianceEnhancedSchedulesPath } from 'routePaths';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 
 import ClustersCoverageTable from './ClustersCoverageTable';
@@ -17,7 +17,7 @@ function CoveragesPage() {
                 currentTabTitle="Coverage"
                 tabLinks={[
                     { title: 'Coverage', href: complianceEnhancedCoveragePath },
-                    { title: 'Schedules', href: complianceEnhancedScanConfigsPath },
+                    { title: 'Schedules', href: complianceEnhancedSchedulesPath },
                 ]}
                 pageTitle="Compliance - Cluster compliance"
                 mainTitle="Cluster compliance"

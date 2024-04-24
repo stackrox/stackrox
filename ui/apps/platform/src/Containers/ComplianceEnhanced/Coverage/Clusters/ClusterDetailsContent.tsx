@@ -4,7 +4,7 @@ import { Alert, Divider, Flex, FlexItem, Gallery, GalleryItem } from '@patternfl
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { ComplianceClusterScanStats } from 'services/ComplianceEnhancedService';
 
-import RadioButtonWithStats from '../Components/RadioButtonWithStats';
+import RadioButtonWithStats from '../components/RadioButtonWithStats';
 import ClusterDetailsTable from './ClusterDetailsTable';
 
 export type ClusterDetailsContentProps = {
