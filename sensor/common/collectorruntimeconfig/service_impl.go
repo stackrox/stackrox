@@ -3,9 +3,9 @@ package collectorruntimeconfig
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	// "github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/pkg/errors"
+	// "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -67,80 +67,89 @@ func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
 
 type connectionManager struct {
 	connectionLock sync.RWMutex
-	connectionMap  map[string]sensor.CollectorService_CommunicateServer
+	connectionMap  map[sensor.CollectorService_CommunicateServer]bool
 }
 
 func newConnectionManager() *connectionManager {
 	return &connectionManager{
-		connectionMap: make(map[string]sensor.CollectorService_CommunicateServer),
+		connectionMap: make(map[sensor.CollectorService_CommunicateServer]bool),
 	}
 }
 
-func (c *connectionManager) add(node string, connection sensor.CollectorService_CommunicateServer) {
+func (c *connectionManager) add(connection sensor.CollectorService_CommunicateServer) {
 	c.connectionLock.Lock()
 	defer c.connectionLock.Unlock()
 
-	c.connectionMap[node] = connection
+	// c.connectionMap[node] = connection
+	c.connectionMap[connection] = true
 }
 
-func (c *connectionManager) remove(node string) {
+func (c *connectionManager) remove(connection sensor.CollectorService_CommunicateServer) {
 	c.connectionLock.Lock()
 	defer c.connectionLock.Unlock()
 
-	delete(c.connectionMap, node)
+	// delete(c.connectionMap, node)
+	delete(c.connectionMap, connection)
 }
 
-func (c *connectionManager) forEach(fn func(node string, server sensor.CollectorService_CommunicateServer)) {
-	c.connectionLock.RLock()
-	defer c.connectionLock.RUnlock()
-
-	for node, server := range c.connectionMap {
-		fn(node, server)
-	}
-}
+// func (c *connectionManager) forEach(fn func(node string, server sensor.CollectorService_CommunicateServer)) {
+//	c.connectionLock.RLock()
+//	defer c.connectionLock.RUnlock()
+//
+//	for node, server := range c.connectionMap {
+//		fn(node, server)
+//	}
+//}
 
 func (s *serviceImpl) startSendingLoop() {
 	log.Info("In startSendingLoop")
 	for msg := range s.collectorC {
-		if msg.Broadcast {
-			log.Info("Sending runtimeconfig broadcast message")
-			log.Infof("msg is %+v", msg)
-			s.connectionManager.forEach(func(node string, server sensor.CollectorService_CommunicateServer) {
-				log.Infof("node= %+v", node)
-				err := server.Send(msg.Msg)
-				if err != nil {
-
-					return
-				}
-			})
-		} else { // Probably everything will be sent as a broadcast so there is no need for this
-			con, ok := s.connectionManager.connectionMap[msg.Hostname]
-			if !ok {
-				log.Errorf("Unable to find connection to collector: %q", msg.Hostname)
-				return
-			}
-			err := con.Send(msg.Msg)
+		for conn := range s.connectionManager.connectionMap {
+			err := conn.Send(msg.Msg)
 			if err != nil {
-				log.Errorf("Error sending MessageToCollectorWithAddress to node %q: %v", msg.Hostname, err)
 				return
 			}
 		}
+		// if msg.Broadcast {
+		//	log.Info("Sending runtimeconfig broadcast message")
+		//	log.Infof("msg is %+v", msg)
+		//	s.connectionManager.forEach(func(node string, server sensor.CollectorService_CommunicateServer) {
+		//		log.Infof("node= %+v", node)
+		//		err := server.Send(msg.Msg)
+		//		if err != nil {
+
+		//			return
+		//		}
+		//	})
+		// } else { // Probably everything will be sent as a broadcast so there is no need for this
+		//	con, ok := s.connectionManager.connectionMap[msg.Hostname]
+		//	if !ok {
+		//		log.Errorf("Unable to find connection to collector: %q", msg.Hostname)
+		//		return
+		//	}
+		//	err := con.Send(msg.Msg)
+		//	if err != nil {
+		//		log.Errorf("Error sending MessageToCollectorWithAddress to node %q: %v", msg.Hostname, err)
+		//		return
+		//	}
+		//}
 	}
 }
 
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
 	log.Info("In Communicate")
-	incomingMD := metautils.ExtractIncoming(server.Context())
-	hostname := incomingMD.Get("rox-collector-nodename")
-	complianceHostname := incomingMD.Get("rox-compliance-nodename")
-	log.Infof("Collector hostname= %+v", hostname)
-	log.Infof("Compliance hostname= %+v", complianceHostname) // Just as a test
-	if hostname == "" {
-		return errors.New("collector did not transmit a hostname in initial metadata")
-	}
+	// incomingMD := metautils.ExtractIncoming(server.Context())
+	// hostname := incomingMD.Get("rox-collector-nodename")
+	// complianceHostname := incomingMD.Get("rox-compliance-nodename")
+	//log.Infof("Collector hostname= %+v", hostname)
+	//log.Infof("Compliance hostname= %+v", complianceHostname) // Just as a test
+	//if hostname == "" {
+	//	return errors.New("collector did not transmit a hostname in initial metadata")
+	//}
 
-	s.connectionManager.add(hostname, server)
-	defer s.connectionManager.remove(hostname)
+	s.connectionManager.add(server)
+	defer s.connectionManager.remove(server)
+	// defer s.connectionManager.remove(hostname)
 
 	go s.startSendingLoop()
 
