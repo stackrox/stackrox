@@ -12,7 +12,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { complianceEnhancedScanConfigsPath } from 'routePaths';
+import { complianceEnhancedSchedulesPath } from 'routePaths';
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceEnhancedService';
@@ -41,7 +41,7 @@ function EditScanConfigDetail({
             <PageTitle title="Edit Compliance Scan Schedule Details" />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={complianceEnhancedScanConfigsPath}>
+                    <BreadcrumbItemLink to={complianceEnhancedSchedulesPath}>
                         Scan schedules
                     </BreadcrumbItemLink>
                     {!isLoading && !error && scanConfig && (

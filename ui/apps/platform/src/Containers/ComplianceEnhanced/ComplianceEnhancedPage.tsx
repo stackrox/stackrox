@@ -6,12 +6,14 @@ import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 import {
     complianceEnhancedBasePath,
-    complianceEnhancedClusterComplianceBasePath,
+    complianceEnhancedCoveragePath,
+    complianceEnhancedSchedulesPath,
     // complianceEnhancedStatusPath,
 } from 'routePaths';
 
 // import ComplianceStatusPage from './Status/ComplianceStatusPage';
-import ClusterCompliancePage from './ClusterCompliance/ClusterCompliancePage';
+import CoveragePage from './Coverage/CoveragePage';
+import ScanConfigsPage from './Schedules/ScanConfigsPage';
 
 function ComplianceEnhancedPage() {
     // For 4.5 release:
@@ -23,15 +25,18 @@ function ComplianceEnhancedPage() {
     return (
         <Switch>
             <Route exact path={complianceEnhancedBasePath}>
-                <Redirect to={complianceEnhancedClusterComplianceBasePath} />
+                <Redirect to={complianceEnhancedCoveragePath} />
             </Route>
             {/*
             <Route path={complianceEnhancedStatusPath}>
                 <ComplianceStatusPage />
             </Route>
             */}
-            <Route path={complianceEnhancedClusterComplianceBasePath}>
-                <ClusterCompliancePage />
+            <Route path={complianceEnhancedCoveragePath}>
+                <CoveragePage />
+            </Route>
+            <Route path={complianceEnhancedSchedulesPath}>
+                <ScanConfigsPage />
             </Route>
             <Route>
                 <PageSection variant="light">

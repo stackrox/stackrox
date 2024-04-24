@@ -3,15 +3,13 @@ import { Redirect, Route, Switch } from 'react-router-dom';
 
 import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
-import {
-    complianceEnhancedScanConfigsPath,
-    complianceEnhancedScanConfigDetailPath,
-} from 'routePaths';
+import { complianceEnhancedSchedulesPath } from 'routePaths';
 
+import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
+import { PageActions } from './compliance.scanConfigs.utils';
 import ScanConfigsTablePage from './Table/ScanConfigsTablePage';
 import CreateScanConfigPage from './CreateScanConfigPage';
 import ScanConfigDetailPage from './ScanConfigDetailPage';
-import { PageActions } from './compliance.scanConfigs.utils';
 
 function ScanConfigsPage() {
     /*
@@ -29,7 +27,7 @@ function ScanConfigsPage() {
         <Switch>
             <Route
                 exact
-                path={complianceEnhancedScanConfigsPath}
+                path={complianceEnhancedSchedulesPath}
                 render={() => {
                     if (pageAction === 'create' && hasWriteAccessForCompliance) {
                         return <CreateScanConfigPage />;
@@ -41,12 +39,12 @@ function ScanConfigsPage() {
                             />
                         );
                     }
-                    return <Redirect to={complianceEnhancedScanConfigsPath} />;
+                    return <Redirect to={complianceEnhancedSchedulesPath} />;
                 }}
             />
             <Route
                 exact
-                path={complianceEnhancedScanConfigDetailPath}
+                path={scanConfigDetailsPath}
                 render={() => {
                     return (
                         <ScanConfigDetailPage

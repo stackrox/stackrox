@@ -26,11 +26,7 @@ import {
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { OutlinedClockIcon } from '@patternfly/react-icons';
 
-import {
-    complianceEnhancedCoveragePath,
-    complianceEnhancedScanConfigDetailPath,
-    complianceEnhancedScanConfigsPath,
-} from 'routePaths';
+import { complianceEnhancedCoveragePath, complianceEnhancedSchedulesPath } from 'routePaths';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import TabNavHeader from 'Components/TabNav/TabNavHeader';
@@ -47,6 +43,7 @@ import {
 import { SortOption } from 'types/table';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
+import { scanConfigDetailsPath } from '../compliance.scanConfigs.routes';
 import { formatScanSchedule } from '../compliance.scanConfigs.utils';
 
 type ScanConfigsTablePageProps = {
@@ -55,7 +52,7 @@ type ScanConfigsTablePageProps = {
 
 const CreateScanConfigButton = () => {
     return (
-        <Link to={`${complianceEnhancedScanConfigsPath}?action=create`}>
+        <Link to={`${complianceEnhancedSchedulesPath}?action=create`}>
             <Button variant="primary">Create scan schedule</Button>
         </Link>
     );
@@ -130,7 +127,7 @@ function ScanConfigsTablePage({
     const renderTableContent = () => {
         return scanSchedules?.map((scanSchedule) => {
             const { id, scanName, scanConfig, lastUpdatedTime, clusterStatus } = scanSchedule;
-            const scanConfigUrl = generatePath(complianceEnhancedScanConfigDetailPath, {
+            const scanConfigUrl = generatePath(scanConfigDetailsPath, {
                 scanConfigId: id,
             });
 
@@ -232,7 +229,7 @@ function ScanConfigsTablePage({
                 currentTabTitle="Schedules"
                 tabLinks={[
                     { title: 'Coverage', href: complianceEnhancedCoveragePath },
-                    { title: 'Schedules', href: complianceEnhancedScanConfigsPath },
+                    { title: 'Schedules', href: complianceEnhancedSchedulesPath },
                 ]}
                 pageTitle="Compliance - Cluster compliance"
                 mainTitle="Cluster compliance"

@@ -5,9 +5,8 @@ import { visit } from '../../helpers/visit';
 
 export const basePath = '/main/compliance-enhanced';
 export const statusDashboardPath = `${basePath}/status`;
-export const clusterCompliancePath = `${basePath}/cluster-compliance`;
-export const clusterComplianceCoveragePath = `${clusterCompliancePath}/coverage`;
-export const clusterComplianceScanConfigsPath = `${clusterCompliancePath}/scan-configs`;
+export const complianceEnhancedCoveragePath = `${basePath}/coverage`;
+export const complianceEnhancedScanConfigsPath = `${basePath}/schedules`;
 
 // visit helpers
 export const scanConfigsAlias = 'configurations';
@@ -38,21 +37,27 @@ export function visitComplianceEnhancedDashboard(staticResponseMap) {
     cy.get(`h1:contains("Compliance")`);
 }
 
-export function visitComplianceEnhancedClusterComplianceFromLeftNav(staticResponseMap) {
-    visitFromLeftNavExpandable('Compliance (2.0)', 'Cluster Compliance', null, staticResponseMap);
+export function visitComplianceEnhancedCoverageFromLeftNav(staticResponseMap) {
+    visitFromLeftNavExpandable('Compliance (2.0)', 'Coverage', null, staticResponseMap);
 
     cy.get(`h1:contains("Cluster compliance")`);
 }
 
-export function visitComplianceEnhancedClusterCompliance(staticResponseMap) {
-    visit(clusterCompliancePath, null, staticResponseMap);
+export function visitComplianceEnhancedSchedulesFromLeftNav(staticResponseMap) {
+    visitFromLeftNavExpandable('Compliance (2.0)', 'Schedules', null, staticResponseMap);
+
+    cy.get(`h1:contains("Cluster compliance")`);
+}
+
+export function visitComplianceEnhancedCoverage(staticResponseMap) {
+    visit(complianceEnhancedCoveragePath, null, staticResponseMap);
 
     cy.get(`h1:contains("Cluster compliance")`);
 }
 
 export function visitComplianceEnhancedScanConfigs(staticResponseMap) {
     visit(
-        clusterComplianceScanConfigsPath,
+        complianceEnhancedScanConfigsPath,
         routeMatcherMapForComplianceScanConfigs,
         staticResponseMap
     );

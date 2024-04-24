@@ -2,7 +2,7 @@ import React, { ReactElement, useCallback, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Wizard, WizardStep } from '@patternfly/react-core/deprecated';
 import { FormikProvider } from 'formik';
-import { complianceEnhancedScanConfigsPath } from 'routePaths';
+import { complianceEnhancedSchedulesPath } from 'routePaths';
 import isEqual from 'lodash/isEqual';
 
 import useRestQuery from 'hooks/useRestQuery';
@@ -60,7 +60,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
 
         try {
             await saveScanConfig(complianceScanConfig);
-            history.push(complianceEnhancedScanConfigsPath);
+            history.push(complianceEnhancedSchedulesPath);
         } catch (error) {
             setCreateScanConfigError(getAxiosErrorMessage(error));
         } finally {
@@ -89,7 +89,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     }
 
     function onClose(): void {
-        history.push(complianceEnhancedScanConfigsPath);
+        history.push(complianceEnhancedSchedulesPath);
     }
 
     function setAllFieldsTouched(formikGroupKey: string): void {
