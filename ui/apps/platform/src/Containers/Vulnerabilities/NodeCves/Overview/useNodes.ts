@@ -1,4 +1,5 @@
 import { gql, useQuery } from '@apollo/client';
+import { getPaginationParams } from 'utils/searchUtils';
 import { getRegexScopedQueryString } from '../../utils/searchUtils';
 import { QuerySearchFilter } from '../../types';
 
@@ -63,10 +64,7 @@ export default function useNodes(
     return useQuery<{ nodes: Node[] }>(nodeListQuery, {
         variables: {
             query: getRegexScopedQueryString(querySearchFilter),
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-            },
+            pagination: getPaginationParams(page, perPage),
         },
     });
 }

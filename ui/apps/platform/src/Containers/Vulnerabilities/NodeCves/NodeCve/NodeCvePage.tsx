@@ -40,9 +40,7 @@ import AffectedNodesSummaryCard from './AffectedNodesSummaryCard';
 import useAffectedNodes from './useAffectedNodes';
 import useNodeCveMetadata from './useNodeCveMetadata';
 
-const workloadCveOverviewCvePath = getOverviewPagePath('Node', {
-    entityTab: 'CVE',
-});
+const nodeCveOverviewCvePath = getOverviewPagePath('Node', { entityTab: 'CVE' });
 
 function NodeCvePage() {
     const { searchFilter } = useURLSearch();
@@ -79,9 +77,7 @@ function NodeCvePage() {
             <PageTitle title={`Node CVEs - NodeCVE ${nodeCveName}`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={workloadCveOverviewCvePath}>
-                        Node CVEs
-                    </BreadcrumbItemLink>
+                    <BreadcrumbItemLink to={nodeCveOverviewCvePath}>Node CVEs</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
                         {nodeCveName ?? (
                             <Skeleton screenreaderText="Loading CVE name" width="200px" />

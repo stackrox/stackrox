@@ -80,7 +80,7 @@ function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps
                 tableState={tableState}
                 colSpan={colSpan}
                 emptyProps={{
-                    message: 'No Platform CVEs have been reported for your secured clusters',
+                    message: 'No CVEs have been detected for your secured clusters',
                 }}
                 renderer={({ data }) =>
                     data.map((platformCve, rowIndex) => {

@@ -6,6 +6,7 @@ import {
     convertSortToRestFormat,
     searchOptionsToSearchFilter,
     getListQueryParams,
+    getPaginationParams,
     searchValueAsArray,
     convertToExactMatch,
 } from './searchUtils';
@@ -377,6 +378,18 @@ describe('searchUtils', () => {
                 const offset = parseInt(offsetParam, 10);
                 expect(offset % page).toBe(0);
             });
+        });
+    });
+
+    describe('getPaginationParams', () => {
+        it('should return an object with the offset and limit properties', () => {
+            expect(getPaginationParams(0, 20)).toEqual({ offset: 0, limit: 20 });
+        });
+
+        it('should calculate the offset based on the page number and page size', () => {
+            expect(getPaginationParams(1, 20)).toEqual({ offset: 0, limit: 20 });
+            expect(getPaginationParams(2, 20)).toEqual({ offset: 20, limit: 20 });
+            expect(getPaginationParams(3, 20)).toEqual({ offset: 40, limit: 20 });
         });
     });
 

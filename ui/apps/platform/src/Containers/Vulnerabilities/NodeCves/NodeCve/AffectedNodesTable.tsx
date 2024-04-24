@@ -130,7 +130,7 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
                 tableState={tableState}
                 colSpan={colSpan}
                 emptyProps={{
-                    message: 'No nodes are detected to have been reported for this CVE',
+                    message: 'There are no nodes that are affected by this CVE',
                 }}
                 renderer={({ data }) =>
                     data.map((node, rowIndex) => {

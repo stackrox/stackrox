@@ -74,7 +74,7 @@ function NodesTable({ querySearchFilter, isFiltered, pagination }: NodesTablePro
                         } = node;
                         const { critical, important, moderate, low } = nodeCVECountBySeverity;
                         return (
-                            <Tr key={node.id}>
+                            <Tr key={id}>
                                 <Td dataLabel="Node" modifier="nowrap">
                                     <Link to={getNodeEntityPagePath('Node', id)}>
                                         <Truncate position="middle" content={name} />

@@ -1,4 +1,5 @@
 import { gql, useQuery } from '@apollo/client';
+import { getPaginationParams } from 'utils/searchUtils';
 import { QuerySearchFilter } from '../../types';
 import { getRegexScopedQueryString } from '../../utils/searchUtils';
 
@@ -64,10 +65,7 @@ export default function usePlatformCves(
     >(cveListQuery, {
         variables: {
             query: getRegexScopedQueryString(querySearchFilter),
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-            },
+            pagination: getPaginationParams(page, perPage),
         },
     });
 }
