@@ -18,10 +18,12 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apimachinery/pkg/watch"
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/dynamic"
+	fakeDynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -49,6 +51,7 @@ func init() {
 // clientSetImpl implements our client.Interface
 type clientSetImpl struct {
 	kubernetes kubernetes.Interface
+	dynamic    dynamic.Interface
 }
 
 // Kubernetes returns the fake Kubernetes clientset
@@ -68,7 +71,7 @@ func (c *clientSetImpl) OpenshiftConfig() configVersioned.Interface {
 
 // Dynamic returns nil
 func (c *clientSetImpl) Dynamic() dynamic.Interface {
-	return nil
+	return c.dynamic
 }
 
 // OpenshiftRoute implements the client interface.
@@ -233,8 +236,16 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		Compiler:     "gc",
 		Platform:     "linux/amd64",
 	}
+	scheme := runtime.NewScheme()
+
 	w.client = &clientSetImpl{
 		kubernetes: w.fakeClient,
+		dynamic: fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, map[schema.GroupVersionResource]string{
+			schema.GroupVersionResource{
+				Group:    "apiextensions.k8s.io",
+				Version:  "v1",
+				Resource: "customresourcedefinitions",
+			}: "CustomResourceDefinitionList"}),
 	}
 
 	go w.clearActions()
