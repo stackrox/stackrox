@@ -114,7 +114,7 @@ require (
 	github.com/stackrox/scanner v0.0.0-20240418215726-f850fe61bb97
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/gjson v1.17.1
-	github.com/tkuchiki/go-timezone v0.2.2
+	github.com/tkuchiki/go-timezone v0.2.3
 	github.com/travelaudience/go-promhttp v1.0.1
 	github.com/vbauerster/mpb/v4 v4.12.2
 	go.etcd.io/bbolt v1.3.9
