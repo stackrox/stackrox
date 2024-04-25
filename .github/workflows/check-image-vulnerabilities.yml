@@ -26,7 +26,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   check-image-vulnerabilities:
-    name: Check images in version ${{ inputs.version }} for vulnerabilities
+    name: Check ${{ matrix.image }}:${{ inputs.version }}
     runs-on: ubuntu-latest
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
