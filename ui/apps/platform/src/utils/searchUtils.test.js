@@ -382,14 +382,12 @@ describe('searchUtils', () => {
     });
 
     describe('getPaginationParams', () => {
-        it('should return an object with the offset and limit properties', () => {
-            expect(getPaginationParams(0, 20)).toEqual({ offset: 0, limit: 20 });
-        });
-
         it('should calculate the offset based on the page number and page size', () => {
             expect(getPaginationParams(1, 20)).toEqual({ offset: 0, limit: 20 });
             expect(getPaginationParams(2, 20)).toEqual({ offset: 20, limit: 20 });
             expect(getPaginationParams(3, 20)).toEqual({ offset: 40, limit: 20 });
+            expect(getPaginationParams(4, 12)).toEqual({ offset: 36, limit: 12 });
+            expect(getPaginationParams(5, 1)).toEqual({ offset: 4, limit: 1 });
         });
     });
 
