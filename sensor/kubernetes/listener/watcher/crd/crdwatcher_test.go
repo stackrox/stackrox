@@ -69,7 +69,7 @@ func newFakeCRD(name string) *unstructured.Unstructured {
 
 func (s *watcherSuite) createWithRandomTicker(names ...string) {
 	go func() {
-		ticker := time.NewTicker(time.Duration(rand.Intn(100)) * time.Millisecond)
+		ticker := time.NewTicker(time.Duration(rand.Intn(90)+10) * time.Millisecond)
 		for _, name := range names {
 			select {
 			case <-ticker.C:
