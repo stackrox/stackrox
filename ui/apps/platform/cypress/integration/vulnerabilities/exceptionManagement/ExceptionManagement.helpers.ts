@@ -7,7 +7,6 @@ import {
     verifySelectedCvesInModal,
     visitWorkloadCveOverview,
 } from '../workloadCves/WorkloadCves.helpers';
-import { selectors as workloadCVESelectors } from '../workloadCves/WorkloadCves.selectors';
 
 const basePath = '/main/vulnerabilities/exception-management';
 export const pendingRequestsPath = `${basePath}/pending-requests`;
@@ -44,6 +43,23 @@ export function visitDeniedRequestsTab() {
     visitExceptionManagementTab(deniedRequestsPath);
 }
 
+function assertClipboardWriteAndVisitRequestPage(id) {
+    cy.location().then(({ origin }) => {
+        const url = `${origin}/main/vulnerabilities/exception-management/requests/${id}`;
+
+        // To prevent permission or timing problems, do not actually write to clipboard.
+        cy.window()
+            .its('navigator.clipboard')
+            .then((clipboard) => {
+                cy.stub(clipboard, 'writeText').as('writeText');
+            });
+        cy.get('button[aria-label="Copy"]').click();
+        cy.get('@writeText').should('have.been.calledOnceWith', url);
+
+        visit(url);
+    });
+}
+
 export function deferAndVisitRequestDetails({
     comment,
     expiry,
@@ -58,30 +74,24 @@ export function deferAndVisitRequestDetails({
     // defer a single cve
     selectSingleCveForException('DEFERRAL').then((cveName) => {
         verifySelectedCvesInModal([cveName]);
+
         fillAndSubmitExceptionForm({
             comment,
             expiryLabel: expiry,
-        });
-        verifyExceptionConfirmationDetails({
-            expectedAction: 'Deferral',
-            cves: [cveName],
-            scope,
-            expiry,
-        });
-        cy.get(workloadCVESelectors.copyToClipboardButton).click();
-        cy.get(workloadCVESelectors.copyToClipboardTooltipText).contains('Copied');
-        // @TODO: Can make this into a custom cypress command (ie. getClipboardText)
-        cy.window()
-            .then((win) => {
-                return win.navigator.clipboard.readText();
-            })
-            .then((url) => {
-                visit(url);
+        }).then(({ response }) => {
+            verifyExceptionConfirmationDetails({
+                expectedAction: 'Deferral',
+                cves: [cveName],
+                scope,
+                expiry,
             });
+
+            // Response is source of truth for exceptipn id.
+            assertClipboardWriteAndVisitRequestPage(response?.body?.exception?.id);
+        });
     });
 }
 
-// @TODO: We could possibly just use a single function for deferral/false positive
 export function markFalsePositiveAndVisitRequestDetails({
     comment,
     scope,
@@ -94,22 +104,16 @@ export function markFalsePositiveAndVisitRequestDetails({
     // mark a single cve as false positive
     selectSingleCveForException('FALSE_POSITIVE').then((cveName) => {
         verifySelectedCvesInModal([cveName]);
-        fillAndSubmitExceptionForm({ comment });
-        verifyExceptionConfirmationDetails({
-            expectedAction: 'False positive',
-            cves: [cveName],
-            scope,
-        });
-        cy.get(workloadCVESelectors.copyToClipboardButton).click();
-        cy.get(workloadCVESelectors.copyToClipboardTooltipText).contains('Copied');
-        // @TODO: Can make this into a custom cypress command (ie. getClipboardText)
-        cy.window()
-            .then((win) => {
-                return win.navigator.clipboard.readText();
-            })
-            .then((url) => {
-                visit(url);
+        fillAndSubmitExceptionForm({ comment }).then(({ response }) => {
+            verifyExceptionConfirmationDetails({
+                expectedAction: 'False positive',
+                cves: [cveName],
+                scope,
             });
+
+            // Response is source of truth for exceptipn id.
+            assertClipboardWriteAndVisitRequestPage(response?.body?.exception?.id);
+        });
     });
 }
 

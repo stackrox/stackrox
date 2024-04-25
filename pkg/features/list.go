@@ -93,4 +93,7 @@ var (
 
 	// UnqualifiedSearchRegistries enables support for unqualified search registries and short name aliases.
 	UnqualifiedSearchRegistries = registerFeature("Enable support for unqualified search registries and short name aliases", "ROX_UNQUALIFIED_SEARCH_REGISTRIES", false)
+
+	// RuntimeFilters enables filtering of runtime events.
+	RuntimeFilters = registerFeature("Enable runtime event filtering", "ROX_RUNTIME_FILTERS", false)
 )

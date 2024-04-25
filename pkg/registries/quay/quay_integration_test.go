@@ -28,7 +28,7 @@ func TestQuay(t *testing.T) {
 		},
 	}
 
-	q, err := newRegistry(integration, false)
+	q, err := newRegistry(integration, false, nil)
 	assert.NoError(t, err)
 	assert.NoError(t, filterOkErrors(q.Test()))
 }

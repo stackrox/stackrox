@@ -5,7 +5,7 @@ package v1;
 import "api/v1/pagination.proto";
 import weak "google/api/annotations.proto";
 
-option go_package = "v1";
+option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 // Next available tag: 70
@@ -80,6 +80,7 @@ enum SearchCategory {
   COMPLIANCE_SUITES = 67;
   CLOUD_SOURCES = 68;
   DISCOVERED_CLUSTERS = 69;
+  COMPLIANCE_REMEDIATIONS = 70;
 }
 
 enum SearchDataType {

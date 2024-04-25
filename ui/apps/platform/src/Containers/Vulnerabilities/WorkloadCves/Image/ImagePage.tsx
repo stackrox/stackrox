@@ -24,10 +24,11 @@ import isEmpty from 'lodash/isEmpty';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLPagination from 'hooks/useURLPagination';
 
+import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
@@ -38,6 +39,7 @@ import ImageDetailBadges, {
     imageDetailsFragment,
 } from '../components/ImageDetailBadges';
 import getImageScanMessage from '../utils/getImageScanMessage';
+import { DEFAULT_PAGE_SIZE } from '../../constants';
 
 const workloadCveOverviewImagePath = getOverviewPagePath('Workload', {
     vulnerabilityState: 'OBSERVED',
@@ -81,7 +83,7 @@ function ImagePage() {
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
     const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
 
-    const pagination = useURLPagination(20);
+    const pagination = useURLPagination(DEFAULT_PAGE_SIZE);
 
     const imageData = data && data.image;
     const imageName = imageData?.name
@@ -146,14 +148,10 @@ function ImagePage() {
                             )}
                         </Flex>
                     ) : (
-                        <Flex
-                            direction={{ default: 'column' }}
-                            spaceItems={{ default: 'spaceItemsXs' }}
-                            className="pf-v5-u-w-50"
-                        >
-                            <Skeleton screenreaderText="Loading image name" fontSize="2xl" />
-                            <Skeleton screenreaderText="Loading image metadata" fontSize="sm" />
-                        </Flex>
+                        <HeaderLoadingSkeleton
+                            nameScreenreaderText="Loading image name"
+                            metadataScreenreaderText="Loading image metadata"
+                        />
                     )}
                 </PageSection>
                 <PageSection

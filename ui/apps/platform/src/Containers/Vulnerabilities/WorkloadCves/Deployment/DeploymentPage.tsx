@@ -26,6 +26,7 @@ import DeploymentPageHeader, {
 } from './DeploymentPageHeader';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import { detailsTabValues } from '../../types';
+import { DEFAULT_PAGE_SIZE } from '../../constants';
 import DeploymentPageResources from './DeploymentPageResources';
 import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
 import DeploymentPageDetails from './DeploymentPageDetails';
@@ -48,7 +49,7 @@ function DeploymentPage() {
     const { deploymentId } = useParams() as { deploymentId: string };
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
-    const pagination = useURLPagination(20);
+    const pagination = useURLPagination(DEFAULT_PAGE_SIZE);
 
     const metadataRequest = useQuery<{ deployment: DeploymentMetadata | null }, { id: string }>(
         deploymentMetadataQuery,

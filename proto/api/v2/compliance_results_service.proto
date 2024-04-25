@@ -7,7 +7,7 @@ import "api/v2/search_query.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "v2";
+option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
 
 enum ComplianceCheckStatus {
@@ -166,12 +166,6 @@ message ComplianceProfileCheckRequest {
   RawQuery query = 3;
 }
 
-message ComplianceClusterStatsRequest {
-  string profile_name = 1;
-  string scan_config_id = 2;
-  RawQuery query = 3;
-}
-
 service ComplianceResultsService {
   // GetComplianceScanCheckResult returns the specific result by ID
   rpc GetComplianceScanCheckResult(ResourceByID) returns (ComplianceCheckResult) {
@@ -250,8 +244,8 @@ service ComplianceResultsService {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/overall/cluster"};
   }
 
-  rpc GetComplianceClusterStats(ComplianceClusterStatsRequest) returns (ListComplianceClusterOverallStatsResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/totals/clusters"};
+  rpc GetComplianceClusterStats(ComplianceProfileResultsRequest) returns (ListComplianceClusterOverallStatsResponse) {
+    option (google.api.http) = {get: "/v2/compliance/results/profiles/{profile_name}/clusters"};
   }
 
   // GetComplianceProfileCheckClusterResult lists status of a check per cluster

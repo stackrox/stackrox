@@ -38,8 +38,24 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		return len(integrations), nil
 	})
 
-	totalCount := map[string]int{}
-	stsCount := map[string]int{}
+	totalCount := map[string]int{
+		types.ArtifactoryType:      0,
+		types.ArtifactRegistryType: 0,
+		types.AzureType:            0,
+		types.DockerType:           0,
+		types.ECRType:              0,
+		types.GoogleType:           0,
+		types.IBMType:              0,
+		types.NexusType:            0,
+		types.QuayType:             0,
+		types.RedHatType:           0,
+	}
+	stsCount := map[string]int{
+		types.ArtifactRegistryType: 0,
+		types.AzureType:            0,
+		types.ECRType:              0,
+		types.GoogleType:           0,
+	}
 
 	for _, ii := range integrations {
 		iiType := ii.GetType()

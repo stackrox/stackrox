@@ -129,6 +129,8 @@ collector:
   priorityClassName: null # string
   disableSELinuxOptions: null # bool
   seLinuxOptionsType: null # string
+  containerdEnable: true # bool
+  crioEnable: true # bool
 auditLogs:
   disableCollection: null # bool
 customize:

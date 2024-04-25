@@ -298,7 +298,7 @@ function NetworkGraphPage() {
                     data-testid="network-graph-selector-bar"
                 >
                     <ToolbarContent>
-                        <ToolbarGroup variant="filter-group">
+                        <ToolbarGroup variant="filter-group" className="pf-v5-u-align-self-center">
                             <Title headingLevel="h1" className="pf-v5-u-screen-reader">
                                 Network Graph
                             </Title>
@@ -380,7 +380,10 @@ function NetworkGraphPage() {
                                         />
                                     </ToolbarItem>
                                 </ToolbarGroup>
-                                <ToolbarGroup align={{ default: 'alignRight' }}>
+                                <ToolbarGroup
+                                    align={{ default: 'alignRight' }}
+                                    className="pf-v5-u-align-self-center"
+                                >
                                     <Divider
                                         component="div"
                                         orientation={{ default: 'vertical' }}

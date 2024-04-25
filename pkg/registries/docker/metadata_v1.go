@@ -61,7 +61,7 @@ func convertImageToDockerFileLine(img *v1.Image) *storage.ImageLayer {
 
 func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, ref string) (*storage.ImageMetadata, error) {
 	// Get the latest layer and author
-	var latest storage.ImageLayer
+	var latest *storage.ImageLayer
 	var layers []*storage.ImageLayer
 	labels := make(map[string]string)
 	for i := len(manifest.History) - 1; i > -1; i-- {
@@ -71,8 +71,8 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 			return nil, errors.Wrap(err, "Failed unmarshalling v1 capability")
 		}
 		layer := convertImageToDockerFileLine(&v1Image)
-		if protocompat.CompareTimestamps(layer.Created, latest.Created) == 1 {
-			latest = *layer
+		if protocompat.CompareTimestamps(layer.Created, latest.GetCreated()) == 1 {
+			latest = layer
 		}
 		layers = append(layers, layer)
 		// Last label takes precedence and there seems to be a separate image object per layer
@@ -94,8 +94,8 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 	return &storage.ImageMetadata{
 		V1: &storage.V1Metadata{
 			Digest:  ref,
-			Created: latest.Created,
-			Author:  latest.Author,
+			Created: latest.GetCreated(),
+			Author:  latest.GetAuthor(),
 			Layers:  layers,
 			Labels:  labels,
 		},

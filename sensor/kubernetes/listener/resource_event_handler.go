@@ -15,9 +15,14 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	listenerUtils "github.com/stackrox/rox/sensor/kubernetes/listener/utils"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher"
+	complianceOperatorAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/complianceoperator"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher/crd"
 	sensorUtils "github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -74,11 +79,29 @@ func (k *listenerImpl) handleAllEvents() {
 	clusterID := clusterid.Get()
 
 	var crdSharedInformerFactory dynamicinformer.DynamicSharedInformerFactory
-	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer, complianceSuiteInformer cache.SharedIndexInformer
+	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer, complianceSuiteInformer, complianceRemediationInformer cache.SharedIndexInformer
 	var profileLister cache.GenericLister
-	if resourceList, err := serverResourcesForGroup(k.client, complianceoperator.GetGroupVersion().String()); err != nil {
-		log.Errorf("Checking API resources for group %q: %v", complianceoperator.GetGroupVersion().String(), err)
-	} else if resourceExists(resourceList, complianceoperator.ComplianceCheckResult.Name) {
+	crdWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod))
+	coAvailabilityChecker := complianceOperatorAvailabilityChecker.NewComplianceOperatorAvailabilityChecker()
+	if err := coAvailabilityChecker.AppendToCRDWatcher(crdWatcher); err != nil {
+		log.Errorf("Unable to add the Resource to the CRD Watcher: %v", err)
+	}
+	if err := crdWatcher.Watch(k.crdWatcherStatusC); err != nil {
+		log.Errorf("Failed to start watching the CRDs: %v", err)
+	}
+	crdHandlerFn := func(status *watcher.Status) {
+		if status.Available {
+			log.Infof("Resources %v became available", status.Resources)
+			if err := k.pubSub.Publish(&internalmessage.SensorInternalMessage{
+				Kind:     internalmessage.SensorMessageSoftRestart,
+				Text:     "Compliance Operator resources have been updated. Connection will restart to force reconciliation with Central",
+				Validity: k.context,
+			}); err != nil {
+				log.Errorf("Unable to publish message %s: %v", internalmessage.SensorMessageSoftRestart, err)
+			}
+		}
+	}
+	if coAvailabilityChecker.Available(k.client) {
 		log.Info("initializing compliance operator informers")
 		crdSharedInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
 		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResult.GroupVersionResource()).Informer()
@@ -90,7 +113,22 @@ func (k *listenerImpl) handleAllEvents() {
 		complianceScanInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceScan.GroupVersionResource()).Informer()
 		complianceTailoredProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfile.GroupVersionResource()).Informer()
 		complianceSuiteInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceSuite.GroupVersionResource()).Informer()
+		complianceRemediationInformer = crdSharedInformerFactory.ForResource(complianceoperator.Remediation.GroupVersionResource()).Informer()
+		// Override the crdHandlerFn to only handle when the resources become unavailable
+		crdHandlerFn = func(status *watcher.Status) {
+			if !status.Available {
+				log.Infof("Resources %v became unavailable", status.Resources)
+				if err := k.pubSub.Publish(&internalmessage.SensorInternalMessage{
+					Kind:     internalmessage.SensorMessageSoftRestart,
+					Text:     "Compliance Operator resources have been removed. Connection will restart to force reconciliation with Central",
+					Validity: k.context,
+				}); err != nil {
+					log.Errorf("Unable to publish message %s: %v", internalmessage.SensorMessageSoftRestart, err)
+				}
+			}
+		}
 	}
+	k.handleWatcherStatus(crdHandlerFn)
 
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := sif.Core().V1().Pods()
@@ -132,23 +170,23 @@ func (k *listenerImpl) handleAllEvents() {
 	// For openshift clusters only
 	var osConfigFactory osConfigExtVersions.SharedInformerFactory
 	if k.client.OpenshiftConfig() != nil {
-		if resourceList, err := serverResourcesForGroup(k.client, osConfigGroupVersion); err != nil {
+		if resourceList, err := listenerUtils.ServerResourcesForGroup(k.client, osConfigGroupVersion); err != nil {
 			log.Errorf("Checking API resources for group %q: %v", osConfigGroupVersion, err)
 		} else {
 			osConfigFactory = osConfigExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), noResyncPeriod)
 
-			if resourceExists(resourceList, osClusterOperatorsResourceName) {
+			if listenerUtils.ResourceExists(resourceList, osClusterOperatorsResourceName, osConfigGroupVersion) {
 				log.Infof("Initializing %q informer", osClusterOperatorsResourceName)
 				handle(k.context, osConfigFactory.Config().V1().ClusterOperators().Informer(), dispatchers.ForClusterOperators(), k.outputQueue, nil, noDependencyWaitGroup, stopSignal, &eventLock)
 			}
 
 			if env.RegistryMirroringEnabled.BooleanSetting() {
-				if resourceExists(resourceList, osImageDigestMirrorSetsResourceName) {
+				if listenerUtils.ResourceExists(resourceList, osImageDigestMirrorSetsResourceName, osConfigGroupVersion) {
 					log.Infof("Initializing %q informer", osImageDigestMirrorSetsResourceName)
 					handle(k.context, osConfigFactory.Config().V1().ImageDigestMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 				}
 
-				if resourceExists(resourceList, osImageTagMirrorSetsResourceName) {
+				if listenerUtils.ResourceExists(resourceList, osImageTagMirrorSetsResourceName, osConfigGroupVersion) {
 					log.Infof("Initializing %q informer", osImageTagMirrorSetsResourceName)
 					handle(k.context, osConfigFactory.Config().V1().ImageTagMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 				}
@@ -158,12 +196,12 @@ func (k *listenerImpl) handleAllEvents() {
 
 	var osOperatorFactory osOperatorExtVersions.SharedInformerFactory
 	if k.client.OpenshiftOperator() != nil && env.RegistryMirroringEnabled.BooleanSetting() {
-		if resourceList, err := serverResourcesForGroup(k.client, osOperatorAlphaGroupVersion); err != nil {
+		if resourceList, err := listenerUtils.ServerResourcesForGroup(k.client, osOperatorAlphaGroupVersion); err != nil {
 			log.Errorf("Checking API resources for group %q: %v", osOperatorAlphaGroupVersion, err)
 		} else {
 			osOperatorFactory = osOperatorExtVersions.NewSharedInformerFactory(k.client.OpenshiftOperator(), noResyncPeriod)
 
-			if resourceExists(resourceList, osImageContentSourcePoliciesResourceName) {
+			if listenerUtils.ResourceExists(resourceList, osImageContentSourcePoliciesResourceName, osOperatorAlphaGroupVersion) {
 				log.Infof("Initializing %q informer", osImageContentSourcePoliciesResourceName)
 				handle(k.context, osOperatorFactory.Operator().V1alpha1().ImageContentSourcePolicies().Informer(), dispatchers.ForRegistryMirrors(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 			}
@@ -178,6 +216,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, complianceScanSettingBindingsInformer, dispatchers.ForComplianceOperatorScanSettingBindings(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 		handle(k.context, complianceScanInformer, dispatchers.ForComplianceOperatorScans(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 		handle(k.context, complianceSuiteInformer, dispatchers.ForComplianceOperatorSuites(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+		handle(k.context, complianceRemediationInformer, dispatchers.ForComplianceOperatorRemediations(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 	}
 
 	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {

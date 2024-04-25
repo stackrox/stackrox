@@ -395,6 +395,9 @@ describe('Image Integrations', () => {
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('OAuth token').clear().type('12345');
 
+        getInputByLabel('Username').clear().type('scoobydoo');
+        getInputByLabel('Password').clear().type('rutrohshaggy');
+
         testIntegrationInFormWithStoredCredentials(
             integrationSource,
             integrationType,

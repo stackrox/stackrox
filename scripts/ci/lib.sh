@@ -1056,6 +1056,15 @@ openshift_ci_e2e_mods() {
         # shellcheck disable=SC1090
         source "$envfile"
     fi
+
+    if [[ "${JOB_NAME:-}" =~ -eks- ]]; then
+        # Explicitly set AWS creds from the stackrox-stackrox-e2e-tests vault to
+        # override any from other vaults e.g. automation-flavors.
+        AWS_ACCESS_KEY_ID="$(cat /tmp/vault/stackrox-stackrox-e2e-tests/AWS_ACCESS_KEY_ID)"
+        AWS_SECRET_ACCESS_KEY="$(cat /tmp/vault/stackrox-stackrox-e2e-tests/AWS_SECRET_ACCESS_KEY)"
+        export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+        aws sts get-caller-identity | jq -r '.Arn'
+    fi
 }
 
 operator_e2e_test_setup() {
@@ -1212,7 +1221,7 @@ post_process_test_results() {
         # we will fallback to short commit
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.19/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.20/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \

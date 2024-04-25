@@ -5,7 +5,7 @@ package v2;
 import "api/v2/search_query.proto";
 import weak "google/api/annotations.proto";
 
-option go_package = "v2";
+option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
 
 // Next Tag: 8
@@ -26,6 +26,7 @@ message ComplianceIntegrationStatusRequest {
 
 message ListComplianceIntegrationsResponse {
   repeated ComplianceIntegration integrations = 1;
+  int32 total_count = 2;
 }
 
 // CountComplianceIntegrationsResponse gives count of compliance integrations

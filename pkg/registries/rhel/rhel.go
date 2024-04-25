@@ -14,8 +14,9 @@ var RedHatRegistryEndpoints = set.NewFrozenSet("registry.redhat.io")
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, types.Creator) {
 	return types.RedHatType,
-		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
-			reg, err := docker.NewRegistryWithoutManifestCall(integration, false)
+		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			cfg := types.ApplyCreatorOptions(options...)
+			reg, err := docker.NewRegistryWithoutManifestCall(integration, false, cfg.GetMetricsHandler())
 			return reg, err
 		}
 }
@@ -24,8 +25,9 @@ func Creator() (string, types.Creator) {
 // Populating the internal repo list will be disabled.
 func CreatorWithoutRepoList() (string, types.Creator) {
 	return types.RedHatType,
-		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
-			reg, err := docker.NewRegistryWithoutManifestCall(integration, true)
+		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			cfg := types.ApplyCreatorOptions(options...)
+			reg, err := docker.NewRegistryWithoutManifestCall(integration, true, cfg.GetMetricsHandler())
 			return reg, err
 		}
 }

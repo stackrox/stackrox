@@ -20,7 +20,7 @@ import { useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 
 import PageTitle from 'Components/PageTitle';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { searchCategories } from 'constants/entityTypes';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -136,7 +136,9 @@ function ListeningEndpointsPage() {
             <PageTitle title="Listening Endpoints" />
             <PageSection variant="light">
                 <Title headingLevel="h1">Listening endpoints</Title>
-                <Text>Audit listening endpoints of deployments in your clusters</Text>
+                <Text className="pf-v5-u-pt-xs">
+                    Audit listening endpoints of deployments in your clusters
+                </Text>
             </PageSection>
             <Divider component="div" />
             <PageSection

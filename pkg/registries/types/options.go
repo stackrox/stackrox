@@ -7,6 +7,7 @@ import (
 // CreatorConfig specifies optional configuration parameters for registry creators.
 type CreatorConfig struct {
 	GCPTokenManager gcpAuth.STSTokenManager
+	MetricsHandler  *MetricsHandler
 }
 
 // GetGCPTokenManager is a nil-safe getter for GCPTokenManager.
@@ -15,6 +16,14 @@ func (c *CreatorConfig) GetGCPTokenManager() gcpAuth.STSTokenManager {
 		return nil
 	}
 	return c.GCPTokenManager
+}
+
+// GetMetricsHandler is a nil-safe getter for MetricsHandler.
+func (c *CreatorConfig) GetMetricsHandler() *MetricsHandler {
+	if c == nil {
+		return nil
+	}
+	return c.MetricsHandler
 }
 
 // CreatorOption is a functor that applies the creator config option.
@@ -27,6 +36,17 @@ func WithGCPTokenManager(manager gcpAuth.STSTokenManager) CreatorOption {
 			opt = &CreatorConfig{}
 		}
 		opt.GCPTokenManager = manager
+		return opt
+	}
+}
+
+// WithMetricsHandler adds a Prometheus metrics handler.
+func WithMetricsHandler(handler *MetricsHandler) CreatorOption {
+	return func(opt *CreatorConfig) *CreatorConfig {
+		if opt == nil {
+			opt = &CreatorConfig{}
+		}
+		opt.MetricsHandler = handler
 		return opt
 	}
 }

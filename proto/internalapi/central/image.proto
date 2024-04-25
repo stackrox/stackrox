@@ -4,7 +4,7 @@ package central;
 
 import "storage/image_integration.proto";
 
-option go_package = "central";
+option go_package = "./internalapi/central;central";
 
 // ScanImage is sent to sensor to request a local scan of an image.
 message ScanImage {

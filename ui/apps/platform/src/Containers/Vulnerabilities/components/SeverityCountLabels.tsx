@@ -63,11 +63,7 @@ function SeverityCountLabels({
                     icon={<CriticalIcon color={critical ? undefined : noViolationsColor} />}
                 >
                     <span className={getClassNameForCount(critical)}>
-                        {!critical && critical !== 0 ? (
-                            <EllipsisHIcon className="pf-v5-u-my-xs" />
-                        ) : (
-                            critical
-                        )}
+                        {!critical && critical !== 0 ? <EllipsisHIcon /> : critical}
                     </span>
                 </Label>
             </Tooltip>
@@ -78,11 +74,7 @@ function SeverityCountLabels({
                     icon={<ImportantIcon color={important ? undefined : noViolationsColor} />}
                 >
                     <span className={getClassNameForCount(important)}>
-                        {!important && important !== 0 ? (
-                            <EllipsisHIcon className="pf-v5-u-my-xs" />
-                        ) : (
-                            important
-                        )}
+                        {!important && important !== 0 ? <EllipsisHIcon /> : important}
                     </span>
                 </Label>
             </Tooltip>
@@ -93,11 +85,7 @@ function SeverityCountLabels({
                     icon={<ModerateIcon color={moderate ? undefined : noViolationsColor} />}
                 >
                     <span className={getClassNameForCount(moderate)}>
-                        {!moderate && moderate !== 0 ? (
-                            <EllipsisHIcon className="pf-v5-u-my-xs" />
-                        ) : (
-                            moderate
-                        )}
+                        {!moderate && moderate !== 0 ? <EllipsisHIcon /> : moderate}
                     </span>
                 </Label>
             </Tooltip>
@@ -108,7 +96,7 @@ function SeverityCountLabels({
                     icon={<LowIcon color={low ? undefined : noViolationsColor} />}
                 >
                     <span className={getClassNameForCount(low)}>
-                        {!low && low !== 0 ? <EllipsisHIcon className="pf-v5-u-my-xs" /> : low}
+                        {!low && low !== 0 ? <EllipsisHIcon /> : low}
                     </span>
                 </Label>
             </Tooltip>

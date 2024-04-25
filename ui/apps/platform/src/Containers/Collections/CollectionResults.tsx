@@ -58,19 +58,21 @@ function DeploymentSkeleton() {
 
 function DeploymentResult({ deployment }: { deployment: ListDeployment }) {
     return (
-        <Flex>
-            <FlexItem>
-                <ResourceIcon kind="Deployment" />
-            </FlexItem>
-            <FlexItem>
-                <div>{deployment.name}</div>
-                <span className="pf-v5-u-color-300 pf-v5-u-font-size-xs">
-                    In &quot;{deployment.cluster} / {deployment.namespace}
-                    &quot;
-                </span>
-            </FlexItem>
-            <Divider className="pf-v5-u-mt-md" />
-        </Flex>
+        <>
+            <Flex>
+                <FlexItem>
+                    <ResourceIcon kind="Deployment" />
+                </FlexItem>
+                <FlexItem>
+                    <div>{deployment.name}</div>
+                    <span className="pf-v5-u-color-300 pf-v5-u-font-size-xs">
+                        In &quot;{deployment.cluster} / {deployment.namespace}
+                        &quot;
+                    </span>
+                </FlexItem>
+            </Flex>
+            <Divider className="pf-v5-u-mt-sm" />
+        </>
     );
 }
 

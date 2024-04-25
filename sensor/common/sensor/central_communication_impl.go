@@ -52,6 +52,7 @@ type centralCommunicationImpl struct {
 }
 
 var (
+	errForcedConnectionRestart       = errors.New("forced connection restart")
 	errCantReconcile                 = errors.New("unable to reconcile")
 	errLargePayload                  = errors.Wrap(errCantReconcile, "deduper payload too large")
 	errTimeoutWaitingForDeduperState = errors.Wrap(errCantReconcile, "timeout reached while waiting for the DeduperState")
@@ -63,7 +64,14 @@ func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, cen
 	go s.sendEvents(client, centralReachable, syncDone, configHandler, detector, s.receiver.Stop, s.sender.Stop)
 }
 
-func (s *centralCommunicationImpl) Stop(_ error) {
+func (s *centralCommunicationImpl) Stop(err error) {
+	if err != nil {
+		if errors.Is(err, errForcedConnectionRestart) {
+			log.Infof("Connection restart requested: %v", err)
+		} else {
+			log.Errorf("Stopping connection due to error: %v", err)
+		}
+	}
 	s.stopper.Client().Stop()
 }
 

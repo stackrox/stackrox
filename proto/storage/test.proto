@@ -5,7 +5,7 @@ package storage;
 import "google/protobuf/timestamp.proto";
 
 option cc_enable_arenas = true;
-option go_package = "storage";
+option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
 message TestSingleKeyStruct {
@@ -134,6 +134,11 @@ message TestSingleUUIDKeyStruct {
   }
 
   bytes bytess = 16;
+
+  oneof oneof_two {
+    string oneof_two_string = 17;
+    int64 oneof_two_int = 18;
+  }
 }
 
 message TestStruct {

@@ -8,11 +8,11 @@ export type NodePageDetailsProps = {};
 function NodePageDetails({}: NodePageDetailsProps) {
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-u-py-md pf-u-px-xl">
+            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
                 <Text>View details about this node</Text>
             </PageSection>
-            <PageSection isFilled className="pf-u-display-flex pf-u-flex-direction-column">
-                <div className="pf-u-flex-grow-1 pf-u-background-color-100">Details</div>
+            <PageSection isFilled className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
+                <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100">Details</div>
             </PageSection>
         </>
     );

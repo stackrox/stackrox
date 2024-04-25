@@ -15,21 +15,23 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
+import TableEntityToolbar from '../../components/TableEntityToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import NodeCveFilterToolbar from '../components/NodeCveFilterToolbar';
 import { NODE_CVE_SEARCH_OPTION } from '../../searchOptions';
 import { parseWorkloadQuerySearchFilter } from '../../utils/searchUtils';
 import { nodeEntityTabValues } from '../../types';
+import { DEFAULT_PAGE_SIZE } from '../../constants';
 
-import CVEsTableContainer from './CVEsTableContainer';
-import NodesTableContainer from './NodesTableContainer';
+import CVEsTable from './CVEsTable';
+import NodesTable from './NodesTable';
 
 const searchOptions = [NODE_CVE_SEARCH_OPTION];
 
 function NodeCvesOverviewPage() {
     const [activeEntityTabKey] = useURLStringUnion('entityTab', nodeEntityTabValues);
     const { searchFilter } = useURLSearch();
-    const pagination = useURLPagination(20);
+    const pagination = useURLPagination(DEFAULT_PAGE_SIZE);
 
     // TODO - Need an equivalent function implementation for filter sanitization for Node CVEs
     const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
@@ -78,23 +80,29 @@ function NodeCvesOverviewPage() {
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>
+                            <TableEntityToolbar
+                                filterToolbar={filterToolbar}
+                                entityToggleGroup={entityToggleGroup}
+                                pagination={pagination}
+                                tableRowCount={
+                                    activeEntityTabKey === 'CVE'
+                                        ? entityCounts.CVE
+                                        : entityCounts.Node
+                                }
+                                isFiltered={isFiltered}
+                            />
+                            <Divider component="div" />
                             {activeEntityTabKey === 'CVE' && (
-                                <CVEsTableContainer
-                                    filterToolbar={filterToolbar}
-                                    entityToggleGroup={entityToggleGroup}
+                                <CVEsTable
                                     querySearchFilter={querySearchFilter}
                                     isFiltered={isFiltered}
-                                    rowCount={entityCounts.CVE}
                                     pagination={pagination}
                                 />
                             )}
                             {activeEntityTabKey === 'Node' && (
-                                <NodesTableContainer
-                                    filterToolbar={filterToolbar}
-                                    entityToggleGroup={entityToggleGroup}
+                                <NodesTable
                                     querySearchFilter={querySearchFilter}
                                     isFiltered={isFiltered}
-                                    rowCount={entityCounts.Node}
                                     pagination={pagination}
                                 />
                             )}

@@ -8,7 +8,7 @@ import "api/v2/user.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "v2";
+option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
 
 // ClusterScanStatus holds status based on cluster in the event that a scan configuration
@@ -62,9 +62,9 @@ message ComplianceScanConfigurationsCount {
   int32 count = 1;
 }
 
-// Next available tag: 2
 message ListComplianceScanConfigurationsResponse {
   repeated ComplianceScanConfigurationStatus configurations = 1;
+  int32 total_count = 2;
 }
 
 service ComplianceScanConfigurationService {
