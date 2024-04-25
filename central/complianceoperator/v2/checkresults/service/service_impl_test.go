@@ -9,6 +9,7 @@ import (
 	resultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
+	ruleMocks "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	convertUtils "github.com/stackrox/rox/central/convert/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -68,6 +69,7 @@ type ComplianceResultsServiceTestSuite struct {
 	resultDatastore *resultMocks.MockDataStore
 	scanConfigDS    *scanConfigMocks.MockDataStore
 	integrationDS   *integrationMocks.MockDataStore
+	ruleDS          *ruleMocks.MockDataStore
 	service         Service
 	profilsDS       *profileDatastore.MockDataStore
 }
@@ -88,7 +90,9 @@ func (s *ComplianceResultsServiceTestSuite) SetupTest() {
 	s.scanConfigDS = scanConfigMocks.NewMockDataStore(s.mockCtrl)
 	s.integrationDS = integrationMocks.NewMockDataStore(s.mockCtrl)
 	s.profilsDS = profileDatastore.NewMockDataStore(s.mockCtrl)
-	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS, s.profilsDS)
+	s.ruleDS = ruleMocks.NewMockDataStore(s.mockCtrl)
+
+	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS, s.profilsDS, s.ruleDS)
 }
 
 func (s *ComplianceResultsServiceTestSuite) TearDownTest() {
@@ -514,7 +518,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResult() {
 	testCases := []struct {
 		desc         string
 		query        *apiV2.ResourceByID
-		expectedResp *apiV2.ComplianceCheckResult
+		expectedResp *apiV2.ComplianceClusterCheckStatus
 		expectedErr  error
 		found        bool
 		setMocks     func()
@@ -1051,7 +1055,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckStats()
 	}
 }
 
-func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckClusterResult() {
+func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult() {
 	testCases := []struct {
 		desc         string
 		query        *apiV2.ComplianceProfileCheckRequest
@@ -1144,7 +1148,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckCluster
 		s.T().Run(tc.desc, func(t *testing.T) {
 			tc.setMocks()
 
-			results, err := s.service.GetComplianceProfileCheckClusterResult(s.ctx, tc.query)
+			results, err := s.service.GetComplianceProfileCheckResult(s.ctx, tc.query)
 			if tc.expectedErr == nil {
 				s.Require().NoError(err)
 				s.Require().Equal(tc.expectedResp, results)

@@ -338,7 +338,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2ComplianceCheckResult"
+              "$ref": "#/definitions/v2ComplianceClusterCheckStatus"
             }
           },
           "default": {
@@ -439,8 +439,8 @@
     },
     "/v2/compliance/scan/results/profile/{profileName}/checks/{checkName}": {
       "get": {
-        "summary": "GetComplianceProfileCheckClusterResult lists status of a check per cluster",
-        "operationId": "ComplianceResultsService_GetComplianceProfileCheckClusterResult",
+        "summary": "GetComplianceProfileCheckResult lists status of a check per cluster",
+        "operationId": "ComplianceResultsService_GetComplianceProfileCheckResult",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -464,6 +464,94 @@
           },
           {
             "name": "checkName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/results/profile/{profileName}/cluster/{clusterId}": {
+      "get": {
+        "summary": "GetComplianceProfileClusterResults lists status of a check per cluster",
+        "operationId": "ComplianceResultsService_GetComplianceProfileClusterResults",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceCheckResultResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "profileName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "clusterId",
             "in": "path",
             "required": true,
             "type": "string"
@@ -1164,11 +1252,8 @@
         "checkName": {
           "type": "string"
         },
-        "clusters": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v2ClusterCheckStatus"
-          }
+        "checkUid": {
+          "type": "string"
         },
         "description": {
           "type": "string"
@@ -1180,7 +1265,10 @@
           "type": "string"
         },
         "control": {
-          "type": "string"
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "rationale": {
           "type": "string"
@@ -1196,9 +1284,15 @@
           "items": {
             "type": "string"
           }
+        },
+        "status": {
+          "$ref": "#/definitions/v2ComplianceCheckStatus"
+        },
+        "ruleName": {
+          "type": "string"
         }
       },
-      "title": "Next tag: 11\nComplianceCheckResult provides the results of a compliance check against a rule"
+      "title": "ComplianceCheckResult provides the results of a compliance check against a rule"
     },
     "v2ComplianceCheckResultStatusCount": {
       "type": "object",
@@ -1247,6 +1341,54 @@
         }
       },
       "title": "Group the number of occurrences by status"
+    },
+    "v2ComplianceClusterCheckStatus": {
+      "type": "object",
+      "properties": {
+        "checkId": {
+          "type": "string"
+        },
+        "checkName": {
+          "type": "string"
+        },
+        "clusters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ClusterCheckStatus"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "instructions": {
+          "type": "string"
+        },
+        "standard": {
+          "type": "string"
+        },
+        "control": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "valuesUsed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "ComplianceClusterCheckStatus provides the results of a compliance check against a rule"
     },
     "v2ComplianceClusterOverallStats": {
       "type": "object",
@@ -1325,7 +1467,7 @@
         "checkResults": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v2ComplianceCheckResult"
+            "$ref": "#/definitions/v2ComplianceClusterCheckStatus"
           }
         },
         "scanConfigId": {
@@ -1387,6 +1529,27 @@
         }
       },
       "title": "ListComplianceCheckScanStatsResponse provides stats per cluster"
+    },
+    "v2ListComplianceCheckResultResponse": {
+      "type": "object",
+      "properties": {
+        "checkResults": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceCheckResult"
+          }
+        },
+        "profileName": {
+          "type": "string"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
     },
     "v2ListComplianceClusterOverallStatsResponse": {
       "type": "object",
