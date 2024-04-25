@@ -32,6 +32,7 @@ jobs:
       # Needed for stackrox/central-login to create the JWT token.
       id-token: write
     strategy:
+      fail-fast: false
       matrix:
         image:
           [
@@ -74,3 +75,16 @@ jobs:
             echo '```'
             echo "</details>"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if critical or important vulnerabilities have been found
+        run: |
+          RESULT=$(roxctl image scan --output=json \
+            --image="quay.io/rhacs-eng/${{ matrix.image }}:${{ inputs.version }}")
+          CRITICAL_CNT=$(jq ".result.summary.CRITICAL" <<< "$RESULT")
+          IMPORTANT_CNT=$(jq ".result.summary.IMPORTANT" <<< "$RESULT")
+          if (( CRITICAL_CNT + IMPORTANT_CNT > 0 )); then
+            echo "Found $CRITICAL_CNT critical vulnerabilities."
+            echo "Found $IMPORTANT_CNT important vulnerabilities."
+            echo "Check the workflow summary for a detailed list of the vulnerabilities."
+            exit 1
+          fi
