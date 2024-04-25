@@ -6,7 +6,7 @@ toolchain go1.21.7
 
 require (
 	cloud.google.com/go/artifactregistry v1.14.7
-	cloud.google.com/go/compute/metadata v0.2.3
+	cloud.google.com/go/compute/metadata v0.3.0
 	cloud.google.com/go/containeranalysis v0.11.4
 	cloud.google.com/go/securitycenter v1.27.0
 	cloud.google.com/go/storage v1.40.0
@@ -160,7 +160,6 @@ require (
 
 require (
 	cloud.google.com/go v0.112.1 // indirect
-	cloud.google.com/go/compute v1.25.0 // indirect
 	cloud.google.com/go/iam v1.1.7 // indirect
 	cloud.google.com/go/longrunning v0.5.5 // indirect
 	dario.cat/mergo v1.0.0 // indirect
