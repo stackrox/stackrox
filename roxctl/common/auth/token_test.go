@@ -2,8 +2,11 @@ package auth
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/containers/storage/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/suite"
 )
@@ -20,6 +23,21 @@ type tokenSuite struct {
 
 func (s *tokenSuite) Test_RetrieveAuthToken_WithEnv() {
 	s.T().Setenv(env.TokenEnv.EnvVar(), testTokenVal)
+
+	method := tokenMethod{}
+	got, err := method.retrieveAuthToken()
+
+	s.Require().NoError(err)
+	s.Equal(got, testTokenVal, "Did not receive correct rox auth token from environment")
+}
+
+func (s *tokenSuite) Test_RetrieveAuthToken_WithFileEnv() {
+	tstDir, err := ioutils.TempDir("", "roxctl-test-common-auth")
+	s.NoError(err)
+	defer func() { _ = os.RemoveAll(tstDir) }()
+	filePath := filepath.Join(tstDir, "token")
+	os.WriteFile(filePath, []byte(testTokenVal), 0600)
+	s.T().Setenv(env.TokenFileEnv.EnvVar(), filePath)
 
 	method := tokenMethod{}
 	got, err := method.retrieveAuthToken()
