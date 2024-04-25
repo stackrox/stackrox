@@ -68,7 +68,7 @@ describe(Cypress.spec.relative, () => {
             setup({ type: 'EMPTY' });
 
             cy.findByText('No results found');
-            cy.findByText('No nodes are detected to have been reported for this CVE');
+            cy.findByText('There are no nodes that are affected by this CVE');
         });
 
         it('should render a message when a filter results in no data', () => {
