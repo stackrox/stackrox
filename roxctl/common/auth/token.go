@@ -45,12 +45,6 @@ func (t tokenMethod) retrieveAuthToken() (string, error) {
 			return "", errors.Wrapf(err, "could not read token from %q", tokenFile)
 		}
 		apiToken = token
-	} else if tokenFileFromEnv := env.TokenFileEnv.Setting(); tokenFileFromEnv != "" {
-		token, err := flags.ReadTokenFromFile(tokenFileFromEnv)
-		if err != nil {
-			return "", errors.Wrapf(err, "could not read token from %q", tokenFileFromEnv)
-		}
-		apiToken = token
 	} else if token := env.TokenEnv.Setting(); token != "" {
 		apiToken = token
 	}
