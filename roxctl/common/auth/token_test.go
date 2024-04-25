@@ -36,7 +36,8 @@ func (s *tokenSuite) Test_RetrieveAuthToken_WithFileEnv() {
 	s.NoError(err)
 	defer func() { _ = os.RemoveAll(tstDir) }()
 	filePath := filepath.Join(tstDir, "token")
-	os.WriteFile(filePath, []byte(testTokenVal), 0600)
+	err = os.WriteFile(filePath, []byte(testTokenVal), 0600)
+	s.NoError(err)
 	s.T().Setenv(env.TokenFileEnv.EnvVar(), filePath)
 
 	method := tokenMethod{}
