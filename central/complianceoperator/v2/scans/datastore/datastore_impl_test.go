@@ -197,6 +197,47 @@ func (s *complianceScanDataStoreTestSuite) TestGetScansByCluster() {
 	}
 }
 
+func (s *complianceScanDataStoreTestSuite) TestGetScansByProfile() {
+	// make sure we have nothing
+	ScanIDs, err := s.storage.GetIDs(s.hasReadCtx)
+	s.Require().NoError(err)
+	s.Require().Empty(ScanIDs)
+
+	testScan1 := getTestScan("scan1", "profile-1", testconsts.Cluster1)
+	testScan2 := getTestScan("scan2", "profile-1", testconsts.Cluster1)
+	testScan3 := getTestScan("scan3", "profile-1", testconsts.Cluster2)
+
+	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan1))
+	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan2))
+	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan3))
+
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Require().Equal(3, count)
+
+	testCases := []struct {
+		desc            string
+		profileID       string
+		testContext     context.Context
+		expectedResults []*storage.ComplianceOperatorScanV2
+		expectedCount   int
+	}{
+		{
+			desc:            "Scans exist - Full access",
+			profileID:       "profile-1",
+			testContext:     s.testContexts[testutils.UnrestrictedReadCtx],
+			expectedResults: []*storage.ComplianceOperatorScanV2{testScan1, testScan2},
+			expectedCount:   2,
+		},
+	}
+	for _, tc := range testCases {
+		retrievedObjects, err := s.dataStore.GetScansByProfile(tc.testContext, tc.profileID)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedCount, len(retrievedObjects))
+		s.Require().Equal(tc.expectedResults, retrievedObjects)
+	}
+}
+
 func (s *complianceScanDataStoreTestSuite) TestUpsertScan() {
 	// make sure we have nothing
 	ScanIDs, err := s.storage.GetIDs(s.hasReadCtx)

@@ -25,6 +25,9 @@ type DataStore interface {
 	// GetScansByCluster retrieves scan objects by cluster
 	GetScansByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorScanV2, error)
 
+	// GetScansByProfile retrieves scan objects by cluster
+	GetScansByProfile(ctx context.Context, profileID string) ([]*storage.ComplianceOperatorScanV2, error)
+
 	// DeleteScanByCluster deletes scans by cluster
 	DeleteScanByCluster(ctx context.Context, clusterID string) error
 }

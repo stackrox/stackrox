@@ -35,6 +35,12 @@ func (d *datastoreImpl) GetScansByCluster(ctx context.Context, clusterID string)
 		AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
 }
 
+// GetScansByCluster retrieves scan objects by cluster
+func (d *datastoreImpl) GetScansByProfile(ctx context.Context, profileID string) ([]*storage.ComplianceOperatorScanV2, error) {
+	return d.store.GetByQuery(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorProfileID, profileID).ProtoQuery())
+}
+
 // DeleteScanByCluster deletes scans by cluster
 func (d *datastoreImpl) DeleteScanByCluster(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()

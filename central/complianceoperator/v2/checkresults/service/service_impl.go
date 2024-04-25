@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -9,6 +10,7 @@ import (
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	complianceConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	scanDatastore "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
@@ -50,12 +52,13 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore) Service {
+func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore, scanDatastore scanDatastore.DataStore) Service {
 	return &serviceImpl{
 		complianceResultsDS: complianceResultsDS,
 		scanConfigDS:        scanConfigDS,
 		integrationDS:       integrationDS,
 		profileDS:           profileDS,
+		scanDatastore:       scanDatastore,
 	}
 }
 
@@ -66,6 +69,7 @@ type serviceImpl struct {
 	scanConfigDS        complianceConfigDS.DataStore
 	integrationDS       complianceIntegrationDS.DataStore
 	profileDS           profileDatastore.DataStore
+	scanDatastore       scanDatastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -153,6 +157,7 @@ func (s *serviceImpl) getProfileStats(ctx context.Context, parsedQuery *v1.Query
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for request %v", countQuery)
 	}
+
 	profileMap := map[string]*storage.ComplianceOperatorProfileV2{}
 	for _, scan := range scanResults {
 		profileResults, err := s.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
@@ -163,8 +168,21 @@ func (s *serviceImpl) getProfileStats(ctx context.Context, parsedQuery *v1.Query
 		if len(profileResults) == 0 {
 			return nil, errors.Errorf("Unable to retrieve compliance profile for %s", scan.ProfileName)
 		}
-
 		profileMap[scan.ProfileName] = profileResults[0]
+		scans, err := s.scanDatastore.GetScansByProfile(ctx, profileResults[0].ProfileId)
+		if err != nil {
+			return nil, errors.Wrap(err, "Unable to retrieve scan results for profile")
+		}
+		if len(scans) == 0 {
+			return nil, errors.Errorf("Unable to retrieve scan results for compliance profile %s", scan.ProfileName)
+		}
+		sort.Slice(scans, func(i, j int) bool {
+			return scans[i].LastExecutedTime.GetSeconds() < scans[j].LastExecutedTime.GetSeconds()
+		})
+
+		if err != nil {
+			return nil, errors.Wrap(err, "Unable to retrieve compliance profile")
+		}
 	}
 
 	return &v2.ListComplianceProfileScanStatsResponse{

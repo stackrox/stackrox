@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
@@ -10,6 +11,7 @@ import (
 	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
+	scanDatastore "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
 	convertUtils "github.com/stackrox/rox/central/convert/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
@@ -18,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/search"
@@ -70,6 +73,7 @@ type ComplianceResultsServiceTestSuite struct {
 	integrationDS   *integrationMocks.MockDataStore
 	service         Service
 	profilsDS       *profileDatastore.MockDataStore
+	scanDatastore   *scanDatastore.MockDataStore
 }
 
 func (s *ComplianceResultsServiceTestSuite) SetupSuite() {
@@ -88,7 +92,8 @@ func (s *ComplianceResultsServiceTestSuite) SetupTest() {
 	s.scanConfigDS = scanConfigMocks.NewMockDataStore(s.mockCtrl)
 	s.integrationDS = integrationMocks.NewMockDataStore(s.mockCtrl)
 	s.profilsDS = profileDatastore.NewMockDataStore(s.mockCtrl)
-	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS, s.profilsDS)
+	s.scanDatastore = scanDatastore.NewMockDataStore(s.mockCtrl)
+	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS, s.profilsDS, s.scanDatastore)
 }
 
 func (s *ComplianceResultsServiceTestSuite) TearDownTest() {
@@ -710,6 +715,21 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileScanStats() 
 				}}
 				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-node").ProtoQuery()).Return(profiles, nil).Times(1)
+				timePrev := time.Now().Add(-time.Duration(2) * 24 * time.Hour)
+				scans := []*storage.ComplianceOperatorScanV2{{
+					ScanConfigName:   "test_scan",
+					LastExecutedTime: protocompat.TimestampNow(),
+					Profile: &storage.ProfileShim{
+						ProfileId: "test_profile_ocp4-node"},
+				},
+					{
+						ScanConfigName:   "test_scan",
+						LastExecutedTime: protocompat.ConvertTimeToTimestampOrNil(&timePrev),
+						Profile: &storage.ProfileShim{
+							ProfileId: "test_profile_ocp4-node"},
+					},
+				}
+				s.scanDatastore.EXPECT().GetScansByProfile(gomock.Any(), gomock.Any()).Return(scans, nil).Times(1)
 			},
 		},
 		{

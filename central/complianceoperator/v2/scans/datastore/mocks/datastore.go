@@ -99,6 +99,21 @@ func (mr *MockDataStoreMockRecorder) GetScansByCluster(ctx, clusterID any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScansByCluster", reflect.TypeOf((*MockDataStore)(nil).GetScansByCluster), ctx, clusterID)
 }
 
+// GetScansByProfile mocks base method.
+func (m *MockDataStore) GetScansByProfile(ctx context.Context, profileID string) ([]*storage.ComplianceOperatorScanV2, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetScansByProfile", ctx, profileID)
+	ret0, _ := ret[0].([]*storage.ComplianceOperatorScanV2)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetScansByProfile indicates an expected call of GetScansByProfile.
+func (mr *MockDataStoreMockRecorder) GetScansByProfile(ctx, profileID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScansByProfile", reflect.TypeOf((*MockDataStore)(nil).GetScansByProfile), ctx, profileID)
+}
+
 // UpsertScan mocks base method.
 func (m *MockDataStore) UpsertScan(ctx context.Context, result *storage.ComplianceOperatorScanV2) error {
 	m.ctrl.T.Helper()
