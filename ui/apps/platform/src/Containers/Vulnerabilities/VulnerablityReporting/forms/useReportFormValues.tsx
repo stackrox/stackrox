@@ -3,7 +3,13 @@ import { FormikProps, useFormik } from 'formik';
 import * as yup from 'yup';
 
 import { VulnerabilitySeverity, vulnerabilitySeverities } from 'types/cve.proto';
-import { ImageType, IntervalType, imageTypes, intervalTypes } from 'services/ReportsService.types';
+import {
+    ImageType,
+    IntervalType,
+    NotifierConfiguration,
+    imageTypes,
+    intervalTypes,
+} from 'services/ReportsService.types';
 import {
     DayOfMonth,
     DayOfWeek,
@@ -14,7 +20,7 @@ import {
 export type ReportFormValues = {
     reportId: string;
     reportParameters: ReportParametersFormValues;
-    deliveryDestinations: DeliveryDestination[];
+    deliveryDestinations: NotifierConfiguration[];
     schedule: {
         intervalType: IntervalType | null;
         daysOfWeek: DayOfWeek[];
@@ -27,7 +33,7 @@ export type SetReportFormValues = (newFormValues: ReportFormValues) => void;
 export type FormFieldValue =
     | string
     | string[]
-    | DeliveryDestination[]
+    | NotifierConfiguration[]
     | Partial<Record<string, string | string[] | null>>;
 
 export type SetReportFormFieldValue = (fieldName: string, value: FormFieldValue) => void;
@@ -54,18 +60,6 @@ export type CVESDiscoveredSince = (typeof cvesDiscoveredSince)[number];
 export type CVESDiscoveredStartDate = string | undefined;
 
 export type ReportScope = {
-    id: string;
-    name: string;
-};
-
-export type DeliveryDestination = {
-    notifier: ReportNotifier | null;
-    mailingLists: string[];
-    customSubject: string;
-    customBody: string;
-};
-
-export type ReportNotifier = {
     id: string;
     name: string;
 };
@@ -138,19 +132,16 @@ const validationSchema = yup.object().shape({
         .array()
         .of(
             yup.object().shape({
-                notifier: yup
-                    .object()
-                    .nullable()
-                    .strict()
-                    .test('is-not-null', 'A notifier is required', (value) => {
-                        return value !== null && value !== undefined;
-                    }),
-                mailingLists: yup
-                    .array()
-                    .of(yup.string())
-                    .min(1, 'At least 1 delivery destination is required'),
-                customSubject: emailSubjectValidation,
-                customBody: emailBodyValidation,
+                emailConfig: yup.object().shape({
+                    notifierId: yup.string().required('A notifier is required'),
+                    mailingLists: yup
+                        .array()
+                        .of(yup.string())
+                        .min(1, 'At least 1 delivery destination is required'),
+                    customSubject: emailSubjectValidation,
+                    customBody: emailBodyValidation,
+                }),
+                notifierName: yup.string(),
             })
         )
         .strict()
