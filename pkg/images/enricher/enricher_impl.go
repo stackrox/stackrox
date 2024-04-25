@@ -339,7 +339,8 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 		return false, nil
 	}
 
-	if enrichmentContext.FetchOpt != ForceRefetch {
+	if !enrichmentContext.FetchOpt.forceRefetchCachedValues() &&
+		enrichmentContext.FetchOpt != UseImageNamesRefetchCachedValues {
 		// The metadata in the cache is always up-to-date with respect to the current metadataVersion
 		if metadataValue := e.metadataCache.Get(getRef(image)); metadataValue != nil {
 			e.metrics.IncrementMetadataCacheHit()
