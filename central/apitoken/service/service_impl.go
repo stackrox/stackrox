@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"strings"
+	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -146,6 +147,7 @@ func (s *serviceImpl) ListAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*
 			result = append(result, role.GetRoleName())
 		}
 	}
+	sort.Strings(result)
 	return &v1.ListAllowedTokenRolesResponse{
 		RoleNames: result,
 	}, nil
