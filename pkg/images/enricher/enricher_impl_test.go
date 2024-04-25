@@ -304,6 +304,26 @@ func TestEnricherFlow(t *testing.T) {
 			},
 		},
 		{
+			name: " data in both caches but force refetch use names",
+			ctx: EnrichmentContext{
+				FetchOpt: UseImageNamesRefetchCachedValues,
+			},
+			inMetadataCache: true,
+			image: &storage.Image{
+				Id:    "id",
+				Name:  &storage.ImageName{Registry: "reg"},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+			},
+			fsr: newFakeRegistryScanner(opts{
+				requestedMetadata: true,
+				requestedScan:     true,
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: true,
+				ScanResult:   ScanSucceeded,
+			},
+		},
+		{
 			name: "data in both caches but force refetch scans only",
 			ctx: EnrichmentContext{
 				FetchOpt: ForceRefetchScansOnly,
