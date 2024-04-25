@@ -15,7 +15,6 @@ import { FormikProps } from 'formik';
 
 import {
     CVESDiscoveredSince,
-    DeliveryDestination,
     ReportFormValues,
 } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import { fixabilityLabels } from 'constants/reportConstants';
@@ -30,6 +29,7 @@ import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/Vulner
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { cloneDeep } from 'lodash';
 import { CollectionSlim } from 'services/CollectionsService';
+import { NotifierConfiguration } from 'services/ReportsService.types';
 import CollectionSelection from './CollectionSelection';
 
 export type ReportParametersFormParams = {
@@ -218,11 +218,14 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                                 // since delivery destinations are required in this case, we will
                                 // automatically add to the array so the user doesn't need to do it
                                 // manually
-                                const newDeliveryDestination: DeliveryDestination = {
-                                    notifier: null,
-                                    mailingLists: [],
-                                    customSubject: '',
-                                    customBody: '',
+                                const newDeliveryDestination: NotifierConfiguration = {
+                                    emailConfig: {
+                                        notifierId: '',
+                                        mailingLists: [],
+                                        customSubject: '',
+                                        customBody: '',
+                                    },
+                                    notifierName: '',
                                 };
                                 modifiedFormValues.deliveryDestinations.push(
                                     newDeliveryDestination

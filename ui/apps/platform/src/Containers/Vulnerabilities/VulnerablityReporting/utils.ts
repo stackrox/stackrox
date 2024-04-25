@@ -12,7 +12,6 @@ import { getDate } from 'utils/dateUtils';
 import {
     CVESDiscoveredSince,
     CVESDiscoveredStartDate,
-    DeliveryDestination,
     ReportFormValues,
     ReportParametersFormValues,
 } from './forms/useReportFormValues';
@@ -81,17 +80,7 @@ export function getReportConfigurationFromFormValues(
         };
     }
 
-    const notifiers = deliveryDestinations.map((deliveryDestination) => {
-        return {
-            emailConfig: {
-                notifierId: deliveryDestination.notifier?.id || '',
-                mailingLists: deliveryDestination.mailingLists,
-                customSubject: deliveryDestination.customSubject,
-                customBody: deliveryDestination.customBody,
-            },
-            notifierName: deliveryDestination.notifier?.name || '',
-        };
-    });
+    const notifiers = deliveryDestinations;
 
     let schedule: Schedule | null;
     if (formSchedule.intervalType === 'WEEKLY') {
@@ -161,18 +150,7 @@ export function getReportFormValuesFromConfiguration(
         cvesDiscoveredSince = 'ALL_VULN';
     }
 
-    const deliveryDestinations = notifiers.map((notifier) => {
-        const deliveryDestination: DeliveryDestination = {
-            notifier: {
-                id: notifier.emailConfig.notifierId,
-                name: notifier.notifierName,
-            },
-            mailingLists: notifier.emailConfig.mailingLists,
-            customSubject: notifier.emailConfig.customSubject,
-            customBody: notifier.emailConfig.customBody,
-        };
-        return deliveryDestination;
-    });
+    const deliveryDestinations = notifiers;
 
     let formSchedule: ReportFormValues['schedule'];
     if (!schedule) {

@@ -18,11 +18,9 @@ import { HelpIcon, PencilAltIcon, PlusCircleIcon, TrashIcon } from '@patternfly/
 import { FormikProps } from 'formik';
 import isEqual from 'lodash/isEqual';
 
-import {
-    DeliveryDestination,
-    ReportFormValues,
-} from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
+import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import usePermissions from 'hooks/usePermissions';
+import { NotifierConfiguration } from 'services/ReportsService.types';
 import {
     EmailTemplateFormData,
     defaultEmailBody,
@@ -68,20 +66,27 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
         );
         if (index >= 0) {
             const prevDeliveryDestination = formik.values.deliveryDestinations[index];
+            const { emailConfig } = prevDeliveryDestination;
             formik.setFieldValue(`deliveryDestinations[${index}]`, {
                 ...prevDeliveryDestination,
-                customSubject: formData.emailSubject,
-                customBody: formData.emailBody,
+                emailConfig: {
+                    ...emailConfig,
+                    customSubject: formData.emailSubject,
+                    customBody: formData.emailBody,
+                },
             });
         }
     }
 
     function addDeliveryDestination() {
-        const newDeliveryDestination: DeliveryDestination = {
-            notifier: null,
-            mailingLists: [],
-            customSubject: '',
-            customBody: '',
+        const newDeliveryDestination: NotifierConfiguration = {
+            emailConfig: {
+                notifierId: '',
+                mailingLists: [],
+                customSubject: '',
+                customBody: '',
+            },
+            notifierName: '',
         };
         const newDeliveryDestinations = [
             ...formik.values.deliveryDestinations,
@@ -150,12 +155,20 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                             <ul>
                                 {formik.values.deliveryDestinations.map(
                                     (deliveryDestination, index) => {
+                                        const { emailConfig, notifierName } = deliveryDestination;
+                                        const {
+                                            customBody,
+                                            customSubject,
+                                            mailingLists,
+                                            notifierId,
+                                        } = emailConfig;
+                                        const selectedNotifier =
+                                            notifierId.length === 0
+                                                ? null
+                                                : { id: notifierId, name: notifierName };
                                         const fieldId = `deliveryDestinations[${index}]`;
                                         const isDefaultEmailTemplateApplied =
-                                            isDefaultEmailTemplate(
-                                                deliveryDestination.customSubject,
-                                                deliveryDestination.customBody
-                                            );
+                                            isDefaultEmailTemplate(customSubject, customBody);
                                         return (
                                             <li key={keyFor(index)} className="pf-v5-u-mb-md">
                                                 <Card>
@@ -186,12 +199,8 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                                                     <CardBody>
                                                         <NotifierSelection
                                                             prefixId={fieldId}
-                                                            selectedNotifier={
-                                                                deliveryDestination.notifier
-                                                            }
-                                                            mailingLists={
-                                                                deliveryDestination.mailingLists
-                                                            }
+                                                            selectedNotifier={selectedNotifier}
+                                                            mailingLists={mailingLists}
                                                             allowCreate={hasNotifierWriteAccess}
                                                             formik={formik}
                                                         />
