@@ -9,4 +9,5 @@ package tools
 import (
 	// Tool dependencies, not used anywhere in the code.
 	_ "github.com/jstemmer/go-junit-report/v2"
+	_ "github.com/stackrox/image-prefetcher/deploy"
 )
