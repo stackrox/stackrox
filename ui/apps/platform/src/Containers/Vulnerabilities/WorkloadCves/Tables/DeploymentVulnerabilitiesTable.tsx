@@ -19,7 +19,10 @@ import DeploymentComponentVulnerabilitiesTable, {
     ImageMetadataContext,
     deploymentComponentVulnerabilitiesFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
-import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
+import {
+    getAnyVulnerabilityIsFixable,
+    getHighestVulnerabilitySeverity,
+} from '../../utils/vulnerabilityUtils';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 
@@ -87,8 +90,9 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
         const { vulnerabilityId, cve, summary, images, pendingExceptionCount } = vulnerability;
         // Severity, Fixability, and Discovered date are all based on the aggregate value of all components
         const allVulnerableComponents = vulnerability.images.flatMap((img) => img.imageComponents);
-        const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerableComponents);
-        const isAnyVulnFixable = getAnyVulnerabilityIsFixable(allVulnerableComponents);
+        const allVulnerabilities = allVulnerableComponents.flatMap((c) => c.imageVulnerabilities);
+        const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerabilities);
+        const isAnyVulnFixable = getAnyVulnerabilityIsFixable(allVulnerabilities);
         const allDiscoveredDates = allVulnerableComponents
             .flatMap((c) => c.imageVulnerabilities.map((v) => v.discoveredAtImage))
             .filter((d): d is string => d !== null);

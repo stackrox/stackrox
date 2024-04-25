@@ -23,6 +23,7 @@ import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
 import TooltipTh from 'Components/TooltipTh';
 import DateDistance from 'Components/DateDistance';
+import { getAnyVulnerabilityIsFixable } from '../../utils/vulnerabilityUtils';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
@@ -31,7 +32,6 @@ import ImageComponentVulnerabilitiesTable, {
 } from './ImageComponentVulnerabilitiesTable';
 
 import EmptyTableResults from '../components/EmptyTableResults';
-import { getAnyVulnerabilityIsFixable } from './table.utils';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../components/CVESelectionTh';
@@ -142,7 +142,10 @@ function ImageVulnerabilitiesTable({
                     },
                     rowIndex
                 ) => {
-                    const isFixable = getAnyVulnerabilityIsFixable(imageComponents);
+                    const vulnerabilities = imageComponents.flatMap(
+                        (imageComponent) => imageComponent.imageVulnerabilities
+                    );
+                    const isFixable = getAnyVulnerabilityIsFixable(vulnerabilities);
                     const isExpanded = expandedRowSet.has(cve);
 
                     return (

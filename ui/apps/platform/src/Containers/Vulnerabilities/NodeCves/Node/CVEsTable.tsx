@@ -1,79 +1,67 @@
 import React from 'react';
-import { Truncate, pluralize } from '@patternfly/react-core';
-import { ExpandableRowContent, Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
-import { gql } from '@apollo/client';
 import { Link } from 'react-router-dom';
-
-import { TableUIState } from 'utils/getTableUIState';
-
-import useSet from 'hooks/useSet';
-import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
+import { gql } from '@apollo/client';
+import { pluralize } from '@patternfly/react-core';
+import { Table, Thead, Tr, Th, Td, ExpandableRowContent, Tbody } from '@patternfly/react-table';
 
 import CvssFormatted from 'Components/CvssFormatted';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { getNodeEntityPagePath } from '../../utils/searchUtils';
-import {
-    getHighestVulnerabilitySeverity,
-    getAnyVulnerabilityIsFixable,
-    getHighestCvssScore,
-} from '../../utils/vulnerabilityUtils';
+import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
+import { TableUIState } from 'utils/getTableUIState';
+import useSet from 'hooks/useSet';
 
+import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
+import {
+    getAnyVulnerabilityIsFixable,
+    getHighestVulnerabilitySeverity,
+} from '../../utils/vulnerabilityUtils';
+import { getNodeEntityPagePath } from '../../utils/searchUtils';
 import NodeComponentsTable from '../components/NodeComponentsTable';
 
-export const affectedNodeFragment = gql`
-    fragment AffectedNode on Node {
-        id
-        name
-        operatingSystem
-        cluster {
+export const nodeVulnerabilityFragment = gql`
+    fragment NodeVulnerabilityFragment on NodeVulnerability {
+        cve
+        summary
+        cvss
+        scoreVersion
+        nodeComponents(query: $query) {
             name
-        }
-        nodeComponents {
-            name
-            version
             source
-            nodeVulnerabilities {
-                vulnerabilityId: id
-                cve
+            operatingSystem
+            version
+            nodeVulnerabilities(query: $query) {
                 severity
+                isFixable
                 fixedByVersion
-                cvss
-                scoreVersion
             }
         }
     }
 `;
 
-export type AffectedNode = {
-    id: string;
-    name: string;
-    operatingSystem: string;
-    cluster: {
-        name: string;
-    };
+export type NodeVulnerability = {
+    cve: string;
+    summary: string;
+    cvss: number;
+    scoreVersion: string;
     nodeComponents: {
         name: string;
-        version: string;
         source: string;
+        operatingSystem: string;
+        version: string;
         nodeVulnerabilities: {
-            vulnerabilityId: string;
-            cve: string;
             severity: string;
+            isFixable: boolean;
             fixedByVersion: string;
-            cvss: number;
-            scoreVersion: string;
         }[];
     }[];
 };
 
-export type AffectedNodesTableProps = {
-    tableState: TableUIState<AffectedNode>;
+export type CVEsTableProps = {
+    tableState: TableUIState<NodeVulnerability>;
 };
 
-// TODO Add filter icon to dynamic table columns
-function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
-    const colSpan = 8;
+function CVEsTable({ tableState }: CVEsTableProps) {
+    const COL_SPAN = 6;
     const expandedRowSet = useSet<string>();
 
     return (
@@ -87,62 +75,50 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
             <Thead noWrap>
                 <Tr>
                     <Th aria-label="Expand row" />
-                    <Th>Node</Th>
-                    <Th>CVE severity</Th>
+                    <Th>CVE</Th>
+                    <Th>Top severity</Th>
                     <Th>CVE status</Th>
                     <Th>CVSS score</Th>
-                    <Th>Cluster</Th>
-                    <Th>Operating system</Th>
                     <Th>Affected components</Th>
                 </Tr>
             </Thead>
             <TbodyUnified
                 tableState={tableState}
-                colSpan={colSpan}
-                emptyProps={{
-                    message: 'There are no nodes that are affected by this CVE',
-                }}
+                colSpan={COL_SPAN}
+                emptyProps={{ message: 'No CVEs were detected for this node' }}
                 renderer={({ data }) =>
-                    data.map((node, rowIndex) => {
-                        const { id, name, nodeComponents } = node;
-                        const isExpanded = expandedRowSet.has(id);
+                    data.map((nodeVulnerability, rowIndex) => {
+                        const { cve, cvss, scoreVersion, nodeComponents } = nodeVulnerability;
 
                         const vulnerabilities = nodeComponents.flatMap(
                             (component) => component.nodeVulnerabilities
                         );
                         const topSeverity = getHighestVulnerabilitySeverity(vulnerabilities);
                         const isFixable = getAnyVulnerabilityIsFixable(vulnerabilities);
-                        const { cvss, scoreVersion } = getHighestCvssScore(vulnerabilities);
+                        const isExpanded = expandedRowSet.has(cve);
 
                         return (
-                            <Tbody key={id} isExpanded={isExpanded}>
+                            <Tbody key={cve} isExpanded={isExpanded}>
                                 <Tr>
                                     <Td
                                         expand={{
                                             rowIndex,
                                             isExpanded,
-                                            onToggle: () => expandedRowSet.toggle(id),
+                                            onToggle: () => expandedRowSet.toggle(cve),
                                         }}
                                     />
-
-                                    <Td dataLabel="Node">
-                                        <Link to={getNodeEntityPagePath('Node', id)}>
-                                            <Truncate position="middle" content={name} />
-                                        </Link>
+                                    <Td dataLabel="CVE" modifier="nowrap">
+                                        <Link to={getNodeEntityPagePath('CVE', cve)}>{cve}</Link>
                                     </Td>
-                                    <Td dataLabel="CVE severity" modifier="nowrap">
+                                    <Td dataLabel="Top severity">
                                         <VulnerabilitySeverityIconText severity={topSeverity} />
                                     </Td>
-                                    <Td dataLabel="CVE status" modifier="nowrap">
+                                    <Td dataLabel="CVE status">
                                         <VulnerabilityFixableIconText isFixable={isFixable} />
                                     </Td>
-                                    <Td dataLabel="CVSS score" modifier="nowrap">
+                                    <Td dataLabel="CVSS score">
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
-                                    <Td dataLabel="Cluster">
-                                        <Truncate position="middle" content={node.cluster.name} />
-                                    </Td>
-                                    <Td dataLabel="Operating system">{node.operatingSystem}</Td>
                                     <Td dataLabel="Affected components">
                                         {nodeComponents.length === 1
                                             ? nodeComponents[0].name
@@ -151,7 +127,7 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
                                     <Td />
-                                    <Td colSpan={colSpan - 1}>
+                                    <Td colSpan={COL_SPAN - 1}>
                                         <ExpandableRowContent>
                                             <NodeComponentsTable />
                                         </ExpandableRowContent>
@@ -166,4 +142,4 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
     );
 }
 
-export default AffectedNodesTable;
+export default CVEsTable;

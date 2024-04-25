@@ -14,7 +14,7 @@ import {
     getAnyVulnerabilityIsFixable,
     getHighestCvssScore,
     getHighestVulnerabilitySeverity,
-} from './table.utils';
+} from '../../utils/vulnerabilityUtils';
 import ImageNameLink from '../components/ImageNameLink';
 
 import ImageComponentVulnerabilitiesTable, {
@@ -112,9 +112,12 @@ function AffectedImagesTable({
             {images.length === 0 && <EmptyTableResults colSpan={7} />}
             {images.map((image, rowIndex) => {
                 const { id, name, operatingSystem, scanTime, imageComponents } = image;
-                const topSeverity = getHighestVulnerabilitySeverity(imageComponents);
-                const isFixable = getAnyVulnerabilityIsFixable(imageComponents);
-                const { cvss, scoreVersion } = getHighestCvssScore(imageComponents);
+                const vulnerabilities = imageComponents.flatMap(
+                    (imageComponent) => imageComponent.imageVulnerabilities
+                );
+                const topSeverity = getHighestVulnerabilitySeverity(vulnerabilities);
+                const isFixable = getAnyVulnerabilityIsFixable(vulnerabilities);
+                const { cvss, scoreVersion } = getHighestCvssScore(vulnerabilities);
                 const hasPendingException = imageComponents.some((imageComponent) =>
                     imageComponent.imageVulnerabilities.some(
                         (imageVulnerability) => imageVulnerability.pendingExceptionCount > 0
