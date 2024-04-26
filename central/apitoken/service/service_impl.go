@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/apitoken/backend"
 	roleDS "github.com/stackrox/rox/central/role/datastore"

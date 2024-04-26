@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	dbAuthz "github.com/stackrox/rox/central/globaldb/authz"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
