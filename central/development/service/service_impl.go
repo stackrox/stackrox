@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"

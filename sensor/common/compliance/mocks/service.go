@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	runtime "github.com/grpc-ecosystem/grpc-gateway/runtime"
+	runtime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	sensor "github.com/stackrox/rox/generated/internalapi/sensor"
