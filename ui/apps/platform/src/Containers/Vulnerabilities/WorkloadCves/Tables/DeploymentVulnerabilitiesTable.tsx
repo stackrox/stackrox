@@ -20,7 +20,7 @@ import DeploymentComponentVulnerabilitiesTable, {
     deploymentComponentVulnerabilitiesFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import {
-    getAnyVulnerabilityIsFixable,
+    getIsSomeVulnerabilityFixable,
     getHighestVulnerabilitySeverity,
 } from '../../utils/vulnerabilityUtils';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
@@ -92,7 +92,7 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
         const allVulnerableComponents = vulnerability.images.flatMap((img) => img.imageComponents);
         const allVulnerabilities = allVulnerableComponents.flatMap((c) => c.imageVulnerabilities);
         const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerabilities);
-        const isAnyVulnFixable = getAnyVulnerabilityIsFixable(allVulnerabilities);
+        const isFixableInDeployment = getIsSomeVulnerabilityFixable(allVulnerabilities);
         const allDiscoveredDates = allVulnerableComponents
             .flatMap((c) => c.imageVulnerabilities.map((v) => v.discoveredAtImage))
             .filter((d): d is string => d !== null);
@@ -119,7 +119,7 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
             vulnerabilityId,
             cve,
             severity: highestVulnSeverity,
-            isFixable: isAnyVulnFixable,
+            isFixable: isFixableInDeployment,
             discoveredAtImage: oldestDiscoveredVulnDate,
             summary,
             affectedComponentsText,

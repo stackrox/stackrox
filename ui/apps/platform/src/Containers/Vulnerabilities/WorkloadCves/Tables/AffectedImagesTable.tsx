@@ -11,7 +11,7 @@ import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
 import {
-    getAnyVulnerabilityIsFixable,
+    getIsSomeVulnerabilityFixable,
     getHighestCvssScore,
     getHighestVulnerabilitySeverity,
 } from '../../utils/vulnerabilityUtils';
@@ -116,7 +116,7 @@ function AffectedImagesTable({
                     (imageComponent) => imageComponent.imageVulnerabilities
                 );
                 const topSeverity = getHighestVulnerabilitySeverity(vulnerabilities);
-                const isFixable = getAnyVulnerabilityIsFixable(vulnerabilities);
+                const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
                 const { cvss, scoreVersion } = getHighestCvssScore(vulnerabilities);
                 const hasPendingException = imageComponents.some((imageComponent) =>
                     imageComponent.imageVulnerabilities.some(
@@ -156,7 +156,7 @@ function AffectedImagesTable({
                                 <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
                             <Td dataLabel="CVE status" modifier="nowrap">
-                                <VulnerabilityFixableIconText isFixable={isFixable} />
+                                <VulnerabilityFixableIconText isFixable={isFixableInImage} />
                             </Td>
                             <Td dataLabel="Operating system">{operatingSystem}</Td>
                             <Td dataLabel="Affected components">

@@ -23,7 +23,7 @@ import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
 import TooltipTh from 'Components/TooltipTh';
 import DateDistance from 'Components/DateDistance';
-import { getAnyVulnerabilityIsFixable } from '../../utils/vulnerabilityUtils';
+import { getIsSomeVulnerabilityFixable } from '../../utils/vulnerabilityUtils';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
@@ -145,7 +145,7 @@ function ImageVulnerabilitiesTable({
                     const vulnerabilities = imageComponents.flatMap(
                         (imageComponent) => imageComponent.imageVulnerabilities
                     );
-                    const isFixable = getAnyVulnerabilityIsFixable(vulnerabilities);
+                    const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
                     const isExpanded = expandedRowSet.has(cve);
 
                     return (
@@ -190,7 +190,7 @@ function ImageVulnerabilitiesTable({
                                     )}
                                 </Td>
                                 <Td modifier="nowrap" dataLabel="CVE status">
-                                    <VulnerabilityFixableIconText isFixable={isFixable} />
+                                    <VulnerabilityFixableIconText isFixable={isFixableInImage} />
                                 </Td>
                                 <Td modifier="nowrap" dataLabel="CVSS">
                                     <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />

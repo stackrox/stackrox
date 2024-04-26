@@ -12,7 +12,7 @@ import useSet from 'hooks/useSet';
 
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import {
-    getAnyVulnerabilityIsFixable,
+    getIsSomeVulnerabilityFixable,
     getHighestVulnerabilitySeverity,
 } from '../../utils/vulnerabilityUtils';
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
@@ -94,7 +94,7 @@ function CVEsTable({ tableState }: CVEsTableProps) {
                             (component) => component.nodeVulnerabilities
                         );
                         const topSeverity = getHighestVulnerabilitySeverity(vulnerabilities);
-                        const isFixable = getAnyVulnerabilityIsFixable(vulnerabilities);
+                        const isFixableInNode = getIsSomeVulnerabilityFixable(vulnerabilities);
                         const isExpanded = expandedRowSet.has(cve);
 
                         return (
@@ -114,7 +114,7 @@ function CVEsTable({ tableState }: CVEsTableProps) {
                                         <VulnerabilitySeverityIconText severity={topSeverity} />
                                     </Td>
                                     <Td dataLabel="CVE status">
-                                        <VulnerabilityFixableIconText isFixable={isFixable} />
+                                        <VulnerabilityFixableIconText isFixable={isFixableInNode} />
                                     </Td>
                                     <Td dataLabel="CVSS score">
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />

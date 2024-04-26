@@ -15,7 +15,7 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
 import {
     getHighestVulnerabilitySeverity,
-    getAnyVulnerabilityIsFixable,
+    getIsSomeVulnerabilityFixable,
     getHighestCvssScore,
 } from '../../utils/vulnerabilityUtils';
 
@@ -111,7 +111,7 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
                             (component) => component.nodeVulnerabilities
                         );
                         const topSeverity = getHighestVulnerabilitySeverity(vulnerabilities);
-                        const isFixable = getAnyVulnerabilityIsFixable(vulnerabilities);
+                        const isFixableInNode = getIsSomeVulnerabilityFixable(vulnerabilities);
                         const { cvss, scoreVersion } = getHighestCvssScore(vulnerabilities);
 
                         return (
@@ -134,7 +134,7 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
                                         <VulnerabilitySeverityIconText severity={topSeverity} />
                                     </Td>
                                     <Td dataLabel="CVE status" modifier="nowrap">
-                                        <VulnerabilityFixableIconText isFixable={isFixable} />
+                                        <VulnerabilityFixableIconText isFixable={isFixableInNode} />
                                     </Td>
                                     <Td dataLabel="CVSS score" modifier="nowrap">
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
