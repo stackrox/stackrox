@@ -1,5 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { PageSection, Breadcrumb, Divider, BreadcrumbItem, Skeleton } from '@patternfly/react-core';
+import {
+    PageSection,
+    Breadcrumb,
+    Divider,
+    BreadcrumbItem,
+    Skeleton,
+    Alert,
+    Grid,
+    GridItem,
+    Gallery,
+    GalleryItem,
+} from '@patternfly/react-core';
 import { useParams } from 'react-router-dom';
 
 import PageTitle from 'Components/PageTitle';
@@ -9,6 +20,7 @@ import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getTableUIState } from 'utils/getTableUIState';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
 import {
     getOverviewPagePath,
@@ -17,6 +29,9 @@ import {
 } from '../../utils/searchUtils';
 import useAffectedClusters from './useAffectedClusters';
 import AffectedClustersTable from './AffectedClustersTable';
+import usePlatformCveMetadata from './usePlatformCveMetadata';
+import ClustersByTypeSummaryCard from './ClustersByTypeSummaryCard';
+import AffectedClustersSummaryCard from './AffectedClustersSummaryCard';
 
 const workloadCveOverviewCvePath = getOverviewPagePath('Platform', {
     entityTab: 'CVE',
@@ -39,25 +54,8 @@ function PlatformCvePage() {
 
     const { affectedClustersRequest, clusterData } = useAffectedClusters(query, page, perPage);
 
-    const [platformCveMetadata, setPlatformCveMetadata] = useState<CveMetadata>();
-    const cveName = platformCveMetadata?.cve;
-
-    // TODO - Simulate a loading state, will replace metadata with results from a query
-    useEffect(() => {
-        setTimeout(() => {
-            setPlatformCveMetadata({
-                cve: cveId,
-                firstDiscoveredInSystem: '2021-01-01T00:00:00Z',
-                distroTuples: [
-                    {
-                        summary: 'This is a sample description used during development',
-                        link: `https://access.redhat.com/security/cve/${cveId}`,
-                        operatingSystem: 'rhel',
-                    },
-                ],
-            });
-        }, 1500);
-    }, [cveId]);
+    const metadataRequest = usePlatformCveMetadata(cveId, query, page, perPage);
+    const cveName = metadataRequest.data?.platformCVE?.cve;
 
     const tableState = getTableUIState({
         isLoading: affectedClustersRequest.loading,
@@ -81,10 +79,67 @@ function PlatformCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light">
-                <CvePageHeader data={platformCveMetadata} />
+                <CvePageHeader data={metadataRequest.data?.platformCVE} />
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-v5-u-flex-grow-1">
+                <div className="pf-v5-u-background-color-100 pf-v5-u-p-lg">
+                    {metadataRequest.error && (
+                        <Alert
+                            title="There was an error loading the summary data for this deployment"
+                            isInline
+                            variant="danger"
+                        >
+                            {getAxiosErrorMessage(metadataRequest.error)}
+                        </Alert>
+                    )}
+                    {metadataRequest.loading && (
+                        <Gallery
+                            hasGutter
+                            minWidths={{
+                                // Enforce a 1/3 size, taking into account the GridGap
+                                default: 'calc(33.3% - var(--pf-v5-l-gallery--m-gutter--GridGap))',
+                            }}
+                        >
+                            <GalleryItem>
+                                <Skeleton
+                                    style={{ height: '120px' }}
+                                    screenreaderText="Loading affected nodes summary"
+                                />
+                            </GalleryItem>
+                            <GalleryItem>
+                                <Skeleton
+                                    style={{ height: '120px' }}
+                                    screenreaderText="Loading affected nodes by CVE severity summary"
+                                />
+                            </GalleryItem>
+                        </Gallery>
+                    )}
+                    {metadataRequest.data && (
+                        <Gallery
+                            hasGutter
+                            minWidths={{
+                                // Enforce a 1/3 size, taking into account the GridGap
+                                default: 'calc(33.3% - var(--pf-v5-l-gallery--m-gutter--GridGap))',
+                            }}
+                        >
+                            <GalleryItem>
+                                <AffectedClustersSummaryCard
+                                    affectedClusterCount={metadataRequest.data.clusterCount}
+                                    totalClusterCount={metadataRequest.data.totalClusterCount}
+                                />
+                            </GalleryItem>
+                            <GalleryItem>
+                                <ClustersByTypeSummaryCard
+                                    clusterCounts={
+                                        metadataRequest.data.platformCVE.clusterCountByType
+                                    }
+                                />
+                            </GalleryItem>
+                        </Gallery>
+                    )}
+                </div>
+                <Divider component="div" />
                 <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1 pf-v5-u-p-lg">
                     <AffectedClustersTable tableState={tableState} />
                 </div>
