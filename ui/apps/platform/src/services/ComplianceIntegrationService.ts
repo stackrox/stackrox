@@ -11,6 +11,7 @@ export type ComplianceIntegration = {
     clusterName: string;
     namespace: string;
     statusErrors: string[];
+    operatorInstalled: boolean;
 };
 
 /**

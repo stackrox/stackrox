@@ -37,17 +37,25 @@ export type Schedule = UnsetSchedule | DailySchedule | WeeklySchedule | MonthlyS
 
 export type IntervalType = Schedule['intervalType'];
 
-type BaseComplianceScanConfigurationSettings = {
-    oneTimeScan: boolean;
-    profiles: string[];
-    scanSchedule: Schedule;
-    description?: string;
+type SuiteStatus = {
+    phase: string;
+    result: string;
+    errorMessage: string;
+    lastTransitionTime: string; // ISO 8601 date string
 };
 
 export type ClusterScanStatus = {
     clusterId: string;
     errors: string[];
     clusterName: string;
+    suiteStatus: SuiteStatus;
+};
+
+type BaseComplianceScanConfigurationSettings = {
+    oneTimeScan: boolean;
+    profiles: string[];
+    scanSchedule: Schedule;
+    description?: string;
 };
 
 export type ComplianceScanConfiguration = {
@@ -68,9 +76,34 @@ export type ComplianceScanConfigurationStatus = {
 };
 
 /*
+ * Fetches a list of scan configurations.
+ */
+export function listComplianceScanConfigurations(
+    sortOption: ApiSortOption,
+    page?: number,
+    pageSize?: number
+): Promise<ComplianceScanConfigurationStatus[]> {
+    let offset: number | undefined;
+    if (typeof page === 'number' && typeof pageSize === 'number') {
+        offset = page > 0 ? page * pageSize : 0;
+    }
+    const query = {
+        pagination: { offset, limit: pageSize, sortOption },
+    };
+    const params = qs.stringify(query, { arrayFormat: 'repeat', allowDots: true });
+    return axios
+        .get<{
+            configurations: ComplianceScanConfigurationStatus[];
+        }>(`${complianceScanConfigBaseUrl}?${params}`)
+        .then((response) => {
+            return response?.data?.configurations ?? [];
+        });
+}
+
+/*
  * Fetches a scan configuration by ID.
  */
-export function getScanConfig(
+export function getComplianceScanConfiguration(
     scanConfigId: string
 ): CancellableRequest<ComplianceScanConfigurationStatus> {
     return makeCancellableAxiosRequest((signal) =>
@@ -107,7 +140,7 @@ export function saveScanConfig(
 /*
  * Deletes a scan configuration by ID.
  */
-export function deleteScanConfig(scanConfigId: string) {
+export function deleteComplianceScanConfiguration(scanConfigId: string) {
     return axios
         .delete<Empty>(`${complianceScanConfigBaseUrl}/${scanConfigId}`)
         .then((response) => {
@@ -116,34 +149,9 @@ export function deleteScanConfig(scanConfigId: string) {
 }
 
 /*
- * Fetches a list of scan configurations.
- */
-export function getScanConfigs(
-    sortOption: ApiSortOption,
-    page?: number,
-    pageSize?: number
-): Promise<ComplianceScanConfigurationStatus[]> {
-    let offset: number | undefined;
-    if (typeof page === 'number' && typeof pageSize === 'number') {
-        offset = page > 0 ? page * pageSize : 0;
-    }
-    const query = {
-        pagination: { offset, limit: pageSize, sortOption },
-    };
-    const params = qs.stringify(query, { arrayFormat: 'repeat', allowDots: true });
-    return axios
-        .get<{
-            configurations: ComplianceScanConfigurationStatus[];
-        }>(`${complianceScanConfigBaseUrl}?${params}`)
-        .then((response) => {
-            return response?.data?.configurations ?? [];
-        });
-}
-
-/*
  * Returns the count of scan configurations.
  */
-export function getScanConfigsCount(): Promise<number> {
+export function getComplianceScanConfigurationsCount(): Promise<number> {
     return axios
         .get<{
             count: number;

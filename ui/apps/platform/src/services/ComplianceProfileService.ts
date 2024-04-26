@@ -17,7 +17,7 @@ export type ComplianceProfileSummary = {
 /**
  * Fetches a list of compliance profile summaries based on the provided cluster IDs.
  */
-export function listComplianceSummaries(clusterIds): Promise<ComplianceProfileSummary[]> {
+export function listProfileSummaries(clusterIds): Promise<ComplianceProfileSummary[]> {
     const params = qs.stringify({ cluster_ids: clusterIds }, { arrayFormat: 'repeat' });
     return axios
         .get<{

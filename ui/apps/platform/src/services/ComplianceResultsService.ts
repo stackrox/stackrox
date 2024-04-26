@@ -27,28 +27,6 @@ type ComplianceScanCluster = {
     clusterName: string;
 };
 
-export type ComplianceCheckStatusCount = {
-    count: number;
-    status: ComplianceCheckStatus;
-};
-
-export type ComplianceScanStatsShim = {
-    scanName: string;
-    checkStats: ComplianceCheckStatusCount[];
-    lastScan: string; // ISO 8601 date string
-};
-
-export type ComplianceClusterScanStats = {
-    scanStats: ComplianceScanStatsShim;
-    cluster: ComplianceScanCluster;
-};
-
-export type ComplianceClusterOverallStats = {
-    cluster: ComplianceScanCluster;
-    checkStats: ComplianceCheckStatusCount[];
-    clusterErrors: string[];
-};
-
 export type ClusterCheckStatus = {
     cluster: ComplianceScanCluster;
     status: ComplianceCheckStatus;
@@ -73,6 +51,30 @@ type ComplianceScanResult = {
     scanName: string;
     profileName: string;
     checkResults: ComplianceCheckResult[];
+    scanConfigId: string;
+};
+
+export type ComplianceCheckStatusCount = {
+    count: number;
+    status: ComplianceCheckStatus;
+};
+
+export type ComplianceScanStatsShim = {
+    scanName: string;
+    checkStats: ComplianceCheckStatusCount[];
+    lastScan: string; // ISO 8601 date string
+    scanConfigId: string;
+};
+
+export type ComplianceClusterScanStats = {
+    scanStats: ComplianceScanStatsShim;
+    cluster: ComplianceScanCluster;
+};
+
+export type ComplianceClusterOverallStats = {
+    cluster: ComplianceScanCluster;
+    checkStats: ComplianceCheckStatusCount[];
+    clusterErrors: string[];
 };
 
 /**
