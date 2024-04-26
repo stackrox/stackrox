@@ -10,7 +10,7 @@ import (
 )
 
 // ExtractToken extracts the token of the given type (e.g., "Bearer") from the given metadata.
-func ExtractToken(md requestinfo.HeaderGetter, tokenType string) string {
+func ExtractToken(md requestinfo.HeadersMultiMap, tokenType string) string {
 	authHeaders := md.Get("authorization")
 	if len(authHeaders) != 1 {
 		return ""

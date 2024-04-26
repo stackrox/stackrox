@@ -34,7 +34,7 @@ func (cfg *Config) track(rp *RequestParams) {
 	}
 }
 
-func getUserAgent(h requestinfo.HeaderGetter) string {
+func getUserAgent(h requestinfo.HeadersMultiMap) string {
 	return requestinfo.GetFirst(h, "User-Agent")
 }
 
@@ -71,7 +71,7 @@ func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *Re
 	if iderr != nil {
 		log.Debug("Cannot identify user from context: ", iderr)
 	}
-	header := requestinfo.WithGet(r.Header)
+	header := requestinfo.AsHeadersMultiMap(r.Header)
 	var path string
 	if r.URL != nil {
 		path = r.URL.Path
