@@ -67,14 +67,14 @@ var (
 				Text: "Home is behind, the world ahead, and there " +
 					"are many paths to tread through shadows to the edge of night, " +
 					"until the stars are all alight.",
-				Size_:           10,
+				Size:            10,
 				Color:           "0x88bbff",
 				BackgroundColor: "0x0000ff",
 			},
 			Footer: &storage.BannerConfig{
 				Enabled:         false,
 				Text:            "All's well that ends better.",
-				Size_:           10,
+				Size:            10,
 				Color:           "0x88bbff",
 				BackgroundColor: "0x0000ff",
 			},
