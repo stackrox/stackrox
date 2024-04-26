@@ -25,7 +25,7 @@ ifeq ($(shell uname -s),Darwin)
 endif
 GOOS := $(HOST_OS)
 
-GO_BUILD_FLAGS = GOOS=$(GOOS)
+GO_BUILD_FLAGS = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH)
 GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
                    -trimpath \
                    -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG)" \
