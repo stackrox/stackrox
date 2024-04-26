@@ -194,7 +194,7 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 		return pathutil.NewAugmentedObj(image), nil
 	}
 
-	img := *image
+	img := image.Clone()
 
 	// When evaluating policies, the evaluator will stop when any of the objects within the path
 	// are nil and immediately return, not matching. Within the image signature criteria, we have
@@ -209,7 +209,7 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 		}
 	}
 
-	obj := pathutil.NewAugmentedObj(&img)
+	obj := pathutil.NewAugmentedObj(img)
 
 	// Since policies query for Dockerfile Line as a single compound field, we simulate it by creating a "composite"
 	// dockerfile line under each layer.
