@@ -39,7 +39,7 @@ import {
     getScanConfigsCount,
     deleteScanConfig,
     ComplianceScanConfigurationStatus,
-} from 'services/ComplianceEnhancedService';
+} from 'services/ComplianceScanConfigurationService';
 import { SortOption } from 'types/table';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 

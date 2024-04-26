@@ -6,13 +6,11 @@ import { complianceEnhancedSchedulesPath } from 'routePaths';
 import isEqual from 'lodash/isEqual';
 
 import useRestQuery from 'hooks/useRestQuery';
-import {
-    saveScanConfig,
-    listComplianceIntegrations,
-    listComplianceSummaries,
-} from 'services/ComplianceEnhancedService';
-
+import { saveScanConfig } from 'services/ComplianceScanConfigurationService';
+import { listComplianceIntegrations } from 'services/ComplianceIntegrationService';
+import { listComplianceSummaries } from 'services/ComplianceProfileService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
 import ScanConfigOptions from './ScanConfigOptions';
 import ClusterSelection from './ClusterSelection';
 import ProfileSelection from './ProfileSelection';

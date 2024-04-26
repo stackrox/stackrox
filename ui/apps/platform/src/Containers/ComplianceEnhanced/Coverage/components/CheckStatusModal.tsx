@@ -19,7 +19,7 @@ import {
 } from '@patternfly/react-core';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
-import { ComplianceCheckResult, ComplianceCheckStatus } from 'services/ComplianceEnhancedService';
+import { ComplianceCheckResult, ComplianceCheckStatus } from 'services/ComplianceResultsService';
 
 import { getClusterResultsStatusObject } from '../compliance.coverage.utils';
 

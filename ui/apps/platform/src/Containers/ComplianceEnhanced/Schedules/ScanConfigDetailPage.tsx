@@ -4,7 +4,7 @@ import { generatePath, Link, useParams } from 'react-router-dom';
 
 import usePageAction from 'hooks/usePageAction';
 import useRestQuery from 'hooks/useRestQuery';
-import { getScanConfig } from 'services/ComplianceEnhancedService';
+import { getScanConfig } from 'services/ComplianceScanConfigurationService';
 import EditScanConfigDetail from './EditScanConfigDetail';
 import ViewScanConfigDetail from './ViewScanConfigDetail';
 import { PageActions } from './compliance.scanConfigs.utils';

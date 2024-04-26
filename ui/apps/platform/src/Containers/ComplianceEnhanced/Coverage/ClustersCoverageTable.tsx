@@ -26,7 +26,7 @@ import { complianceEnhancedSchedulesPath } from 'routePaths';
 import {
     getAllClustersCombinedStats,
     getAllClustersCombinedStatsCount,
-} from 'services/ComplianceEnhancedService';
+} from 'services/ComplianceResultsService';
 import { SortOption } from 'types/table';
 
 import useURLSort from 'hooks/useURLSort';
