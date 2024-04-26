@@ -260,6 +260,34 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, err
 	return m, nil
 }
 
+func (c *gRPCScanner) CreateNodeIndexReport(ctx context.Context) (*v4.IndexReport, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "CreateNodeIndexReport")
+
+	// Generate random SHA to use as HashId // FIXME: temporary for tests. Find way to properly calc the hashId.
+	data := make([]byte, 10)
+	_, _ = rand.Read(data)
+	randomSha := fmt.Sprintf("%x", sha256.Sum256(data))
+
+	r := &v4.CreateNodeIndexReportRequest{
+		HashId: "SCANNER_v4:" + randomSha, // FIXME: This parameter is unused and can go
+	}
+	return c.nodeIndexer.CreateNodeIndexReport(ctx, r)
+}
+
+func (c *gRPCScanner) IndexAndScanNode(ctx context.Context) (*v4.VulnerabilityReport, error) {
+	nr, err := c.CreateNodeIndexReport(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("creating node index report: %w", err)
+	}
+	rc := &v4.Contents{
+		Packages:      nr.GetContents().GetPackages(),
+		Distributions: nr.GetContents().GetDistributions(),
+		Repositories:  nr.GetContents().GetRepositories(),
+		Environments:  nr.GetContents().GetEnvironments(),
+	}
+	return c.getVulnerabilities(ctx, "/v4/containerimage/"+nr.GetHashId(), rc)
+}
+
 func getImageManifestID(ref name.Digest) string {
 	return fmt.Sprintf("/v4/containerimage/%s", ref.DigestStr())
 }
