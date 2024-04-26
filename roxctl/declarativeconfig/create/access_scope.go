@@ -16,12 +16,12 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
+	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
@@ -259,7 +259,7 @@ func retrieveRequirement(s string) (*declarativeconfig.Requirement, error) {
 			op, ok := storage.SetBasedLabelSelector_Operator_value[kv[1]]
 			if !ok {
 				return nil, fmt.Errorf("operator %s must be one of the allowed values: [%s]", kvPair,
-					strings.Join(maputil.Keys(storage.SetBasedLabelSelector_Operator_value), ","))
+					strings.Join(maps.Keys(storage.SetBasedLabelSelector_Operator_value), ","))
 			}
 			requirement.Operator = declarativeconfig.Operator(op)
 		case "values":
