@@ -34,7 +34,7 @@ var (
 	enabled  bool
 )
 
-func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
+func getInstanceConfig(id string) (*phonehome.Config, map[string]any, error) {
 	if env.OfflineModeEnv.BooleanSetting() {
 		return nil, nil, nil
 	}
@@ -61,21 +61,10 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 		orchestrator = storage.ClusterType_OPENSHIFT_CLUSTER.String()
 	}
 
-	ii, _, err := store.Singleton().Get(
-		sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.InstallationInfo))))
-
-	if err != nil || ii == nil {
-		return nil, nil, errors.Wrap(err, "cannot get installation information")
-	}
-	centralID := ii.Id
-
 	tenantID := env.TenantID.Setting()
 	// Consider on-prem central a tenant of itself:
 	if tenantID == "" {
-		tenantID = centralID
+		tenantID = id
 	}
 
 	return &phonehome.Config{
@@ -84,7 +73,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 			// the number of (none) values, appearing on Amplitude charts, by
 			// introducing a slight delay between consequent events.
 			BatchSize:    1,
-			ClientID:     centralID,
+			ClientID:     id,
 			ClientName:   "Central",
 			GroupType:    "Tenant",
 			GroupID:      tenantID,
@@ -108,8 +97,21 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 func InstanceConfig() *phonehome.Config {
 	once.Do(func() {
 		var err error
+
+		ii, _, err := store.Singleton().Get(
+			sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.InstallationInfo))))
+
+		if err != nil || ii == nil {
+			log.Errorf("Failed to get telemetry configuration: %v.",
+				errors.Wrap(err, "cannot get installation information"))
+			return
+		}
+
 		var props map[string]any
-		config, props, err = getInstanceConfig()
+		config, props, err = getInstanceConfig(ii.Id)
 		if err != nil {
 			log.Errorf("Failed to get telemetry configuration: %v.", err)
 			return
