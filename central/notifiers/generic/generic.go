@@ -12,7 +12,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -28,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -179,10 +179,7 @@ func (g *generic) Test(ctx context.Context) *notifiers.NotifierError {
 }
 
 func (g *generic) constructJSON(message protocompat.Message, msgKey string) (io.Reader, error) {
-	msgStr, err := new(jsonpb.Marshaler).MarshalToString(message)
-	if err != nil {
-		return nil, err
-	}
+	msgStr := protojson.Format(message)
 
 	var strJSON string
 	// No extra fields append so that the payload is something like {"alert": {...}}

@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -19,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -56,11 +56,11 @@ func (s *sumologic) AlertNotify(ctx context.Context, alert *storage.Alert) error
 }
 
 func (s *sumologic) sendProtoPayload(ctx context.Context, msg protocompat.Message) error {
-	var buf bytes.Buffer
-	if err := new(jsonpb.Marshaler).Marshal(&buf, msg); err != nil {
+	data, err := protojson.Marshal(msg)
+	if err != nil {
 		return err
 	}
-	return s.sendPayload(ctx, &buf)
+	return s.sendPayload(ctx, bytes.NewBuffer(data))
 }
 
 func (s *sumologic) sendPayload(ctx context.Context, buf io.Reader) error {
