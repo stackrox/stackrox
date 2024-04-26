@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestSub(t *testing.T) {
@@ -56,14 +56,14 @@ func TestMustGetProtoTimestampFromRFC3339NanoString(t *testing.T) {
 }
 
 func TestRoundTimestamp(t *testing.T) {
-	tsInvalid := &types.Timestamp{
+	tsInvalid := &timestamppb.Timestamp{
 		Seconds: -62235596800,
 		Nanos:   123456789,
 	}
 	notRounded := RoundTimestamp(tsInvalid, time.Microsecond)
 	protoassert.Equal(t, tsInvalid, notRounded)
 
-	ts1 := &types.Timestamp{
+	ts1 := &timestamppb.Timestamp{
 		Seconds: 1510860932,
 		Nanos:   123456789,
 	}
@@ -71,7 +71,7 @@ func TestRoundTimestamp(t *testing.T) {
 	assert.Equal(t, ts1.Seconds, rounded1.Seconds)
 	assert.Equal(t, int32(123457000), rounded1.Nanos)
 
-	ts2 := &types.Timestamp{
+	ts2 := &timestamppb.Timestamp{
 		Seconds: 1510860932,
 		Nanos:   987654321,
 	}
@@ -79,7 +79,7 @@ func TestRoundTimestamp(t *testing.T) {
 	assert.Equal(t, ts2.Seconds, rounded2.Seconds)
 	assert.Equal(t, int32(987654000), rounded2.Nanos)
 
-	ts3 := &types.Timestamp{
+	ts3 := &timestamppb.Timestamp{
 		Seconds: 1520860932,
 		Nanos:   987654321,
 	}
@@ -87,7 +87,7 @@ func TestRoundTimestamp(t *testing.T) {
 	assert.Equal(t, ts3.Seconds, rounded3.Seconds)
 	assert.Equal(t, int32(988000000), rounded3.Nanos)
 
-	ts4 := &types.Timestamp{
+	ts4 := &timestamppb.Timestamp{
 		Seconds: 1510860932,
 		Nanos:   123456789,
 	}

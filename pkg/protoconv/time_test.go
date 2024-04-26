@@ -3,17 +3,17 @@ package protoconv
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestConvertTimeString(t *testing.T) {
 	cases := []struct {
 		input  string
-		output *types.Timestamp
+		output *timestamppb.Timestamp
 	}{
 		{
 			input:  "",
@@ -67,7 +67,7 @@ func TestConvertMicroTSToProtobufTS(t *testing.T) {
 	assert.Equal(t, int64(0), timestamp0.Seconds)
 	assert.Equal(t, int32(0), timestamp0.Nanos)
 
-	timestamp1 := &types.Timestamp{
+	timestamp1 := &timestamppb.Timestamp{
 		Seconds: 1518046140,
 		Nanos:   123456789,
 	}
