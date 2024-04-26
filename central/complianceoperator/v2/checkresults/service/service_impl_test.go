@@ -1160,6 +1160,117 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult(
 	}
 }
 
+func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResults() {
+	testCases := []struct {
+		desc         string
+		query        *apiV2.ComplianceProfileClusterRequest
+		expectedResp *apiV2.ListComplianceCheckResultResponse
+		expectedErr  error
+		setMocks     func()
+	}{
+		{
+			desc: "Empty query",
+			query: &apiV2.ComplianceProfileClusterRequest{
+				ProfileName: "ocp4",
+				ClusterId:   testconsts.Cluster1,
+				Query:       &apiV2.RawQuery{Query: ""},
+			},
+			expectedErr: nil,
+			expectedResp: &apiV2.ListComplianceCheckResultResponse{
+				CheckResults: convertUtils.GetConvertedCheckResult(s.T()),
+				ProfileName:  "ocp4",
+				ClusterId:    testconsts.Cluster1,
+				TotalCount:   7,
+			},
+			setMocks: func() {
+				expectedQ := search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").
+						AddExactMatches(search.ClusterID, testconsts.Cluster1).ProtoQuery(),
+					search.EmptyQuery(),
+				)
+				countQuery := expectedQ.Clone()
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+
+				ruleQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, "test-ref-id").ProtoQuery()
+				s.ruleDS.EXPECT().SearchRules(gomock.Any(), ruleQuery).Return([]*storage.ComplianceOperatorRuleV2{{Name: "test-rule-name"}}, nil).Times(1)
+
+				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).
+					Return([]*storage.ComplianceOperatorCheckResultV2{convertUtils.GetComplianceStorageResult(s.T())}, nil).
+					Times(1)
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), countQuery).Return(7, nil).Times(1)
+			},
+		},
+		{
+			desc: "Query with search field",
+			query: &apiV2.ComplianceProfileClusterRequest{
+				ProfileName: "ocp4",
+				ClusterId:   testconsts.Cluster1,
+				Query:       &apiV2.RawQuery{Query: "Compliance Check Name:" + "check-name"},
+			},
+			expectedErr: nil,
+			expectedResp: &apiV2.ListComplianceCheckResultResponse{
+				CheckResults: convertUtils.GetConvertedCheckResult(s.T()),
+				ProfileName:  "ocp4",
+				ClusterId:    testconsts.Cluster1,
+				TotalCount:   3,
+			},
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().AddStrings(search.ComplianceOperatorCheckName, "check-name").ProtoQuery()
+				expectedQ = search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").
+						AddExactMatches(search.ClusterID, testconsts.Cluster1).ProtoQuery(),
+					expectedQ,
+				)
+				countQuery := expectedQ.Clone()
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+
+				ruleQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, "test-ref-id").ProtoQuery()
+				s.ruleDS.EXPECT().SearchRules(gomock.Any(), ruleQuery).Return([]*storage.ComplianceOperatorRuleV2{{Name: "test-rule-name"}}, nil).Times(1)
+
+				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).
+					Return([]*storage.ComplianceOperatorCheckResultV2{convertUtils.GetComplianceStorageResult(s.T())}, nil).
+					Times(1)
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), countQuery).Return(3, nil).Times(1)
+			},
+		},
+		{
+			desc: "Request with missing field",
+			query: &apiV2.ComplianceProfileClusterRequest{
+				ProfileName: "",
+				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + testconsts.Cluster1},
+			},
+			expectedErr: errors.Wrap(errox.InvalidArgs, "Profile name is required"),
+			setMocks: func() {
+			},
+		},
+		{
+			desc: "Query with missing cluster",
+			query: &apiV2.ComplianceProfileClusterRequest{
+				ProfileName: "ocp4",
+				Query:       &apiV2.RawQuery{Query: "Compliance Operator Check Name:" + "check-name"},
+			},
+			expectedErr: errors.Wrap(errox.InvalidArgs, "Cluster ID is required"),
+			setMocks: func() {
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			tc.setMocks()
+
+			results, err := s.service.GetComplianceProfileClusterResults(s.ctx, tc.query)
+			if tc.expectedErr == nil {
+				s.Require().NoError(err)
+				s.Require().Equal(tc.expectedResp, results)
+			} else {
+				s.Require().Error(tc.expectedErr, err)
+				s.Require().Nil(results)
+			}
+		})
+	}
+}
+
 func getTestRec(scanName string) *storage.ComplianceOperatorScanConfigurationV2 {
 	return &storage.ComplianceOperatorScanConfigurationV2{
 		Id:                     scanName,

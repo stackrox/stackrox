@@ -523,6 +523,7 @@ func GetComplianceStorageResult(_ *testing.T) *storage.ComplianceOperatorCheckRe
 		Description:    "description 1",
 		Instructions:   "instructions 1",
 		ScanConfigName: scanConfigName1,
+		RuleRefId:      "test-ref-id",
 	}
 }
 
@@ -543,5 +544,20 @@ func GetConvertedComplianceResult(_ *testing.T) *v2.ComplianceClusterCheckStatus
 		},
 		Description:  "description 1",
 		Instructions: "instructions 1",
+	}
+}
+
+// GetConvertedCheckResult retrieves results
+func GetConvertedCheckResult(_ *testing.T) []*v2.ComplianceCheckResult {
+	return []*v2.ComplianceCheckResult{
+		{
+			CheckId:      complianceCheckID1,
+			CheckName:    complianceCheckName1,
+			Description:  "description 1",
+			Instructions: "instructions 1",
+			Status:       v2.ComplianceCheckStatus_INFO,
+			CheckUid:     complianceCheckUID1,
+			RuleName:     "test-rule-name",
+		},
 	}
 }

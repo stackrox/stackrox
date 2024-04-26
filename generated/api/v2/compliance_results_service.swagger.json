@@ -525,7 +525,7 @@
         ]
       }
     },
-    "/v2/compliance/scan/results/profile/{profileName}/cluster/{clusterId}": {
+    "/v2/compliance/scan/results/profiles/{profileName}/clusters/{clusterId}": {
       "get": {
         "summary": "GetComplianceProfileClusterResults lists status of a check per cluster",
         "operationId": "ComplianceResultsService_GetComplianceProfileClusterResults",
