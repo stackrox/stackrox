@@ -3,7 +3,6 @@ package protoutils
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
@@ -11,15 +10,15 @@ import (
 
 func TestErrorOnNilMarshal(t *testing.T) {
 	_, err := protocompat.Marshal(nil)
-	assert.Equal(t, proto.ErrNil, err)
+	assert.Equal(t, protocompat.ErrNil, err)
 
 	_, err = protocompat.Marshal((*storage.Image)(nil))
-	assert.Equal(t, proto.ErrNil, err)
+	assert.Equal(t, protocompat.ErrNil, err)
 
 	var img *storage.Image
 	var msg protocompat.Message = img
 	_, err = protocompat.Marshal(msg)
-	assert.Equal(t, proto.ErrNil, err)
+	assert.Equal(t, protocompat.ErrNil, err)
 
 	_, err = protocompat.Marshal(&storage.Image{})
 	assert.NoError(t, err)
@@ -27,14 +26,14 @@ func TestErrorOnNilMarshal(t *testing.T) {
 
 func TestErrorOnNilUnmarshal(t *testing.T) {
 	err := protocompat.Unmarshal(nil, nil)
-	assert.Equal(t, proto.ErrNil, err)
+	assert.Equal(t, protocompat.ErrNil, err)
 
 	err = protocompat.Unmarshal(nil, (*storage.Image)(nil))
-	assert.Equal(t, proto.ErrNil, err)
+	assert.Equal(t, protocompat.ErrNil, err)
 
 	var img *storage.Image
 	err = protocompat.Unmarshal(nil, img)
-	assert.Equal(t, proto.ErrNil, err)
+	assert.Equal(t, protocompat.ErrNil, err)
 
 	img = &storage.Image{}
 	err = protocompat.Unmarshal([]byte{}, img)

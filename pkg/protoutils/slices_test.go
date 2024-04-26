@@ -171,7 +171,7 @@ func TestSliceUnique(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.unique, SliceUnique(tc.slice))
+			assert.True(t, SlicesEqual(tc.unique, SliceUnique(tc.slice)))
 		})
 	}
 }

@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/test"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 func getFilledStruct() *test.TestClone {
@@ -40,7 +40,7 @@ func getFilledStruct() *test.TestClone {
 		},
 		EnumSlice: []test.TestClone_CloneEnum{test.TestClone_UNSET, test.TestClone_Val2},
 		Ts:        protocompat.TimestampNow(),
-		Any: &types.Any{
+		Any: &anypb.Any{
 			TypeUrl: "type url",
 			Value:   []byte("123"),
 		},
