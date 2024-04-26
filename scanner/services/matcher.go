@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/quay/claircore"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"

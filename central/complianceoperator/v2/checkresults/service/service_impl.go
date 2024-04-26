@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"

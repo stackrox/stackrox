@@ -4,7 +4,7 @@ import (
 	"context"
 	"regexp"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"

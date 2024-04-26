@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	pb "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
