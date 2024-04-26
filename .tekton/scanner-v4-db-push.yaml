@@ -65,6 +65,3 @@ spec:
 
   pipelineRef:
     name: basic-component-pipeline
-
-status: { }
-taskRunTemplate: { }

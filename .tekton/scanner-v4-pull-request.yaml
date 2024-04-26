@@ -65,6 +65,3 @@ spec:
 
   pipelineRef:
     name: scanner-v4-pipeline
-
-status: { }
-taskRunTemplate: { }
