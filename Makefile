@@ -308,7 +308,7 @@ dev: install-dev-tools
 ## Generated Code and Dependencies ##
 #####################################
 
-PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_SRCS) $(GENERATED_API_GW_SRCS)
+PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_VT_SRCS) $(GENERATED_COMPAT_SRCS) $(GENERATED_API_SRCS) $(GENERATED_API_GW_SRCS)
 
 include make/protogen.mk
 
@@ -328,7 +328,7 @@ go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(ST
 	@echo "+ $@"
 	PATH="$(GOTOOLS_BIN):$(PATH):$(BASE_DIR)/tools/generate-helpers" MOCKGEN_BIN="$(MOCKGEN_BIN)" go generate -v -x ./...
 
-proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS) $(GENERATED_API_SWAGGER_SPECS_V2) inject-proto-tags
+proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS) $(GENERATED_API_SWAGGER_SPECS_V2) inject-proto-tags cleanup-swagger-json-gotags
 	@echo "+ $@"
 	$(SILENT)touch proto-generated-srcs
 	$(SILENT)$(MAKE) clean-obsolete-protos

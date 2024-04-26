@@ -40,7 +40,6 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.4
@@ -55,7 +54,7 @@ require (
 	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/grpc-ecosystem/grpc-gateway v1.16.0
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-retryablehttp v0.7.6
 	github.com/hashicorp/go-version v1.6.0
@@ -89,6 +88,7 @@ require (
 	github.com/owenrumney/go-sarif/v2 v2.3.1
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/errors v0.9.1
+	github.com/planetscale/vtprotobuf v0.6.0
 	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.53.0
@@ -111,7 +111,7 @@ require (
 	github.com/stackrox/helmtest v0.0.1
 	github.com/stackrox/k8s-overlay-patch v0.0.0-20230704092804-d66fa79cb2d1
 	github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d
-	github.com/stackrox/scanner v0.0.0-20240418215726-f850fe61bb97
+	github.com/stackrox/scanner v0.0.0-20240513123407-b235bf0d0178
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/gjson v1.17.1
 	github.com/tkuchiki/go-timezone v0.2.3
@@ -131,7 +131,7 @@ require (
 	golang.org/x/time v0.5.0
 	golang.org/x/tools v0.21.0
 	golang.stackrox.io/grpc-http1 v0.3.11
-	google.golang.org/api v0.179.0
+	google.golang.org/api v0.178.0
 	google.golang.org/genproto v0.0.0-20240311173647-c811ad7063a7
 	google.golang.org/grpc v1.64.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
@@ -159,8 +159,6 @@ require (
 
 require (
 	cloud.google.com/go v0.112.2 // indirect
-	cloud.google.com/go/auth v0.4.1 // indirect
-	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
 	cloud.google.com/go/iam v1.1.7 // indirect
 	cloud.google.com/go/longrunning v0.5.5 // indirect
 	dario.cat/mergo v1.0.0 // indirect
@@ -247,6 +245,7 @@ require (
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gobuffalo/flect v1.0.2 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/glog v1.2.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/snappy v0.0.4 // indirect
@@ -263,7 +262,6 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.1-vault-5 // indirect
@@ -482,6 +480,9 @@ replace (
 	//       the library solves with autosensing + caching, and what we don't
 	//       want to reimplement in our code.
 	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.0.0-20240521152739-4d3f7e4f6b49
+
+	// github.com/stackrox/oauth2 - requires older version of google.golang.org/api
+	google.golang.org/api => google.golang.org/api v0.173.0
 
 	// grpc has updated protobuf dependency to v2 that causes test failures.
 	// We need to upgrade to v2 in order to fix issues. For now let's stick with older version.
