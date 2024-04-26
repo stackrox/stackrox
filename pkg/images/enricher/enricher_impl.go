@@ -180,7 +180,8 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	}
 
 	// Copy the fields from scannedImage into image, EnrichImage expecting modification in place
-	*image = *scannedImage
+	image.Reset()
+	protocompat.Merge(image, scannedImage)
 
 	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
