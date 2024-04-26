@@ -128,7 +128,7 @@ func (s *developmentServiceAccessControlTestSuite) TestDevelopmentServiceAuthori
 func (s *developmentServiceAccessControlTestSuite) TestDevelopmentServiceRandomBytes() {
 	const dataSize = 16
 	request := &central.RandomDataRequest{
-		Size_: dataSize,
+		Size: dataSize,
 	}
 	for _, c := range s.getTestCases() {
 		s.Run(c.name, func() {
