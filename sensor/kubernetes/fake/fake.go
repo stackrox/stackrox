@@ -237,15 +237,15 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		Platform:     "linux/amd64",
 	}
 	scheme := runtime.NewScheme()
+	gvr := schema.GroupVersionResource{
+		Group:    "apiextensions.k8s.io",
+		Version:  "v1",
+		Resource: "customresourcedefinitions",
+	}
 
 	w.client = &clientSetImpl{
 		kubernetes: w.fakeClient,
-		dynamic: fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, map[schema.GroupVersionResource]string{
-			schema.GroupVersionResource{
-				Group:    "apiextensions.k8s.io",
-				Version:  "v1",
-				Resource: "customresourcedefinitions",
-			}: "CustomResourceDefinitionList"}),
+		dynamic:    fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, map[schema.GroupVersionResource]string{gvr: "CustomResourceDefinitionList"}),
 	}
 
 	go w.clearActions()
