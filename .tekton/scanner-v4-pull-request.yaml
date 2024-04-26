@@ -42,6 +42,10 @@ spec:
     value: '{"type": "gomod", "path": "."}'
   - name: build-source-image
     value: 'true'
+  - name: clone-depth
+    value: '0'
+  - name: clone-fetch-tags
+    value: 'true'
 
   workspaces:
   - name: workspace
@@ -60,7 +64,7 @@ spec:
       secretName: '{{ git_auth_secret }}'
 
   pipelineRef:
-    name: scanner-v4
+    name: scanner-v4-pipeline
 
 status: { }
 taskRunTemplate: { }

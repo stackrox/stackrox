@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: main
+  name: main-pipeline
 spec:
 
   finally:
@@ -10,14 +10,14 @@ spec:
     - name: IMAGE_URL
       value: $(tasks.build-container.results.IMAGE_URL)
     taskRef:
-        params:
-        - name: name
-          value: show-sbom
-        - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-show-sbom:0.1@sha256:1f90faefa39c2e4965793c1d8321e7d5d99a6c941276a9094a4e0d483a598fca
-        - name: kind
-          value: task
-        resolver: bundles
+      params:
+      - name: name
+        value: show-sbom
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-show-sbom:0.1@sha256:1f90faefa39c2e4965793c1d8321e7d5d99a6c941276a9094a4e0d483a598fca
+      - name: kind
+        value: task
+      resolver: bundles
   - name: show-summary
     params:
     - name: pipelinerun-name
@@ -32,14 +32,14 @@ spec:
     - name: workspace
       workspace: workspace
     taskRef:
-        params:
-        - name: name
-          value: summary
-        - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-summary:0.2@sha256:bdf58a8a6bf10482fff841ce6c78c54e87d306bc6aae9515821c436d26daff35
-        - name: kind
-          value: task
-        resolver: bundles
+      params:
+      - name: name
+        value: summary
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-summary:0.2@sha256:bdf58a8a6bf10482fff841ce6c78c54e87d306bc6aae9515821c436d26daff35
+      - name: kind
+        value: task
+      resolver: bundles
 
   params:
   - description: Source Repository URL
@@ -87,9 +87,17 @@ spec:
         1h, 2d, 3w for hours, days, and weeks, respectively.
     name: image-expires-after
     type: string
-  - default: "false"
+  - default: "true"
     description: Build a source image.
     name: build-source-image
+    type: string
+  - default: "0"
+    description: Depth of the git clone in number of commits. Use "1" for shallow clone. Use "0" for deep clone, i.e. to fetch all commits.
+    name: clone-depth
+    type: string
+  - default: "true"
+    description: Fetch tags with git clone
+    name: clone-fetch-tags
     type: string
 
   results:
@@ -122,6 +130,8 @@ spec:
       value: $(params.output-image)
     - name: rebuild
       value: $(params.rebuild)
+    - name: skip-checks
+      value: $(params.skip-checks)
     taskRef:
         params:
         - name: name
@@ -139,9 +149,9 @@ spec:
     - name: revision
       value: $(params.revision)
     - name: depth
-      value: "0"
+      value: $(params.clone-depth)
     - name: fetchTags
-      value: "true"
+      value: $(params.clone-fetch-tags)
     runAfter:
     - init
     taskRef:

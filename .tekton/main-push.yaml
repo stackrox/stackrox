@@ -44,6 +44,10 @@ spec:
       ]
   - name: build-source-image
     value: 'true'
+  - name: clone-depth
+    value: '0'
+  - name: clone-fetch-tags
+    value: 'true'
 
   workspaces:
   - name: workspace
@@ -97,7 +101,7 @@ spec:
     pipeline: 1h30m0s
 
   pipelineRef:
-    name: main
+    name: main-pipeline
 
   taskRunTemplate: { }
 status: { }

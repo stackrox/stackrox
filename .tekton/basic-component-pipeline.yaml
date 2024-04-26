@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: basic-component
+  name: basic-component-pipeline
 spec:
 
   finally:
@@ -92,7 +92,7 @@ spec:
       name: build-source-image
       type: string
     - default: "0"
-      description: Depth of the git clone ( "1" for shallow, "0" for deep )
+      description: Depth of the git clone in number of commits. Use "1" for shallow clone. Use "0" for deep clone, i.e. to fetch all commits.
       name: clone-depth
       type: string
     - default: "true"

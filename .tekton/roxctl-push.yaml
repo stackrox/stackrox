@@ -42,7 +42,6 @@ spec:
   - name: build-source-image
     value: 'true'
   - name: clone-depth
-    # Deep clone
     value: '0'
   - name: clone-fetch-tags
     value: 'true'
@@ -64,7 +63,7 @@ spec:
       secretName: '{{ git_auth_secret }}'
 
   pipelineRef:
-    name: basic-component
+    name: basic-component-pipeline
 
 status: { }
 taskRunTemplate: { }

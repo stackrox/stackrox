@@ -41,6 +41,7 @@ spec:
     value: ''
   - name: build-source-image
     value: 'true'
+  # A shallow repo clone is sufficient for central-db build.
   - name: clone-depth
     value: '1'
   - name: clone-fetch-tags
@@ -63,7 +64,7 @@ spec:
       secretName: '{{ git_auth_secret }}'
 
   pipelineRef:
-    name: basic-component
+    name: basic-component-pipeline
 
 status: { }
 taskRunTemplate: { }
