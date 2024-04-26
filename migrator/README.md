@@ -10,7 +10,7 @@ are in the `migrations` subdirectory.
 
 Migrations are organized with sequence numbers and executed in sequence. Each migration is provided
 with a pointer to `types.Databases` where the pointed object contains all necessary database instances,
-including `Bolt`, `RocksDB`, `Postgres` and `GormDB` (datamodel for postgres) as well as a context `DBCtx`. 
+including `Postgres` and `GormDB` (datamodel for postgres) as well as a context `DBCtx`. 
 The context allows for the migrations to be wrapped in a transaction so they can be committed as they 
 are processed.  (Migrations moving data with `GormDB` will not be part of the outer transaction, 
 as such care should be taken when using `GormDB` to move data.)  Depending on the version a migration 
