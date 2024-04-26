@@ -25,4 +25,5 @@ metadata='{
 
 find "$folder/" -name '*.swagger.json' -print0 \
 	| sort -zr \
-	| xargs -0 jq -s 'reduce .[] as $item ('"$metadata"'; $item * .)'
+	| xargs -0 jq -s 'reduce .[] as $item ('"$metadata"'; $item * .)' \
+	| jq 'del(.. | select(. | strings | test("@gotags")))'
