@@ -18,16 +18,16 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-type acscsMessage struct {
-	to         []string
-	subject    string
-	rawMessage []byte
+type AcscsMessage struct {
+	To         []string
+	RawMessage []byte
 }
 
-func newACSCSEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,
+func newACSCSEmail(notifier *storage.Notifier, client Client, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,
 	cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*acscsEmail, error) {
 	return &acscsEmail{
 		notifier:       notifier,
+		client:         client,
 		metadataGetter: metadataGetter,
 		mitreStore:     mitreStore,
 	}, nil
@@ -35,6 +35,7 @@ func newACSCSEmail(notifier *storage.Notifier, metadataGetter notifiers.Metadata
 
 type acscsEmail struct {
 	notifier       *storage.Notifier
+	client         Client
 	metadataGetter notifiers.MetadataGetter
 	mitreStore     mitreDS.AttackReadOnlyDataStore
 }
@@ -49,7 +50,7 @@ func (e *acscsEmail) ProtoNotifier() *storage.Notifier {
 
 // Test sends a test notification.
 func (e *acscsEmail) Test(ctx context.Context) *notifiers.NotifierError {
-	subject := "StackRox Test Email"
+	subject := "RHACS Cloud Service Test Email"
 	body := fmt.Sprintf("%v\r\n", "This is a test email created to test integration with ACSCS email service")
 	msg := email.Message{
 		To:      []string{e.notifier.GetLabelDefault()},
@@ -58,7 +59,7 @@ func (e *acscsEmail) Test(ctx context.Context) *notifiers.NotifierError {
 	}
 
 	if err := e.send(ctx, &msg); err != nil {
-		return notifiers.NewNotifierError("send test message to ACSCS email service failed", err)
+		return notifiers.NewNotifierError("failed to send test message to ACSCS email service", err)
 	}
 
 	return nil
@@ -107,16 +108,14 @@ func (e *acscsEmail) ReportNotify(ctx context.Context, zippedReportData *bytes.B
 }
 
 func (e *acscsEmail) send(ctx context.Context, msg *email.Message) error {
-	acscsMessage := acscsMessage{
-		to:      msg.To,
-		subject: msg.Subject,
-		// using ContentBytes instead of Bytes here to allow prepending From,To and Subject headers by the
-		// ACSCS email service implementation
-		rawMessage: msg.ContentBytes(),
+	apiMsg := AcscsMessage{
+		To: msg.To,
+		// using ContentBytes instead of Bytes here to allow prepending From and to headers by the
+		// ACSCS email service
+		RawMessage: msg.ContentBytes(),
 	}
 
-	// TODO: actually implementing this
-	return fmt.Errorf("failed to send alert to ACSCS: %v, TODO: not yet implemented", acscsMessage)
+	return e.client.SendMessage(ctx, apiMsg)
 }
 
 func init() {
@@ -134,7 +133,7 @@ func init() {
 	}
 
 	notifiers.Add(notifiers.ACSCSEmailType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		g, err := newACSCSEmail(notifier, metadatagetter.Singleton(), mitreDS.Singleton(), cryptocodec.Singleton(), cryptoKey)
+		g, err := newACSCSEmail(notifier, ClientSingleton(), metadatagetter.Singleton(), mitreDS.Singleton(), cryptocodec.Singleton(), cryptoKey)
 		return g, err
 	})
 }

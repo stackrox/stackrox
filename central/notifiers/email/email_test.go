@@ -75,6 +75,22 @@ func TestEmailMsgNoAttachments(t *testing.T) {
 	assert.Contains(t, msgStr, "How you doin'?\r\n")
 }
 
+func TestContentBytes(t *testing.T) {
+	msg := &Message{
+		To:        []string{"foo@stackrox.com", "bar@stackrox.com"},
+		From:      "xyz@stackrox.com",
+		Subject:   "Test Email",
+		Body:      "How you doin'?",
+		EmbedLogo: false,
+	}
+
+	msgContentBytes := msg.ContentBytes()
+	msgStr := string(msgContentBytes)
+
+	assert.NotContains(t, msgStr, "From:")
+	assert.NotContains(t, msgStr, "To:")
+}
+
 func TestApplyRfc5322LineLengthLimit(t *testing.T) {
 	t.Parallel()
 

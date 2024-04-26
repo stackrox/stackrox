@@ -237,14 +237,13 @@ func (m Message) Bytes() []byte {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString(fmt.Sprintf("From: %s\r\n", m.From))
 	buf.WriteString(fmt.Sprintf("To: %s\r\n", strings.Join(m.To, ",")))
-	buf.WriteString(fmt.Sprintf("Subject: %s\r\n", m.Subject))
 
 	m.writeContentBytes(buf)
 	return buf.Bytes()
 }
 
 // ContentBytes returns the Message bytes without the SMTP email headers
-// From, To and Subject
+// From and To
 func (m Message) ContentBytes() []byte {
 	buf := bytes.NewBuffer(nil)
 	m.writeContentBytes(buf)
@@ -252,6 +251,7 @@ func (m Message) ContentBytes() []byte {
 }
 
 func (m Message) writeContentBytes(buf *bytes.Buffer) {
+	buf.WriteString(fmt.Sprintf("Subject: %s\r\n", m.Subject))
 	buf.WriteString("MIME-Version: 1.0\r\n")
 
 	writer := multipart.NewWriter(buf)
