@@ -75,9 +75,9 @@ func (s *tokenSuite) Test_RetrieveAuthToken_ShouldTrimLeadingAndTrailingWhitespa
 }
 
 func (s *tokenSuite) Test_RetrieveAuthToken_Precedence() {
-	const tokenForFlag = "token-for-flag"
+	const tokenForFlag = "for-flag"
 	const tokenForFileEnv = "token-for-file-env"
-	const tokenForEnv = "token-for-env"
+	const tokenForEnv = "for-env"
 
 	tstDir := s.T().TempDir()
 	forFlagFilePath := filepath.Join(tstDir, tokenForFlag)
