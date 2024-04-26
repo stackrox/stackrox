@@ -322,31 +322,6 @@ spec:
     - name: workspace
       workspace: workspace
 
-  - name: inspect-image
-    params:
-    - name: IMAGE_URL
-      value: $(tasks.build-container.results.IMAGE_URL)
-    - name: IMAGE_DIGEST
-      value: $(tasks.build-container.results.IMAGE_DIGEST)
-    runAfter:
-    - build-container
-    taskRef:
-      params:
-      - name: name
-        value: inspect-image
-      - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-inspect-image:0.1@sha256:268632262685fe84400c9b346fe589f96b1930321334660d234037fc25f97806
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(params.skip-checks)
-      operator: in
-      values: [ "false" ]
-    workspaces:
-    - name: source
-      workspace: workspace
-
   - name: deprecated-base-image-check
     params:
     - name: BASE_IMAGES_DIGESTS
