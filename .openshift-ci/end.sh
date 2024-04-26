@@ -33,36 +33,35 @@ end() {
 }
 
 determine_an_overall_job_outcome() {
-    # Determine a useful overall job outcome based on state shared from prior steps.
-    # 'undefined' states mean the step did not run or openshift-ci canceled it.
-    # Note: in openshift-ci, if SHARED_DIR files are created or changed after
-    # cancelation that does not propagate.
+    # Determine a useful overall job outcome based on outcomes shared from prior
+    # steps. A default outcome of canceled is assumed for a step with an
+    # undefined value. This handles steps that are canceled by openshift-ci and
+    # that do not terminate within the termination grace period where the
+    # SHARED_DIR state is not propagated.
 
-    combined="${CREATE_CLUSTER_OUTCOME:-undefined}-${JOB_DISPATCH_OUTCOME:-undefined}-${DESTROY_CLUSTER_OUTCOME:-undefined}"
+    combined="${CREATE_CLUSTER_OUTCOME:-${OUTCOME_CANCELED}}-${JOB_DISPATCH_OUTCOME:-${OUTCOME_CANCELED}}-${DESTROY_CLUSTER_OUTCOME:-${OUTCOME_CANCELED}}"
 
     info "Determining a job outcome from (cluster create-job-cluster destroy):"
     info "${combined}"
 
     case "${combined}" in
-        undefined-undefined-*)
-            # The job was interrupted before cluster create could complete. or
-            # openshift-ci had a meltdown. cluster destroy might still pass, fail or
-            # be canceled.
+        "${OUTCOME_CANCELED}-${OUTCOME_CANCELED}"-*)
+            # The job was interrupted before cluster create could complete.
+            # Cluster destroy might still pass, fail or be canceled.
             outcome="${OUTCOME_CANCELED}"
             ;;
         "${OUTCOME_FAILED}"-*-*)
             # Track cluster create failures
             outcome="${OUTCOME_FAILED}"
             ;;
-        "${OUTCOME_PASSED}"-undefined-*)
-            # The job was interrupted before the test could complete. or somewhat
-            # less likely openshift-ci had a meltdown.
+        "${OUTCOME_PASSED}-${OUTCOME_CANCELED}"-*)
+            # The job was interrupted before the test could complete.
             outcome="${OUTCOME_CANCELED}"
             ;;
         "${OUTCOME_PASSED}-${OUTCOME_FAILED}"-*)
             outcome="${OUTCOME_FAILED}"
             ;;
-        "${OUTCOME_PASSED}-${OUTCOME_PASSED}"-undefined)
+        "${OUTCOME_PASSED}-${OUTCOME_PASSED}-${OUTCOME_CANCELED}")
             # The job was interrupted before cluster destroy could complete, this is
             # not ideal but we can rely on janitor to clean up, for actionableness
             # track as a passing job.
