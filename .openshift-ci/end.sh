@@ -36,7 +36,7 @@ determine_an_overall_job_outcome() {
     # Determine a useful overall job outcome based on outcomes shared from prior
     # steps. A default outcome of canceled is assumed for a step with an
     # undefined value. This handles steps that are canceled by openshift-ci and
-    # that do not terminate within the termination grace period where the
+    # that do not terminate within the termination grace period. In these cases
     # SHARED_DIR state is not propagated.
 
     combined="${CREATE_CLUSTER_OUTCOME:-${OUTCOME_CANCELED}}-${JOB_DISPATCH_OUTCOME:-${OUTCOME_CANCELED}}-${DESTROY_CLUSTER_OUTCOME:-${OUTCOME_CANCELED}}"
@@ -45,7 +45,7 @@ determine_an_overall_job_outcome() {
     info "${combined}"
 
     case "${combined}" in
-        "${OUTCOME_CANCELED}-${OUTCOME_CANCELED}"-*)
+        "${OUTCOME_CANCELED}"-*-*)
             # The job was interrupted before cluster create could complete.
             # Cluster destroy might still pass, fail or be canceled.
             outcome="${OUTCOME_CANCELED}"
