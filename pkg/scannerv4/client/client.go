@@ -305,7 +305,13 @@ func (c *gRPCScanner) IndexAndScanNode(ctx context.Context) (*v4.VulnerabilityRe
 	if err != nil {
 		return nil, fmt.Errorf("creating node index report: %w", err)
 	}
-	return c.getVulnerabilitiesForManifest(ctx, nr.GetHashId(), nil)
+	rc := &v4.Contents{
+		Packages:      nr.GetContents().GetPackages(),
+		Distributions: nr.GetContents().GetDistributions(),
+		Repositories:  nr.GetContents().GetRepositories(),
+		Environments:  nr.GetContents().GetEnvironments(),
+	}
+	return c.getVulnerabilities(ctx, "/v4/containerimage/"+nr.GetHashId(), rc)
 }
 
 func getImageManifestID(ref name.Digest) string {
