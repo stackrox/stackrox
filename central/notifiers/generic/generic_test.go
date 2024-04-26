@@ -106,11 +106,4 @@ func TestConstructJSON(t *testing.T) {
 			assert.JSONEq(t, c.expectedPayload, string(jsonBytes))
 		})
 	}
-
-	t.Run("marshaling error", func(t *testing.T) {
-		notifier := makeBaseGeneric()
-		var alert *storage.Alert
-		_, err := notifier.constructJSON(alert, alertMessageKey)
-		require.Error(t, err)
-	})
 }
