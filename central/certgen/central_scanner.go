@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
-	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
 )
 
