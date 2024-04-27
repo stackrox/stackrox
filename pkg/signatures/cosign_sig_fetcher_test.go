@@ -116,7 +116,7 @@ func uploadSignatureForImage(imgRef string, b64Sig string, sigPayload []byte) er
 	return nil
 }
 
-func TestPublicKey_FetchSignature_Success(t *testing.T) {
+func TestCosignSignatureFetcher_FetchSignature_Success(t *testing.T) {
 	registryServer, imgRef, err := registryServerWithImage("nginx")
 	require.NoError(t, err, "setting up registry")
 	defer registryServer.Close()
@@ -157,7 +157,7 @@ func TestPublicKey_FetchSignature_Success(t *testing.T) {
 		},
 	}
 
-	f := newCosignPublicKeySignatureFetcher()
+	f := newCosignSignatureFetcher()
 	mockConfig := &registryTypes.Config{
 		Username: "",
 		Password: "",
@@ -170,12 +170,12 @@ func TestPublicKey_FetchSignature_Success(t *testing.T) {
 	assert.Equal(t, expectedSignatures, res)
 }
 
-func TestPublicKey_FetchSignature_Failure(t *testing.T) {
+func TestCosignSignatureFetcher_FetchSignature_Failure(t *testing.T) {
 	registryServer, _, err := registryServerWithImage("nginx")
 	require.NoError(t, err, "setting up registry")
 	defer registryServer.Close()
 
-	f := newCosignPublicKeySignatureFetcher()
+	f := newCosignSignatureFetcher()
 
 	cimg, err := imgUtils.GenerateImageFromString("nginx")
 	require.NoError(t, err, "creating test image")
@@ -190,7 +190,7 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 	assert.False(t, retry.IsRetryable(err))
 }
 
-func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
+func TestCosignSignatureFetcher_FetchSignature_NoSignature(t *testing.T) {
 	registryServer, imgRef, err := registryServerWithImage("nginx")
 	require.NoError(t, err, "setting up registry")
 	defer registryServer.Close()
@@ -199,7 +199,7 @@ func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
 	require.NoError(t, err, "creating test image")
 	img := types.ToImage(cimg)
 
-	f := newCosignPublicKeySignatureFetcher()
+	f := newCosignSignatureFetcher()
 	reg := &mockRegistry{cfg: &registryTypes.Config{}}
 
 	require.NoError(t, err)

@@ -28,16 +28,16 @@ import (
 	"golang.org/x/time/rate"
 )
 
-type cosignPublicKeySignatureFetcher struct {
+type cosignSignatureFetcher struct {
 	// registryRateLimiter is a rate limiter for parallel calls to the registry. This will avoid reaching out to the
 	// registry too many times leading to 429 errors.
 	registryRateLimiter *rate.Limiter
 }
 
-var _ SignatureFetcher = (*cosignPublicKeySignatureFetcher)(nil)
+var _ SignatureFetcher = (*cosignSignatureFetcher)(nil)
 
-func newCosignPublicKeySignatureFetcher() *cosignPublicKeySignatureFetcher {
-	return &cosignPublicKeySignatureFetcher{
+func newCosignSignatureFetcher() *cosignSignatureFetcher {
+	return &cosignSignatureFetcher{
 		registryRateLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 	}
 }
@@ -55,7 +55,7 @@ func init() {
 // The signature associated with the image will be fetched from the given registry.
 // It will return the storage.ImageSignature and an error that indicated whether the fetching should be retried or not.
 // NOTE: No error will be returned when the image has no signature available. All occurring errors will be logged.
-func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, image *storage.Image,
+func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *storage.Image,
 	fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error) {
 	// Short-circuit for images that do not have V2 metadata associated with them. These would be older images manifest
 	// schemes that are not supported by cosign, like the docker v1 manifest.

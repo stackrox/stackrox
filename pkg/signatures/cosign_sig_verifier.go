@@ -37,21 +37,21 @@ var (
 	errCorruptedSignature    = errox.InvariantViolation.New("corrupted signature")
 )
 
-type cosignPublicKeyVerifier struct {
+type cosignSignatureVerifier struct {
 	parsedPublicKeys []crypto.PublicKey
 }
 
-var _ SignatureVerifier = (*cosignPublicKeyVerifier)(nil)
+var _ SignatureVerifier = (*cosignSignatureVerifier)(nil)
 
 // IsValidPublicKeyPEMBlock is a helper function which checks whether public key PEM block was successfully decoded.
 func IsValidPublicKeyPEMBlock(keyBlock *pem.Block, rest []byte) bool {
 	return keyBlock != nil && keyBlock.Type == publicKeyType && len(rest) == 0
 }
 
-// newCosignPublicKeyVerifier creates a public key verifier with the given Cosign configuration. The provided public keys
+// newCosignSignatureVerifier creates a public key verifier with the given Cosign configuration. The provided public keys
 // MUST be valid PEM encoded ones.
 // It will return an error if the provided public keys could not be parsed.
-func newCosignPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*cosignPublicKeyVerifier, error) {
+func newCosignSignatureVerifier(config *storage.CosignPublicKeyVerification) (*cosignSignatureVerifier, error) {
 	publicKeys := config.GetPublicKeys()
 	parsedKeys := make([]crypto.PublicKey, 0, len(publicKeys))
 	for _, publicKey := range publicKeys {
@@ -68,13 +68,13 @@ func newCosignPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*c
 		parsedKeys = append(parsedKeys, parsedKey)
 	}
 
-	return &cosignPublicKeyVerifier{parsedPublicKeys: parsedKeys}, nil
+	return &cosignSignatureVerifier{parsedPublicKeys: parsedKeys}, nil
 }
 
 // VerifySignature implements the SignatureVerifier interface.
 // The signature of the image will be verified using cosign. It will include the verification via public key
 // as well as the claim verification of the payload of the signature.
-func (c *cosignPublicKeyVerifier) VerifySignature(ctx context.Context,
+func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	image *storage.Image) (storage.ImageSignatureVerificationResult_Status, []string, error) {
 	// Short circuit if we do not have any public keys configured to verify against.
 	if len(c.parsedPublicKeys) == 0 {

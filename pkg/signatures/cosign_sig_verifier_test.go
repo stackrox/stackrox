@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewPublicKeyVerifier(t *testing.T) {
+func TestNewCosignSignatureVerifier(t *testing.T) {
 	cases := map[string]struct {
 		pemEncKey string
 		fail      bool
@@ -43,7 +43,7 @@ func TestNewPublicKeyVerifier(t *testing.T) {
 					},
 				},
 			}
-			verifier, err := newCosignPublicKeyVerifier(config)
+			verifier, err := newCosignSignatureVerifier(config)
 			if c.fail {
 				assert.Error(t, err)
 				assert.Nil(t, verifier)
@@ -56,7 +56,7 @@ func TestNewPublicKeyVerifier(t *testing.T) {
 	}
 }
 
-func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
+func TestCosignSignatureVerifier_VerifySignature_Success(t *testing.T) {
 	const pemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
 		"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE04soAoNygRhaytCtygPcwsP+6Ein\n" +
 		"YoDv/BJx1T9WmtsANh2HplRR66Fbm+3OjFuah2IhFufPhDl6a85I3ymVYw==\n" +
@@ -70,10 +70,10 @@ func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
 	const imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
 		"bfd5c4c20a2fa2aaa7ede3"
 
-	pubKeyVerifier, err := newCosignPublicKeyVerifier(&storage.CosignPublicKeyVerification{
+	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
-				Name:            "cosignPublicKeyVerifier",
+				Name:            "cosignSignatureVerifier",
 				PublicKeyPemEnc: pemPublicKey,
 			},
 		},
@@ -92,7 +92,7 @@ func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
 		"image full name should match verified image reference")
 }
 
-func TestPublicKeyVerifier_VerifySignature_Multiple_Names(t *testing.T) {
+func TestCosignSignatureVerifier_VerifySignature_Multiple_Names(t *testing.T) {
 	const pemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
 		"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE04soAoNygRhaytCtygPcwsP+6Ein\n" +
 		"YoDv/BJx1T9WmtsANh2HplRR66Fbm+3OjFuah2IhFufPhDl6a85I3ymVYw==\n" +
@@ -106,10 +106,10 @@ func TestPublicKeyVerifier_VerifySignature_Multiple_Names(t *testing.T) {
 	const imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
 		"bfd5c4c20a2fa2aaa7ede3"
 
-	pubKeyVerifier, err := newCosignPublicKeyVerifier(&storage.CosignPublicKeyVerification{
+	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
-				Name:            "cosignPublicKeyVerifier",
+				Name:            "cosignSignatureVerifier",
 				PublicKeyPemEnc: pemPublicKey,
 			},
 		},
@@ -139,7 +139,7 @@ func TestPublicKeyVerifier_VerifySignature_Multiple_Names(t *testing.T) {
 		"verified image references should not contain image name %s", secondImageName.GetFullName())
 }
 
-func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
+func TestCosignSignatureVerifier_VerifySignature_Failure(t *testing.T) {
 	const pemNonMatchingPubKey = "-----BEGIN PUBLIC KEY-----\n" +
 		"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWi3tSxvBH7S/WUmv408nKPxNSJx6\n" +
 		"+w7c9FtFSk6coxx2VUbPy/X3US3cXfk/zVA+G7NbXGBYhAGaOsps5ZKjkQ==\n" +
@@ -153,7 +153,7 @@ func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
 	const imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
 		"bfd5c4c20a2fa2aaa7ede3"
 
-	pubKeyVerifier, err := newCosignPublicKeyVerifier(&storage.CosignPublicKeyVerification{
+	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
 				Name:            "Non matching key",
@@ -164,14 +164,14 @@ func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
 
 	require.NoError(t, err, "creating public key verifier")
 
-	emptyPubKeyVerifier, err := newCosignPublicKeyVerifier(&storage.CosignPublicKeyVerification{})
+	emptyPubKeyVerifier, err := newCosignSignatureVerifier(&storage.CosignPublicKeyVerification{})
 	require.NoError(t, err, "creating empty public key verifier")
 
 	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
 	require.NoError(t, err, "creating image with signature")
 
 	cases := map[string]struct {
-		verifier *cosignPublicKeyVerifier
+		verifier *cosignSignatureVerifier
 		img      *storage.Image
 		err      error
 		status   storage.ImageSignatureVerificationResult_Status
