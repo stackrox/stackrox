@@ -52,9 +52,16 @@ var (
 	allImagesQuery = search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).
 			ProtoQuery()
 
-	imagesWithSignatureVerificationResultsQuery = search.NewQueryBuilder().
-							AddStringsHighlighted(search.ClusterID, search.WildcardString).
-							AddDays(search.ImageSignatureFetchedTime, 0).ProtoQuery()
+	imagesWithSignaturesQuery = search.NewQueryBuilder().
+		// We take all images into account irrespective whether they have a cluster associated with them
+		// or not. The reason is that we want to reprocess those in case e.g. a previous signature
+		// verification failure lead to an enforcement, which would make the image not have any cluster
+		// associated with it.
+		AddTimeRangeField(search.ImageSignatureFetchedTime,
+			// Could potentially miss images that _just_ fetched signatures so creating a small jitter
+			// to include those as well.
+			time.Unix(0, 0), time.Now().Add(10*time.Second)).
+		ProtoQuery()
 )
 
 // Singleton returns the singleton reprocessor loop
@@ -501,7 +508,7 @@ func (l *loopImpl) runSignatureVerificationReprocessing() {
 	defer metrics.SetSignatureVerificationReprocessorDuration(time.Now())
 	l.reprocessWatchedImages()
 	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
-		l.forceEnrichImageSignatureVerificationResults, imagesWithSignatureVerificationResultsQuery)
+		l.forceEnrichImageSignatureVerificationResults, imagesWithSignaturesQuery)
 
 }
 
