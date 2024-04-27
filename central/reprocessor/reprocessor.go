@@ -83,7 +83,7 @@ type Loop interface {
 	Stop()
 
 	ReprocessRiskForDeployments(deploymentIDs ...string)
-	ReprocessSignatureVerifications()
+	ReprocessSignatureVerifications(firstIntegration bool)
 }
 
 // NewLoop returns a new instance of a Loop.
@@ -91,8 +91,9 @@ func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEn
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
 	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, acUpdater activeComponentsUpdater.Updater) Loop {
 	return newLoopWithDuration(
-		connManager, imageEnricher, nodeEnricher, deployments, images, nodes, risk, watchedImages,
-		env.ReprocessInterval.DurationSetting(), env.RiskReprocessInterval.DurationSetting(), env.ActiveVulnRefreshInterval.DurationSetting(), acUpdater)
+		connManager, imageEnricher, nodeEnricher, deployments, images, nodes, risk,
+		watchedImages, env.ReprocessInterval.DurationSetting(), env.RiskReprocessInterval.DurationSetting(),
+		env.ActiveVulnRefreshInterval.DurationSetting(), acUpdater)
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
@@ -100,7 +101,7 @@ func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEn
 // to enable testing.
 func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
-	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, deploymentRiskDuration time.Duration,
+	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, deploymentRiskDuration,
 	activeComponentTickerDuration time.Duration, acUpdater activeComponentsUpdater.Updater) *loopImpl {
 	return &loopImpl{
 		enrichAndDetectTickerDuration: enrichAndDetectDuration,
@@ -167,7 +168,8 @@ type loopImpl struct {
 	riskStopped       concurrency.Signal
 	enrichmentStopped concurrency.Signal
 
-	signatureVerificationSig concurrency.Signal
+	signatureVerificationSig  concurrency.Signal
+	firstSignatureIntegration concurrency.Flag
 
 	reprocessingInProgress concurrency.Flag
 
@@ -206,11 +208,13 @@ func (l *loopImpl) ShortCircuit() {
 	l.shortCircuitSig.Signal()
 }
 
-func (l *loopImpl) ReprocessSignatureVerifications() {
+func (l *loopImpl) ReprocessSignatureVerifications(firstIntegration bool) {
 	// Signal that we should reprocess signature verifications for all images. This will only trigger a reprocess with
 	// refetch of signature verification results.
 	// If the signal is already triggered, then the current signal is effectively deduped.
 	l.signatureVerificationSig.Signal()
+
+	l.firstSignatureIntegration.Set(firstIntegration)
 }
 
 func (l *loopImpl) sendDeployments(deploymentIDs []string) {
@@ -507,9 +511,16 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 func (l *loopImpl) runSignatureVerificationReprocessing() {
 	defer metrics.SetSignatureVerificationReprocessorDuration(time.Now())
 	l.reprocessWatchedImages()
-	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
-		l.forceEnrichImageSignatureVerificationResults, imagesWithSignaturesQuery)
+	query := imagesWithSignaturesQuery
+	// If we have reprocessed when the _first_ signature integration is added, then take into account all images.
+	if l.firstSignatureIntegration.Get() {
+		query = allImagesQuery
+	}
 
+	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
+		l.forceEnrichImageSignatureVerificationResults, query)
+
+	l.firstSignatureIntegration.Set(false)
 }
 
 func (l *loopImpl) forceEnrichImageSignatureVerificationResults(ctx context.Context, _ imageEnricher.EnrichmentContext,
