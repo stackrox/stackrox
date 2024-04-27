@@ -2,19 +2,19 @@ syntax = "proto3";
 
 package sensor;
 
-import "storage/runtime_filters.proto";
+import "storage/collector_runtime_config.proto";
 
 option go_package = "sensor";
 
 message MsgToCollector {
   oneof msg {
-    storage.RuntimeFilteringConfiguration runtime_filtering_configuration = 1;
+    storage.CollectorRuntimeConfig collector_runtime_config = 1;
   }
 }
 
 message MsgFromCollector {
   oneof msg {
-    storage.RuntimeFiltersACK runtime_filters_ack = 1;
+    storage.CollectorRuntimeConfigACK collector_runtime_config_ack = 1;
   }
 }
 

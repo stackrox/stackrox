@@ -21,7 +21,7 @@ import "internalapi/central/sensor_upgrade.proto";
 import "internalapi/central/telemetry.proto";
 import "storage/cluster.proto";
 import "storage/image.proto";
-import "storage/runtime_filters.proto";
+import "storage/collector_runtime_config.proto";
 
 option go_package = "central";
 
@@ -46,7 +46,7 @@ message MsgFromSensor {
     ComplianceOperatorInfo compliance_operator_info = 16;
     ComplianceResponse compliance_response = 17;
     DeploymentEnhancementResponse deployment_enhancement_response = 18;
-    storage.RuntimeFiltersACK runtime_filters_ack = 19;
+    storage.CollectorRuntimeConfigACK collector_runtime_config_ack = 19;
   }
 }
 
@@ -84,7 +84,7 @@ message MsgToSensor {
     ClusterHealthResponse cluster_health_response = 25;
     DeduperState deduper_state = 26;
     DeploymentEnhancementRequest deployment_enhancement_request = 27;
-    storage.RuntimeFilteringConfiguration runtime_filtering_configuration = 28;
+    storage.CollectorRuntimeConfig collector_runtime_config = 28;
   }
 }
 
