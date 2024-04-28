@@ -27,7 +27,7 @@ message Status {
   message ProcessStatus {
     bool enabled = 1;
   }
-  
+
   message NetworkConnectionStatus {
     bool enabled = 1;
     bool aggregate_external = 2;
@@ -45,7 +45,6 @@ message Status {
 }
 
 message RuntimeFeatureConfig {
-
   message RuntimeRule {
     string resource_collection_name = 1;
     Status status = 2;

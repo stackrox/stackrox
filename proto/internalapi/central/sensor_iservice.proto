@@ -20,8 +20,8 @@ import "internalapi/central/sensor_events.proto";
 import "internalapi/central/sensor_upgrade.proto";
 import "internalapi/central/telemetry.proto";
 import "storage/cluster.proto";
-import "storage/image.proto";
 import "storage/collector_runtime_config.proto";
+import "storage/image.proto";
 
 option go_package = "central";
 
