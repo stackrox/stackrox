@@ -136,7 +136,7 @@ spec:
           - name: name
             value: init
           - name: bundle
-            value: quay.io/redhat-appstudio-tekton-catalog/task-init:0.2@sha256:99674c6fbedcb153945ea37729c951e86314746cfc2dbeeecef6ce8b60229383
+            value: quay.io/redhat-appstudio-tekton-catalog/task-init:0.2@sha256:686109bd8088258f73211618824aee5d3cf9e370f65fa3e85d361790a54260ef
           - name: kind
             value: task
         resolver: bundles
@@ -183,7 +183,7 @@ spec:
           - name: name
             value: prefetch-dependencies
           - name: bundle
-            value: quay.io/redhat-appstudio-tekton-catalog/task-prefetch-dependencies:0.1@sha256:76d4c97336234dd673cd3f5115c3d2558cb5ad3d2021a15da38988326b7f1c4a
+            value: quay.io/redhat-appstudio-tekton-catalog/task-prefetch-dependencies:0.1@sha256:6687b3a54a8cbfbb5c2904d447bbb3d48d5739c5e201f6ddf0c4b471a7e35e27
           - name: kind
             value: task
         resolver: bundles
@@ -214,7 +214,7 @@ spec:
           - name: name
             value: buildah
           - name: bundle
-            value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:071f2b71f44257b0355bab8dcf5a4b656c13e60463473e4a04409aa03c3aa83d
+            value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:7e5f19d3aa233b9becf90d1ca01697486dc1acb1f1d6d2a0b8d1a1cc07c66249
           - name: kind
             value: task
         resolver: bundles
@@ -283,6 +283,10 @@ spec:
       params:
         - name: BASE_IMAGES_DIGESTS
           value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+        - name: IMAGE_URL
+          value: $(tasks.build-container.results.IMAGE_URL)
+        - name: IMAGE_DIGEST
+          value: $(tasks.build-container.results.IMAGE_DIGEST)
       runAfter:
         - build-container
       taskRef:
@@ -290,7 +294,7 @@ spec:
           - name: name
             value: deprecated-image-check
           - name: bundle
-            value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.3@sha256:ae1fcb32b1aeac846e1a41019b2e735b9c25c27752496f17744d869860c80ff1
+            value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.4@sha256:dd1b8b5b2652b24dc823aa83ebbf5e7ad52ade3cf6c7fa4993b8d0f9e0761189
           - name: kind
             value: task
         resolver: bundles
