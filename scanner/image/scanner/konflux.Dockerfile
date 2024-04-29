@@ -7,7 +7,6 @@ ARG BASE_TAG=latest
 
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.21 as builder
 
-ENV CGO_ENABLED=1
 ENV GOFLAGS=""
 ENV GOTAGS="release"
 # TODO(ROX-23335): Properly set the build tag
@@ -19,7 +18,7 @@ WORKDIR /src
 
 RUN scripts/konflux/fail-build-if-git-is-dirty.sh
 
-RUN make -C scanner NODEPS=1 image/scanner/bin/scanner copy-scripts
+RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-scripts
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
