@@ -8,6 +8,7 @@ import (
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	complianceConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -44,18 +45,20 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceProfileResults",
 			"/v2.ComplianceResultsService/GetComplianceClusterStats",
 			"/v2.ComplianceResultsService/GetComplianceProfileCheckStats",
-			"/v2.ComplianceResultsService/GetComplianceProfileCheckClusterResult",
+			"/v2.ComplianceResultsService/GetComplianceProfileCheckResult",
+			"/v2.ComplianceResultsService/GetComplianceProfileClusterResults",
 		},
 	})
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore) Service {
+func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore, ruleDS complianceRuleDS.DataStore) Service {
 	return &serviceImpl{
 		complianceResultsDS: complianceResultsDS,
 		scanConfigDS:        scanConfigDS,
 		integrationDS:       integrationDS,
 		profileDS:           profileDS,
+		ruleDS:              ruleDS,
 	}
 }
 
@@ -66,6 +69,7 @@ type serviceImpl struct {
 	scanConfigDS        complianceConfigDS.DataStore
 	integrationDS       complianceIntegrationDS.DataStore
 	profileDS           profileDatastore.DataStore
+	ruleDS              complianceRuleDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -331,7 +335,7 @@ func (s *serviceImpl) GetComplianceOverallClusterCount(ctx context.Context, quer
 }
 
 // GetComplianceScanCheckResult returns the specific result by ID
-func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.ResourceByID) (*v2.ComplianceCheckResult, error) {
+func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.ResourceByID) (*v2.ComplianceClusterCheckStatus, error) {
 	if req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "compliance check result ID is required for retrieval")
 	}
@@ -478,8 +482,8 @@ func (s *serviceImpl) GetComplianceProfileCheckStats(ctx context.Context, reques
 	}, nil
 }
 
-// GetComplianceProfileCheckClusterResult retrieves cluster status for a specific check result
-func (s *serviceImpl) GetComplianceProfileCheckClusterResult(ctx context.Context, request *v2.ComplianceProfileCheckRequest) (*v2.ListComplianceCheckClusterResponse, error) {
+// GetComplianceProfileCheckResult retrieves cluster status for a specific check result
+func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, request *v2.ComplianceProfileCheckRequest) (*v2.ListComplianceCheckClusterResponse, error) {
 	if request.GetProfileName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
 	}
@@ -526,6 +530,65 @@ func (s *serviceImpl) GetComplianceProfileCheckClusterResult(ctx context.Context
 	}, nil
 }
 
+// GetComplianceProfileClusterResults retrieves check results for a specific profile on a specific cluster
+func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, request *v2.ComplianceProfileClusterRequest) (*v2.ListComplianceCheckResultResponse, error) {
+	if request.GetProfileName() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
+	}
+
+	if request.GetClusterId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Cluster ID is required")
+	}
+
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	// Add the scan config name as an exact match
+	parsedQuery = search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, request.GetProfileName()).
+			AddExactMatches(search.ClusterID, request.ClusterId).
+			ProtoQuery(),
+		parsedQuery,
+	)
+
+	countQuery := parsedQuery.Clone()
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
+
+	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
+	}
+
+	checkToRule := make(map[string]string, len(scanResults))
+	for _, result := range scanResults {
+		rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, result.GetRuleRefId()).ProtoQuery())
+		if err != nil {
+			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for query %v", parsedQuery)
+		}
+		if len(rules) != 1 {
+			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
+		}
+		checkToRule[result.GetRuleRefId()] = rules[0].GetName()
+	}
+
+	resultCount, err := s.complianceResultsDS.CountCheckResults(ctx, countQuery)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", parsedQuery)
+	}
+
+	return &v2.ListComplianceCheckResultResponse{
+		CheckResults: storagetov2.ComplianceV2CheckResults(scanResults, checkToRule),
+		ProfileName:  request.GetProfileName(),
+		ClusterId:    request.GetClusterId(),
+		TotalCount:   int32(resultCount),
+	}, nil
+}
+
 func (s *serviceImpl) mapScanConfigToID(ctx context.Context, scanResults []*storage.ComplianceOperatorCheckResultV2) (map[string]string, error) {
 	scanConfigToIDs := make(map[string]string, len(scanResults))
 	for _, result := range scanResults {
@@ -554,6 +617,6 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 	}
 
 	return &v2.ListComplianceScanResultsResponse{
-		ScanResults: storagetov2.ComplianceV2CheckResults(scanResults, scanConfigToIDs),
+		ScanResults: storagetov2.ComplianceV2ScanResults(scanResults, scanConfigToIDs),
 	}, nil
 }
