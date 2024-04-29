@@ -58,7 +58,7 @@ func (w *workerQueue) indexFromKey(key string) int {
 
 // push attempts to add an item to the queue, and returns an error if it is unable.
 func (w *workerQueue) push(msg *central.MsgFromSensor) {
-	// The zeroth index is reserved for objects that do not match the switch statement below
+	// The zeroth index is reserved for objects that do not match the if statement below
 	// w.indexFromKey returns (hashed value % poolSize) + 1 so it cannot return a 0 index
 	var idx int
 	if msg.HashKey != "" {
