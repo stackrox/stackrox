@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"maps"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -10,7 +11,6 @@ import (
 	commonLabels "github.com/stackrox/rox/operator/pkg/common/labels"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/maputil"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -115,7 +115,7 @@ func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlCl
 		strData[k] = string(v)
 	}
 
-	if maputil.Equal(strData, proxyEnvVars) {
+	if maps.Equal(strData, proxyEnvVars) {
 		return nil
 	}
 

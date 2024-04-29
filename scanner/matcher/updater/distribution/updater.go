@@ -3,13 +3,13 @@ package distribution
 import (
 	"context"
 	"math/rand"
+	"slices"
 	"time"
 
 	"github.com/quay/claircore"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
-	"golang.org/x/exp/slices"
 )
 
 const updateInterval = 24 * time.Hour
