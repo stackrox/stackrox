@@ -83,9 +83,9 @@ func TestSarifPrinter_Print_Success(t *testing.T) {
 }
 
 func TestSarifPrinter_Print_EmptyViolations(t *testing.T) {
-	obj := &testObject{Violations: []violation{}}
+	obj := &testObject{Violations: nil}
 	expressions := map[string]string{
-		SarifRuleJSONPathExpressionKey:     "violations.#.id",
+		SarifRuleJSONPathExpressionKey:     "{violations.#.id}.@text",
 		SarifHelpJSONPathExpressionKey:     "violations.#.reason",
 		SarifSeverityJSONPathExpressionKey: "violations.#.severity",
 	}

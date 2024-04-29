@@ -49,5 +49,10 @@ func getStringsFromGJSONResult(results []gjson.Result) []string {
 			return true
 		})
 	}
+	// If we only have a single result _and_ that result is null, return a nil array.
+	if len(results) == 1 && results[0].Type == gjson.Null {
+		return nil
+	}
+
 	return stringResults
 }
