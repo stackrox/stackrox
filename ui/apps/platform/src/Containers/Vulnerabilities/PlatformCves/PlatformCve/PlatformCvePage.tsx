@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
     PageSection,
     Breadcrumb,
@@ -6,8 +6,6 @@ import {
     BreadcrumbItem,
     Skeleton,
     Alert,
-    Grid,
-    GridItem,
     Gallery,
     GalleryItem,
 } from '@patternfly/react-core';
@@ -21,7 +19,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
+import CvePageHeader from '../../components/CvePageHeader';
 import {
     getOverviewPagePath,
     getRegexScopedQueryString,
