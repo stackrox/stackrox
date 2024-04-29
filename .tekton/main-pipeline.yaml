@@ -25,7 +25,7 @@ spec:
     - name: git-url
       value: $(tasks.clone-repository.results.url)?rev=$(tasks.clone-repository.results.commit)
     - name: image-url
-      value: $(params.output-image)
+      value: $(tasks.build-container.results.IMAGE_URL)
     - name: build-task-status
       value: $(tasks.build-container.status)
     workspaces:
@@ -173,6 +173,37 @@ spec:
     - name: basic-auth
       workspace: git-auth
 
+  - name: determine-image-tag
+    params:
+      - name: image
+        value: $(params.output-image)
+    runAfter:
+    - clone-repository
+    # TODO(ROX-23812): Refactor to a task bundle
+    taskSpec:
+      params:
+        - name: image
+          description: Image without tag
+      results:
+        - name: image-with-tag
+          description: Fully Qualified Image Name with identifying tag
+      steps:
+        - name: determine-image-tag
+          image: registry.access.redhat.com/ubi8:latest
+          env:
+            - name: IMAGE
+              value: $(params.image)
+          script: |
+            #!/usr/bin/env bash
+            set -euo pipefail
+            dnf upgrade -y --nobest
+            dnf install -y git make
+            cd "$(workspaces.source.path)/source"
+            echo -n "${IMAGE%%:*}:$(make --quiet --no-print-directory -f make/tag.mk tag)" | tee "$(results.image-with-tag.path)"
+    workspaces:
+    - name: source
+      workspace: workspace
+
   # TODO(ROX-23257): remove once Central does not depend on rocksdb
   - name: clone-rocksdb
     params:
@@ -185,7 +216,7 @@ spec:
     - name: subdirectory
       value: source/.konflux/rocksdb
     runAfter:
-    - clone-repository
+    - determine-image-tag
     taskRef:
         params:
         - name: name
@@ -207,7 +238,7 @@ spec:
 
   - name: copy-subscription-manager-activation-key
     runAfter:
-    - clone-repository
+    - determine-image-tag
     workspaces:
     - name: source
       workspace: workspace
@@ -222,7 +253,7 @@ spec:
 
   - name: fetch-external-networks
     runAfter:
-    - clone-repository
+    - determine-image-tag
     taskSpec:
         steps:
         - name: fetch-external-networks
@@ -242,7 +273,7 @@ spec:
     - name: input
       value: $(params.prefetch-input)
     runAfter:
-    - clone-repository
+    - determine-image-tag
     taskRef:
         params:
         - name: name
@@ -259,7 +290,7 @@ spec:
   - name: build-container
     params:
     - name: IMAGE
-      value: $(params.output-image)
+      value: $(tasks.determine-image-tag.results.image-with-tag)
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -297,7 +328,7 @@ spec:
   - name: build-source-image
     params:
     - name: BINARY_IMAGE
-      value: $(params.output-image)
+      value: $(tasks.determine-image-tag.results.image-with-tag)
     - name: BASE_IMAGES
       value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
     runAfter:
