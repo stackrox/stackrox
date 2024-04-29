@@ -5,14 +5,12 @@ import { FormikProps } from 'formik';
 import isEqual from 'lodash/isEqual';
 import resolvePath from 'object-resolve-path';
 
+import EmailNotifierModal from 'Components/EmailNotifier/EmailNotifierModal';
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { fetchIntegration } from 'services/IntegrationsService';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { ReportFormValues } from './useReportFormValues';
-
-// eslint-disable-next-line import/no-named-as-default
-import EmailNotifierFormModal from './EmailNotifierFormModal';
 
 type ReportNotifier = {
     id: string;
@@ -174,7 +172,7 @@ function NotifierSelection({
                     Reset to default
                 </Button>
             )}
-            <EmailNotifierFormModal
+            <EmailNotifierModal
                 isOpen={isEmailNotifierModalOpen}
                 updateNotifierList={setLastAddedNotifier}
                 onToggleEmailNotifierModal={onToggleEmailNotifierModal}
