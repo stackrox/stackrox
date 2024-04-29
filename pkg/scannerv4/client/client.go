@@ -46,6 +46,12 @@ type Scanner interface {
 	// GetMatcherMetadata returns metadata from the matcher.
 	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
 
+	// CreateNodeIndexReport indexes the node the target indexer is running on
+	CreateNodeIndexReport(ctx context.Context) (*v4.IndexReport, error)
+
+	// IndexAndScanNode indexes the node and matches vulnerabilities in one call
+	IndexAndScanNode(ctx context.Context) (*v4.VulnerabilityReport, error)
+
 	// Close cleans up any resources used by the implementation.
 	Close() error
 }
@@ -53,6 +59,7 @@ type Scanner interface {
 // gRPCScanner A scanner client implementation based on gRPC endpoints.
 type gRPCScanner struct {
 	indexer         v4.IndexerClient
+	nodeIndexer     v4.NodeIndexerClient
 	matcher         v4.MatcherClient
 	gRPCConnections []*grpc.ClientConn
 }
@@ -79,10 +86,12 @@ func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
 		connList = append(connList, mConn)
 	}
 	indexerClient := v4.NewIndexerClient(iConn)
+	nodeindexerClient := v4.NewNodeIndexerClient(iConn)
 	matcherClient := v4.NewMatcherClient(mConn)
 	return &gRPCScanner{
 		gRPCConnections: connList,
 		indexer:         indexerClient,
+		nodeIndexer:     nodeindexerClient,
 		matcher:         matcherClient,
 	}, nil
 }
@@ -263,14 +272,7 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, err
 func (c *gRPCScanner) CreateNodeIndexReport(ctx context.Context) (*v4.IndexReport, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "CreateNodeIndexReport")
 
-	// Generate random SHA to use as HashId // FIXME: temporary for tests. Find way to properly calc the hashId.
-	data := make([]byte, 10)
-	_, _ = rand.Read(data)
-	randomSha := fmt.Sprintf("%x", sha256.Sum256(data))
-
-	r := &v4.CreateNodeIndexReportRequest{
-		HashId: "SCANNER_v4:" + randomSha, // FIXME: This parameter is unused and can go
-	}
+	r := &v4.CreateNodeIndexReportRequest{}
 	return c.nodeIndexer.CreateNodeIndexReport(ctx, r)
 }
 

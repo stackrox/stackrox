@@ -501,3 +501,5 @@ replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.1.0
 )
+
+replace github.com/quay/claircore => github.com/Maddosaurus/claircore v0.0.0-20240429155417-98b34b9b7fbc

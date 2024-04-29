@@ -38,15 +38,15 @@ type localNodeIndexer struct {
 
 // NewNodeIndexer creates a new node indexer
 func NewNodeIndexer(ctx context.Context, cfg config.NodeIndexerConfig) (NodeIndexer, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.NewNodeIndexer")
+	// ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.NewNodeIndexer")
 
 	// Note: http.DefaultTransport has already been modified to handle configured proxies.
 	// See scanner/cmd/scanner/main.go.
-	//t, err := httputil.TransportMux(http.DefaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices))
-	//if err != nil {
+	// t, err := httputil.TransportMux(http.DefaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices))
+	// if err != nil {
 	//	return nil, fmt.Errorf("creating HTTP transport: %w", err)
 	//}
-	//client := &http.Client{
+	// client := &http.Client{
 	//	Transport: t,
 	//}
 
@@ -70,6 +70,8 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*claircore.IndexRepor
 	}
 	report.Hash = ch
 
+	// SA1029 FIXME: Find a better way to pass the manifest ID through the stack
+	//nolint:staticcheck
 	ctx = context.WithValue(ctx, "manifest_id", h)
 
 	layer, err := constructLayer(ctx)
@@ -158,7 +160,10 @@ func runRepositoryScanner(ctx context.Context, l *claircore.Layer) ([]*claircore
 
 func getRandomSHA256() string {
 	data := make([]byte, 10)
-	rand.Read(data)
+	_, err := rand.Read(data)
+	if err != nil {
+		return ""
+	}
 	return fmt.Sprintf("%x", sha256.Sum256(data))
 }
 

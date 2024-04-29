@@ -32,7 +32,7 @@ func NewNodeIndexerService(indexer indexer.NodeIndexer) *nodeIndexerService {
 // CreateNodeIndexReport is the endpoint to create a new report for the node it runs on.
 func (s *nodeIndexerService) CreateNodeIndexReport(ctx context.Context, _ *v4.CreateNodeIndexReportRequest) (*v4.IndexReport, error) {
 	clairReport, err := s.nodeIndexer.IndexNode(ctx)
-	//clairReport, err := createNodeIndexReport(ctx)
+	// clairReport, err := createNodeIndexReport(ctx)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("nodeIndexer.IndexNode failed")
 		return nil, err
