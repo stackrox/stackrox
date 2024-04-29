@@ -7,6 +7,9 @@ const (
 	// EmailType represents notifier type email
 	EmailType = "email"
 
+	// ACSCSEmailType represents notifier type acscsEmail
+	ACSCSEmailType = "acscsEmail"
+
 	// CSCCType represents notifier type cscc
 	CSCCType = "cscc"
 
