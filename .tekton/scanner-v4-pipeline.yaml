@@ -200,7 +200,7 @@ spec:
             dnf upgrade -y --nobest
             dnf install -y git make
             cd "$(workspaces.source.path)/source"
-            echo -n "${IMAGE%%:*}:$(make --quiet --no-print-directory -f make/tag.mk tag)" | tee "$(results.image-with-tag.path)"
+            echo -n "${IMAGE%%:*}:$(make --quiet --no-print-directory tag)" | tee "$(results.image-with-tag.path)"
     workspaces:
     - name: source
       workspace: workspace
