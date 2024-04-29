@@ -246,6 +246,9 @@
         },
         "operatorInstalled": {
           "type": "boolean"
+        },
+        "status": {
+          "type": "string"
         }
       },
       "title": "Next Tag: 8"

@@ -64,6 +64,7 @@ func (suite *PipelineTestSuite) TestComplianceInfoMsgFromSensor() {
 		ClusterId:           fixtureconsts.Cluster1,
 		ComplianceNamespace: fixtureconsts.Namespace1,
 		StatusErrors:        statusErrors,
+		Status:              "Unhealthy",
 	}
 
 	suite.manager.EXPECT().ProcessComplianceOperatorInfo(gomock.Any(), expectedInfo).Return(nil).Times(1)

@@ -14,4 +14,6 @@ message ComplianceIntegration {
   // Collection of errors that occurred while trying to obtain compliance health info.
   repeated string status_errors = 5;
   bool operator_installed = 6; // @gotags: search:"Compliance Operator Installed,hidden"
+  string status = 7;// @gotags: search:"Compliance Operator Status,hidden"
+
 }
