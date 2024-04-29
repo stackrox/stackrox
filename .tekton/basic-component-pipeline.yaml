@@ -283,6 +283,10 @@ spec:
       params:
         - name: BASE_IMAGES_DIGESTS
           value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+        - name: IMAGE_URL
+          value: $(tasks.build-container.results.IMAGE_URL)
+        - name: IMAGE_DIGEST
+          value: $(tasks.build-container.results.IMAGE_DIGEST)
       runAfter:
         - build-container
       taskRef:
