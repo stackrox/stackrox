@@ -8,7 +8,7 @@ import (
 )
 
 type TestStorageType struct {
-	ID string `sql:"pk,id,type(uuid)"`
+	ID string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"`
 }
 
 // One can specify a custom SQL type for the structure field

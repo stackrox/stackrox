@@ -255,7 +255,7 @@ make kuttl
 
 These make targets will add the executable to your `$GOPATH`.
 If that is not on your `$PATH`, then you can install the Operator SDK from its [release page](https://github.com/operator-framework/operator-sdk/releases)
-and kuttl from its [release page](https://github.com/porridge/kuttl/releases).
+and kuttl from its [release page](https://github.com/kudobuilder/kuttl/releases).
 
 #### Pull Secret
 

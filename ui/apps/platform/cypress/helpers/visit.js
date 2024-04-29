@@ -62,14 +62,14 @@ const routeMatcherMapForAuthenticatedRoutes = {
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  * @returns {{ request: Record<string, unknown>, response: Record<string, unknown>}[]}
  */
-export function visit(pageUrl, routeMatcherMap, staticResponseMap) {
+export function visit(pageUrl, routeMatcherMap, staticResponseMap, waitOptions) {
     interceptRequests(routeMatcherMapForAuthenticatedRoutes);
     interceptRequests(routeMatcherMap, staticResponseMap);
 
     cy.visit(pageUrl);
 
     waitForResponses(routeMatcherMapForAuthenticatedRoutes);
-    return waitForResponses(routeMatcherMap);
+    return waitForResponses(routeMatcherMap, waitOptions);
 }
 
 /**

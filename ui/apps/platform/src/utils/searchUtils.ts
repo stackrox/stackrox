@@ -219,6 +219,20 @@ export function getListQueryParams(
 }
 
 /**
+ * Calculates the API pagination limit and offset parameters given the
+ * current page and number of items per page
+ */
+export function getPaginationParams(
+    page: number,
+    perPage: number
+): { offset: number; limit: number } {
+    return {
+        offset: (page - 1) * perPage,
+        limit: perPage,
+    };
+}
+
+/**
  * Coerces a search filter value obtained from the URL into an array of strings.
  *
  * Array values will be returned unchanged.

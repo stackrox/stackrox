@@ -4,34 +4,15 @@ import { Table, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
 import { Link } from 'react-router-dom';
 import { gql, useQuery } from '@apollo/client';
 
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useURLPagination from 'hooks/useURLPagination';
 import { ClusterType } from 'types/cluster.proto';
-import {
-    TbodyLoading,
-    TbodyError,
-    TbodyEmpty,
-    TbodyFilteredEmpty,
-} from 'Components/TableStateTemplates';
 import { getTableUIState } from 'utils/getTableUIState';
-import { ensureExhaustive } from 'utils/type.utils';
 
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import { getPlatformEntityPagePath, getRegexScopedQueryString } from '../../utils/searchUtils';
 import { QuerySearchFilter } from '../../types';
-
-function displayClusterType(type: ClusterType): string {
-    switch (type) {
-        case 'GENERIC_CLUSTER':
-            return 'Generic';
-        case 'KUBERNETES_CLUSTER':
-            return 'Kubernetes';
-        case 'OPENSHIFT_CLUSTER':
-        case 'OPENSHIFT4_CLUSTER':
-            return 'OCP';
-        default:
-            return ensureExhaustive(type);
-    }
-}
+import { displayClusterType } from '../utils/stringUtils';
 
 const clusterListQuery = gql`
     query getPlatformClusters($query: String, $pagination: Pagination) {
@@ -118,29 +99,31 @@ function ClustersTable({ querySearchFilter, isFiltered, pagination }: ClustersTa
                     <Th>Kubernetes version</Th>
                 </Tr>
             </Thead>
-            {tableState.type === 'LOADING' && <TbodyLoading colSpan={colSpan} />}
-            {tableState.type === 'ERROR' && (
-                <TbodyError colSpan={colSpan} error={tableState.error} />
-            )}
-            {tableState.type === 'EMPTY' && (
-                <TbodyEmpty colSpan={colSpan} message="No secured clusters have been detected" />
-            )}
-            {tableState.type === 'FILTERED_EMPTY' && <TbodyFilteredEmpty colSpan={colSpan} />}
-            {tableState.type === 'COMPLETE' &&
-                tableState.data.map(({ id, name, clusterVulnerabilityCount, type, status }) => (
-                    <Tbody key={id}>
-                        <Tr>
-                            <Td dataLabel="Cluster" modifier="nowrap">
-                                <Link to={getPlatformEntityPagePath('Cluster', id)}>{name}</Link>
-                            </Td>
-                            <Td dataLabel="CVEs">{pluralize(clusterVulnerabilityCount, 'CVE')}</Td>
-                            <Td dataLabel="Cluster type">{displayClusterType(type)}</Td>
-                            <Td dataLabel="Kubernetes version">
-                                {status?.orchestratorMetadata?.version ?? 'UNKNOWN'}
-                            </Td>
-                        </Tr>
-                    </Tbody>
-                ))}
+            <TbodyUnified
+                tableState={tableState}
+                colSpan={colSpan}
+                emptyProps={{ message: 'No secured clusters have been detected' }}
+                renderer={({ data }) =>
+                    data.map(({ id, name, clusterVulnerabilityCount, type, status }) => (
+                        <Tbody key={id}>
+                            <Tr>
+                                <Td dataLabel="Cluster" modifier="nowrap">
+                                    <Link to={getPlatformEntityPagePath('Cluster', id)}>
+                                        {name}
+                                    </Link>
+                                </Td>
+                                <Td dataLabel="CVEs">
+                                    {pluralize(clusterVulnerabilityCount, 'CVE')}
+                                </Td>
+                                <Td dataLabel="Cluster type">{displayClusterType(type)}</Td>
+                                <Td dataLabel="Kubernetes version">
+                                    {status?.orchestratorMetadata?.version ?? 'Unavailable'}
+                                </Td>
+                            </Tr>
+                        </Tbody>
+                    ))
+                }
+            />
         </Table>
     );
 }

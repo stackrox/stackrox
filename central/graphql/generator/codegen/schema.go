@@ -65,9 +65,6 @@ func makeSchemaEntries(data []typeData) []schemaEntry {
 }
 
 func schemaType(fd fieldData) string {
-	if strings.HasPrefix(fd.Name, "XXX_") {
-		return ""
-	}
 	if strings.ToLower(fd.Name) == "id" && fd.Type.Kind() == reflect.String {
 		return "ID!"
 	}

@@ -20,6 +20,7 @@ import (
 	apiTokenExpiration "github.com/stackrox/rox/central/apitoken/expiration"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	"github.com/stackrox/rox/central/audit"
+	authDS "github.com/stackrox/rox/central/auth/datastore"
 	authService "github.com/stackrox/rox/central/auth/service"
 	"github.com/stackrox/rox/central/auth/userpass"
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
@@ -623,6 +624,7 @@ func startGRPCServer() {
 				gs.AddGatherer(externalbackupsDS.Gather)
 				gs.AddGatherer(imageintegrationsDS.Gather)
 				gs.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
+				gs.AddGatherer(authDS.Gather)
 			}
 		}
 	}

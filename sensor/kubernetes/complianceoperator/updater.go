@@ -205,9 +205,10 @@ func checkWriteAccess(client kubernetes.Interface) error {
 
 func (u *updaterImpl) searchComplianceOperatorDeployment() (*appsv1.Deployment, error) {
 	// Use cached namespace, if compliance operator deployment was not found search again in all namespaces.
-	complianceOperator, err := u.getComplianceOperatorDeployment(u.complianceOperatorNS)
-	if complianceOperator != nil {
-		return complianceOperator, err
+	if u.complianceOperatorNS != "" {
+		if complianceOperator, err := u.getComplianceOperatorDeployment(u.complianceOperatorNS); err == nil {
+			return complianceOperator, nil
+		}
 	}
 
 	// List all namespaces to begin the lookup for compliance operator.

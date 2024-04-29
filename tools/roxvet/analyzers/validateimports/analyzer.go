@@ -61,9 +61,6 @@ var (
 		},
 		"sync": {
 			replacement: "github.com/stackrox/rox/pkg/sync",
-			allowlist: set.NewStringSet(
-				"github.com/stackrox/rox/pkg/bolthelper/crud/proto",
-			),
 		},
 		"github.com/gogo/protobuf/proto": {
 			replacement: "pkg/proto*",
@@ -248,7 +245,6 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/auth",
 			"pkg/batcher",
 			"pkg/binenc",
-			"pkg/bolthelper",
 			"pkg/booleanpolicy/policyversion",
 			"pkg/buildinfo",
 			"pkg/concurrency",

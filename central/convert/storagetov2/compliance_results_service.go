@@ -201,12 +201,14 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 }
 
 // ComplianceV2ProfileStats converts the counts to the v2 stats
-func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByProfile) []*v2.ComplianceProfileScanStats {
+func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByProfile, profileMap map[string]*storage.ComplianceOperatorProfileV2) []*v2.ComplianceProfileScanStats {
 	var convertedResults []*v2.ComplianceProfileScanStats
 
 	for _, resultCount := range resultCounts {
 		convertedResults = append(convertedResults, &v2.ComplianceProfileScanStats{
 			ProfileName: resultCount.ProfileName,
+			Title:       profileMap[resultCount.ProfileName].GetTitle(),
+			Version:     profileMap[resultCount.ProfileName].GetProfileVersion(),
 			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  int32(resultCount.FailCount),
@@ -243,15 +245,10 @@ func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByPro
 }
 
 // ComplianceV2ProfileResults converts the counts to the v2 stats
-func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfile) *v2.ComplianceProfileResults {
+func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfile) []*v2.ComplianceCheckResultStatusCount {
 	var profileResults []*v2.ComplianceCheckResultStatusCount
 
-	var profileName string
 	for _, resultCount := range resultCounts {
-		if profileName == "" {
-			profileName = resultCount.ProfileName
-		}
-
 		profileResults = append(profileResults, &v2.ComplianceCheckResultStatusCount{
 			CheckName: resultCount.CheckName,
 			Rationale: resultCount.CheckRationale,
@@ -289,10 +286,7 @@ func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfi
 		})
 	}
 
-	return &v2.ComplianceProfileResults{
-		ProfileResults: profileResults,
-		ProfileName:    profileName,
-	}
+	return profileResults
 }
 
 // ComplianceV2CheckClusterResults converts the storage check results to v2 scan results

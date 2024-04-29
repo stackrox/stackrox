@@ -32,6 +32,12 @@ message DisableComplianceRequest {
   string id = 1;
 }
 
+// SyncComplianceScanConfigRequest contains a list of the Scan Configs that should be applied in the cluster.
+// This is use during Central/Sensor connection' startup to reconcile ScanSettings and ScanSettingBindings.
+message SyncComplianceScanConfigRequest {
+  repeated ApplyComplianceScanConfigRequest scan_configs = 1;
+}
+
 // ApplyComplianceScanConfigRequest contains information about a compliance scan configuration to be applied to secured cluster.
 message ApplyComplianceScanConfigRequest {
   message BaseScanSettings {
@@ -90,6 +96,7 @@ message ComplianceRequest {
     DisableComplianceRequest disable_compliance = 2;
     ApplyComplianceScanConfigRequest apply_scan_config = 3;
     DeleteComplianceScanConfigRequest delete_scan_config = 4;
+    SyncComplianceScanConfigRequest sync_scan_configs = 5;
   }
 }
 

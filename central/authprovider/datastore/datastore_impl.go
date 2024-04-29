@@ -62,7 +62,7 @@ func (b *datastoreImpl) GetAuthProvidersFiltered(ctx context.Context,
 	return filteredAuthProviders, nil
 }
 
-// AddAuthProvider adds an auth provider into bolt.
+// AddAuthProvider adds an auth provider into the database.
 func (b *datastoreImpl) AddAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error {
 	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
@@ -111,7 +111,7 @@ func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *st
 	return b.storage.Upsert(ctx, authProvider)
 }
 
-// RemoveAuthProvider removes an auth provider from bolt.
+// RemoveAuthProvider removes an auth provider from the database.
 func (b *datastoreImpl) RemoveAuthProvider(ctx context.Context, id string, force bool) error {
 	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err

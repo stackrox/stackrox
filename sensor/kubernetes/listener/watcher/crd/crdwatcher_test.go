@@ -3,7 +3,6 @@ package crd
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"testing"
 	"time"
 
@@ -67,20 +66,6 @@ func newFakeCRD(name string) *unstructured.Unstructured {
 	}
 }
 
-func (s *watcherSuite) createWithRandomTicker(names ...string) {
-	go func() {
-		ticker := time.NewTicker(time.Duration(rand.Intn(100)) * time.Millisecond)
-		for _, name := range names {
-			select {
-			case <-ticker.C:
-				s.createFakeCRDs(context.Background(), name)
-			case <-time.NewTimer(defaultTimeout).C:
-				s.Fail("timeout creating resources")
-			}
-		}
-	}()
-}
-
 func (s *watcherSuite) createFakeCRDs(ctx context.Context, names ...string) {
 	for _, name := range names {
 		_, err := s.dynamicClient.Resource(gvr).Create(ctx, newFakeCRD(name), metav1.CreateOptions{})
@@ -97,18 +82,24 @@ func (s *watcherSuite) removeFakeCRDs(ctx context.Context, names ...string) {
 
 func (s *watcherSuite) Test_CreateDeleteCRD() {
 	cases := map[string]struct {
-		resourcesToWatch     []string
-		shouldStartAtAnytime bool
+		resourcesToCreateAfterWatch  []string
+		resourcesToCreateBeforeWatch []string
 	}{
-		"One resource": {
-			resourcesToWatch: []string{crdName},
+		"One resource after": {
+			resourcesToCreateAfterWatch: []string{crdName},
 		},
 		"Multiple resources after calling Watch": {
-			resourcesToWatch: []string{crdName, "fake-crd2", "fake-crd3"},
+			resourcesToCreateAfterWatch: []string{crdName, "fake-crd2", "fake-crd3"},
 		},
-		"Multiple resources before/after calling Watch": {
-			resourcesToWatch:     []string{crdName, "fake-crd2", "fake-crd3"},
-			shouldStartAtAnytime: true,
+		"One resource before": {
+			resourcesToCreateBeforeWatch: []string{crdName},
+		},
+		"Multiple resources before calling Watch": {
+			resourcesToCreateBeforeWatch: []string{crdName, "fake-crd2", "fake-crd3"},
+		},
+		"Multiple resources before and after calling Watch": {
+			resourcesToCreateBeforeWatch: []string{crdName},
+			resourcesToCreateAfterWatch:  []string{"fake-crd2", "fake-crd3"},
 		},
 	}
 	for tName, tCase := range cases {
@@ -120,19 +111,19 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 				stopSig.Done()
 				close(callbackC)
 			}()
-			// This will create the resources in a goroutine with a random ticker
-			if tCase.shouldStartAtAnytime {
-				s.createWithRandomTicker(tCase.resourcesToWatch...)
-			}
+			// Create fake CRDs before starting the watcher
+			s.createFakeCRDs(context.Background(), tCase.resourcesToCreateBeforeWatch...)
 			w := s.createWatcher(&stopSig)
-			for _, rName := range tCase.resourcesToWatch {
+			for _, rName := range tCase.resourcesToCreateBeforeWatch {
+				s.Assert().NoError(w.AddResourceToWatch(rName))
+			}
+			for _, rName := range tCase.resourcesToCreateAfterWatch {
 				s.Assert().NoError(w.AddResourceToWatch(rName))
 			}
 			s.Assert().NoError(w.Watch(callbackC))
 
-			if !tCase.shouldStartAtAnytime {
-				s.createFakeCRDs(context.Background(), tCase.resourcesToWatch...)
-			}
+			// Create fake CRDs after starting the watcher
+			s.createFakeCRDs(context.Background(), tCase.resourcesToCreateAfterWatch...)
 
 			select {
 			case <-time.NewTimer(defaultTimeout).C:
@@ -140,12 +131,16 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 			case st, ok := <-callbackC:
 				s.Assert().True(ok)
 				s.Assert().True(st.Available)
-				for _, rName := range tCase.resourcesToWatch {
+				for _, rName := range tCase.resourcesToCreateBeforeWatch {
+					s.Assert().Contains(st.Resources, rName)
+				}
+				for _, rName := range tCase.resourcesToCreateAfterWatch {
 					s.Assert().Contains(st.Resources, rName)
 				}
 			}
 
-			s.removeFakeCRDs(context.Background(), tCase.resourcesToWatch...)
+			s.removeFakeCRDs(context.Background(), tCase.resourcesToCreateBeforeWatch...)
+			s.removeFakeCRDs(context.Background(), tCase.resourcesToCreateAfterWatch...)
 
 			select {
 			case <-time.NewTimer(defaultTimeout).C:
@@ -153,7 +148,10 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 			case st, ok := <-callbackC:
 				s.Assert().True(ok)
 				s.Assert().False(st.Available)
-				for _, rName := range tCase.resourcesToWatch {
+				for _, rName := range tCase.resourcesToCreateBeforeWatch {
+					s.Assert().Contains(st.Resources, rName)
+				}
+				for _, rName := range tCase.resourcesToCreateAfterWatch {
 					s.Assert().Contains(st.Resources, rName)
 				}
 			}

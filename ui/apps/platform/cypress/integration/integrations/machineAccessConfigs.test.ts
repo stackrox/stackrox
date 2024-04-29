@@ -37,12 +37,12 @@ describe('Machine Access Configs', () => {
             'Create configuration'
         );
 
-        // Check inital state.
+        // Check initial state.
         cy.get(selectors.buttons.save).should('be.disabled');
 
-        // Check that issuer is automatically determined when Github action type is selected.
+        // Check that issuer is automatically determined when GitHub action type is selected.
         getSelectButtonByLabel('Select configuration type').click();
-        getSelectOption('Github action').click();
+        getSelectOption('GitHub action').click();
         getInputByLabel('Issuer').should('be.disabled');
         getInputByLabel('Issuer').should(
             'contain.value',
@@ -61,7 +61,7 @@ describe('Machine Access Configs', () => {
 
         // Save integration.
         getSelectButtonByLabel('Select configuration type').click();
-        getSelectOption('Github action').click();
+        getSelectOption('GitHub action').click();
         getInputByLabel('Token lifetime').clear().type('3h20m');
 
         // Check that without rules it's not possible to save integration.
@@ -84,13 +84,13 @@ describe('Machine Access Configs', () => {
         saveCreatedIntegrationInForm(integrationSource, integrationType);
 
         // View it.
-        cy.get(`${selectors.tableRowNameLink}:contains("Github action")`).click();
+        cy.get(`${selectors.tableRowNameLink}:contains("GitHub action")`).click();
 
         clickIntegrationSourceLinkInForm(integrationSource, integrationType);
 
         // Delete it.
-        deleteIntegrationInTable(integrationSource, integrationType, 'Github action');
+        deleteIntegrationInTable(integrationSource, integrationType, 'GitHub action');
 
-        cy.get(`${selectors.tableRowNameLink}:contains("Github action")`).should('not.exist');
+        cy.get(`${selectors.tableRowNameLink}:contains("GitHub action")`).should('not.exist');
     });
 });

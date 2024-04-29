@@ -146,7 +146,7 @@ function MachineAccessIntegrationForm({
                                     Generic
                                 </SelectOption>
                                 <SelectOption key={'GITHUB_ACTIONS'} value={'GITHUB_ACTIONS'}>
-                                    Github action
+                                    GitHub action
                                 </SelectOption>
                             </SelectSingle>
                         </FormLabelGroup>

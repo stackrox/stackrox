@@ -53,6 +53,7 @@ import {
 } from '../../utils/searchUtils';
 import { getDefaultWorkloadSortOption } from '../../utils/sortUtils';
 import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
+import { DEFAULT_PAGE_SIZE } from '../../constants';
 
 import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import AffectedImagesTable, {
@@ -67,7 +68,7 @@ import AffectedDeploymentsTable, {
 import AffectedImages from '../SummaryCards/AffectedImages';
 import BySeveritySummaryCard, {
     ResourceCountsByCveSeverity,
-} from '../SummaryCards/BySeveritySummaryCard';
+} from '../../components/BySeveritySummaryCard';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
@@ -191,7 +192,7 @@ function ImageCvePage() {
         },
         currentVulnerabilityState
     );
-    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_PAGE_SIZE);
 
     const [entityTab] = useURLStringUnion('entityTab', imageCveEntities);
 
@@ -344,7 +345,9 @@ function ImageCvePage() {
             />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={workloadCveOverviewCvePath}>CVEs</BreadcrumbItemLink>
+                    <BreadcrumbItemLink to={workloadCveOverviewCvePath}>
+                        Workload CVEs
+                    </BreadcrumbItemLink>
                     {!metadataRequest.error && (
                         <BreadcrumbItem isActive>
                             {cveName ?? (

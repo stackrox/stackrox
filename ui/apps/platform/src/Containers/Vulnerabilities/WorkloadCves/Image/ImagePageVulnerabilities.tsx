@@ -52,7 +52,7 @@ import {
     getVulnStateScopedQueryString,
     parseWorkloadQuerySearchFilter,
 } from '../../utils/searchUtils';
-import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
+import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';

@@ -109,7 +109,7 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                         return 'Generic';
                     }
                     if (type === 'GITHUB_ACTIONS') {
-                        return 'Github action';
+                        return 'GitHub action';
                     }
                     return 'Unknown';
                 },

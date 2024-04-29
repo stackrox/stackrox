@@ -1139,27 +1139,34 @@ db_backup_and_restore_test() {
 handle_e2e_progress_failures() {
     info "Checking for progress events"
 
-    local images_available=("Image_Availability" "Are the required images available?")
+    local images_available=("Image_Availability" "Were the required images built successfully by GitHub Actions?")
     local stackrox_deployed=("Stackrox_Deployment" "Was Stackrox deployed to the cluster?")
 
     local check_deployment=false
 
     if [[ -f "${STATE_IMAGES_AVAILABLE}" ]]; then
-        save_junit_success "${images_available[@]}" || true
+        save_junit_success "${images_available[@]}"
         check_deployment=true
     else
-        save_junit_failure "${images_available[@]}" \
-            "Did the images build OK? If yes then the poll_for_system_test_images() timeout might need to be increased."
+        local build_results="build results are unknown"
+        if [[ -f "${STATE_BUILD_RESULTS}" ]]; then
+            build_results="$(cat "${STATE_BUILD_RESULTS}")"
+        fi
+        read -r -d '' build_details <<- _EO_DETAILS_ || true
+Check the build workflow runs on GitHub:
+${build_results}
+_EO_DETAILS_
+        save_junit_failure "${images_available[@]}" "${build_details}"
     fi
 
     if $check_deployment; then
         if [[ -f "${STATE_DEPLOYED}" ]]; then
-            save_junit_success "${stackrox_deployed[@]}" || true
+            save_junit_success "${stackrox_deployed[@]}"
         else
-            save_junit_failure "${stackrox_deployed[@]}" "Check the build log" || true
+            save_junit_failure "${stackrox_deployed[@]}" "Check the build log"
         fi
     else
-        save_junit_skipped "${stackrox_deployed[@]}" || true
+        save_junit_skipped "${stackrox_deployed[@]}"
     fi
 }
 

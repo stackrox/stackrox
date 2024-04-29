@@ -9,10 +9,15 @@ import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { fetchIntegration } from 'services/IntegrationsService';
 import { NotifierIntegration } from 'types/notifier.proto';
-import { ReportFormValues, ReportNotifier } from './useReportFormValues';
+import { ReportFormValues } from './useReportFormValues';
 
 // eslint-disable-next-line import/no-named-as-default
 import EmailNotifierFormModal from './EmailNotifierFormModal';
+
+type ReportNotifier = {
+    id: string;
+    name: string;
+};
 
 type NotifierSelectionProps = {
     prefixId: string;
@@ -59,18 +64,22 @@ function NotifierSelection({
 
     function onMailingListsChange(value) {
         const explodedEmails: string = value.split(',').map((email) => email.trim() as string);
-        formik.setFieldValue(`${prefixId}.mailingLists`, explodedEmails);
+        formik.setFieldValue(`${prefixId}.emailConfig.mailingLists`, explodedEmails);
     }
 
     function onNotifierChange(_id, selectionId) {
         const notifierObject = notifiers.find((notifier) => notifier.id === selectionId);
         if (notifierObject) {
             const notifierMailingLists = notifierObject.labelDefault.split(',');
-            const prevDeliveryDestination = resolvePath(formik.values, prefixId);
+            const deliveryDestinationPrev = resolvePath(formik.values, prefixId);
+            const { emailConfig: emailConfigPrev } = deliveryDestinationPrev;
             formik.setFieldValue(prefixId, {
-                ...prevDeliveryDestination,
-                notifier: notifierObject,
-                mailingLists: mailingLists.length === 0 ? notifierMailingLists : mailingLists,
+                emailConfig: {
+                    ...emailConfigPrev,
+                    notifierId: notifierObject.id,
+                    mailingLists: mailingLists.length === 0 ? notifierMailingLists : mailingLists,
+                },
+                notifierName: notifierObject.name,
             });
             setIsEmailNotifierModalOpen(false);
         }
@@ -91,7 +100,7 @@ function NotifierSelection({
     function onSetToDefaultNotifierMailingLists() {
         const notifierMailingLists = getDefaultNotifierMailingLists();
         if (notifierMailingLists) {
-            formik.setFieldValue(`${prefixId}.mailingLists`, notifierMailingLists);
+            formik.setFieldValue(`${prefixId}.emailConfig.mailingLists`, notifierMailingLists);
         }
     }
 
@@ -141,7 +150,7 @@ function NotifierSelection({
             <FormLabelGroup
                 isRequired
                 label="Distribution list"
-                fieldId={`${prefixId}.mailingLists`}
+                fieldId={`${prefixId}.emailConfig.mailingLists`}
                 helperText="Enter an audience, who will receive the scheduled report. Multiple email addresses can be entered with comma separators."
                 errors={formik.errors}
             >
