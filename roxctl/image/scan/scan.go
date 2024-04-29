@@ -83,8 +83,8 @@ var (
 				Expression: "result.vulnerabilities.#.componentFixedVersion",
 			},
 		),
-		printers.SarifSeverityJSONPathExpressionKey: "result.vulnerabilities.#.cveSeverity",
-		printers.SarifHelpLinkJSONPathExpressionKey: "result.vulnerabilities.#.cveInfo",
+		printers.SarifSeverityJSONPathExpressionKey: `{"Severity":result.vulnerabilities.#.cveSeverity}.@text`,
+		printers.SarifHelpLinkJSONPathExpressionKey: `{"Link":result.vulnerabilities.#.cveInfo}.@text`,
 	}
 
 	// supported output formats with default values
