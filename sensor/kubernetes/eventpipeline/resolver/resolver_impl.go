@@ -1,19 +1,44 @@
 package resolver
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/uniqueue"
 )
 
 var (
 	log = logging.LoggerForModule()
 )
+
+// Queue defines the aggregator queue
+type Queue interface {
+	PullBlocking(concurrency.Waitable) uniqueue.Item
+	Push(uniqueue.Item)
+}
+
+type deploymentRef struct {
+	context          context.Context
+	id               string
+	action           central.ResourceAction
+	forceDetection   bool
+	skipResolving    bool
+	deploymentTiming *central.Timing
+}
+
+// GetKey returns the key to index the deploymentRef in the queue
+func (d *deploymentRef) GetKey() string {
+	return fmt.Sprintf("%s-%s-%t-%t", d.id, d.action.String(), d.skipResolving, d.forceDetection)
+}
 
 type resolverImpl struct {
 	outputQueue component.OutputQueue
@@ -21,11 +46,16 @@ type resolverImpl struct {
 
 	storeProvider store.Provider
 	stopper       concurrency.Stopper
+
+	deploymentRefQueue Queue
 }
 
 // Start the resolverImpl component
 func (r *resolverImpl) Start() error {
 	go r.runResolver()
+	if features.SensorAggregateDeploymentReferenceOptimization.Enabled() && r.deploymentRefQueue != nil {
+		go r.runPullAndResolve()
+	}
 	return nil
 }
 
@@ -62,6 +92,97 @@ func (r *resolverImpl) runResolver() {
 	}
 }
 
+// resolveDeployment resolves the given deployment reference. Returns false if the deployment was not resolved, true otherwise.
+func (r *resolverImpl) resolveDeployment(msg *component.ResourceEvent, ref *deploymentRef) bool {
+	if ref.forceDetection {
+		// We append the referenceIds to the msg to be reprocessed
+		msg.AddDeploymentForReprocessing(ref.id)
+	}
+	preBuiltDeployment := r.storeProvider.Deployments().Get(ref.id)
+	if preBuiltDeployment == nil {
+		log.Warnf("Deployment with id %s not found", ref.id)
+		return false
+	}
+	// Skip resolving the deployment dependencies
+	if ref.skipResolving {
+		d, built := r.storeProvider.Deployments().GetBuiltDeployment(ref.id)
+		if d == nil {
+			log.Warnf("Deployment with id %s not found", ref.id)
+			return false
+		}
+
+		if !built {
+			log.Debugf("Deployment with id %s is already in the pipeline, skipping processing", ref.id)
+			return false
+		}
+		msg.AddDeploymentForDetection(component.DeploytimeDetectionRequest{Object: d, Action: ref.action})
+		return true
+	}
+
+	// Remove actions are done at the handler level. This is not ideal but for now it allows us to be able to fetch deployments from the store
+	// in the resolver instead of sending a copy. We still manage OnDeploymentCreateOrUpdateByID here.
+	r.storeProvider.EndpointManager().OnDeploymentCreateOrUpdateByID(ref.id)
+
+	localImages := set.NewStringSet()
+	for _, c := range preBuiltDeployment.GetContainers() {
+		imgName := c.GetImage().GetName()
+		if r.storeProvider.Registries().IsLocal(imgName) {
+			localImages.Add(imgName.GetFullName())
+		}
+	}
+
+	permissionLevel := r.storeProvider.RBAC().GetPermissionLevelForDeployment(preBuiltDeployment)
+	exposureInfo := r.storeProvider.Services().
+		GetExposureInfos(preBuiltDeployment.GetNamespace(), preBuiltDeployment.GetPodLabels())
+
+	d, newObject, err := r.storeProvider.Deployments().BuildDeploymentWithDependencies(ref.id, store.Dependencies{
+		PermissionLevel: permissionLevel,
+		Exposures:       exposureInfo,
+		LocalImages:     localImages,
+	})
+
+	if err != nil {
+		log.Warnf("Failed to build deployment dependency: %s", err)
+		return false
+	}
+
+	// Skip generating an event and sending the deployment to the detector if the object is not
+	// new and detection isn't forced.
+	if ref.forceDetection || newObject {
+		msg.AddSensorEvent(toEvent(ref.action, d, msg.DeploymentTiming)).
+			AddDeploymentForDetection(component.DeploytimeDetectionRequest{Object: d, Action: ref.action})
+		return true
+	}
+	return false
+}
+
+// runPullAndResolve pull the next deployment reference to be resolved out of the queue
+func (r *resolverImpl) runPullAndResolve() {
+	for {
+		item := r.deploymentRefQueue.PullBlocking(r.stopper.LowLevel().GetStopRequestSignal())
+		select {
+		case <-r.stopper.Flow().StopRequested():
+			return
+		default:
+		}
+		ref, ok := item.(*deploymentRef)
+		if !ok {
+			log.Warnf("The pulled item is not a deploymentRef")
+			continue
+		}
+
+		if ref == nil {
+			continue
+		}
+		msg := component.NewEvent()
+		msg.Context = ref.context
+		msg.DeploymentTiming = ref.deploymentTiming
+		if r.resolveDeployment(msg, ref) {
+			r.outputQueue.Send(msg)
+		}
+	}
+}
+
 // processMessage resolves the dependencies and forwards the message to the outputQueue
 func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 	if msg.DeploymentReferences != nil {
@@ -75,65 +196,19 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 			// the resource event.
 			referenceIds := deploymentReference.Reference(r.storeProvider.Deployments())
 
-			if deploymentReference.ForceDetection && len(referenceIds) > 0 {
-				// We append the referenceIds to the msg to be reprocessed
-				msg.AddDeploymentForReprocessing(referenceIds...)
-			}
-
 			for _, id := range referenceIds {
-				preBuiltDeployment := r.storeProvider.Deployments().Get(id)
-				if preBuiltDeployment == nil {
-					log.Warnf("Deployment with id %s not found", id)
-					continue
+				ref := &deploymentRef{
+					context:          msg.Context,
+					deploymentTiming: msg.DeploymentTiming,
+					id:               id,
+					action:           deploymentReference.ParentResourceAction,
+					skipResolving:    deploymentReference.SkipResolving,
+					forceDetection:   deploymentReference.ForceDetection,
 				}
-				// Skip resolving the deployment dependencies
-				if deploymentReference.SkipResolving {
-					d, built := r.storeProvider.Deployments().GetBuiltDeployment(id)
-					if d == nil {
-						log.Warnf("Deployment with id %s not found", id)
-						continue
-					}
-
-					if !built {
-						log.Debugf("Deployment with id %s is already in the pipeline, skipping processing", id)
-						continue
-					}
-					msg.AddDeploymentForDetection(component.DeploytimeDetectionRequest{Object: d, Action: deploymentReference.ParentResourceAction})
-					continue
-				}
-
-				// Remove actions are done at the handler level. This is not ideal but for now it allows us to be able to fetch deployments from the store
-				// in the resolver instead of sending a copy. We still manage OnDeploymentCreateOrUpdateByID here.
-				r.storeProvider.EndpointManager().OnDeploymentCreateOrUpdateByID(id)
-
-				localImages := set.NewStringSet()
-				for _, c := range preBuiltDeployment.GetContainers() {
-					imgName := c.GetImage().GetName()
-					if r.storeProvider.Registries().IsLocal(imgName) {
-						localImages.Add(imgName.GetFullName())
-					}
-				}
-
-				permissionLevel := r.storeProvider.RBAC().GetPermissionLevelForDeployment(preBuiltDeployment)
-				exposureInfo := r.storeProvider.Services().
-					GetExposureInfos(preBuiltDeployment.GetNamespace(), preBuiltDeployment.GetPodLabels())
-
-				d, newObject, err := r.storeProvider.Deployments().BuildDeploymentWithDependencies(id, store.Dependencies{
-					PermissionLevel: permissionLevel,
-					Exposures:       exposureInfo,
-					LocalImages:     localImages,
-				})
-
-				if err != nil {
-					log.Warnf("Failed to build deployment dependency: %s", err)
-					continue
-				}
-
-				// Skip generating an event and sending the deployment to the detector if the object is not
-				// new and detection isn't forced.
-				if deploymentReference.ForceDetection || newObject {
-					msg.AddSensorEvent(toEvent(deploymentReference.ParentResourceAction, d, msg.DeploymentTiming)).
-						AddDeploymentForDetection(component.DeploytimeDetectionRequest{Object: d, Action: deploymentReference.ParentResourceAction})
+				if features.SensorAggregateDeploymentReferenceOptimization.Enabled() && r.deploymentRefQueue != nil {
+					r.deploymentRefQueue.Push(ref)
+				} else {
+					r.resolveDeployment(msg, ref)
 				}
 			}
 		}

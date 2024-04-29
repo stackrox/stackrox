@@ -93,4 +93,7 @@ var (
 
 	// UnqualifiedSearchRegistries enables support for unqualified search registries and short name aliases.
 	UnqualifiedSearchRegistries = registerFeature("Enable support for unqualified search registries and short name aliases", "ROX_UNQUALIFIED_SEARCH_REGISTRIES", false)
+
+	// SensorAggregateDeploymentReferenceOptimization enables a performance improvement by aggregating deployment references when the same reference is queued for processing
+	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION", true)
 )
