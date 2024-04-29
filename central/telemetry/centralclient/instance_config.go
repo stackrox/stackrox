@@ -79,6 +79,11 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	}
 
 	return &phonehome.Config{
+			// Segment does not respect the processing order of events in a
+			// batch. Setting BatchSize to 1, instead of default 250, may reduce
+			// the number of (none) values, appearing on Amplitude charts, by
+			// introducing a slight delay between consequent events.
+			BatchSize:    1,
 			ClientID:     centralID,
 			ClientName:   "Central",
 			GroupType:    "Tenant",
