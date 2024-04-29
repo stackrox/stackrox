@@ -3,7 +3,9 @@ package env
 import "time"
 
 var (
-	// PostgresDefaultStatementTimeout sets the default timeout for Postgres statements
+	// PostgresDefaultStatementTimeout sets the default timeout for Postgres statements. This does not
+	// set the statement_timeout, usually configured in the central-external-db configmap. Statement
+	// will fail after either of each is exceeded.
 	PostgresDefaultStatementTimeout = registerDurationSetting("ROX_POSTGRES_DEFAULT_TIMEOUT", 60*time.Second)
 
 	// PostgresDefaultCursorTimeout sets the default timeout for Postgres cursor statements

@@ -31,6 +31,10 @@ const (
 	getAllOrphanedNodes = `SELECT id FROM nodes WHERE NOT EXISTS
 		(SELECT 1 FROM clusters WHERE nodes.clusterid = clusters.Id)`
 
+	// deleteOrphanedProcesses select all process_indicators without
+	// associated deployments or pods. It does not scale for big deployments with million of rows
+	// in the table. If it fails repeatedly the postgres DB resources need to be reviewed,
+	// PostgresDefaultStatementTimeout increased, and a manual clean-up might be needed.
 	deleteOrphanedProcesses = `WITH orphan_proc AS 
 		(SELECT id FROM process_indicators pi WHERE NOT EXISTS 
 		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) 
