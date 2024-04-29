@@ -25,9 +25,8 @@ spec:
     value: '{{repo_url}}'
   - name: image-expires-after
     value: '13w'
-    # TODO(ROX-23783): Remove the placeholder tag when init task implementation can skip image check.
   - name: output-image
-    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/central-db:placeholder-image-tag
+    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/central-db
   - name: path-context
     value: .
   - name: revision

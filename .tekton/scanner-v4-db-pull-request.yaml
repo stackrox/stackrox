@@ -28,7 +28,7 @@ spec:
   - name: image-expires-after
     value: '13w'
   - name: output-image
-    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner-v4-db:placeholder-image-tag
+    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner-v4-db
   - name: path-context
     value: .
   - name: revision
