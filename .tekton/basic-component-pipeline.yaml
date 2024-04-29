@@ -192,6 +192,8 @@ spec:
             env:
               - name: IMAGE
                 value: $(params.image)
+              - name: KONFLUX_CI
+                value: 'true'
             script: |
               #!/usr/bin/env bash
               set -euo pipefail
