@@ -646,6 +646,7 @@ jobs:
     if: github.event_name == 'push'
     needs:
       - build-and-push-main
+      - push-main-manifests
     name: Check images for vulnerabilities
     runs-on: ubuntu-latest
     permissions:
@@ -661,7 +662,8 @@ jobs:
             "collector",
             "collector-slim",
             "main",
-            "roxctl",
+            # TODO(stehessel): re-enable roxctl scanning after #10928 has been released.
+            # "roxctl",
             "scanner",
             "scanner-db",
             "scanner-db-slim",
@@ -695,6 +697,9 @@ jobs:
       - name: Scan images for vulnerabilities
         run: |
           release_tag=$(make tag)
+          if [[ ${{ matrix.image }} =~ "operator" ]]; then
+            release_tag=$(make -C operator tag)
+          fi
           roxctl image scan --retries=10 --retry-delay=15 --output=sarif \
             --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
             > results.sarif
