@@ -43,11 +43,10 @@ spec:
     value: ''
   - name: build-source-image
     value: 'true'
-  # A shallow repo clone is sufficient for central-db build.
   - name: clone-depth
-    value: '1'
+    value: '0'
   - name: clone-fetch-tags
-    value: 'false'
+    value: 'true'
 
   workspaces:
   - name: workspace

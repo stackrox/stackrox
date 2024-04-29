@@ -44,7 +44,6 @@ spec:
   - name: build-source-image
     value: 'true'
   - name: clone-depth
-    # A shallow repo clone is sufficient for scanner-v4-db build.
     value: '0'
   - name: clone-fetch-tags
     value: 'true'
