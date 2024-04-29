@@ -653,6 +653,7 @@ jobs:
       id-token: write
       security-events: write
     strategy:
+      fail-fast: false
       matrix:
         image:
           [
@@ -694,7 +695,7 @@ jobs:
       - name: Scan images for vulnerabilities
         run: |
           release_tag=$(make tag)
-          roxctl image scan --output=sarif \
+          roxctl image scan --retries=10 --retry-delay=15 --output=sarif \
             --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
             > results.sarif
 
