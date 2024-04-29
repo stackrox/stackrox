@@ -43,6 +43,12 @@ on:
       next-milestone:
         description: Next milestone (A.B.C[-N]-rc.`D+1`)
         value: ${{format('{0}.{1}{2}-rc.{3}', jobs.parse.outputs.release, jobs.parse.outputs.patch, jobs.parse.outputs.dash-name, jobs.parse.outputs.next-rc)}}
+      next-release-patch:
+        description: Next Release.patch (A.B.`C+1`)
+        value: ${{format('{0}.{1}', jobs.parse.outputs.release, jobs.parse.outputs.next-patch)}}
+      next-named-release-patch:
+        description: Next Release.patch-name (A.B.`C+1`[-N])
+        value: ${{format('{0}.{1}{2}', jobs.parse.outputs.release, jobs.parse.outputs.next-patch, jobs.parse.outputs.dash-name)}}
 
 jobs:
   parse:
@@ -55,6 +61,7 @@ jobs:
       name: ${{steps.parse.outputs.name}}
       next-rc: ${{steps.parse.outputs.next-rc}}
       dash-name: ${{steps.parse.outputs.dash-name}}
+      next-patch: ${{steps.parse.outputs.next-patch}}
     steps:
       - name: Parse version
         id: parse
@@ -100,12 +107,14 @@ jobs:
               print(f'::error::Cannot parse "{version}": should be in a form of `{f}`.')
               exit(1)
 
-          rc = int(m.group('rc') or 1) if '-rc.D' in f else 0
+          patch = m.group('patch') if '.C' in f else 0
           name = (m.group('name') if '-N' in f else '') or ''
+          rc = int(m.group('rc') or 1) if '-rc.D' in f else 0
 
           data = {
               'release': m.group('release'),
-              'patch': m.group('patch') if '.C' in f else 0,
+              'patch': patch,
+              'next-patch': int(patch)+1,
               'name': name,
               'dash-name': f'-{name}' if name else '',
               'rc': rc,
