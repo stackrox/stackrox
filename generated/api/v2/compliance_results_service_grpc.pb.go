@@ -83,7 +83,7 @@ type ComplianceResultsServiceClient interface {
 	GetComplianceClusterStats(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ListComplianceClusterOverallStatsResponse, error)
 	// GetComplianceProfileCheckResult lists status of a check per cluster
 	GetComplianceProfileCheckResult(ctx context.Context, in *ComplianceProfileCheckRequest, opts ...grpc.CallOption) (*ListComplianceCheckClusterResponse, error)
-	// GetComplianceProfileClusterResults lists status of a check per cluster
+	// GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
 	GetComplianceProfileClusterResults(ctx context.Context, in *ComplianceProfileClusterRequest, opts ...grpc.CallOption) (*ListComplianceCheckResultResponse, error)
 	GetComplianceOverallClusterCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountComplianceScanResults, error)
 	GetComplianceScanResultsCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountComplianceScanResults, error)
@@ -280,7 +280,7 @@ type ComplianceResultsServiceServer interface {
 	GetComplianceClusterStats(context.Context, *ComplianceProfileResultsRequest) (*ListComplianceClusterOverallStatsResponse, error)
 	// GetComplianceProfileCheckResult lists status of a check per cluster
 	GetComplianceProfileCheckResult(context.Context, *ComplianceProfileCheckRequest) (*ListComplianceCheckClusterResponse, error)
-	// GetComplianceProfileClusterResults lists status of a check per cluster
+	// GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
 	GetComplianceProfileClusterResults(context.Context, *ComplianceProfileClusterRequest) (*ListComplianceCheckResultResponse, error)
 	GetComplianceOverallClusterCount(context.Context, *RawQuery) (*CountComplianceScanResults, error)
 	GetComplianceScanResultsCount(context.Context, *RawQuery) (*CountComplianceScanResults, error)

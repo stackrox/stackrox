@@ -34,7 +34,7 @@ message ClusterCheckStatus {
   string check_uid = 4;
 }
 
-// ComplianceCheckResult provides the results of a compliance check against a rule
+// ComplianceCheckResult details of an instance of a compliance check result
 message ComplianceCheckResult {
   string check_id = 1;
   string check_name = 2;
@@ -50,7 +50,7 @@ message ComplianceCheckResult {
   string rule_name = 12;
 }
 
-// ComplianceClusterCheckStatus provides the results of a compliance check against a rule
+// ComplianceClusterCheckStatus provides the status of a compliance check result across clusters
 message ComplianceClusterCheckStatus {
   string check_id = 1;
   string check_name = 2;
@@ -264,7 +264,7 @@ service ComplianceResultsService {
     option (google.api.http) = {get: "/v2/compliance/scan/results/profile/{profile_name}/checks/{check_name}"};
   }
 
-  // GetComplianceProfileClusterResults lists status of a check per cluster
+  // GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
   rpc GetComplianceProfileClusterResults(ComplianceProfileClusterRequest) returns (ListComplianceCheckResultResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/clusters/{cluster_id}"};
   }

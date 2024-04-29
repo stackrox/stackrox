@@ -221,7 +221,7 @@ func (m *ClusterCheckStatus) Clone() *ClusterCheckStatus {
 	return cloned
 }
 
-// ComplianceCheckResult provides the results of a compliance check against a rule
+// ComplianceCheckResult details of an instance of a compliance check result
 type ComplianceCheckResult struct {
 	CheckId              string                `protobuf:"bytes,1,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty"`
 	CheckName            string                `protobuf:"bytes,2,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
@@ -382,7 +382,7 @@ func (m *ComplianceCheckResult) Clone() *ComplianceCheckResult {
 	return cloned
 }
 
-// ComplianceClusterCheckStatus provides the results of a compliance check against a rule
+// ComplianceClusterCheckStatus provides the status of a compliance check result across clusters
 type ComplianceClusterCheckStatus struct {
 	CheckId              string                `protobuf:"bytes,1,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty"`
 	CheckName            string                `protobuf:"bytes,2,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`

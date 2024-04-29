@@ -527,7 +527,7 @@
     },
     "/v2/compliance/scan/results/profiles/{profileName}/clusters/{clusterId}": {
       "get": {
-        "summary": "GetComplianceProfileClusterResults lists status of a check per cluster",
+        "summary": "GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster",
         "operationId": "ComplianceResultsService_GetComplianceProfileClusterResults",
         "responses": {
           "200": {
@@ -1292,7 +1292,7 @@
           "type": "string"
         }
       },
-      "title": "ComplianceCheckResult provides the results of a compliance check against a rule"
+      "title": "ComplianceCheckResult details of an instance of a compliance check result"
     },
     "v2ComplianceCheckResultStatusCount": {
       "type": "object",
@@ -1388,7 +1388,7 @@
           }
         }
       },
-      "title": "ComplianceClusterCheckStatus provides the results of a compliance check against a rule"
+      "title": "ComplianceClusterCheckStatus provides the status of a compliance check result across clusters"
     },
     "v2ComplianceClusterOverallStats": {
       "type": "object",

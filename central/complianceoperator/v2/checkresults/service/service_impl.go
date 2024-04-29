@@ -530,7 +530,7 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 	}, nil
 }
 
-// GetComplianceProfileClusterResults retrieves cluster status for a specific check result
+// GetComplianceProfileClusterResults retrieves check results for a specific profile on a specific cluster
 func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, request *v2.ComplianceProfileClusterRequest) (*v2.ListComplianceCheckResultResponse, error) {
 	if request.GetProfileName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
