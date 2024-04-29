@@ -19,9 +19,13 @@ import {
     getHighestCvssScore,
 } from '../../utils/vulnerabilityUtils';
 
-import NodeComponentsTable from '../components/NodeComponentsTable';
+import NodeComponentsTable, {
+    NodeComponent,
+    nodeComponentFragment,
+} from '../components/NodeComponentsTable';
 
 export const affectedNodeFragment = gql`
+    ${nodeComponentFragment}
     fragment AffectedNode on Node {
         id
         name
@@ -30,9 +34,7 @@ export const affectedNodeFragment = gql`
             name
         }
         nodeComponents {
-            name
-            version
-            source
+            ...NodeComponentFragment
             nodeVulnerabilities {
                 vulnerabilityId: id
                 cve
@@ -52,10 +54,7 @@ export type AffectedNode = {
     cluster: {
         name: string;
     };
-    nodeComponents: {
-        name: string;
-        version: string;
-        source: string;
+    nodeComponents: (NodeComponent & {
         nodeVulnerabilities: {
             vulnerabilityId: string;
             cve: string;
@@ -64,7 +63,7 @@ export type AffectedNode = {
             cvss: number;
             scoreVersion: string;
         }[];
-    }[];
+    })[];
 };
 
 export type AffectedNodesTableProps = {
@@ -153,7 +152,7 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
                                     <Td />
                                     <Td colSpan={colSpan - 1}>
                                         <ExpandableRowContent>
-                                            <NodeComponentsTable />
+                                            <NodeComponentsTable data={nodeComponents} />
                                         </ExpandableRowContent>
                                     </Td>
                                 </Tr>
