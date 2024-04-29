@@ -34,6 +34,9 @@ var (
 	// TokenEnv is the variable that clients can source for commandline operations.
 	TokenEnv = RegisterSetting("ROX_API_TOKEN")
 
+	// TokenFileEnv is the variable that clients can source for commandline operations.
+	TokenFileEnv = RegisterSetting("ROX_API_TOKEN_FILE")
+
 	// ConfigDirEnv is the variable that clients can use for specifying the config location for commandline operations.
 	ConfigDirEnv = RegisterSetting("ROX_CONFIG_DIR")
 
