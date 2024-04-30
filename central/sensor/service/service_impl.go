@@ -111,6 +111,9 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		if features.ComplianceEnhancements.Enabled() {
 			capabilities = append(capabilities, centralsensor.ComplianceV2Integrations)
 		}
+		if features.ComplianceRemediationV2.Enabled() {
+			capabilities = append(capabilities, centralsensor.ComplianceV2Remediations)
+		}
 		if features.ScannerV4.Enabled() {
 			capabilities = append(capabilities, centralsensor.ScannerV4Supported)
 		}

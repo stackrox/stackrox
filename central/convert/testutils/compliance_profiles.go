@@ -16,6 +16,8 @@ var (
 	ProfileUID  = uuid.NewV4().String()
 	profileUID2 = uuid.NewV4().String()
 
+	RemediationUID = uuid.NewV4().String()
+
 	profileID     = uuid.NewV4().String()
 	values        = []string{"value-1", "value-2"}
 	v2SensorRules = []*central.ComplianceOperatorProfileV2_Rule{
@@ -201,5 +203,32 @@ func GetProfilesV2Api(_ *testing.T) []*v2.ComplianceProfile {
 			Product:        "",
 			Values:         values,
 		},
+	}
+}
+
+// GetComplianceRemediationV2Msg -- returns a V2 message from sensor
+func GetComplianceRemediationV2Msg(_ *testing.T) *central.ComplianceOperatorRemediationV2 {
+	return &central.ComplianceOperatorRemediationV2{
+		Id:                        RemediationUID,
+		Name:                      "ocp4-stig-project-config-and-template-network-policy-1",
+		ComplianceCheckResultName: "ocp4-stig-project-config-and-template-network-policy",
+		Apply:                     true,
+		CurrentObject:             "",
+		OutdatedObject:            "",
+		EnforcementType:           "test-type",
+	}
+}
+
+// GetComplianceRemediationV2Storage -- returns a v2 message from sensor
+func GetComplianceRemediationV2Storage(_ *testing.T) *storage.ComplianceOperatorRemediationV2 {
+	return &storage.ComplianceOperatorRemediationV2{
+		Id:                        RemediationUID,
+		Name:                      "ocp4-stig-project-config-and-template-network-policy-1",
+		ComplianceCheckResultName: "ocp4-stig-project-config-and-template-network-policy",
+		Apply:                     true,
+		CurrentObject:             "",
+		OutdatedObject:            "",
+		EnforcementType:           "test-type",
+		ClusterId:                 fixtureconsts.Cluster1,
 	}
 }
