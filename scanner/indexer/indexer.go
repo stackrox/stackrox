@@ -73,6 +73,8 @@ func proxiedRemoteTransport(insecure bool) http.RoundTripper {
 	tr := func() *http.Transport {
 		tr, ok := remote.DefaultTransport.(*http.Transport)
 		if !ok {
+			// The proxy function was already modified to proxy.TransportFunc.
+			// See scanner/cmd/scanner/main.go.
 			return http.DefaultTransport.(*http.Transport).Clone()
 		}
 		tr = tr.Clone()
@@ -269,7 +271,7 @@ func (i *localIndexer) IndexContainerImage(
 	if err != nil {
 		return nil, fmt.Errorf("listing image layers (reference %q): %w", imgRef.String(), err)
 	}
-	httpClient, err := getLayerHTTPClient(ctx, imgRef, o.auth, i.getLayerTimeout, o.insecure)
+	httpClient, err := getLayerHTTPClient(ctx, imgRef, o.auth, i.getLayerTimeout, o.insecureSkipTLSVerify)
 
 	if err != nil {
 		return nil, err
@@ -393,15 +395,13 @@ func createManifestDigest(hashID string) (claircore.Digest, error) {
 // a list of layers.
 func getContainerImageLayers(ctx context.Context, ref name.Reference, o options) ([]v1.Layer, error) {
 	// TODO Check for non-retryable errors (permission denied, etc.) to report properly.
-	client := &http.Client{
-		Transport: remoteTransport,
+	var transport = remoteTransport
+	if o.insecureSkipTLSVerify {
+		transport = insecureRemoteTransport
 	}
-	if o.insecure {
-		client = &http.Client{
-			Transport: insecureRemoteTransport,
-		}
-	}
-	desc, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuth(o.auth), remote.WithPlatform(o.platform), remote.WithTransport(client.Transport))
+
+	desc, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuth(o.auth), remote.WithPlatform(o.platform), remote.WithTransport(transport))
+
 	if err != nil {
 		return nil, err
 	}

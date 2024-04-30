@@ -68,6 +68,7 @@ func scanCmd(ctx context.Context) *cobra.Command {
 			report = ir
 		} else {
 			var vr *v4.VulnerabilityReport
+			// TODO(ROX-23898): add flag for skipping TLS verification.
 			vr, err = scanner.IndexAndScanImage(ctx, ref, auth, false)
 			report = vr
 		}

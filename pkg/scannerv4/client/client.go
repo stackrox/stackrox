@@ -33,7 +33,7 @@ type Scanner interface {
 	// GetOrCreateImageIndex first attempts to get an existing index report for the
 	// image reference, and if not found or invalid, it then attempts to index the
 	// image and return the generated index report if successful, or error.
-	GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, insecure bool) (*v4.IndexReport, error)
+	GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, skipTLSVerify bool) (*v4.IndexReport, error)
 
 	// IndexAndScanImage scans an image for vulnerabilities. If the index report
 	// for that image does not exist, it is created. It returns the vulnerability
@@ -169,7 +169,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.Ind
 }
 
 // GetOrCreateImageIndex calls the Indexer's gRPC endpoint GetOrCreateIndexReport.
-func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, insecure bool) (*v4.IndexReport, error) {
+func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, skipTLSVerify bool) (*v4.IndexReport, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "scanner/client",
 		"method", "GetOrCreateImageIndex",
@@ -187,7 +187,7 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 	}
 	req := v4.GetOrCreateIndexReportRequest{
 		HashId:                id,
-		InsecureSkipTlsVerify: insecure,
+		InsecureSkipTlsVerify: skipTLSVerify,
 		ResourceLocator: &v4.GetOrCreateIndexReportRequest_ContainerImage{
 			ContainerImage: &v4.ContainerImageLocator{
 				Url:      imgURL.String(),

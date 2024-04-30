@@ -136,6 +136,7 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 						// Though this method both indexes and matches, we know the indexing has already completed,
 						// and this method will just verify the index still exists. We don't account for
 						// this verification's potential failures at this time.
+						// TODO(ROX-23898): add flag for skipping TLS verification.
 						_, err = scanner.IndexAndScanImage(ctx, d, auth, false)
 						if err != nil {
 							stats.matchFailure.Add(1)

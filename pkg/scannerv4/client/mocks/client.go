@@ -88,18 +88,18 @@ func (mr *MockScannerMockRecorder) GetMatcherMetadata(arg0 any) *gomock.Call {
 }
 
 // GetOrCreateImageIndex mocks base method.
-func (m *MockScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, insecure bool) (*v4.IndexReport, error) {
+func (m *MockScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, skipTLSVerify bool) (*v4.IndexReport, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrCreateImageIndex", ctx, ref, auth, insecure)
+	ret := m.ctrl.Call(m, "GetOrCreateImageIndex", ctx, ref, auth, skipTLSVerify)
 	ret0, _ := ret[0].(*v4.IndexReport)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetOrCreateImageIndex indicates an expected call of GetOrCreateImageIndex.
-func (mr *MockScannerMockRecorder) GetOrCreateImageIndex(ctx, ref, auth, insecure any) *gomock.Call {
+func (mr *MockScannerMockRecorder) GetOrCreateImageIndex(ctx, ref, auth, skipTLSVerify any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateImageIndex", reflect.TypeOf((*MockScanner)(nil).GetOrCreateImageIndex), ctx, ref, auth, insecure)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateImageIndex", reflect.TypeOf((*MockScanner)(nil).GetOrCreateImageIndex), ctx, ref, auth, skipTLSVerify)
 }
 
 // GetVulnerabilities mocks base method.
