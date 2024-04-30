@@ -21,7 +21,7 @@ import DeploymentComponentVulnerabilitiesTable, {
 } from './DeploymentComponentVulnerabilitiesTable';
 import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
-import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
+import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 
 export const deploymentWithVulnerabilitiesFragment = gql`
     ${deploymentComponentVulnerabilitiesFragment}
