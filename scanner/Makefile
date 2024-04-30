@@ -21,8 +21,8 @@ endif
 
 # CGO is disabled for Scanner V4 builds because:
 #
-# 1. Local builds aren't dockerized. When e.g. host OS's glibc does not match version in target container, scanner
-# refuses to start with errors looking like this:
+# 1. Local builds aren't dockerized. And, upon packaging the locally-built scanner in a container when e.g. host
+# OS's glibc does not match version in target container, scanner refuses to start with errors looking like this:
 #    $ /usr/local/bin/scanner --help
 #    /usr/local/bin/scanner: /lib64/libc.so.6: version `GLIBC_2.32' not found (required by /usr/local/bin/scanner)
 #    /usr/local/bin/scanner: /lib64/libc.so.6: version `GLIBC_2.34' not found (required by /usr/local/bin/scanner)
@@ -42,7 +42,8 @@ endif
 # If you need to separate the declaration and the usage in Dockerfile, do this instead
 #    ARG CGO_ENABLED=1
 #    RUN make CGO_ENABLED=$CGO_ENABLED blah
-# TODO: dockerize local builds and flip this to 1.
+#
+# TODO: remove this assignment to set CGO_ENABLED to 1 (see env.mk) to minimize testing difference with FIPS builds.
 CGO_ENABLED := 0
 
 HOST_OS := linux
