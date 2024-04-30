@@ -18,22 +18,25 @@ import { HelpIcon, PencilAltIcon, PlusCircleIcon, TrashIcon } from '@patternfly/
 import { FormikProps } from 'formik';
 import isEqual from 'lodash/isEqual';
 
-import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
-import usePermissions from 'hooks/usePermissions';
-import { NotifierConfiguration } from 'services/ReportsService.types';
-import {
-    EmailTemplateFormData,
-    defaultEmailBody,
-    getDefaultEmailSubject,
-    isDefaultEmailTemplate,
-} from 'Containers/Vulnerabilities/VulnerablityReporting/forms/emailTemplateFormUtils';
-
+import { EmailTemplateFormData } from 'Components/EmailTemplate/EmailTemplate.utils';
+import EmailTemplateModal, {
+    TemplatePreviewArgs,
+} from 'Components/EmailTemplate/EmailTemplateModal';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useIndexKey from 'hooks/useIndexKey';
+import usePermissions from 'hooks/usePermissions';
+import { NotifierConfiguration } from 'services/ReportsService.types';
+
 import NotifierSelection from './NotifierSelection';
-import EmailTemplateFormModal from './EmailTemplateFormModal';
+import {
+    defaultEmailBody,
+    getDefaultEmailSubject,
+    isDefaultEmailTemplate,
+} from './emailTemplateFormUtils';
+import { ReportFormValues } from './useReportFormValues';
+import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import useEmailTemplateModal from '../hooks/useEmailTemplateModal';
 
 export type DeliveryDestinationsFormParams = {
@@ -71,11 +74,26 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                 ...prevDeliveryDestination,
                 emailConfig: {
                     ...emailConfig,
-                    customSubject: formData.emailSubject,
-                    customBody: formData.emailBody,
+                    customSubject: formData.customSubject,
+                    customBody: formData.customBody,
                 },
             });
         }
+    }
+
+    function renderTemplatePreview({
+        customBody,
+        customSubject,
+        customSubjectDefault,
+    }: TemplatePreviewArgs) {
+        return (
+            <EmailTemplatePreview
+                emailSubject={customSubject}
+                emailBody={customBody}
+                defaultEmailSubject={customSubjectDefault}
+                reportParameters={formik.values.reportParameters}
+            />
+        );
     }
 
     function addDeliveryDestination() {
@@ -350,15 +368,15 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                     </Flex>
                 </Form>
             </PageSection>
-            <EmailTemplateFormModal
+            <EmailTemplateModal
                 isOpen={isEmailTemplateModalOpen}
                 onClose={closeEmailTemplateModal}
                 onChange={onEmailTemplateChange}
-                initialEmailSubject={selectedEmailSubject}
-                initialEmailBody={selectedEmailBody}
-                defaultEmailSubject={defaultEmailSubject}
-                defaultEmailBody={defaultEmailBody}
-                reportParameters={formik.values.reportParameters}
+                customBodyDefault={defaultEmailBody}
+                customBodyInitial={selectedEmailBody}
+                customSubjectDefault={defaultEmailSubject}
+                customSubjectInitial={selectedEmailSubject}
+                renderTemplatePreview={renderTemplatePreview}
             />
         </>
     );
