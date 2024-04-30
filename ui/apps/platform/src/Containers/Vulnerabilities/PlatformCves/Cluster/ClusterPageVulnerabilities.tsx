@@ -17,7 +17,7 @@ import { getTableUIState } from 'utils/getTableUIState';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import { parseWorkloadQuerySearchFilter } from '../../utils/searchUtils';
-import { DEFAULT_PAGE_SIZE } from '../../constants';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import useClusterVulnerabilities from './useClusterVulnerabilities';
 import CVEsTable from './CVEsTable';
@@ -31,7 +31,7 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
     const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
     const query = getUrlQueryStringForSearchFilter(querySearchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
-    const { page, perPage } = useURLPagination(DEFAULT_PAGE_SIZE);
+    const { page, perPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const { data, loading, error } = useClusterVulnerabilities(clusterId, query, page, perPage);
 
