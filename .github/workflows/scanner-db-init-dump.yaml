@@ -75,7 +75,7 @@ jobs:
       - name: Run updater
         run: |
           chmod +x /usr/local/bin/updater
-          updater \
+          updater import \
               --vulns-url "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/$version/vulns.json.zst" \
               --db-conn 'host=localhost user=postgres database=postgres password=scanner'
 
