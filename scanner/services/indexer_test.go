@@ -43,12 +43,12 @@ func (s *indexerServiceTestSuite) TearDownTest() {
 
 func createRequest(id, url, username string, insecure bool) *v4.CreateIndexReportRequest {
 	return &v4.CreateIndexReportRequest{
-		HashId:                id,
-		InsecureSkipTlsVerify: insecure,
+		HashId: id,
 		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
 			ContainerImage: &v4.ContainerImageLocator{
-				Url:      url,
-				Username: username,
+				Url:                   url,
+				Username:              username,
+				InsecureSkipTlsVerify: insecure,
 			},
 		},
 	}
@@ -119,9 +119,8 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 		{
 			name: "when unknown resource type",
 			args: args{req: &v4.CreateIndexReportRequest{
-				HashId:                "foobar",
-				InsecureSkipTlsVerify: false,
-				ResourceLocator:       nil,
+				HashId:          "foobar",
+				ResourceLocator: nil,
 			}},
 			wantErr: `invalid hash id: "foobar"`,
 		},
@@ -129,9 +128,8 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 			name: "when empty resource locator",
 			args: args{
 				req: &v4.CreateIndexReportRequest{
-					HashId:                "/v4/containerimage/foobar",
-					InsecureSkipTlsVerify: false,
-					ResourceLocator:       nil,
+					HashId:          "/v4/containerimage/foobar",
+					ResourceLocator: nil,
 				},
 			},
 			wantErr: "invalid resource locator",
@@ -140,8 +138,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 			name: "when empty container image URL",
 			args: args{
 				req: &v4.CreateIndexReportRequest{
-					HashId:                "/v4/containerimage/foobar",
-					InsecureSkipTlsVerify: false,
+					HashId: "/v4/containerimage/foobar",
 					ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
 						ContainerImage: &v4.ContainerImageLocator{
 							Url:      "",
@@ -157,11 +154,11 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 			name: "when invalid container image URL",
 			args: args{
 				req: &v4.CreateIndexReportRequest{
-					HashId:                "/v4/containerimage/foobar",
-					InsecureSkipTlsVerify: false,
+					HashId: "/v4/containerimage/foobar",
 					ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
 						ContainerImage: &v4.ContainerImageLocator{
-							Url: "sample-url",
+							Url:                   "sample-url",
+							InsecureSkipTlsVerify: false,
 						},
 					},
 				},
@@ -172,11 +169,11 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 			name: "when invalid image reference in container image URL",
 			args: args{
 				req: &v4.CreateIndexReportRequest{
-					HashId:                "/v4/containerimage/foobar",
-					InsecureSkipTlsVerify: false,
+					HashId: "/v4/containerimage/foobar",
 					ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
 						ContainerImage: &v4.ContainerImageLocator{
-							Url: "https://invalid-image-reference",
+							Url:                   "https://invalid-image-reference",
+							InsecureSkipTlsVerify: false,
 						},
 					},
 				},

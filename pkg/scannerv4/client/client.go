@@ -186,13 +186,13 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 		return nil, fmt.Errorf("get auth: %w", err)
 	}
 	req := v4.GetOrCreateIndexReportRequest{
-		HashId:                id,
-		InsecureSkipTlsVerify: skipTLSVerify,
+		HashId: id,
 		ResourceLocator: &v4.GetOrCreateIndexReportRequest_ContainerImage{
 			ContainerImage: &v4.ContainerImageLocator{
-				Url:      imgURL.String(),
-				Username: authCfg.Username,
-				Password: authCfg.Password,
+				Url:                   imgURL.String(),
+				Username:              authCfg.Username,
+				Password:              authCfg.Password,
+				InsecureSkipTlsVerify: skipTLSVerify,
 			},
 		},
 	}
