@@ -115,7 +115,7 @@ func (s *riskDatastoreSACSuite) TestGetRisk() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.Require().True(found)
-				s.Equal(*risk, *res)
+				s.Equal(risk, res)
 			} else {
 				s.False(found)
 				s.Nil(res)
@@ -146,7 +146,7 @@ func (s *riskDatastoreSACSuite) TestGetRiskForDeployment() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.Require().True(found)
-				s.Equal(*risk, *res)
+				s.Equal(risk, res)
 			} else {
 				s.False(found)
 				s.Nil(res)
