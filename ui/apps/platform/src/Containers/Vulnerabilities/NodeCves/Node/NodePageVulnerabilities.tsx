@@ -16,11 +16,19 @@ import useURLSearch from 'hooks/useURLSearch';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getUrlQueryStringForSearchFilter, getHasSearchApplied } from 'utils/searchUtils';
 
-import { parseWorkloadQuerySearchFilter } from '../../utils/searchUtils';
+import BySeveritySummaryCard from 'Containers/Vulnerabilities/components/BySeveritySummaryCard';
+import CvesByStatusSummaryCard from 'Containers/Vulnerabilities/WorkloadCves/SummaryCards/CvesByStatusSummaryCard';
+import {
+    getHiddenSeverities,
+    getHiddenStatuses,
+    parseWorkloadQuerySearchFilter,
+} from '../../utils/searchUtils';
 
 import CVEsTable from './CVEsTable';
 import useNodeVulnerabilities from './useNodeVulnerabilities';
+import useNodeSummaryData from './useNodeSummaryData';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
+import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 
 export type NodePageVulnerabilitiesProps = {
     nodeId: string;
@@ -32,8 +40,11 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
     const query = getUrlQueryStringForSearchFilter(querySearchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const { page, perPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const hiddenSeverities = getHiddenSeverities(querySearchFilter);
+    const hiddenStatuses = getHiddenStatuses(querySearchFilter);
 
     const { data, loading, error } = useNodeVulnerabilities(nodeId, query, page, perPage);
+    const summaryRequest = useNodeSummaryData(nodeId, query);
 
     const tableState = getTableUIState({
         isLoading: loading,
@@ -48,6 +59,30 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                 <Text>Review and triage vulnerability data scanned on this node</Text>
             </PageSection>
             <PageSection isFilled className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
+                <SummaryCardLayout isLoading={summaryRequest.loading} error={summaryRequest.error}>
+                    <SummaryCard
+                        loadingText={'Loading node CVEs by severity summary'}
+                        data={summaryRequest.data}
+                        renderer={({ data }) => (
+                            <BySeveritySummaryCard
+                                title="CVEs by severity"
+                                severityCounts={data.node.cveCountBySeverityAndFixability}
+                                hiddenSeverities={hiddenSeverities}
+                            />
+                        )}
+                    />
+                    <SummaryCard
+                        loadingText={'Loading node CVEs by status summary'}
+                        data={summaryRequest.data}
+                        renderer={({ data }) => (
+                            <CvesByStatusSummaryCard
+                                cveStatusCounts={data.node.cveCountBySeverityAndFixability}
+                                hiddenStatuses={hiddenStatuses}
+                                isBusy={summaryRequest.loading}
+                            />
+                        )}
+                    />
+                </SummaryCardLayout>
                 <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100 pf-v5-u-p-lg">
                     <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
                         <SplitItem isFilled>
