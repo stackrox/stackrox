@@ -9,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
 	processBaselineStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
@@ -48,6 +50,8 @@ var (
 		},
 	})
 	deploymentExtensionAuth = user.With(permissions.View(resources.DeploymentExtension))
+
+	log = logging.LoggerForModule()
 )
 
 // serviceImpl provides APIs for deployments.
@@ -55,6 +59,7 @@ type serviceImpl struct {
 	v1.UnimplementedDeploymentServiceServer
 
 	datastore              datastore.DataStore
+	imagesDS               imageDS.DataStore
 	processBaselines       processBaselineStore.DataStore
 	processIndicators      processIndicatorStore.DataStore
 	processBaselineResults processBaselineResultsStore.DataStore
@@ -74,7 +79,23 @@ func (s *serviceImpl) ExportDeployments(req *v1.ExportDeploymentRequest, srv v1.
 		defer cancel()
 	}
 	return s.datastore.WalkByQuery(ctx, parsedQuery, func(d *storage.Deployment) error {
-		if err := srv.Send(&v1.ExportDeploymentResponse{Deployment: d}); err != nil {
+		// TODO(dhaus): Ideally this is a separate export API which will consist of both deployment and images.
+		// We can go through all the deployments and their related images. Images are sadly _not_ cached, but since
+		// we know the ID the lookup should be rather fast (compared to searching things).
+		containers := d.GetContainers()
+		images := make([]*storage.Image, 0, len(containers))
+		for _, container := range containers {
+			img, exists, err := s.imagesDS.GetImage(ctx, container.GetId())
+			if err != nil {
+				log.Errorf("Error getting image for deployment %s: %v", d.Id, err)
+				continue
+			}
+			if exists {
+				images = append(images, img)
+			}
+		}
+
+		if err := srv.Send(&v1.ExportDeploymentResponse{Deployment: d, Images: images}); err != nil {
 			return err
 		}
 		return nil

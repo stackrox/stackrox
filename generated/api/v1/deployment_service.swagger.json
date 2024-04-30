@@ -372,6 +372,49 @@
     }
   },
   "definitions": {
+    "CVSSV2AccessComplexity": {
+      "type": "string",
+      "enum": [
+        "ACCESS_HIGH",
+        "ACCESS_MEDIUM",
+        "ACCESS_LOW"
+      ],
+      "default": "ACCESS_HIGH"
+    },
+    "CVSSV2Authentication": {
+      "type": "string",
+      "enum": [
+        "AUTH_MULTIPLE",
+        "AUTH_SINGLE",
+        "AUTH_NONE"
+      ],
+      "default": "AUTH_MULTIPLE"
+    },
+    "CVSSV3Complexity": {
+      "type": "string",
+      "enum": [
+        "COMPLEXITY_LOW",
+        "COMPLEXITY_HIGH"
+      ],
+      "default": "COMPLEXITY_LOW"
+    },
+    "CVSSV3Privileges": {
+      "type": "string",
+      "enum": [
+        "PRIVILEGE_NONE",
+        "PRIVILEGE_LOW",
+        "PRIVILEGE_HIGH"
+      ],
+      "default": "PRIVILEGE_NONE"
+    },
+    "CVSSV3UserInteraction": {
+      "type": "string",
+      "enum": [
+        "UI_NONE",
+        "UI_REQUIRED"
+      ],
+      "default": "UI_NONE"
+    },
     "ContainerConfigEnvironmentConfig": {
       "type": "object",
       "properties": {
@@ -406,6 +449,18 @@
           }
         }
       }
+    },
+    "EmbeddedVulnerabilityVulnerabilityType": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY",
+        "IMAGE_VULNERABILITY",
+        "K8S_VULNERABILITY",
+        "ISTIO_VULNERABILITY",
+        "NODE_VULNERABILITY",
+        "OPENSHIFT_VULNERABILITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY"
     },
     "EnvironmentConfigEnvVarSource": {
       "type": "string",
@@ -606,6 +661,161 @@
         }
       }
     },
+    "storageCVSSV2": {
+      "type": "object",
+      "properties": {
+        "vector": {
+          "type": "string"
+        },
+        "attackVector": {
+          "$ref": "#/definitions/storageCVSSV2AttackVector"
+        },
+        "accessComplexity": {
+          "$ref": "#/definitions/CVSSV2AccessComplexity"
+        },
+        "authentication": {
+          "$ref": "#/definitions/CVSSV2Authentication"
+        },
+        "confidentiality": {
+          "$ref": "#/definitions/storageCVSSV2Impact"
+        },
+        "integrity": {
+          "$ref": "#/definitions/storageCVSSV2Impact"
+        },
+        "availability": {
+          "$ref": "#/definitions/storageCVSSV2Impact"
+        },
+        "exploitabilityScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "impactScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "score": {
+          "type": "number",
+          "format": "float"
+        },
+        "severity": {
+          "$ref": "#/definitions/storageCVSSV2Severity"
+        }
+      }
+    },
+    "storageCVSSV2AttackVector": {
+      "type": "string",
+      "enum": [
+        "ATTACK_LOCAL",
+        "ATTACK_ADJACENT",
+        "ATTACK_NETWORK"
+      ],
+      "default": "ATTACK_LOCAL"
+    },
+    "storageCVSSV2Impact": {
+      "type": "string",
+      "enum": [
+        "IMPACT_NONE",
+        "IMPACT_PARTIAL",
+        "IMPACT_COMPLETE"
+      ],
+      "default": "IMPACT_NONE"
+    },
+    "storageCVSSV2Severity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "default": "UNKNOWN"
+    },
+    "storageCVSSV3": {
+      "type": "object",
+      "properties": {
+        "vector": {
+          "type": "string"
+        },
+        "exploitabilityScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "impactScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "attackVector": {
+          "$ref": "#/definitions/storageCVSSV3AttackVector"
+        },
+        "attackComplexity": {
+          "$ref": "#/definitions/CVSSV3Complexity"
+        },
+        "privilegesRequired": {
+          "$ref": "#/definitions/CVSSV3Privileges"
+        },
+        "userInteraction": {
+          "$ref": "#/definitions/CVSSV3UserInteraction"
+        },
+        "scope": {
+          "$ref": "#/definitions/storageCVSSV3Scope"
+        },
+        "confidentiality": {
+          "$ref": "#/definitions/storageCVSSV3Impact"
+        },
+        "integrity": {
+          "$ref": "#/definitions/storageCVSSV3Impact"
+        },
+        "availability": {
+          "$ref": "#/definitions/storageCVSSV3Impact"
+        },
+        "score": {
+          "type": "number",
+          "format": "float"
+        },
+        "severity": {
+          "$ref": "#/definitions/storageCVSSV3Severity"
+        }
+      }
+    },
+    "storageCVSSV3AttackVector": {
+      "type": "string",
+      "enum": [
+        "ATTACK_LOCAL",
+        "ATTACK_ADJACENT",
+        "ATTACK_NETWORK",
+        "ATTACK_PHYSICAL"
+      ],
+      "default": "ATTACK_LOCAL"
+    },
+    "storageCVSSV3Impact": {
+      "type": "string",
+      "enum": [
+        "IMPACT_NONE",
+        "IMPACT_LOW",
+        "IMPACT_HIGH"
+      ],
+      "default": "IMPACT_NONE"
+    },
+    "storageCVSSV3Scope": {
+      "type": "string",
+      "enum": [
+        "UNCHANGED",
+        "CHANGED"
+      ],
+      "default": "UNCHANGED"
+    },
+    "storageCVSSV3Severity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "NONE",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "default": "UNKNOWN"
+    },
     "storageContainer": {
       "type": "object",
       "properties": {
@@ -721,6 +931,33 @@
         }
       },
       "description": "`ContainerNameAndBaselineStatus` represents a cached result\nof process evaluation on a specific container name."
+    },
+    "storageCosignSignature": {
+      "type": "object",
+      "properties": {
+        "rawSignature": {
+          "type": "string",
+          "format": "byte"
+        },
+        "signaturePayload": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "storageDataSource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "mirror": {
+          "type": "string"
+        }
+      }
     },
     "storageDeployment": {
       "type": "object",
@@ -845,6 +1082,74 @@
       },
       "title": "Next available tag: 35"
     },
+    "storageEmbeddedImageScanComponent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "license": {
+          "$ref": "#/definitions/storageLicense"
+        },
+        "vulns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageEmbeddedVulnerability"
+          }
+        },
+        "layerIndex": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "priority": {
+          "type": "string",
+          "format": "int64"
+        },
+        "source": {
+          "$ref": "#/definitions/storageSourceType"
+        },
+        "location": {
+          "type": "string"
+        },
+        "topCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "fixedBy": {
+          "type": "string",
+          "description": "Component version that fixes all the fixable vulnerabilities in this component."
+        },
+        "executables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageEmbeddedImageScanComponentExecutable"
+          },
+          "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
+        }
+      },
+      "title": "Next Tag: 13"
+    },
+    "storageEmbeddedImageScanComponentExecutable": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "storageEmbeddedSecret": {
       "type": "object",
       "properties": {
@@ -855,6 +1160,212 @@
           "type": "string"
         }
       }
+    },
+    "storageEmbeddedVulnerability": {
+      "type": "object",
+      "properties": {
+        "cve": {
+          "type": "string"
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        },
+        "fixedBy": {
+          "type": "string"
+        },
+        "scoreVersion": {
+          "$ref": "#/definitions/storageEmbeddedVulnerabilityScoreVersion"
+        },
+        "cvssV2": {
+          "$ref": "#/definitions/storageCVSSV2"
+        },
+        "cvssV3": {
+          "$ref": "#/definitions/storageCVSSV3"
+        },
+        "publishedOn": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastModified": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "vulnerabilityType": {
+          "$ref": "#/definitions/EmbeddedVulnerabilityVulnerabilityType",
+          "description": "For internal purposes only."
+        },
+        "vulnerabilityTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EmbeddedVulnerabilityVulnerabilityType"
+          }
+        },
+        "suppressed": {
+          "type": "boolean"
+        },
+        "suppressActivation": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "suppressExpiry": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "firstSystemOccurrence": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
+        },
+        "firstImageOccurrence": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the CVE was first seen in this image."
+        },
+        "severity": {
+          "$ref": "#/definitions/storageVulnerabilitySeverity"
+        },
+        "state": {
+          "$ref": "#/definitions/storageVulnerabilityState"
+        }
+      },
+      "title": "Next Tag: 21"
+    },
+    "storageEmbeddedVulnerabilityScoreVersion": {
+      "type": "string",
+      "enum": [
+        "V2",
+        "V3"
+      ],
+      "default": "V2"
+    },
+    "storageImage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/definitions/storageImageName"
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageName"
+          },
+          "description": "This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with\ndifferent locations.\nTODO(dhaus): For now, this message will be without search tags due to duplicated search tags otherwise."
+        },
+        "metadata": {
+          "$ref": "#/definitions/storageImageMetadata"
+        },
+        "scan": {
+          "$ref": "#/definitions/storageImageScan"
+        },
+        "signatureVerificationData": {
+          "$ref": "#/definitions/storageImageSignatureVerificationData"
+        },
+        "signature": {
+          "$ref": "#/definitions/storageImageSignature"
+        },
+        "components": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "cves": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "fixableCves": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "notPullable": {
+          "type": "boolean"
+        },
+        "isClusterLocal": {
+          "type": "boolean"
+        },
+        "priority": {
+          "type": "string",
+          "format": "int64"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "topCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageNote"
+          }
+        }
+      },
+      "title": "Next Tag: 19"
+    },
+    "storageImageLayer": {
+      "type": "object",
+      "properties": {
+        "instruction": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "author": {
+          "type": "string"
+        },
+        "empty": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageImageMetadata": {
+      "type": "object",
+      "properties": {
+        "v1": {
+          "$ref": "#/definitions/storageV1Metadata",
+          "title": "V1Metadata contains all of the V1 docker data. In the normal case we will get this because the image is a\nV1 image OR because the v2 manifest has a link to it in it's config.\nSee https://docs.docker.com/registry/spec/manifest-v2-2/#image-manifest-field-descriptions\nThe only time we will not get it is in the rare caseof a strictly V2 image schema"
+        },
+        "v2": {
+          "$ref": "#/definitions/storageV2Metadata",
+          "title": "We should always get V2 metadata unless the registry is old or the image is strictly V1"
+        },
+        "layerShas": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "We never need both sets of layers so consolidate them. They will be ordered by oldest-\u003enewest"
+        },
+        "dataSource": {
+          "$ref": "#/definitions/storageDataSource",
+          "title": "DataSource contains information about which integration was used to pull the metadata"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Version is used to determine if the metadata needs to be re-pulled"
+        }
+      },
+      "title": "If any fields of ImageMetadata are modified including subfields, please check pkg/images/enricher/metadata.go\nto ensure that those changes will be automatically picked up\nNext Tag: 6"
     },
     "storageImageName": {
       "type": "object",
@@ -872,6 +1383,132 @@
           "type": "string"
         }
       }
+    },
+    "storageImageNote": {
+      "type": "string",
+      "enum": [
+        "MISSING_METADATA",
+        "MISSING_SCAN_DATA",
+        "MISSING_SIGNATURE",
+        "MISSING_SIGNATURE_VERIFICATION_DATA"
+      ],
+      "default": "MISSING_METADATA"
+    },
+    "storageImageScan": {
+      "type": "object",
+      "properties": {
+        "scannerVersion": {
+          "type": "string"
+        },
+        "scanTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageEmbeddedImageScanComponent"
+          }
+        },
+        "operatingSystem": {
+          "type": "string"
+        },
+        "dataSource": {
+          "$ref": "#/definitions/storageDataSource",
+          "title": "DataSource contains information about which integration was used to scan the image"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageScanNote"
+          }
+        },
+        "hash": {
+          "type": "string",
+          "format": "uint64"
+        }
+      },
+      "title": "Next tag: 8"
+    },
+    "storageImageScanNote": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "OS_UNAVAILABLE",
+        "PARTIAL_SCAN_DATA",
+        "OS_CVES_UNAVAILABLE",
+        "OS_CVES_STALE",
+        "LANGUAGE_CVES_UNAVAILABLE",
+        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
+      ],
+      "default": "UNSET"
+    },
+    "storageImageSignature": {
+      "type": "object",
+      "properties": {
+        "signatures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageSignature"
+          }
+        },
+        "fetched": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "storageImageSignatureVerificationData": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageSignatureVerificationResult"
+          }
+        }
+      }
+    },
+    "storageImageSignatureVerificationResult": {
+      "type": "object",
+      "properties": {
+        "verificationTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "verifierId": {
+          "type": "string",
+          "description": "verifier_id correlates to the ID of the signature integration used to verify the signature."
+        },
+        "status": {
+          "$ref": "#/definitions/storageImageSignatureVerificationResultStatus"
+        },
+        "description": {
+          "type": "string",
+          "description": "description is set in the case of an error with the specific error's message. Otherwise, this will not be set."
+        },
+        "verifiedImageReferences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The full image names that are verified by this specific signature integration ID."
+        }
+      },
+      "title": "Next Tag: 6"
+    },
+    "storageImageSignatureVerificationResultStatus": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "VERIFIED",
+        "FAILED_VERIFICATION",
+        "INVALID_SIGNATURE_ALGO",
+        "CORRUPTED_SIGNATURE",
+        "GENERIC_ERROR"
+      ],
+      "default": "UNSET",
+      "description": "Status represents the status of the result.\n\n - VERIFIED: VERIFIED is set when the signature's verification was successful.\n - FAILED_VERIFICATION: FAILED_VERIFICATION is set when the signature's verification failed.\n - INVALID_SIGNATURE_ALGO: INVALID_SIGNATURE_ALGO is set when the signature's algorithm is invalid and unsupported.\n - CORRUPTED_SIGNATURE: CORRUPTED_SIGNATURE is set when the raw signature is corrupted, i.e. wrong base64 encoding.\n - GENERIC_ERROR: GENERIC_ERROR is set when an error occurred during verification that cannot be associated with a specific\nstatus."
     },
     "storageLabelSelector": {
       "type": "object",
@@ -921,6 +1558,20 @@
         }
       },
       "title": "Next available tag: 4"
+    },
+    "storageLicense": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      }
     },
     "storageListDeployment": {
       "type": "object",
@@ -1138,6 +1789,28 @@
         }
       }
     },
+    "storageSignature": {
+      "type": "object",
+      "properties": {
+        "cosign": {
+          "$ref": "#/definitions/storageCosignSignature"
+        }
+      }
+    },
+    "storageSourceType": {
+      "type": "string",
+      "enum": [
+        "OS",
+        "PYTHON",
+        "JAVA",
+        "RUBY",
+        "NODEJS",
+        "GO",
+        "DOTNETCORERUNTIME",
+        "INFRASTRUCTURE"
+      ],
+      "default": "OS"
+    },
     "storageTaintEffect": {
       "type": "string",
       "enum": [
@@ -1174,6 +1847,62 @@
       ],
       "default": "TOLERATION_OPERATION_UNKNOWN"
     },
+    "storageV1Metadata": {
+      "type": "object",
+      "properties": {
+        "digest": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "author": {
+          "type": "string"
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageLayer"
+          }
+        },
+        "user": {
+          "type": "string"
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "entrypoint": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "storageV2Metadata": {
+      "type": "object",
+      "properties": {
+        "digest": {
+          "type": "string"
+        }
+      }
+    },
     "storageVolume": {
       "type": "object",
       "properties": {
@@ -1196,6 +1925,27 @@
           "$ref": "#/definitions/VolumeMountPropagation"
         }
       }
+    },
+    "storageVulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    },
+    "storageVulnerabilityState": {
+      "type": "string",
+      "enum": [
+        "OBSERVED",
+        "DEFERRED",
+        "FALSE_POSITIVE"
+      ],
+      "default": "OBSERVED",
+      "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed."
     },
     "v1AggregateBy": {
       "type": "object",
@@ -1249,6 +1999,13 @@
       "properties": {
         "deployment": {
           "$ref": "#/definitions/storageDeployment"
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImage"
+          },
+          "description": "TODO(dhaus): For now in the same response object to have all \"in the same entity\" which is workload and the\nrelated CVEs."
         }
       }
     },

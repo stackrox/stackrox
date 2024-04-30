@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/deployment/datastore"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -24,9 +25,11 @@ type Service interface {
 
 // New returns a new Service instance using the given DataStore.
 func New(datastore datastore.DataStore, processIndicators processIndicatorDataStore.DataStore, processBaselines processBaselineDataStore.DataStore,
-	processBaselineResults processBaselineResultsStore.DataStore, risks riskDataStore.DataStore, manager riskManager.Manager) Service {
+	processBaselineResults processBaselineResultsStore.DataStore, risks riskDataStore.DataStore,
+	manager riskManager.Manager, images imageDS.DataStore) Service {
 	return &serviceImpl{
 		datastore:              datastore,
+		imagesDS:               images,
 		processIndicators:      processIndicators,
 		processBaselines:       processBaselines,
 		processBaselineResults: processBaselineResults,

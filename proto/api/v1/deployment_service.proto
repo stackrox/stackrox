@@ -6,6 +6,7 @@ import "api/v1/common.proto";
 import "api/v1/empty.proto";
 import "api/v1/search_service.proto";
 import weak "google/api/annotations.proto";
+import "storage/image.proto";
 import "storage/deployment.proto";
 import "storage/process_baseline.proto";
 import "storage/risk.proto";
@@ -50,6 +51,9 @@ message ExportDeploymentRequest {
 
 message ExportDeploymentResponse {
   storage.Deployment deployment = 1;
+  // TODO(dhaus): For now in the same response object to have all "in the same entity" which is workload and the
+  // related CVEs.
+  repeated storage.Image images = 2;
 }
 
 // DeploymentService APIs can be used to manage deployments.
