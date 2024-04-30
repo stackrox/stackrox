@@ -38,7 +38,7 @@ const fullWidth = '100%';
 export type SummaryCardLayoutProps = {
     error: unknown;
     isLoading: boolean;
-    children: [React.ReactElement, ...React.ReactElement[]];
+    children: React.ReactNode;
     errorAlertTitle?: string;
 };
 
