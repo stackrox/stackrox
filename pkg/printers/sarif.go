@@ -220,7 +220,7 @@ func validateDataEntries(entries map[string][]string) (int, error) {
 	for key, values := range entries {
 		// "-" is used as an empty replacement value in case values are missing in an array for GJSON. Hence, ignore
 		// all values which may not match the number of expected values iff the array contains the replacement value.
-		if len(values) != numberOfValues && !slices.Equal(values, []string{"-"}) {
+		if len(values) != numberOfValues && !sliceutils.Equal(values, []string{"-"}) {
 			return -1, errox.InvalidArgs.Newf("the amount of values retrieved from JSON path expressions "+
 				"should be %d, but got %d for key %s", numberOfValues, len(values), key)
 		}
