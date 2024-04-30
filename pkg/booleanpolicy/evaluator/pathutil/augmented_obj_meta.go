@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -202,6 +203,12 @@ func (o *AugmentedObjMeta) addPathsForSearchTagsFromStruct(currentType reflect.T
 				// Panic here is okay, it will be caught.
 				panic(err)
 			}
+		}
+
+		// We need to skip internal fields for proto generated structs,
+		// because they contain recursive references.
+		if protoreflect.IsProtoMessage(currentType) && protoreflect.IsInternalGeneratorField(field) {
+			continue
 		}
 
 		o.addPathsForSearchTags(currentType, field.Type, pathUntilThisObj, newPath, outputMap, seenAugmentKeys)
