@@ -572,18 +572,6 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 					"Marking it as '%s' in the network graph.",
 					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), entitiesName)
 			}
-<<<<<<< HEAD
-=======
-
-			if !status.used {
-				// Count internal metrics even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
-				if isExternal {
-					flowMetrics.ExternalFlowCounter.With(metricDirection).Inc()
-				} else {
-					flowMetrics.InternalFlowCounter.With(metricDirection).Inc()
-				}
-			}
->>>>>>> ec23204f4e (ROX-23540: Central cap to display Internal Entities in the NWG (#10698))
 		} else {
 			lookupResults = []clusterentities.LookupResult{
 				{
