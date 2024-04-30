@@ -27,7 +27,7 @@ func createCentralServer(version string, retErr bool) *httptest.Server {
 			return
 		}
 
-		md := v1.Metadata{}
+		md := &v1.Metadata{}
 		md.Version = version
 		data, err := json.Marshal(md)
 		if err != nil {
