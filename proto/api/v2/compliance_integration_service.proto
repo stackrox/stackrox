@@ -8,7 +8,13 @@ import weak "google/api/annotations.proto";
 option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
 
-// Next Tag: 8
+// Represents the status of compliance operator
+enum COStatus {
+  HEALTHY = 0;
+  UNHEALTHY = 1;
+}
+
+// Next Tag: 9
 message ComplianceIntegration {
   string id = 1;
   string version = 2;
@@ -18,7 +24,7 @@ message ComplianceIntegration {
   // Collection of errors that occurred while trying to obtain compliance operator health info.
   repeated string status_errors = 6;
   bool operator_installed = 7;
-  string status = 8;
+  COStatus status = 8;
 }
 
 message ComplianceIntegrationStatusRequest {
