@@ -150,17 +150,18 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 
 func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo() {
 	req, _ := http.NewRequest("PATCH", "/wrapped/http", nil)
+	req.Header.Add("user-agent", "user")
 	rih := requestinfo.NewRequestInfoHandler()
 	ctx := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Net: "pipe"}})
 	md := rih.AnnotateMD(ctx, req)
-	md.Set("User-Agent", "test")
+	md.Set("User-Agent", "gateway")
 
 	ctx, err := rih.UpdateContextForGRPC(metadata.NewIncomingContext(ctx, md))
 	s.NoError(err)
 
 	rp := getGRPCRequestDetails(ctx, err, "ignored grpc method", "request")
 	s.Equal(http.StatusOK, rp.Code)
-	s.Equal("test", rp.UserAgent)
+	s.Equal("gateway user", rp.UserAgent)
 	s.Nil(rp.UserID)
 	s.Equal("request", rp.GRPCReq)
 	s.Equal("/wrapped/http", rp.Path)
