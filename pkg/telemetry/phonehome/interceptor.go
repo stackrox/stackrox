@@ -59,8 +59,12 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 	// Use the wrapped HTTP request details if provided:
 	ri := requestinfo.FromContext(ctx)
 	if ri.HTTPRequest != nil && ri.HTTPRequest.URL != nil {
+		userAgentKey := "User-Agent"
+		if matchedKey, ok := runtime.DefaultHeaderMatcher(userAgentKey); ok {
+			userAgentKey = matchedKey
+		}
 		return &RequestParams{
-			UserAgent: getUserAgent(ri.Metadata.Get),
+			UserAgent: ri.HTTPRequest.Headers.Get(userAgentKey),
 			UserID:    id,
 			Method:    ri.HTTPRequest.Method,
 			Path:      ri.HTTPRequest.URL.Path,

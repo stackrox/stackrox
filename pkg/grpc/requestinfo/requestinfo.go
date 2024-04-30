@@ -163,18 +163,18 @@ func slimHTTPRequest(req *http.Request) *HTTPRequest {
 	}
 }
 
-// AnnotateMD builds a RequestInfo for a request coming in through the HTTP/1.1 gateway, and returns it in serialized
-// form as GRPC metadata.
-func (h *Handler) AnnotateMD(_ context.Context, req *http.Request) metadata.MD {
+func makeRequestInfo(req *http.Request) *RequestInfo {
 	tlsState := req.TLS
 
-	var ri RequestInfo
+	ri := &RequestInfo{
+		Hostname:    req.Host,
+		Metadata:    metadataFromHeader(req.Header),
+		HTTPRequest: slimHTTPRequest(req),
+		Source:      sourceFromRequest(req),
+	}
 
-	ri.HTTPRequest = slimHTTPRequest(req)
-
-	ri.Source = sourceFromRequest(req)
-
-	// X-Forwarded-Host takes precedence in case we are behind a proxy. `Hostname` should match what the client sees.
+	// X-Forwarded-Host takes precedence in case we are behind a proxy.
+	// `Hostname` should match what the client sees.
 	if fwdHost := req.Header.Get(forwardedHost); fwdHost != "" {
 		ri.Hostname = fwdHost
 	} else if tlsState != nil {
@@ -190,6 +190,14 @@ func (h *Handler) AnnotateMD(_ context.Context, req *http.Request) metadata.MD {
 	if tlsState != nil {
 		ri.VerifiedChains = ExtractCertInfoChains(tlsState.VerifiedChains)
 	}
+	return ri
+}
+
+// AnnotateMD builds a RequestInfo for a request coming in through the HTTP/1.1
+// gateway, and returns it in serialized form as GRPC metadata.
+// HTTP Request -> Metadata[RequestInfo]
+func (h *Handler) AnnotateMD(_ context.Context, req *http.Request) metadata.MD {
+	ri := makeRequestInfo(req)
 
 	// Encode to GOB.
 	var buf bytes.Buffer
@@ -222,6 +230,11 @@ func FromContext(ctx context.Context) RequestInfo {
 	return ri
 }
 
+func toContext(ctx context.Context, ri *RequestInfo) context.Context {
+	return context.WithValue(ctx, requestInfoKey{}, *ri)
+}
+
+// Metadata[RequestInfo] -> RequestInfo+Metadata
 func (h *Handler) extractFromMD(ctx context.Context) (*RequestInfo, error) {
 	md := metautils.ExtractIncoming(ctx)
 	riB64 := md.Get(requestInfoMDKey)
@@ -242,11 +255,12 @@ func (h *Handler) extractFromMD(ctx context.Context) (*RequestInfo, error) {
 	if err := gob.NewDecoder(bytes.NewReader(riRaw)).Decode(&reqInfo); err != nil {
 		return nil, errors.Wrap(err, "could not decode request info")
 	}
-
+	reqInfo.Metadata = metadata.MD(md)
 	return &reqInfo, nil
 }
 
 // UpdateContextForGRPC provides the context updater logic when used with GRPC interceptors.
+// Context[Metadata[RequestInfo]] -> Context[RequestInfo[Metadata]]
 func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, error) {
 	ri, err := h.extractFromMD(ctx)
 	if err != nil {
@@ -260,6 +274,7 @@ func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, er
 	if ri == nil {
 		ri = &RequestInfo{
 			ClientUsedTLS: tlsState != nil,
+			Metadata:      metadata.MD(metautils.ExtractIncoming(ctx)),
 		}
 	}
 
@@ -269,49 +284,26 @@ func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, er
 		ri.VerifiedChains = ExtractCertInfoChains(tlsState.VerifiedChains)
 	}
 
-	ri.Metadata, _ = metadata.FromIncomingContext(ctx)
-	return context.WithValue(ctx, requestInfoKey{}, *ri), nil
+	return toContext(ctx, ri), nil
 }
 
 // HTTPIntercept provides a http interceptor logic for populating the context with the request info.
 func (h *Handler) HTTPIntercept(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		ri := &RequestInfo{
-			Hostname:    r.Host,
-			Metadata:    metadataFromHeader(r.Header),
-			HTTPRequest: slimHTTPRequest(r),
-			Source:      sourceFromRequest(r),
-		}
-		// X-Forwarded-Host takes precedence in case we are behind a proxy.
-		// `Hostname` should match what the client sees.
-		if fwdHost := r.Header.Get("X-Forwarded-Host"); fwdHost != "" {
-			ri.Hostname = fwdHost
-		}
-		if fwdProto := r.Header.Get("X-Forwarded-Proto"); fwdProto != "" {
-			ri.ClientUsedTLS = fwdProto != "http"
-		} else {
-			ri.ClientUsedTLS = r.TLS != nil
-		}
-
-		if r.TLS != nil {
-			ri.VerifiedChains = ExtractCertInfoChains(r.TLS.VerifiedChains)
-		}
-		newCtx := context.WithValue(r.Context(), requestInfoKey{}, *ri)
-		logRequest(r)
+		ri := makeRequestInfo(r)
+		logRequest(r, ri)
+		newCtx := toContext(r.Context(), ri)
 		handler.ServeHTTP(w, r.WithContext(newCtx))
 	})
 }
 
-func logRequest(request *http.Request) {
+func logRequest(request *http.Request, ri *RequestInfo) {
 	if !networkLog || request == nil {
 		return
 	}
 
 	forwardedBy := stringutils.OrDefault(request.Header.Get(forwardedKey), "N/A")
 	xff := request.Header.Get(forwardedForKey)
-
-	source := sourceFromRequest(request)
 
 	var referer string
 	if request.Header.Get(refererKey) != "" {
@@ -324,7 +316,7 @@ func logRequest(request *http.Request) {
 
 	log.Infof(
 		"Source: %+v, Method: %s, User Agent: %s, Forwarded: %s, Destination Host: %s, Referer: %s, X-Forwarded-For: %s, URL: %s",
-		source, request.Method, request.Header.Get(userAgent), forwardedBy, destHost, referer, stringutils.OrDefault(xff, "N/A"), uri)
+		ri.Source, request.Method, request.Header.Get(userAgent), forwardedBy, destHost, referer, stringutils.OrDefault(xff, "N/A"), uri)
 }
 
 func sourceAddr(ctx context.Context) net.Addr {
