@@ -16,10 +16,10 @@ export type EmailTemplateModalProps = {
     isOpen: boolean;
     onClose: () => void;
     onChange: (formData: EmailTemplateFormData) => void;
-    customSubjectInitial: string;
+    customBodyDefault: string;
     customBodyInitial: string;
     customSubjectDefault: string;
-    customBodyDefault: string;
+    customSubjectInitial: string;
     renderTemplatePreview?: (args: TemplatePreviewArgs) => ReactElement;
 };
 
