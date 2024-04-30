@@ -147,6 +147,43 @@ func insertIntoAlerts(batch *pgx.Batch, obj *storage.Alert) error {
 	finalStr := "INSERT INTO alerts (Id, Policy_Id, Policy_Name, Policy_Description, Policy_Disabled, Policy_Categories, Policy_Severity, Policy_EnforcementActions, Policy_LastUpdated, Policy_SORTName, Policy_SORTLifecycleStage, Policy_SORTEnforcement, LifecycleStage, ClusterId, ClusterName, Namespace, NamespaceId, Deployment_Id, Deployment_Name, Deployment_Inactive, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Resource_ResourceType, Resource_Name, Enforcement_Action, Time, State, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Disabled = EXCLUDED.Policy_Disabled, Policy_Categories = EXCLUDED.Policy_Categories, Policy_Severity = EXCLUDED.Policy_Severity, Policy_EnforcementActions = EXCLUDED.Policy_EnforcementActions, Policy_LastUpdated = EXCLUDED.Policy_LastUpdated, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage, Policy_SORTEnforcement = EXCLUDED.Policy_SORTEnforcement, LifecycleStage = EXCLUDED.LifecycleStage, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, Deployment_Id = EXCLUDED.Deployment_Id, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Inactive = EXCLUDED.Deployment_Inactive, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Resource_ResourceType = EXCLUDED.Resource_ResourceType, Resource_Name = EXCLUDED.Resource_Name, Enforcement_Action = EXCLUDED.Enforcement_Action, Time = EXCLUDED.Time, State = EXCLUDED.State, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
+	var query string
+
+	for childIndex, child := range obj.GetProcessViolation().GetProcesses() {
+		if err := insertIntoAlertsProcesses(batch, child, obj.GetId(), childIndex); err != nil {
+			return err
+		}
+	}
+
+	query = "delete from alerts_processes where alerts_Id = $1 AND idx >= $2"
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetProcessViolation().GetProcesses()))
+	return nil
+}
+
+func insertIntoAlertsProcesses(batch *pgx.Batch, obj *storage.ProcessIndicator, alertID string, idx int) error {
+
+	values := []interface{}{
+		// parent primary keys start
+		pgutils.NilOrUUID(alertID),
+		idx,
+		pgutils.NilOrUUID(obj.GetId()),
+		pgutils.NilOrUUID(obj.GetDeploymentId()),
+		obj.GetContainerName(),
+		obj.GetPodId(),
+		pgutils.NilOrUUID(obj.GetPodUid()),
+		obj.GetSignal().GetContainerId(),
+		pgutils.NilOrTime(obj.GetSignal().GetTime()),
+		obj.GetSignal().GetName(),
+		obj.GetSignal().GetArgs(),
+		obj.GetSignal().GetExecFilePath(),
+		obj.GetSignal().GetUid(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
+		obj.GetNamespace(),
+	}
+
+	finalStr := "INSERT INTO alerts_processes (alerts_Id, idx, Id, DeploymentId, ContainerName, PodId, PodUid, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid, ClusterId, Namespace) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace"
+	batch.Queue(finalStr, values...)
+
 	return nil
 }
 
@@ -262,6 +299,79 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 		}
 	}
 
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
+
+		if err := copyFromAlertsProcesses(ctx, s, tx, obj.GetId(), obj.GetProcessViolation().GetProcesses()...); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func copyFromAlertsProcesses(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, alertID string, objs ...*storage.ProcessIndicator) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
+	inputRows := make([][]interface{}, 0, batchSize)
+
+	copyCols := []string{
+		"alerts_id",
+		"idx",
+		"id",
+		"deploymentid",
+		"containername",
+		"podid",
+		"poduid",
+		"signal_containerid",
+		"signal_time",
+		"signal_name",
+		"signal_args",
+		"signal_execfilepath",
+		"signal_uid",
+		"clusterid",
+		"namespace",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+			"to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+			pgutils.NilOrUUID(alertID),
+			idx,
+			pgutils.NilOrUUID(obj.GetId()),
+			pgutils.NilOrUUID(obj.GetDeploymentId()),
+			obj.GetContainerName(),
+			obj.GetPodId(),
+			pgutils.NilOrUUID(obj.GetPodUid()),
+			obj.GetSignal().GetContainerId(),
+			pgutils.NilOrTime(obj.GetSignal().GetTime()),
+			obj.GetSignal().GetName(),
+			obj.GetSignal().GetArgs(),
+			obj.GetSignal().GetExecFilePath(),
+			obj.GetSignal().GetUid(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
+			obj.GetNamespace(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"alerts_processes"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+				return err
+			}
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
 	return nil
 }
 
@@ -282,6 +392,12 @@ func Destroy(ctx context.Context, db postgres.DB) {
 
 func dropTableAlerts(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts CASCADE")
+	dropTableAlertsProcesses(ctx, db)
+
+}
+
+func dropTableAlertsProcesses(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts_processes CASCADE")
 
 }
 

@@ -20,7 +20,12 @@ var (
 	// CreateTableAlertsStmt holds the create statement for table `alerts`.
 	CreateTableAlertsStmt = &postgres.CreateStmts{
 		GormModel: (*Alerts)(nil),
-		Children:  []*postgres.CreateStmts{},
+		Children: []*postgres.CreateStmts{
+			&postgres.CreateStmts{
+				GormModel: (*AlertsProcesses)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
+		},
 	}
 
 	// AlertsSchema is the go schema for table `alerts`.
@@ -41,6 +46,8 @@ var (
 const (
 	// AlertsTableName specifies the name of the table in postgres.
 	AlertsTableName = "alerts"
+	// AlertsProcessesTableName specifies the name of the table in postgres.
+	AlertsProcessesTableName = "alerts_processes"
 )
 
 // Alerts holds the Gorm model for Postgres table `alerts`.
@@ -76,4 +83,24 @@ type Alerts struct {
 	Time                     *time.Time                          `gorm:"column:time;type:timestamp"`
 	State                    storage.ViolationState              `gorm:"column:state;type:integer;index:alerts_state,type:btree"`
 	Serialized               []byte                              `gorm:"column:serialized;type:bytea"`
+}
+
+// AlertsProcesses holds the Gorm model for Postgres table `alerts_processes`.
+type AlertsProcesses struct {
+	AlertsID           string     `gorm:"column:alerts_id;type:uuid;primaryKey"`
+	Idx                int        `gorm:"column:idx;type:integer;primaryKey;index:alertsprocesses_idx,type:btree"`
+	ID                 string     `gorm:"column:id;type:uuid"`
+	DeploymentID       string     `gorm:"column:deploymentid;type:uuid;index:alertsprocesses_deploymentid,type:hash"`
+	ContainerName      string     `gorm:"column:containername;type:varchar"`
+	PodID              string     `gorm:"column:podid;type:varchar"`
+	PodUID             string     `gorm:"column:poduid;type:uuid;index:alertsprocesses_poduid,type:hash"`
+	SignalContainerID  string     `gorm:"column:signal_containerid;type:varchar"`
+	SignalTime         *time.Time `gorm:"column:signal_time;type:timestamp"`
+	SignalName         string     `gorm:"column:signal_name;type:varchar"`
+	SignalArgs         string     `gorm:"column:signal_args;type:varchar"`
+	SignalExecFilePath string     `gorm:"column:signal_execfilepath;type:varchar"`
+	SignalUID          uint32     `gorm:"column:signal_uid;type:bigint"`
+	ClusterID          string     `gorm:"column:clusterid;type:uuid;index:alertsprocesses_sac_filter,type:btree"`
+	Namespace          string     `gorm:"column:namespace;type:varchar;index:alertsprocesses_sac_filter,type:btree"`
+	AlertsRef          Alerts     `gorm:"foreignKey:alerts_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
