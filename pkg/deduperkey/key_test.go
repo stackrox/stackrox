@@ -130,6 +130,7 @@ func withKey(resource any, id string) Key {
 var allSensorEventTypes []string
 
 var whitelist = []string{
+	"SensorEvent",
 	"SensorEvent_SensorHash",
 	"SensorEvent_Synced",
 	"SensorEvent_ReprocessDeployment",
@@ -137,7 +138,7 @@ var whitelist = []string{
 	"SensorEvent_ResourcesSynced",
 }
 
-func TestAllSensorEventsWereAdded(t *testing.T) {
+func TestAllSensorEventsWereAddedToDeduper(t *testing.T) {
 	pwd, err := os.Getwd()
 	if err != nil {
 		require.NoError(t, err)
