@@ -20,7 +20,7 @@ import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import useTableSelection from 'hooks/useTableSelection';
 import { clustersBasePath } from 'routePaths';
-import { ComplianceIntegration } from 'services/ComplianceEnhancedService';
+import { ComplianceIntegration } from 'services/ComplianceIntegrationService';
 
 import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 import ComplianceClusterStatus from '../components/ComplianceClusterStatus';

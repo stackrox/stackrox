@@ -14,7 +14,8 @@ import {
 import {
     ComplianceCheckStatus,
     ComplianceCheckStatusCount,
-} from 'services/ComplianceEnhancedService';
+    ComplianceCheckStatusEnum,
+} from 'services/ComplianceResultsService';
 
 // Thresholds for compliance status
 const DANGER_THRESHOLD = 50;
@@ -50,10 +51,10 @@ export function getStatusCounts(checkStats: ComplianceCheckStatusCount[]): {
     checkStats.forEach((statusInfo) => {
         totalCount += statusInfo.count;
         switch (statusInfo.status) {
-            case ComplianceCheckStatus.PASS:
+            case ComplianceCheckStatusEnum.PASS:
                 passCount += statusInfo.count;
                 break;
-            case ComplianceCheckStatus.FAIL:
+            case ComplianceCheckStatusEnum.FAIL:
                 failCount += statusInfo.count;
                 break;
             default:
@@ -111,7 +112,7 @@ export function getComplianceLabelGroupColor(
 }
 
 const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject } = {
-    [ComplianceCheckStatus.PASS]: {
+    [ComplianceCheckStatusEnum.PASS]: {
         icon: (
             <Icon>
                 <CheckCircleIcon color="var(--pf-v5-global--success-color--100)" />
@@ -120,7 +121,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         statusText: 'Pass',
         tooltipText: 'Check was successful',
     },
-    [ComplianceCheckStatus.FAIL]: {
+    [ComplianceCheckStatusEnum.FAIL]: {
         icon: (
             <Icon>
                 <SecurityIcon color="var(--pf-v5-global--danger-color--100)" />
@@ -129,7 +130,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         statusText: 'Fail',
         tooltipText: 'Check was unsuccessful',
     },
-    [ComplianceCheckStatus.ERROR]: {
+    [ComplianceCheckStatusEnum.ERROR]: {
         icon: (
             <Icon>
                 <ExclamationTriangleIcon color="var(--pf-v5-global--disabled-color--100)" />
@@ -138,7 +139,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         statusText: 'Error',
         tooltipText: 'Check ran successfully, but could not complete',
     },
-    [ComplianceCheckStatus.INFO]: {
+    [ComplianceCheckStatusEnum.INFO]: {
         icon: (
             <Icon>
                 <ExclamationCircleIcon color="var(--pf-v5-global--disabled-color--100)" />
@@ -148,7 +149,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         tooltipText:
             'Check was successful and found something not severe enough to be considered an error',
     },
-    [ComplianceCheckStatus.MANUAL]: {
+    [ComplianceCheckStatusEnum.MANUAL]: {
         icon: (
             <Icon>
                 <WrenchIcon color="var(--pf-v5-global--disabled-color--100)" />
@@ -157,7 +158,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         statusText: 'Manual',
         tooltipText: 'Check cannot automatically assess the status and manual check is required',
     },
-    [ComplianceCheckStatus.NOT_APPLICABLE]: {
+    [ComplianceCheckStatusEnum.NOT_APPLICABLE]: {
         icon: (
             <Icon>
                 <BanIcon color="var(--pf-v5-global--disabled-color--100)" />
@@ -166,7 +167,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         statusText: 'Not Applicable',
         tooltipText: 'Check did not run as it is not applicable',
     },
-    [ComplianceCheckStatus.INCONSISTENT]: {
+    [ComplianceCheckStatusEnum.INCONSISTENT]: {
         icon: (
             <Icon>
                 <UnknownIcon color="var(--pf-v5-global--disabled-color--100)" />
@@ -175,7 +176,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         statusText: 'Inconsistent',
         tooltipText: 'Different nodes report different results',
     },
-    [ComplianceCheckStatus.UNSET_CHECK_STATUS]: {
+    [ComplianceCheckStatusEnum.UNSET_CHECK_STATUS]: {
         icon: (
             <Icon>
                 <ResourcesEmptyIcon color="var(--pf-v5-global--disabled-color--100)" />

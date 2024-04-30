@@ -7,7 +7,7 @@ import {
     ScheduleBase,
     UnsetSchedule,
     WeeklySchedule,
-} from 'services/ComplianceEnhancedService';
+} from 'services/ComplianceScanConfigurationService';
 import { getDayOfMonthWithOrdinal, getTimeHoursMinutes } from 'utils/dateUtils';
 
 export type ScanConfigParameters = {

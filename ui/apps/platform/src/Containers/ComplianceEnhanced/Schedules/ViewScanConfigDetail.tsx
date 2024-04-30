@@ -26,7 +26,7 @@ import useAlert from 'hooks/useAlert';
 import {
     runComplianceScanConfiguration,
     ComplianceScanConfigurationStatus,
-} from 'services/ComplianceEnhancedService';
+} from 'services/ComplianceScanConfigurationService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
