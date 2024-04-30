@@ -2,12 +2,18 @@ package deduperkey
 
 import (
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -117,4 +123,71 @@ func withKey(resource any, id string) Key {
 		ID:           id,
 		ResourceType: reflect.TypeOf(resource),
 	}
+}
+
+var allSensorEventTypes []string
+
+var whitelist = []string{
+	"SensorEvent_SensorHash",
+	"SensorEvent_Synced",
+	"SensorEvent_ReprocessDeployment",
+	"SensorEvent_ComplianceOperatorSuiteV2",
+	"SensorEvent_ResourcesSynced",
+}
+
+func TestAllSensorEventsWereAdded(t *testing.T) {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "/home/sbaumer/go/src/github.com/stackrox/stackrox/generated/internalapi/central/sensor_events.pb.go", nil, 0)
+	require.NoError(t, err)
+
+	allSensorEventTypes = []string{}
+	ast.Walk(VisitorFunc(FindStructs), file)
+
+	notFound := []string{}
+
+sensorEventLoop:
+	for _, sensorEventType := range allSensorEventTypes {
+		// types which are not used by the deduper can be skipped.
+		for _, whitelisted := range whitelist {
+			if sensorEventType == whitelisted {
+				continue sensorEventLoop
+			}
+		}
+
+		for _, deduperType := range deduperTypes {
+			deduperTypeSensorEvent := reflect.TypeOf(deduperType).String()
+
+			if strings.Contains(deduperTypeSensorEvent, sensorEventType) {
+				continue sensorEventLoop
+			}
+		}
+
+		notFound = append(notFound, sensorEventType)
+	}
+
+	assert.Empty(t, notFound, "Please add the missing types to the deduper keys or the whitelist.")
+}
+
+type VisitorFunc func(n ast.Node) ast.Visitor
+
+func (f VisitorFunc) Visit(n ast.Node) ast.Visitor {
+	return f(n)
+}
+
+func FindStructs(n ast.Node) ast.Visitor {
+	switch n := n.(type) {
+	case *ast.Package:
+		return VisitorFunc(FindStructs)
+	case *ast.File:
+		return VisitorFunc(FindStructs)
+	case *ast.GenDecl:
+		if n.Tok == token.TYPE {
+			return VisitorFunc(FindStructs)
+		}
+	case *ast.TypeSpec:
+		if strings.HasPrefix(n.Name.Name, "SensorEvent") {
+			allSensorEventTypes = append(allSensorEventTypes, n.Name.Name)
+		}
+	}
+	return nil
 }
