@@ -11,7 +11,7 @@ import {
 } from '@patternfly/react-core';
 import { BarsIcon, CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
-import { ComplianceScanStatsShim } from 'services/ComplianceEnhancedService';
+import { ComplianceScanStatsShim } from 'services/ComplianceResultsService';
 
 import { getStatusCounts } from '../compliance.coverage.utils';
 

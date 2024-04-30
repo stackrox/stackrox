@@ -31,7 +31,7 @@ import {
     ClusterCheckStatus,
     getSingleClusterResultsByScanConfig,
     getSingleClusterResultsByScanConfigCount,
-} from 'services/ComplianceEnhancedService';
+} from 'services/ComplianceResultsService';
 import { SearchFilter } from 'types/search';
 import { SortOption } from 'types/table';
 import { addRegexPrefixToFilters, searchValueAsArray } from 'utils/searchUtils';

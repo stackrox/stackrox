@@ -1,7 +1,7 @@
 import React from 'react';
 import { Flex, Label, LabelGroup, Skeleton, Title } from '@patternfly/react-core';
 
-import { ComplianceClusterOverallStats } from 'services/ComplianceEnhancedService';
+import { ComplianceClusterOverallStats } from 'services/ComplianceResultsService';
 
 import {
     getStatusCounts,

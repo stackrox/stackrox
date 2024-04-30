@@ -15,10 +15,8 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import {
-    ComplianceProfileSummary,
-    ComplianceIntegration,
-} from 'services/ComplianceEnhancedService';
+import { ComplianceIntegration } from 'services/ComplianceIntegrationService';
+import { ComplianceProfileSummary } from 'services/ComplianceProfileService';
 
 import {
     convertFormikParametersToSchedule,

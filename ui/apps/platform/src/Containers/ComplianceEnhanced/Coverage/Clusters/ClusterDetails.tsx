@@ -18,7 +18,7 @@ import { complianceEnhancedCoveragePath } from 'routePaths';
 import {
     getSingleClusterCombinedStats,
     getSingleClusterStatsByScanConfig,
-} from 'services/ComplianceEnhancedService';
+} from 'services/ComplianceResultsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ClusterDetailsHeader from './ClusterDetailsHeader';

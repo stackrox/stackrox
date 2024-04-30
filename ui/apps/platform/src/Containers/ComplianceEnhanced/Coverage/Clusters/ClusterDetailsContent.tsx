@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Divider, Flex, FlexItem, Gallery, GalleryItem } from '@patternfly/react-core';
 
 import useURLStringUnion from 'hooks/useURLStringUnion';
-import { ComplianceClusterScanStats } from 'services/ComplianceEnhancedService';
+import { ComplianceClusterScanStats } from 'services/ComplianceResultsService';
 
 import RadioButtonWithStats from '../components/RadioButtonWithStats';
 import ClusterDetailsTable from './ClusterDetailsTable';
