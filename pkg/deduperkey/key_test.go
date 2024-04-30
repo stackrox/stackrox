@@ -5,6 +5,8 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
+	"path"
 	"reflect"
 	"strings"
 	"testing"
@@ -136,15 +138,22 @@ var whitelist = []string{
 }
 
 func TestAllSensorEventsWereAdded(t *testing.T) {
+	pwd, err := os.Getwd()
+	if err != nil {
+		require.NoError(t, err)
+	}
+
 	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, "/home/sbaumer/go/src/github.com/stackrox/stackrox/generated/internalapi/central/sensor_events.pb.go", nil, 0)
+	file, err := parser.ParseFile(fset, path.Join(pwd, "../../generated/internalapi/central/sensor_events.pb.go"), nil, 0)
 	require.NoError(t, err)
 
 	allSensorEventTypes = []string{}
-	ast.Walk(VisitorFunc(FindStructs), file)
+	defer func() { allSensorEventTypes = []string{} }()
 
-	notFound := []string{}
+	ast.Walk(VisitorFunc(findStructs), file)
+	require.NotEmpty(t, allSensorEventTypes)
 
+	var notFound []string
 sensorEventLoop:
 	for _, sensorEventType := range allSensorEventTypes {
 		// types which are not used by the deduper can be skipped.
@@ -155,9 +164,10 @@ sensorEventLoop:
 		}
 
 		for _, deduperType := range deduperTypes {
-			deduperTypeSensorEvent := reflect.TypeOf(deduperType).String()
+			deduperTypeSensorEventRaw := reflect.TypeOf(deduperType).String()
+			deduperTypeSensorEvent := strings.TrimLeft(deduperTypeSensorEventRaw, "*central.")
 
-			if strings.Contains(deduperTypeSensorEvent, sensorEventType) {
+			if deduperTypeSensorEvent == sensorEventType {
 				continue sensorEventLoop
 			}
 		}
@@ -165,7 +175,7 @@ sensorEventLoop:
 		notFound = append(notFound, sensorEventType)
 	}
 
-	assert.Empty(t, notFound, "Please add the missing types to the deduper keys or the whitelist.")
+	assert.Empty(t, notFound, "Please add the missing types to the deduper keys or the whitelist if it should not be used in the deduper.")
 }
 
 type VisitorFunc func(n ast.Node) ast.Visitor
@@ -174,15 +184,15 @@ func (f VisitorFunc) Visit(n ast.Node) ast.Visitor {
 	return f(n)
 }
 
-func FindStructs(n ast.Node) ast.Visitor {
+func findStructs(n ast.Node) ast.Visitor {
 	switch n := n.(type) {
 	case *ast.Package:
-		return VisitorFunc(FindStructs)
+		return VisitorFunc(findStructs)
 	case *ast.File:
-		return VisitorFunc(FindStructs)
+		return VisitorFunc(findStructs)
 	case *ast.GenDecl:
 		if n.Tok == token.TYPE {
-			return VisitorFunc(FindStructs)
+			return VisitorFunc(findStructs)
 		}
 	case *ast.TypeSpec:
 		if strings.HasPrefix(n.Name.Name, "SensorEvent") {
