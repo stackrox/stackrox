@@ -294,3 +294,47 @@ func (c *Client) generateChallengeToken() (string, error) {
 
 	return challenge, nil
 }
+
+// CertLoader function that returns trusted TLS certificates to establish Central TLS connection
+type CertLoader func() []*x509.Certificate
+
+// StaticCertLoader returns CertLoader that always returns the provided slice of TLS certificates
+func StaticCertLoader(certs []*x509.Certificate) CertLoader {
+	return func() []*x509.Certificate {
+		return certs
+	}
+}
+
+// EmptyCertLoader returns CertLoader that always returns empty slice
+func EmptyCertLoader() CertLoader {
+	return StaticCertLoader([]*x509.Certificate{})
+}
+
+// RemoteCertLoader returns CertLoader that fetches the trusted certificates from Central
+func RemoteCertLoader(httpClient *Client) CertLoader {
+	// only logs errors because this feature should not break sensors start-up.
+	return func() []*x509.Certificate {
+		certs, err := httpClient.GetTLSTrustedCerts(context.Background())
+		if err != nil {
+			log.Warnf("Error fetching centrals TLS certs: %s", err)
+		}
+		return certs
+	}
+}
+
+// AuthenticatedCentralHTTPClient creates an authenticated Central HTTP client
+func AuthenticatedCentralHTTPClient(endpoint string, certs []*x509.Certificate) (*http.Client, error) {
+	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
+
+	if len(certs) != 0 {
+		opts = append(opts, clientconn.AddRootCAs(certs...))
+	}
+
+	transport, err := clientconn.AuthenticatedHTTPTransport(endpoint, mtls.CentralSubject, nil, opts...)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating http transport")
+	}
+	return &http.Client{
+		Transport: transport,
+	}, nil
+}

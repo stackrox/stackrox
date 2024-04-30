@@ -34,9 +34,24 @@ message ClusterCheckStatus {
   string check_uid = 4;
 }
 
-// Next tag: 11
-// ComplianceCheckResult provides the results of a compliance check against a rule
+// ComplianceCheckResult details of an instance of a compliance check result
 message ComplianceCheckResult {
+  string check_id = 1;
+  string check_name = 2;
+  string check_uid = 3;
+  string description = 4;
+  string instructions = 5;
+  string standard = 6;
+  repeated string control = 7;
+  string rationale = 8;
+  repeated string valuesUsed = 9;
+  repeated string warnings = 10;
+  ComplianceCheckStatus status = 11;
+  string rule_name = 12;
+}
+
+// ComplianceClusterCheckStatus provides the status of a compliance check result across clusters
+message ComplianceClusterCheckStatus {
   string check_id = 1;
   string check_name = 2;
 
@@ -44,7 +59,7 @@ message ComplianceCheckResult {
   string description = 4;
   string instructions = 5;
   string standard = 6;
-  string control = 7;
+  repeated string control = 7;
   string rationale = 8;
   repeated string valuesUsed = 9;
   repeated string warnings = 10;
@@ -54,7 +69,7 @@ message ComplianceCheckResult {
 message ComplianceScanResult {
   string scan_name = 1;
   string profile_name = 2;
-  repeated ComplianceCheckResult check_results = 3;
+  repeated ComplianceClusterCheckStatus check_results = 3;
   string scan_config_id = 4;
 }
 
@@ -138,6 +153,13 @@ message ListComplianceCheckClusterResponse {
   int32 total_count = 4;
 }
 
+message ListComplianceCheckResultResponse {
+  repeated ComplianceCheckResult check_results = 1;
+  string profile_name = 2;
+  string cluster_id = 3;
+  int32 total_count = 4;
+}
+
 // ComplianceScanResultsCount gives count of scan results
 message CountComplianceScanResults {
   int32 count = 1;
@@ -159,9 +181,15 @@ message ComplianceProfileCheckRequest {
   RawQuery query = 3;
 }
 
+message ComplianceProfileClusterRequest {
+  string profile_name = 1;
+  string cluster_id = 2;
+  RawQuery query = 3;
+}
+
 service ComplianceResultsService {
   // GetComplianceScanCheckResult returns the specific result by ID
-  rpc GetComplianceScanCheckResult(ResourceByID) returns (ComplianceCheckResult) {
+  rpc GetComplianceScanCheckResult(ResourceByID) returns (ComplianceClusterCheckStatus) {
     option (google.api.http) = {get: "/v2/compliance/scan/result/{id}"};
   }
 
@@ -231,9 +259,14 @@ service ComplianceResultsService {
     option (google.api.http) = {get: "/v2/compliance/results/profiles/{profile_name}/clusters"};
   }
 
-  // GetComplianceProfileCheckClusterResult lists status of a check per cluster
-  rpc GetComplianceProfileCheckClusterResult(ComplianceProfileCheckRequest) returns (ListComplianceCheckClusterResponse) {
+  // GetComplianceProfileCheckResult lists status of a check per cluster
+  rpc GetComplianceProfileCheckResult(ComplianceProfileCheckRequest) returns (ListComplianceCheckClusterResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/results/profile/{profile_name}/checks/{check_name}"};
+  }
+
+  // GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
+  rpc GetComplianceProfileClusterResults(ComplianceProfileClusterRequest) returns (ListComplianceCheckResultResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/clusters/{cluster_id}"};
   }
 
   rpc GetComplianceOverallClusterCount(RawQuery) returns (CountComplianceScanResults) {

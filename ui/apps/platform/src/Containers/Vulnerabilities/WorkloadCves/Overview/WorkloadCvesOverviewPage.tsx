@@ -46,7 +46,7 @@ import {
     parseWorkloadQuerySearchFilter,
     getVulnStateScopedQueryString,
 } from '../../utils/searchUtils';
-import { DEFAULT_PAGE_SIZE } from '../../constants';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
@@ -154,7 +154,7 @@ function WorkloadCvesOverviewPage() {
     // as a fallback
     const localStorageValue = isFixabilityFiltersEnabled ? storedValue : defaultStorage;
 
-    const pagination = useURLPagination(DEFAULT_PAGE_SIZE);
+    const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const sort = useURLSort({
         sortFields: getWorkloadSortFields(activeEntityTabKey),

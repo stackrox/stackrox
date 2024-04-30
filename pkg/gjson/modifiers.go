@@ -6,9 +6,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/tidwall/gjson"
+	"golang.org/x/exp/maps"
 )
 
 // CustomModifier is a type alias for a gjson.Modifier function used within gjson.AddModifier
@@ -148,7 +148,7 @@ func TextModifier() CustomModifier {
 			return true
 		})
 		// Ensure we keep the same order for the texts we generated.
-		keys := maputil.Keys(texts)
+		keys := maps.Keys(texts)
 		sort.Ints(keys)
 		var result []string
 		for _, key := range keys {

@@ -16,9 +16,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"golang.org/x/exp/maps"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -345,5 +345,5 @@ func (s *FileStore) getAllMirrorSets() ([]*operatorV1Alpha1.ImageContentSourcePo
 	s.ruleRWMutex.RLock()
 	defer s.ruleRWMutex.RUnlock()
 
-	return maputil.Values(s.icspRules), maputil.Values(s.idmsRules), maputil.Values(s.itmsRules)
+	return maps.Values(s.icspRules), maps.Values(s.idmsRules), maps.Values(s.itmsRules)
 }

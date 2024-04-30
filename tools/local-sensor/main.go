@@ -295,12 +295,13 @@ func main() {
 	isFakeCentral := localConfig.CentralEndpoint == ""
 
 	var connection centralclient.CentralConnectionFactory
+	var certLoader centralclient.CertLoader
 	var spyCentral *centralDebug.FakeService
 	if isFakeCentral {
-		connection, spyCentral = setupCentralWithFakeConnection(localConfig)
+		connection, certLoader, spyCentral = setupCentralWithFakeConnection(localConfig)
 		defer spyCentral.Stop()
 	} else {
-		connection = setupCentralWithRealConnection(k8sClient, localConfig)
+		connection, certLoader = setupCentralWithRealConnection(k8sClient, localConfig)
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
@@ -309,6 +310,7 @@ func main() {
 	sensorConfig := sensor.ConfigWithDefaults().
 		WithK8sClient(k8sClient).
 		WithCentralConnectionFactory(connection).
+		WithCertLoader(certLoader).
 		WithLocalSensor(true).
 		WithWorkloadManager(workloadManager)
 
@@ -409,7 +411,7 @@ func main() {
 	}
 }
 
-func setupCentralWithRealConnection(cli client.Interface, localConfig localSensorConfig) centralclient.CentralConnectionFactory {
+func setupCentralWithRealConnection(cli client.Interface, localConfig localSensorConfig) (centralclient.CentralConnectionFactory, centralclient.CertLoader) {
 	certFetcher := certs.NewCertificateFetcher(cli, certs.WithOutputDir("tmp/"))
 	if err := certFetcher.FetchCertificatesAndSetEnvironment(); err != nil {
 		utils.CrashOnError(errors.Wrap(err, "failed to retrieve sensor's certificates"))
@@ -419,15 +421,18 @@ func setupCentralWithRealConnection(cli client.Interface, localConfig localSenso
 	utils.CrashOnError(os.Setenv("ROX_CENTRAL_ENDPOINT", localConfig.CentralEndpoint))
 
 	clientconn.SetUserAgent(clientconn.Sensor)
-	centralConnFactory, err := centralclient.NewCentralConnectionFactory(env.CentralEndpoint.Setting())
-	if err != nil {
-		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing gRPC client to endpoint %s", env.CentralEndpoint.Setting()))
-	}
 
-	return centralConnFactory
+	centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())
+	if err != nil {
+		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing HTTP client to endpoint %s", env.CentralEndpoint.Setting()))
+	}
+	centralConnFactory := centralclient.NewCentralConnectionFactory(centralClient)
+	centralCertLoader := centralclient.RemoteCertLoader(centralClient)
+
+	return centralConnFactory, centralCertLoader
 }
 
-func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclient.CentralConnectionFactory, *centralDebug.FakeService) {
+func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclient.CentralConnectionFactory, centralclient.CertLoader, *centralDebug.FakeService) {
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "tools/local-sensor/certs/cert.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "tools/local-sensor/certs/key.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "tools/local-sensor/certs/caCert.pem"))
@@ -466,7 +471,7 @@ func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclien
 	fakeCentral.OnShutdown(shutdownFakeServer)
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
-	return fakeConnectionFactory, spyCentral
+	return fakeConnectionFactory, centralclient.EmptyCertLoader(), spyCentral
 }
 
 type sensorMessageJSONOutput struct {

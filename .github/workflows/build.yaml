@@ -230,7 +230,7 @@ jobs:
       - name: Generate the swagger docs
         run: |
           make swagger-docs
-          # Workarround to handle https://github.com/actions/cache/issues/753
+          # Workaround to handle https://github.com/actions/cache/issues/753
           rm -rf .proto
 
       - uses: ./.github/actions/upload-artifact-retry
@@ -644,14 +644,35 @@ jobs:
 
   scan-images-with-roxctl:
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
     needs:
       - build-and-push-main
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.68
-      env:
-        STACKROX_CI_INSTANCE_API_KEY: ${{ secrets.STACKROX_CI_INSTANCE_API_KEY }}
-        STACKROX_CI_INSTANCE_CENTRAL_HOST: ${{ secrets.STACKROX_CI_INSTANCE_CENTRAL_HOST }}
+      - build-and-push-operator
+      - push-main-manifests
+    name: Check images for vulnerabilities
+    runs-on: ubuntu-latest
+    permissions:
+      # Needed for stackrox/central-login to create the JWT token.
+      id-token: write
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          [
+            "central-db",
+            "collector",
+            "collector-slim",
+            "main",
+            # TODO(ROX-23940): re-enable roxctl scanning after #10928 has been released.
+            # "roxctl",
+            "scanner",
+            "scanner-db",
+            "scanner-db-slim",
+            "scanner-slim",
+            "scanner-v4",
+            "scanner-v4-db",
+            "stackrox-operator",
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -663,28 +684,32 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Checkout submodules
-        run: |
-            git submodule update --init
-
-      - uses: ./.github/actions/handle-tagged-build
-
-      - uses: actions/download-artifact@v4
+      - name: Central login
+        uses: stackrox/central-login@v1
         with:
-          name: cli-build
-
-      - name: Unpack cli build
-        run: |
-          tar xvzf cli-build.tgz
+          endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
 
       - name: Install roxctl
-        run: |
-          make cli-install
-          roxctl version
+        uses: stackrox/roxctl-installer-action@v1
+        with:
+          central-endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
+          central-token: ${{ env.ROX_API_TOKEN }}
 
-      - name: Scan images
+      - name: Scan images for vulnerabilities
         run: |
-          ./release/scripts/scan-images-with-roxctl.sh
+          release_tag=$(make tag)
+          if [[ ${{ matrix.image }} =~ "operator" ]]; then
+            release_tag=$(make -C operator --silent tag)
+          fi
+          roxctl image scan --retries=10 --retry-delay=15 --force --output=sarif \
+            --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
+            > results.sarif
+
+      - name: Upload roxctl scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          category: ${{ matrix.image }}
+          sarif_file: results.sarif
 
   slack-on-build-failure:
     env:

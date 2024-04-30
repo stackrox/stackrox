@@ -16,6 +16,7 @@ import (
 type CreateOptions struct {
 	workloadManager                    *fake.WorkloadManager
 	centralConnFactory                 centralclient.CentralConnectionFactory
+	certLoader                         centralclient.CertLoader
 	localSensor                        bool
 	k8sClient                          client.Interface
 	traceWriter                        io.Writer
@@ -36,6 +37,7 @@ func ConfigWithDefaults() *CreateOptions {
 	return &CreateOptions{
 		workloadManager:                    nil,
 		centralConnFactory:                 nil,
+		certLoader:                         centralclient.EmptyCertLoader(),
 		k8sClient:                          nil,
 		localSensor:                        false,
 		traceWriter:                        nil,
@@ -65,6 +67,11 @@ func (cfg *CreateOptions) WithWorkloadManager(manager *fake.WorkloadManager) *Cr
 // Default: nil
 func (cfg *CreateOptions) WithCentralConnectionFactory(centralConnFactory centralclient.CentralConnectionFactory) *CreateOptions {
 	cfg.centralConnFactory = centralConnFactory
+	return cfg
+}
+
+func (cfg *CreateOptions) WithCertLoader(certLoader centralclient.CertLoader) *CreateOptions {
+	cfg.certLoader = certLoader
 	return cfg
 }
 

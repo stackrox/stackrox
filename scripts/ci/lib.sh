@@ -54,6 +54,8 @@ ci_exit_trap() {
 
     if [[ "${exit_code}" == "0" ]]; then
         set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_PASSED}"
+    elif [[ "${exit_code}" == "130" ]]; then
+        set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_CANCELED}"
     else
         set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_FAILED}"
     fi

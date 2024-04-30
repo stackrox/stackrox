@@ -2,10 +2,12 @@ package connection
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -83,5 +85,48 @@ func Test_SensorReconnects(t *testing.T) {
 		// We applied the resource _after_ Sensor restarted. Now we should check that this deployment will be sent to Central.
 		_, err = c.ApplyResourceAndWaitNoObject(context.Background(), t, helper.DefaultNamespace, NginxDeployment1, nil)
 		require.NoError(t, err)
+	}))
+}
+
+func Test_KernelObjectProxy(t *testing.T) {
+	c, err := helper.NewContextWithConfig(t, helper.Config{
+		InitialSystemPolicies: nil,
+		CertFilePath:          "../../../tools/local-sensor/certs/",
+	})
+
+	t.Cleanup(c.Stop)
+
+	require.NoError(t, err)
+
+	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
+		client := helper.NewHTTPTestClient(t, storage.ServiceType_COLLECTOR_SERVICE)
+		req, err := http.NewRequest(http.MethodGet, "https://localhost:8443/kernel-objects/2.9.0/collector-ebpf-6.5.0-15-generic.o.gz", nil)
+		require.NoError(t, err)
+
+		resp, err := client.Do(req)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode, "response: %v", resp)
+	}))
+}
+
+func Test_ScannerDefinitionsProxy(t *testing.T) {
+	t.Setenv("ROX_LOCAL_IMAGE_SCANNING_ENABLED", "true")
+	c, err := helper.NewContextWithConfig(t, helper.Config{
+		InitialSystemPolicies: nil,
+		CertFilePath:          "../../../tools/local-sensor/certs/",
+	})
+
+	t.Cleanup(c.Stop)
+
+	require.NoError(t, err)
+
+	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
+		client := helper.NewHTTPTestClient(t, storage.ServiceType_SCANNER_SERVICE)
+		req, err := http.NewRequest(http.MethodGet, "https://localhost:8443/scanner/definitions", nil)
+		require.NoError(t, err)
+
+		resp, err := client.Do(req)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode, "response: %v", resp)
 	}))
 }

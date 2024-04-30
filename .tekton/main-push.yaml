@@ -60,7 +60,6 @@ spec:
         resources:
           requests:
             storage: 3Gi
-      status: { }
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
@@ -102,6 +101,3 @@ spec:
 
   pipelineRef:
     name: main-pipeline
-
-  taskRunTemplate: { }
-status: { }

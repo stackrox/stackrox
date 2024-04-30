@@ -14,7 +14,7 @@ import TooltipTh from 'Components/TooltipTh';
 import CvssFormatted from 'Components/CvssFormatted';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import PartialCVEDataAlert from '../../WorkloadCves/components/PartialCVEDataAlert';
+import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import { sortCveDistroList } from '../../utils/sortUtils';
 import { getPlatformEntityPagePath } from '../../utils/searchUtils';
 import { QuerySearchFilter } from '../../types';

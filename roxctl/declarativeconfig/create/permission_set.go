@@ -13,11 +13,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
+	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
@@ -80,7 +80,7 @@ func (p *permissionSetCmd) Validate() error {
 	resourceWithAccess := make([]declarativeconfig.ResourceWithAccess, 0, len(accessMap))
 
 	// Keep an alphabetic order within the resources.
-	resources := maputil.Keys(accessMap)
+	resources := maps.Keys(accessMap)
 	sort.Strings(resources)
 
 	// TODO(ROX-16330): Resources are currently defined within central/role/resources, and hence cannot be reused here yet.
@@ -91,7 +91,7 @@ func (p *permissionSetCmd) Validate() error {
 		if !ok {
 			invalidAccessErrors = multierror.Append(invalidAccessErrors, errox.InvalidArgs.
 				Newf("invalid access specified for resource %s: %s. The allowed values for access are: [%s]",
-					resource, accessMap[resource], strings.Join(maputil.Keys(storage.Access_value), ",")))
+					resource, accessMap[resource], strings.Join(maps.Keys(storage.Access_value), ",")))
 			continue
 		}
 		resourceWithAccess = append(resourceWithAccess, declarativeconfig.ResourceWithAccess{

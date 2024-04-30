@@ -118,6 +118,26 @@ jobs:
             --jq '.[] | select((.title | startswith("${{ needs.variables.outputs.named-release-patch }}-rc.")) and (.state == "open")) | .number' \
           | xargs -I % gh api -X DELETE repos/${{ github.repository }}/milestones/%
 
+      - name: Create first milestone for the next patch release
+        if: env.DRY_RUN == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          NEXT_RELEASE_FIRST_MILESTONE="${{ needs.variables.outputs.next-named-release-patch }}-rc.1"
+          if ! http_code=$(gh api --silent -X POST \
+            "repos/${{github.repository}}/milestones" \
+            -f title="${NEXT_RELEASE_FIRST_MILESTONE}" \
+            2>&1); then
+
+            if grep "HTTP 422" <<< "$http_code"; then
+              echo "Milestone ${NEXT_RELEASE_FIRST_MILESTONE} already exists." >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::error::Couldn't create milestone ${NEXT_RELEASE_FIRST_MILESTONE}: $http_code"
+              exit 1
+            fi
+          fi
+
       - name: Post to Slack
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
