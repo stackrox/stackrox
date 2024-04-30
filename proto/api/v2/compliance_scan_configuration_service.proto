@@ -3,6 +3,7 @@ syntax = "proto3";
 package v2;
 
 import "api/v2/common.proto";
+import "api/v2/report_service.proto";
 import "api/v2/search_query.proto";
 import "api/v2/user.proto";
 import weak "google/api/annotations.proto";
@@ -36,6 +37,7 @@ message BaseComplianceScanConfigurationSettings {
   repeated string profiles = 2;
   Schedule scan_schedule = 3;
   string description = 4;
+  repeated NotifierConfiguration notifiers = 5;
 }
 
 // Next available tag: 5
