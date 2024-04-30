@@ -2,7 +2,6 @@ package printers
 
 import (
 	"io"
-	"slices"
 	"strings"
 
 	"github.com/owenrumney/go-sarif/v2/sarif"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 )
