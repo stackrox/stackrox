@@ -7,24 +7,18 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dedupingqueue"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/uniqueue"
 )
 
 var (
 	log = logging.LoggerForModule()
 )
-
-// Queue defines the aggregator queue
-type Queue interface {
-	PullBlocking(concurrency.Waitable) uniqueue.Item
-	Push(uniqueue.Item)
-}
 
 type deploymentRef struct {
 	context          context.Context
@@ -35,8 +29,8 @@ type deploymentRef struct {
 	deploymentTiming *central.Timing
 }
 
-// GetKey returns the key to index the deploymentRef in the queue
-func (d *deploymentRef) GetKey() string {
+// GetDedupeKey returns the key to index the deploymentRef in the queue
+func (d *deploymentRef) GetDedupeKey() string {
 	return fmt.Sprintf("%s-%s-%t-%t", d.id, d.action.String(), d.skipResolving, d.forceDetection)
 }
 
@@ -47,7 +41,7 @@ type resolverImpl struct {
 	storeProvider store.Provider
 	stopper       concurrency.Stopper
 
-	deploymentRefQueue Queue
+	deploymentRefQueue *dedupingqueue.DedupingQueue[string]
 }
 
 // Start the resolverImpl component

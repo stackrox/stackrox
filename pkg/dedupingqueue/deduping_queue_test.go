@@ -1,4 +1,4 @@
-package uniqueue
+package dedupingqueue
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ func TestUniQueue(t *testing.T) {
 func (s *uniQueueSuite) TestPushPull() {
 	items := []*testItem{{1}, {2}, {1}, {3}}
 	expectedItems := []*testItem{{1}, {2}, {3}}
-	q := NewUniQueue()
+	q := NewDedupingQueue[string]()
 	for _, i := range items {
 		q.Push(i)
 	}
@@ -36,8 +36,28 @@ func (s *uniQueueSuite) TestPushPull() {
 	}
 }
 
+func (s *uniQueueSuite) TestPushItemsWithUndefinedKey() {
+	// If the item as an implemented `GetDedupeKey`, all items must be pushed to the queue
+	items := []*itemWithNoKeyFunction{{val: 0}, {val: 0}}
+	q := NewDedupingQueue[string]()
+	for _, i := range items {
+		q.Push(i)
+	}
+	s.Assert().Equal(q.queue.Len(), len(items), "should have len %d", len(items))
+}
+
+func (s *uniQueueSuite) TestPullFromEmpty() {
+	q := NewDedupingQueue[string]()
+	// Pulling from an empty queue should not block
+	// This should never happen as `pull` should only be called from `PullBlocking`
+	s.Never(func() bool {
+		i := q.pull()
+		return i != nil
+	}, 10*time.Millisecond, time.Millisecond)
+}
+
 func (s *uniQueueSuite) TestPullBlocking() {
-	q := NewUniQueue()
+	q := NewDedupingQueue[string]()
 	stopSignal := concurrency.NewSignal()
 	time.AfterFunc(200*time.Millisecond, func() {
 		stopSignal.Signal()
@@ -52,6 +72,14 @@ type testItem struct {
 	value int
 }
 
-func (i *testItem) GetKey() string {
+func (i *testItem) GetDedupeKey() string {
 	return fmt.Sprintf("%d", i.value)
+}
+
+type itemWithNoKeyFunction struct {
+	val int
+}
+
+func (u *itemWithNoKeyFunction) GetDedupeKey() string {
+	return ""
 }
