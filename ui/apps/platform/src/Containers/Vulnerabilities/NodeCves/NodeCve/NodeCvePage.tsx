@@ -34,7 +34,7 @@ import {
     parseWorkloadQuerySearchFilter,
 } from '../../utils/searchUtils';
 import CvePageHeader from '../../components/CvePageHeader';
-import { DEFAULT_PAGE_SIZE } from '../../constants';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import AffectedNodesTable from './AffectedNodesTable';
 import AffectedNodesSummaryCard from './AffectedNodesSummaryCard';
 import useAffectedNodes from './useAffectedNodes';
@@ -55,7 +55,7 @@ function NodeCvePage() {
         CVE: [exactCveIdSearchRegex],
     });
 
-    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_PAGE_SIZE);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
 
