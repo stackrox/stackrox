@@ -14,8 +14,6 @@ function sortTableData(tableData: NodeComponent[], sortOption: ApiSortOption): N
                 return row.name?.toLowerCase();
             case 'Type':
                 return row.source?.toLowerCase();
-            case 'Operating system':
-                return row.operatingSystem?.toLowerCase();
             default:
                 return '';
         }
@@ -30,7 +28,6 @@ export const nodeComponentFragment = gql`
     fragment NodeComponentFragment on NodeComponent {
         name
         source
-        operatingSystem
         version
         fixedIn
     }
@@ -39,12 +36,11 @@ export const nodeComponentFragment = gql`
 export type NodeComponent = {
     name: string;
     source: string;
-    operatingSystem: string;
     version: string;
     fixedIn: string;
 };
 
-const sortFields = ['Component', 'Type', 'Operating system'];
+const sortFields = ['Component', 'Type'];
 const defaultSortOption = { field: 'Component', direction: 'asc' } as const;
 
 export type NodeComponentsTableProps = {
@@ -66,17 +62,15 @@ function NodeComponentsTable({ data }: NodeComponentsTableProps) {
                 <Tr>
                     <Th sort={getSortParams('Component')}>Component</Th>
                     <Th sort={getSortParams('Type')}>Type</Th>
-                    <Th sort={getSortParams('Operating system')}>Operating system</Th>
                     <Th>Version</Th>
                     <Th>Fixed in</Th>
                 </Tr>
             </Thead>
             <Tbody>
-                {sortedData.map(({ name, source, operatingSystem, version, fixedIn }) => (
+                {sortedData.map(({ name, source, version, fixedIn }) => (
                     <Tr key={name}>
                         <Td dataLabel="Component">{name}</Td>
                         <Td dataLabel="Type">{source}</Td>
-                        <Td dataLabel="Operating system">{operatingSystem}</Td>
                         <Td dataLabel="Version">{version}</Td>
                         <Td dataLabel="Fixed in">
                             {fixedIn || <VulnerabilityFixableIconText isFixable={false} />}

@@ -5,17 +5,14 @@ import NodeComponentsTable from './NodeComponentsTable';
 const mockData = [
     {
         name: 'podman',
-        operatingSystem: 'rhel',
         source: 'INFRASTRUCTURE',
     },
     {
         name: 'cri-o',
-        operatingSystem: 'Ubuntu',
         source: 'KUBELET',
     },
     {
         name: 'kernel',
-        operatingSystem: 'Debian',
         source: 'INFRASTRUCTURE',
     },
 ];
@@ -66,25 +63,6 @@ describe(Cypress.spec.relative, () => {
             cy.get(typeCell).eq(0).should('have.text', 'INFRASTRUCTURE');
             cy.get(typeCell).eq(1).should('have.text', 'INFRASTRUCTURE');
             cy.get(typeCell).eq(2).should('have.text', 'KUBELET');
-        });
-
-        it('should sort by the operating system', () => {
-            setup(mockData);
-
-            const osCell = 'td[data-label="Operating system"]';
-
-            // Since this column is not the default sort, the starting sort will be descending
-            // Click the operating system header to sort by operating system descending
-            cy.get('th:contains("Operating system")').click();
-            cy.get(osCell).eq(0).should('have.text', 'Ubuntu');
-            cy.get(osCell).eq(1).should('have.text', 'rhel');
-            cy.get(osCell).eq(2).should('have.text', 'Debian');
-
-            // Click the operating system header to sort by operating system ascending
-            cy.get('th:contains("Operating system")').click();
-            cy.get(osCell).eq(0).should('have.text', 'Debian');
-            cy.get(osCell).eq(1).should('have.text', 'rhel');
-            cy.get(osCell).eq(2).should('have.text', 'Ubuntu');
         });
     });
 });

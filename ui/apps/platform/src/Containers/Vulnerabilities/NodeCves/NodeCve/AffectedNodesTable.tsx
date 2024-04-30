@@ -29,7 +29,7 @@ export const affectedNodeFragment = gql`
     fragment AffectedNode on Node {
         id
         name
-        operatingSystem
+        osImage
         cluster {
             name
         }
@@ -50,7 +50,7 @@ export const affectedNodeFragment = gql`
 export type AffectedNode = {
     id: string;
     name: string;
-    operatingSystem: string;
+    osImage: string;
     cluster: {
         name: string;
     };
@@ -141,7 +141,9 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
                                     <Td dataLabel="Cluster">
                                         <Truncate position="middle" content={node.cluster.name} />
                                     </Td>
-                                    <Td dataLabel="Operating system">{node.operatingSystem}</Td>
+                                    <Td dataLabel="Operating system">
+                                        <Truncate position="middle" content={node.osImage} />
+                                    </Td>
                                     <Td dataLabel="Affected components">
                                         {nodeComponents.length === 1
                                             ? nodeComponents[0].name
