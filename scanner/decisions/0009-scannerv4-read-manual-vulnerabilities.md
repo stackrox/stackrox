@@ -16,7 +16,7 @@ Therefore, it is essential to improve this process to ensure that manually inser
 
 Introduce a JSON file at /scanner/updater/manual/vulns.json (The format of the json will be listed below), and update the corresponding manual vulnerability updater located in scanner/updater/manual/manual.go. 
 This updater will be utilized within the existing vulnerability updating GitHub Actions workflow. 
-The new manual vulnerability updater will retrieve and parse the manually inserted data from https://github.com/stackrox/stackrox/blob/master/scanner/updater/manual/vulns.json. 
+The new manual vulnerability updater will retrieve and parse the manually inserted data from https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.json. 
 The parsed vulnerabilities will then be added into a vulns.zst file, which is generated during the updater process in the GitHub Action. 
 When this vulns.zst file is imported by Scanner v4, it will also include the manually inserted vulnerability data as part of the ZST bundle.
 
