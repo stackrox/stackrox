@@ -90,6 +90,10 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
 
     return (
         // TODO: (vjw, 15-Nov-2023) remove the DndProvider after the PolicyCriteriaModal flag has been made unflagged
+        /* 
+        (dv 2024-05-01) Upgrading to React types 18 causes a type error below
+
+        @ts-expect-error DndProvider types do not expect children as props */
         <DndProvider backend={HTML5Backend}>
             <Flex fullWidth={{ default: 'fullWidth' }} className="pf-v5-u-h-100">
                 <Flex

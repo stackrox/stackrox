@@ -91,6 +91,12 @@ const StyleGroup: React.FunctionComponent<React.PropsWithChildren<StyleGroupProp
     className = `${className} ${passedData?.isFadedOut ? 'pf-topology-node-faded' : ''}`.trim();
 
     return (
+        /* 
+        (dv 2024-05-01) 
+        Upgrading to React types 18 causes a type error below as React 18 no longer includes `children`
+        as a prop of `React.FC` by default
+
+        @ts-expect-error DefaultGroup does not expect children as a prop */
         <DefaultGroup
             element={element}
             collapsedWidth={collapsedWidth}

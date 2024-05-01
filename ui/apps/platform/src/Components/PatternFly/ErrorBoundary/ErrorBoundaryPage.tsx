@@ -112,7 +112,7 @@ function ErrorBoundaryPage({ error, errorInfo }: ErrorBoundaryPageProps): ReactE
                                 flex={{ default: 'flex_1' }}
                             >
                                 <ErrorBoundaryCodeBlock
-                                    code={errorInfo.componentStack}
+                                    code={errorInfo.componentStack ?? ''}
                                     idForButton="error-boundary-button-component-stack"
                                     idForContent="error-boundary-content-component-stack"
                                     phraseForCopied="Copied to clipboard: Component stack"
