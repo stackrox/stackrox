@@ -16,19 +16,20 @@ import {
     getHighestVulnerabilitySeverity,
 } from '../../utils/vulnerabilityUtils';
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
-import NodeComponentsTable from '../components/NodeComponentsTable';
+import NodeComponentsTable, {
+    NodeComponent,
+    nodeComponentFragment,
+} from '../components/NodeComponentsTable';
 
 export const nodeVulnerabilityFragment = gql`
+    ${nodeComponentFragment}
     fragment NodeVulnerabilityFragment on NodeVulnerability {
         cve
         summary
         cvss
         scoreVersion
         nodeComponents(query: $query) {
-            name
-            source
-            operatingSystem
-            version
+            ...NodeComponentFragment
             nodeVulnerabilities(query: $query) {
                 severity
                 isFixable
@@ -43,17 +44,13 @@ export type NodeVulnerability = {
     summary: string;
     cvss: number;
     scoreVersion: string;
-    nodeComponents: {
-        name: string;
-        source: string;
-        operatingSystem: string;
-        version: string;
+    nodeComponents: (NodeComponent & {
         nodeVulnerabilities: {
             severity: string;
             isFixable: boolean;
             fixedByVersion: string;
         }[];
-    }[];
+    })[];
 };
 
 export type CVEsTableProps = {
@@ -129,7 +126,7 @@ function CVEsTable({ tableState }: CVEsTableProps) {
                                     <Td />
                                     <Td colSpan={COL_SPAN - 1}>
                                         <ExpandableRowContent>
-                                            <NodeComponentsTable />
+                                            <NodeComponentsTable data={nodeComponents} />
                                         </ExpandableRowContent>
                                     </Td>
                                 </Tr>
