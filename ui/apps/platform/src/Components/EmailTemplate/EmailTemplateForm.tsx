@@ -13,24 +13,13 @@ import {
     TextContent,
     TextInput,
 } from '@patternfly/react-core';
-import { FormikContextType, FormikErrors, FormikTouched } from 'formik';
-import get from 'lodash/get';
+import { FormikContextType } from 'formik';
 
 import {
     EmailTemplateFormData,
     maxCustomBodyLength,
     maxCustomSubjectLength,
 } from './EmailTemplate.utils';
-
-function getFieldValidated(
-    errors: FormikErrors<EmailTemplateFormData>,
-    touched: FormikTouched<EmailTemplateFormData>,
-    fieldId: string
-) {
-    const isFieldInvalid = !!(get(errors, fieldId) && get(touched, fieldId));
-    const fieldValidated = isFieldInvalid ? 'error' : 'default';
-    return fieldValidated;
-}
 
 export type EmailTemplateFormProps = {
     customBodyDefault: string;
@@ -54,8 +43,8 @@ function EmailTemplateForm({
         values,
     } = formik;
 
-    const isSubjectValidated = getFieldValidated(errors, touched, 'customSubject');
-    const isBodyValidated = getFieldValidated(errors, touched, 'customBody');
+    const variantForBody = errors.customBody && touched.customBody ? 'error' : 'default';
+    const variantForSubject = errors.customSubject && touched.customSubject ? 'error' : 'default';
 
     return (
         <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" onSubmit={handleSubmit}>
@@ -64,7 +53,7 @@ function EmailTemplateForm({
                     id="customSubject"
                     type="text"
                     value={values.customSubject}
-                    validated={isSubjectValidated}
+                    validated={variantForSubject}
                     onChange={(e) => handleChange(e)}
                     onBlur={handleBlur}
                     isDisabled={isSubmitting}
@@ -72,7 +61,7 @@ function EmailTemplateForm({
                 />
                 <FormHelperText>
                     <HelperText>
-                        <HelperTextItem variant={isSubjectValidated}>
+                        <HelperTextItem variant={variantForSubject}>
                             {errors.customSubject}
                         </HelperTextItem>
                     </HelperText>
@@ -104,7 +93,7 @@ function EmailTemplateForm({
                     id="customBody"
                     type="text"
                     value={values.customBody}
-                    validated={isBodyValidated}
+                    validated={variantForBody}
                     onChange={(e) => handleChange(e)}
                     onBlur={handleBlur}
                     isDisabled={isSubmitting}
@@ -113,7 +102,7 @@ function EmailTemplateForm({
                 />
                 <FormHelperText>
                     <HelperText>
-                        <HelperTextItem variant={isBodyValidated}>
+                        <HelperTextItem variant={variantForBody}>
                             {errors.customBody}
                         </HelperTextItem>
                     </HelperText>
