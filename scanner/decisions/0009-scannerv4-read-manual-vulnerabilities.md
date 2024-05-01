@@ -6,8 +6,10 @@
 ## Context
 
 Currently, Scanner v4 includes a feature for manually updating vulnerabilities to add and update urgent vulnerability data. 
-This allows clients to access the most recent vulnerability information before it becomes officially available in any data source. 
-However, this manual update process has a major flaw: the vulnerability data is integrated with the codebase, which means clients cannot access the updated data unless they install a patch release that includes these vulnerabilities. 
+This allows clients to access the most recent vulnerability information before it becomes officially available in any data source.
+However, this manual update process has a significant flaw. The vulnerability data is integrated with the codebase, which means that updating manual vulnerabilities requires a code change. 
+Currently, the vulnerability bundle workflow serves one vulnerability bundle per X.Y.Z stream and uses release tags to generate the bundle. Thus, changing each release branch, publishing a new patch release, and upgrading clients to start using the new bundle version would be necessary. 
+This approach restricts clients' ability to access the new bundle until they upgrade.
 Therefore, it is essential to improve this process to ensure that manually inserted vulnerabilities are not dependent on any ACS release cycle. This improvement would enable all versions starting from ACS 4.4 to retrieve manually updated vulnerabilities without any issues.
 
 ## Decision
