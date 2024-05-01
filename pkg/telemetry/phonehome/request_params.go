@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 )
 
 // RequestParams holds intercepted call parameters.
@@ -17,6 +18,8 @@ type RequestParams struct {
 	Code      int
 	GRPCReq   any
 	HTTPReq   *http.Request
+	// HTTP Headers or, for pure gRPC, the metadata.
+	Headers requestinfo.HeadersMultiMap
 }
 
 // ServiceMethod describes a service method with its gRPC and HTTP variants.

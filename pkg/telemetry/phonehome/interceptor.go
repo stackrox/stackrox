@@ -64,6 +64,7 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 			Path:      path,
 			Code:      grpcError.ErrToHTTPStatus(err),
 			GRPCReq:   req,
+			Headers:   requestinfo.AsHeadersMultiMap(ri.HTTPRequest.Headers),
 		}
 	}
 
@@ -74,6 +75,7 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 		Path:      grpcFullMethod,
 		Code:      int(erroxGRPC.RoxErrorToGRPCCode(err)),
 		GRPCReq:   req,
+		Headers:   ri.Metadata,
 	}
 }
 
@@ -90,5 +92,6 @@ func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *Re
 		Path:      r.URL.Path,
 		Code:      status,
 		HTTPReq:   r,
+		Headers:   requestinfo.AsHeadersMultiMap(r.Header),
 	}
 }
