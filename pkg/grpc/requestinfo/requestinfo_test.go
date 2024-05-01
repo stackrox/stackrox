@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
@@ -18,50 +19,36 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/peer"
 )
 
 var insecureTLSConfig = &tls.Config{InsecureSkipVerify: true}
 var insecureSkipVerify = credentials.NewTLS(insecureTLSConfig)
 
-func Test_PureHTTP(t *testing.T) {
-	handler := NewRequestInfoHandler()
+const userAgentKey = "User-Agent"
 
-	var receivedRequest *http.Request
-	var receivedRI *RequestInfo
-
-	server := httptest.NewServer(handler.HTTPIntercept(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedRequest = r
-		ri := FromContext(r.Context())
-		receivedRI = &ri
-	})))
-	defer server.Close()
-
-	req, _ := http.NewRequest("GET", server.URL+"/v1/test", nil)
+func makeTestRequest(url string) *http.Request {
+	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Add("test-key", "test value")
+	req.Header.Add(userAgentKey, "test agent")
+	return req
+}
 
-	client := http.Client{}
-	_, err := client.Do(req)
-	require.NoError(t, err)
-
-	require.NotNil(t, receivedRequest)
-	assert.Equal(t, req.Method, receivedRequest.Method)
-	assert.Equal(t, req.Header.Get("test-key"), receivedRequest.Header.Get("test-key"))
-	assert.Equal(t, "Go-http-client/1.1", receivedRequest.Header.Get("user-agent"))
-
-	require.NotNil(t, receivedRI)
-	assert.Equal(t, receivedRequest.Header, receivedRI.HTTPRequest.Headers)
-	assert.NotNil(t, receivedRI.Metadata)
-	assert.Equal(t, []string{"test value"}, receivedRI.Metadata.Get("test-key"))
+func testRequest(t *testing.T, req *HTTPRequest) {
+	require.NotNil(t, req)
+	assert.Equal(t, "GET", req.Method)
+	assert.Equal(t, "test value", req.Headers.Get("test-key"))
+	assert.Equal(t, "test agent", req.Headers.Get(userAgentKey))
 }
 
 type pingService struct {
 	pb.UnimplementedPingServiceServer
-	receivedRI *RequestInfo
+	ri *RequestInfo
 }
 
 func (s *pingService) Ping(ctx context.Context, in *pb.Empty) (*pb.PongMessage, error) {
 	ri := FromContext(ctx)
-	s.receivedRI = &ri
+	s.ri = &ri
 	return &pb.PongMessage{Status: "pong"}, nil
 }
 
@@ -74,7 +61,7 @@ func Test_PureGRPC(t *testing.T) {
 	serviceInstance := &pingService{}
 	pb.RegisterPingServiceServer(grpcServer, serviceInstance)
 
-	server := httptest.NewUnstartedServer(http.HandlerFunc(grpcServer.ServeHTTP))
+	server := httptest.NewUnstartedServer(handler.HTTPIntercept(http.HandlerFunc(grpcServer.ServeHTTP)))
 	server.EnableHTTP2 = true
 	server.StartTLS()
 	defer server.Close()
@@ -89,12 +76,12 @@ func Test_PureGRPC(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "pong", resp.Status)
 
-	receivedRI := serviceInstance.receivedRI
-	require.NotNil(t, receivedRI)
-	require.Nil(t, receivedRI.HTTPRequest)
-	assert.NotNil(t, receivedRI.Metadata)
-	assert.Equal(t, []string{"application/grpc"}, receivedRI.Metadata.Get("content-type"))
-	assert.Contains(t, receivedRI.Metadata.Get("user-agent")[0], "grpc-go/")
+	ri := serviceInstance.ri
+	require.NotNil(t, ri)
+	require.Nil(t, ri.HTTPRequest)
+	assert.NotNil(t, ri.Metadata)
+	assert.Equal(t, []string{"application/grpc"}, ri.Metadata.Get("content-type"))
+	assert.Contains(t, ri.Metadata.Get(userAgentKey)[0], "grpc-go/")
 }
 
 func Test_gRPCGateway(t *testing.T) {
@@ -136,32 +123,85 @@ func Test_gRPCGateway(t *testing.T) {
 		})
 	require.NoError(t, err)
 
+	// No handler.HTTPIntercept handler for the gateway.
 	server := httptest.NewUnstartedServer(gateway)
 	server.TLS = insecureTLSConfig
 	server.StartTLS()
 	defer server.Close()
 
+	req := makeTestRequest(server.URL + "/v1/ping")
+
 	client := http.Client{Transport: &http.Transport{
 		TLSClientConfig:   insecureTLSConfig,
 		ForceAttemptHTTP2: true,
 	}}
-
-	req, _ := http.NewRequest("GET", server.URL+"/v1/ping", nil)
-	req.Header.Add("user-agent", "test agent")
-	req.Header.Add("test-key", "test value")
 	_, err = client.Do(req)
 	require.NoError(t, err)
 
-	receivedRI := serviceInstance.receivedRI
+	receivedRI := serviceInstance.ri
 	require.NotNil(t, receivedRI)
 
 	require.NotNil(t, receivedRI.HTTPRequest)
-	assert.Equal(t, "test agent", receivedRI.HTTPRequest.Headers.Get("user-agent"))
+	assert.Equal(t, "test agent", receivedRI.HTTPRequest.Headers.Get(userAgentKey))
 	assert.Equal(t, "test value", receivedRI.HTTPRequest.Headers.Get("test-key"))
 
 	assert.NotNil(t, receivedRI.Metadata)
 	assert.Equal(t, []string{"application/grpc"}, receivedRI.Metadata.Get("content-type"))
-	assert.Contains(t, receivedRI.Metadata.Get("user-agent")[0], "gateway agent")
-	prefixedUserAgentKey, _ := runtime.DefaultHeaderMatcher("user-agent")
+	assert.Contains(t, receivedRI.Metadata.Get(userAgentKey)[0], "gateway agent")
+	prefixedUserAgentKey, _ := runtime.DefaultHeaderMatcher(userAgentKey)
 	assert.Contains(t, receivedRI.Metadata.Get(prefixedUserAgentKey)[0], "test agent")
+}
+
+func Test_Conversions(t *testing.T) {
+
+	req := makeTestRequest("https://endpoint/v1/ping")
+
+	{ // http flow:
+		handler := NewRequestInfoHandler()
+		var riptr *RequestInfo
+		handler.HTTPIntercept(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ri := FromContext(r.Context())
+			riptr = &ri
+		})).ServeHTTP(nil, req)
+
+		require.NotNil(t, riptr)
+		testRequest(t, riptr.HTTPRequest)
+		assert.NotNil(t, riptr.Metadata)
+		// A copy of the request headers:
+		assert.Equal(t, []string{"test agent"}, riptr.Metadata.Get(userAgentKey))
+		assert.Equal(t, []string{"test value"}, riptr.Metadata.Get("test-key"))
+	}
+	{ // grpc flow:
+		handler := NewRequestInfoHandler()
+		ctx := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Net: "pipe"}})
+
+		ctx = metautils.NiceMD{}.Add("test-key", "test value").ToIncoming(ctx)
+
+		ctx, err := handler.UpdateContextForGRPC(ctx)
+		require.NoError(t, err)
+
+		ri := FromContext(ctx)
+		assert.Empty(t, ri.Metadata.Get(requestInfoMDKey))
+		assert.Empty(t, ri.Metadata.Get(userAgentKey))
+		assert.Equal(t, []string{"test value"}, ri.Metadata.Get("test-key"))
+		require.Nil(t, ri.HTTPRequest)
+	}
+	{ // grpc-gateway flow:
+		handler := NewRequestInfoHandler()
+		ctx := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Net: "pipe"}})
+
+		md := handler.AnnotateMD(ctx, req)
+		assert.NotEmpty(t, md.Get(requestInfoMDKey))
+		md.Set(userAgentKey, "gateway")
+
+		ctx = metautils.NiceMD(md).ToIncoming(ctx)
+		ctx, err := handler.UpdateContextForGRPC(ctx)
+		require.NoError(t, err)
+
+		ri := FromContext(ctx)
+		require.NotNil(t, ri.Metadata)
+		assert.Empty(t, ri.Metadata.Get(requestInfoMDKey))
+		assert.Equal(t, []string{"gateway"}, ri.Metadata.Get(userAgentKey))
+		testRequest(t, ri.HTTPRequest)
+	}
 }

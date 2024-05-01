@@ -195,8 +195,8 @@ func makeRequestInfo(req *http.Request) *RequestInfo {
 
 // AnnotateMD builds a RequestInfo for a request coming in through the HTTP/1.1
 // gateway, and returns it in serialized form as GRPC metadata.
-// HTTP Request -> Metadata[RequestInfo]
-func (h *Handler) AnnotateMD(_ context.Context, req *http.Request) metadata.MD {
+// HTTP Request -> Metadata[B64(RequestInfo)]
+func (h *Handler) AnnotateMD(ctx context.Context, req *http.Request) metadata.MD {
 	ri := makeRequestInfo(req)
 
 	// Encode to GOB.
@@ -234,7 +234,7 @@ func toContext(ctx context.Context, ri *RequestInfo) context.Context {
 	return context.WithValue(ctx, requestInfoKey{}, *ri)
 }
 
-// Metadata[RequestInfo] -> RequestInfo+Metadata
+// Ctx[Metadata[B64(RequestInfo)]] -> RequestInfo[Metadata]
 func (h *Handler) extractFromMD(ctx context.Context) (*RequestInfo, error) {
 	md := metautils.ExtractIncoming(ctx)
 	riB64 := md.Get(requestInfoMDKey)
@@ -255,12 +255,12 @@ func (h *Handler) extractFromMD(ctx context.Context) (*RequestInfo, error) {
 	if err := gob.NewDecoder(bytes.NewReader(riRaw)).Decode(&reqInfo); err != nil {
 		return nil, errors.Wrap(err, "could not decode request info")
 	}
-	reqInfo.Metadata = metadata.MD(md)
+	reqInfo.Metadata = metadata.MD(md.Del(requestInfoMDKey))
 	return &reqInfo, nil
 }
 
 // UpdateContextForGRPC provides the context updater logic when used with GRPC interceptors.
-// Context[Metadata[RequestInfo]] -> Context[RequestInfo[Metadata]]
+// Ctx[Metadata[B64(RequestInfo)]] -> Ctx[RequestInfo[Metadata]]
 func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, error) {
 	ri, err := h.extractFromMD(ctx)
 	if err != nil {
