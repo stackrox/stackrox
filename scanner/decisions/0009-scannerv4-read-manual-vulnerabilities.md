@@ -66,4 +66,6 @@ When this vulns.zst file is imported by Scanner v4, it will also include the man
 
 ## Consequences
 
-Following this modification, clients will no longer need to update the ACS patch release to access manually added vulnerabilities.
+* Following this modification, clients will no longer need to update the ACS patch release to access manually added vulnerabilities.
+* Adding new vulnerabilities to the manual data source now only requires updates to a single branch, eliminating the need for changes across multiple patch release branches. 
+* The vulnerability JSON data format must maintain backward compatibility with all supported ACS versions and patch releases, provided that versioned bundles continue to be utilized.
