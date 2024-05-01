@@ -10,7 +10,7 @@ export const nodeMetadataFragment = gql`
     fragment NodeMetadata on Node {
         id
         name
-        operatingSystem
+        osImage
         kubeletVersion
         kernelVersion
         scanTime
@@ -20,7 +20,7 @@ export const nodeMetadataFragment = gql`
 export type NodeMetadata = {
     id: string;
     name: string;
-    operatingSystem: string;
+    osImage: string;
     kubeletVersion: string;
     kernelVersion: string;
     scanTime?: string;
@@ -48,7 +48,7 @@ function NodePageHeader({ data }: NodePageHeaderProps) {
                 {data.name}
             </Title>
             <LabelGroup numLabels={numLabels}>
-                <Label>OS: {data.operatingSystem}</Label>
+                <Label>OS: {data.osImage}</Label>
                 <Label>Kubelet: {data.kubeletVersion}</Label>
                 <Label>Kernel version: {data.kernelVersion}</Label>
                 {data.scanTime && <Label>Scan time: {getDateTime(data.scanTime)}</Label>}

@@ -19,20 +19,22 @@ import {
     getHighestCvssScore,
 } from '../../utils/vulnerabilityUtils';
 
-import NodeComponentsTable from '../components/NodeComponentsTable';
+import NodeComponentsTable, {
+    NodeComponent,
+    nodeComponentFragment,
+} from '../components/NodeComponentsTable';
 
 export const affectedNodeFragment = gql`
+    ${nodeComponentFragment}
     fragment AffectedNode on Node {
         id
         name
-        operatingSystem
+        osImage
         cluster {
             name
         }
         nodeComponents {
-            name
-            version
-            source
+            ...NodeComponentFragment
             nodeVulnerabilities {
                 vulnerabilityId: id
                 cve
@@ -48,14 +50,11 @@ export const affectedNodeFragment = gql`
 export type AffectedNode = {
     id: string;
     name: string;
-    operatingSystem: string;
+    osImage: string;
     cluster: {
         name: string;
     };
-    nodeComponents: {
-        name: string;
-        version: string;
-        source: string;
+    nodeComponents: (NodeComponent & {
         nodeVulnerabilities: {
             vulnerabilityId: string;
             cve: string;
@@ -64,7 +63,7 @@ export type AffectedNode = {
             cvss: number;
             scoreVersion: string;
         }[];
-    }[];
+    })[];
 };
 
 export type AffectedNodesTableProps = {
@@ -142,7 +141,9 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
                                     <Td dataLabel="Cluster">
                                         <Truncate position="middle" content={node.cluster.name} />
                                     </Td>
-                                    <Td dataLabel="Operating system">{node.operatingSystem}</Td>
+                                    <Td dataLabel="Operating system">
+                                        <Truncate position="middle" content={node.osImage} />
+                                    </Td>
                                     <Td dataLabel="Affected components">
                                         {nodeComponents.length === 1
                                             ? nodeComponents[0].name
@@ -153,7 +154,7 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
                                     <Td />
                                     <Td colSpan={colSpan - 1}>
                                         <ExpandableRowContent>
-                                            <NodeComponentsTable />
+                                            <NodeComponentsTable data={nodeComponents} />
                                         </ExpandableRowContent>
                                     </Td>
                                 </Tr>
