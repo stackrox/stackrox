@@ -68,7 +68,7 @@ func Test_PureGRPC(t *testing.T) {
 	conn, err := grpc.Dial(server.Listener.Addr().String(),
 		grpc.WithTransportCredentials(insecureSkipVerify))
 	require.NoError(t, err)
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	c := pb.NewPingServiceClient(conn)
 	resp, err := c.Ping(context.Background(), &pb.Empty{})
