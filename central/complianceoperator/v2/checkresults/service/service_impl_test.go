@@ -11,6 +11,7 @@ import (
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	ruleMocks "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
+	scanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
 	convertUtils "github.com/stackrox/rox/central/convert/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
@@ -72,6 +73,7 @@ type ComplianceResultsServiceTestSuite struct {
 	ruleDS          *ruleMocks.MockDataStore
 	service         Service
 	profilsDS       *profileDatastore.MockDataStore
+	scanDS          *scanMocks.MockDataStore
 }
 
 func (s *ComplianceResultsServiceTestSuite) SetupSuite() {
@@ -91,8 +93,9 @@ func (s *ComplianceResultsServiceTestSuite) SetupTest() {
 	s.integrationDS = integrationMocks.NewMockDataStore(s.mockCtrl)
 	s.profilsDS = profileDatastore.NewMockDataStore(s.mockCtrl)
 	s.ruleDS = ruleMocks.NewMockDataStore(s.mockCtrl)
+	s.scanDS = scanMocks.NewMockDataStore(s.mockCtrl)
 
-	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS, s.profilsDS, s.ruleDS)
+	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS, s.profilsDS, s.ruleDS, s.scanDS)
 }
 
 func (s *ComplianceResultsServiceTestSuite) TearDownTest() {
