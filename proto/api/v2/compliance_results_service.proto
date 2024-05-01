@@ -83,7 +83,7 @@ message ComplianceCheckStatusCount {
 message ComplianceScanStatsShim {
   string scan_name = 1;
   repeated ComplianceCheckStatusCount check_stats = 2;
-  google.protobuf.Timestamp last_scan = 3;
+  google.protobuf.Timestamp last_scan_time = 3;
   string scan_config_id = 4;
 }
 
@@ -121,6 +121,7 @@ message ComplianceClusterOverallStats {
   ComplianceScanCluster cluster = 1;
   repeated ComplianceCheckStatusCount check_stats = 2;
   repeated string cluster_errors = 3;
+  google.protobuf.Timestamp last_scan_time = 4;
 }
 
 // ListComplianceProfileScanStatsResponse provides stats for the profiles within the scans
@@ -139,7 +140,7 @@ message ListComplianceScanResultsResponse {
   repeated ComplianceScanResult scan_results = 1;
 }
 
-// ListComplianceCheckScanStatsResponse provides stats per cluster
+// ListComplianceClusterOverallStatsResponse provides stats per cluster
 message ListComplianceClusterOverallStatsResponse {
   repeated ComplianceClusterOverallStats scan_stats = 1;
   int32 total_count = 2;
@@ -158,9 +159,10 @@ message ListComplianceCheckResultResponse {
   string profile_name = 2;
   string cluster_id = 3;
   int32 total_count = 4;
+  google.protobuf.Timestamp last_scan_time = 5;
 }
 
-// ComplianceScanResultsCount gives count of scan results
+// CountComplianceScanResults gives count of scan results
 message CountComplianceScanResults {
   int32 count = 1;
 }

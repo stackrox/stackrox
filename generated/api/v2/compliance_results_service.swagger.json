@@ -1407,6 +1407,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "lastScanTime": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "title": "ComplianceClusterOverallStats provides overall stats for cluster"
@@ -1488,7 +1492,7 @@
             "$ref": "#/definitions/v2ComplianceCheckStatusCount"
           }
         },
-        "lastScan": {
+        "lastScanTime": {
           "type": "string",
           "format": "date-time"
         },
@@ -1506,7 +1510,7 @@
           "format": "int32"
         }
       },
-      "title": "ComplianceScanResultsCount gives count of scan results"
+      "title": "CountComplianceScanResults gives count of scan results"
     },
     "v2ListComplianceCheckClusterResponse": {
       "type": "object",
@@ -1548,6 +1552,10 @@
         "totalCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "lastScanTime": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -1565,7 +1573,7 @@
           "format": "int32"
         }
       },
-      "title": "ListComplianceCheckScanStatsResponse provides stats per cluster"
+      "title": "ListComplianceClusterOverallStatsResponse provides stats per cluster"
     },
     "v2ListComplianceClusterScanStatsResponse": {
       "type": "object",
