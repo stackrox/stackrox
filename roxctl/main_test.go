@@ -29,35 +29,33 @@ func TestCommandReconstruction(t *testing.T) {
 	AddMissingDefaultsToFlagUsage(root)
 
 	type testCase struct {
-		args      []string
-		command   string
-		arguments string
+		args    []string
+		command string
 	}
 	for _, c := range []testCase{
 		{
 			[]string{"central", "--insecure", "whoami", "-e", "test"},
-			"central whoami", "--endpoint *** --insecure true",
+			"central whoami",
 		},
 		{
 			[]string{"declarative-config", "create", "auth-provider", "iap", "--audience", "test"},
-			"declarative-config create auth-provider iap", "--audience ***",
+			"declarative-config create auth-provider iap",
 		},
 		{
 			[]string{"central", "--insecure=false", "whoami"},
 			// endpoint is always 'changed' in the common/flags/endpoint.go.
-			"central whoami", "--endpoint *** --insecure false",
+			"central whoami",
 		},
 		{
 			[]string{"central", "db", "restore", "positional_argument"},
-			"central db restore", "",
+			"central db restore",
 		},
 	} {
-		var command, arguments string
+		var command string
 		once := sync.Once{}
 		common.PatchPersistentPreRunHooks(root, func(cmd *cobra.Command, _ []string) {
 			once.Do(func() {
 				command = getCommandPath(cmd)
-				arguments = reconstructArguments(cmd)
 			})
 			// Do not actually run the command:
 			cmd.Run = mockRun
@@ -68,6 +66,5 @@ func TestCommandReconstruction(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "", output)
 		assert.Equal(t, c.command, command)
-		assert.Equal(t, c.arguments, arguments)
 	}
 }

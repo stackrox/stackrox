@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/roxctl/common"
@@ -32,10 +31,10 @@ func main() {
 	AddMissingDefaultsToFlagUsage(c)
 
 	once := sync.Once{}
+	// Peak only the deepest command path. The hooks are added to all commands.
 	common.PatchPersistentPreRunHooks(c, func(cmd *cobra.Command, args []string) {
 		once.Do(func() {
 			common.RoxctlCommand = getCommandPath(cmd)
-			_ = reconstructArguments(cmd) // Ignore arguments for now (TODO).
 		})
 	})
 
@@ -49,23 +48,4 @@ func main() {
 func getCommandPath(cmd *cobra.Command) string {
 	binaryName := cmd.Root().CommandPath() + " "
 	return strings.TrimPrefix(cmd.CommandPath(), binaryName)
-}
-
-func reconstructArguments(cmd *cobra.Command) string {
-	var arguments []string
-	// Reconstruct provided arguments, masking string values:
-	for c := cmd; c != nil; c = c.Parent() {
-		c.Flags().Visit(func(f *pflag.Flag) {
-			arguments = append(arguments, "--"+f.Name)
-			if f.Value.Type() == "stringSlice" || f.Value.Type() == "string" {
-				arguments = append(arguments, "***")
-			} else {
-				arguments = append(arguments, f.Value.String())
-			}
-		})
-	}
-	// Attention: cmd.Flags().Args() are not included, as may contain sensitive
-	// data.
-
-	return strings.Join(arguments, " ")
 }
