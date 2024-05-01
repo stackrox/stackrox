@@ -6,7 +6,7 @@
 ## Context
 
 Currently, Scanner v4 includes a feature for manually updating vulnerabilities to add and update urgent vulnerability data. 
-This allows clients to access the most recent vulnerability information before it becomes officially available in some data sources. 
+This allows clients to access the most recent vulnerability information before it becomes officially available in any data source. 
 However, this manual update process has a major flaw: the vulnerability data is integrated with the codebase, which means clients cannot access the updated data unless they install a patch release that includes these vulnerabilities. 
 Therefore, it is essential to improve this process to ensure that manually inserted vulnerabilities are not dependent on any ACS release cycle. This improvement would enable all versions starting from ACS 4.4 to retrieve manually updated vulnerabilities without any issues.
 
