@@ -3,8 +3,6 @@ import * as yup from 'yup';
 export const maxCustomSubjectLength = 256;
 export const maxCustomBodyLength = 1500;
 
-// Validation
-
 export const customSubjectValidation = yup
     .string()
     .default('')
@@ -24,3 +22,10 @@ export const emailTemplateValidationSchema = yup.object({
 });
 
 export type EmailTemplateFormData = yup.InferType<typeof emailTemplateValidationSchema>;
+
+export function isDefaultEmailTemplate({
+    customBody,
+    customSubject,
+}: EmailTemplateFormData): boolean {
+    return customBody.length === 0 && customSubject.length === 0;
+}

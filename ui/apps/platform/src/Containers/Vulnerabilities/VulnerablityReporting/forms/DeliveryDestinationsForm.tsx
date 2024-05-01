@@ -18,7 +18,10 @@ import { HelpIcon, PencilAltIcon, PlusCircleIcon, TrashIcon } from '@patternfly/
 import { FormikProps } from 'formik';
 import isEqual from 'lodash/isEqual';
 
-import { EmailTemplateFormData } from 'Components/EmailTemplate/EmailTemplate.utils';
+import {
+    EmailTemplateFormData,
+    isDefaultEmailTemplate,
+} from 'Components/EmailTemplate/EmailTemplate.utils';
 import EmailTemplateModal, {
     TemplatePreviewArgs,
 } from 'Components/EmailTemplate/EmailTemplateModal';
@@ -30,11 +33,7 @@ import usePermissions from 'hooks/usePermissions';
 import { NotifierConfiguration } from 'services/ReportsService.types';
 
 import NotifierSelection from './NotifierSelection';
-import {
-    defaultEmailBody,
-    getDefaultEmailSubject,
-    isDefaultEmailTemplate,
-} from './emailTemplateFormUtils';
+import { defaultEmailBody, getDefaultEmailSubject } from './emailTemplateFormUtils';
 import { ReportFormValues } from './useReportFormValues';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import useEmailTemplateModal from '../hooks/useEmailTemplateModal';
@@ -186,7 +185,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                                                 : { id: notifierId, name: notifierName };
                                         const fieldId = `deliveryDestinations[${index}]`;
                                         const isDefaultEmailTemplateApplied =
-                                            isDefaultEmailTemplate(customSubject, customBody);
+                                            isDefaultEmailTemplate({ customBody, customSubject });
                                         return (
                                             <li key={keyFor(index)} className="pf-v5-u-mb-md">
                                                 <Card>

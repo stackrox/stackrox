@@ -11,9 +11,10 @@ import {
 } from '@patternfly/react-core';
 import React, { ReactElement } from 'react';
 
-import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
+import { isDefaultEmailTemplate } from 'Components/EmailTemplate/EmailTemplate.utils';
 import useIndexKey from 'hooks/useIndexKey';
-import { getDefaultEmailSubject, isDefaultEmailTemplate } from '../forms/emailTemplateFormUtils';
+import { getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
+import { ReportFormValues } from '../forms/useReportFormValues';
 import useEmailTemplateModal from '../hooks/useEmailTemplateModal';
 import EmailTemplatePreview from './EmailTemplatePreview';
 
@@ -59,10 +60,10 @@ function DeliveryDestinationsDetails({
             formValues.deliveryDestinations.map((deliveryDestination, index) => {
                 const { emailConfig } = deliveryDestination;
                 const { customSubject, customBody } = emailConfig;
-                const isDefaultEmailTemplateApplied = isDefaultEmailTemplate(
+                const isDefaultEmailTemplateApplied = isDefaultEmailTemplate({
                     customSubject,
-                    customBody
-                );
+                    customBody,
+                });
                 return (
                     <li key={keyFor(index)}>
                         <Button
@@ -89,7 +90,10 @@ function DeliveryDestinationsDetails({
         formValues.reportParameters.reportScope?.name
     );
 
-    const modalTitle = isDefaultEmailTemplate(selectedEmailSubject, selectedEmailBody)
+    const modalTitle = isDefaultEmailTemplate({
+        customBody: selectedEmailBody,
+        customSubject: selectedEmailSubject,
+    })
         ? 'Default template applied'
         : 'Custom template applied';
 

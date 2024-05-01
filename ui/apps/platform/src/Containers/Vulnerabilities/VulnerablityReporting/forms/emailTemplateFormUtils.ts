@@ -18,7 +18,3 @@ export function getDefaultEmailSubject(reportName, reportScope = ''): string {
         .replace('<Config name>', reportName)
         .replace('<Collection name>', reportScope);
 }
-
-export function isDefaultEmailTemplate(emailSubject: string, emailBody: string): boolean {
-    return emailSubject === '' && emailBody === '';
-}
