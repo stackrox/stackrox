@@ -209,13 +209,13 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 
 // IndexAndScanImage gets or creates an index report for the image, then call the
 // matcher to return a vulnerability report.
-func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, insecure bool) (*v4.VulnerabilityReport, error) {
+func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, skipTLSVerify bool) (*v4.VulnerabilityReport, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "scanner/client",
 		"method", "IndexAndScanImage",
 		"image", ref.String(),
 	)
-	ir, err := c.GetOrCreateImageIndex(ctx, ref, auth, insecure)
+	ir, err := c.GetOrCreateImageIndex(ctx, ref, auth, skipTLSVerify)
 	if err != nil {
 		return nil, fmt.Errorf("get or create index: %w", err)
 	}
