@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Modal, ModalVariant, Title, TitleSizes } from '@patternfly/react-core';
+import { Flex, Modal, Title } from '@patternfly/react-core';
 
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
@@ -11,7 +11,7 @@ import {
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import useFormModal from 'hooks/patternfly/useFormModal';
 import { createIntegration } from 'services/IntegrationsService';
-import EmailIntegrationForm from './EmailIntegrationForm';
+import EmailNotifierForm from './EmailNotifierForm';
 
 export type EmailNotifierFormModalProps = {
     isOpen: boolean;
@@ -19,7 +19,7 @@ export type EmailNotifierFormModalProps = {
     onToggleEmailNotifierModal: () => void;
 };
 
-function EmailNotifierFormModal({
+function EmailNotifierModal({
     isOpen,
     updateNotifierList,
     onToggleEmailNotifierModal,
@@ -52,12 +52,12 @@ function EmailNotifierFormModal({
     const descriptionText = 'Configure the setting for a new email notifier integration.';
 
     const header = (
-        <>
-            <Title id="custom-header-label" headingLevel="h1" size={TitleSizes.xl}>
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
+            <Title id="custom-header-label" headingLevel="h1">
                 {title}
             </Title>
-            <p className="pf-v5-u-pt-sm">{descriptionText}</p>
-        </>
+            <p>{descriptionText}</p>
+        </Flex>
     );
 
     const { values, touched, errors, isSubmitting, dirty, isValid, setFieldValue, handleBlur } =
@@ -66,7 +66,7 @@ function EmailNotifierFormModal({
     return (
         <Modal
             aria-label="Create new email notifier"
-            variant={ModalVariant.medium}
+            variant="medium"
             header={header}
             isOpen={isOpen}
             onClose={onHandleCancel}
@@ -83,7 +83,7 @@ function EmailNotifierFormModal({
             ]}
         >
             <FormMessage message={message} />
-            <EmailIntegrationForm
+            <EmailNotifierForm
                 values={values}
                 setFieldValue={setFieldValue}
                 handleBlur={handleBlur}
@@ -94,4 +94,4 @@ function EmailNotifierFormModal({
     );
 }
 
-export default EmailNotifierFormModal;
+export default EmailNotifierModal;

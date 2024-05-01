@@ -1,15 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-void */
 import React, { ReactElement, useState } from 'react';
-import {
-    Alert,
-    AlertVariant,
-    Checkbox,
-    Form,
-    PageSection,
-    TextInput,
-    Popover,
-} from '@patternfly/react-core';
+import { Alert, Checkbox, Form, PageSection, Popover, TextInput } from '@patternfly/react-core';
 import { SelectOption } from '@patternfly/react-core/deprecated';
 import { HelpIcon } from '@patternfly/react-icons';
 import { FormikErrors, FormikTouched } from 'formik';
@@ -34,7 +25,7 @@ const startTLSAuthMethods = [
     },
 ];
 
-export type EmailIntegrationFormProps = {
+export type EmailNotifierFormProps = {
     values: EmailIntegrationFormValues;
     setFieldValue: (field: string, value: any, shouldValidate?: boolean | undefined) => void;
     handleBlur: (e: React.FocusEvent<any, Element>) => void;
@@ -42,23 +33,23 @@ export type EmailIntegrationFormProps = {
     touched: FormikTouched<any>;
 };
 
-function EmailIntegrationForm({
+function EmailNotifierForm({
     values,
     setFieldValue,
     handleBlur,
     errors,
     touched,
-}: EmailIntegrationFormProps): ReactElement {
+}: EmailNotifierFormProps): ReactElement {
     const [storedUsername, setStoredUsername] = useState('');
     const { allowUnauthenticatedSmtp } = values.notifier.email;
     function onChange(value, event) {
-        return void setFieldValue(event.target.id, value);
+        setFieldValue(event.target.id, value);
     }
 
     function updateStartTLSAuthMethodOnChange(value, event) {
-        void setFieldValue(event.target.id, value);
+        setFieldValue(event.target.id, value);
         if (value === false && values.notifier.email.startTLSAuthMethod !== 'DISABLED') {
-            void setFieldValue('notifier.email.startTLSAuthMethod', 'DISABLED');
+            setFieldValue('notifier.email.startTLSAuthMethod', 'DISABLED');
         }
     }
 
@@ -145,7 +136,7 @@ function EmailIntegrationForm({
                                 <Alert
                                     className="pf-v5-u-mt-md"
                                     title="Security Warning"
-                                    variant={AlertVariant.warning}
+                                    variant="warning"
                                     isInline
                                 >
                                     <p>
@@ -309,4 +300,4 @@ function EmailIntegrationForm({
     );
 }
 
-export default EmailIntegrationForm;
+export default EmailNotifierForm;
