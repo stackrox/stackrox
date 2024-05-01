@@ -60,17 +60,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -204,17 +194,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -254,17 +234,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -426,20 +396,17 @@
               {
                 "id": 4,
                 "name": "deployment",
-                "type": "Deployment",
-                "oneof_parent": "Entity"
+                "type": "Deployment"
               },
               {
                 "id": 15,
                 "name": "image",
-                "type": "ContainerImage",
-                "oneof_parent": "Entity"
+                "type": "ContainerImage"
               },
               {
                 "id": 16,
                 "name": "resource",
-                "type": "Resource",
-                "oneof_parent": "Entity"
+                "type": "Resource"
               },
               {
                 "id": 5,
@@ -619,14 +586,12 @@
                   {
                     "id": 4,
                     "name": "key_value_attrs",
-                    "type": "KeyValueAttrs",
-                    "oneof_parent": "MessageAttributes"
+                    "type": "KeyValueAttrs"
                   },
                   {
                     "id": 7,
                     "name": "network_flow_info",
-                    "type": "NetworkFlowInfo",
-                    "oneof_parent": "MessageAttributes"
+                    "type": "NetworkFlowInfo"
                   },
                   {
                     "id": 5,
@@ -805,14 +770,12 @@
               {
                 "id": 5,
                 "name": "deployment",
-                "type": "ListAlertDeployment",
-                "oneof_parent": "Entity"
+                "type": "ListAlertDeployment"
               },
               {
                 "id": 11,
                 "name": "resource",
-                "type": "ResourceEntity",
-                "oneof_parent": "Entity"
+                "type": "ResourceEntity"
               }
             ],
             "reserved_ids": [
@@ -996,17 +959,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -1068,17 +1021,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -1155,17 +1098,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -1291,17 +1224,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -1351,17 +1274,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -1417,14 +1330,12 @@
               {
                 "id": 6,
                 "name": "paladin_cloud",
-                "type": "PaladinCloudConfig",
-                "oneof_parent": "Config"
+                "type": "PaladinCloudConfig"
               },
               {
                 "id": 7,
                 "name": "ocm",
-                "type": "OCMConfig",
-                "oneof_parent": "Config"
+                "type": "OCMConfig"
               }
             ],
             "messages": [
@@ -1463,17 +1374,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -1785,20 +1686,17 @@
               {
                 "id": 3,
                 "name": "google",
-                "type": "GoogleProviderMetadata",
-                "oneof_parent": "Provider"
+                "type": "GoogleProviderMetadata"
               },
               {
                 "id": 4,
                 "name": "aws",
-                "type": "AWSProviderMetadata",
-                "oneof_parent": "Provider"
+                "type": "AWSProviderMetadata"
               },
               {
                 "id": 5,
                 "name": "azure",
-                "type": "AzureProviderMetadata",
-                "oneof_parent": "Provider"
+                "type": "AzureProviderMetadata"
               },
               {
                 "id": 15,
@@ -1823,8 +1721,7 @@
               {
                 "id": 4,
                 "name": "openshift_version",
-                "type": "string",
-                "oneof_parent": "is_openshift"
+                "type": "string"
               },
               {
                 "id": 2,
@@ -2380,20 +2277,17 @@
               {
                 "id": 2,
                 "name": "total_desired_pods",
-                "type": "int32",
-                "oneof_parent": "total_desired_pods_opt"
+                "type": "int32"
               },
               {
                 "id": 3,
                 "name": "total_ready_pods",
-                "type": "int32",
-                "oneof_parent": "total_ready_pods_opt"
+                "type": "int32"
               },
               {
                 "id": 4,
                 "name": "total_registered_nodes",
-                "type": "int32",
-                "oneof_parent": "total_registered_nodes_opt"
+                "type": "int32"
               },
               {
                 "id": 5,
@@ -2409,14 +2303,12 @@
               {
                 "id": 1,
                 "name": "total_desired_pods",
-                "type": "int32",
-                "oneof_parent": "total_desired_pods_opt"
+                "type": "int32"
               },
               {
                 "id": 2,
                 "name": "total_ready_pods",
-                "type": "int32",
-                "oneof_parent": "total_ready_pods_opt"
+                "type": "int32"
               },
               {
                 "id": 3,
@@ -2432,26 +2324,22 @@
               {
                 "id": 1,
                 "name": "total_desired_analyzer_pods",
-                "type": "int32",
-                "oneof_parent": "total_desired_analyzer_pods_opt"
+                "type": "int32"
               },
               {
                 "id": 2,
                 "name": "total_ready_analyzer_pods",
-                "type": "int32",
-                "oneof_parent": "total_ready_analyzer_pods_opt"
+                "type": "int32"
               },
               {
                 "id": 3,
                 "name": "total_desired_db_pods",
-                "type": "int32",
-                "oneof_parent": "total_desired_db_pods_opt"
+                "type": "int32"
               },
               {
                 "id": 4,
                 "name": "total_ready_db_pods",
-                "type": "int32",
-                "oneof_parent": "total_ready_db_pods_opt"
+                "type": "int32"
               },
               {
                 "id": 5,
@@ -2469,17 +2357,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -2532,17 +2410,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -2567,17 +2435,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -2660,26 +2518,22 @@
               {
                 "id": 1,
                 "name": "cluster",
-                "type": "ClusterName",
-                "oneof_parent": "resource"
+                "type": "ClusterName"
               },
               {
                 "id": 2,
                 "name": "deployment",
-                "type": "DeploymentName",
-                "oneof_parent": "resource"
+                "type": "DeploymentName"
               },
               {
                 "id": 3,
                 "name": "node",
-                "type": "NodeName",
-                "oneof_parent": "resource"
+                "type": "NodeName"
               },
               {
                 "id": 4,
                 "name": "image",
-                "type": "ImageName",
-                "oneof_parent": "resource"
+                "type": "ImageName"
               }
             ],
             "messages": [
@@ -3173,17 +3027,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -3208,17 +3052,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -3264,17 +3098,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -3603,17 +3427,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -3894,6 +3708,21 @@
                 "id": 14,
                 "name": "cluster_id",
                 "type": "string"
+              },
+              {
+                "id": 15,
+                "name": "rule_ref_id",
+                "type": "string"
+              },
+              {
+                "id": 16,
+                "name": "parent_rule",
+                "type": "string"
+              },
+              {
+                "id": 17,
+                "name": "instructions",
+                "type": "string"
               }
             ],
             "maps": [
@@ -4022,6 +3851,12 @@
                 "id": 16,
                 "name": "clusters",
                 "type": "Cluster",
+                "is_repeated": true
+              },
+              {
+                "id": 17,
+                "name": "notifiers",
+                "type": "NotifierConfiguration",
                 "is_repeated": true
               }
             ],
@@ -4185,6 +4020,11 @@
               {
                 "id": 18,
                 "name": "scan_ref_id",
+                "type": "string"
+              },
+              {
+                "id": 19,
+                "name": "rule_ref_id",
                 "type": "string"
               }
             ],
@@ -4457,11 +4297,59 @@
                 "type": "ComplianceOperatorStatus"
               }
             ]
+          },
+          {
+            "name": "ComplianceOperatorRemediationV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "compliance_check_result_name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "apply",
+                "type": "bool"
+              },
+              {
+                "id": 5,
+                "name": "current_object",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "outdated_object",
+                "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "enforcement_type",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "cluster_id",
+                "type": "string"
+              }
+            ]
           }
         ],
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/report_notifier_configuration.proto"
           },
           {
             "path": "storage/schedule.proto"
@@ -4472,17 +4360,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -4667,14 +4545,12 @@
               {
                 "id": 1,
                 "name": "DEPRECATED_alert_retention_duration_days",
-                "type": "int32",
-                "oneof_parent": "alert_retention"
+                "type": "int32"
               },
               {
                 "id": 3,
                 "name": "alert_config",
-                "type": "AlertRetentionConfig",
-                "oneof_parent": "alert_retention"
+                "type": "AlertRetentionConfig"
               },
               {
                 "id": 2,
@@ -4812,17 +4688,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -4865,17 +4731,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -5723,17 +5579,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -5834,17 +5680,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -5910,17 +5746,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -6830,17 +6656,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -6963,17 +6779,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -7011,14 +6817,12 @@
               {
                 "id": 6,
                 "name": "s3",
-                "type": "S3Config",
-                "oneof_parent": "Config"
+                "type": "S3Config"
               },
               {
                 "id": 7,
                 "name": "gcs",
-                "type": "GCSConfig",
-                "oneof_parent": "Config"
+                "type": "GCSConfig"
               },
               {
                 "id": 8,
@@ -7029,8 +6833,7 @@
                     "name": "deprecated",
                     "value": "true"
                   }
-                ],
-                "oneof_parent": "include_certificates_opt"
+                ]
               }
             ]
           },
@@ -7107,17 +6910,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -7177,17 +6970,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -7217,17 +7000,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -7252,17 +7025,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -7323,17 +7086,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -7500,20 +7253,17 @@
               {
                 "id": 7,
                 "name": "components",
-                "type": "int32",
-                "oneof_parent": "set_components"
+                "type": "int32"
               },
               {
                 "id": 8,
                 "name": "cves",
-                "type": "int32",
-                "oneof_parent": "set_cves"
+                "type": "int32"
               },
               {
                 "id": 9,
                 "name": "fixable_cves",
-                "type": "int32",
-                "oneof_parent": "set_fixable"
+                "type": "int32"
               },
               {
                 "id": 5,
@@ -7543,8 +7293,7 @@
               {
                 "id": 13,
                 "name": "top_cvss",
-                "type": "float",
-                "oneof_parent": "set_top_cvss"
+                "type": "float"
               },
               {
                 "id": 14,
@@ -7615,8 +7364,7 @@
               {
                 "id": 7,
                 "name": "hash",
-                "type": "uint64",
-                "oneof_parent": "hashoneof"
+                "type": "uint64"
               }
             ]
           },
@@ -7689,8 +7437,7 @@
               {
                 "id": 5,
                 "name": "layer_index",
-                "type": "int32",
-                "oneof_parent": "has_layer_index"
+                "type": "int32"
               },
               {
                 "id": 6,
@@ -7710,8 +7457,7 @@
               {
                 "id": 9,
                 "name": "top_cvss",
-                "type": "float",
-                "oneof_parent": "set_top_cvss"
+                "type": "float"
               },
               {
                 "id": 10,
@@ -7822,8 +7568,7 @@
               {
                 "id": 1,
                 "name": "cosign",
-                "type": "CosignSignature",
-                "oneof_parent": "Signature"
+                "type": "CosignSignature"
               }
             ]
           },
@@ -7985,20 +7730,17 @@
               {
                 "id": 3,
                 "name": "components",
-                "type": "int32",
-                "oneof_parent": "set_components"
+                "type": "int32"
               },
               {
                 "id": 4,
                 "name": "cves",
-                "type": "int32",
-                "oneof_parent": "set_cves"
+                "type": "int32"
               },
               {
                 "id": 5,
                 "name": "fixable_cves",
-                "type": "int32",
-                "oneof_parent": "set_fixable"
+                "type": "int32"
               },
               {
                 "id": 6,
@@ -8041,17 +7783,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -8099,8 +7831,7 @@
               {
                 "id": 8,
                 "name": "top_cvss",
-                "type": "float",
-                "oneof_parent": "set_top_cvss"
+                "type": "float"
               },
               {
                 "id": 9,
@@ -8122,17 +7853,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -8184,62 +7905,52 @@
               {
                 "id": 8,
                 "name": "clairify",
-                "type": "ClairifyConfig",
-                "oneof_parent": "IntegrationConfig"
+                "type": "ClairifyConfig"
               },
               {
                 "id": 23,
                 "name": "scanner_v4",
-                "type": "ScannerV4Config",
-                "oneof_parent": "IntegrationConfig"
+                "type": "ScannerV4Config"
               },
               {
                 "id": 9,
                 "name": "docker",
-                "type": "DockerConfig",
-                "oneof_parent": "IntegrationConfig"
+                "type": "DockerConfig"
               },
               {
                 "id": 10,
                 "name": "quay",
-                "type": "QuayConfig",
-                "oneof_parent": "IntegrationConfig"
+                "type": "QuayConfig"
               },
               {
                 "id": 11,
                 "name": "ecr",
-                "type": "ECRConfig",
-                "oneof_parent": "IntegrationConfig"
+                "type": "ECRConfig"
               },
               {
                 "id": 13,
                 "name": "google",
-                "type": "GoogleConfig",
-                "oneof_parent": "IntegrationConfig"
+                "type": "GoogleConfig"
               },
               {
                 "id": 14,
                 "name": "clair",
-                "type": "ClairConfig",
-                "oneof_parent": "IntegrationConfig"
+                "type": "ClairConfig"
               },
               {
                 "id": 22,
                 "name": "clair_v4",
-                "type": "ClairV4Config",
-                "oneof_parent": "IntegrationConfig"
+                "type": "ClairV4Config"
               },
               {
                 "id": 20,
                 "name": "ibm",
-                "type": "IBMRegistryConfig",
-                "oneof_parent": "IntegrationConfig"
+                "type": "IBMRegistryConfig"
               },
               {
                 "id": 24,
                 "name": "azure",
-                "type": "AzureConfig",
-                "oneof_parent": "IntegrationConfig"
+                "type": "AzureConfig"
               },
               {
                 "id": 15,
@@ -8580,17 +8291,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -8620,17 +8321,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -8722,17 +8413,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -8851,14 +8532,12 @@
               {
                 "id": 5,
                 "name": "pod_exec_args",
-                "type": "PodExecArgs",
-                "oneof_parent": "ObjectArgs"
+                "type": "PodExecArgs"
               },
               {
                 "id": 6,
                 "name": "pod_port_forward_args",
-                "type": "PodPortForwardArgs",
-                "oneof_parent": "ObjectArgs"
+                "type": "PodPortForwardArgs"
               },
               {
                 "id": 15,
@@ -8986,17 +8665,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -9137,17 +8806,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -9182,17 +8841,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -9307,17 +8956,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -9385,17 +9024,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -9496,17 +9125,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -9698,14 +9317,12 @@
               {
                 "id": 3,
                 "name": "deployment",
-                "type": "Deployment",
-                "oneof_parent": "desc"
+                "type": "Deployment"
               },
               {
                 "id": 4,
                 "name": "external_source",
-                "type": "ExternalSource",
-                "oneof_parent": "desc"
+                "type": "ExternalSource"
               }
             ],
             "messages": [
@@ -9769,8 +9386,7 @@
                   {
                     "id": 2,
                     "name": "cidr",
-                    "type": "string",
-                    "oneof_parent": "source"
+                    "type": "string"
                   },
                   {
                     "id": 3,
@@ -9789,17 +9405,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -9824,17 +9430,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -10039,14 +9635,12 @@
               {
                 "id": 2,
                 "name": "port",
-                "type": "int32",
-                "oneof_parent": "port_ref"
+                "type": "int32"
               },
               {
                 "id": 3,
                 "name": "port_name",
-                "type": "string",
-                "oneof_parent": "port_ref"
+                "type": "string"
               }
             ]
           },
@@ -10164,17 +9758,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -10336,20 +9920,17 @@
               {
                 "id": 19,
                 "name": "components",
-                "type": "int32",
-                "oneof_parent": "set_components"
+                "type": "int32"
               },
               {
                 "id": 20,
                 "name": "cves",
-                "type": "int32",
-                "oneof_parent": "set_cves"
+                "type": "int32"
               },
               {
                 "id": 21,
                 "name": "fixable_cves",
-                "type": "int32",
-                "oneof_parent": "set_fixable"
+                "type": "int32"
               },
               {
                 "id": 22,
@@ -10364,8 +9945,7 @@
               {
                 "id": 24,
                 "name": "top_cvss",
-                "type": "float",
-                "oneof_parent": "set_top_cvss"
+                "type": "float"
               },
               {
                 "id": 27,
@@ -10591,8 +10171,7 @@
               {
                 "id": 5,
                 "name": "top_cvss",
-                "type": "float",
-                "oneof_parent": "set_top_cvss"
+                "type": "float"
               },
               {
                 "id": 6,
@@ -10618,17 +10197,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -10666,8 +10235,7 @@
               {
                 "id": 8,
                 "name": "top_cvss",
-                "type": "float",
-                "oneof_parent": "set_top_cvss"
+                "type": "float"
               },
               {
                 "id": 9,
@@ -10679,17 +10247,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -10717,8 +10275,7 @@
               {
                 "id": 4,
                 "name": "clairify",
-                "type": "ClairifyConfig",
-                "oneof_parent": "IntegrationConfig"
+                "type": "ClairifyConfig"
               }
             ]
           }
@@ -10730,17 +10287,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -10768,17 +10315,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -10887,56 +10424,47 @@
               {
                 "id": 10,
                 "name": "jira",
-                "type": "Jira",
-                "oneof_parent": "config"
+                "type": "Jira"
               },
               {
                 "id": 11,
                 "name": "email",
-                "type": "Email",
-                "oneof_parent": "config"
+                "type": "Email"
               },
               {
                 "id": 12,
                 "name": "cscc",
-                "type": "CSCC",
-                "oneof_parent": "config"
+                "type": "CSCC"
               },
               {
                 "id": 13,
                 "name": "splunk",
-                "type": "Splunk",
-                "oneof_parent": "config"
+                "type": "Splunk"
               },
               {
                 "id": 14,
                 "name": "pagerduty",
-                "type": "PagerDuty",
-                "oneof_parent": "config"
+                "type": "PagerDuty"
               },
               {
                 "id": 15,
                 "name": "generic",
-                "type": "Generic",
-                "oneof_parent": "config"
+                "type": "Generic"
               },
               {
                 "id": 16,
                 "name": "sumologic",
-                "type": "SumoLogic",
-                "oneof_parent": "config"
+                "type": "SumoLogic"
               },
               {
                 "id": 17,
                 "name": "aws_security_hub",
-                "type": "AWSSecurityHub",
-                "oneof_parent": "config"
+                "type": "AWSSecurityHub"
               },
               {
                 "id": 18,
                 "name": "syslog",
-                "type": "Syslog",
-                "oneof_parent": "config"
+                "type": "Syslog"
               },
               {
                 "id": 19,
@@ -11167,8 +10695,7 @@
                     "name": "deprecated",
                     "value": "true"
                   }
-                ],
-                "oneof_parent": "derived_source_type_deprecated"
+                ]
               }
             ],
             "maps": [
@@ -11265,8 +10792,7 @@
               {
                 "id": 2,
                 "name": "tcp_config",
-                "type": "TCPConfig",
-                "oneof_parent": "endpoint"
+                "type": "TCPConfig"
               },
               {
                 "id": 3,
@@ -11322,17 +10848,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -11352,17 +10868,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -11384,17 +10890,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -11422,8 +10918,7 @@
               {
                 "id": 4,
                 "name": "clairify",
-                "type": "ClairifyConfig",
-                "oneof_parent": "IntegrationConfig"
+                "type": "ClairifyConfig"
               }
             ]
           }
@@ -11435,17 +10930,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -11947,17 +11432,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -11987,21 +11462,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "cc_enable_arenas",
-            "value": "true"
-          },
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -12123,8 +11584,7 @@
               {
                 "id": 1,
                 "name": "process_name",
-                "type": "string",
-                "oneof_parent": "item"
+                "type": "string"
               }
             ]
           },
@@ -12182,21 +11642,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "cc_enable_arenas",
-            "value": "true"
-          },
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -12410,21 +11856,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "cc_enable_arenas",
-            "value": "true"
-          },
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -12622,17 +12054,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "cc_enable_arenas",
-            "value": "true"
-          },
-          {
-            "name": "go_package",
-            "value": "storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -12900,17 +12322,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -12928,8 +12340,7 @@
               {
                 "id": 2,
                 "name": "layer_index",
-                "type": "int32",
-                "oneof_parent": "has_layer_index"
+                "type": "int32"
               },
               {
                 "id": 3,
@@ -12964,8 +12375,7 @@
               {
                 "id": 3,
                 "name": "fixed_by",
-                "type": "string",
-                "oneof_parent": "has_fixed_by"
+                "type": "string"
               },
               {
                 "id": 4,
@@ -13045,8 +12455,7 @@
               {
                 "id": 3,
                 "name": "fixed_by",
-                "type": "string",
-                "oneof_parent": "has_fixed_by"
+                "type": "string"
               },
               {
                 "id": 4,
@@ -13076,8 +12485,7 @@
               {
                 "id": 3,
                 "name": "fixed_by",
-                "type": "string",
-                "oneof_parent": "has_fixed_by"
+                "type": "string"
               },
               {
                 "id": 4,
@@ -13122,17 +12530,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -13215,8 +12613,7 @@
               {
                 "id": 5,
                 "name": "vuln_report_filters",
-                "type": "VulnerabilityReportFilters",
-                "oneof_parent": "filter"
+                "type": "VulnerabilityReportFilters"
               },
               {
                 "id": 6,
@@ -13226,8 +12623,7 @@
               {
                 "id": 7,
                 "name": "email_config",
-                "type": "EmailNotifierConfiguration",
-                "oneof_parent": "notifier_config"
+                "type": "EmailNotifierConfiguration"
               },
               {
                 "id": 8,
@@ -13315,20 +12711,17 @@
               {
                 "id": 5,
                 "name": "all_vuln",
-                "type": "bool",
-                "oneof_parent": "cves_since"
+                "type": "bool"
               },
               {
                 "id": 6,
                 "name": "since_last_sent_scheduled_report",
-                "type": "bool",
-                "oneof_parent": "cves_since"
+                "type": "bool"
               },
               {
                 "id": 7,
                 "name": "since_start_date",
-                "type": "google.protobuf.Timestamp",
-                "oneof_parent": "cves_since"
+                "type": "google.protobuf.Timestamp"
               },
               {
                 "id": 8,
@@ -13344,25 +12737,52 @@
               {
                 "id": 1,
                 "name": "collection_id",
-                "type": "string",
-                "oneof_parent": "scope_reference"
+                "type": "string"
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
           },
+          {
+            "path": "storage/cve.proto"
+          },
+          {
+            "path": "storage/report_notifier_configuration.proto"
+          },
+          {
+            "path": "storage/role.proto"
+          },
+          {
+            "path": "storage/schedule.proto"
+          },
+          {
+            "path": "storage/user.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "report_notifier_configuration.proto",
+      "def": {
+        "messages": [
           {
             "name": "NotifierConfiguration",
             "fields": [
               {
                 "id": 1,
                 "name": "email_config",
-                "type": "EmailNotifierConfiguration",
-                "oneof_parent": "notifier_config"
+                "type": "EmailNotifierConfiguration"
               },
               {
                 "id": 2,
                 "name": "id",
-                "type": "string",
-                "oneof_parent": "ref"
+                "type": "string"
               }
             ]
           },
@@ -13393,36 +12813,9 @@
             ]
           }
         ],
-        "imports": [
-          {
-            "path": "google/protobuf/timestamp.proto"
-          },
-          {
-            "path": "storage/cve.proto"
-          },
-          {
-            "path": "storage/role.proto"
-          },
-          {
-            "path": "storage/schedule.proto"
-          },
-          {
-            "path": "storage/user.proto"
-          }
-        ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -13518,8 +12911,7 @@
               {
                 "id": 6,
                 "name": "vuln_report_filters",
-                "type": "VulnerabilityReportFilters",
-                "oneof_parent": "filter"
+                "type": "VulnerabilityReportFilters"
               },
               {
                 "id": 7,
@@ -13570,8 +12962,7 @@
               {
                 "id": 1,
                 "name": "email_config",
-                "type": "EmailNotifierConfiguration",
-                "oneof_parent": "notifier_config"
+                "type": "EmailNotifierConfiguration"
               },
               {
                 "id": 2,
@@ -13624,6 +13015,9 @@
             "path": "storage/report_configuration.proto"
           },
           {
+            "path": "storage/report_notifier_configuration.proto"
+          },
+          {
             "path": "storage/schedule.proto"
           },
           {
@@ -13632,17 +13026,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -13788,17 +13172,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -13941,17 +13315,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -14259,17 +13623,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -14319,20 +13673,17 @@
               {
                 "id": 4,
                 "name": "weekly",
-                "type": "WeeklyInterval",
-                "oneof_parent": "Interval"
+                "type": "WeeklyInterval"
               },
               {
                 "id": 5,
                 "name": "days_of_week",
-                "type": "DaysOfWeek",
-                "oneof_parent": "Interval"
+                "type": "DaysOfWeek"
               },
               {
                 "id": 6,
                 "name": "days_of_month",
-                "type": "DaysOfMonth",
-                "oneof_parent": "Interval"
+                "type": "DaysOfMonth"
               }
             ],
             "messages": [
@@ -14373,17 +13724,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -14430,17 +13771,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -14707,14 +14038,12 @@
               {
                 "id": 3,
                 "name": "cert",
-                "type": "Cert",
-                "oneof_parent": "metadata"
+                "type": "Cert"
               },
               {
                 "id": 4,
                 "name": "image_pull_secret",
-                "type": "ImagePullSecret",
-                "oneof_parent": "metadata"
+                "type": "ImagePullSecret"
               }
             ]
           },
@@ -14813,17 +14142,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -14843,17 +14162,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -14938,17 +14247,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -15042,8 +14341,7 @@
                     "name": "deprecated",
                     "value": "true"
                   }
-                ],
-                "oneof_parent": "srl"
+                ]
               },
               {
                 "id": 2,
@@ -15111,17 +14409,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -15179,17 +14467,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -15240,17 +14518,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -15343,17 +14611,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -15389,21 +14647,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "cc_enable_arenas",
-            "value": "true"
-          },
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -15529,14 +14773,12 @@
               {
                 "id": 14,
                 "name": "oneofstring",
-                "type": "string",
-                "oneof_parent": "oneof"
+                "type": "string"
               },
               {
                 "id": 15,
                 "name": "oneofnested",
-                "type": "OneOfNested",
-                "oneof_parent": "oneof"
+                "type": "OneOfNested"
               },
               {
                 "id": 16,
@@ -15702,19 +14944,27 @@
               {
                 "id": 14,
                 "name": "oneofstring",
-                "type": "string",
-                "oneof_parent": "oneof"
+                "type": "string"
               },
               {
                 "id": 15,
                 "name": "oneofnested",
-                "type": "OneOfNested",
-                "oneof_parent": "oneof"
+                "type": "OneOfNested"
               },
               {
                 "id": 16,
                 "name": "bytess",
                 "type": "bytes"
+              },
+              {
+                "id": 17,
+                "name": "oneof_two_string",
+                "type": "string"
+              },
+              {
+                "id": 18,
+                "name": "oneof_two_int",
+                "type": "int64"
               }
             ],
             "maps": [
@@ -15898,14 +15148,12 @@
               {
                 "id": 14,
                 "name": "oneofstring",
-                "type": "string",
-                "oneof_parent": "oneof"
+                "type": "string"
               },
               {
                 "id": 15,
                 "name": "oneofnested",
-                "type": "OneOfNested",
-                "oneof_parent": "oneof"
+                "type": "OneOfNested"
               }
             ],
             "maps": [
@@ -16345,21 +15593,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "cc_enable_arenas",
-            "value": "true"
-          },
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -16435,17 +15669,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -16587,17 +15811,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -16637,17 +15851,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -16723,14 +15927,12 @@
               {
                 "id": 1,
                 "name": "expires_when_fixed",
-                "type": "bool",
-                "oneof_parent": "expiry"
+                "type": "bool"
               },
               {
                 "id": 2,
                 "name": "expires_on",
-                "type": "google.protobuf.Timestamp",
-                "oneof_parent": "expiry"
+                "type": "google.protobuf.Timestamp"
               },
               {
                 "id": 3,
@@ -16895,20 +16097,17 @@
               {
                 "id": 11,
                 "name": "deferral_req",
-                "type": "DeferralRequest",
-                "oneof_parent": "req"
+                "type": "DeferralRequest"
               },
               {
                 "id": 12,
                 "name": "fp_request",
-                "type": "FalsePositiveRequest",
-                "oneof_parent": "req"
+                "type": "FalsePositiveRequest"
               },
               {
                 "id": 16,
                 "name": "cves",
-                "type": "CVEs",
-                "oneof_parent": "entities"
+                "type": "CVEs"
               },
               {
                 "id": 21,
@@ -16919,20 +16118,17 @@
                     "name": "deprecated",
                     "value": "true"
                   }
-                ],
-                "oneof_parent": "updated_req"
+                ]
               },
               {
                 "id": 22,
                 "name": "deferral_update",
-                "type": "DeferralUpdate",
-                "oneof_parent": "updated_req"
+                "type": "DeferralUpdate"
               },
               {
                 "id": 23,
                 "name": "false_positive_update",
-                "type": "FalsePositiveUpdate",
-                "oneof_parent": "updated_req"
+                "type": "FalsePositiveUpdate"
               }
             ],
             "messages": [
@@ -16953,8 +16149,7 @@
                   {
                     "id": 1,
                     "name": "image_scope",
-                    "type": "Image",
-                    "oneof_parent": "info"
+                    "type": "Image"
                   },
                   {
                     "id": 2,
@@ -16965,8 +16160,7 @@
                         "name": "deprecated",
                         "value": "true"
                       }
-                    ],
-                    "oneof_parent": "info"
+                    ]
                   }
                 ],
                 "messages": [
@@ -17011,17 +16205,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -17096,8 +16280,7 @@
               {
                 "id": 5,
                 "name": "fixed_by",
-                "type": "string",
-                "oneof_parent": "set_fixed_by"
+                "type": "string"
               },
               {
                 "id": 8,
@@ -17196,8 +16379,7 @@
               {
                 "id": 4,
                 "name": "fixed_by",
-                "type": "string",
-                "oneof_parent": "set_fixed_by"
+                "type": "string"
               },
               {
                 "id": 5,
@@ -17227,17 +16409,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     }
   ]
