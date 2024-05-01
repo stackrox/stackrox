@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -545,7 +545,7 @@ func (s *serviceImpl) GetPolicyCategories(ctx context.Context, _ *v1.Empty) (*v1
 
 	response := new(v1.PolicyCategoriesResponse)
 	response.Categories = categorySet.AsSlice()
-	sort.Strings(response.Categories)
+	slices.Sort(response.Categories)
 
 	return response, nil
 }

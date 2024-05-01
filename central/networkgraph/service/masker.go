@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
@@ -45,7 +45,7 @@ func (m *flowGraphMasker) RegisterDeploymentForMasking(deployment *storage.ListD
 
 func (m *flowGraphMasker) MaskDeploymentsAndNamespaces() {
 	orderedNamespaceNamesToMask := m.namespaceNamesToMask.AsSlice()
-	sort.Strings(orderedNamespaceNamesToMask)
+	slices.Sort(orderedNamespaceNamesToMask)
 	for ix, ns := range orderedNamespaceNamesToMask {
 		maskedNS := fmt.Sprintf("%s #%d", MaskedNamespaceName, ix+1)
 		m.realToMaskedNamespace[ns] = maskedNS
@@ -55,7 +55,7 @@ func (m *flowGraphMasker) MaskDeploymentsAndNamespaces() {
 	for deploymentID := range m.deploymentsToMask {
 		orderedDeploymentIDsToMask = append(orderedDeploymentIDsToMask, deploymentID)
 	}
-	sort.Strings(orderedDeploymentIDsToMask)
+	slices.Sort(orderedDeploymentIDsToMask)
 	for ix, deploymentID := range orderedDeploymentIDsToMask {
 		origDeployment := m.deploymentsToMask[deploymentID]
 		maskedDeploymentName := fmt.Sprintf("%s #%d", MaskedDeploymentName, ix+1)

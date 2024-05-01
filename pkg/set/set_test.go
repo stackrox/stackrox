@@ -24,7 +24,7 @@ func assertSetContainsExactly(t *testing.T, set StringSet, elements ...string) {
 	}
 	a.ElementsMatch(set.AsSlice(), elements)
 
-	sort.Strings(elements)
+	slices.Sort(elements)
 	a.Equal(elements, set.AsSortedSlice(func(i, j string) bool {
 		return i < j
 	}))

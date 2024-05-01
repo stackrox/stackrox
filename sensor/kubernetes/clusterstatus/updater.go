@@ -3,7 +3,7 @@ package clusterstatus
 import (
 	"context"
 	"encoding/json"
-	"sort"
+	"slices"
 	"sync/atomic"
 	"time"
 
@@ -289,7 +289,7 @@ func (u *updaterImpl) getAPIVersions() []string {
 	}
 
 	apiVersions := metav1.ExtractGroupVersions(groupList)
-	sort.Strings(apiVersions)
+	slices.Sort(apiVersions)
 	return apiVersions
 }
 

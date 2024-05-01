@@ -1,7 +1,7 @@
 package kubernetes
 
 import (
-	"sort"
+	"slices"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/checks/common"
@@ -156,7 +156,7 @@ func tlsCipherSuites(config *standards.KubeletConfiguration) []*storage.Complian
 		}
 	}
 	if len(unexpectedCiphers) != 0 {
-		sort.Strings(unexpectedCiphers)
+		slices.Sort(unexpectedCiphers)
 		return common.FailListf("TLSCipherSuites contains unexpected ciphers: %q", unexpectedCiphers)
 	}
 	return common.PassListf("TLSCipherSuites contains only %q", config.TLSCipherSuites)

@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"testing"
 	"time"
 
@@ -417,8 +417,8 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 		"baz/depF <- foo/depB",
 		"mycluster__net1 <- foo/depA",
 	}
-	sort.Strings(expected)
-	sort.Strings(flowStrings)
+	slices.Sort(expected)
+	slices.Sort(flowStrings)
 	s.Equal(expected, flowStrings)
 }
 
@@ -774,7 +774,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 		"baz/depF <- foo/depB",
 		"mycluster__net1 <- foo/depA",
 	}
-	sort.Strings(expected)
+	slices.Sort(expected)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
@@ -842,7 +842,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 		}
 	}
 
-	sort.Strings(flowStrings)
+	slices.Sort(flowStrings)
 	s.Equal(expected, flowStrings)
 
 	// Second run, change only the order of the elements in SearchListDeployments
@@ -882,7 +882,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 			flowStringsSecondPass = append(flowStringsSecondPass, flowAsString(src, dst))
 		}
 	}
-	sort.Strings(flowStringsSecondPass)
+	slices.Sort(flowStringsSecondPass)
 	s.Equal(expected, flowStringsSecondPass)
 }
 
@@ -1140,8 +1140,8 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 		es2ID.String() + " <- bar/depD",
 		es3ID.String() + " <- bar/depD",
 	}
-	sort.Strings(expected)
-	sort.Strings(flowStrings)
+	slices.Sort(expected)
+	slices.Sort(flowStrings)
 	s.Equal(expected, flowStrings)
 }
 

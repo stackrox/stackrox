@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sort"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -253,7 +253,7 @@ func (a *authProviderCmd) Construct(cmd *cobra.Command) error {
 func (a *authProviderCmd) Validate(providerType string) error {
 	requiredAttributes := make([]declarativeconfig.RequiredAttribute, 0, len(a.requiredAttributes))
 	keys := maps.Keys(a.requiredAttributes)
-	sort.Strings(keys)
+	slices.Sort(keys)
 	for _, key := range keys {
 		requiredAttributes = append(requiredAttributes, declarativeconfig.RequiredAttribute{
 			AttributeKey:   key,
@@ -290,7 +290,7 @@ func (a *authProviderCmd) Validate(providerType string) error {
 	case "oidc":
 		claimMappings := make([]declarativeconfig.ClaimMapping, 0, len(a.claimMapping))
 		paths := maps.Keys(a.claimMapping)
-		sort.Strings(paths)
+		slices.Sort(paths)
 		for _, path := range paths {
 			claimMappings = append(claimMappings, declarativeconfig.ClaimMapping{
 				Path: path,

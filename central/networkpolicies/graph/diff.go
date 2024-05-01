@@ -2,7 +2,6 @@ package graph
 
 import (
 	"slices"
-	"sort"
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -15,7 +14,7 @@ func getAdjacentNodeIDs(adjacencies map[string]*v1.NetworkEdgePropertiesBundle) 
 	for id := range adjacencies {
 		ids = append(ids, id)
 	}
-	sort.Strings(ids)
+	slices.Sort(ids)
 	return ids
 }
 
@@ -29,7 +28,7 @@ func adjacentNodeIDsToMap(adjacencies []string) map[string]*v1.NetworkEdgeProper
 
 func getPolicyIDs(node *v1.NetworkNode) []string {
 	result := slices.Clone(node.GetPolicyIds())
-	sort.Strings(result)
+	slices.Sort(result)
 	return result
 }
 
