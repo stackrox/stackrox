@@ -1,3 +1,5 @@
+import { ValueOf } from 'utils/type.utils';
+
 // Image search filter
 
 export const imageSearchFilterConfig = {
@@ -441,3 +443,5 @@ export type CompoundSearchFilterConfig = {
     ImageComponent?: ImageComponentSearchFilterConfig;
     NodeComponent?: NodeComponentSearchFilterConfig;
 };
+
+export type EntitySearchFilterConfig = ValueOf<Required<CompoundSearchFilterConfig>>;
