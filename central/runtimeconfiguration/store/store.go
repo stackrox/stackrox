@@ -23,7 +23,7 @@ type Store interface {
 	Exists(ctx context.Context, id string) (bool, error)
 
 	Get(ctx context.Context, id string) (*storage.RuntimeFilterData, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.RuntimeFilterData, error)
+	// GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.RuntimeFilterData, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.RuntimeFilterData, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 

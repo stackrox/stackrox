@@ -137,6 +137,7 @@ import (
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	roleService "github.com/stackrox/rox/central/role/service"
+	collectorRuntimeConfigService "github.com/stackrox/rox/central/runtimeconfiguration/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/scanner"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
@@ -431,6 +432,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		collectionService.Singleton(),
 		policyCategoryService.Singleton(),
 		processListeningOnPorts.Singleton(),
+		collectorRuntimeConfigService.Singleton(),
 	}
 
 	// The scheduled backup service is not applicable when using an external database
