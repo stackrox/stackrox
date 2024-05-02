@@ -5,7 +5,9 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	datastore "github.com/stackrox/rox/central/runtimeconfiguration/datastore"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -27,7 +29,8 @@ var (
 )
 
 type serviceImpl struct {
-	dataStore datastore.DataStore
+	dataStore   datastore.DataStore
+	connManager connection.Manager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -66,6 +69,14 @@ func (s *serviceImpl) PostCollectorRuntimeConfiguration(
 
 	log.Infof("request.CollectorRuntimeConfiguration= %+v", request.CollectorRuntimeConfiguration)
 	err := s.dataStore.SetRuntimeConfiguration(ctx, request.CollectorRuntimeConfiguration)
+
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_RuntimeFilteringConfiguration{
+			RuntimeFilteringConfiguration: request.CollectorRuntimeConfiguration,
+		},
+	}
+
+	s.connManager.BroadcastMessage(msg)
 
 	return &v1.Empty{}, err
 }
