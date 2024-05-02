@@ -4,7 +4,9 @@ package datastore
 
 import (
 	"context"
+	"math/rand"
 	"testing"
+	"time"
 
 	runtimeStore "github.com/stackrox/rox/central/runtimeconfiguration/store"
 	postgresStore "github.com/stackrox/rox/central/runtimeconfiguration/store/postgres"
@@ -91,7 +93,7 @@ var (
 	resourceSelectorIncomplete = storage.ResourceSelector{
 		Rules: []*storage.SelectorRule{
 			{
-				FieldName: "Clster",
+				FieldName: "Cluster",
 				Values: []*storage.RuleValue{
 					{
 						Value: "cluster-1",
@@ -112,7 +114,7 @@ var (
 	resourceSelectorCluster1 = storage.ResourceSelector{
 		Rules: []*storage.SelectorRule{
 			{
-				FieldName: "Clster",
+				FieldName: "Cluster",
 				Operator:  storage.BooleanOperator_OR,
 				Values: []*storage.RuleValue{
 					{
@@ -127,7 +129,7 @@ var (
 	resourceSelectorWebappAndMarketing = storage.ResourceSelector{
 		Rules: []*storage.SelectorRule{
 			{
-				FieldName: "Clster",
+				FieldName: "Cluster",
 				Operator:  storage.BooleanOperator_OR,
 				Values: []*storage.RuleValue{
 					{
@@ -156,7 +158,7 @@ var (
 	resourceSelectorMarketingDepartment = storage.ResourceSelector{
 		Rules: []*storage.SelectorRule{
 			{
-				FieldName: "Clster",
+				FieldName: "Cluster",
 				Operator:  storage.BooleanOperator_OR,
 				Values: []*storage.RuleValue{
 					{
@@ -286,4 +288,136 @@ func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfigurationIncomplet
 	suite.NoError(err)
 
 	suite.compareRuntimeFilteringConfigurations(runtimeFilteringConfigurationIncomplete, fetchedRuntimeConfiguration)
+}
+
+func randomString(length int) string {
+    //rand.Seed(time.Now().UnixNano())
+
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+    result := make([]byte, length)
+
+    for i := range result {
+        result[i] = charset[rand.Intn(len(charset))]
+    }
+
+    return string(result)
+}
+
+
+func makeRandomCollection() storage.ResourceCollection {
+	resourceSelector := storage.ResourceSelector{
+		Rules: []*storage.SelectorRule{
+			{
+				FieldName: "Cluster",
+				Operator:  storage.BooleanOperator_OR,
+				Values: []*storage.RuleValue{
+					{
+						Value:     randomString(10),
+						MatchType: storage.MatchType_EXACT,
+					},
+				},
+			},
+			{
+				FieldName: "Namespace",
+				Operator:  storage.BooleanOperator_OR,
+				Values: []*storage.RuleValue{
+					{
+						Value:     randomString(10),
+						MatchType: storage.MatchType_EXACT,
+					},
+				},
+			},
+		},
+	}
+	resourceSelectors := []*storage.ResourceSelector{&resourceSelector}
+	resourceCollection := storage.ResourceCollection{
+		Id:             randomString(16),
+		Name:		randomString(16),
+		ResourceSelectors: resourceSelectors,
+	}
+
+	return resourceCollection
+}
+
+func makeRandomCollections(ncollections int) []*storage.ResourceCollection {
+	resourceCollections := make([]*storage.ResourceCollection, ncollections)
+
+	for i := 0; i < ncollections; i++ {
+		resourceCollection := makeRandomCollection()
+		resourceCollections[i] = &resourceCollection;
+	}
+
+	return resourceCollections
+}
+
+func makeRandomRules(collections []*storage.ResourceCollection) []*storage.RuntimeFilter_RuntimeFilterRule {
+	ncollections := len(collections)
+	rules := make([]*storage.RuntimeFilter_RuntimeFilterRule, ncollections)
+	for i := 0; i < ncollections; i++ {
+		runtimeFilterRule := storage.RuntimeFilter_RuntimeFilterRule{
+			ResourceCollectionId: collections[i].Id,
+			Status:			randomString(10),
+		}
+		rules[i] = &runtimeFilterRule;
+	}
+
+	return rules
+}
+
+func makeRandomRuntimeFilters(collections []*storage.ResourceCollection) []*storage.RuntimeFilter {
+	//runtimeFilters := make([]*storage.RuntimeFilter, len(storage.RuntimeFilterFeatures_name))
+	runtimeFilters := make([]*storage.RuntimeFilter, 0)
+	//for _, feature := range storage.RuntimeFilterFeatures_value {
+	features := []storage.RuntimeFilterFeatures{
+		storage.RuntimeFilterFeatures_EXTERNAL_IPS,
+		storage.RuntimeFilterFeatures_PROCESSES,
+		storage.RuntimeFilterFeatures_NETWORK_CONNECTIONS,
+		storage.RuntimeFilterFeatures_LISTENING_ENDPOINTS,
+	}
+
+	for i := 0; i < 4; i++ {
+		rules := makeRandomRules(collections)
+		runtimeFilter := storage.RuntimeFilter{
+			Feature:       features[i],
+			DefaultStatus: randomString(10),
+			Rules:         rules,
+		}
+		//runtimeFilters[feature] = &runtimeFilter
+		runtimeFilters = append(runtimeFilters, &runtimeFilter)
+	}
+
+	return runtimeFilters
+}
+
+func makeRandomConfiguration(ncollections int) *storage.RuntimeFilteringConfiguration {
+	resourceCollections := makeRandomCollections(ncollections)
+	runtimeFilters := makeRandomRuntimeFilters(resourceCollections)
+
+	runtimeFilteringConfiguration = &storage.RuntimeFilteringConfiguration{
+		RuntimeFilters:      runtimeFilters,
+		ResourceCollections: resourceCollections,
+	}
+
+	return runtimeFilteringConfiguration
+}
+
+func (suite *RuntimeConfigurationTestSuite) TestSetRuntimeConfigurationSpeed() {
+	runtimeFilteringConfigurationLarge := makeRandomConfiguration(100000)
+
+	start := time.Now()
+	suite.NoError(suite.datastore.SetRuntimeConfiguration(suite.hasAllCtx, runtimeFilteringConfigurationLarge))
+	setTime := time.Since(start)
+	log.Infof("setTime= %+v", setTime)
+
+	getStart := time.Now()
+	fetchedRuntimeConfiguration, err := suite.datastore.GetRuntimeConfiguration(suite.hasAllCtx)
+	suite.NoError(err)
+	getTime := time.Since(getStart)
+	log.Infof("getTime= %+v", getTime)
+
+	elapsedTime := time.Since(start)
+	log.Infof("elapsedTime= %+v", elapsedTime)
+
+	suite.compareRuntimeFilteringConfigurations(runtimeFilteringConfigurationLarge, fetchedRuntimeConfiguration)
 }

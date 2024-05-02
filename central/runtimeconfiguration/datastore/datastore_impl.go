@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 
 	// "github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/central/runtimeconfiguration/store"
@@ -104,22 +105,31 @@ func (ds *datastoreImpl) GetRuntimeConfiguration(ctx context.Context) (*storage.
 	return &runtimeFilteringConfiguration, err
 }
 
+func getRuntimeConfigId(feature storage.RuntimeFilterFeatures, collection_id string) string {
+	idNamespace := uuid.FromStringOrPanic("801fcce1-56d3-48bd-b1ac-c41fdc6c3d94") // Coppied from process/id/id.go probably needs to be changed
+
+        id := uuid.NewV5(idNamespace, fmt.Sprintf("%s %s", feature, collection_id)).String()
+
+        return id
+}
+
 func convertRuntimeConfigurationToRuntimeConfigurationTable(runtimeConfiguration *storage.RuntimeFilteringConfiguration) []*storage.RuntimeFilterData {
 	runtimeFiltersRows := make([]*storage.RuntimeFilterData, 0)
 
-	log.Infof("runtimeConfiguration.RuntimeFilters= %+v", runtimeConfiguration.RuntimeFilters)
 	if runtimeConfiguration.RuntimeFilters != nil {
 		runtimeFilters := runtimeConfiguration.RuntimeFilters
 		for _, runtimeFilter := range runtimeFilters {
+			id := getRuntimeConfigId(runtimeFilter.Feature, "")
 			runtimeFiltersRow := storage.RuntimeFilterData{
-				Id:      uuid.NewV4().String(),
+				Id:      id,
 				Feature: runtimeFilter.Feature,
 				Status:  runtimeFilter.DefaultStatus,
 			}
 			runtimeFiltersRows = append(runtimeFiltersRows, &runtimeFiltersRow)
 			for _, rule := range runtimeFilter.Rules {
+				id = getRuntimeConfigId(runtimeFilter.Feature, rule.ResourceCollectionId)
 				runtimeFiltersRow2 := storage.RuntimeFilterData{
-					Id:                   uuid.NewV4().String(),
+					Id:                   id,
 					Feature:              runtimeFilter.Feature,
 					Status:               rule.Status,
 					ResourceCollectionId: rule.ResourceCollectionId,
@@ -157,7 +167,6 @@ func (ds *datastoreImpl) clearTables(ctx context.Context) error {
 }
 
 func (ds *datastoreImpl) SetRuntimeConfiguration(ctx context.Context, runtimeConfiguration *storage.RuntimeFilteringConfiguration) error {
-	log.Infof("runtimeConfiguration= %+v", runtimeConfiguration)
 	runtimeConfigurationRows := convertRuntimeConfigurationToRuntimeConfigurationTable(runtimeConfiguration)
 
 	err := ds.clearTables(ctx)
@@ -166,13 +175,11 @@ func (ds *datastoreImpl) SetRuntimeConfiguration(ctx context.Context, runtimeCon
 	}
 
 	log.Infof("Upserting %+v rows", len(runtimeConfigurationRows))
-	log.Infof("runtimeConfigurationRows= %+v", runtimeConfigurationRows)
 	err = ds.storage.UpsertMany(ctx, runtimeConfigurationRows)
 	if err != nil {
 		return err
 	}
 	log.Infof("Upserting %+v collections", len(runtimeConfiguration.ResourceCollections))
-	log.Infof("runtimeConfiguration.ResourceCollections= %+v", runtimeConfiguration.ResourceCollections)
 	err = ds.rcStorage.UpsertMany(ctx, runtimeConfiguration.ResourceCollections)
 
 	return err
