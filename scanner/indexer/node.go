@@ -33,23 +33,10 @@ type NodeIndexer interface {
 }
 
 type localNodeIndexer struct {
-	client http.Client
 }
 
 // NewNodeIndexer creates a new node indexer
 func NewNodeIndexer(ctx context.Context, cfg config.NodeIndexerConfig) (NodeIndexer, error) {
-	// ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.NewNodeIndexer")
-
-	// Note: http.DefaultTransport has already been modified to handle configured proxies.
-	// See scanner/cmd/scanner/main.go.
-	// t, err := httputil.TransportMux(http.DefaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices))
-	// if err != nil {
-	//	return nil, fmt.Errorf("creating HTTP transport: %w", err)
-	//}
-	// client := &http.Client{
-	//	Transport: t,
-	//}
-
 	return &localNodeIndexer{}, nil
 }
 
