@@ -1,8 +1,7 @@
 module github.com/stackrox/rox
 
 go 1.21
-
-toolchain go1.21.9
+toolchain go1.22.2
 
 require (
 	cloud.google.com/go/artifactregistry v1.14.7
@@ -17,7 +16,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v1.8.0
 	github.com/RoaringBitmap/roaring v1.9.3
-	github.com/Shopify/toxiproxy/v2 v2.8.0
+	github.com/Shopify/toxiproxy/v2 v2.9.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.8.1
 	github.com/andygrunwald/go-jira v1.16.0
@@ -336,7 +335,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/prometheus/procfs v0.12.0 // indirect
+	github.com/prometheus/procfs v0.13.0 // indirect
 	github.com/quay/claircore/updater/driver v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
