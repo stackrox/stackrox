@@ -13,12 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetInstanceConfigInTest(t *testing.T) {
-	cfg, props, err := getInstanceConfig("id")
+func Test_getKey(t *testing.T) {
+	key, err := getKey()
 	// Telemetry should be disabled in test environment.
-	assert.Nil(t, cfg)
-	assert.Nil(t, props)
-	assert.Nil(t, err)
+	assert.Empty(t, key)
+	assert.NoError(t, err)
 }
 
 func TestInstanceConfig(t *testing.T) {
@@ -65,16 +64,16 @@ func TestInstanceConfig(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Setenv(env.TelemetryConfigURL.EnvVar(), test.configURL)
 			t.Setenv(env.TelemetryStorageKey.EnvVar(), test.key)
-
-			cfg, props, err := getInstanceConfig("test-id")
+			key, err := getKey()
 			assert.NoError(t, err)
 			if test.telemetryEnabled {
+				cfg, props := getInstanceConfig("test-id", key)
 				require.NotNil(t, cfg, "Telemetry must be enabled")
 				assert.Equal(t, test.expectedKey, cfg.StorageKey)
 				assert.Equal(t, "test-id", cfg.ClientID)
 				assert.Equal(t, devVersion, props["Central version"])
 			} else {
-				assert.Nil(t, cfg, "Telemetry must be disabled")
+				assert.Empty(t, key, "Telemetry must be disabled")
 			}
 		})
 	}
