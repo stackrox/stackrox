@@ -137,7 +137,7 @@ function ExceptionRequestModal({
             variant="medium"
         >
             <ModalBoxBody className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
-                {submissionError && (
+                {!!submissionError && (
                     <Alert
                         variant="danger"
                         isInline

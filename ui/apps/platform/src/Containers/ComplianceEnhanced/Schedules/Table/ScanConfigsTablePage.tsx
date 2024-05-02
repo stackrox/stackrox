@@ -43,6 +43,7 @@ import {
 import { SortOption } from 'types/table';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { scanConfigDetailsPath } from '../compliance.scanConfigs.routes';
 import { formatScanSchedule } from '../compliance.scanConfigs.utils';
 
@@ -243,7 +244,7 @@ function ScanConfigsTablePage({
             {error ? (
                 <PageSection variant="light" isFilled id="policies-table-error">
                     <Bullseye>
-                        <Alert variant="danger" title={error} />
+                        <Alert variant="danger" title={getAxiosErrorMessage(error)} />
                     </Bullseye>
                 </PageSection>
             ) : (
