@@ -99,6 +99,11 @@ var (
 
 	// SensorAggregateDeploymentReferenceOptimization enables a performance improvement by aggregating deployment references when the same reference is queued for processing
 	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION", true)
+
 	// ACSCSEmailNotifier enables support for the ACSCS email notifier integratioon
 	ACSCSEmailNotifier = registerFeature("Enable support for ACSCS Email notifier type", "ROX_ACSCS_EMAIL_NOTIFIER", false)
+
+	// AttemptManifestDigest enables attempting to pull manifest digests from registres that historically did not
+	// support it but now appear to (ie: Nexus and RHEL).
+	AttemptManifestDigest = registerFeature("", "ROX_ATTEMPT_MANIFEST_DIGEST", true)
 )

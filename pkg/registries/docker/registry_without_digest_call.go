@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/registries/types"
 )
 
@@ -56,6 +57,17 @@ func (r *RegistryWithoutManifestCall) Metadata(image *storage.Image) (*storage.I
 	}
 
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("Error accessing %q", image.GetName().GetFullName()))
+
+	if features.AttemptManifestDigest.Enabled() {
+		// Try to pull metadata in a standard way, fallback on failure.
+		metadata, err := r.Registry.Metadata(image)
+		if err == nil {
+			return metadata, nil
+		}
+		errorList.AddError(err)
+		log.Debugf("Falling back to trying each handler individually for %q due to: %v", image.GetName().GetFullName(), err)
+	}
+
 	for _, f := range manifestFuncs {
 		metadata, err := f(r.Registry, remote, ref)
 		if err != nil {
