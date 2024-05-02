@@ -11,7 +11,7 @@ spec:
         spec:
           containers:
           - name: update-signature
-            image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.61
+            image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.67.1
             imagePullPolicy: IfNotPresent
             command:
             - /bin/bash
