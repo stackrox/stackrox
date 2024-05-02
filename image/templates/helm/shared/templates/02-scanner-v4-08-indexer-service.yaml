@@ -9,6 +9,9 @@ metadata:
     {{- include "srox.labels" (list . "service" "scanner-v4-indexer") | nindent 4 }}
   annotations:
     {{- include "srox.annotations" (list . "service" "scanner-v4-indexer") | nindent 4 }}
+    {{- if ._rox.monitoring.openshift.enabled }}
+    service.beta.openshift.io/serving-cert-secret-name: scanner-v4-indexer-monitoring-tls
+    {{- end }}
 spec:
   selector:
     app: scanner-v4-indexer
@@ -22,10 +25,14 @@ spec:
     port: {{ ._rox.scannerV4.indexer.metricsPort }}
     targetPort: monitoring
   {{- end }}
+  {{- if ._rox.monitoring.openshift.enabled }}
+  - name: indexer-monitoring-tls
+    port: 9091
+    targetPort: monitoring-tls
+  {{- end }}
 
 {{- if ._rox.env.istio }}
 ---
-
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:

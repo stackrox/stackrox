@@ -63,4 +63,26 @@ spec:
   policyTypes:
   - Ingress
 {{- end }}
+{{- if ._rox.monitoring.openshift.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scanner-v4-indexer-monitoring-tls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "scanner-v4-indexer-monitoring-tls") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "scanner-v4-indexer-monitoring-tls") | nindent 4 }}
+spec:
+  ingress:
+    - ports:
+      - port: 9091
+        protocol: TCP
+  podSelector:
+    matchLabels:
+      app: scanner-v4-indexer
+  policyTypes:
+    - Ingress
+{{- end }}
 {{- end }}
