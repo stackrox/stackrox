@@ -16,8 +16,8 @@ var (
 // AddHelmChartDebugSetting adds debug and debug-path flags to the base command.
 func AddHelmChartDebugSetting(c *cobra.Command) {
 	defaultDebugPath := path.Join(os.Getenv("GOPATH"), "src/github.com/stackrox/stackrox/image/")
-	c.PersistentFlags().BoolVar(&debug, "debug", false, "read templates from local filesystem")
-	c.PersistentFlags().StringVar(&debugChartPath, "debug-path", defaultDebugPath, "path to helm templates on your local filesystem")
+	c.PersistentFlags().BoolVar(&debug, "debug", false, "Read templates from local filesystem")
+	c.PersistentFlags().StringVar(&debugChartPath, "debug-path", defaultDebugPath, "Path to helm templates on your local filesystem")
 }
 
 // IsDebug returns whether debug flag is enabled

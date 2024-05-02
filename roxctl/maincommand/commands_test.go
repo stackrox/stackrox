@@ -10,7 +10,7 @@ import (
 )
 
 func checkUsageFirstCharacter(command *cobra.Command, t *testing.T) {
-	command.Flags().VisitAll(func(flag *pflag.Flag) {
+	command.LocalFlags().VisitAll(func(flag *pflag.Flag) {
 		s := string([]byte{flag.Usage[0]})
 		assert.Equal(t, s, strings.ToUpper(s),
 			"Command %q, flag %q, usage doesn't start with capital letter: %q",
