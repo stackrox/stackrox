@@ -35,7 +35,7 @@ spec:
             - name: ROX_TELEMETRY_STORAGE_KEY_V1
               value: my-api-key
             - name: ROX_TELEMETRY_API_WHITELIST
-              value: "/api/splunk/ta/*,/v1/auth/m2m/exchange"
+              value: "/api/splunk/ta/*,/v1/auth/m2m/exchange,/api/cli/download/*"
             - name: ROX_OFFLINE_MODE
               value: "false"
             - name: ROX_ENABLE_OPENSHIFT_AUTH
