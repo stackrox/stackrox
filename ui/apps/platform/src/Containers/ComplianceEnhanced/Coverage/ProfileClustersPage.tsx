@@ -25,16 +25,6 @@ function ProfileClustersPage() {
                 >
                     Go to all checks (ProfileChecksPage)
                 </Button>
-                <Button
-                    onClick={() => {
-                        history.push(
-                            `${complianceEnhancedCoveragePath}/profiles/${profileName}/checks/test`
-                        );
-                    }}
-                    variant="primary"
-                >
-                    Go to single check (CheckDetailsPage)
-                </Button>
             </PageSection>
         </>
     );
