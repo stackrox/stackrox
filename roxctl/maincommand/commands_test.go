@@ -6,21 +6,43 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/stretchr/testify/assert"
 )
 
-func checkUsageFirstCharacter(command *cobra.Command, t *testing.T) {
+func isFirstCapital(s string) bool {
+	if len(s) == 0 {
+		return true
+	}
+	first := string([]byte{s[0]})
+	return first == strings.ToUpper(first)
+}
+
+func getCommandPath(command *cobra.Command) string {
+	// Assume the binary has no spaces in the filepath.
+	if path := strings.SplitN(command.CommandPath(), " ", 2); len(path) > 1 {
+		return path[1]
+	}
+	return "roxctl"
+}
+
+func checkUsageFirstCharacter(t *testing.T, command *cobra.Command) {
 	command.LocalFlags().VisitAll(func(flag *pflag.Flag) {
-		s := string([]byte{flag.Usage[0]})
-		assert.Equal(t, s, strings.ToUpper(s),
-			"Command %q, flag %q, usage doesn't start with capital letter: %q",
-			command.Name(), flag.Name, flag.Usage)
+		if !isFirstCapital(flag.Usage) {
+			t.Errorf(`"%s --%s" flag usage: %q`, getCommandPath(command), flag.Name, flag.Usage)
+		}
 	})
+	if !isFirstCapital(command.Short) {
+		t.Errorf("%q, short usage: %q", getCommandPath(command), command.Short)
+	}
+	if !isFirstCapital(command.Long) {
+		t.Errorf("%q, long usage: %q", getCommandPath(command), command.Long)
+	}
 	for _, subcommand := range command.Commands() {
-		checkUsageFirstCharacter(subcommand, t)
+		t.Run(getCommandPath(subcommand), func(t *testing.T) {
+			checkUsageFirstCharacter(t, subcommand)
+		})
 	}
 }
 
 func Test_Commands(t *testing.T) {
-	checkUsageFirstCharacter(Command(), t)
+	checkUsageFirstCharacter(t, Command())
 }
