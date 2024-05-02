@@ -43,7 +43,8 @@ endif
 #    ARG CGO_ENABLED=1
 #    RUN make CGO_ENABLED=$CGO_ENABLED blah
 #
-# TODO: remove this assignment to set CGO_ENABLED to 1 (see env.mk) to minimize testing difference with FIPS builds.
+# TODO(ROX-23969): remove this assignment so that CGO_ENABLED is set to 1 (see env.mk) in order to minimize testing
+# difference with FIPS builds.
 CGO_ENABLED := 0
 
 HOST_OS := linux
