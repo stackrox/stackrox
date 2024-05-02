@@ -3,6 +3,7 @@ syntax = "proto3";
 package storage;
 
 import "google/protobuf/timestamp.proto";
+import "storage/report_notifier_configuration.proto";
 import "storage/schedule.proto";
 import "storage/user.proto";
 
@@ -91,7 +92,7 @@ message RuleControls {
   repeated string controls = 2;
 }
 
-// Next Tag: 17
+// Next Tag: 18
 message ComplianceOperatorScanConfigurationV2 {
   string id = 1; // @gotags: search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"
   string scan_config_name = 2; // @gotags: search:"Compliance Scan Config Name" sql:"unique"
@@ -118,6 +119,7 @@ message ComplianceOperatorScanConfigurationV2 {
     string cluster_id = 1; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
   }
   repeated Cluster clusters = 16;
+  repeated NotifierConfiguration notifiers = 17;
 }
 
 // Next Tag: 7

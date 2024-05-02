@@ -64,7 +64,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -208,7 +208,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -258,7 +258,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -1000,7 +1000,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -1072,7 +1072,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -1159,7 +1159,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -1295,7 +1295,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -1355,7 +1355,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -1467,7 +1467,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -2473,7 +2473,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -2536,7 +2536,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -2571,7 +2571,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -3177,7 +3177,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -3212,7 +3212,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -3268,7 +3268,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -3607,7 +3607,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -3894,6 +3894,21 @@
                 "id": 14,
                 "name": "cluster_id",
                 "type": "string"
+              },
+              {
+                "id": 15,
+                "name": "rule_ref_id",
+                "type": "string"
+              },
+              {
+                "id": 16,
+                "name": "parent_rule",
+                "type": "string"
+              },
+              {
+                "id": 17,
+                "name": "instructions",
+                "type": "string"
               }
             ],
             "maps": [
@@ -4022,6 +4037,12 @@
                 "id": 16,
                 "name": "clusters",
                 "type": "Cluster",
+                "is_repeated": true
+              },
+              {
+                "id": 17,
+                "name": "notifiers",
+                "type": "NotifierConfiguration",
                 "is_repeated": true
               }
             ],
@@ -4185,6 +4206,11 @@
               {
                 "id": 18,
                 "name": "scan_ref_id",
+                "type": "string"
+              },
+              {
+                "id": 19,
+                "name": "rule_ref_id",
                 "type": "string"
               }
             ],
@@ -4457,11 +4483,59 @@
                 "type": "ComplianceOperatorStatus"
               }
             ]
+          },
+          {
+            "name": "ComplianceOperatorRemediationV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "compliance_check_result_name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "apply",
+                "type": "bool"
+              },
+              {
+                "id": 5,
+                "name": "current_object",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "outdated_object",
+                "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "enforcement_type",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "cluster_id",
+                "type": "string"
+              }
+            ]
           }
         ],
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/report_notifier_configuration.proto"
           },
           {
             "path": "storage/schedule.proto"
@@ -4476,7 +4550,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -4816,7 +4890,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -4869,7 +4943,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -5727,7 +5801,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -5838,7 +5912,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -5914,7 +5988,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -6834,7 +6908,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -6967,7 +7041,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -7111,7 +7185,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -7181,7 +7255,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -7221,7 +7295,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -7256,7 +7330,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -7327,7 +7401,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -8045,7 +8119,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -8126,7 +8200,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -8584,7 +8658,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -8624,7 +8698,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -8726,7 +8800,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -8990,7 +9064,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -9141,7 +9215,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -9186,7 +9260,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -9311,7 +9385,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -9389,7 +9463,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -9500,7 +9574,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -9793,7 +9867,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -9828,7 +9902,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -10168,7 +10242,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -10622,7 +10696,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -10683,7 +10757,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -10734,7 +10808,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -10772,7 +10846,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -11326,7 +11400,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -11356,7 +11430,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -11388,7 +11462,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -11439,7 +11513,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -11951,7 +12025,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -11995,7 +12069,7 @@
           },
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -12190,7 +12264,7 @@
           },
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -12418,7 +12492,7 @@
           },
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -12630,7 +12704,7 @@
           },
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           }
         ]
       }
@@ -12904,7 +12978,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -13126,7 +13200,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -13348,7 +13422,47 @@
                 "oneof_parent": "scope_reference"
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
           },
+          {
+            "path": "storage/cve.proto"
+          },
+          {
+            "path": "storage/report_notifier_configuration.proto"
+          },
+          {
+            "path": "storage/role.proto"
+          },
+          {
+            "path": "storage/schedule.proto"
+          },
+          {
+            "path": "storage/user.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "report_notifier_configuration.proto",
+      "def": {
+        "messages": [
           {
             "name": "NotifierConfiguration",
             "fields": [
@@ -13393,30 +13507,13 @@
             ]
           }
         ],
-        "imports": [
-          {
-            "path": "google/protobuf/timestamp.proto"
-          },
-          {
-            "path": "storage/cve.proto"
-          },
-          {
-            "path": "storage/role.proto"
-          },
-          {
-            "path": "storage/schedule.proto"
-          },
-          {
-            "path": "storage/user.proto"
-          }
-        ],
         "package": {
           "name": "storage"
         },
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -13624,6 +13721,9 @@
             "path": "storage/report_configuration.proto"
           },
           {
+            "path": "storage/report_notifier_configuration.proto"
+          },
+          {
             "path": "storage/schedule.proto"
           },
           {
@@ -13636,7 +13736,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -13792,7 +13892,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -13945,7 +14045,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -14263,7 +14363,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -14377,7 +14477,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -14434,7 +14534,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -14817,7 +14917,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -14847,7 +14947,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -14942,7 +15042,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -15115,7 +15215,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -15183,7 +15283,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -15244,7 +15344,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -15347,7 +15447,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -15397,7 +15497,7 @@
           },
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -15715,6 +15815,18 @@
                 "id": 16,
                 "name": "bytess",
                 "type": "bytes"
+              },
+              {
+                "id": 17,
+                "name": "oneof_two_string",
+                "type": "string",
+                "oneof_parent": "oneof_two"
+              },
+              {
+                "id": 18,
+                "name": "oneof_two_int",
+                "type": "int64",
+                "oneof_parent": "oneof_two"
               }
             ],
             "maps": [
@@ -16353,7 +16465,7 @@
           },
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -16439,7 +16551,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -16591,7 +16703,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -16641,7 +16753,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -17015,7 +17127,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",
@@ -17231,7 +17343,7 @@
         "options": [
           {
             "name": "go_package",
-            "value": "storage"
+            "value": "./storage;storage"
           },
           {
             "name": "java_package",

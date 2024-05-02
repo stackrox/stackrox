@@ -318,6 +318,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 						LastUpdatedTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
 						ModifiedBy:      storageRequester,
 						Description:     "test-description",
+						Notifiers:       []*storage.NotifierConfiguration{},
 					},
 				}, nil).Times(1)
 
@@ -461,6 +462,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 						LastUpdatedTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
 						ModifiedBy:      storageRequester,
 						Description:     "test-description",
+						Notifiers:       []*storage.NotifierConfiguration{},
 					}, true, nil).Times(1)
 
 				s.suiteDataStore.EXPECT().GetSuites(allAccessContext, gomock.Any()).Return([]*storage.ComplianceOperatorSuiteV2{
