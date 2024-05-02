@@ -259,7 +259,7 @@ service ComplianceResultsService {
   }
 
   rpc GetComplianceClusterStats(ComplianceProfileResultsRequest) returns (ListComplianceClusterOverallStatsResponse) {
-    option (google.api.http) = {get: "/v2/compliance/results/profiles/{profile_name}/clusters"};
+    option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles/{profile_name}/clusters"};
   }
 
   // GetComplianceProfileCheckResult lists status of a check per cluster
