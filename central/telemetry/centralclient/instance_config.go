@@ -34,16 +34,18 @@ var (
 	enabled  bool
 )
 
-func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
+// getKey returns the configured key. If returned key is empty, telemetry should
+// be disabled.
+func getKey() (string, error) {
 	if env.OfflineModeEnv.BooleanSetting() {
-		return nil, nil, nil
+		return "", nil
 	}
 	key, err := phonehome.GetKey(env.TelemetryStorageKey.Setting(),
 		env.TelemetryConfigURL.Setting())
-	if key == "" || err != nil {
-		return nil, nil, err
-	}
+	return key, errors.Wrap(err, "failed to get telemetry key")
+}
 
+func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any) {
 	// k8s apiserver is not accessible in cloud service environment.
 	v := &k8sVersion.Info{GitVersion: "unknown"}
 	if rc, err := rest.InClusterConfig(); err == nil {
@@ -61,21 +63,10 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 		orchestrator = storage.ClusterType_OPENSHIFT_CLUSTER.String()
 	}
 
-	ii, _, err := store.Singleton().Get(
-		sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.InstallationInfo))))
-
-	if err != nil || ii == nil {
-		return nil, nil, errors.Wrap(err, "cannot get installation information")
-	}
-	centralID := ii.Id
-
 	tenantID := env.TenantID.Setting()
 	// Consider on-prem central a tenant of itself:
 	if tenantID == "" {
-		tenantID = centralID
+		tenantID = id
 	}
 
 	return &phonehome.Config{
@@ -84,7 +75,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 			// the number of (none) values, appearing on Amplitude charts, by
 			// introducing a slight delay between consequent events.
 			BatchSize:    1,
-			ClientID:     centralID,
+			ClientID:     id,
 			ClientName:   "Central",
 			GroupType:    "Tenant",
 			GroupID:      tenantID,
@@ -98,7 +89,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 			"Orchestrator":       orchestrator,
 			"Kubernetes version": v.GitVersion,
 			"Managed":            env.ManagedCentral.BooleanSetting(),
-		}, nil
+		}
 }
 
 // InstanceConfig collects the central instance telemetry configuration from
@@ -107,17 +98,28 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 // telemetry client. Returns nil if data collection is disabled.
 func InstanceConfig() *phonehome.Config {
 	once.Do(func() {
-		var err error
-		var props map[string]any
-		config, props, err = getInstanceConfig()
+		key, err := getKey()
 		if err != nil {
-			log.Errorf("Failed to get telemetry configuration: %v.", err)
+			log.Errorf("Failed to configure telemetry: %v.", err)
 			return
 		}
-		if config == nil {
-			log.Info("Phonehome telemetry collection disabled.")
+		if key == "" {
 			return
 		}
+
+		ii, _, err := store.Singleton().Get(
+			sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.InstallationInfo))))
+
+		if err != nil || ii == nil {
+			log.Errorf("Failed to get installation information: %v.", err)
+			return
+		}
+
+		var props map[string]any
+		config, props = getInstanceConfig(ii.Id, key)
 		log.Info("Central ID: ", config.ClientID)
 		log.Info("Tenant ID: ", config.GroupID)
 		log.Info("API path telemetry enabled for: ", trackedPaths)
