@@ -196,7 +196,7 @@ func makeRequestInfo(req *http.Request) *RequestInfo {
 // AnnotateMD builds a RequestInfo for a request coming in through the HTTP/1.1
 // gateway, and returns it in serialized form as GRPC metadata.
 // HTTP Request -> Metadata[B64(RequestInfo)]
-func (h *Handler) AnnotateMD(ctx context.Context, req *http.Request) metadata.MD {
+func (h *Handler) AnnotateMD(_ context.Context, req *http.Request) metadata.MD {
 	ri := makeRequestInfo(req)
 
 	// Encode to GOB.
@@ -230,10 +230,6 @@ func FromContext(ctx context.Context) RequestInfo {
 	return ri
 }
 
-func toContext(ctx context.Context, ri *RequestInfo) context.Context {
-	return context.WithValue(ctx, requestInfoKey{}, *ri)
-}
-
 // Ctx[Metadata[B64(RequestInfo)]] -> RequestInfo[Metadata]
 func (h *Handler) extractFromMD(ctx context.Context) (*RequestInfo, error) {
 	md := metautils.ExtractIncoming(ctx)
@@ -255,6 +251,8 @@ func (h *Handler) extractFromMD(ctx context.Context) (*RequestInfo, error) {
 	if err := gob.NewDecoder(bytes.NewReader(riRaw)).Decode(&reqInfo); err != nil {
 		return nil, errors.Wrap(err, "could not decode request info")
 	}
+	// Let's remove the requestInfoMDKey key from the metadata, as it contains
+	// the already extracted Base64-encoded RequestInfo gob-serialized value.
 	reqInfo.Metadata = metadata.MD(md.Del(requestInfoMDKey))
 	return &reqInfo, nil
 }
@@ -284,7 +282,7 @@ func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, er
 		ri.VerifiedChains = ExtractCertInfoChains(tlsState.VerifiedChains)
 	}
 
-	return toContext(ctx, ri), nil
+	return context.WithValue(ctx, requestInfoKey{}, *ri), nil
 }
 
 // HTTPIntercept provides a http interceptor logic for populating the context with the request info.
@@ -292,7 +290,7 @@ func (h *Handler) HTTPIntercept(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ri := makeRequestInfo(r)
 		logRequest(r, ri)
-		newCtx := toContext(r.Context(), ri)
+		newCtx := context.WithValue(r.Context(), requestInfoKey{}, *ri)
 		handler.ServeHTTP(w, r.WithContext(newCtx))
 	})
 }

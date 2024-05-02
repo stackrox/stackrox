@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -68,7 +69,7 @@ func Test_PureGRPC(t *testing.T) {
 	conn, err := grpc.Dial(server.Listener.Addr().String(),
 		grpc.WithTransportCredentials(insecureSkipVerify))
 	require.NoError(t, err)
-	defer func() { _ = conn.Close() }()
+	defer utils.IgnoreError(conn.Close)
 
 	c := pb.NewPingServiceClient(conn)
 	resp, err := c.Ping(context.Background(), &pb.Empty{})
@@ -155,7 +156,7 @@ func Test_Conversions(t *testing.T) {
 
 	req := makeTestRequest("https://endpoint/v1/ping")
 
-	{ // http flow:
+	t.Run("http flow", func(t *testing.T) {
 		handler := NewRequestInfoHandler()
 		var riptr *RequestInfo
 		handler.HTTPIntercept(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -169,8 +170,9 @@ func Test_Conversions(t *testing.T) {
 		// A copy of the request headers:
 		assert.Equal(t, []string{"test agent"}, riptr.Metadata.Get(userAgentKey))
 		assert.Equal(t, []string{"test value"}, riptr.Metadata.Get("test-key"))
-	}
-	{ // grpc flow:
+	})
+
+	t.Run("grpc flow", func(t *testing.T) {
 		handler := NewRequestInfoHandler()
 		ctx := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Net: "pipe"}})
 
@@ -184,8 +186,9 @@ func Test_Conversions(t *testing.T) {
 		assert.Empty(t, ri.Metadata.Get(userAgentKey))
 		assert.Equal(t, []string{"test value"}, ri.Metadata.Get("test-key"))
 		require.Nil(t, ri.HTTPRequest)
-	}
-	{ // grpc-gateway flow:
+	})
+
+	t.Run("grpc-gateway flow", func(t *testing.T) {
 		handler := NewRequestInfoHandler()
 		ctx := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Net: "pipe"}})
 
@@ -202,5 +205,5 @@ func Test_Conversions(t *testing.T) {
 		assert.Empty(t, ri.Metadata.Get(requestInfoMDKey))
 		assert.Equal(t, []string{"gateway"}, ri.Metadata.Get(userAgentKey))
 		testRequest(t, ri.HTTPRequest)
-	}
+	})
 }
