@@ -1,7 +1,13 @@
 package phonehome
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
+
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_toDownload(t *testing.T) {
@@ -20,7 +26,13 @@ func Test_toDownload(t *testing.T) {
 		"e": {release: true, key: "", cfgURL: "", download: false},
 		"f": {release: true, key: "abc", cfgURL: "", download: false},
 		"g": {release: true, key: "", cfgURL: "url", download: true},
-		"h": {release: true, key: "abc", cfgURL: "url", download: true},
+		"h": {release: true, key: "abc", cfgURL: "url", download: false},
+
+		// "hardcoded" is a special value.
+		"j": {release: false, key: "", cfgURL: "hardcoded", download: false},
+		"k": {release: false, key: "abc", cfgURL: "hardcoded", download: true},
+		"l": {release: true, key: "", cfgURL: "hardcoded", download: true},
+		"m": {release: true, key: "abc", cfgURL: "hardcoded", download: false},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -56,6 +68,79 @@ func Test_useRemoteKey(t *testing.T) {
 			if got := useRemoteKey(tt.release, tt.cfg, tt.localKey); got != tt.useRemote {
 				t.Errorf("useRemoteKey() = %v, want %v", got, tt.useRemote)
 			}
+		})
+	}
+}
+
+func Test_download(t *testing.T) {
+	cfg, err := downloadConfig("hardcoded")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, cfg.Key)
+
+	const remoteKey = "remotekey"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"storage_key_v1": "` + remoteKey + `" }`))
+	}))
+	defer server.Close()
+
+	cfg, err = downloadConfig(server.URL)
+	assert.NoError(t, err)
+	assert.Equal(t, remoteKey, cfg.Key)
+}
+
+func Test_GetKey(t *testing.T) {
+	const devVersion = "4.4.1-dev"
+	const remoteKey = "remotekey"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"storage_key_v1": "` + remoteKey + `" }`))
+	}))
+	defer server.Close()
+
+	// There's no way to test a release version in a test binary.
+	testutils.SetMainVersion(t, devVersion)
+
+	tests := map[string]struct {
+		defaultKey string
+		cfgURL     string
+
+		expectedKey string
+		expectedErr error
+	}{
+		"a": {defaultKey: "", cfgURL: ""},
+		"b": {defaultKey: "", cfgURL: "hardcoded"},
+		"c": {defaultKey: DisabledKey, cfgURL: ""},
+		"d": {defaultKey: "abc", cfgURL: "hardcoded",
+			expectedKey: "abc",
+		},
+		"e": {defaultKey: "ignored", cfgURL: ":bad url:",
+			expectedErr: errors.New("missing protocol scheme"),
+		},
+		"f": {defaultKey: selfManagedKey, cfgURL: "hardcoded",
+			expectedKey: selfManagedKey,
+		},
+		"g": {defaultKey: remoteKey, cfgURL: server.URL,
+			expectedKey: remoteKey,
+		},
+		"h": {defaultKey: "whatever", cfgURL: server.URL,
+			expectedKey: "whatever",
+		},
+		"i": {defaultKey: "whatever",
+			expectedKey: "whatever",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := GetKey(tt.defaultKey, tt.cfgURL)
+			if tt.expectedErr != nil {
+				assert.ErrorContains(t, err, tt.expectedErr.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.expectedKey, got, name)
 		})
 	}
 }
