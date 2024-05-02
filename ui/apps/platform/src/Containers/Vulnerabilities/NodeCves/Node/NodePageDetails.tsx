@@ -39,11 +39,13 @@ function NodePageDetails({ nodeId }: NodePageDetailsProps) {
                         {error ? (
                             <Bullseye>
                                 <EmptyStateTemplate
-                                    title={getAxiosErrorMessage(error)}
+                                    title="There was an error loading the node details"
                                     headingLevel="h2"
                                     icon={ExclamationCircleIcon}
                                     iconClassName="pf-v5-u-danger-color-100"
-                                />
+                                >
+                                    {getAxiosErrorMessage(error)}
+                                </EmptyStateTemplate>
                             </Bullseye>
                         ) : loading ? (
                             <Bullseye>
