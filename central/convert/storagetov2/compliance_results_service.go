@@ -21,12 +21,12 @@ type scanResultKey struct {
 }
 
 // ComplianceV2CheckResult converts a storage check result to a v2 check result
-func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2) *v2.ComplianceClusterCheckStatus {
+func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTime *types.Timestamp) *v2.ComplianceClusterCheckStatus {
 	converted := &v2.ComplianceClusterCheckStatus{
 		CheckId:   incoming.GetCheckId(),
 		CheckName: incoming.GetCheckName(),
 		Clusters: []*v2.ClusterCheckStatus{
-			clusterStatus(incoming),
+			clusterStatus(incoming, lastScanTime),
 		},
 		Description:  incoming.GetDescription(),
 		Instructions: incoming.GetInstructions(),
@@ -59,10 +59,10 @@ func ComplianceV2ScanResults(incoming []*storage.ComplianceOperatorCheckResultV2
 		// First time seeing this rule in the results.
 		if !found {
 			orderedKeys = append(orderedKeys, key)
-			resultsByScanCheck[key] = ComplianceV2CheckResult(result)
+			resultsByScanCheck[key] = ComplianceV2CheckResult(result, nil)
 		} else {
 			// Append the new cluster status to the v2 check result.
-			workingResult.Clusters = append(workingResult.Clusters, clusterStatus(result))
+			workingResult.Clusters = append(workingResult.Clusters, clusterStatus(result, nil))
 			resultsByScanCheck[key] = workingResult
 		}
 	}
@@ -297,10 +297,10 @@ func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfi
 }
 
 // ComplianceV2CheckClusterResults converts the storage check results to v2 scan results
-func ComplianceV2CheckClusterResults(incoming []*storage.ComplianceOperatorCheckResultV2) []*v2.ClusterCheckStatus {
+func ComplianceV2CheckClusterResults(incoming []*storage.ComplianceOperatorCheckResultV2, lastTimeMap map[string]*types.Timestamp) []*v2.ClusterCheckStatus {
 	clusterResults := make([]*v2.ClusterCheckStatus, 0, len(incoming))
 	for _, result := range incoming {
-		clusterResults = append(clusterResults, clusterStatus(result))
+		clusterResults = append(clusterResults, clusterStatus(result, lastTimeMap[result.ClusterId]))
 	}
 
 	return clusterResults
@@ -327,14 +327,15 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 	return clusterResults
 }
 
-func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2) *v2.ClusterCheckStatus {
+func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTime *types.Timestamp) *v2.ClusterCheckStatus {
 	return &v2.ClusterCheckStatus{
 		Cluster: &v2.ComplianceScanCluster{
 			ClusterId:   incoming.GetClusterId(),
 			ClusterName: incoming.GetClusterName(),
 		},
-		Status:      convertComplianceCheckStatus(incoming.Status),
-		CreatedTime: incoming.GetCreatedTime(),
-		CheckUid:    incoming.GetId(),
+		Status:       convertComplianceCheckStatus(incoming.Status),
+		CreatedTime:  incoming.GetCreatedTime(),
+		CheckUid:     incoming.GetId(),
+		LastScanTime: lastScanTime,
 	}
 }

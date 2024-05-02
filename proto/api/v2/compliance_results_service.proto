@@ -32,6 +32,7 @@ message ClusterCheckStatus {
   ComplianceCheckStatus status = 2;
   google.protobuf.Timestamp created_time = 3;
   string check_uid = 4;
+  google.protobuf.Timestamp last_scan_time = 5;
 }
 
 // ComplianceCheckResult details of an instance of a compliance check result

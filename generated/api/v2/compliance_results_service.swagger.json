@@ -1239,6 +1239,10 @@
         },
         "checkUid": {
           "type": "string"
+        },
+        "lastScanTime": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "title": "ClusterCheckStatus groups the result of the check by cluster"

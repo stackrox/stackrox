@@ -369,7 +369,19 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 		return nil, errors.Wrapf(errox.NotFound, "compliance check result with id %q does not exist", req.GetId())
 	}
 
-	return storagetov2.ComplianceV2CheckResult(scanResult), nil
+	// Check the Compliance Scan object to get the scan time.
+	scanQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, scanResult.GetScanRefId()).
+		ProtoQuery()
+	scans, err := s.scanDS.SearchScans(ctx, scanQuery)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve scan data for result %q", req.GetId())
+	}
+	// There should only be a single object for a scan ref id
+	if len(scans) != 1 {
+		return nil, errors.Errorf("Unable to retrieve scan data for result %q", req.GetId())
+	}
+
+	return storagetov2.ComplianceV2CheckResult(scanResult, scans[0].LastExecutedTime), nil
 }
 
 // GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
@@ -538,13 +550,23 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
 	}
 
+	// Lookup the scans to get the last scan time
+	clusterLastScan := make(map[string]*types.Timestamp, len(scanResults))
+	for _, result := range scanResults { // Check the Compliance Scan object to get the scan time.
+		lastExecutedTime, err := s.getLastScanTime(ctx, result.ClusterId, request.GetProfileName())
+		if err != nil {
+			return nil, err
+		}
+		clusterLastScan[result.ClusterId] = lastExecutedTime
+	}
+
 	resultCount, err := s.complianceResultsDS.CountCheckResults(ctx, countQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", parsedQuery)
 	}
 
 	return &v2.ListComplianceCheckClusterResponse{
-		CheckResults: storagetov2.ComplianceV2CheckClusterResults(scanResults),
+		CheckResults: storagetov2.ComplianceV2CheckClusterResults(scanResults, clusterLastScan),
 		ProfileName:  request.GetProfileName(),
 		CheckName:    request.GetCheckName(),
 		TotalCount:   int32(resultCount),
