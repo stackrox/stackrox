@@ -52,7 +52,8 @@ func (t tokenMethod) retrieveAuthToken() (string, error) {
 	if apiToken == "" {
 		return "", errox.InvalidArgs.New(`No valid token is set.
 Set the token file via the --token-file flag, and ensure only a single authentication token is contained within it.
-Alternatively, provide the value directly by setting the ROX_API_TOKEN environment variable.
+Alternatively, provide the file path by setting the ROX_API_TOKEN_FILE environment variable
+or provide the value directly by setting the ROX_API_TOKEN environment variable.
 `)
 	}
 

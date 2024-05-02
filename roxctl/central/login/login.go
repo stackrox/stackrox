@@ -248,15 +248,9 @@ func (l *loginCommand) storeConfiguration(token string, expiresAt time.Time, ref
 		return errors.Wrap(err, "reading configuration")
 	}
 
-	// We store the config under <endpoint>:<port> and omit the scheme. This way it's agnostic to use either HTTP or
-	// HTTPS.
-	centralURL := l.centralURL.Hostname() + ":" + l.centralURL.Port()
+	configKey := config.NewConfigKey(l.centralURL)
 
-	centralCfg := cfg.GetCentralConfigs().GetCentralConfig(centralURL)
-	if centralCfg == nil {
-		centralCfg = &config.CentralConfig{}
-		cfg.CentralConfigs[centralURL] = centralCfg
-	}
+	centralCfg := cfg.GetCentralConfigs().GetCentralConfig(configKey)
 	now := time.Now()
 	centralCfg.AccessConfig = &config.CentralAccessConfig{
 		AccessToken:  token,
@@ -273,7 +267,7 @@ func (l *loginCommand) storeConfiguration(token string, expiresAt time.Time, ref
 
 You can now use the retrieved access token for all other roxctl commands!
 
-In case the access token is expired and cannot be refreshed, you have to run "roxctl central login" again.`, centralURL)
+In case the access token is expired and cannot be refreshed, you have to run "roxctl central login" again.`, configKey)
 	return nil
 }
 
