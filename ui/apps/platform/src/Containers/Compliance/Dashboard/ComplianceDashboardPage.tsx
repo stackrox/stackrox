@@ -151,7 +151,7 @@ function ComplianceDashboardPage(): ReactElement {
                 </div>
             </PageHeader>
             <div className="flex-1 relative p-6 xxxl:p-8 bg-base-200" id="capture-dashboard">
-                {(inProgressScanDetected || error) && (
+                {(inProgressScanDetected || !!error) && (
                     <div className="pf-v5-u-pb-lg">
                         {error ? (
                             <Alert
