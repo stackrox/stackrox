@@ -46,7 +46,7 @@ finderLoop:
 		notFound = append(notFound, resource)
 	}
 
-	assert.Empty(t, notFound, "Please add the missing types to the resources field in the availability checker ot the whileList in this test if they should not be used in the availability checker")
+	assert.Empty(t, notFound, "Please add the missing types to the resources field in the availability checker to the whilelist in this test if they should not be used in the availability checker")
 }
 
 type resourcesFinder struct {
