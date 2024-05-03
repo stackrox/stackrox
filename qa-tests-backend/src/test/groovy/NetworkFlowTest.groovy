@@ -532,37 +532,24 @@ class NetworkFlowTest extends BaseSpecification {
                 }
                 log.warn("Edge coming from OpenShift ingress router to ${deploymentUid} not found")
                 // Debug dump of all router edges
-                def currentGraph = NetworkGraphService.getNetworkGraph()
-                def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == defaultRouterId }
-                List<NetworkNode> outNodesRouter = currentGraph.nodesList.findAll { node ->
-                    node.outEdgesMap.containsKey(index)
-                }
-                log.debug("All edges of 'router-default' ${defaultRouterId}: ${outNodesRouter}")
+                log.debug("All edges of 'router-default' ${defaultRouterId}: ${getAllEdgesOf(defaultRouterId)}")
             }
+            log.debug("All edges of 'INTERNAL_ENTITIES_SOURCE_ID' " +
+                "${Constants.INTERNAL_ENTITIES_SOURCE_ID}: ${getAllEdgesOf(Constants.INTERNAL_ENTITIES_SOURCE_ID)}")
+            log.debug("All edges of 'EXTERNAL_ENTITIES_SOURCE_ID' " +
+                "${Constants.EXTERNAL_ENTITIES_SOURCE_ID}: ${getAllEdgesOf(Constants.EXTERNAL_ENTITIES_SOURCE_ID)}")
+            
             log.info("Searching for edge coming from INTERNAL_ENTITIES_SOURCE_ID " +
                 "(${Constants.INTERNAL_ENTITIES_SOURCE_ID}) to ${deploymentUid}")
             List<Edge> edges =
                     NetworkGraphUtil.checkForEdge(Constants.INTERNAL_ENTITIES_SOURCE_ID, deploymentUid, null, 180)
             if (edges == null || edges.size() == 0) {
                 // Debug dump of all INTERNAL_ENTITIES_SOURCE_ID edges
-                def currentGraph = NetworkGraphService.getNetworkGraph()
-                def index = currentGraph.nodesList.findIndexOf {
-                    node -> node.deploymentName == Constants.INTERNAL_ENTITIES_SOURCE_ID
-                }
-                List<NetworkNode> outNodes = currentGraph.nodesList.findAll { node ->
-                    node.outEdgesMap.containsKey(index)
-                }
                 log.debug("All edges of 'INTERNAL_ENTITIES_SOURCE_ID' " +
-                    "${Constants.INTERNAL_ENTITIES_SOURCE_ID}: ${outNodes}")
+                    "${Constants.INTERNAL_ENTITIES_SOURCE_ID}: ${getAllEdgesOf(Constants.INTERNAL_ENTITIES_SOURCE_ID)}")
 
-                // Debug dump all incoming edges to deploymentUid
-                def targetId = currentGraph.nodesList.findIndexOf {
-                    node -> node.deploymentId == deploymentUid
-                }
-                List<NetworkNode> nginxEdges = currentGraph.nodesList.findAll {
-                    node -> node.outEdges.containsKey(targetId)
-                }
-                log.debug("All edges of ${NGINXCONNECTIONTARGET} ${deploymentUid}: ${nginxEdges}")
+                // Debug dump all edges to deploymentUid
+                log.debug("All edges of ${NGINXCONNECTIONTARGET} ${deploymentUid}: ${getAllEdgesOf(deploymentUid)}")
             }
             assert edges
         }
@@ -1009,6 +996,17 @@ class NetworkFlowTest extends BaseSpecification {
         }
 
         return match
+    }
+
+    private getAllEdgesOf(string objName){
+        def currentGraph = NetworkGraphService.getNetworkGraph()
+        def index = currentGraph.nodesList.findIndexOf {
+            node -> node.deploymentName == objName
+        }
+        List<NetworkNode> outNodes = currentGraph.nodesList.findAll { node ->
+            node.outEdgesMap.containsKey(index)
+        }
+        return outNodes
     }
 
     private waitForEdgeToBeClosed(Edge edge, int timeoutSeconds = 65) {
