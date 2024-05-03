@@ -16,11 +16,15 @@ import { getHasSearchApplied, getUrlQueryStringForSearchFilter } from 'utils/sea
 import { getTableUIState } from 'utils/getTableUIState';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
-import { parseWorkloadQuerySearchFilter } from '../../utils/searchUtils';
+import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
+import { getHiddenStatuses, parseWorkloadQuerySearchFilter } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import useClusterVulnerabilities from './useClusterVulnerabilities';
+import useClusterSummaryData from './useClusterSummaryData';
 import CVEsTable from './CVEsTable';
+import PlatformCvesByStatusSummaryCard from './PlatformCvesByStatusSummaryCard';
+import PlatformCvesByTypeSummaryCard from './PlatformCvesByTypeSummaryCard';
 
 export type ClusterPageVulnerabilitiesProps = {
     clusterId: string;
@@ -34,6 +38,9 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
     const { page, perPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const { data, loading, error } = useClusterVulnerabilities(clusterId, query, page, perPage);
+    const summaryRequest = useClusterSummaryData(clusterId, query);
+
+    const hiddenStatuses = getHiddenStatuses(querySearchFilter);
 
     const tableState = getTableUIState({
         isLoading: loading,
@@ -48,6 +55,27 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                 <Text>Review and triage vulnerability data scanned on this cluster</Text>
             </PageSection>
             <PageSection isFilled className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
+                <SummaryCardLayout isLoading={summaryRequest.loading} error={summaryRequest.error}>
+                    <SummaryCard
+                        loadingText={'Loading platform CVEs by status summary'}
+                        data={summaryRequest.data}
+                        renderer={({ data }) => (
+                            <PlatformCvesByStatusSummaryCard
+                                data={data.cluster.platformCVECountByFixability}
+                                hiddenStatuses={hiddenStatuses}
+                            />
+                        )}
+                    />
+                    <SummaryCard
+                        loadingText={'Loading platform CVEs by type summary'}
+                        data={summaryRequest.data}
+                        renderer={({ data }) => (
+                            <PlatformCvesByTypeSummaryCard
+                                data={data.cluster.platformCVECountByType}
+                            />
+                        )}
+                    />
+                </SummaryCardLayout>
                 <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100 pf-v5-u-p-lg">
                     <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
                         <SplitItem isFilled>
