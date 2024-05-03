@@ -75,7 +75,7 @@ run_scale_test() {
 }
 
 get_prometheus_metrics_parser() {
-    go install github.com/stackrox/prometheus-metric-parser@latest
+    go install github.com/stackrox/prometheus-metric-parser@87a1573980ccd8dfbf2bac2ace8402743fbd0431
     prometheus-metric-parser help
 }
 
