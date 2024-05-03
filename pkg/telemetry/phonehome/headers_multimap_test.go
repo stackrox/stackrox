@@ -8,11 +8,10 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func Test_headers(t *testing.T) {
+func TestHeaders(t *testing.T) {
 	h := make(http.Header)
 	h.Add("key", "value 1")
 	h.Add("key", "value 2")
-
 	assert.Equal(t, []string{"value 1", "value 2"}, Headers(h).Get("key"))
 }
 
