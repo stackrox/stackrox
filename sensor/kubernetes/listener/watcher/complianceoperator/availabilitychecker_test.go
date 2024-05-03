@@ -28,12 +28,12 @@ func TestAllCOResourcesAreAddedToTheAvailabilityChecker(t *testing.T) {
 
 	resFinder := &resourcesFinder{}
 	ast.Walk(resFinder, file)
+	require.NotEmpty(t, resFinder.resources)
 
 	var notFound []string
 finderLoop:
 	for _, resource := range resFinder.resources {
 		for _, acResource := range ac.resources {
-			log.Info(acResource.Kind)
 			if acResource.Kind == resource {
 				continue finderLoop
 			}
