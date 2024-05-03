@@ -1,4 +1,4 @@
-package requestinfo
+package phonehome
 
 import (
 	"net/http"
@@ -8,12 +8,12 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func TestAsHeadersMultiMap(t *testing.T) {
+func Test_headers(t *testing.T) {
 	h := make(http.Header)
 	h.Add("key", "value 1")
 	h.Add("key", "value 2")
 
-	assert.Equal(t, []string{"value 1", "value 2"}, AsHeadersMultiMap(h).Get("key"))
+	assert.Equal(t, []string{"value 1", "value 2"}, headers(h).Get("key"))
 }
 
 func TestKeyCase(t *testing.T) {
@@ -21,7 +21,7 @@ func TestKeyCase(t *testing.T) {
 	const keyCase2 = "test-KEY"
 	const goodValue = "good"
 
-	testKeys := func(t *testing.T, getter HeadersMultiMap) {
+	testKeys := func(t *testing.T, getter interface{ Get(string) []string }) {
 		assert.Equal(t, []string{goodValue}, getter.Get(keyCase1))
 		assert.Equal(t, []string{goodValue}, getter.Get(keyCase2))
 	}
@@ -37,6 +37,6 @@ func TestKeyCase(t *testing.T) {
 		// keys are canonicalized in http.Header.
 		h := make(http.Header)
 		h.Add(keyCase1, goodValue)
-		testKeys(t, AsHeadersMultiMap(h))
+		testKeys(t, headers(h))
 	})
 }
