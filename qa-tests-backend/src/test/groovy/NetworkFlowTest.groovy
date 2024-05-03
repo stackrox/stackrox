@@ -997,7 +997,7 @@ class NetworkFlowTest extends BaseSpecification {
         return match
     }
 
-    private static getAllEdgesOf(String objName){
+    private static getAllEdgesOf(String objName) {
         def currentGraph = NetworkGraphService.getNetworkGraph()
         def index = currentGraph.nodesList.findIndexOf {
             node -> node.deploymentName == objName
