@@ -17,7 +17,7 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 	_, err := rand.Read(content)
 	assert.NoError(t, err)
 
-	msg := &message{
+	msg := &Message{
 		To:      []string{"foo@stackrox.com", "bar@stackrox.com"},
 		From:    "xyz@stackrox.com",
 		Subject: "Test Email",
@@ -51,7 +51,7 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 }
 
 func TestEmailMsgNoAttachments(t *testing.T) {
-	msg := &message{
+	msg := &Message{
 		To:        []string{"foo@stackrox.com", "bar@stackrox.com"},
 		From:      "xyz@stackrox.com",
 		Subject:   "Test Email",
@@ -73,6 +73,22 @@ func TestEmailMsgNoAttachments(t *testing.T) {
 	assert.NotContains(t, msgStr, "Content-Disposition: attachment;")
 
 	assert.Contains(t, msgStr, "How you doin'?\r\n")
+}
+
+func TestContentBytes(t *testing.T) {
+	msg := &Message{
+		To:        []string{"foo@stackrox.com", "bar@stackrox.com"},
+		From:      "xyz@stackrox.com",
+		Subject:   "Test Email",
+		Body:      "How you doin'?",
+		EmbedLogo: false,
+	}
+
+	msgContentBytes := msg.ContentBytes()
+	msgStr := string(msgContentBytes)
+
+	assert.NotContains(t, msgStr, "From:")
+	assert.NotContains(t, msgStr, "To:")
 }
 
 func TestApplyRfc5322LineLengthLimit(t *testing.T) {
