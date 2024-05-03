@@ -536,9 +536,8 @@ class NetworkFlowTest extends BaseSpecification {
             }
             log.debug("All edges of 'INTERNAL_ENTITIES_SOURCE_ID' " +
                 "${Constants.INTERNAL_ENTITIES_SOURCE_ID}: ${getAllEdgesOf(Constants.INTERNAL_ENTITIES_SOURCE_ID)}")
-            log.debug("All edges of 'EXTERNAL_ENTITIES_SOURCE_ID' " +
-                "${Constants.EXTERNAL_ENTITIES_SOURCE_ID}: ${getAllEdgesOf(Constants.EXTERNAL_ENTITIES_SOURCE_ID)}")
-            
+            log.debug("All edges of 'INTERNET_EXTERNAL_SOURCE_ID' " +
+                "${Constants.INTERNET_EXTERNAL_SOURCE_ID}: ${getAllEdgesOf(Constants.INTERNET_EXTERNAL_SOURCE_ID)}")
             log.info("Searching for edge coming from INTERNAL_ENTITIES_SOURCE_ID " +
                 "(${Constants.INTERNAL_ENTITIES_SOURCE_ID}) to ${deploymentUid}")
             List<Edge> edges =
@@ -998,7 +997,7 @@ class NetworkFlowTest extends BaseSpecification {
         return match
     }
 
-    private getAllEdgesOf(string objName){
+    private static getAllEdgesOf(String objName){
         def currentGraph = NetworkGraphService.getNetworkGraph()
         def index = currentGraph.nodesList.findIndexOf {
             node -> node.deploymentName == objName
