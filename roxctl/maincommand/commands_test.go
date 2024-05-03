@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func isFirstCapital(s string) bool {
+func isCapitalized(s string) bool {
 	if len(s) == 0 {
 		return true
 	}
@@ -26,14 +26,14 @@ func getCommandPath(command *cobra.Command) string {
 
 func checkUsageFirstCharacter(t *testing.T, command *cobra.Command) {
 	command.LocalFlags().VisitAll(func(flag *pflag.Flag) {
-		if !isFirstCapital(flag.Usage) {
+		if !isCapitalized(flag.Usage) {
 			t.Errorf(`"%s --%s" flag usage: %q`, getCommandPath(command), flag.Name, flag.Usage)
 		}
 	})
-	if !isFirstCapital(command.Short) {
+	if !isCapitalized(command.Short) {
 		t.Errorf("%q, short usage: %q", getCommandPath(command), command.Short)
 	}
-	if !isFirstCapital(command.Long) {
+	if !isCapitalized(command.Long) {
 		t.Errorf("%q, long usage: %q", getCommandPath(command), command.Long)
 	}
 	for _, subcommand := range command.Commands() {
