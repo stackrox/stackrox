@@ -684,6 +684,8 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - uses: ./.github/actions/handle-tagged-build
+
       - name: Central login
         uses: stackrox/central-login@v1
         with:
