@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -111,14 +111,14 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 	return resp, nil
 }
 
-func setCustomHeaders(h requestinfo.HeadersMultiMap) {
+func setCustomHeaders(h interface{ Set(string, ...string) }) {
 	h.Set(clientconn.RoxctlCommandHeader, RoxctlCommand)
 	h.Set(clientconn.RoxctlCommandIndexHeader, fmt.Sprint(RoxctlCommandIndex.Add(1)))
 }
 
 // Do executes a http.Request
 func (client *roxctlClientImpl) Do(req *http.Request) (*http.Response, error) {
-	setCustomHeaders(requestinfo.AsHeadersMultiMap(req.Header))
+	setCustomHeaders(phonehome.Headers(req.Header))
 
 	resp, err := client.http.Do(req)
 	// The url.Error returned by go-retryablehttp needs to be unwrapped to retrieve the correct timeout settings.
