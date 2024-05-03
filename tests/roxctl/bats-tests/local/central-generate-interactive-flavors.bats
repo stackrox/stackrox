@@ -53,21 +53,21 @@ assert_flavor_prompt_release() {
 assert_prompts_development() {
   # partial line matching allows to avoid problems with leading an trailing whitespaces
   # main/scanner/scanner-db are constants from code
-  assert_line --regexp '^Main .* "quay.io/rhacs-eng/main:'
-  assert_line --regexp '^Scanner-db .* "quay.io/rhacs-eng/scanner-db:'
-  assert_line --regexp '^Scanner .* "quay.io/rhacs-eng/scanner:'
+  assert_line --regexp '^The main .* "quay.io/rhacs-eng/main:'
+  assert_line --regexp '^The scanner-db .* "quay.io/rhacs-eng/scanner-db:'
+  assert_line --regexp '^The scanner .* "quay.io/rhacs-eng/scanner:'
 }
 
 assert_prompts_opensource() {
-  assert_line --regexp '^Main .* "quay.io/stackrox-io/main:'
-  assert_line --regexp '^Scanner-db .* "quay.io/stackrox-io/scanner-db:'
-  assert_line --regexp '^Scanner .* "quay.io/stackrox-io/scanner:'
+  assert_line --regexp '^The main .* "quay.io/stackrox-io/main:'
+  assert_line --regexp '^The scanner-db .* "quay.io/stackrox-io/scanner-db:'
+  assert_line --regexp '^The scanner .* "quay.io/stackrox-io/scanner:'
 }
 
 assert_prompts_rhacs() {
-  assert_line --regexp '^Main .* "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:'
-  assert_line --regexp '^Scanner-db .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8:'
-  assert_line --regexp '^Scanner .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8:'
+  assert_line --regexp '^The main .* "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:'
+  assert_line --regexp '^The scanner-db .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8:'
+  assert_line --regexp '^The scanner .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8:'
 }
 
 @test "roxctl-development central generate interactive flavor=dummy should ask for valid value" {
