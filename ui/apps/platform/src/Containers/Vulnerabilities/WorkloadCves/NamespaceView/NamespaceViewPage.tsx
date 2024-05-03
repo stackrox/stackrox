@@ -23,7 +23,7 @@ import { gql, useQuery } from '@apollo/client';
 
 import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import { getTableUIState } from 'utils/getTableUIState';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
@@ -125,8 +125,7 @@ function NamespaceViewPage() {
                 ...defaultSearchFilters,
             }),
             pagination: {
-                limit: perPage,
-                offset: page - 1,
+                ...getPaginationParams(page, perPage),
                 sortOption,
             },
         },
