@@ -305,8 +305,12 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 		}
 		if len(integrations) == 1 {
 			clusterErrors[result.ClusterID] = integrations[0].GetStatusErrors()
+		} else if len(integrations) < 1 {
+			log.Warnf("Unable to detect a compliance operator integration for cluster %q", result.ClusterID)
+			clusterErrors[result.ClusterID] = []string{"Unable to detect a compliance operator integration"}
 		} else {
-			log.Warnf("Unable to retrieve configuration for cluster %q", result.ClusterID)
+			log.Warnf("Detected multiple compliance operator integrations for cluster %q", result.ClusterID)
+			clusterErrors[result.ClusterID] = []string{"Detected multiple compliance operator integrations"}
 		}
 
 		// Check the Compliance Scan object to get the scan time.
