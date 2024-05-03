@@ -482,7 +482,25 @@ func getCentralDBData(ctx context.Context, zipWriter *zipWriter) error {
 	if statements.Error != "" {
 		log.Errorw("error retrieving pg_stat_statements", logging.Err(errors.New(statements.Error)))
 	}
-	return addJSONToZip(zipWriter, "central-db-pg-stats.json", statements)
+	if err := addJSONToZip(zipWriter, "central-db-pg-stats.json", statements); err != nil {
+		return err
+	}
+
+	// Get the analyze stats
+	analyzeStats := stats.GetPGAnalyzeStats(ctx, db, pgStatStatementsMax)
+	if analyzeStats.Error != "" {
+		log.Errorw("error retrieving pg_stat_statements", logging.Err(errors.New(analyzeStats.Error)))
+	}
+	if err := addJSONToZip(zipWriter, "central-db-pg-analyze-stats.json", analyzeStats); err != nil {
+		return err
+	}
+
+	// Get the dead tuple stats
+	tuples := stats.GetPGTupleStats(ctx, db, pgStatStatementsMax)
+	if tuples.Error != "" {
+		log.Errorw("error retrieving pg_stat_user_tables", logging.Err(errors.New(tuples.Error)))
+	}
+	return addJSONToZip(zipWriter, "central-db-pg-tuples.json", tuples)
 }
 
 func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zipWriter) error {
