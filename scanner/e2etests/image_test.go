@@ -100,7 +100,8 @@ func TestImage(t *testing.T) {
 			d, err := indexer.GetDigestFromReference(ref, auth)
 			require.NoError(t, err)
 
-			vr, err := c.IndexAndScanImage(ctx, d, auth, false)
+			opt := client.ImageRegistryOpt{}
+			vr, err := c.IndexAndScanImage(ctx, d, auth, opt)
 			require.NoError(t, err)
 
 			expected := tc.TestWant

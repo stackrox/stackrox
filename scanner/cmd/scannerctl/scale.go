@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/scanner/cmd/scannerctl/authn"
 	"github.com/stackrox/rox/scanner/cmd/scannerctl/fixtures"
@@ -121,7 +122,8 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 					err = doWithTimeout(ctx, scanTimeout, func(ctx context.Context) error {
 						log.Printf("indexing image %v", ref)
 						// TODO(ROX-23898): add flag for skipping TLS verification.
-						_, err := scanner.GetOrCreateImageIndex(ctx, d, auth, false)
+						opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: false}
+						_, err := scanner.GetOrCreateImageIndex(ctx, d, auth, opt)
 						if err != nil {
 							stats.indexFailure.Add(1)
 							return fmt.Errorf("indexing: %w", err)
@@ -137,7 +139,7 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 						// and this method will just verify the index still exists. We don't account for
 						// this verification's potential failures at this time.
 						// TODO(ROX-23898): add flag for skipping TLS verification.
-						_, err = scanner.IndexAndScanImage(ctx, d, auth, false)
+						_, err = scanner.IndexAndScanImage(ctx, d, auth, opt)
 						if err != nil {
 							stats.matchFailure.Add(1)
 							return fmt.Errorf("matching: %w", err)

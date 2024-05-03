@@ -117,7 +117,8 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
-	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, rc.Insecure)
+	opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: rc.GetInsecure()}
+	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt)
 	if err != nil {
 		return nil, fmt.Errorf("index and scan image report (reference: %q): %w", digest.Name(), err)
 	}

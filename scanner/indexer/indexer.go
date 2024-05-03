@@ -395,12 +395,12 @@ func createManifestDigest(hashID string) (claircore.Digest, error) {
 // a list of layers.
 func getContainerImageLayers(ctx context.Context, ref name.Reference, o options) ([]v1.Layer, error) {
 	// TODO Check for non-retryable errors (permission denied, etc.) to report properly.
-	var transport = remoteTransport
+	tr := remoteTransport
 	if o.insecureSkipTLSVerify {
-		transport = insecureRemoteTransport
+		tr = insecureRemoteTransport
 	}
 
-	desc, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuth(o.auth), remote.WithPlatform(o.platform), remote.WithTransport(transport))
+	desc, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuth(o.auth), remote.WithPlatform(o.platform), remote.WithTransport(tr))
 
 	if err != nil {
 		return nil, err
