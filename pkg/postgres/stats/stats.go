@@ -97,6 +97,8 @@ type PGAnalyzeStat struct {
 	TableName       string
 	LastAutoAnalyze *time.Time
 	LastAnalyze     *time.Time
+	LastAutoVacuum  *time.Time
+	LastVacuum      *time.Time
 }
 
 // PGAnalyzeStats is a wrapper around PGAnalyzeStat
@@ -108,7 +110,7 @@ type PGAnalyzeStats struct {
 // GetPGAnalyzeStats returns a tuple struct that wraps the results from the query to pg_stat_all_tables
 func GetPGAnalyzeStats(ctx context.Context, db postgres.DB, limit int) *PGAnalyzeStats {
 	var analyzeStats PGAnalyzeStats
-	rows, err := db.Query(ctx, "SELECT relname, last_autoanalyze, last_analyze FROM pg_stat_all_tables WHERE schemaname = $1 ORDER BY relname limit $2", "public", limit)
+	rows, err := db.Query(ctx, "SELECT relname, last_autoanalyze, last_analyze, last_autovacuum, last_vacuum FROM pg_stat_all_tables WHERE schemaname = $1 ORDER BY relname limit $2", "public", limit)
 	if err != nil {
 		analyzeStats.Error = err.Error()
 		return &analyzeStats
@@ -117,7 +119,7 @@ func GetPGAnalyzeStats(ctx context.Context, db postgres.DB, limit int) *PGAnalyz
 
 	for rows.Next() {
 		var analyzeStat PGAnalyzeStat
-		if err := rows.Scan(&analyzeStat.TableName, &analyzeStat.LastAutoAnalyze, &analyzeStat.LastAnalyze); err != nil {
+		if err := rows.Scan(&analyzeStat.TableName, &analyzeStat.LastAutoAnalyze, &analyzeStat.LastAnalyze, &analyzeStat.LastAutoVacuum, &analyzeStat.LastVacuum); err != nil {
 			analyzeStats.Error = errors.Wrap(err, "error scanning rows from pg_stat_all_tables").Error()
 			return &analyzeStats
 		}
