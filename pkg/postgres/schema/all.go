@@ -2,7 +2,7 @@ package schema
 
 import (
 	"context"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 
@@ -62,7 +62,7 @@ func getAllRegisteredTablesInOrder() []*registeredTable {
 	for table := range registeredTables {
 		tables = append(tables, table)
 	}
-	sort.Strings(tables)
+	slices.Sort(tables)
 
 	var rts []*registeredTable
 	for _, table := range tables {

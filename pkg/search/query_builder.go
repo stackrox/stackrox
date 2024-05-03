@@ -3,7 +3,7 @@ package search
 import (
 	"fmt"
 	"math"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -456,7 +456,7 @@ func (qb *QueryBuilder) Query() string {
 	for k, values := range qb.fieldsToValues {
 		pairs = append(pairs, fmt.Sprintf("%s:%s", k, strings.Join(values, ",")))
 	}
-	sort.Strings(pairs)
+	slices.Sort(pairs)
 	return strings.Join(pairs, "+")
 }
 

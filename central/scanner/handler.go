@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"sort"
+	"slices"
 
 	"github.com/distribution/reference"
 	"github.com/pkg/errors"
@@ -48,7 +48,7 @@ func validateParamsAndNormalizeClusterType(p *apiparams.Scanner) (storage.Cluste
 				validClusterTypes = append(validClusterTypes, clusterString)
 			}
 		}
-		sort.Strings(validClusterTypes)
+		slices.Sort(validClusterTypes)
 		errorList.AddStringf("invalid cluster type: %q; valid options are %+v", p.ClusterType, validClusterTypes)
 	}
 

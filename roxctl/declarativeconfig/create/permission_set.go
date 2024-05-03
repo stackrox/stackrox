@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
@@ -81,7 +81,7 @@ func (p *permissionSetCmd) Validate() error {
 
 	// Keep an alphabetic order within the resources.
 	resources := maps.Keys(accessMap)
-	sort.Strings(resources)
+	slices.Sort(resources)
 
 	// TODO(ROX-16330): Resources are currently defined within central/role/resources, and hence cannot be reused here yet.
 	// There are plans to move the resource definition to a shared place however, in which case we can reuse them here.

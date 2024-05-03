@@ -3,7 +3,7 @@ package cscc
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -165,7 +165,7 @@ func convertAlertDescription(alert *storage.Alert) string {
 	for v := range distinct {
 		distinctSlice = append(distinctSlice, v)
 	}
-	sort.Strings(distinctSlice)
+	slices.Sort(distinctSlice)
 	return strings.Join(distinctSlice, " ")
 }
 

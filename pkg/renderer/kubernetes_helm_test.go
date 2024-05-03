@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sort"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -212,6 +212,6 @@ func TestRenderSensorTLSSecretsOnly(t *testing.T) {
 		encounteredSecretNames = append(encounteredSecretNames, secret.Name)
 	}
 
-	sort.Strings(encounteredSecretNames)
+	slices.Sort(encounteredSecretNames)
 	assert.Equal(t, expectedSecrets, encounteredSecretNames)
 }

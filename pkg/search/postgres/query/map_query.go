@@ -3,7 +3,7 @@ package pgsearch
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/search"
@@ -130,7 +130,7 @@ func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 			}
 			out = append(out, fmt.Sprintf("%s=%s", k, v))
 		}
-		sort.Strings(out)
+		slices.Sort(out)
 		return out
 	}), nil
 }

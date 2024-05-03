@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"math"
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -268,10 +268,10 @@ func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.Deploym
 		keyValuesMap[k] = &v1.DeploymentLabelsResponse_LabelValues{
 			Values: valSet.AsSlice(),
 		}
-		sort.Strings(keyValuesMap[k].Values)
+		slices.Sort(keyValuesMap[k].Values)
 	}
 	values = globalValueSet.AsSlice()
-	sort.Strings(values)
+	slices.Sort(values)
 
 	return keyValuesMap, values
 }

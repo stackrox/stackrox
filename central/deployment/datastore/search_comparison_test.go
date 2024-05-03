@@ -4,7 +4,7 @@ package datastore
 
 import (
 	"context"
-	"sort"
+	"slices"
 	"testing"
 
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
@@ -60,14 +60,14 @@ func compareResults(t *testing.T, matches bool, predResult *search.Result, searc
 
 	if matches && len(searchResults) > 0 {
 		for k := range predResult.Matches {
-			sort.Strings(predResult.Matches[k])
+			slices.Sort(predResult.Matches[k])
 			newImageKey, ok := imageKeyMap[k]
 			// If the key exists
 			if ok {
-				sort.Strings(searchResults[0].Matches[newImageKey])
+				slices.Sort(searchResults[0].Matches[newImageKey])
 				assert.Equal(t, predResult.Matches[k], searchResults[0].Matches[newImageKey])
 			} else {
-				sort.Strings(searchResults[0].Matches[k])
+				slices.Sort(searchResults[0].Matches[k])
 				assert.Equal(t, predResult.Matches[k], searchResults[0].Matches[k])
 			}
 		}
