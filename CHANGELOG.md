@@ -28,7 +28,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Adds a label `app.stackrox.io/managed-by: operator` to all helm chart resources and secrets created by the operator
 - ROX-22044: Scanner DB is now based on PostgreSQL 15 instead of 12.
   - No migration should be necessary, as the database is not persisted.
-- ROX-23953: Nexus and Red Hat registry integrations will now attempt to pull manifest digests by default. This can be disabled by setting env `ROX_ATTEMPT_MANIFEST_DIGEST` to `false`.
+- ROX-23953: Nexus and Red Hat registry integrations will now attempt to pull manifest digests by default (via a `HEAD` request to `/v2/<name>/manifests/<reference>`). This can be disabled by setting env `ROX_ATTEMPT_MANIFEST_DIGEST` to `false`.
   - This fixes one scenario that resulted in an `unsupported digest algorithm` error when using Scanner V4.
 
 ## [4.4.0]
