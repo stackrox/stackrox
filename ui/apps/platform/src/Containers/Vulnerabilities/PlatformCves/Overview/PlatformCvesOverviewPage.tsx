@@ -20,9 +20,10 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import TableEntityToolbar from 'Containers/Vulnerabilities/components/TableEntityToolbar';
 import useMap from 'hooks/useMap';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+
+import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
-import { parseWorkloadQuerySearchFilter } from '../../utils/searchUtils';
 import { platformEntityTabValues } from '../../types';
 import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
 
@@ -32,11 +33,11 @@ import { usePlatformCveEntityCounts } from './usePlatformCveEntityCounts';
 
 function PlatformCvesOverviewPage() {
     const [activeEntityTabKey] = useURLStringUnion('entityTab', platformEntityTabValues);
-    const { searchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     // TODO - Need an equivalent function implementation for filter sanitization for Platform CVEs
-    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
+    const querySearchFilter = searchFilter;
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const isViewingSnoozedCves = querySearchFilter['CVE Snoozed'] === 'true';
@@ -73,9 +74,17 @@ function PlatformCvesOverviewPage() {
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
                 variant="light"
             >
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-flex-grow-1">
-                    <Title headingLevel="h1">Platform CVEs</Title>
-                    <FlexItem>Prioritize and manage scanned CVEs across clusters</FlexItem>
+                <Flex alignItems={{ default: 'alignItemsCenter' }} className="pf-v5-u-flex-grow-1">
+                    <Flex direction={{ default: 'column' }} className="pf-v5-u-flex-grow-1">
+                        <Title headingLevel="h1">Platform CVEs</Title>
+                        <FlexItem>Prioritize and manage scanned CVEs across clusters</FlexItem>
+                    </Flex>
+                    <FlexItem>
+                        <SnoozeCveToggleButton
+                            searchFilter={querySearchFilter}
+                            setSearchFilter={setSearchFilter}
+                        />
+                    </FlexItem>
                 </Flex>
             </PageSection>
             <PageSection isCenterAligned isFilled>
