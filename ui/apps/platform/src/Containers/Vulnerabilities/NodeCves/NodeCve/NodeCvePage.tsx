@@ -1,12 +1,9 @@
 import React from 'react';
 import {
-    Alert,
     Breadcrumb,
     BreadcrumbItem,
     Divider,
     Flex,
-    Grid,
-    GridItem,
     PageSection,
     Pagination,
     Skeleton,
@@ -24,8 +21,11 @@ import useURLSearch from 'hooks/useURLSearch';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
+import {
+    SummaryCardLayout,
+    SummaryCard,
+} from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import {
     getHiddenSeverities,
@@ -91,55 +91,33 @@ function NodeCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-v5-u-flex-grow-1">
-                <div className="pf-v5-u-background-color-100 pf-v5-u-p-lg">
-                    {metadataRequest.error && (
-                        <Alert
-                            title="There was an error loading the summary data for this deployment"
-                            isInline
-                            variant="danger"
-                        >
-                            {getAxiosErrorMessage(metadataRequest.error)}
-                        </Alert>
-                    )}
-                    {metadataRequest.loading && (
-                        <Grid hasGutter>
-                            <GridItem sm={12} md={6} xl2={4}>
-                                <Skeleton
-                                    style={{ height: '120px' }}
-                                    screenreaderText="Loading affected nodes summary"
-                                />
-                            </GridItem>
-                            <GridItem sm={12} md={6} xl2={4}>
-                                <Skeleton
-                                    style={{ height: '120px' }}
-                                    screenreaderText="Loading affected nodes by CVE severity summary"
-                                />
-                            </GridItem>
-                        </Grid>
-                    )}
-                    {metadataRequest.data && (
-                        <Grid hasGutter>
-                            <GridItem sm={12} md={6} xl2={4}>
-                                <AffectedNodesSummaryCard
-                                    affectedNodeCount={nodeCount}
-                                    totalNodeCount={metadataRequest.data.totalNodeCount}
-                                    operatingSystemCount={
-                                        metadataRequest.data.nodeCVE.distroTuples.length
-                                    }
-                                />
-                            </GridItem>
-                            <GridItem sm={12} md={6} xl2={4}>
-                                <BySeveritySummaryCard
-                                    title="Nodes by severity"
-                                    severityCounts={
-                                        metadataRequest.data.nodeCVE.nodeCountBySeverity
-                                    }
-                                    hiddenSeverities={hiddenSeverities}
-                                />
-                            </GridItem>
-                        </Grid>
-                    )}
-                </div>
+                <SummaryCardLayout
+                    error={metadataRequest.error}
+                    isLoading={metadataRequest.loading}
+                >
+                    <SummaryCard
+                        data={metadataRequest.data}
+                        loadingText="Loading affected nodes summary"
+                        renderer={({ data }) => (
+                            <AffectedNodesSummaryCard
+                                affectedNodeCount={nodeCount}
+                                totalNodeCount={data.totalNodeCount}
+                                operatingSystemCount={data.nodeCVE.distroTuples.length}
+                            />
+                        )}
+                    />
+                    <SummaryCard
+                        data={metadataRequest.data}
+                        loadingText="Loading affected nodes by CVE severity summary"
+                        renderer={({ data }) => (
+                            <BySeveritySummaryCard
+                                title="Nodes by severity"
+                                severityCounts={data.nodeCVE.nodeCountBySeverity}
+                                hiddenSeverities={hiddenSeverities}
+                            />
+                        )}
+                    />
+                </SummaryCardLayout>
                 <Divider component="div" />
                 <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1 pf-v5-u-p-lg">
                     <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">

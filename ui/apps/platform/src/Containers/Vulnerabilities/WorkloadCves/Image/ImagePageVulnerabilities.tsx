@@ -3,8 +3,6 @@ import {
     Bullseye,
     Divider,
     Flex,
-    Grid,
-    GridItem,
     PageSection,
     Pagination,
     pluralize,
@@ -30,6 +28,10 @@ import useMap from 'hooks/useMap';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
+import {
+    SummaryCardLayout,
+    SummaryCard,
+} from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import {
     SearchOption,
     IMAGE_CVE_SEARCH_OPTION,
@@ -201,24 +203,30 @@ function ImagePageVulnerabilities({
 
         mainContent = (
             <>
-                <div className="pf-v5-u-px-lg pf-v5-u-pb-lg">
-                    <Grid hasGutter>
-                        <GridItem sm={12} md={6} xl2={4}>
+                <SummaryCardLayout error={error} isLoading={loading}>
+                    <SummaryCard
+                        data={vulnerabilityData.image}
+                        loadingText="Loading image vulnerability summary"
+                        renderer={({ data }) => (
                             <BySeveritySummaryCard
                                 title="CVEs by severity"
-                                severityCounts={vulnCounter}
+                                severityCounts={data.imageCVECountBySeverity}
                                 hiddenSeverities={hiddenSeverities}
                             />
-                        </GridItem>
-                        <GridItem sm={12} md={6} xl2={4}>
+                        )}
+                    />
+                    <SummaryCard
+                        data={vulnerabilityData.image}
+                        loadingText="Loading image vulnerability summary"
+                        renderer={({ data }) => (
                             <CvesByStatusSummaryCard
-                                cveStatusCounts={vulnerabilityData.image.imageCVECountBySeverity}
+                                cveStatusCounts={data.imageCVECountBySeverity}
                                 hiddenStatuses={hiddenStatuses}
                                 isBusy={loading}
                             />
-                        </GridItem>
-                    </Grid>
-                </div>
+                        )}
+                    />
+                </SummaryCardLayout>
                 <Divider />
                 <div className="pf-v5-u-p-lg">
                     <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
