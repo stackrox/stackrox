@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/tools/roxvet/analyzers/protoclone"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/protoptrs"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/regexes"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/sortslices"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/storeinterface"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/structuredlogs"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckederrors"
@@ -40,5 +41,6 @@ func main() {
 		structuredlogs.Analyzer,
 		migrationreferencedschema.Analyzer,
 		undeferredmutexunlocks.Analyzer,
+		sortslices.Analyzer,
 	)
 }

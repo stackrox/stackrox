@@ -2,7 +2,7 @@ package sliceutils
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 )
 
 // StringSlice returns a sorted string slice from the given T.
@@ -12,7 +12,7 @@ func StringSlice[T fmt.Stringer](in ...T) []string {
 		res = append(res, i.String())
 	}
 
-	sort.Strings(res)
+	slices.Sort(res)
 	return res
 }
 

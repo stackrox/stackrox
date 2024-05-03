@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"sort"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -180,12 +180,12 @@ func (n *notifierCmd) construct(cmd *cobra.Command) error {
 
 	if anyFlagChanged(n.genericFlagSet) {
 		keys := maps.Keys(n.gcHeaders)
-		sort.Strings(keys)
+		slices.Sort(keys)
 		for _, k := range keys {
 			n.gc.Headers = append(n.gc.Headers, declarativeconfig.KeyValuePair{Key: k, Value: n.gcHeaders[k]})
 		}
 		keys = maps.Keys(n.gcExtraFields)
-		sort.Strings(keys)
+		slices.Sort(keys)
 		for _, k := range keys {
 			n.gc.ExtraFields = append(n.gc.ExtraFields, declarativeconfig.KeyValuePair{Key: k, Value: n.gcExtraFields[k]})
 		}
@@ -200,7 +200,7 @@ func (n *notifierCmd) construct(cmd *cobra.Command) error {
 
 	if anyFlagChanged(n.splunkFlagSet) {
 		keys := maps.Keys(n.scSourceTypes)
-		sort.Strings(keys)
+		slices.Sort(keys)
 		for _, k := range keys {
 			n.sc.SourceTypes = append(n.sc.SourceTypes, declarativeconfig.SourceTypePair{Key: k, Value: n.scSourceTypes[k]})
 		}

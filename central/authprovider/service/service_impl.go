@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"slices"
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -144,7 +145,7 @@ func (s *serviceImpl) ListAvailableProviderTypes(_ context.Context, _ *v1.Empty)
 		}
 
 		attributes := factory.GetSuggestedAttributes()
-		sort.Strings(attributes)
+		slices.Sort(attributes)
 		supportedTypes = append(supportedTypes, &v1.AvailableProviderTypesResponse_AuthProviderType{
 			Type:                typ,
 			SuggestedAttributes: attributes,

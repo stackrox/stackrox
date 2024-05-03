@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"sort"
+	"slices"
 
 	. "github.com/dave/jennifer/jen"
 	"github.com/spf13/cobra"
@@ -64,7 +64,7 @@ func generate(props *operations.GeneratorProperties, methods []string) error {
 
 func generateFunctions(props *operations.GeneratorProperties, methods []string) (signatures []Code, variables []Code, implementations []Code) {
 	// Generate code in a deterministic order so the style checker doesn't complain about stale generated code
-	sort.Strings(methods)
+	slices.Sort(methods)
 	for _, method := range methods {
 		newSignatures, newVariables, newImplementations := operations.GenerateSignaturesAndImplementations(method, props)
 		signatures = append(signatures, newSignatures...)

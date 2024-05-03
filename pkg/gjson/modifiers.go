@@ -3,7 +3,7 @@ package gjson
 import (
 	"encoding/json"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/utils"
@@ -149,7 +149,7 @@ func TextModifier() CustomModifier {
 		})
 		// Ensure we keep the same order for the texts we generated.
 		keys := maps.Keys(texts)
-		sort.Ints(keys)
+		slices.Sort(keys)
 		var result []string
 		for _, key := range keys {
 			result = append(result, modifier.trimSeparator(texts[key]))

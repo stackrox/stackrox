@@ -3,6 +3,7 @@ package graph
 import (
 	"fmt"
 	"net"
+	"slices"
 	"sort"
 	"strings"
 
@@ -373,7 +374,7 @@ func (b *graphBuilder) forEachNetworkPolicy(netPols []*storage.NetworkPolicy, do
 
 func (b *graphBuilder) PostProcess() {
 	for _, d := range b.allDeployments {
-		sort.Strings(d.applyingPoliciesIDs)
+		slices.Sort(d.applyingPoliciesIDs)
 		for _, e := range d.ingressEdges {
 			e.ports.normalizeInPlace()
 		}
