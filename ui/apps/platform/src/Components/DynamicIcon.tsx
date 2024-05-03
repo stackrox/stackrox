@@ -18,7 +18,7 @@ export function DynamicColumnIcon() {
 export function DynamicTableLabel() {
     return (
         <Tooltip content="You are viewing a filtered set of table rows. Column values may also be changed to match the applied filters.">
-            <Label color="blue" icon={<DynamicIcon />}>
+            <Label color="blue" icon={<DynamicIcon />} isCompact>
                 Filtered view
             </Label>
         </Tooltip>
