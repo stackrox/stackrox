@@ -101,6 +101,7 @@ func (k *listenerImpl) handleAllEvents() {
 			}
 		}
 	}
+	// Any informer created in the following block should be added to the coAvailabilityChecker
 	if coAvailabilityChecker.Available(k.client) {
 		log.Info("initializing compliance operator informers")
 		crdSharedInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
@@ -113,7 +114,7 @@ func (k *listenerImpl) handleAllEvents() {
 		complianceScanInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceScan.GroupVersionResource()).Informer()
 		complianceTailoredProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfile.GroupVersionResource()).Informer()
 		complianceSuiteInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceSuite.GroupVersionResource()).Informer()
-		complianceRemediationInformer = crdSharedInformerFactory.ForResource(complianceoperator.Remediation.GroupVersionResource()).Informer()
+		complianceRemediationInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceRemediation.GroupVersionResource()).Informer()
 		// Override the crdHandlerFn to only handle when the resources become unavailable
 		crdHandlerFn = func(status *watcher.Status) {
 			if !status.Available {
