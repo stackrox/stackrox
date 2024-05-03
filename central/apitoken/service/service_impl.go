@@ -147,7 +147,7 @@ func (s *serviceImpl) ListAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*
 			result = append(result, role.GetRoleName())
 		}
 	}
-	sort.Strings(result)
+	slices.Sort(result)
 	return &v1.ListAllowedTokenRolesResponse{
 		RoleNames: result,
 	}, nil
