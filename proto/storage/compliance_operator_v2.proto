@@ -261,3 +261,14 @@ message ComplianceOperatorRemediationV2 {
   string enforcement_type = 7;
   string cluster_id = 8; // @gotags: search:"Cluster ID,hidden"
 }
+
+// Next Tag: 7
+message ComplianceOperatorBenchmarkV2 {
+  string id = 1; // @gotags: sql:"pk,id,type(uuid)"
+  string name = 2; // @gotags: search:"Compliance Benchmark Name,hidden"
+  string version = 3;
+  string description = 4;
+  // Example: https://control.compliance.openshift.io/CIS-OCP
+  string profile_annotation = 5;
+  string provider = 6;
+}
