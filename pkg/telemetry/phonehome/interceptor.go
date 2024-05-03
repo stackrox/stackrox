@@ -64,7 +64,7 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 			Path:      path,
 			Code:      grpcError.ErrToHTTPStatus(err),
 			GRPCReq:   req,
-			Headers:   headers(ri.HTTPRequest.Headers),
+			Headers:   Headers(ri.HTTPRequest.Headers),
 		}
 	}
 
@@ -92,6 +92,6 @@ func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *Re
 		Path:      r.URL.Path,
 		Code:      status,
 		HTTPReq:   r,
-		Headers:   headers(r.Header),
+		Headers:   Headers(r.Header),
 	}
 }

@@ -4,10 +4,10 @@ import (
 	"net/http"
 )
 
-// headers wraps http.Header with a metadata.MD-like interface.
-type headers http.Header
+// Headers wraps http.Header with a metadata.MD-like interface.
+type Headers http.Header
 
 // Get implements the getter interface.
-func (h headers) Get(key string) []string {
+func (h Headers) Get(key string) []string {
 	return http.Header(h).Values(key)
 }
