@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -414,11 +415,18 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			s.NoError(err)
 			s.Equal(len(c.initialProcesses), countFromDB)
 
-			PruneOrphanedProcessIndicators(s.ctx, s.testDB.DB, orphanWindow)
-
-			countFromDB, err = processDatastore.Count(s.ctx, nil)
+			idsToDelete, err := GetOrphanedProcessIDsByDeployment(s.ctx, s.testDB.DB, orphanWindow)
 			s.NoError(err)
-			s.Equal(len(c.initialProcesses)-len(c.expectedDeletions), countFromDB)
+			idsByPod, err := GetOrphanedProcessIDsByPod(s.ctx, s.testDB.DB, orphanWindow)
+			s.NoError(err)
+			idsToDelete = append(idsToDelete, idsByPod...)
+
+			log.Infof(c.name)
+			log.Infof("%v by deployment", idsToDelete)
+			log.Infof("%v by pod", idsByPod)
+			log.Infof("%v by compact", slices.Compact(idsToDelete))
+			slices.Sort(idsToDelete)
+			s.Require().Equal(len(c.expectedDeletions), len(slices.Compact(idsToDelete)))
 
 			// Cleanup
 			var cleanupIDs []string

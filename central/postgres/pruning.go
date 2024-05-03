@@ -31,6 +31,14 @@ const (
 	getAllOrphanedNodes = `SELECT id FROM nodes WHERE NOT EXISTS
 		(SELECT 1 FROM clusters WHERE nodes.clusterid = clusters.Id)`
 
+	getOrphanedProcessesByDeployment = `SELECT id FROM process_indicators pi WHERE NOT EXISTS 
+		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) AND 	
+		(signal_time < now() AT time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time IS NULL)`
+
+	getOrphanedProcessesByPod = `SELECT id FROM process_indicators pi WHERE NOT EXISTS 
+		(SELECT 1 FROM pods WHERE pi.poduid = pods.Id) AND 	
+		(signal_time < now() AT time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time IS NULL)`
+
 	// deleteOrphanedProcesses select all process_indicators without
 	// associated deployments or pods. It does not scale for big deployments with million of rows
 	// in the table. If it fails repeatedly the postgres DB resources need to be reviewed,
@@ -156,12 +164,26 @@ func GetOrphanedNodeIDs(ctx context.Context, pool postgres.DB) ([]string, error)
 	})
 }
 
-// PruneOrphanedProcessIndicators prunes orphaned process indicators.
-func PruneOrphanedProcessIndicators(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) {
-	query := fmt.Sprintf(deleteOrphanedProcesses, int(orphanWindow.Minutes()))
-	if _, err := pool.Exec(ctx, query); err != nil {
-		log.Errorf("failed to prune process indicators: %v", err)
-	}
+// GetOrphanedProcessIDsByDeployment returns the process ids that have a deployment that has been removed.
+func GetOrphanedProcessIDsByDeployment(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) ([]string, error) {
+	return pgutils.Retry2(func() ([]string, error) {
+		ctx, cancel := context.WithTimeout(ctx, orphanedTimeout)
+		defer cancel()
+
+		query := fmt.Sprintf(getOrphanedProcessesByDeployment, int(orphanWindow.Minutes()))
+		return getOrphanedIDs(ctx, pool, query)
+	})
+}
+
+// GetOrphanedProcessIDsByPod returns the process ids that have a pod that has been removed.
+func GetOrphanedProcessIDsByPod(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) ([]string, error) {
+	return pgutils.Retry2(func() ([]string, error) {
+		ctx, cancel := context.WithTimeout(ctx, orphanedTimeout)
+		defer cancel()
+
+		query := fmt.Sprintf(getOrphanedProcessesByPod, int(orphanWindow.Minutes()))
+		return getOrphanedIDs(ctx, pool, query)
+	})
 }
 
 // PruneReportHistory prunes report history as per specified retentionDuration and a few static criteria.
