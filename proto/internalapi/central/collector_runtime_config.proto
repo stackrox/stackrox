@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package central;
+
+import "storage/collector_runtime_config.proto";
+
+option go_package = "./internalapi/central;central";
+
+message CollectorRuntimeConfigACKFromSensor {
+  string error = 1;
+  Action action = 2;
+
+  enum Action {
+    ACK = 0;
+    NACK = 1;
+  }
+}
+
+message CollectorRuntimeConfigWithCluster {
+  storage.CollectorRuntimeConfigWithCluster config_with_cluster = 2;
+}

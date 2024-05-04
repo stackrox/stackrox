@@ -2,22 +2,36 @@ syntax = "proto3";
 
 package sensor;
 
-import "storage/collector_runtime_config.proto";
+import "internalapi/central/collector_runtime_config.proto";
 
 option go_package = "sensor";
 
 message MsgToCollector {
   oneof msg {
-    storage.CollectorRuntimeConfig collector_runtime_config = 1;
+    CollectorRuntimeConfigWithCluster config_with_cluster = 1;
   }
 }
 
 message MsgFromCollector {
   oneof msg {
-    storage.CollectorRuntimeConfigACK collector_runtime_config_ack = 1;
+    CollectorRuntimeConfigACKFromCollector collector_runtime_config_ack = 1;
   }
 }
 
 service CollectorService {
   rpc Communicate(stream MsgFromCollector) returns (stream MsgToCollector);
+}
+
+message CollectorRuntimeConfigACKFromCollector {
+  string error = 1;
+  Action action = 2;
+
+  enum Action {
+    ACK = 0;
+    NACK = 1;
+  }
+}
+
+message CollectorRuntimeConfigWithCluster {
+  central.CollectorRuntimeConfigWithCluster config_with_cluster = 1;
 }

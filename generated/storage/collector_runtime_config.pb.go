@@ -27,19 +27,19 @@ type RuntimeFeature int32
 const (
 	RuntimeFeature_PROCESSES           RuntimeFeature = 0
 	RuntimeFeature_NETWORK_CONNECTIONS RuntimeFeature = 1
-	RuntimeFeature_LISTENING_ENDPOINTS RuntimeFeature = 2
+	RuntimeFeature_NETWORK_ENDPOINTS   RuntimeFeature = 2
 )
 
 var RuntimeFeature_name = map[int32]string{
 	0: "PROCESSES",
 	1: "NETWORK_CONNECTIONS",
-	2: "LISTENING_ENDPOINTS",
+	2: "NETWORK_ENDPOINTS",
 }
 
 var RuntimeFeature_value = map[string]int32{
 	"PROCESSES":           0,
 	"NETWORK_CONNECTIONS": 1,
-	"LISTENING_ENDPOINTS": 2,
+	"NETWORK_ENDPOINTS":   2,
 }
 
 func (x RuntimeFeature) String() string {
@@ -50,104 +50,11 @@ func (RuntimeFeature) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_47419a359a3138ed, []int{0}
 }
 
-type CollectorRuntimeConfigACK_Action int32
-
-const (
-	CollectorRuntimeConfigACK_ACK  CollectorRuntimeConfigACK_Action = 0
-	CollectorRuntimeConfigACK_NACK CollectorRuntimeConfigACK_Action = 1
-)
-
-var CollectorRuntimeConfigACK_Action_name = map[int32]string{
-	0: "ACK",
-	1: "NACK",
-}
-
-var CollectorRuntimeConfigACK_Action_value = map[string]int32{
-	"ACK":  0,
-	"NACK": 1,
-}
-
-func (x CollectorRuntimeConfigACK_Action) String() string {
-	return proto.EnumName(CollectorRuntimeConfigACK_Action_name, int32(x))
-}
-
-func (CollectorRuntimeConfigACK_Action) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_47419a359a3138ed, []int{0, 0}
-}
-
-type CollectorRuntimeConfigACK struct {
-	InstanceId           string                           `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
-	Action               CollectorRuntimeConfigACK_Action `protobuf:"varint,2,opt,name=action,proto3,enum=storage.CollectorRuntimeConfigACK_Action" json:"action,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
-	XXX_unrecognized     []byte                           `json:"-"`
-	XXX_sizecache        int32                            `json:"-"`
-}
-
-func (m *CollectorRuntimeConfigACK) Reset()         { *m = CollectorRuntimeConfigACK{} }
-func (m *CollectorRuntimeConfigACK) String() string { return proto.CompactTextString(m) }
-func (*CollectorRuntimeConfigACK) ProtoMessage()    {}
-func (*CollectorRuntimeConfigACK) Descriptor() ([]byte, []int) {
-	return fileDescriptor_47419a359a3138ed, []int{0}
-}
-func (m *CollectorRuntimeConfigACK) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *CollectorRuntimeConfigACK) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_CollectorRuntimeConfigACK.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *CollectorRuntimeConfigACK) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CollectorRuntimeConfigACK.Merge(m, src)
-}
-func (m *CollectorRuntimeConfigACK) XXX_Size() int {
-	return m.Size()
-}
-func (m *CollectorRuntimeConfigACK) XXX_DiscardUnknown() {
-	xxx_messageInfo_CollectorRuntimeConfigACK.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CollectorRuntimeConfigACK proto.InternalMessageInfo
-
-func (m *CollectorRuntimeConfigACK) GetInstanceId() string {
-	if m != nil {
-		return m.InstanceId
-	}
-	return ""
-}
-
-func (m *CollectorRuntimeConfigACK) GetAction() CollectorRuntimeConfigACK_Action {
-	if m != nil {
-		return m.Action
-	}
-	return CollectorRuntimeConfigACK_ACK
-}
-
-func (m *CollectorRuntimeConfigACK) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *CollectorRuntimeConfigACK) Clone() *CollectorRuntimeConfigACK {
-	if m == nil {
-		return nil
-	}
-	cloned := new(CollectorRuntimeConfigACK)
-	*cloned = *m
-
-	return cloned
-}
-
 type Status struct {
 	// Types that are valid to be assigned to Status:
 	//	*Status_ProcessStatus_
 	//	*Status_NetworkConnectionStatus_
-	//	*Status_ListeningEndpointStatus_
+	//	*Status_NetworkEndpointStatus_
 	Status               isStatus_Status `protobuf_oneof:"status"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -158,7 +65,7 @@ func (m *Status) Reset()         { *m = Status{} }
 func (m *Status) String() string { return proto.CompactTextString(m) }
 func (*Status) ProtoMessage()    {}
 func (*Status) Descriptor() ([]byte, []int) {
-	return fileDescriptor_47419a359a3138ed, []int{1}
+	return fileDescriptor_47419a359a3138ed, []int{0}
 }
 func (m *Status) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -200,8 +107,8 @@ type Status_ProcessStatus_ struct {
 type Status_NetworkConnectionStatus_ struct {
 	NetworkConnectionStatus *Status_NetworkConnectionStatus `protobuf:"bytes,2,opt,name=network_connection_status,json=networkConnectionStatus,proto3,oneof" json:"network_connection_status,omitempty"`
 }
-type Status_ListeningEndpointStatus_ struct {
-	ListeningEndpointStatus *Status_ListeningEndpointStatus `protobuf:"bytes,3,opt,name=listening_endpoint_status,json=listeningEndpointStatus,proto3,oneof" json:"listening_endpoint_status,omitempty"`
+type Status_NetworkEndpointStatus_ struct {
+	NetworkEndpointStatus *Status_NetworkEndpointStatus `protobuf:"bytes,3,opt,name=network_endpoint_status,json=networkEndpointStatus,proto3,oneof" json:"network_endpoint_status,omitempty"`
 }
 
 func (*Status_ProcessStatus_) isStatus_Status() {}
@@ -226,15 +133,15 @@ func (m *Status_NetworkConnectionStatus_) Clone() isStatus_Status {
 	cloned.NetworkConnectionStatus = m.NetworkConnectionStatus.Clone()
 	return cloned
 }
-func (*Status_ListeningEndpointStatus_) isStatus_Status() {}
-func (m *Status_ListeningEndpointStatus_) Clone() isStatus_Status {
+func (*Status_NetworkEndpointStatus_) isStatus_Status() {}
+func (m *Status_NetworkEndpointStatus_) Clone() isStatus_Status {
 	if m == nil {
 		return nil
 	}
-	cloned := new(Status_ListeningEndpointStatus_)
+	cloned := new(Status_NetworkEndpointStatus_)
 	*cloned = *m
 
-	cloned.ListeningEndpointStatus = m.ListeningEndpointStatus.Clone()
+	cloned.NetworkEndpointStatus = m.NetworkEndpointStatus.Clone()
 	return cloned
 }
 
@@ -259,9 +166,9 @@ func (m *Status) GetNetworkConnectionStatus() *Status_NetworkConnectionStatus {
 	return nil
 }
 
-func (m *Status) GetListeningEndpointStatus() *Status_ListeningEndpointStatus {
-	if x, ok := m.GetStatus().(*Status_ListeningEndpointStatus_); ok {
-		return x.ListeningEndpointStatus
+func (m *Status) GetNetworkEndpointStatus() *Status_NetworkEndpointStatus {
+	if x, ok := m.GetStatus().(*Status_NetworkEndpointStatus_); ok {
+		return x.NetworkEndpointStatus
 	}
 	return nil
 }
@@ -271,7 +178,7 @@ func (*Status) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
 		(*Status_ProcessStatus_)(nil),
 		(*Status_NetworkConnectionStatus_)(nil),
-		(*Status_ListeningEndpointStatus_)(nil),
+		(*Status_NetworkEndpointStatus_)(nil),
 	}
 }
 
@@ -302,7 +209,7 @@ func (m *Status_ProcessStatus) Reset()         { *m = Status_ProcessStatus{} }
 func (m *Status_ProcessStatus) String() string { return proto.CompactTextString(m) }
 func (*Status_ProcessStatus) ProtoMessage()    {}
 func (*Status_ProcessStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_47419a359a3138ed, []int{1, 0}
+	return fileDescriptor_47419a359a3138ed, []int{0, 0}
 }
 func (m *Status_ProcessStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -363,7 +270,7 @@ func (m *Status_NetworkConnectionStatus) Reset()         { *m = Status_NetworkCo
 func (m *Status_NetworkConnectionStatus) String() string { return proto.CompactTextString(m) }
 func (*Status_NetworkConnectionStatus) ProtoMessage()    {}
 func (*Status_NetworkConnectionStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_47419a359a3138ed, []int{1, 1}
+	return fileDescriptor_47419a359a3138ed, []int{0, 1}
 }
 func (m *Status_NetworkConnectionStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -419,25 +326,26 @@ func (m *Status_NetworkConnectionStatus) Clone() *Status_NetworkConnectionStatus
 	return cloned
 }
 
-type Status_ListeningEndpointStatus struct {
-	Enabled              bool     `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+type Status_NetworkEndpointStatus struct {
+	Enabled                  bool     `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	ProcessesListeningOnPort bool     `protobuf:"varint,3,opt,name=processes_listening_on_port,json=processesListeningOnPort,proto3" json:"processes_listening_on_port,omitempty"`
+	XXX_NoUnkeyedLiteral     struct{} `json:"-"`
+	XXX_unrecognized         []byte   `json:"-"`
+	XXX_sizecache            int32    `json:"-"`
 }
 
-func (m *Status_ListeningEndpointStatus) Reset()         { *m = Status_ListeningEndpointStatus{} }
-func (m *Status_ListeningEndpointStatus) String() string { return proto.CompactTextString(m) }
-func (*Status_ListeningEndpointStatus) ProtoMessage()    {}
-func (*Status_ListeningEndpointStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_47419a359a3138ed, []int{1, 2}
+func (m *Status_NetworkEndpointStatus) Reset()         { *m = Status_NetworkEndpointStatus{} }
+func (m *Status_NetworkEndpointStatus) String() string { return proto.CompactTextString(m) }
+func (*Status_NetworkEndpointStatus) ProtoMessage()    {}
+func (*Status_NetworkEndpointStatus) Descriptor() ([]byte, []int) {
+	return fileDescriptor_47419a359a3138ed, []int{0, 2}
 }
-func (m *Status_ListeningEndpointStatus) XXX_Unmarshal(b []byte) error {
+func (m *Status_NetworkEndpointStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Status_ListeningEndpointStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Status_NetworkEndpointStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Status_ListeningEndpointStatus.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Status_NetworkEndpointStatus.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -447,33 +355,40 @@ func (m *Status_ListeningEndpointStatus) XXX_Marshal(b []byte, deterministic boo
 		return b[:n], nil
 	}
 }
-func (m *Status_ListeningEndpointStatus) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Status_ListeningEndpointStatus.Merge(m, src)
+func (m *Status_NetworkEndpointStatus) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Status_NetworkEndpointStatus.Merge(m, src)
 }
-func (m *Status_ListeningEndpointStatus) XXX_Size() int {
+func (m *Status_NetworkEndpointStatus) XXX_Size() int {
 	return m.Size()
 }
-func (m *Status_ListeningEndpointStatus) XXX_DiscardUnknown() {
-	xxx_messageInfo_Status_ListeningEndpointStatus.DiscardUnknown(m)
+func (m *Status_NetworkEndpointStatus) XXX_DiscardUnknown() {
+	xxx_messageInfo_Status_NetworkEndpointStatus.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Status_ListeningEndpointStatus proto.InternalMessageInfo
+var xxx_messageInfo_Status_NetworkEndpointStatus proto.InternalMessageInfo
 
-func (m *Status_ListeningEndpointStatus) GetEnabled() bool {
+func (m *Status_NetworkEndpointStatus) GetEnabled() bool {
 	if m != nil {
 		return m.Enabled
 	}
 	return false
 }
 
-func (m *Status_ListeningEndpointStatus) MessageClone() proto.Message {
+func (m *Status_NetworkEndpointStatus) GetProcessesListeningOnPort() bool {
+	if m != nil {
+		return m.ProcessesListeningOnPort
+	}
+	return false
+}
+
+func (m *Status_NetworkEndpointStatus) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *Status_ListeningEndpointStatus) Clone() *Status_ListeningEndpointStatus {
+func (m *Status_NetworkEndpointStatus) Clone() *Status_NetworkEndpointStatus {
 	if m == nil {
 		return nil
 	}
-	cloned := new(Status_ListeningEndpointStatus)
+	cloned := new(Status_NetworkEndpointStatus)
 	*cloned = *m
 
 	return cloned
@@ -481,7 +396,7 @@ func (m *Status_ListeningEndpointStatus) Clone() *Status_ListeningEndpointStatus
 
 type RuntimeFeatureConfig struct {
 	Feature              RuntimeFeature                      `protobuf:"varint,1,opt,name=feature,proto3,enum=storage.RuntimeFeature" json:"feature,omitempty"`
-	DefaultStatus        string                              `protobuf:"bytes,2,opt,name=default_status,json=defaultStatus,proto3" json:"default_status,omitempty"`
+	DefaultStatus        *Status                             `protobuf:"bytes,2,opt,name=default_status,json=defaultStatus,proto3" json:"default_status,omitempty"`
 	Rules                []*RuntimeFeatureConfig_RuntimeRule `protobuf:"bytes,3,rep,name=rules,proto3" json:"rules,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                            `json:"-"`
 	XXX_unrecognized     []byte                              `json:"-"`
@@ -492,7 +407,7 @@ func (m *RuntimeFeatureConfig) Reset()         { *m = RuntimeFeatureConfig{} }
 func (m *RuntimeFeatureConfig) String() string { return proto.CompactTextString(m) }
 func (*RuntimeFeatureConfig) ProtoMessage()    {}
 func (*RuntimeFeatureConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_47419a359a3138ed, []int{2}
+	return fileDescriptor_47419a359a3138ed, []int{1}
 }
 func (m *RuntimeFeatureConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -528,11 +443,11 @@ func (m *RuntimeFeatureConfig) GetFeature() RuntimeFeature {
 	return RuntimeFeature_PROCESSES
 }
 
-func (m *RuntimeFeatureConfig) GetDefaultStatus() string {
+func (m *RuntimeFeatureConfig) GetDefaultStatus() *Status {
 	if m != nil {
 		return m.DefaultStatus
 	}
-	return ""
+	return nil
 }
 
 func (m *RuntimeFeatureConfig) GetRules() []*RuntimeFeatureConfig_RuntimeRule {
@@ -552,6 +467,7 @@ func (m *RuntimeFeatureConfig) Clone() *RuntimeFeatureConfig {
 	cloned := new(RuntimeFeatureConfig)
 	*cloned = *m
 
+	cloned.DefaultStatus = m.DefaultStatus.Clone()
 	if m.Rules != nil {
 		cloned.Rules = make([]*RuntimeFeatureConfig_RuntimeRule, len(m.Rules))
 		for idx, v := range m.Rules {
@@ -573,7 +489,7 @@ func (m *RuntimeFeatureConfig_RuntimeRule) Reset()         { *m = RuntimeFeature
 func (m *RuntimeFeatureConfig_RuntimeRule) String() string { return proto.CompactTextString(m) }
 func (*RuntimeFeatureConfig_RuntimeRule) ProtoMessage()    {}
 func (*RuntimeFeatureConfig_RuntimeRule) Descriptor() ([]byte, []int) {
-	return fileDescriptor_47419a359a3138ed, []int{2, 0}
+	return fileDescriptor_47419a359a3138ed, []int{1, 0}
 }
 func (m *RuntimeFeatureConfig_RuntimeRule) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -642,7 +558,7 @@ func (m *CollectorRuntimeConfig) Reset()         { *m = CollectorRuntimeConfig{}
 func (m *CollectorRuntimeConfig) String() string { return proto.CompactTextString(m) }
 func (*CollectorRuntimeConfig) ProtoMessage()    {}
 func (*CollectorRuntimeConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_47419a359a3138ed, []int{3}
+	return fileDescriptor_47419a359a3138ed, []int{2}
 }
 func (m *CollectorRuntimeConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -712,12 +628,10 @@ func (m *CollectorRuntimeConfig) Clone() *CollectorRuntimeConfig {
 
 func init() {
 	proto.RegisterEnum("storage.RuntimeFeature", RuntimeFeature_name, RuntimeFeature_value)
-	proto.RegisterEnum("storage.CollectorRuntimeConfigACK_Action", CollectorRuntimeConfigACK_Action_name, CollectorRuntimeConfigACK_Action_value)
-	proto.RegisterType((*CollectorRuntimeConfigACK)(nil), "storage.CollectorRuntimeConfigACK")
 	proto.RegisterType((*Status)(nil), "storage.Status")
 	proto.RegisterType((*Status_ProcessStatus)(nil), "storage.Status.ProcessStatus")
 	proto.RegisterType((*Status_NetworkConnectionStatus)(nil), "storage.Status.NetworkConnectionStatus")
-	proto.RegisterType((*Status_ListeningEndpointStatus)(nil), "storage.Status.ListeningEndpointStatus")
+	proto.RegisterType((*Status_NetworkEndpointStatus)(nil), "storage.Status.NetworkEndpointStatus")
 	proto.RegisterType((*RuntimeFeatureConfig)(nil), "storage.RuntimeFeatureConfig")
 	proto.RegisterType((*RuntimeFeatureConfig_RuntimeRule)(nil), "storage.RuntimeFeatureConfig.RuntimeRule")
 	proto.RegisterType((*CollectorRuntimeConfig)(nil), "storage.CollectorRuntimeConfig")
@@ -728,86 +642,44 @@ func init() {
 }
 
 var fileDescriptor_47419a359a3138ed = []byte{
-	// 638 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x54, 0xc1, 0x6e, 0xd3, 0x4a,
-	0x14, 0x8d, 0x93, 0xf7, 0x92, 0xf4, 0x46, 0xc9, 0xcb, 0x9b, 0x56, 0x4d, 0x9a, 0xaa, 0x79, 0x7d,
-	0x91, 0xa0, 0x2d, 0x12, 0x41, 0xb4, 0x2c, 0xd8, 0xa1, 0xd4, 0xb8, 0x10, 0xb5, 0x72, 0xca, 0x38,
-	0x12, 0x12, 0x1b, 0x6b, 0xea, 0x4c, 0x23, 0xab, 0xee, 0x4c, 0x34, 0x1e, 0x8b, 0x7e, 0x0a, 0x0b,
-	0x76, 0x7c, 0x07, 0x7b, 0x96, 0x7c, 0x02, 0x2a, 0x5b, 0x3e, 0x02, 0xd9, 0x33, 0x93, 0x26, 0xad,
-	0xc3, 0xce, 0xbe, 0xf7, 0xdc, 0x73, 0xee, 0x3d, 0x73, 0x67, 0xe0, 0x71, 0x2c, 0xb9, 0x20, 0x53,
-	0xfa, 0x2c, 0xe0, 0x51, 0x44, 0x03, 0xc9, 0x85, 0x2f, 0x12, 0x26, 0xc3, 0x6b, 0xea, 0x07, 0x9c,
-	0x5d, 0x86, 0xd3, 0xfe, 0x4c, 0x70, 0xc9, 0x51, 0x45, 0xe3, 0x3a, 0xff, 0x9b, 0x02, 0x41, 0x63,
-	0x9e, 0x88, 0x20, 0xc5, 0x65, 0x95, 0x21, 0x67, 0x0a, 0xdb, 0xfb, 0x6c, 0xc1, 0x96, 0x6d, 0xe8,
-	0xb0, 0x62, 0xb3, 0x33, 0xb2, 0x81, 0x7d, 0x8a, 0xfe, 0x83, 0x5a, 0xc8, 0x62, 0x49, 0x58, 0x40,
-	0xfd, 0x70, 0xd2, 0xb6, 0x76, 0xad, 0xfd, 0x35, 0x0c, 0x26, 0x34, 0x9c, 0xa0, 0x01, 0x94, 0x49,
-	0x46, 0xd7, 0x2e, 0xee, 0x5a, 0xfb, 0x8d, 0xc3, 0x83, 0xbe, 0x96, 0xec, 0xaf, 0x24, 0xed, 0x0f,
-	0xb2, 0x02, 0xac, 0x0b, 0x7b, 0xdb, 0x50, 0x56, 0x11, 0x54, 0x81, 0xd2, 0xc0, 0x3e, 0x6d, 0x16,
-	0x50, 0x15, 0xfe, 0x72, 0xd3, 0x2f, 0xab, 0xf7, 0xab, 0x04, 0x65, 0x4f, 0x12, 0x99, 0xc4, 0xe8,
-	0x04, 0x1a, 0x33, 0xc1, 0x03, 0x1a, 0xc7, 0x7e, 0x9c, 0x45, 0xb2, 0x76, 0x6a, 0x87, 0x3b, 0x73,
-	0x49, 0x05, 0xec, 0x9f, 0x2b, 0x94, 0xfa, 0x7b, 0x5b, 0xc0, 0xf5, 0xd9, 0x62, 0x00, 0x51, 0xd8,
-	0x62, 0x54, 0x7e, 0xe4, 0xe2, 0x2a, 0x75, 0x8d, 0x29, 0x37, 0x0c, 0x65, 0x31, 0xa3, 0xdc, 0xbb,
-	0x4f, 0xe9, 0xaa, 0x02, 0x7b, 0x8e, 0x9f, 0x93, 0xb7, 0x58, 0x7e, 0x2a, 0x95, 0x89, 0xc2, 0x58,
-	0x52, 0x16, 0xb2, 0xa9, 0x4f, 0xd9, 0x64, 0xc6, 0x43, 0x26, 0x8d, 0x4c, 0x29, 0x5f, 0xe6, 0xcc,
-	0x14, 0x38, 0x1a, 0x7f, 0x27, 0x13, 0xe5, 0xa7, 0x3a, 0x07, 0x50, 0x5f, 0x9a, 0x17, 0xb5, 0xa1,
-	0x42, 0x19, 0xb9, 0x88, 0xa8, 0x3a, 0xae, 0x2a, 0x36, 0xbf, 0x9d, 0x0b, 0x68, 0xad, 0x98, 0x63,
-	0x75, 0x11, 0x7a, 0x0a, 0x88, 0x4c, 0xa7, 0x82, 0x4e, 0x89, 0xa4, 0x3e, 0xbd, 0x91, 0x54, 0x30,
-	0x12, 0x65, 0x36, 0x55, 0xf1, 0xbf, 0xf3, 0x8c, 0xa3, 0x13, 0x9d, 0x23, 0x68, 0xad, 0x18, 0x62,
-	0x51, 0xa3, 0xb8, 0xa4, 0x71, 0x5c, 0x85, 0xb2, 0xf2, 0xa5, 0xf7, 0xa5, 0x08, 0x1b, 0x7a, 0x5f,
-	0x4e, 0x28, 0x91, 0x89, 0xd0, 0x6b, 0x83, 0x9e, 0x43, 0xe5, 0x52, 0x05, 0xb2, 0x06, 0x1b, 0x87,
-	0xad, 0xb9, 0x77, 0xcb, 0x78, 0x6c, 0x70, 0xe8, 0x11, 0x34, 0x26, 0xf4, 0x92, 0x24, 0x91, 0x5c,
-	0x3c, 0xdc, 0x35, 0x5c, 0xd7, 0x51, 0xdd, 0xd6, 0x2b, 0xf8, 0x5b, 0x24, 0x11, 0x4d, 0xcf, 0xa4,
-	0xb4, 0x5f, 0x5b, 0x58, 0xe0, 0xbc, 0x3e, 0x4c, 0x10, 0x27, 0x11, 0xc5, 0xaa, 0xae, 0x33, 0x83,
-	0xda, 0x42, 0x14, 0xbd, 0x84, 0x76, 0xce, 0x6d, 0xf3, 0x19, 0xb9, 0xa6, 0xfa, 0xfe, 0x6c, 0x9a,
-	0xbc, 0x3d, 0x4f, 0xbb, 0xe4, 0x9a, 0xa2, 0x3d, 0x63, 0x83, 0xde, 0xc2, 0x7f, 0xee, 0xad, 0x07,
-	0x36, 0x2e, 0x7d, 0xb5, 0x60, 0x33, 0xff, 0x7a, 0x21, 0x0f, 0x36, 0xcd, 0x93, 0xa0, 0x7d, 0xd0,
-	0x4f, 0x43, 0xdb, 0xca, 0xc6, 0xdb, 0xf9, 0xe3, 0x78, 0x78, 0x43, 0xe4, 0x99, 0xef, 0xc2, 0x46,
-	0xce, 0x48, 0x69, 0x9b, 0x29, 0xe5, 0xf6, 0x1d, 0xe5, 0x83, 0xb9, 0xf0, 0xfa, 0xc3, 0x59, 0xe3,
-	0x27, 0xef, 0xa0, 0xb1, 0xac, 0x8e, 0xea, 0xb0, 0x76, 0x8e, 0x47, 0xb6, 0xe3, 0x79, 0x8e, 0xd7,
-	0x2c, 0xa0, 0x16, 0xac, 0xbb, 0xce, 0xf8, 0xfd, 0x08, 0x9f, 0xfa, 0xf6, 0xc8, 0x75, 0x1d, 0x7b,
-	0x3c, 0x1c, 0xb9, 0x5e, 0xd3, 0x4a, 0x13, 0x67, 0x43, 0x6f, 0xec, 0xb8, 0x43, 0xf7, 0x8d, 0xef,
-	0xb8, 0xaf, 0xcf, 0x47, 0x43, 0x77, 0xec, 0x35, 0x8b, 0xc7, 0x2f, 0xbe, 0xdd, 0x76, 0xad, 0xef,
-	0xb7, 0x5d, 0xeb, 0xc7, 0x6d, 0xd7, 0xfa, 0xf4, 0xb3, 0x5b, 0x80, 0xad, 0x90, 0xf7, 0x63, 0x49,
-	0x82, 0x2b, 0xc1, 0x6f, 0xd4, 0x5b, 0x67, 0xfa, 0xfc, 0x60, 0xde, 0xc7, 0x8b, 0x72, 0x16, 0x3f,
-	0xfa, 0x1d, 0x00, 0x00, 0xff, 0xff, 0x12, 0x2e, 0xd0, 0x28, 0x59, 0x05, 0x00, 0x00,
-}
-
-func (m *CollectorRuntimeConfigACK) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *CollectorRuntimeConfigACK) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CollectorRuntimeConfigACK) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Action != 0 {
-		i = encodeVarintCollectorRuntimeConfig(dAtA, i, uint64(m.Action))
-		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.InstanceId) > 0 {
-		i -= len(m.InstanceId)
-		copy(dAtA[i:], m.InstanceId)
-		i = encodeVarintCollectorRuntimeConfig(dAtA, i, uint64(len(m.InstanceId)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
+	// 588 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x54, 0xcd, 0x6e, 0xd3, 0x4c,
+	0x14, 0xad, 0xd3, 0xef, 0x4b, 0xd2, 0x1b, 0x25, 0xa4, 0xd3, 0xfc, 0x35, 0x55, 0x23, 0xa8, 0x04,
+	0x6d, 0x91, 0x08, 0x22, 0x20, 0xc4, 0x06, 0x21, 0xd5, 0xb8, 0xa2, 0x02, 0xd9, 0xd1, 0x38, 0x12,
+	0x12, 0x1b, 0xcb, 0x71, 0x26, 0x96, 0x55, 0x67, 0xc6, 0x1a, 0x8f, 0x45, 0x1f, 0x85, 0x3d, 0xaf,
+	0xc0, 0x96, 0x3d, 0x4b, 0x1e, 0x01, 0x85, 0x17, 0x41, 0xf1, 0x78, 0x4c, 0xd2, 0x3a, 0x2c, 0x7d,
+	0xcf, 0xb9, 0xf7, 0xdc, 0x73, 0x66, 0xc6, 0xf0, 0x28, 0x16, 0x8c, 0xbb, 0x3e, 0x79, 0xea, 0xb1,
+	0x30, 0x24, 0x9e, 0x60, 0xdc, 0xe1, 0x09, 0x15, 0xc1, 0x82, 0x38, 0x1e, 0xa3, 0xf3, 0xc0, 0x1f,
+	0x46, 0x9c, 0x09, 0x86, 0x2a, 0x19, 0xaf, 0xff, 0x40, 0x35, 0x70, 0x12, 0xb3, 0x84, 0x7b, 0x2b,
+	0x5e, 0xda, 0x19, 0x30, 0x2a, 0xb9, 0x27, 0x5f, 0xff, 0x83, 0xb2, 0x2d, 0x5c, 0x91, 0xc4, 0xe8,
+	0x12, 0x1a, 0x11, 0x67, 0x1e, 0x89, 0x63, 0x27, 0x4e, 0x2b, 0x3d, 0xed, 0xbe, 0x76, 0x56, 0x1b,
+	0x1d, 0x0f, 0xb3, 0x31, 0x43, 0x49, 0x1c, 0x8e, 0x25, 0x4b, 0x7e, 0xbd, 0xdb, 0xc1, 0xf5, 0x68,
+	0xbd, 0x80, 0x08, 0x1c, 0x52, 0x22, 0x3e, 0x33, 0x7e, 0xbd, 0x5a, 0x8b, 0x4a, 0x39, 0x35, 0xb2,
+	0x94, 0x8e, 0x3c, 0xbd, 0x3d, 0xd2, 0x94, 0x0d, 0x7a, 0xce, 0xcf, 0x87, 0x77, 0x69, 0x31, 0x84,
+	0x1c, 0x50, 0x90, 0x43, 0xe8, 0x2c, 0x62, 0x01, 0x15, 0x4a, 0x64, 0x37, 0x15, 0x79, 0xb8, 0x45,
+	0xc4, 0xc8, 0xd8, 0xb9, 0x44, 0x9b, 0x16, 0x01, 0xfd, 0x73, 0xa8, 0x6f, 0x38, 0x45, 0x3d, 0xa8,
+	0x10, 0xea, 0x4e, 0x43, 0x32, 0x4b, 0x93, 0xa9, 0x62, 0xf5, 0xd9, 0x9f, 0x42, 0x77, 0x8b, 0x83,
+	0xed, 0x4d, 0xe8, 0x09, 0x20, 0xd7, 0xf7, 0x39, 0xf1, 0x5d, 0x41, 0x1c, 0x72, 0x23, 0x08, 0xa7,
+	0x6e, 0x98, 0x06, 0x54, 0xc5, 0xfb, 0x39, 0x62, 0x64, 0x40, 0x3f, 0x82, 0x76, 0xa1, 0x81, 0x75,
+	0x85, 0xd2, 0xa6, 0xc2, 0x6b, 0x38, 0xca, 0x8e, 0x86, 0xc4, 0x4e, 0x18, 0xc4, 0x82, 0xd0, 0x80,
+	0xfa, 0x0e, 0xa3, 0x4e, 0xc4, 0xb8, 0x48, 0x63, 0xaa, 0xe2, 0x5e, 0x4e, 0xf9, 0xa0, 0x18, 0x16,
+	0x1d, 0x33, 0x2e, 0x2e, 0xaa, 0x50, 0x96, 0x81, 0x9e, 0x7c, 0x2b, 0x41, 0x0b, 0xcb, 0xab, 0x76,
+	0x49, 0x5c, 0x91, 0x70, 0xa2, 0xa7, 0x17, 0x0e, 0x3d, 0x83, 0xca, 0x5c, 0x16, 0x52, 0x77, 0x8d,
+	0x51, 0x37, 0x0f, 0x7d, 0x93, 0x8f, 0x15, 0x0f, 0xbd, 0x84, 0xc6, 0x8c, 0xcc, 0xdd, 0x24, 0x14,
+	0x9b, 0x77, 0xe2, 0xde, 0xad, 0xe3, 0xc2, 0xf5, 0x8c, 0x96, 0xd9, 0x7c, 0x03, 0xff, 0xf3, 0x24,
+	0x24, 0xab, 0xd3, 0xdd, 0x3d, 0xab, 0x8d, 0xce, 0xb7, 0x08, 0xc9, 0xc5, 0x54, 0x11, 0x27, 0x21,
+	0xc1, 0xb2, 0xaf, 0x1f, 0x41, 0x6d, 0xad, 0x8a, 0x5e, 0x41, 0xaf, 0xe0, 0x59, 0x38, 0xd4, 0x5d,
+	0x48, 0x2f, 0x7b, 0xb8, 0xa3, 0x70, 0x3d, 0x87, 0x4d, 0x77, 0x41, 0xd0, 0xa9, 0xca, 0x65, 0xdb,
+	0xe6, 0x2a, 0xb6, 0xef, 0x1a, 0x74, 0x74, 0xf5, 0x56, 0x33, 0xed, 0x2c, 0x38, 0x1b, 0x3a, 0xea,
+	0xed, 0x66, 0xc1, 0x64, 0x6f, 0xb8, 0xa7, 0xa5, 0xf6, 0x8e, 0xff, 0x69, 0x0f, 0xb7, 0x78, 0xd1,
+	0x69, 0x98, 0xd0, 0x2a, 0xb0, 0xb4, 0x5a, 0x73, 0x35, 0xf2, 0xe8, 0xef, 0xc8, 0x3b, 0xbe, 0xf0,
+	0xc1, 0x5d, 0xaf, 0xf1, 0x63, 0x0b, 0x1a, 0x9b, 0xea, 0xa8, 0x0e, 0x7b, 0x63, 0x6c, 0xe9, 0x86,
+	0x6d, 0x1b, 0x76, 0x73, 0x07, 0x75, 0xe1, 0xc0, 0x34, 0x26, 0x1f, 0x2d, 0xfc, 0xde, 0xd1, 0x2d,
+	0xd3, 0x34, 0xf4, 0xc9, 0x95, 0x65, 0xda, 0x4d, 0x0d, 0xb5, 0x61, 0x5f, 0x01, 0x86, 0xf9, 0x76,
+	0x6c, 0x5d, 0x99, 0x13, 0xbb, 0x59, 0xba, 0x78, 0xf1, 0x63, 0x39, 0xd0, 0x7e, 0x2e, 0x07, 0xda,
+	0xaf, 0xe5, 0x40, 0xfb, 0xf2, 0x7b, 0xb0, 0x03, 0x87, 0x01, 0x1b, 0xc6, 0xc2, 0xf5, 0xae, 0x39,
+	0xbb, 0x91, 0xbf, 0x24, 0xb5, 0xe5, 0x27, 0xf5, 0x1b, 0x9b, 0x96, 0xd3, 0xfa, 0xf3, 0x3f, 0x01,
+	0x00, 0x00, 0xff, 0xff, 0x6a, 0x85, 0x2b, 0xcc, 0x00, 0x05, 0x00, 0x00,
 }
 
 func (m *Status) Marshal() (dAtA []byte, err error) {
@@ -888,16 +760,16 @@ func (m *Status_NetworkConnectionStatus_) MarshalToSizedBuffer(dAtA []byte) (int
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Status_ListeningEndpointStatus_) MarshalTo(dAtA []byte) (int, error) {
+func (m *Status_NetworkEndpointStatus_) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Status_ListeningEndpointStatus_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Status_NetworkEndpointStatus_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.ListeningEndpointStatus != nil {
+	if m.NetworkEndpointStatus != nil {
 		{
-			size, err := m.ListeningEndpointStatus.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.NetworkEndpointStatus.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -993,7 +865,7 @@ func (m *Status_NetworkConnectionStatus) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *Status_ListeningEndpointStatus) Marshal() (dAtA []byte, err error) {
+func (m *Status_NetworkEndpointStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1003,12 +875,12 @@ func (m *Status_ListeningEndpointStatus) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Status_ListeningEndpointStatus) MarshalTo(dAtA []byte) (int, error) {
+func (m *Status_NetworkEndpointStatus) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Status_ListeningEndpointStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Status_NetworkEndpointStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1016,6 +888,16 @@ func (m *Status_ListeningEndpointStatus) MarshalToSizedBuffer(dAtA []byte) (int,
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ProcessesListeningOnPort {
+		i--
+		if m.ProcessesListeningOnPort {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
 	}
 	if m.Enabled {
 		i--
@@ -1068,10 +950,15 @@ func (m *RuntimeFeatureConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x1a
 		}
 	}
-	if len(m.DefaultStatus) > 0 {
-		i -= len(m.DefaultStatus)
-		copy(dAtA[i:], m.DefaultStatus)
-		i = encodeVarintCollectorRuntimeConfig(dAtA, i, uint64(len(m.DefaultStatus)))
+	if m.DefaultStatus != nil {
+		{
+			size, err := m.DefaultStatus.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCollectorRuntimeConfig(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x12
 	}
@@ -1195,25 +1082,6 @@ func encodeVarintCollectorRuntimeConfig(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *CollectorRuntimeConfigACK) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.InstanceId)
-	if l > 0 {
-		n += 1 + l + sovCollectorRuntimeConfig(uint64(l))
-	}
-	if m.Action != 0 {
-		n += 1 + sovCollectorRuntimeConfig(uint64(m.Action))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
 func (m *Status) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1253,14 +1121,14 @@ func (m *Status_NetworkConnectionStatus_) Size() (n int) {
 	}
 	return n
 }
-func (m *Status_ListeningEndpointStatus_) Size() (n int) {
+func (m *Status_NetworkEndpointStatus_) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ListeningEndpointStatus != nil {
-		l = m.ListeningEndpointStatus.Size()
+	if m.NetworkEndpointStatus != nil {
+		l = m.NetworkEndpointStatus.Size()
 		n += 1 + l + sovCollectorRuntimeConfig(uint64(l))
 	}
 	return n
@@ -1298,13 +1166,16 @@ func (m *Status_NetworkConnectionStatus) Size() (n int) {
 	return n
 }
 
-func (m *Status_ListeningEndpointStatus) Size() (n int) {
+func (m *Status_NetworkEndpointStatus) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
 	if m.Enabled {
+		n += 2
+	}
+	if m.ProcessesListeningOnPort {
 		n += 2
 	}
 	if m.XXX_unrecognized != nil {
@@ -1322,8 +1193,8 @@ func (m *RuntimeFeatureConfig) Size() (n int) {
 	if m.Feature != 0 {
 		n += 1 + sovCollectorRuntimeConfig(uint64(m.Feature))
 	}
-	l = len(m.DefaultStatus)
-	if l > 0 {
+	if m.DefaultStatus != nil {
+		l = m.DefaultStatus.Size()
 		n += 1 + l + sovCollectorRuntimeConfig(uint64(l))
 	}
 	if len(m.Rules) > 0 {
@@ -1387,108 +1258,6 @@ func sovCollectorRuntimeConfig(x uint64) (n int) {
 }
 func sozCollectorRuntimeConfig(x uint64) (n int) {
 	return sovCollectorRuntimeConfig(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
-func (m *CollectorRuntimeConfigACK) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowCollectorRuntimeConfig
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: CollectorRuntimeConfigACK: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CollectorRuntimeConfigACK: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field InstanceId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowCollectorRuntimeConfig
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthCollectorRuntimeConfig
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthCollectorRuntimeConfig
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.InstanceId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Action", wireType)
-			}
-			m.Action = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowCollectorRuntimeConfig
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Action |= CollectorRuntimeConfigACK_Action(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipCollectorRuntimeConfig(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthCollectorRuntimeConfig
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *Status) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -1591,7 +1360,7 @@ func (m *Status) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ListeningEndpointStatus", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NetworkEndpointStatus", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1618,11 +1387,11 @@ func (m *Status) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &Status_ListeningEndpointStatus{}
+			v := &Status_NetworkEndpointStatus{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.Status = &Status_ListeningEndpointStatus_{v}
+			m.Status = &Status_NetworkEndpointStatus_{v}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1808,7 +1577,7 @@ func (m *Status_NetworkConnectionStatus) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Status_ListeningEndpointStatus) Unmarshal(dAtA []byte) error {
+func (m *Status_NetworkEndpointStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1831,10 +1600,10 @@ func (m *Status_ListeningEndpointStatus) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListeningEndpointStatus: wiretype end group for non-group")
+			return fmt.Errorf("proto: NetworkEndpointStatus: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListeningEndpointStatus: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: NetworkEndpointStatus: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 2:
@@ -1857,6 +1626,26 @@ func (m *Status_ListeningEndpointStatus) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.Enabled = bool(v != 0)
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProcessesListeningOnPort", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCollectorRuntimeConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.ProcessesListeningOnPort = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipCollectorRuntimeConfig(dAtA[iNdEx:])
@@ -1931,7 +1720,7 @@ func (m *RuntimeFeatureConfig) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DefaultStatus", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowCollectorRuntimeConfig
@@ -1941,23 +1730,27 @@ func (m *RuntimeFeatureConfig) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthCollectorRuntimeConfig
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthCollectorRuntimeConfig
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.DefaultStatus = string(dAtA[iNdEx:postIndex])
+			if m.DefaultStatus == nil {
+				m.DefaultStatus = &Status{}
+			}
+			if err := m.DefaultStatus.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {

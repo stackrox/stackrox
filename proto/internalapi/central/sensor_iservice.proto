@@ -6,6 +6,7 @@ import "internalapi/central/baseline_sync.proto";
 import "internalapi/central/cluster_config.proto";
 import "internalapi/central/cluster_metrics.proto";
 import "internalapi/central/cluster_status.proto";
+import "internalapi/central/collector_runtime_config.proto";
 import "internalapi/central/compliance_operator.proto";
 import "internalapi/central/delegated_registry_config.proto";
 import "internalapi/central/deployment_enhancement.proto";
@@ -20,7 +21,6 @@ import "internalapi/central/sensor_events.proto";
 import "internalapi/central/sensor_upgrade.proto";
 import "internalapi/central/telemetry.proto";
 import "storage/cluster.proto";
-import "storage/collector_runtime_config.proto";
 import "storage/image.proto";
 
 option go_package = "./internalapi/central;central";
@@ -46,7 +46,7 @@ message MsgFromSensor {
     ComplianceOperatorInfo compliance_operator_info = 16;
     ComplianceResponse compliance_response = 17;
     DeploymentEnhancementResponse deployment_enhancement_response = 18;
-    storage.CollectorRuntimeConfigACK collector_runtime_config_ack = 19;
+    CollectorRuntimeConfigACKFromSensor collector_runtime_config_ack = 19;
   }
 }
 
@@ -84,7 +84,7 @@ message MsgToSensor {
     ClusterHealthResponse cluster_health_response = 25;
     DeduperState deduper_state = 26;
     DeploymentEnhancementRequest deployment_enhancement_request = 27;
-    storage.CollectorRuntimeConfig collector_runtime_config = 28;
+    CollectorRuntimeConfigWithCluster collector_runtime_config = 28;
   }
 }
 
