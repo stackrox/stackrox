@@ -221,6 +221,7 @@ func (i *imageScanCommand) Validate() error {
 		moderateCVESeverity.String(), importantCVESeverity.String(), criticalCVESeverity.String()}
 
 	for _, severity := range i.severities {
+		severity := strings.ToUpper(severity)
 		if !slices.Contains(validSeverities, severity) {
 			return errox.InvalidArgs.Newf("invalid severity %q used. Choose one of [%s]", severity,
 				strings.Join(validSeverities, ", "))
