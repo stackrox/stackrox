@@ -264,6 +264,8 @@ func (s *imageScanTestSuite) SetupTest() {
 		retryDelay: 3,
 		retryCount: 3,
 		timeout:    1 * time.Minute,
+		severities: []string{lowCVESeverity.String(), moderateCVESeverity.String(), importantCVESeverity.String(),
+			criticalCVESeverity.String()},
 	}
 }
 
