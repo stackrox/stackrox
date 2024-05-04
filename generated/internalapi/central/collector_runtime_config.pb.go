@@ -23,51 +23,25 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type CollectorRuntimeConfigACKFromSensor_Action int32
-
-const (
-	CollectorRuntimeConfigACKFromSensor_ACK  CollectorRuntimeConfigACKFromSensor_Action = 0
-	CollectorRuntimeConfigACKFromSensor_NACK CollectorRuntimeConfigACKFromSensor_Action = 1
-)
-
-var CollectorRuntimeConfigACKFromSensor_Action_name = map[int32]string{
-	0: "ACK",
-	1: "NACK",
+type CollectorRuntimeConfigACK struct {
+	CollectorRuntimeConfigAck *storage.CollectorRuntimeConfigACK `protobuf:"bytes,1,opt,name=collector_runtime_config_ack,json=collectorRuntimeConfigAck,proto3" json:"collector_runtime_config_ack,omitempty"`
+	XXX_NoUnkeyedLiteral      struct{}                           `json:"-"`
+	XXX_unrecognized          []byte                             `json:"-"`
+	XXX_sizecache             int32                              `json:"-"`
 }
 
-var CollectorRuntimeConfigACKFromSensor_Action_value = map[string]int32{
-	"ACK":  0,
-	"NACK": 1,
-}
-
-func (x CollectorRuntimeConfigACKFromSensor_Action) String() string {
-	return proto.EnumName(CollectorRuntimeConfigACKFromSensor_Action_name, int32(x))
-}
-
-func (CollectorRuntimeConfigACKFromSensor_Action) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_31fa1cd776b84736, []int{0, 0}
-}
-
-type CollectorRuntimeConfigACKFromSensor struct {
-	Error                string                                     `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
-	Action               CollectorRuntimeConfigACKFromSensor_Action `protobuf:"varint,2,opt,name=action,proto3,enum=central.CollectorRuntimeConfigACKFromSensor_Action" json:"action,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                                   `json:"-"`
-	XXX_unrecognized     []byte                                     `json:"-"`
-	XXX_sizecache        int32                                      `json:"-"`
-}
-
-func (m *CollectorRuntimeConfigACKFromSensor) Reset()         { *m = CollectorRuntimeConfigACKFromSensor{} }
-func (m *CollectorRuntimeConfigACKFromSensor) String() string { return proto.CompactTextString(m) }
-func (*CollectorRuntimeConfigACKFromSensor) ProtoMessage()    {}
-func (*CollectorRuntimeConfigACKFromSensor) Descriptor() ([]byte, []int) {
+func (m *CollectorRuntimeConfigACK) Reset()         { *m = CollectorRuntimeConfigACK{} }
+func (m *CollectorRuntimeConfigACK) String() string { return proto.CompactTextString(m) }
+func (*CollectorRuntimeConfigACK) ProtoMessage()    {}
+func (*CollectorRuntimeConfigACK) Descriptor() ([]byte, []int) {
 	return fileDescriptor_31fa1cd776b84736, []int{0}
 }
-func (m *CollectorRuntimeConfigACKFromSensor) XXX_Unmarshal(b []byte) error {
+func (m *CollectorRuntimeConfigACK) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CollectorRuntimeConfigACKFromSensor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CollectorRuntimeConfigACK) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_CollectorRuntimeConfigACKFromSensor.Marshal(b, m, deterministic)
+		return xxx_messageInfo_CollectorRuntimeConfigACK.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -77,47 +51,41 @@ func (m *CollectorRuntimeConfigACKFromSensor) XXX_Marshal(b []byte, deterministi
 		return b[:n], nil
 	}
 }
-func (m *CollectorRuntimeConfigACKFromSensor) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CollectorRuntimeConfigACKFromSensor.Merge(m, src)
+func (m *CollectorRuntimeConfigACK) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CollectorRuntimeConfigACK.Merge(m, src)
 }
-func (m *CollectorRuntimeConfigACKFromSensor) XXX_Size() int {
+func (m *CollectorRuntimeConfigACK) XXX_Size() int {
 	return m.Size()
 }
-func (m *CollectorRuntimeConfigACKFromSensor) XXX_DiscardUnknown() {
-	xxx_messageInfo_CollectorRuntimeConfigACKFromSensor.DiscardUnknown(m)
+func (m *CollectorRuntimeConfigACK) XXX_DiscardUnknown() {
+	xxx_messageInfo_CollectorRuntimeConfigACK.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_CollectorRuntimeConfigACKFromSensor proto.InternalMessageInfo
+var xxx_messageInfo_CollectorRuntimeConfigACK proto.InternalMessageInfo
 
-func (m *CollectorRuntimeConfigACKFromSensor) GetError() string {
+func (m *CollectorRuntimeConfigACK) GetCollectorRuntimeConfigAck() *storage.CollectorRuntimeConfigACK {
 	if m != nil {
-		return m.Error
+		return m.CollectorRuntimeConfigAck
 	}
-	return ""
+	return nil
 }
 
-func (m *CollectorRuntimeConfigACKFromSensor) GetAction() CollectorRuntimeConfigACKFromSensor_Action {
-	if m != nil {
-		return m.Action
-	}
-	return CollectorRuntimeConfigACKFromSensor_ACK
-}
-
-func (m *CollectorRuntimeConfigACKFromSensor) MessageClone() proto.Message {
+func (m *CollectorRuntimeConfigACK) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *CollectorRuntimeConfigACKFromSensor) Clone() *CollectorRuntimeConfigACKFromSensor {
+func (m *CollectorRuntimeConfigACK) Clone() *CollectorRuntimeConfigACK {
 	if m == nil {
 		return nil
 	}
-	cloned := new(CollectorRuntimeConfigACKFromSensor)
+	cloned := new(CollectorRuntimeConfigACK)
 	*cloned = *m
 
+	cloned.CollectorRuntimeConfigAck = m.CollectorRuntimeConfigAck.Clone()
 	return cloned
 }
 
 type CollectorRuntimeConfigWithCluster struct {
-	ConfigWithCluster    *storage.CollectorRuntimeConfigWithCluster `protobuf:"bytes,2,opt,name=config_with_cluster,json=configWithCluster,proto3" json:"config_with_cluster,omitempty"`
+	ConfigWithCluster    *storage.CollectorRuntimeConfigWithCluster `protobuf:"bytes,1,opt,name=config_with_cluster,json=configWithCluster,proto3" json:"config_with_cluster,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                                   `json:"-"`
 	XXX_unrecognized     []byte                                     `json:"-"`
 	XXX_sizecache        int32                                      `json:"-"`
@@ -178,8 +146,7 @@ func (m *CollectorRuntimeConfigWithCluster) Clone() *CollectorRuntimeConfigWithC
 }
 
 func init() {
-	proto.RegisterEnum("central.CollectorRuntimeConfigACKFromSensor_Action", CollectorRuntimeConfigACKFromSensor_Action_name, CollectorRuntimeConfigACKFromSensor_Action_value)
-	proto.RegisterType((*CollectorRuntimeConfigACKFromSensor)(nil), "central.CollectorRuntimeConfigACKFromSensor")
+	proto.RegisterType((*CollectorRuntimeConfigACK)(nil), "central.CollectorRuntimeConfigACK")
 	proto.RegisterType((*CollectorRuntimeConfigWithCluster)(nil), "central.CollectorRuntimeConfigWithCluster")
 }
 
@@ -188,28 +155,24 @@ func init() {
 }
 
 var fileDescriptor_31fa1cd776b84736 = []byte{
-	// 274 bytes of a gzipped FileDescriptorProto
+	// 218 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x32, 0xca, 0xcc, 0x2b, 0x49,
 	0x2d, 0xca, 0x4b, 0xcc, 0x49, 0x2c, 0xc8, 0xd4, 0x4f, 0x4e, 0xcd, 0x2b, 0x29, 0x4a, 0xcc, 0xd1,
 	0x4f, 0xce, 0xcf, 0xc9, 0x49, 0x4d, 0x2e, 0xc9, 0x2f, 0x8a, 0x2f, 0x2a, 0xcd, 0x2b, 0xc9, 0xcc,
 	0x4d, 0x8d, 0x4f, 0xce, 0xcf, 0x4b, 0xcb, 0x4c, 0xd7, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62,
-	0x87, 0xaa, 0x93, 0x52, 0x2b, 0x2e, 0xc9, 0x2f, 0x4a, 0x4c, 0x4f, 0x25, 0xa0, 0x41, 0x69, 0x29,
-	0x23, 0x97, 0xb2, 0x33, 0x4c, 0x49, 0x10, 0x44, 0x85, 0x33, 0x58, 0x81, 0xa3, 0xb3, 0xb7, 0x5b,
-	0x51, 0x7e, 0x6e, 0x70, 0x6a, 0x5e, 0x71, 0x7e, 0x91, 0x90, 0x08, 0x17, 0x6b, 0x6a, 0x51, 0x51,
-	0x7e, 0x91, 0x04, 0xa3, 0x02, 0xa3, 0x06, 0x67, 0x10, 0x84, 0x23, 0xe4, 0xcd, 0xc5, 0x96, 0x98,
-	0x5c, 0x92, 0x99, 0x9f, 0x27, 0xc1, 0xa4, 0xc0, 0xa8, 0xc1, 0x67, 0x64, 0xac, 0x07, 0xb5, 0x5f,
-	0x8f, 0x08, 0x33, 0xf5, 0x1c, 0xc1, 0x5a, 0x83, 0xa0, 0x46, 0x28, 0x49, 0x73, 0xb1, 0x41, 0x44,
-	0x84, 0xd8, 0xb9, 0x98, 0x1d, 0x9d, 0xbd, 0x05, 0x18, 0x84, 0x38, 0xb8, 0x58, 0xfc, 0x40, 0x2c,
-	0x46, 0xa5, 0x7a, 0x2e, 0x45, 0xec, 0x46, 0x86, 0x67, 0x96, 0x64, 0x38, 0xe7, 0x94, 0x16, 0x97,
-	0xa4, 0x16, 0x09, 0x45, 0x71, 0x09, 0x43, 0x3c, 0x17, 0x5f, 0x9e, 0x59, 0x92, 0x11, 0x9f, 0x0c,
-	0x11, 0x06, 0xbb, 0x8d, 0xdb, 0x48, 0x4b, 0x0f, 0x1a, 0x24, 0x7a, 0x04, 0x0d, 0x0a, 0x12, 0x4c,
-	0x46, 0x17, 0x72, 0xd2, 0x3f, 0xf1, 0x48, 0x8e, 0xf1, 0xc2, 0x23, 0x39, 0xc6, 0x07, 0x8f, 0xe4,
-	0x18, 0x67, 0x3c, 0x96, 0x63, 0x88, 0x92, 0xd5, 0xd3, 0xc7, 0x12, 0x43, 0xd6, 0x50, 0x3a, 0x89,
-	0x0d, 0x1c, 0xc0, 0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0xa6, 0xe6, 0xeb, 0x7c, 0xc7, 0x01,
-	0x00, 0x00,
+	0x87, 0xaa, 0x93, 0x52, 0x2b, 0x2e, 0xc9, 0x2f, 0x4a, 0x4c, 0x4f, 0x25, 0xa0, 0x41, 0xa9, 0x81,
+	0x91, 0x4b, 0xd2, 0x19, 0xa6, 0x24, 0x08, 0xa2, 0xc2, 0x19, 0xac, 0xc0, 0xd1, 0xd9, 0x5b, 0x28,
+	0x99, 0x4b, 0x06, 0x97, 0xfe, 0xf8, 0xc4, 0xe4, 0x6c, 0x09, 0x46, 0x05, 0x46, 0x0d, 0x6e, 0x23,
+	0x25, 0x3d, 0xa8, 0x65, 0x7a, 0x38, 0x4d, 0x0a, 0x92, 0x4c, 0xc6, 0x2e, 0x95, 0x9c, 0xad, 0x54,
+	0xcf, 0xa5, 0x88, 0x5d, 0x5f, 0x78, 0x66, 0x49, 0x86, 0x73, 0x4e, 0x69, 0x71, 0x49, 0x6a, 0x91,
+	0x50, 0x14, 0x97, 0x30, 0xd4, 0xde, 0xf2, 0xcc, 0x92, 0x8c, 0xf8, 0x64, 0x88, 0x30, 0xd4, 0x01,
+	0x5a, 0x04, 0x1c, 0x80, 0x64, 0x50, 0x90, 0x60, 0x32, 0xba, 0x90, 0x93, 0xfe, 0x89, 0x47, 0x72,
+	0x8c, 0x17, 0x1e, 0xc9, 0x31, 0x3e, 0x78, 0x24, 0xc7, 0x38, 0xe3, 0xb1, 0x1c, 0x43, 0x94, 0xac,
+	0x9e, 0x3e, 0x96, 0xc0, 0xb7, 0x86, 0xd2, 0x49, 0x6c, 0xe0, 0xb0, 0x33, 0x06, 0x04, 0x00, 0x00,
+	0xff, 0xff, 0xfb, 0x3c, 0xad, 0x95, 0xa2, 0x01, 0x00, 0x00,
 }
 
-func (m *CollectorRuntimeConfigACKFromSensor) Marshal() (dAtA []byte, err error) {
+func (m *CollectorRuntimeConfigACK) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -219,12 +182,12 @@ func (m *CollectorRuntimeConfigACKFromSensor) Marshal() (dAtA []byte, err error)
 	return dAtA[:n], nil
 }
 
-func (m *CollectorRuntimeConfigACKFromSensor) MarshalTo(dAtA []byte) (int, error) {
+func (m *CollectorRuntimeConfigACK) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *CollectorRuntimeConfigACKFromSensor) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *CollectorRuntimeConfigACK) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -233,15 +196,15 @@ func (m *CollectorRuntimeConfigACKFromSensor) MarshalToSizedBuffer(dAtA []byte) 
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.Action != 0 {
-		i = encodeVarintCollectorRuntimeConfig(dAtA, i, uint64(m.Action))
-		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.Error) > 0 {
-		i -= len(m.Error)
-		copy(dAtA[i:], m.Error)
-		i = encodeVarintCollectorRuntimeConfig(dAtA, i, uint64(len(m.Error)))
+	if m.CollectorRuntimeConfigAck != nil {
+		{
+			size, err := m.CollectorRuntimeConfigAck.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCollectorRuntimeConfig(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0xa
 	}
@@ -282,7 +245,7 @@ func (m *CollectorRuntimeConfigWithCluster) MarshalToSizedBuffer(dAtA []byte) (i
 			i = encodeVarintCollectorRuntimeConfig(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -298,18 +261,15 @@ func encodeVarintCollectorRuntimeConfig(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *CollectorRuntimeConfigACKFromSensor) Size() (n int) {
+func (m *CollectorRuntimeConfigACK) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Error)
-	if l > 0 {
+	if m.CollectorRuntimeConfigAck != nil {
+		l = m.CollectorRuntimeConfigAck.Size()
 		n += 1 + l + sovCollectorRuntimeConfig(uint64(l))
-	}
-	if m.Action != 0 {
-		n += 1 + sovCollectorRuntimeConfig(uint64(m.Action))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -339,7 +299,7 @@ func sovCollectorRuntimeConfig(x uint64) (n int) {
 func sozCollectorRuntimeConfig(x uint64) (n int) {
 	return sovCollectorRuntimeConfig(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *CollectorRuntimeConfigACKFromSensor) Unmarshal(dAtA []byte) error {
+func (m *CollectorRuntimeConfigACK) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -362,17 +322,17 @@ func (m *CollectorRuntimeConfigACKFromSensor) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: CollectorRuntimeConfigACKFromSensor: wiretype end group for non-group")
+			return fmt.Errorf("proto: CollectorRuntimeConfigACK: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CollectorRuntimeConfigACKFromSensor: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: CollectorRuntimeConfigACK: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Error", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CollectorRuntimeConfigAck", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowCollectorRuntimeConfig
@@ -382,43 +342,28 @@ func (m *CollectorRuntimeConfigACKFromSensor) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthCollectorRuntimeConfig
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthCollectorRuntimeConfig
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Error = string(dAtA[iNdEx:postIndex])
+			if m.CollectorRuntimeConfigAck == nil {
+				m.CollectorRuntimeConfigAck = &storage.CollectorRuntimeConfigACK{}
+			}
+			if err := m.CollectorRuntimeConfigAck.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Action", wireType)
-			}
-			m.Action = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowCollectorRuntimeConfig
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Action |= CollectorRuntimeConfigACKFromSensor_Action(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipCollectorRuntimeConfig(dAtA[iNdEx:])
@@ -470,7 +415,7 @@ func (m *CollectorRuntimeConfigWithCluster) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: CollectorRuntimeConfigWithCluster: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 2:
+		case 1:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ConfigWithCluster", wireType)
 			}
