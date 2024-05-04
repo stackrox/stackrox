@@ -1198,6 +1198,7 @@ func (m *DeleteComplianceScanConfigRequest) Clone() *DeleteComplianceScanConfigR
 // ComplianceRequest is a message from Central (to Sensor) to perform an action related to compliance.
 type ComplianceRequest struct {
 	// Types that are valid to be assigned to Request:
+	//
 	//	*ComplianceRequest_EnableCompliance
 	//	*ComplianceRequest_DisableCompliance
 	//	*ComplianceRequest_ApplyScanConfig
@@ -1370,6 +1371,7 @@ func (m *ComplianceRequest) Clone() *ComplianceRequest {
 // ComplianceResponse is a message from Sensor (to Central) representing success/failure processing request.
 type ComplianceResponse struct {
 	// Types that are valid to be assigned to Response:
+	//
 	//	*ComplianceResponse_EnableComplianceResponse_
 	//	*ComplianceResponse_DisableComplianceResponse_
 	//	*ComplianceResponse_ApplyComplianceScanConfigResponse_
@@ -1542,6 +1544,7 @@ func (m *ComplianceResponse) Clone() *ComplianceResponse {
 type ComplianceResponse_EnableComplianceResponse struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are valid to be assigned to Payload:
+	//
 	//	*ComplianceResponse_EnableComplianceResponse_Error
 	Payload              isComplianceResponse_EnableComplianceResponse_Payload `protobuf_oneof:"payload"`
 	XXX_NoUnkeyedLiteral struct{}                                              `json:"-"`
@@ -1656,6 +1659,7 @@ func (m *ComplianceResponse_EnableComplianceResponse) Clone() *ComplianceRespons
 type ComplianceResponse_DisableComplianceResponse struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are valid to be assigned to Payload:
+	//
 	//	*ComplianceResponse_DisableComplianceResponse_Error
 	Payload              isComplianceResponse_DisableComplianceResponse_Payload `protobuf_oneof:"payload"`
 	XXX_NoUnkeyedLiteral struct{}                                               `json:"-"`
@@ -1770,6 +1774,7 @@ func (m *ComplianceResponse_DisableComplianceResponse) Clone() *ComplianceRespon
 type ComplianceResponse_ApplyComplianceScanConfigResponse struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are valid to be assigned to Payload:
+	//
 	//	*ComplianceResponse_ApplyComplianceScanConfigResponse_Error
 	Payload              isComplianceResponse_ApplyComplianceScanConfigResponse_Payload `protobuf_oneof:"payload"`
 	XXX_NoUnkeyedLiteral struct{}                                                       `json:"-"`
@@ -1884,6 +1889,7 @@ func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) Clone() *Complian
 type ComplianceResponse_DeleteComplianceScanConfigResponse struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are valid to be assigned to Payload:
+	//
 	//	*ComplianceResponse_DeleteComplianceScanConfigResponse_Error
 	Payload              isComplianceResponse_DeleteComplianceScanConfigResponse_Payload `protobuf_oneof:"payload"`
 	XXX_NoUnkeyedLiteral struct{}                                                        `json:"-"`

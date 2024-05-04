@@ -8,7 +8,7 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 message CollectorRuntimeConfigACK {
-  string instance_id = 1;
+  string error = 1;
   Action action = 2;
 
   enum Action {
@@ -20,7 +20,7 @@ message CollectorRuntimeConfigACK {
 enum RuntimeFeature {
   PROCESSES = 0;
   NETWORK_CONNECTIONS = 1;
-  LISTENING_ENDPOINTS = 2;
+  NETWORK_ENDPOINTS = 2;
 }
 
 message Status {
@@ -33,14 +33,15 @@ message Status {
     bool aggregate_external = 2;
   }
 
-  message ListeningEndpointStatus {
+  message NetworkEndpointStatus {
     bool enabled = 2;
+    bool processes_listening_on_port = 3;
   }
 
   oneof status {
     ProcessStatus process_status = 1;
     NetworkConnectionStatus network_connection_status = 2;
-    ListeningEndpointStatus listening_endpoint_status = 3;
+    NetworkEndpointStatus network_endpoint_status = 3;
   }
 }
 
@@ -51,11 +52,16 @@ message RuntimeFeatureConfig {
   }
 
   RuntimeFeature feature = 1;
-  string default_status = 2;
+  Status default_status = 2;
   repeated RuntimeRule rules = 3;
 }
 
 message CollectorRuntimeConfig {
   repeated RuntimeFeatureConfig runtime_feature_config = 1;
   repeated ResourceCollection resource_collections = 2;
+}
+
+message CollectorRuntimeConfigWithCluster {
+  string cluster_name = 1;
+  CollectorRuntimeConfig config = 2;
 }
