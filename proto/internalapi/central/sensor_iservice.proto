@@ -46,7 +46,7 @@ message MsgFromSensor {
     ComplianceOperatorInfo compliance_operator_info = 16;
     ComplianceResponse compliance_response = 17;
     DeploymentEnhancementResponse deployment_enhancement_response = 18;
-    CollectorRuntimeConfigACKFromSensor collector_runtime_config_ack = 19;
+    CollectorRuntimeConfigACK collector_runtime_config_ack = 19;
   }
 }
 
