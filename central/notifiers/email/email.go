@@ -256,6 +256,8 @@ func (m Message) writeContentBytes(buf *bytes.Buffer) {
 
 	writer := multipart.NewWriter(buf)
 	boundary := writer.Boundary()
+	var idx int
+	numberOfAttachments := len(m.Attachments)
 
 	if m.EmbedLogo {
 		buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\r\n", boundary))
@@ -278,12 +280,17 @@ func (m Message) writeContentBytes(buf *bytes.Buffer) {
 	}
 
 	for k, v := range m.Attachments {
+		idx++
 		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
 		buf.WriteString("Content-Type: application/zip\r\n")
 		buf.WriteString("Content-Transfer-Encoding: base64\r\n")
 		buf.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=%s\r\n", k))
 		buf.WriteString(fmt.Sprintf("\r\n%s\r\n", applyRfc5322LineLengthLimit(base64.StdEncoding.EncodeToString(v))))
-		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
+		if idx == numberOfAttachments {
+			buf.WriteString(fmt.Sprintf("\n--%s--\r\n", boundary))
+		} else {
+			buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
+		}
 	}
 }
 

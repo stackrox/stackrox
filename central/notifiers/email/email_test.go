@@ -6,6 +6,8 @@ import (
 	"math/rand"
 	"strings"
 	"testing"
+	"regexp"
+	"fmt"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -48,6 +50,19 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 
 	assert.Contains(t, msgStr, base64.StdEncoding.EncodeToString(attachBuf.Bytes()))
 	assert.Contains(t, msgStr, "<div>\r\nHow you doin'?\r\n</div>\r\n")
+
+	// Obtain boundary and verify the close delimiter 
+	regex, err := regexp.Compile(` boundary="([^"]+)"`)
+	if err != nil {
+		t.Fatalf("Failed to compile regex for boundary: %v", err)
+	}
+	// Regex will provide two values [boundary="boundaryValue", boundaryValue]
+	boundary := regex.FindStringSubmatch(msgStr)
+	expectedFinalBoundary := fmt.Sprintf("--%s--", boundary[1])
+
+	lines := strings.Split(msgStr, "\n")
+	lastBoundary := strings.TrimSpace(lines[len(lines)-2])
+	assert.Equal(t, expectedFinalBoundary, lastBoundary)
 }
 
 func TestEmailMsgNoAttachments(t *testing.T) {
