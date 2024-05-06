@@ -36,6 +36,7 @@ export const deploymentWithVulnerabilitiesFragment = gql`
         imageVulnerabilities(query: $query, pagination: $pagination) {
             vulnerabilityId: id
             cve
+            operatingSystem
             summary
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
             images(query: $query) {
@@ -54,6 +55,7 @@ export type DeploymentWithVulnerabilities = {
     imageVulnerabilities: {
         vulnerabilityId: string;
         cve: string;
+        operatingSystem: string;
         summary: string;
         pendingExceptionCount: number;
         images: {
@@ -71,6 +73,7 @@ type DeploymentVulnerabilityImageMapping = {
 function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
     vulnerabilityId: string;
     cve: string;
+    operatingSystem: string;
     severity: VulnerabilitySeverity;
     isFixable: boolean;
     discoveredAtImage: Date | null;
@@ -87,7 +90,8 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
     });
 
     return deployment.imageVulnerabilities.map((vulnerability) => {
-        const { vulnerabilityId, cve, summary, images, pendingExceptionCount } = vulnerability;
+        const { vulnerabilityId, cve, operatingSystem, summary, images, pendingExceptionCount } =
+            vulnerability;
         // Severity, Fixability, and Discovered date are all based on the aggregate value of all components
         const allVulnerableComponents = vulnerability.images.flatMap((img) => img.imageComponents);
         const allVulnerabilities = allVulnerableComponents.flatMap((c) => c.imageVulnerabilities);
@@ -118,6 +122,7 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
         return {
             vulnerabilityId,
             cve,
+            operatingSystem,
             severity: highestVulnSeverity,
             isFixable: isFixableInDeployment,
             discoveredAtImage: oldestDiscoveredVulnDate,
@@ -152,6 +157,7 @@ function DeploymentVulnerabilitiesTable({
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('CVE')}>CVE</Th>
+                    <Th>OS</Th>
                     <Th>CVE severity</Th>
                     <Th>
                         CVE status
@@ -169,6 +175,7 @@ function DeploymentVulnerabilitiesTable({
                 const {
                     vulnerabilityId,
                     cve,
+                    operatingSystem,
                     severity,
                     summary,
                     isFixable,
@@ -177,7 +184,7 @@ function DeploymentVulnerabilitiesTable({
                     discoveredAtImage,
                     pendingExceptionCount,
                 } = vulnerability;
-                const isExpanded = expandedRowSet.has(cve);
+                const isExpanded = expandedRowSet.has(vulnerabilityId);
 
                 return (
                     <Tbody key={vulnerabilityId} isExpanded={isExpanded}>
@@ -186,7 +193,7 @@ function DeploymentVulnerabilitiesTable({
                                 expand={{
                                     rowIndex,
                                     isExpanded,
-                                    onToggle: () => expandedRowSet.toggle(cve),
+                                    onToggle: () => expandedRowSet.toggle(vulnerabilityId),
                                 }}
                             />
                             <Td dataLabel="CVE" modifier="nowrap">
@@ -205,6 +212,9 @@ function DeploymentVulnerabilitiesTable({
                                         {cve}
                                     </Link>
                                 </PendingExceptionLabelLayout>
+                            </Td>
+                            <Td modifier="nowrap" dataLabel="OS">
+                                {operatingSystem}
                             </Td>
                             <Td modifier="nowrap" dataLabel="Severity">
                                 <VulnerabilitySeverityIconText severity={severity} />
