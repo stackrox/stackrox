@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package v2;
 
+import "api/v2/search_query.proto";
+
 option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
 
@@ -25,4 +27,65 @@ message ComplianceRule {
   string parent_rule = 13;
   string instructions = 14;
   string warning = 15;
+}
+
+enum ComplianceCheckStatus {
+  UNSET_CHECK_STATUS = 0;
+  PASS = 1;
+  FAIL = 2;
+  ERROR = 3;
+  INFO = 4;
+  MANUAL = 5;
+  NOT_APPLICABLE = 6;
+  INCONSISTENT = 7;
+}
+
+message ComplianceScanCluster {
+  string cluster_id = 1;
+  string cluster_name = 2;
+}
+
+// Group the number of occurrences by status
+message ComplianceCheckStatusCount {
+  int32 count = 1;
+  ComplianceCheckStatus status = 2;
+}
+
+// Group the number of occurrences by status
+message ComplianceCheckResultStatusCount {
+  string check_name = 1;
+  string rationale = 2;
+  string rule_name = 3;
+  repeated ComplianceCheckStatusCount check_stats = 4;
+}
+
+// ListComplianceProfileResults provides scan stats overview based on profile
+message ListComplianceProfileResults {
+  repeated ComplianceCheckResultStatusCount profile_results = 1;
+  string profile_name = 2;
+  int32 total_count = 3;
+}
+
+// ComplianceClusterOverallStats provides overall stats for cluster
+message ComplianceClusterOverallStats {
+  ComplianceScanCluster cluster = 1;
+  repeated ComplianceCheckStatusCount check_stats = 2;
+  repeated string cluster_errors = 3;
+}
+
+// ListComplianceCheckScanStatsResponse provides stats per cluster
+message ListComplianceClusterOverallStatsResponse {
+  repeated ComplianceClusterOverallStats scan_stats = 1;
+  int32 total_count = 2;
+}
+
+message ComplianceProfileResultsRequest {
+  string profile_name = 1;
+  RawQuery query = 2;
+}
+
+message ComplianceProfileCheckRequest {
+  string profile_name = 1;
+  string check_name = 2;
+  RawQuery query = 3;
 }
