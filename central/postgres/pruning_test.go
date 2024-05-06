@@ -420,11 +420,6 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			idsByPod, err := GetOrphanedProcessIDsByPod(s.ctx, s.testDB.DB, orphanWindow)
 			s.NoError(err)
 			idsToDelete = append(idsToDelete, idsByPod...)
-
-			log.Infof(c.name)
-			log.Infof("%v by deployment", idsToDelete)
-			log.Infof("%v by pod", idsByPod)
-			log.Infof("%v by compact", slices.Compact(idsToDelete))
 			slices.Sort(idsToDelete)
 			s.Require().Equal(len(c.expectedDeletions), len(slices.Compact(idsToDelete)))
 
