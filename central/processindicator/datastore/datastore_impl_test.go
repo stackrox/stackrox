@@ -461,6 +461,61 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
 	suite.NoError(err, "expected no error trying to write with permissions")
 }
 
+func (suite *IndicatorDataStoreTestSuite) TestIndicatorPruneBatch() {
+	numIndicators := 5000
+	suite.setupDataStoreNoPruning()
+
+	ids := suite.buildIDsToPrune(numIndicators)
+
+	// Try to remove indicators by id
+	indicatorCount, err := suite.datastore.PruneProcessIndicators(suite.hasWriteCtx, ids)
+	suite.NoError(err)
+	suite.Equal(numIndicators, indicatorCount)
+
+	// Prune under batch size
+	numIndicators = 30
+	suite.setupDataStoreNoPruning()
+
+	ids = suite.buildIDsToPrune(numIndicators)
+
+	// Try to remove indicators by id
+	indicatorCount, err = suite.datastore.PruneProcessIndicators(suite.hasWriteCtx, ids)
+	suite.NoError(err)
+	suite.Equal(numIndicators, indicatorCount)
+
+	// Prune over batch size
+	numIndicators = 5234
+	suite.setupDataStoreNoPruning()
+
+	ids = suite.buildIDsToPrune(numIndicators)
+
+	// Try to remove indicators by id
+	indicatorCount, err = suite.datastore.PruneProcessIndicators(suite.hasWriteCtx, ids)
+	suite.NoError(err)
+	suite.Equal(numIndicators, indicatorCount)
+}
+
+func (suite *IndicatorDataStoreTestSuite) buildIDsToPrune(count int) []string {
+	indicators := suite.generateIndicatorsWithPods([]string{fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3}, []string{"c1", "c2", "c3"})
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
+	suite.verifyIndicatorsAre(indicators...)
+
+	ids := make([]string, 0, count)
+	pruneIndicators := make([]*storage.ProcessIndicator, 0, count)
+
+	for i := 0; i < count; i++ {
+		id := uuid.NewV4().String()
+		newIndicator := indicators[0].Clone()
+		newIndicator.Id = id
+		ids = append(ids, id)
+		pruneIndicators = append(pruneIndicators, newIndicator)
+	}
+
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, pruneIndicators...))
+
+	return ids
+}
+
 func TestProcessIndicatorReindexSuite(t *testing.T) {
 	suite.Run(t, new(ProcessIndicatorReindexSuite))
 }
