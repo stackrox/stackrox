@@ -69,7 +69,7 @@ message ProviderMetadata {
 }
 
 message OrchestratorMetadata {
-  string version = 1;
+  string version = 1; // @gotags: search:"Kubernetes Version"
   oneof is_openshift {
     string openshift_version = 4;
   }
@@ -143,7 +143,7 @@ message SensorDeploymentIdentification {
 message Cluster {
   string id = 1; // @gotags: search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Cluster,store" sql:"unique"
-  ClusterType type = 3;
+  ClusterType type = 3; // @gotags: search:"Platform Type"
   map<string, string> labels = 27; // @gotags: search:"Cluster Label"
   string main_image = 4;
   string collector_image = 16;
