@@ -26,6 +26,8 @@ var (
 	ClusterScope          = newFieldLabel("Cluster Scope")
 	ClusterType           = newFieldLabel("Cluster Type")
 	ClusterDiscoveredTime = newFieldLabel("Cluster Discovered Time")
+	PlatformType          = newFieldLabel("Cluster Platform Type")
+	KubernetesVersion     = newFieldLabel("Cluster Kubernetes Version")
 
 	// cluster health search fields
 	ClusterStatus          = newFieldLabel("Cluster Status")
