@@ -3,6 +3,7 @@ syntax = "proto3";
 package v2;
 
 import "api/v2/search_query.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
@@ -71,6 +72,7 @@ message ComplianceClusterOverallStats {
   ComplianceScanCluster cluster = 1;
   repeated ComplianceCheckStatusCount check_stats = 2;
   repeated string cluster_errors = 3;
+  google.protobuf.Timestamp last_scan_time = 4;
 }
 
 // ListComplianceCheckScanStatsResponse provides stats per cluster
