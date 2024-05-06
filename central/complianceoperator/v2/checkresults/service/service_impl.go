@@ -10,6 +10,7 @@ import (
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	complianceConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	complianceScanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
@@ -19,6 +20,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
+	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -49,16 +52,19 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceProfileClusterResults",
 		},
 	})
+
+	log = logging.LoggerForModule()
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore, ruleDS complianceRuleDS.DataStore) Service {
+func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore, ruleDS complianceRuleDS.DataStore, scanDS complianceScanDS.DataStore) Service {
 	return &serviceImpl{
 		complianceResultsDS: complianceResultsDS,
 		scanConfigDS:        scanConfigDS,
 		integrationDS:       integrationDS,
 		profileDS:           profileDS,
 		ruleDS:              ruleDS,
+		scanDS:              scanDS,
 	}
 }
 
@@ -70,6 +76,7 @@ type serviceImpl struct {
 	integrationDS       complianceIntegrationDS.DataStore
 	profileDS           profileDatastore.DataStore
 	ruleDS              complianceRuleDS.DataStore
+	scanDS              complianceScanDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -245,7 +252,7 @@ func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, quer
 	}
 
 	return &v2.ListComplianceClusterOverallStatsResponse{
-		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
+		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors, nil),
 		TotalCount: int32(count),
 	}, nil
 }
@@ -287,17 +294,35 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 	}
 
 	// Lookup the integrations to get the status
+	clusterLastScan := make(map[string]*types.Timestamp, len(scanResults))
 	clusterErrors := make(map[string][]string, len(scanResults))
 	for _, result := range scanResults {
+		// Get the integrations if we can.  If we cannot, it could be an externally configured
+		// scan and thus we will not have a matching integration.
 		integrations, err := s.integrationDS.GetComplianceIntegrationByCluster(ctx, result.ClusterID)
-		if err != nil || len(integrations) != 1 {
-			return nil, errors.Errorf("Unable to retrieve cluster %q", result.ClusterID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Unable to retrieve configuration for cluster %q", result.ClusterID)
 		}
-		clusterErrors[result.ClusterID] = integrations[0].GetStatusErrors()
+		if len(integrations) == 1 {
+			clusterErrors[result.ClusterID] = integrations[0].GetStatusErrors()
+		} else if len(integrations) < 1 {
+			log.Warnf("Unable to detect a compliance operator integration for cluster %q", result.ClusterID)
+			clusterErrors[result.ClusterID] = []string{"Unable to detect a compliance operator integration"}
+		} else {
+			log.Warnf("Detected multiple compliance operator integrations for cluster %q", result.ClusterID)
+			clusterErrors[result.ClusterID] = []string{"Detected multiple compliance operator integrations"}
+		}
+
+		// Check the Compliance Scan object to get the scan time.
+		lastExecutedTime, err := s.getLastScanTime(ctx, result.ClusterID, request.GetProfileName())
+		if err != nil {
+			return nil, err
+		}
+		clusterLastScan[result.ClusterID] = lastExecutedTime
 	}
 
 	return &v2.ListComplianceClusterOverallStatsResponse{
-		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
+		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors, clusterLastScan),
 		TotalCount: int32(count),
 	}, nil
 }
@@ -348,7 +373,19 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 		return nil, errors.Wrapf(errox.NotFound, "compliance check result with id %q does not exist", req.GetId())
 	}
 
-	return storagetov2.ComplianceV2CheckResult(scanResult), nil
+	// Check the Compliance Scan object to get the scan time.
+	scanQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, scanResult.GetScanRefId()).
+		ProtoQuery()
+	scans, err := s.scanDS.SearchScans(ctx, scanQuery)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve scan data for result %q", req.GetId())
+	}
+	// There should only be a single object for a scan ref id
+	if len(scans) != 1 {
+		return nil, errors.Errorf("Unable to retrieve scan data for result %q", req.GetId())
+	}
+
+	return storagetov2.ComplianceV2CheckResult(scanResult, scans[0].LastExecutedTime), nil
 }
 
 // GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
@@ -517,13 +554,23 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
 	}
 
+	// Lookup the scans to get the last scan time
+	clusterLastScan := make(map[string]*types.Timestamp, len(scanResults))
+	for _, result := range scanResults { // Check the Compliance Scan object to get the scan time.
+		lastExecutedTime, err := s.getLastScanTime(ctx, result.ClusterId, request.GetProfileName())
+		if err != nil {
+			return nil, err
+		}
+		clusterLastScan[result.ClusterId] = lastExecutedTime
+	}
+
 	resultCount, err := s.complianceResultsDS.CountCheckResults(ctx, countQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", parsedQuery)
 	}
 
 	return &v2.ListComplianceCheckClusterResponse{
-		CheckResults: storagetov2.ComplianceV2CheckClusterResults(scanResults),
+		CheckResults: storagetov2.ComplianceV2CheckClusterResults(scanResults, clusterLastScan),
 		ProfileName:  request.GetProfileName(),
 		CheckName:    request.GetCheckName(),
 		TotalCount:   int32(resultCount),
@@ -581,11 +628,18 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", parsedQuery)
 	}
 
+	// Check the Compliance Scan object to get the scan time.
+	lastExecutedTime, err := s.getLastScanTime(ctx, request.GetClusterId(), request.GetProfileName())
+	if err != nil {
+		return nil, err
+	}
+
 	return &v2.ListComplianceCheckResultResponse{
 		CheckResults: storagetov2.ComplianceV2CheckResults(scanResults, checkToRule),
 		ProfileName:  request.GetProfileName(),
 		ClusterId:    request.GetClusterId(),
 		TotalCount:   int32(resultCount),
+		LastScanTime: lastExecutedTime,
 	}, nil
 }
 
@@ -619,4 +673,21 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 	return &v2.ListComplianceScanResultsResponse{
 		ScanResults: storagetov2.ComplianceV2ScanResults(scanResults, scanConfigToIDs),
 	}, nil
+}
+
+func (s *serviceImpl) getLastScanTime(ctx context.Context, clusterID string, profileName string) (*types.Timestamp, error) {
+	// Check the Compliance Scan object to get the scan time.
+	scanQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, profileName).
+		AddExactMatches(search.ClusterID, clusterID).
+		ProtoQuery()
+	scans, err := s.scanDS.SearchScans(ctx, scanQuery)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve scan data for cluster %q and profile %q", clusterID, profileName)
+	}
+	// There should only be a single object for a profile/cluster pair
+	if len(scans) != 1 {
+		return nil, errors.Errorf("Unable to retrieve scan data for cluster %q and profile %q", clusterID, profileName)
+	}
+
+	return scans[0].LastExecutedTime, nil
 }

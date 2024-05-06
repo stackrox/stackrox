@@ -11,87 +11,6 @@
     "application/json"
   ],
   "paths": {
-    "/v2/compliance/results/profiles/{profileName}/clusters": {
-      "get": {
-        "operationId": "ComplianceResultsService_GetComplianceClusterStats",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2ListComplianceClusterOverallStatsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "profileName",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "query.query",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "query.pagination.limit",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "query.pagination.offset",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "query.pagination.sortOption.field",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "query.pagination.sortOption.reversed",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "enum": [
-              "UNSET",
-              "COUNT",
-              "MIN",
-              "MAX"
-            ],
-            "default": "UNSET"
-          },
-          {
-            "name": "query.pagination.sortOption.aggregateBy.distinct",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          }
-        ],
-        "tags": [
-          "ComplianceResultsService"
-        ]
-      }
-    },
     "/v2/compliance/scan/count/results": {
       "get": {
         "operationId": "ComplianceResultsService_GetComplianceScanResultsCount",
@@ -1167,6 +1086,87 @@
           "ComplianceResultsService"
         ]
       }
+    },
+    "/v2/compliance/scan/stats/profiles/{profileName}/clusters": {
+      "get": {
+        "operationId": "ComplianceResultsService_GetComplianceClusterStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceClusterOverallStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "profileName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -1239,6 +1239,10 @@
         },
         "checkUid": {
           "type": "string"
+        },
+        "lastScanTime": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "title": "ClusterCheckStatus groups the result of the check by cluster"
@@ -1407,6 +1411,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "lastScanTime": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "title": "ComplianceClusterOverallStats provides overall stats for cluster"
@@ -1488,7 +1496,7 @@
             "$ref": "#/definitions/v2ComplianceCheckStatusCount"
           }
         },
-        "lastScan": {
+        "lastScanTime": {
           "type": "string",
           "format": "date-time"
         },
@@ -1506,7 +1514,7 @@
           "format": "int32"
         }
       },
-      "title": "ComplianceScanResultsCount gives count of scan results"
+      "title": "CountComplianceScanResults gives count of scan results"
     },
     "v2ListComplianceCheckClusterResponse": {
       "type": "object",
@@ -1548,6 +1556,10 @@
         "totalCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "lastScanTime": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -1565,7 +1577,7 @@
           "format": "int32"
         }
       },
-      "title": "ListComplianceCheckScanStatsResponse provides stats per cluster"
+      "title": "ListComplianceClusterOverallStatsResponse provides stats per cluster"
     },
     "v2ListComplianceClusterScanStatsResponse": {
       "type": "object",
