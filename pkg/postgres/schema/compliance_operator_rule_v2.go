@@ -73,5 +73,6 @@ type ComplianceOperatorRuleV2Controls struct {
 	ComplianceOperatorRuleV2ID  string                   `gorm:"column:compliance_operator_rule_v2_id;type:varchar;primaryKey"`
 	Idx                         int                      `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorrulev2controls_idx,type:btree"`
 	Standard                    string                   `gorm:"column:standard;type:varchar"`
+	Control                     string                   `gorm:"column:control;type:varchar"`
 	ComplianceOperatorRuleV2Ref ComplianceOperatorRuleV2 `gorm:"foreignKey:compliance_operator_rule_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
