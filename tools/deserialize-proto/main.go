@@ -34,6 +34,7 @@ var (
 	id           = flag.String("id", "", "id of the object to query")
 	whereClause  = flag.String("where", "", "additional where clause for the objects to query")
 	fromStdin    = flag.Bool("stdin", false, "reads serialized protos from stdin")
+	debug        = flag.Bool("debug", false, "enable debug logging")
 
 	errUnqoting  = errors.New("failed to unquote the serialized text")
 	errDecoding  = errors.New("failed decoding the hex value of the text")
@@ -67,7 +68,10 @@ func main() {
 func readFromDatabase(msg proto.Message) {
 	dbName := env.GetString("POSTGRES_DATABASE", "central")
 	connectionString := conn.GetConnectionStringWithDatabaseName(&testing.T{}, dbName)
-	fmt.Println("Connecting to database: ", connectionString)
+
+	if *debug {
+		fmt.Println("Connecting to database: ", connectionString)
+	}
 
 	db, err := postgres.Connect(context.TODO(), connectionString)
 	utils.Should(err)
@@ -83,7 +87,9 @@ func readFromDatabase(msg proto.Message) {
 		log.Fatalf("cannot provide both id and where clause")
 	}
 
-	fmt.Printf("Run query: %s", query)
+	if *debug {
+		fmt.Printf("Run query: %s", query)
+	}
 
 	rows, err := db.Query(context.TODO(), query)
 	if err != nil {
