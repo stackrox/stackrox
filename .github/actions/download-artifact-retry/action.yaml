@@ -1,0 +1,31 @@
+name: Download artifact with retry
+description: Retry wrapper of download-artifact
+inputs:
+  name:
+    description: Artifact name
+    required: true
+  path:
+    description: Artifact path
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: download-artifact-try1
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+      continue-on-error: true
+    - name: download-artifact-try2
+      if: steps.download-artifact-try1.outcome == 'failure'
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+      continue-on-error: true
+    - name: download-artifact-try3
+      if: steps.download-artifact-try2.outcome == 'failure'
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
