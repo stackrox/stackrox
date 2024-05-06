@@ -25,7 +25,7 @@ spec:
     - name: git-url
       value: $(tasks.clone-repository.results.url)?rev=$(tasks.clone-repository.results.commit)
     - name: image-url
-      value: $(params.output-image)
+      value: $(tasks.build-container.results.IMAGE_URL)
     - name: build-task-status
       value: $(tasks.build-container.status)
     workspaces:
@@ -177,6 +177,7 @@ spec:
       - name: image
         value: $(params.output-image)
     runAfter:
+    # This task must run on a freshly cloned repository to prevent seeing any changes from other tasks.
     - clone-repository
     # TODO(ROX-23812): Refactor to a task bundle
     taskSpec:
@@ -192,15 +193,13 @@ spec:
           env:
             - name: IMAGE
               value: $(params.image)
-            - name: KONFLUX_CI
-              value: 'true'
           script: |
             #!/usr/bin/env bash
             set -euo pipefail
-            dnf upgrade -y --nobest
-            dnf install -y git make
+            dnf -y upgrade --nobest
+            dnf -y install git make
             cd "$(workspaces.source.path)/source"
-            echo -n "${IMAGE%%:*}:$(make --quiet --no-print-directory tag)" | tee "$(results.image-with-tag.path)"
+            echo -n "${IMAGE%%:*}:$(make --quiet --no-print-directory tag)-fast" | tee "$(results.image-with-tag.path)"
     workspaces:
     - name: source
       workspace: workspace
@@ -275,7 +274,7 @@ spec:
   - name: build-source-image
     params:
     - name: BINARY_IMAGE
-      value: $(tasks.determine-image-tag.results.image-with-tag)
+      value: $(tasks.build-container.results.IMAGE_URL)
     - name: BASE_IMAGES
       value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
     runAfter:

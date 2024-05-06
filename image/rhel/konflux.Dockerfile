@@ -84,7 +84,6 @@ ENV CGO_ENABLED=1
 # ENV BUILD_TAG="${CI_VERSION}"
 ENV GOTAGS="release"
 ENV CI=1
-ENV KONFLUX_CI=true
 
 RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
     make main-build-nodeps cli-build && \

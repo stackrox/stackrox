@@ -17,7 +17,7 @@ RUN scripts/konflux/fail-build-if-git-is-dirty.sh
 RUN mkdir -p image/bin
 
 # TODO(ROX-20240): enable non-release development builds.
-ENV CI=1 GOFLAGS="" GOTAGS="release" KONFLUX_CI=true
+ENV CI=1 GOFLAGS="" GOTAGS="release"
 
 # TODO(ROX-19958): figure out if setting BUILD_TAG is actually needed.
 RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) BUILD_TAG=$(make tag) scripts/go-build.sh ./roxctl && \
