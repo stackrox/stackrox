@@ -3,10 +3,10 @@ description: Retry wrapper of download-artifact
 inputs:
   name:
     description: Artifact name
-    required: true
+    required: false
   path:
     description: Artifact path
-    required: true
+    required: false
 runs:
   using: composite
   steps:
