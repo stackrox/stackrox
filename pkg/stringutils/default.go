@@ -1,9 +1,5 @@
 package stringutils
 
-import (
-	"regexp"
-)
-
 // OrDefault returns the string if it's not empty, or the default.
 func OrDefault(s, defaultString string) string {
 	if s != "" {
@@ -20,8 +16,3 @@ func PointerOrDefault(s *string, defaultString string) string {
 
 	return OrDefault(*s, defaultString)
 }
-
-var (
-	matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
-	matchAllCap   = regexp.MustCompile("([a-z0-9])([A-Z])")
-)
