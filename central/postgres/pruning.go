@@ -31,12 +31,12 @@ const (
 	getAllOrphanedNodes = `SELECT id FROM nodes WHERE NOT EXISTS
 		(SELECT 1 FROM clusters WHERE nodes.clusterid = clusters.Id)`
 
-	getOrphanedProcessesByDeployment = `SELECT id FROM process_indicators pi WHERE NOT EXISTS 
-		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) AND 	
+	getOrphanedProcessesByDeployment = `SELECT id FROM process_indicators pi WHERE NOT EXISTS
+		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) AND
 		(signal_time < now() AT time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time IS NULL)`
 
-	getOrphanedProcessesByPod = `SELECT id FROM process_indicators pi WHERE NOT EXISTS 
-		(SELECT 1 FROM pods WHERE pi.poduid = pods.Id) AND 	
+	getOrphanedProcessesByPod = `SELECT id FROM process_indicators pi WHERE NOT EXISTS
+		(SELECT 1 FROM pods WHERE pi.poduid = pods.Id) AND
 		(signal_time < now() AT time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time IS NULL)`
 
 	// (snapshots.reportstatus_runstate = 2 OR snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4)
