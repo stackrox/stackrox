@@ -1,5 +1,18 @@
 import { ValueOf } from 'utils/type.utils';
 
+export type SearchFilterConfig = {
+    displayName: string;
+    searchCategory: string;
+    attributes: Record<string, SearchFilterAttribute>;
+};
+
+export type SearchFilterAttribute = {
+    displayName: string;
+    filterChipLabel: string;
+    searchTerm: string;
+    inputType: string;
+};
+
 // Image search filter
 
 export const imageSearchFilterConfig = {
@@ -60,7 +73,7 @@ export const imageSearchFilterConfig = {
 export type ImageSearchFilterConfig = {
     displayName: (typeof imageSearchFilterConfig)['displayName'];
     searchCategory: (typeof imageSearchFilterConfig)['searchCategory'];
-    attributes: Partial<(typeof imageSearchFilterConfig)['attributes']>;
+    attributes: (typeof imageSearchFilterConfig)['attributes'];
 };
 
 export type ImageAttribute = keyof ImageSearchFilterConfig['attributes'];
@@ -95,7 +108,7 @@ export const deploymentSearchFilterConfig = {
 export type DeploymentSearchFilterConfig = {
     displayName: (typeof deploymentSearchFilterConfig)['displayName'];
     searchCategory: (typeof deploymentSearchFilterConfig)['searchCategory'];
-    attributes: Partial<(typeof deploymentSearchFilterConfig)['attributes']>;
+    attributes: (typeof deploymentSearchFilterConfig)['attributes'];
 };
 
 export type DeploymentAttribute = keyof DeploymentSearchFilterConfig['attributes'];
@@ -130,7 +143,7 @@ export const namespaceSearchFilterConfig = {
 export type NamespaceSearchFilterConfig = {
     displayName: (typeof namespaceSearchFilterConfig)['displayName'];
     searchCategory: (typeof namespaceSearchFilterConfig)['searchCategory'];
-    attributes: Partial<(typeof namespaceSearchFilterConfig)['attributes']>;
+    attributes: (typeof namespaceSearchFilterConfig)['attributes'];
 };
 
 export type NamespaceAttribute = keyof NamespaceSearchFilterConfig['attributes'];
@@ -165,7 +178,7 @@ export const clusterSearchFilterConfig = {
 export type ClusterSearchFilterConfig = {
     displayName: (typeof clusterSearchFilterConfig)['displayName'];
     searchCategory: (typeof clusterSearchFilterConfig)['searchCategory'];
-    attributes: Partial<(typeof clusterSearchFilterConfig)['attributes']>;
+    attributes: (typeof clusterSearchFilterConfig)['attributes'];
 };
 
 export type ClusterAttribute = keyof ClusterSearchFilterConfig['attributes'];
@@ -224,7 +237,7 @@ export const nodeSearchFilterConfig = {
 export type NodeSearchFilterConfig = {
     displayName: (typeof nodeSearchFilterConfig)['displayName'];
     searchCategory: (typeof nodeSearchFilterConfig)['searchCategory'];
-    attributes: Partial<(typeof nodeSearchFilterConfig)['attributes']>;
+    attributes: (typeof nodeSearchFilterConfig)['attributes'];
 };
 
 export type NodeAttribute = keyof NodeSearchFilterConfig['attributes'];
@@ -265,7 +278,7 @@ export const imageCVESearchFilterConfig = {
 export type ImageCVESearchFilterConfig = {
     displayName: (typeof imageCVESearchFilterConfig)['displayName'];
     searchCategory: (typeof imageCVESearchFilterConfig)['searchCategory'];
-    attributes: Partial<(typeof imageCVESearchFilterConfig)['attributes']>;
+    attributes: (typeof imageCVESearchFilterConfig)['attributes'];
 };
 
 export type ImageCVEAttribute = keyof ImageCVESearchFilterConfig['attributes'];
@@ -307,7 +320,7 @@ export const nodeCVESearchFilterConfig = {
 export type NodeCVESearchFilterConfig = {
     displayName: (typeof nodeCVESearchFilterConfig)['displayName'];
     searchCategory: (typeof nodeCVESearchFilterConfig)['searchCategory'];
-    attributes: Partial<(typeof nodeCVESearchFilterConfig)['attributes']>;
+    attributes: (typeof nodeCVESearchFilterConfig)['attributes'];
 };
 
 export type NodeCVEAttribute = keyof NodeCVESearchFilterConfig['attributes'];
@@ -354,7 +367,7 @@ export const platformCVESearchFilterConfig = {
 export type PlatformCVESearchFilterConfig = {
     displayName: (typeof platformCVESearchFilterConfig)['displayName'];
     searchCategory: (typeof platformCVESearchFilterConfig)['searchCategory'];
-    attributes: Partial<(typeof platformCVESearchFilterConfig)['attributes']>;
+    attributes: (typeof platformCVESearchFilterConfig)['attributes'];
 };
 
 export type PlatformCVEAttribute = keyof PlatformCVESearchFilterConfig['attributes'];
@@ -389,7 +402,7 @@ export const imageComponentSearchFilterConfig = {
 export type ImageComponentSearchFilterConfig = {
     displayName: (typeof imageComponentSearchFilterConfig)['displayName'];
     searchCategory: (typeof imageComponentSearchFilterConfig)['searchCategory'];
-    attributes: Partial<(typeof imageComponentSearchFilterConfig)['attributes']>;
+    attributes: (typeof imageComponentSearchFilterConfig)['attributes'];
 };
 
 export type ImageComponentAttribute = keyof ImageComponentSearchFilterConfig['attributes'];
@@ -424,7 +437,7 @@ export const nodeComponentSearchFilterConfig = {
 export type NodeComponentSearchFilterConfig = {
     displayName: (typeof nodeComponentSearchFilterConfig)['displayName'];
     searchCategory: (typeof nodeComponentSearchFilterConfig)['searchCategory'];
-    attributes: Partial<(typeof nodeComponentSearchFilterConfig)['attributes']>;
+    attributes: (typeof nodeComponentSearchFilterConfig)['attributes'];
 };
 
 export type NodeComponentAttribute = keyof NodeComponentSearchFilterConfig['attributes'];
@@ -432,16 +445,18 @@ export type NodeComponentAttribute = keyof NodeComponentSearchFilterConfig['attr
 // Compound search filter config
 
 export type CompoundSearchFilterConfig = {
-    Image?: ImageSearchFilterConfig;
-    Deployment?: DeploymentSearchFilterConfig;
-    Namespace?: NamespaceSearchFilterConfig;
-    Cluster?: ClusterSearchFilterConfig;
-    Node?: NodeSearchFilterConfig;
-    ImageCVE?: ImageCVESearchFilterConfig;
-    NodeCVE?: NodeCVESearchFilterConfig;
-    PlatformCVE?: PlatformCVESearchFilterConfig;
-    ImageComponent?: ImageComponentSearchFilterConfig;
-    NodeComponent?: NodeComponentSearchFilterConfig;
+    Image: ImageSearchFilterConfig;
+    Deployment: DeploymentSearchFilterConfig;
+    Namespace: NamespaceSearchFilterConfig;
+    Cluster: ClusterSearchFilterConfig;
+    Node: NodeSearchFilterConfig;
+    ImageCVE: ImageCVESearchFilterConfig;
+    NodeCVE: NodeCVESearchFilterConfig;
+    PlatformCVE: PlatformCVESearchFilterConfig;
+    ImageComponent: ImageComponentSearchFilterConfig;
+    NodeComponent: NodeComponentSearchFilterConfig;
 };
+
+export type SearchFilterEntity = keyof CompoundSearchFilterConfig;
 
 export type EntitySearchFilterConfig = ValueOf<Required<CompoundSearchFilterConfig>>;

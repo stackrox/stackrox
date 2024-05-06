@@ -2,8 +2,10 @@ import React, { ReactElement, useState } from 'react';
 import { Select, SelectVariant } from '@patternfly/react-core/deprecated';
 
 export type SelectSingleProps = {
+    className?: string;
     toggleIcon?: ReactElement;
     toggleAriaLabel?: string;
+    ariaLabel?: string;
     id: string;
     value: string;
     handleSelect: (name: string, value: string) => void;
@@ -19,8 +21,10 @@ export type SelectSingleProps = {
 };
 
 function SelectSingle({
+    className,
     toggleIcon,
     toggleAriaLabel,
+    ariaLabel,
     id,
     value,
     handleSelect,
@@ -49,6 +53,7 @@ function SelectSingle({
             variant={isTypeahead}
             toggleIcon={toggleIcon}
             toggleAriaLabel={toggleAriaLabel}
+            aria-label={ariaLabel}
             id={id}
             isDisabled={isDisabled}
             isOpen={isOpen}
@@ -62,6 +67,7 @@ function SelectSingle({
             onBlur={onBlur}
             menuAppendTo={menuAppendTo}
             footer={footer}
+            className={className}
         >
             {children}
         </Select>

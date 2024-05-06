@@ -1,34 +1,40 @@
-import React, { ReactElement } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import React from 'react';
+import { SelectOption } from '@patternfly/react-core';
+
+import { CompoundSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
+import { getEntities } from 'Components/CompoundSearchFilter/utils/utils';
+
+import SimpleSelect from './SimpleSelect';
 
 export type EntitySelectorProps = {
-    value: string;
+    selectedEntity: string;
     onChange: (value) => void;
-    children: ReactElement<typeof SelectOption>[];
+    config: Partial<CompoundSearchFilterConfig>;
 };
 
-function EntitySelector({ value, onChange, children }: EntitySelectorProps) {
-    const { isOpen, onToggle, closeSelect } = useSelectToggle();
+function EntitySelector({ selectedEntity, onChange, config }: EntitySelectorProps) {
+    const entities = getEntities(config);
 
-    function onSelect(e, selection) {
-        onChange(selection);
-        closeSelect();
+    if (entities.length === 0) {
+        return null;
     }
 
     return (
-        <Select
-            variant="single"
-            toggleAriaLabel="compound search filter entity selector toggle"
-            aria-label="compound search filter entity selector items"
-            onToggle={(_e, v) => onToggle(v)}
-            onSelect={onSelect}
-            selections={value}
-            isOpen={isOpen}
-            className="pf-v5-u-flex-basis-0"
+        <SimpleSelect
+            id="compound-search-entity-selector"
+            value={selectedEntity}
+            onChange={onChange}
+            ariaLabelMenu="compound search filter entity selector menu"
+            ariaLabelToggle="compound search filter entity selector toggle"
         >
-            {children}
-        </Select>
+            {entities.map((entity) => {
+                return (
+                    <SelectOption key={entity} value={entity}>
+                        {entity}
+                    </SelectOption>
+                );
+            })}
+        </SimpleSelect>
     );
 }
 
