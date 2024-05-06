@@ -4,21 +4,13 @@ import { Button, PageSection } from '@patternfly/react-core';
 
 import { complianceEnhancedCoveragePath } from 'routePaths';
 
-import CoveragesToggleGroup from './CoveragesToggleGroup';
-import CoveragesPageHeader from './CoveragesPageHeader';
-
-function ProfileChecksPage() {
+function ClusterDetailsPage() {
     const history = useHistory();
     const { profileName } = useParams();
-
     return (
         <>
-            <CoveragesPageHeader />
-            <PageSection>
-                <CoveragesToggleGroup tableView="checks" />
-            </PageSection>
             <PageSection variant="light">
-                <div>ProfileChecksPage</div>
+                <div>ClusterDetailsPage</div>
                 <Button
                     onClick={() => {
                         history.push(
@@ -29,19 +21,9 @@ function ProfileChecksPage() {
                 >
                     Go to all clusters (ProfileClustersPage)
                 </Button>
-                <Button
-                    onClick={() => {
-                        history.push(
-                            `${complianceEnhancedCoveragePath}/profiles/${profileName}/checks/test`
-                        );
-                    }}
-                    variant="primary"
-                >
-                    Go to single check (CheckDetailsPage)
-                </Button>
             </PageSection>
         </>
     );
 }
 
-export default ProfileChecksPage;
+export default ClusterDetailsPage;
