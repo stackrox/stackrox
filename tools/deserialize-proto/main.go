@@ -12,13 +12,17 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"testing"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	flag "github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
+	"k8s.io/utils/env"
 
 	// This will register all proto types in the package,
 	// making it possible to retrieve the message type by name.
@@ -28,8 +32,8 @@ import (
 var (
 	protobufType = flag.String("type", "", "name of protobuf, e.g., storage.Alert")
 	id           = flag.String("id", "", "id of the object to query")
-	whereClause  = flag.String("where-clause", "", "additional where clause for the objects to query")
-	fromStdin    = flag.Bool("from-stdin", false, "reads serialized protos from stdin")
+	whereClause  = flag.String("where", "", "additional where clause for the objects to query")
+	fromStdin    = flag.Bool("stdin", false, "reads serialized protos from stdin")
 
 	errUnqoting  = errors.New("failed to unquote the serialized text")
 	errDecoding  = errors.New("failed decoding the hex value of the text")
@@ -61,18 +65,25 @@ func main() {
 
 // Detect database directly from provided proto. Add id or optional where clauses to the SQL query.
 func readFromDatabase(msg proto.Message) {
+	dbName := env.GetString("POSTGRES_DATABASE", "central")
+	connectionString := conn.GetConnectionStringWithDatabaseName(&testing.T{}, dbName)
+	fmt.Println("Connecting to database: ", connectionString)
 
-	db, err := postgres.Connect(context.TODO(), "postgres://postgres:password@localhost:5432/central")
+	db, err := postgres.Connect(context.TODO(), connectionString)
 	utils.Should(err)
 
-	tableName, _ := strings.CutPrefix(stringutils.ToSnakeCase(*protobufType), "storage._")
+	tableName := pgutils.NamingStrategy.TableName(stringutils.GetAfter(*protobufType, "."))
 
 	query := fmt.Sprintf("SELECT serialized FROM %s", tableName)
 	if *id != "" && *whereClause == "" {
 		query = fmt.Sprintf("%s WHERE id = '%s'", query, *id)
-	} else {
-		query = fmt.Sprintf("%s WHERE id = '%s' AND %s", query, *id, *whereClause)
+	} else if *whereClause != "" {
+		query = fmt.Sprintf("%s WHERE %s", query, *whereClause)
+	} else if *whereClause != "" && *id != "" {
+		log.Fatalf("cannot provide both id and where clause")
 	}
+
+	fmt.Printf("Run query: %s", query)
 
 	rows, err := db.Query(context.TODO(), query)
 	if err != nil {
