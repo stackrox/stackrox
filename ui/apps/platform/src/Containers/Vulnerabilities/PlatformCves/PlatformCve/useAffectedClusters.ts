@@ -4,6 +4,7 @@ import { AffectedCluster, affectedClusterFragment } from './AffectedClustersTabl
 const affectedClustersQuery = gql`
     ${affectedClusterFragment}
     query getAffectedClusters($query: String, $pagination: Pagination) {
+        clusterCount(query: $query)
         clusters(query: $query, pagination: $pagination) {
             ...AffectedClusterFragment
         }
@@ -13,6 +14,7 @@ const affectedClustersQuery = gql`
 export default function useAffectedClusters(query: string, page: number, perPage: number) {
     const affectedClustersRequest = useQuery<
         {
+            clusterCount: number;
             clusters: AffectedCluster[];
         },
         {
@@ -31,6 +33,7 @@ export default function useAffectedClusters(query: string, page: number, perPage
 
     return {
         affectedClustersRequest,
+        clusterCount: affectedClustersRequest.data?.clusterCount ?? 0,
         clusterData:
             affectedClustersRequest.data?.clusters ??
             affectedClustersRequest.previousData?.clusters,
