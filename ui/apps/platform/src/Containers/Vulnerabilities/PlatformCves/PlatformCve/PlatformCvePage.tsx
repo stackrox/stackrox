@@ -1,11 +1,22 @@
 import React from 'react';
-import { PageSection, Breadcrumb, Divider, BreadcrumbItem, Skeleton } from '@patternfly/react-core';
+import {
+    PageSection,
+    Breadcrumb,
+    Divider,
+    BreadcrumbItem,
+    Skeleton,
+    Flex,
+    Pagination,
+    Split,
+    SplitItem,
+    Title,
+    pluralize,
+} from '@patternfly/react-core';
 import { useParams } from 'react-router-dom';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 
-import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getTableUIState } from 'utils/getTableUIState';
@@ -13,6 +24,9 @@ import {
     SummaryCardLayout,
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
+import { DynamicTableLabel } from 'Components/DynamicIcon';
+import { getHasSearchApplied } from 'utils/searchUtils';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import CvePageHeader from '../../components/CvePageHeader';
 import {
     getOverviewPagePath,
@@ -42,12 +56,16 @@ function PlatformCvePage() {
         CVE: [exactCveIdSearchRegex],
     });
 
-    const { page, perPage } = useURLPagination(DEFAULT_PAGE_SIZE);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
-    const { affectedClustersRequest, clusterData } = useAffectedClusters(query, page, perPage);
-
+    const { affectedClustersRequest, clusterData, clusterCount } = useAffectedClusters(
+        query,
+        page,
+        perPage
+    );
     const metadataRequest = usePlatformCveMetadata(cveId, query, page, perPage);
     const cveName = metadataRequest.data?.platformCVE?.cve;
+    const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const tableState = getTableUIState({
         isLoading: affectedClustersRequest.loading,
@@ -101,6 +119,30 @@ function PlatformCvePage() {
                 </SummaryCardLayout>
                 <Divider component="div" />
                 <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1 pf-v5-u-p-lg">
+                    <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+                        <SplitItem isFilled>
+                            <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                                <Title headingLevel="h2">
+                                    {pluralize(clusterCount, 'cluster')} affected
+                                </Title>
+                                {isFiltered && <DynamicTableLabel />}
+                            </Flex>
+                        </SplitItem>
+                        <SplitItem>
+                            <Pagination
+                                itemCount={clusterCount}
+                                perPage={perPage}
+                                page={page}
+                                onSetPage={(_, newPage) => setPage(newPage)}
+                                onPerPageSelect={(_, newPerPage) => {
+                                    if (clusterCount < (page - 1) * newPerPage) {
+                                        setPage(1);
+                                    }
+                                    setPerPage(newPerPage);
+                                }}
+                            />
+                        </SplitItem>
+                    </Split>
                     <AffectedClustersTable tableState={tableState} />
                 </div>
             </PageSection>
