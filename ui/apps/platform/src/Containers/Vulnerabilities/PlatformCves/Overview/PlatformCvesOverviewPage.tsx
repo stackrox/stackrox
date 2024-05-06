@@ -23,6 +23,7 @@ import { platformEntityTabValues } from '../../types';
 
 import ClustersTable from './ClustersTable';
 import CVEsTable from './CVEsTable';
+import { usePlatformCveEntityCounts } from './usePlatformCveEntityCounts';
 
 function PlatformCvesOverviewPage() {
     const [activeEntityTabKey] = useURLStringUnion('entityTab', platformEntityTabValues);
@@ -38,10 +39,11 @@ function PlatformCvesOverviewPage() {
         // TODO - set default sort here
     }
 
-    // TODO - needs to be connected to a query
+    const { data } = usePlatformCveEntityCounts(querySearchFilter);
+
     const entityCounts = {
-        CVE: 0,
-        Cluster: 0,
+        CVE: data?.platformCVECount ?? 0,
+        Cluster: data?.clusterCount ?? 0,
     };
 
     const filterToolbar = <></>;
