@@ -35,7 +35,7 @@ func NewComplianceOperatorAvailabilityChecker() *availabilityChecker {
 		complianceoperator.ComplianceSuite,
 		complianceoperator.ComplianceCheckResult,
 		complianceoperator.TailoredProfile,
-		complianceoperator.Remediation,
+		complianceoperator.ComplianceRemediation,
 	}
 	return &availabilityChecker{
 		gv:        complianceoperator.GetGroupVersion(),
