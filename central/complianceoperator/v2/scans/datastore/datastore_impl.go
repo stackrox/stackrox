@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/complianceoperator/v2/scans/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -43,4 +44,9 @@ func (d *datastoreImpl) DeleteScanByCluster(ctx context.Context, clusterID strin
 		return err
 	}
 	return nil
+}
+
+// SearchScans returns the scans for the given query
+func (d *datastoreImpl) SearchScans(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorScanV2, error) {
+	return d.store.GetByQuery(ctx, query)
 }
