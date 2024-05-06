@@ -64,7 +64,7 @@ var (
 		Group:   GetGroupVersion().Group,
 		Version: GetGroupVersion().Version,
 	})
-	Remediation = registerAPIResource(v1.APIResource{
+	ComplianceRemediation = registerAPIResource(v1.APIResource{
 		Name:    "complianceremediations",
 		Kind:    "ComplianceRemediation",
 		Group:   GetGroupVersion().Group,
