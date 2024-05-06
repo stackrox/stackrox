@@ -128,7 +128,7 @@ func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
 			Filter("generic_cluster_count",
 				search.NewQueryBuilder().
 					AddExactMatches(
-						search.PlatformType,
+						search.ClusterPlatformType,
 						storage.ClusterType_GENERIC_CLUSTER.String(),
 					).ProtoQuery(),
 			).Proto(),
@@ -138,7 +138,7 @@ func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
 			Filter("kubernetes_cluster_count",
 				search.NewQueryBuilder().
 					AddExactMatches(
-						search.PlatformType,
+						search.ClusterPlatformType,
 						storage.ClusterType_KUBERNETES_CLUSTER.String(),
 					).ProtoQuery(),
 			).Proto(),
@@ -148,7 +148,7 @@ func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
 			Filter("openshift_cluster_count",
 				search.NewQueryBuilder().
 					AddExactMatches(
-						search.PlatformType,
+						search.ClusterPlatformType,
 						storage.ClusterType_OPENSHIFT_CLUSTER.String(),
 					).ProtoQuery(),
 			).Proto(),
@@ -158,7 +158,7 @@ func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
 			Filter("openshift4_cluster_count",
 				search.NewQueryBuilder().
 					AddExactMatches(
-						search.PlatformType,
+						search.ClusterPlatformType,
 						storage.ClusterType_OPENSHIFT4_CLUSTER.String(),
 					).ProtoQuery(),
 			).Proto(),
