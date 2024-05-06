@@ -785,7 +785,7 @@ func (m *ProviderMetadata) Clone() *ProviderMetadata {
 }
 
 type OrchestratorMetadata struct {
-	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty" search:"Kubernetes Version"` // @gotags: search:"Kubernetes Version"
+	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty" search:"Cluster Kubernetes Version"` // @gotags: search:"Cluster Kubernetes Version"
 	// Types that are valid to be assigned to IsOpenshift:
 	//	*OrchestratorMetadata_OpenshiftVersion
 	IsOpenshift          isOrchestratorMetadata_IsOpenshift `protobuf_oneof:"is_openshift"`
@@ -1478,7 +1478,7 @@ func (m *SensorDeploymentIdentification) Clone() *SensorDeploymentIdentification
 type Cluster struct {
 	Id                         string                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"`                                                                                                  // @gotags: search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"
 	Name                       string                `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Cluster,store" sql:"unique"`                                                                                              // @gotags: search:"Cluster,store" sql:"unique"
-	Type                       ClusterType           `protobuf:"varint,3,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty" search:"Platform Type"`                                                                    // @gotags: search:"Platform Type"
+	Type                       ClusterType           `protobuf:"varint,3,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty" search:"Cluster Platform Type"`                                                                    // @gotags: search:"Cluster Platform Type"
 	Labels                     map[string]string     `protobuf:"bytes,27,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Cluster Label"` // @gotags: search:"Cluster Label"
 	MainImage                  string                `protobuf:"bytes,4,opt,name=main_image,json=mainImage,proto3" json:"main_image,omitempty"`
 	CollectorImage             string                `protobuf:"bytes,16,opt,name=collector_image,json=collectorImage,proto3" json:"collector_image,omitempty"`
