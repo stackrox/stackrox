@@ -35,14 +35,15 @@ import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import {
-    getScanConfigs,
-    getScanConfigsCount,
-    deleteScanConfig,
+    listComplianceScanConfigurations,
+    getComplianceScanConfigurationsCount,
+    deleteComplianceScanConfiguration,
     ComplianceScanConfigurationStatus,
-} from 'services/ComplianceEnhancedService';
+} from 'services/ComplianceScanConfigurationService';
 import { SortOption } from 'types/table';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { scanConfigDetailsPath } from '../compliance.scanConfigs.routes';
 import { formatScanSchedule } from '../compliance.scanConfigs.utils';
 
@@ -81,12 +82,12 @@ function ScanConfigsTablePage({
     });
 
     const listQuery = useCallback(
-        () => getScanConfigs(sortOption, page - 1, perPage),
+        () => listComplianceScanConfigurations(sortOption, page - 1, perPage),
         [sortOption, page, perPage]
     );
     const { data: scanSchedules, loading: isLoading, error, refetch } = useRestQuery(listQuery);
 
-    const countQuery = useCallback(() => getScanConfigsCount(), []);
+    const countQuery = useCallback(() => getComplianceScanConfigurationsCount(), []);
     const { data: scanSchedulesCount } = useRestQuery(countQuery);
 
     function openDeleteModal(scanConfigs) {
@@ -100,7 +101,7 @@ function ScanConfigsTablePage({
 
     function onDeleteScanConfig() {
         const deletePromises = scanConfigsToDelete.map((scanConfig) =>
-            deleteScanConfig(scanConfig.id)
+            deleteComplianceScanConfiguration(scanConfig.id)
         );
 
         setScanConfigDeletionErrors([]);
@@ -243,7 +244,7 @@ function ScanConfigsTablePage({
             {error ? (
                 <PageSection variant="light" isFilled id="policies-table-error">
                     <Bullseye>
-                        <Alert variant="danger" title={error} />
+                        <Alert variant="danger" title={getAxiosErrorMessage(error)} />
                     </Bullseye>
                 </PageSection>
             ) : (

@@ -19,9 +19,12 @@ import DeploymentComponentVulnerabilitiesTable, {
     ImageMetadataContext,
     deploymentComponentVulnerabilitiesFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
-import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
+import {
+    getIsSomeVulnerabilityFixable,
+    getHighestVulnerabilitySeverity,
+} from '../../utils/vulnerabilityUtils';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
-import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
+import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 
 export const deploymentWithVulnerabilitiesFragment = gql`
     ${deploymentComponentVulnerabilitiesFragment}
@@ -87,8 +90,9 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
         const { vulnerabilityId, cve, summary, images, pendingExceptionCount } = vulnerability;
         // Severity, Fixability, and Discovered date are all based on the aggregate value of all components
         const allVulnerableComponents = vulnerability.images.flatMap((img) => img.imageComponents);
-        const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerableComponents);
-        const isAnyVulnFixable = getAnyVulnerabilityIsFixable(allVulnerableComponents);
+        const allVulnerabilities = allVulnerableComponents.flatMap((c) => c.imageVulnerabilities);
+        const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerabilities);
+        const isFixableInDeployment = getIsSomeVulnerabilityFixable(allVulnerabilities);
         const allDiscoveredDates = allVulnerableComponents
             .flatMap((c) => c.imageVulnerabilities.map((v) => v.discoveredAtImage))
             .filter((d): d is string => d !== null);
@@ -115,7 +119,7 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
             vulnerabilityId,
             cve,
             severity: highestVulnSeverity,
-            isFixable: isAnyVulnFixable,
+            isFixable: isFixableInDeployment,
             discoveredAtImage: oldestDiscoveredVulnDate,
             summary,
             affectedComponentsText,

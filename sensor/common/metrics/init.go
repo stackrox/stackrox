@@ -34,6 +34,7 @@ func init() {
 		k8sObjectProcessingDuration,
 		k8sObjectIngestionToSendDuration,
 		resolverChannelSize,
+		ResolverDedupingQueueSize,
 		resourcesSyncedUnchaged,
 		resourcesSyncedMessageSize,
 		outputChannelSize,

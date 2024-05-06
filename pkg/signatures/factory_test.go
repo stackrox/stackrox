@@ -58,7 +58,7 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 
 	cases := map[string]struct {
 		integration        *storage.SignatureIntegration
-		results            []storage.ImageSignatureVerificationResult
+		result             *storage.ImageSignatureVerificationResult
 		verifiedReferences []string
 	}{
 		"successful verification": {
@@ -66,12 +66,10 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 				Id:     "successful",
 				Cosign: successfulCosignConfig,
 			},
-			results: []storage.ImageSignatureVerificationResult{
-				{
-					VerifierId:              "successful",
-					Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
-					VerifiedImageReferences: []string{imgString},
-				},
+			result: &storage.ImageSignatureVerificationResult{
+				VerifierId:              "successful",
+				Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+				VerifiedImageReferences: []string{imgString},
 			},
 		},
 		"failing verification": {
@@ -79,26 +77,21 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 				Id:     "failure",
 				Cosign: failingCosignConfig,
 			},
-			results: []storage.ImageSignatureVerificationResult{
-				{
-					VerifierId:  "failure",
-					Status:      storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
-					Description: "1 error occurred:",
-				},
+			result: &storage.ImageSignatureVerificationResult{
+				VerifierId:  "failure",
+				Status:      storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
+				Description: "1 error occurred:",
 			},
 		},
 	}
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			results := VerifyAgainstSignatureIntegration(context.Background(), c.integration, testImg)
-			require.Len(t, results, len(c.results))
-			for i, res := range c.results {
-				assert.Equal(t, res.VerifierId, results[i].VerifierId)
-				assert.Equal(t, res.Status, results[i].Status)
-				assert.Contains(t, results[i].Description, res.Description)
-				assert.ElementsMatch(t, results[i].VerifiedImageReferences, res.VerifiedImageReferences)
-			}
+			result := VerifyAgainstSignatureIntegration(context.Background(), c.integration, testImg)
+			assert.Equal(t, c.result.VerifierId, result.VerifierId)
+			assert.Equal(t, c.result.Status, result.Status)
+			assert.Contains(t, result.Description, c.result.Description)
+			assert.ElementsMatch(t, c.result.VerifiedImageReferences, result.VerifiedImageReferences)
 		})
 	}
 }

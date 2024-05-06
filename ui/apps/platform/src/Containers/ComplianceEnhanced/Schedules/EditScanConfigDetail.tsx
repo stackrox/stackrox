@@ -15,7 +15,7 @@ import {
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { ComplianceScanConfigurationStatus } from 'services/ComplianceEnhancedService';
+import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import ScanConfigWizardForm from './Wizard/ScanConfigWizardForm';
 import { defaultScanConfigFormValues } from './Wizard/useFormikScanConfig';

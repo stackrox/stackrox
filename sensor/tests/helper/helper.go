@@ -2,6 +2,7 @@ package helper
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"log"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/centralclient"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/certs"
 	"github.com/stackrox/rox/sensor/debugger/message"
@@ -847,10 +849,15 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 	t.Setenv("ROX_MTLS_CA_KEY_FILE", path.Join(c.config.CertFilePath, "/caKey.pem"))
 
 	k8sClient := client.MustCreateInterfaceFromRest(env.Client().RESTConfig())
+	centralHTTPServer := NewCentralHTTPTestServer(t)
+	centralEndpoint := centralHTTPServer.URL
+	t.Setenv("ROX_CENTRAL_ENDPOINT", centralEndpoint)
+
 	sensorConfig := sensor.ConfigWithDefaults().
 		WithK8sClient(k8sClient).
 		WithLocalSensor(true).
-		WithCentralConnectionFactory(c.grpcFactory)
+		WithCentralConnectionFactory(c.grpcFactory).
+		WithCertLoader(centralclient.StaticCertLoader([]*x509.Certificate{centralHTTPServer.Certificate()}))
 	if cfg.RealCerts {
 		certFetcher := certs.NewCertificateFetcher(k8sClient,
 			certs.WithOutputDir(c.config.CertFilePath),
@@ -885,6 +892,7 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 	c.stopFn = func() {
 		s.Stop()
 		c.fakeCentral.KillSwitch.Done()
+		centralHTTPServer.Close()
 	}
 
 	go s.Start()

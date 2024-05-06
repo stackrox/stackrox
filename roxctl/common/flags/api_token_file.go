@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 )
 
@@ -19,11 +20,16 @@ func AddAPITokenFile(c *cobra.Command) {
 		"token-file",
 		"",
 		"",
-		"Use the API token in the provided file to authenticate. Alternatively, set the token via the ROX_API_TOKEN environment variable")
+		"Use the API token in the provided file to authenticate. "+
+			"Alternatively, set the path via the ROX_API_TOKEN_FILE environment variable or "+
+			"set the token via the ROX_API_TOKEN environment variable")
 }
 
 // APITokenFile returns the currently specified API token file name.
 func APITokenFile() string {
+	if apiTokenFile == "" && env.TokenFileEnv.Setting() != "" {
+		apiTokenFile = env.TokenFileEnv.Setting()
+	}
 	return apiTokenFile
 }
 

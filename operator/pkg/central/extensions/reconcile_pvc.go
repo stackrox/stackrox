@@ -3,7 +3,7 @@ package extensions
 import (
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -328,7 +328,7 @@ func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCForCurrentTarget() (*corev1.
 	}
 	if len(pvcList) > 1 {
 		names := sliceutils.Map(pvcList, (*corev1.PersistentVolumeClaim).GetName)
-		sort.Strings(names)
+		slices.Sort(names)
 
 		return nil, errors.Wrapf(errMultipleOwnedPVCs,
 			"multiple owned PVCs were found for %s, please remove not used ones or delete their OwnerReferences. Found PVCs: %s", r.target, strings.Join(names, ", "))

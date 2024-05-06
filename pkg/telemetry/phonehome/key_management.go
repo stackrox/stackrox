@@ -71,7 +71,7 @@ func downloadConfig(u string) (*remoteConfig, error) {
 // We want to prevent accidental use of the production key, but still allow
 // developers to test the functionality. So download will only happen for
 // development installations if both a key and an URL are provided. For release
-// versions the key may be empty.
+// versions the key should be empty.
 // See unit tests for the examples.
 func toDownload(isRelease bool, key, cfgURL string) bool {
 	if cfgURL == "" {
@@ -81,7 +81,7 @@ func toDownload(isRelease bool, key, cfgURL string) bool {
 		// Development versions must provide a key on top of the URL.
 		return key != ""
 	}
-	return true
+	return key == ""
 }
 
 // useRemoteKey decides if the key from the downloaded configuration has to be

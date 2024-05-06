@@ -2,6 +2,7 @@ package all
 
 import (
 	// Register notifiers.
+	_ "github.com/stackrox/rox/central/notifiers/acscsemail"
 	_ "github.com/stackrox/rox/central/notifiers/awssh"
 	_ "github.com/stackrox/rox/central/notifiers/cscc"
 	_ "github.com/stackrox/rox/central/notifiers/email"

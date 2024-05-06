@@ -232,6 +232,14 @@ var (
 		Help:      "A gauge to track the resolver channel size",
 	})
 
+	// ResolverDedupingQueueSize a gauge to track the resolver's deduping queue size.
+	ResolverDedupingQueueSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "resolver_deduping_queue_size",
+		Help:      "A gauge to track the resolver deduping queue size",
+	})
+
 	outputChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),

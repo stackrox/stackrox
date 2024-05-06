@@ -63,7 +63,6 @@ tests/performance/scale/utilities/set-docker-credentials-for-cluster.sh
 tests/performance/scale/utilities/start-central-and-scanner.sh
 tests/performance/scale/utilities/start-secured-cluster.sh
 tests/roxctl/authz-trace.sh
-tests/roxctl/bats-tests/cluster/centraldb-generate.bats
 tests/roxctl/bats-tests/cluster/deployment-bundles-psps.bats
 tests/roxctl/bats-tests/cluster/sensor-generate-image-overrides.bats
 tests/roxctl/bats-tests/local/central-generate-development.bats

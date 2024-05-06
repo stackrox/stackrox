@@ -7,28 +7,34 @@ import { Link } from 'react-router-dom';
 import { TableUIState } from 'utils/getTableUIState';
 
 import useSet from 'hooks/useSet';
-import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
-import { severityRankings } from 'constants/vulnerabilities';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 
 import CvssFormatted from 'Components/CvssFormatted';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
-import NodeComponentsTable from './NodeComponentsTable';
+import {
+    getHighestVulnerabilitySeverity,
+    getIsSomeVulnerabilityFixable,
+    getHighestCvssScore,
+} from '../../utils/vulnerabilityUtils';
+
+import NodeComponentsTable, {
+    NodeComponent,
+    nodeComponentFragment,
+} from '../components/NodeComponentsTable';
 
 export const affectedNodeFragment = gql`
+    ${nodeComponentFragment}
     fragment AffectedNode on Node {
         id
         name
-        operatingSystem
+        osImage
         cluster {
             name
         }
         nodeComponents {
-            name
-            version
-            source
+            ...NodeComponentFragment
             nodeVulnerabilities {
                 vulnerabilityId: id
                 cve
@@ -44,14 +50,11 @@ export const affectedNodeFragment = gql`
 export type AffectedNode = {
     id: string;
     name: string;
-    operatingSystem: string;
+    osImage: string;
     cluster: {
         name: string;
     };
-    nodeComponents: {
-        name: string;
-        version: string;
-        source: string;
+    nodeComponents: (NodeComponent & {
         nodeVulnerabilities: {
             vulnerabilityId: string;
             cve: string;
@@ -60,42 +63,8 @@ export type AffectedNode = {
             cvss: number;
             scoreVersion: string;
         }[];
-    }[];
+    })[];
 };
-
-type NodeVulnerabilities = AffectedNode['nodeComponents'][0]['nodeVulnerabilities'];
-
-function getHighestVulnerabilitySeverity(vulns: NodeVulnerabilities): VulnerabilitySeverity {
-    let topSeverity: VulnerabilitySeverity = 'UNKNOWN_VULNERABILITY_SEVERITY';
-    vulns.forEach(({ severity }) => {
-        if (
-            isVulnerabilitySeverity(severity) &&
-            severityRankings[severity] > severityRankings[topSeverity]
-        ) {
-            topSeverity = severity;
-        }
-    });
-    return topSeverity;
-}
-
-function getAnyVulnerabilityIsFixable(vulns: NodeVulnerabilities): boolean {
-    return vulns.some((vuln) => vuln.fixedByVersion !== '');
-}
-
-function getHighestCvssScore(vulns: NodeVulnerabilities): {
-    cvss: number;
-    scoreVersion: string;
-} {
-    let topCvss = 0;
-    let topScoreVersion = 'N/A';
-    vulns.forEach(({ cvss, scoreVersion }) => {
-        if (cvss > topCvss) {
-            topCvss = cvss;
-            topScoreVersion = scoreVersion;
-        }
-    });
-    return { cvss: topCvss, scoreVersion: topScoreVersion };
-}
 
 export type AffectedNodesTableProps = {
     tableState: TableUIState<AffectedNode>;
@@ -137,12 +106,12 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
                         const { id, name, nodeComponents } = node;
                         const isExpanded = expandedRowSet.has(id);
 
-                        const vulns = nodeComponents.flatMap(
-                            ({ nodeVulnerabilities }) => nodeVulnerabilities
+                        const vulnerabilities = nodeComponents.flatMap(
+                            (component) => component.nodeVulnerabilities
                         );
-                        const topSeverity = getHighestVulnerabilitySeverity(vulns);
-                        const isFixable = getAnyVulnerabilityIsFixable(vulns);
-                        const { cvss, scoreVersion } = getHighestCvssScore(vulns);
+                        const topSeverity = getHighestVulnerabilitySeverity(vulnerabilities);
+                        const isFixableInNode = getIsSomeVulnerabilityFixable(vulnerabilities);
+                        const { cvss, scoreVersion } = getHighestCvssScore(vulnerabilities);
 
                         return (
                             <Tbody key={id} isExpanded={isExpanded}>
@@ -164,7 +133,7 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
                                         <VulnerabilitySeverityIconText severity={topSeverity} />
                                     </Td>
                                     <Td dataLabel="CVE status" modifier="nowrap">
-                                        <VulnerabilityFixableIconText isFixable={isFixable} />
+                                        <VulnerabilityFixableIconText isFixable={isFixableInNode} />
                                     </Td>
                                     <Td dataLabel="CVSS score" modifier="nowrap">
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
@@ -172,7 +141,9 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
                                     <Td dataLabel="Cluster">
                                         <Truncate position="middle" content={node.cluster.name} />
                                     </Td>
-                                    <Td dataLabel="Operating system">{node.operatingSystem}</Td>
+                                    <Td dataLabel="Operating system">
+                                        <Truncate position="middle" content={node.osImage} />
+                                    </Td>
                                     <Td dataLabel="Affected components">
                                         {nodeComponents.length === 1
                                             ? nodeComponents[0].name
@@ -183,7 +154,7 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
                                     <Td />
                                     <Td colSpan={colSpan - 1}>
                                         <ExpandableRowContent>
-                                            <NodeComponentsTable />
+                                            <NodeComponentsTable data={nodeComponents} />
                                         </ExpandableRowContent>
                                     </Td>
                                 </Tr>

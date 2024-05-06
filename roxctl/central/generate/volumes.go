@@ -11,8 +11,8 @@ import (
 func volumeCommand(name string) *cobra.Command {
 	return &cobra.Command{
 		Use:   name,
-		Short: fmt.Sprintf("%s adds an external volume to the deployment definition", name),
-		Long: fmt.Sprintf(`%s adds an external volume to the deployment definition.
+		Short: fmt.Sprintf("Adds an external %s volume to the deployment definition", name),
+		Long: fmt.Sprintf(`Adds an external %s volume to the deployment definition.
 Output is a zip file printed to stdout.`, name),
 		Example: "Central volume type",
 		Annotations: map[string]string{

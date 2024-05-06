@@ -23,7 +23,7 @@ type nodeSpecMap map[string]nodeSpec
 
 func sortedIDs(ids []string) []string {
 	result := slices.Clone(ids)
-	sort.Strings(result)
+	slices.Sort(result)
 	return result
 }
 

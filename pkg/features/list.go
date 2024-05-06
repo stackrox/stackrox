@@ -93,4 +93,12 @@ var (
 
 	// UnqualifiedSearchRegistries enables support for unqualified search registries and short name aliases.
 	UnqualifiedSearchRegistries = registerFeature("Enable support for unqualified search registries and short name aliases", "ROX_UNQUALIFIED_SEARCH_REGISTRIES", false)
+
+	// ComplianceRemediationV2 enables the remediation feature of the compliance v2 integration.
+	ComplianceRemediationV2 = registerFeature("Enable Compliance Remediation feature", "ROX_COMPLIANCE_REMEDIATION", false)
+
+	// SensorAggregateDeploymentReferenceOptimization enables a performance improvement by aggregating deployment references when the same reference is queued for processing
+	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION", true)
+	// ACSCSEmailNotifier enables support for the ACSCS email notifier integratioon
+	ACSCSEmailNotifier = registerFeature("Enable support for ACSCS Email notifier type", "ROX_ACSCS_EMAIL_NOTIFIER", false)
 )

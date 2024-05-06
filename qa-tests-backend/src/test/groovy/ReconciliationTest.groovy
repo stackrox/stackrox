@@ -40,6 +40,7 @@ class ReconciliationTest extends BaseSpecification {
         "*central.SensorEvent_Node": 0,
         "*central.SensorEvent_ComplianceOperatorProfile": 0,
         "*central.SensorEvent_ComplianceOperatorProfileV2": 0,
+        "*central.SensorEvent_ComplianceOperatorRemediationV2": 0,
         "*central.SensorEvent_ComplianceOperatorResult": 0,
         "*central.SensorEvent_ComplianceOperatorRule": 0,
         "*central.SensorEvent_ComplianceOperatorRuleV2": 0,

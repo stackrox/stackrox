@@ -24,7 +24,7 @@ func assertFrozenSetContainsExactly(t *testing.T, fs FrozenStringSet, elements .
 	}
 	a.ElementsMatch(fs.AsSlice(), elements)
 
-	sort.Strings(elements)
+	slices.Sort(elements)
 	a.Equal(elements, fs.AsSortedSlice(func(i, j string) bool {
 		return i < j
 	}))

@@ -19,7 +19,6 @@ function mockNodeVulnerability(fields) {
 function mockNodeComponent(fields) {
     return {
         name: 'podman',
-        operatingSystem: 'rhcos:4.15',
         version: '3:4.4.1-21.rhaos4.15.el9.x86_64',
         fixedIn: '',
         source: 'INFRASTRUCTURE',
@@ -36,7 +35,7 @@ function mockNode(fields) {
         cluster: {
             name: 'test-cluster',
         },
-        operatingSystem: 'linux',
+        osImage: 'RHEL',
         ...fields,
     };
 }

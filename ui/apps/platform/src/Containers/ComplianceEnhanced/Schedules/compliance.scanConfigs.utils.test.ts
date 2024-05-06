@@ -1,4 +1,4 @@
-import { Schedule } from 'services/ComplianceEnhancedService';
+import { Schedule } from 'services/ComplianceScanConfigurationService';
 import {
     convertFormikParametersToSchedule,
     convertScheduleToFormikParameters,

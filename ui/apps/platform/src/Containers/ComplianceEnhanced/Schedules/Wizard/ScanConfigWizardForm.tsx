@@ -6,13 +6,11 @@ import { complianceEnhancedSchedulesPath } from 'routePaths';
 import isEqual from 'lodash/isEqual';
 
 import useRestQuery from 'hooks/useRestQuery';
-import {
-    saveScanConfig,
-    listComplianceIntegrations,
-    listComplianceSummaries,
-} from 'services/ComplianceEnhancedService';
-
+import { saveScanConfig } from 'services/ComplianceScanConfigurationService';
+import { listComplianceIntegrations } from 'services/ComplianceIntegrationService';
+import { listProfileSummaries } from 'services/ComplianceProfileService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
 import ScanConfigOptions from './ScanConfigOptions';
 import ClusterSelection from './ClusterSelection';
 import ProfileSelection from './ProfileSelection';
@@ -47,7 +45,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
 
     const listProfilesQuery = useCallback(() => {
         if (clustersUsedForProfileData.length > 0) {
-            return listComplianceSummaries(clustersUsedForProfileData);
+            return listProfileSummaries(clustersUsedForProfileData);
         }
         return Promise.resolve([]);
     }, [clustersUsedForProfileData]);

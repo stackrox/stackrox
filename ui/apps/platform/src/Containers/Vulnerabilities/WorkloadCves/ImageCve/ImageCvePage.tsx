@@ -1,14 +1,11 @@
 import React, { useEffect } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import {
-    Alert,
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
     Divider,
     Flex,
-    Grid,
-    GridItem,
     PageSection,
     Pagination,
     Skeleton,
@@ -26,7 +23,6 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { Pagination as PaginationParam } from 'services/types';
 
@@ -34,6 +30,10 @@ import { VulnerabilitySeverity } from 'types/cve.proto';
 import useAnalytics, { WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED } from 'hooks/useAnalytics';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
+import {
+    SummaryCardLayout,
+    SummaryCard,
+} from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import {
     SearchOption,
     IMAGE_SEARCH_OPTION,
@@ -53,7 +53,7 @@ import {
 } from '../../utils/searchUtils';
 import { getDefaultWorkloadSortOption } from '../../utils/sortUtils';
 import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
-import { DEFAULT_PAGE_SIZE } from '../../constants';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import AffectedImagesTable, {
@@ -192,7 +192,7 @@ function ImageCvePage() {
         },
         currentVulnerabilityState
     );
-    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_PAGE_SIZE);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const [entityTab] = useURLStringUnion('entityTab', imageCveEntities);
 
@@ -387,44 +387,33 @@ function ImageCvePage() {
                             onFilterChange={() => setPage(1)}
                         />
                     </div>
-                    <div className="pf-v5-u-px-lg pf-v5-u-pb-lg">
-                        {summaryRequest.error && (
-                            <Alert
-                                title="There was an error loading the summary data for this CVE"
-                                isInline
-                                variant="danger"
-                            >
-                                {getAxiosErrorMessage(summaryRequest.error)}
-                            </Alert>
-                        )}
-                        {summaryRequest.loading && !summaryRequest.data && (
-                            <Skeleton
-                                style={{ height: '120px' }}
-                                screenreaderText="Loading image cve summary data"
-                            />
-                        )}
-                        {!summaryRequest.error && summaryRequest.data && (
-                            <Grid hasGutter>
-                                <GridItem sm={12} md={6} xl2={4}>
-                                    <AffectedImages
-                                        className="pf-v5-u-h-100"
-                                        affectedImageCount={severitySummary.affectedImageCount}
-                                        totalImagesCount={summaryRequest.data.totalImageCount}
-                                    />
-                                </GridItem>
-                                <GridItem sm={12} md={6} xl2={4}>
-                                    <BySeveritySummaryCard
-                                        className="pf-v5-u-h-100"
-                                        title="Images by severity"
-                                        severityCounts={
-                                            severitySummary.affectedImageCountBySeverity
-                                        }
-                                        hiddenSeverities={hiddenSeverities}
-                                    />
-                                </GridItem>
-                            </Grid>
-                        )}
-                    </div>
+                    <SummaryCardLayout
+                        error={summaryRequest.error}
+                        isLoading={summaryRequest.loading}
+                    >
+                        <SummaryCard
+                            data={summaryRequest.data}
+                            loadingText="Loading image CVE summary data"
+                            renderer={({ data }) => (
+                                <AffectedImages
+                                    className="pf-v5-u-h-100"
+                                    affectedImageCount={severitySummary.affectedImageCount}
+                                    totalImagesCount={data.totalImageCount}
+                                />
+                            )}
+                        />
+                        <SummaryCard
+                            data={severitySummary}
+                            loadingText="Loading image CVE summary data"
+                            renderer={({ data }) => (
+                                <BySeveritySummaryCard
+                                    title="Images by severity"
+                                    severityCounts={data.affectedImageCountBySeverity}
+                                    hiddenSeverities={hiddenSeverities}
+                                />
+                            )}
+                        />
+                    </SummaryCardLayout>
                 </div>
                 <Divider />
                 <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1">

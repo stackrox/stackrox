@@ -40,7 +40,6 @@ const nodeMetadataQuery = gql`
     }
 `;
 
-// TODO - Update for PF5
 function NodePage() {
     const { nodeId } = useParams() as { nodeId: string };
 
@@ -108,8 +107,8 @@ function NodePage() {
                         role="tabpanel"
                         tabIndex={0}
                     >
-                        {activeTabKey === vulnTabKey && <NodePageVulnerabilities />}
-                        {activeTabKey === detailTabKey && <NodePageDetails />}
+                        {activeTabKey === vulnTabKey && <NodePageVulnerabilities nodeId={nodeId} />}
+                        {activeTabKey === detailTabKey && <NodePageDetails nodeId={nodeId} />}
                     </PageSection>
                 </>
             )}

@@ -7,9 +7,11 @@ import (
 
 	"github.com/pkg/errors"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dedupingqueue"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -24,16 +26,18 @@ type workerQueue struct {
 	totalSize int
 
 	injector  common.MessageInjector
-	queues    []*dedupingQueue
+	queues    []*dedupingqueue.DedupingQueue[string]
 	waitGroup sync.WaitGroup
 	sync.WaitGroup
 }
 
 func newWorkerQueue(poolSize int, typ string, injector common.MessageInjector) *workerQueue {
 	totalSize := poolSize + 1
-	queues := make([]*dedupingQueue, totalSize)
+	queues := make([]*dedupingqueue.DedupingQueue[string], totalSize)
 	for i := 0; i < totalSize; i++ {
-		queues[i] = newDedupingQueue(typ)
+		queues[i] = dedupingqueue.NewDedupingQueue[string](
+			dedupingqueue.WithQueueName[string](typ),
+			dedupingqueue.WithOperationMetricsFunc[string](metrics.IncrementSensorEventQueueCounter))
 	}
 
 	return &workerQueue{
@@ -54,39 +58,44 @@ func (w *workerQueue) indexFromKey(key string) int {
 
 // push attempts to add an item to the queue, and returns an error if it is unable.
 func (w *workerQueue) push(msg *central.MsgFromSensor) {
-	// The zeroth index is reserved for objects that do not match the switch statement below
+	// The zeroth index is reserved for objects that do not match the if statement below
 	// w.indexFromKey returns (hashed value % poolSize) + 1 so it cannot return a 0 index
 	var idx int
 	if msg.HashKey != "" {
 		idx = w.indexFromKey(msg.HashKey)
 	}
 
-	w.queues[idx].push(msg)
+	w.queues[idx].Push(msg)
 }
 
 func (w *workerQueue) runWorker(ctx context.Context, idx int, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper, handler func(context.Context, *central.MsgFromSensor) error) {
 	queue := w.queues[idx]
-	for msg := queue.pullBlocking(stopSig); msg != nil; msg = queue.pullBlocking(stopSig) {
-		err := handler(ctx, msg)
+	for msg := queue.PullBlocking(stopSig); msg != nil; msg = queue.PullBlocking(stopSig) {
+		msgFromSensor, ok := msg.(*central.MsgFromSensor)
+		if !ok {
+			log.Error("Invalid sensor message")
+			continue
+		}
+		err := handler(ctx, msgFromSensor)
 		if err != nil {
 			if !errors.Is(err, context.Canceled) {
 				if pgutils.IsTransientError(err) {
-					msg.ProcessingAttempt++
+					msgFromSensor.ProcessingAttempt++
 
-					if msg.ProcessingAttempt == maxHandlerAttempts {
-						log.Errorf("Error handling sensor message %T permanently: %v", msg.GetEvent().GetResource(), err)
+					if msgFromSensor.ProcessingAttempt == maxHandlerAttempts {
+						log.Errorf("Error handling sensor message %T permanently: %v", msgFromSensor.GetEvent().GetResource(), err)
 						continue
 					}
-					reprocessingDuration := time.Duration(msg.ProcessingAttempt) * handlerRetryInterval
-					log.Warnf("Reprocessing sensor message %T in %d minutes: %v", msg.GetEvent().GetResource(), int(reprocessingDuration.Minutes()), err)
+					reprocessingDuration := time.Duration(msgFromSensor.ProcessingAttempt) * handlerRetryInterval
+					log.Warnf("Reprocessing sensor message %T in %d minutes: %v", msgFromSensor.GetEvent().GetResource(), int(reprocessingDuration.Minutes()), err)
 					concurrency.AfterFunc(reprocessingDuration, func() {
-						w.injector.InjectMessageIntoQueue(msg)
+						w.injector.InjectMessageIntoQueue(msgFromSensor)
 					}, stopSig)
 					continue
 				}
-				log.Errorf("Unretryable error found while handling sensor message %T permanently: %v", msg.GetEvent().GetResource(), err)
+				log.Errorf("Unretryable error found while handling sensor message %T permanently: %v", msgFromSensor.GetEvent().GetResource(), err)
 			}
-			deduper.RemoveMessage(msg)
+			deduper.RemoveMessage(msgFromSensor)
 		}
 	}
 	w.waitGroup.Add(-1)

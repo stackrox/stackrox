@@ -46,7 +46,7 @@ func (d *datastoreImpl) UpsertScanSettingBinding(ctx context.Context, scanSettin
 	return d.store.Upsert(ctx, scanSettingBinding)
 }
 
-// DeleteScan removes a scan setting binding object from the database
+// DeleteScanSettingBinding removes a scan setting binding object from the database
 func (d *datastoreImpl) DeleteScanSettingBinding(ctx context.Context, id string) error {
 	return d.store.Delete(ctx, id)
 }

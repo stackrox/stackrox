@@ -24,12 +24,11 @@ func NewRemediationDispatcher() *RemediationDispatcher {
 
 // ProcessEvent processes a compliance operator remediation
 func (c *RemediationDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
-	// TODO(sbaumer): enable dispatcher when central pipeline is added
-	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) || true {
+	if !centralcaps.Has(centralsensor.ComplianceV2Remediations) {
 		return nil
 	}
 
-	var remediation v1alpha1.ComplianceRemediation
+	remediation := &v1alpha1.ComplianceRemediation{}
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
 	if !ok {
@@ -37,7 +36,7 @@ func (c *RemediationDispatcher) ProcessEvent(obj, _ interface{}, action central.
 		return nil
 	}
 
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObject.Object, &remediation); err != nil {
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObject.Object, remediation); err != nil {
 		log.Errorf("error converting unstructured to compliance remediation: %v", err)
 		return nil
 	}
@@ -48,15 +47,23 @@ func (c *RemediationDispatcher) ProcessEvent(obj, _ interface{}, action central.
 
 	checkResultName := removeSuffix(remediation.GetName())
 
-	currentObjJSON, err := remediation.Spec.Current.Object.MarshalJSON()
-	if err != nil {
-		log.Error("Error marshalling current obj from remediation", err)
-		return nil
+	var currentObjJSON []byte
+	var err error
+	if remediation.Spec.Current.Object != nil {
+		currentObjJSON, err = remediation.Spec.Current.Object.MarshalJSON()
+		if err != nil {
+			log.Error("Error marshalling current obj from remediation", err)
+			return nil
+		}
 	}
-	outdatedObjJSON, err := remediation.Spec.Outdated.Object.MarshalJSON()
-	if err != nil {
-		log.Error("Error marshalling outdated obj from remediation", err)
-		return nil
+
+	var outdatedObjJSON []byte
+	if remediation.Spec.Outdated.Object != nil {
+		outdatedObjJSON, err = remediation.Spec.Outdated.Object.MarshalJSON()
+		if err != nil {
+			log.Error("Error marshalling outdated obj from remediation", err)
+			return nil
+		}
 	}
 
 	remediationCentral := &central.ComplianceOperatorRemediationV2{

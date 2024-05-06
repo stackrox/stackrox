@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { PageSection, Breadcrumb, Divider, BreadcrumbItem, Skeleton } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom';
 
@@ -9,7 +9,11 @@ import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getTableUIState } from 'utils/getTableUIState';
-import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
+import {
+    SummaryCardLayout,
+    SummaryCard,
+} from 'Containers/Vulnerabilities/components/SummaryCardLayout';
+import CvePageHeader from '../../components/CvePageHeader';
 import {
     getOverviewPagePath,
     getRegexScopedQueryString,
@@ -17,6 +21,9 @@ import {
 } from '../../utils/searchUtils';
 import useAffectedClusters from './useAffectedClusters';
 import AffectedClustersTable from './AffectedClustersTable';
+import usePlatformCveMetadata from './usePlatformCveMetadata';
+import ClustersByTypeSummaryCard from './ClustersByTypeSummaryCard';
+import AffectedClustersSummaryCard from './AffectedClustersSummaryCard';
 
 const workloadCveOverviewCvePath = getOverviewPagePath('Platform', {
     entityTab: 'CVE',
@@ -39,25 +46,8 @@ function PlatformCvePage() {
 
     const { affectedClustersRequest, clusterData } = useAffectedClusters(query, page, perPage);
 
-    const [platformCveMetadata, setPlatformCveMetadata] = useState<CveMetadata>();
-    const cveName = platformCveMetadata?.cve;
-
-    // TODO - Simulate a loading state, will replace metadata with results from a query
-    useEffect(() => {
-        setTimeout(() => {
-            setPlatformCveMetadata({
-                cve: cveId,
-                firstDiscoveredInSystem: '2021-01-01T00:00:00Z',
-                distroTuples: [
-                    {
-                        summary: 'This is a sample description used during development',
-                        link: `https://access.redhat.com/security/cve/${cveId}`,
-                        operatingSystem: 'rhel',
-                    },
-                ],
-            });
-        }, 1500);
-    }, [cveId]);
+    const metadataRequest = usePlatformCveMetadata(cveId, query, page, perPage);
+    const cveName = metadataRequest.data?.platformCVE?.cve;
 
     const tableState = getTableUIState({
         isLoading: affectedClustersRequest.loading,
@@ -81,10 +71,35 @@ function PlatformCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light">
-                <CvePageHeader data={platformCveMetadata} />
+                <CvePageHeader data={metadataRequest.data?.platformCVE} />
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-v5-u-flex-grow-1">
+                <SummaryCardLayout
+                    error={metadataRequest.error}
+                    isLoading={metadataRequest.loading}
+                >
+                    <SummaryCard
+                        data={metadataRequest.data}
+                        loadingText="Loading affected nodes summary"
+                        renderer={({ data }) => (
+                            <AffectedClustersSummaryCard
+                                affectedClusterCount={data.clusterCount}
+                                totalClusterCount={data.totalClusterCount}
+                            />
+                        )}
+                    />
+                    <SummaryCard
+                        data={metadataRequest.data}
+                        loadingText="Loading affected nodes by CVE severity summary"
+                        renderer={({ data }) => (
+                            <ClustersByTypeSummaryCard
+                                clusterCounts={data.platformCVE.clusterCountByType}
+                            />
+                        )}
+                    />
+                </SummaryCardLayout>
+                <Divider component="div" />
                 <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1 pf-v5-u-p-lg">
                     <AffectedClustersTable tableState={tableState} />
                 </div>

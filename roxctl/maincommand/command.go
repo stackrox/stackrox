@@ -45,7 +45,7 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 			return nil
 		},
 	}
-	c.PersistentFlags().Bool("json", false, "display extended version information as JSON")
+	c.PersistentFlags().Bool("json", false, "Display extended version information as JSON")
 	flags.HideInheritedFlags(c)
 	return c
 }

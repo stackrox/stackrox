@@ -8,10 +8,10 @@ import (
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
-	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -46,7 +46,7 @@ func (c *writerImpl) flushNoLock(ctx context.Context) error {
 		return nil
 	}
 
-	eventsToAdd := slices.Clone(maputil.Values(c.buffer))
+	eventsToAdd := slices.Clone(maps.Values(c.buffer))
 
 	ids := protoutils.GetIDs(eventsToAdd)
 	// The events we currently hold in the buffer are de-duplicated within the context of the buffer. However, they are

@@ -3,6 +3,7 @@ syntax = "proto3";
 package storage;
 
 import "google/protobuf/timestamp.proto";
+import "storage/report_notifier_configuration.proto";
 import "storage/schedule.proto";
 import "storage/user.proto";
 
@@ -85,13 +86,14 @@ message ComplianceOperatorRuleV2 {
   string instructions = 17;
 }
 
-// Next Tag: 3
+// Next Tag: 4
 message RuleControls {
   string standard = 1; // @gotags: search:"Compliance Standard,hidden"
-  repeated string controls = 2;
+  repeated string controls = 2 [deprecated = true];
+  string control = 3; // @gotags: search:"Compliance Control,hidden"
 }
 
-// Next Tag: 17
+// Next Tag: 18
 message ComplianceOperatorScanConfigurationV2 {
   string id = 1; // @gotags: search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"
   string scan_config_name = 2; // @gotags: search:"Compliance Scan Config Name" sql:"unique"
@@ -118,6 +120,7 @@ message ComplianceOperatorScanConfigurationV2 {
     string cluster_id = 1; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
   }
   repeated Cluster clusters = 16;
+  repeated NotifierConfiguration notifiers = 17;
 }
 
 // Next Tag: 7

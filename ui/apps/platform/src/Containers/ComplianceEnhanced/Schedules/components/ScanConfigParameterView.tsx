@@ -10,7 +10,7 @@ import {
     Timestamp,
 } from '@patternfly/react-core';
 
-import { ComplianceScanConfigurationStatus } from 'services/ComplianceEnhancedService';
+import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import { formatScanSchedule } from '../compliance.scanConfigs.utils';
 
 type ScanConfigParameterViewProps = {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/maputil"
+	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
@@ -39,7 +39,7 @@ func (a *Operator) UnmarshalYAML(value *yaml.Node) error {
 	i, ok := storage.SetBasedLabelSelector_Operator_value[v]
 	if !ok {
 		return errox.InvalidArgs.Newf("operator %s is invalid, valid operators are: [%s]", v, strings.Join(
-			maputil.Keys(storage.SetBasedLabelSelector_Operator_value), ","))
+			maps.Keys(storage.SetBasedLabelSelector_Operator_value), ","))
 	}
 	*a = Operator(i)
 	return nil

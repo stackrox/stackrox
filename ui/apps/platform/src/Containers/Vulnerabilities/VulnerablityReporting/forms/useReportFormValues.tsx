@@ -1,7 +1,16 @@
 import { FormikProps, useFormik } from 'formik';
-
 import * as yup from 'yup';
 
+import {
+    customBodyValidation,
+    customSubjectValidation,
+} from 'Components/EmailTemplate/EmailTemplate.utils';
+import {
+    DayOfMonth,
+    DayOfWeek,
+    daysOfMonth,
+    daysOfWeek,
+} from 'Components/PatternFly/DayPickerDropdown';
 import { VulnerabilitySeverity, vulnerabilitySeverities } from 'types/cve.proto';
 import {
     ImageType,
@@ -10,12 +19,6 @@ import {
     imageTypes,
     intervalTypes,
 } from 'services/ReportsService.types';
-import {
-    DayOfMonth,
-    DayOfWeek,
-    daysOfMonth,
-    daysOfWeek,
-} from 'Components/PatternFly/DayPickerDropdown';
 
 export type ReportFormValues = {
     reportId: string;
@@ -64,9 +67,6 @@ export type ReportScope = {
     name: string;
 };
 
-export const maxEmailSubjectLength = 256;
-export const maxEmailBodyLength = 1500;
-
 export const defaultReportFormValues: ReportFormValues = {
     reportId: '',
     reportParameters: {
@@ -86,19 +86,6 @@ export const defaultReportFormValues: ReportFormValues = {
         daysOfMonth: [],
     },
 };
-
-export const emailSubjectValidation = yup
-    .string()
-    .default('')
-    .max(
-        maxEmailSubjectLength,
-        `Limit your input to ${maxEmailSubjectLength} characters or fewer.`
-    );
-
-export const emailBodyValidation = yup
-    .string()
-    .default('')
-    .max(maxEmailBodyLength, `Limit your input to ${maxEmailBodyLength} characters or fewer.`);
 
 const validationSchema = yup.object().shape({
     reportId: yup.string(),
@@ -138,8 +125,8 @@ const validationSchema = yup.object().shape({
                         .array()
                         .of(yup.string())
                         .min(1, 'At least 1 delivery destination is required'),
-                    customSubject: emailSubjectValidation,
-                    customBody: emailBodyValidation,
+                    customSubject: customSubjectValidation,
+                    customBody: customBodyValidation,
                 }),
                 notifierName: yup.string(),
             })

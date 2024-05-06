@@ -37,7 +37,7 @@ function ExceptionConfigurationPage() {
                                 <Spinner aria-label="Loading current vulnerability exception configuration" />
                             </Bullseye>
                         )}
-                        {configLoadError && (
+                        {!!configLoadError && (
                             <Bullseye>
                                 <EmptyStateTemplate
                                     title="Error loading vulnerability exception configuration"

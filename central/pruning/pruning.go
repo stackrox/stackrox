@@ -34,13 +34,13 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/maputil"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"golang.org/x/sync/semaphore"
@@ -675,7 +675,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 
 	clustersToPrune := make([]string, 0)
 	for _, cluster := range clusters {
-		if sliceutils.MapsIntersect(clusterRetention.GetIgnoreClusterLabels(), cluster.GetLabels()) {
+		if maputil.MapsIntersect(clusterRetention.GetIgnoreClusterLabels(), cluster.GetLabels()) {
 			log.Infof("[Cluster Pruning] skipping excluded cluster with id %s", cluster.GetId())
 			continue
 		}

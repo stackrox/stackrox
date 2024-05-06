@@ -20,8 +20,8 @@ type scanResultKey struct {
 }
 
 // ComplianceV2CheckResult converts a storage check result to a v2 check result
-func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2) *v2.ComplianceCheckResult {
-	converted := &v2.ComplianceCheckResult{
+func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2) *v2.ComplianceClusterCheckStatus {
+	converted := &v2.ComplianceClusterCheckStatus{
 		CheckId:   incoming.GetCheckId(),
 		CheckName: incoming.GetCheckName(),
 		Clusters: []*v2.ClusterCheckStatus{
@@ -37,13 +37,13 @@ func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2) 
 	return converted
 }
 
-// ComplianceV2CheckResults converts the storage check results to v2 scan results
-func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV2, scanToScanID map[string]string) []*v2.ComplianceScanResult {
+// ComplianceV2ScanResults converts the storage check results to v2 scan results
+func ComplianceV2ScanResults(incoming []*storage.ComplianceOperatorCheckResultV2, scanToScanID map[string]string) []*v2.ComplianceScanResult {
 	// Since a check result can hold the status for multiple clusters we need to build from
 	// bottom up.  resultsByScanCheck holds check result based on the key combination of
 	// scanName, profileName, checkName.  Then when that key is encountered again we
 	// add the cluster information to the check result.
-	resultsByScanCheck := make(map[checkResultKey]*v2.ComplianceCheckResult)
+	resultsByScanCheck := make(map[checkResultKey]*v2.ComplianceClusterCheckStatus)
 
 	// Used to maintain sort order from the query since maps are unordered.
 	var orderedKeys []checkResultKey
@@ -69,7 +69,7 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 	// This builds the outer piece of the result.  The key is simply
 	// scan name and profile name.  The individual check results from
 	// resultsByScanCheck are appended to build the output
-	resultsByScan := make(map[scanResultKey][]*v2.ComplianceCheckResult)
+	resultsByScan := make(map[scanResultKey][]*v2.ComplianceClusterCheckStatus)
 	var scanOrder []scanResultKey
 	var convertedResults []*v2.ComplianceScanResult
 	for _, key := range orderedKeys {
@@ -86,7 +86,7 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 		// First time seeing this rule in the results.
 		if !found {
 			scanOrder = append(scanOrder, scanKey)
-			resultsByScan[scanKey] = []*v2.ComplianceCheckResult{result}
+			resultsByScan[scanKey] = []*v2.ComplianceClusterCheckStatus{result}
 		} else {
 			workingResult = append(workingResult, result)
 			resultsByScan[scanKey] = workingResult
@@ -294,6 +294,27 @@ func ComplianceV2CheckClusterResults(incoming []*storage.ComplianceOperatorCheck
 	clusterResults := make([]*v2.ClusterCheckStatus, 0, len(incoming))
 	for _, result := range incoming {
 		clusterResults = append(clusterResults, clusterStatus(result))
+	}
+
+	return clusterResults
+}
+
+// ComplianceV2CheckResults converts the storage check results to v2 scan results
+func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV2, ruleMap map[string]string) []*v2.ComplianceCheckResult {
+	clusterResults := make([]*v2.ComplianceCheckResult, 0, len(incoming))
+	for _, result := range incoming {
+		clusterResults = append(clusterResults, &v2.ComplianceCheckResult{
+			CheckId:      result.GetCheckId(),
+			CheckName:    result.GetCheckName(),
+			Description:  result.GetDescription(),
+			Instructions: result.GetInstructions(),
+			Rationale:    result.GetRationale(),
+			ValuesUsed:   result.GetValuesUsed(),
+			Warnings:     result.GetWarnings(),
+			CheckUid:     result.GetId(),
+			Status:       convertComplianceCheckStatus(result.Status),
+			RuleName:     ruleMap[result.GetRuleRefId()],
+		})
 	}
 
 	return clusterResults

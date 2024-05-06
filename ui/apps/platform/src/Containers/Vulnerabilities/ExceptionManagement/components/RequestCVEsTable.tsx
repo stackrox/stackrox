@@ -30,7 +30,7 @@ import {
 } from '../../utils/sortUtils';
 import { CVEListQueryResult, cveListQuery } from '../../WorkloadCves/Tables/CVEsTable';
 import { VulnerabilitySeverityLabel } from '../../types';
-import { DEFAULT_PAGE_SIZE } from '../../constants';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 
@@ -49,7 +49,7 @@ function RequestCVEsTable({
     expandedRowSet,
     vulnerabilityState,
 }: RequestCVEsTableProps) {
-    const { page, perPage, setPage } = useURLPagination(DEFAULT_PAGE_SIZE);
+    const { page, perPage, setPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
         sortFields: getWorkloadSortFields('CVE'),
         defaultSortOption: getDefaultWorkloadSortOption('CVE'),

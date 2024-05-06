@@ -24,5 +24,4 @@ func TestRemoveSuffix(t *testing.T) {
 			assert.Equal(t, test.expected, r)
 		})
 	}
-
 }
