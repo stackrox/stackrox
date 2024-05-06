@@ -52,6 +52,7 @@ type Node = {
     cluster: {
         name: string;
     };
+    // TODO Swap this to the osImage field
     operatingSystem: string;
     scanTime: string;
 };

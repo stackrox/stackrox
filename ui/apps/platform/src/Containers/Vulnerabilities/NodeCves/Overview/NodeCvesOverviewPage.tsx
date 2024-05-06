@@ -25,6 +25,7 @@ import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import CVEsTable from './CVEsTable';
 import NodesTable from './NodesTable';
+import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
 
 const searchOptions = [NODE_CVE_SEARCH_OPTION];
 
@@ -42,10 +43,11 @@ function NodeCvesOverviewPage() {
         // TODO - set default sort here
     }
 
-    // TODO - needs to be connected to a query
+    const { data } = useNodeCveEntityCounts(querySearchFilter);
+
     const entityCounts = {
-        CVE: 0,
-        Node: 0,
+        CVE: data?.nodeCVECount ?? 0,
+        Node: data?.nodeCount ?? 0,
     };
 
     const filterToolbar = (
