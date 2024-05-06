@@ -96,8 +96,7 @@ type clusterResponse struct {
 	ClusterID string `db:"cluster_id"`
 
 	// Following are supported sort options.
-	ClusterName string              `db:"cluster"`
-	ClusterType storage.ClusterType `db:"platform_type"`
-	// TODO(charmik): Add support for sorting by k8s version
-	// KubernetesVersion string `db:"kubernetes_version"`
+	ClusterName       string              `db:"cluster"`
+	ClusterType       storage.ClusterType `db:"cluster_platform_type"`
+	KubernetesVersion string              `db:"cluster_kubernetes_version"`
 }

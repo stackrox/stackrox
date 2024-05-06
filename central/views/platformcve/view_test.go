@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package platformcve
 
 import (
@@ -326,7 +324,7 @@ func (s *PlatformCVEViewTestSuite) testCases() []testCase {
 			desc: "search openshift4 platform type",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.PlatformType, storage.ClusterType_OPENSHIFT4_CLUSTER.String()).ProtoQuery(),
+				AddExactMatches(search.ClusterPlatformType, storage.ClusterType_OPENSHIFT4_CLUSTER.String()).ProtoQuery(),
 			matchFilter: matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
 				return cluster.GetType() == storage.ClusterType_OPENSHIFT4_CLUSTER
 			}),
@@ -335,7 +333,7 @@ func (s *PlatformCVEViewTestSuite) testCases() []testCase {
 			desc: "search multiple platform types",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.PlatformType,
+				AddExactMatches(search.ClusterPlatformType,
 					storage.ClusterType_KUBERNETES_CLUSTER.String(),
 					storage.ClusterType_OPENSHIFT_CLUSTER.String(),
 				).
@@ -737,6 +735,7 @@ type testClusterFields struct {
 	PlatformType storage.ClusterType
 	ProviderType storage.ClusterMetadata_Type
 	Labels       map[string]string
+	K8sVersion   string
 	IsOpenshift  bool
 }
 
@@ -749,7 +748,7 @@ func generateTestCluster(tcf *testClusterFields) *storage.Cluster {
 		MainImage: "quay.io/stackrox-io/main",
 		Status: &storage.ClusterStatus{
 			OrchestratorMetadata: &storage.OrchestratorMetadata{
-				Version: "9.0",
+				Version: tcf.K8sVersion,
 			},
 			ProviderMetadata: &storage.ProviderMetadata{
 				Cluster: &storage.ClusterMetadata{
