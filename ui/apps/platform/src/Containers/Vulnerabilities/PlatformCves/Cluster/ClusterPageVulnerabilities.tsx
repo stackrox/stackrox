@@ -2,6 +2,7 @@ import React from 'react';
 import {
     Flex,
     PageSection,
+    Pagination,
     Skeleton,
     Split,
     SplitItem,
@@ -35,12 +36,13 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
     const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
     const query = getUrlQueryStringForSearchFilter(querySearchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
-    const { page, perPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const { data, loading, error } = useClusterVulnerabilities(clusterId, query, page, perPage);
     const summaryRequest = useClusterSummaryData(clusterId, query);
 
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
+    const clusterVulnerabilityCount = data?.cluster.clusterVulnerabilityCount ?? 0;
 
     const tableState = getTableUIState({
         isLoading: loading,
@@ -82,16 +84,27 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <Title headingLevel="h2" className="pf-v5-u-w-50">
                                     {data ? (
-                                        `${pluralize(
-                                            data.cluster.clusterVulnerabilityCount,
-                                            'result'
-                                        )} found`
+                                        `${pluralize(clusterVulnerabilityCount, 'result')} found`
                                     ) : (
                                         <Skeleton screenreaderText="Loading cluster vulnerability count" />
                                     )}
                                 </Title>
                                 {isFiltered && <DynamicTableLabel />}
                             </Flex>
+                        </SplitItem>
+                        <SplitItem>
+                            <Pagination
+                                itemCount={clusterVulnerabilityCount}
+                                perPage={perPage}
+                                page={page}
+                                onSetPage={(_, newPage) => setPage(newPage)}
+                                onPerPageSelect={(_, newPerPage) => {
+                                    if (clusterVulnerabilityCount < (page - 1) * newPerPage) {
+                                        setPage(1);
+                                    }
+                                    setPerPage(newPerPage);
+                                }}
+                            />
                         </SplitItem>
                     </Split>
                     <CVEsTable tableState={tableState} />
