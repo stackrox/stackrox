@@ -6,24 +6,19 @@ metadata:
 spec:
   description: Determining image tag with custom logic.
   params:
-  - name: image
-    description: Image without tag
   results:
-  - name: image-with-tag
-    description: Fully Qualified Image Name with identifying tag
+  - name: image-tag
+    description: Image Tag determine by custom logic.
   steps:
   - name: determine-image-tag
     image: registry.access.redhat.com/ubi8:latest
-    env:
-      - name: IMAGE
-        value: $(params.image)
     script: |
       #!/usr/bin/env bash
       set -euo pipefail
       dnf -y upgrade --nobest
       dnf -y install git make
       cd "$(workspaces.source.path)/source"
-      echo -n "${IMAGE%%:*}:$(make --quiet --no-print-directory tag)-fast" | tee "$(results.image-with-tag.path)"
+      echo -n "$(make --quiet --no-print-directory tag)-fast" | tee "$(results.image-tag.path)"
   workspaces:
     - name: source
       description: The workspace where source code is included.

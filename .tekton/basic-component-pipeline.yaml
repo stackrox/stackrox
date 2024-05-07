@@ -176,9 +176,6 @@ spec:
       workspace: git-auth
 
   - name: determine-image-tag
-    params:
-    - name: image
-      value: $(params.output-image-repo)
     runAfter:
     # This task must run on a freshly cloned repository to prevent seeing any changes from other tasks.
     - clone-repository
@@ -211,7 +208,7 @@ spec:
   - name: build-container
     params:
     - name: IMAGE
-      value: $(tasks.determine-image-tag.results.image-with-tag)
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.image-tag)
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
