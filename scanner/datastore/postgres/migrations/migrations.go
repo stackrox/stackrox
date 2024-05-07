@@ -16,6 +16,11 @@ var MatcherMigrations = []migrate.Migration{
 		ID: 1,
 		Up: runFile("matcher/01-init.sql"),
 	},
+	{
+		ID:   2,
+		Up:   runFile("matcher/02-update-timestamp-column-last-vuln-update-up.sql"),
+		Down: runFile("matcher/02-update-timestamp-column-last-vuln-update-down.sql"),
+	},
 }
 
 //go:embed */*.sql
