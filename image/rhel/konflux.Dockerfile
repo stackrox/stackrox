@@ -19,6 +19,8 @@ COPY --from=final-base / "$FINAL_STAGE_PATH"
 COPY ./scripts/konflux/subscription-manager/* /tmp/.konflux/
 RUN /tmp/.konflux/subscription-manager-bro.sh register "$GO_BUILDER_STAGE_PATH" "$FINAL_STAGE_PATH"
 
+RUN subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
+
 # Install packages for the Go builder stage.
 RUN dnf -y --installroot="$GO_BUILDER_STAGE_PATH" install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils gflags snappy-devel zlib-devel bzip2-devel lz4-devel cmake libzstd-devel zstd jq
 
@@ -35,6 +37,11 @@ RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
 
 RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
 
+FROM scratch AS go-builder
+
+ARG GO_BUILDER_STAGE_PATH
+COPY --from=rpm-installer "$GO_BUILDER_STAGE_PATH" /
+
 WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
@@ -44,6 +51,7 @@ RUN git restore scripts/konflux/bootstrap-yarn/package-lock.json && \
     scripts/konflux/fail-build-if-git-is-dirty.sh
 
 ENV GOFLAGS=""
+ENV CGO_LDFLAGS="-L/usr/lib64"
 ENV CGO_ENABLED=1
 # TODO(ROX-19958): figure out if we need BUILD_TAG
 # ENV BUILD_TAG="${CI_VERSION}"
