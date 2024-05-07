@@ -27,7 +27,7 @@ spec:
     value: '{{repo_url}}'
   - name: image-expires-after
     value: '13w'
-  - name: output-image
+  - name: output-image-repo
     value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/main:on-pr-{{revision}}
   - name: path-context
     value: .
