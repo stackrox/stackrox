@@ -51,7 +51,7 @@ service ComplianceResultsStatsService {
   // - cluster: id(s) of the cluster
   // - profile: id(s) of the profile
   rpc GetComplianceProfileStats(ComplianceProfileResultsRequest) returns (ListComplianceProfileScanStatsResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/stats/profile/{profile_name}"};
+    option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles/{profile_name}"};
   }
 
   // GetComplianceProfileScanStats lists current scan stats grouped by profile
@@ -66,7 +66,7 @@ service ComplianceResultsStatsService {
 
   // GetComplianceProfileCheckStats lists current stats for a specific cluster check
   rpc GetComplianceProfileCheckStats(ComplianceProfileCheckRequest) returns (ListComplianceProfileResults) {
-    option (google.api.http) = {get: "/v2/compliance/scan/stats/profile/{profile_name}/checks/{check_name}"};
+    option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles/{profile_name}/checks/{check_name}"};
   }
 
   // GetComplianceClusterScanStats lists current scan stats grouped by cluster

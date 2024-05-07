@@ -688,11 +688,11 @@ func RegisterComplianceResultsStatsServiceHandlerClient(ctx context.Context, mux
 }
 
 var (
-	pattern_ComplianceResultsStatsService_GetComplianceProfileStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"v2", "compliance", "scan", "stats", "profile", "profile_name"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceResultsStatsService_GetComplianceProfileStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"v2", "compliance", "scan", "stats", "profiles", "profile_name"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_ComplianceResultsStatsService_GetComplianceProfilesStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v2", "compliance", "scan", "stats", "profiles"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6, 1, 0, 4, 1, 5, 7}, []string{"v2", "compliance", "scan", "stats", "profile", "profile_name", "checks", "check_name"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6, 1, 0, 4, 1, 5, 7}, []string{"v2", "compliance", "scan", "stats", "profiles", "profile_name", "checks", "check_name"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_ComplianceResultsStatsService_GetComplianceClusterScanStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v2", "compliance", "scan", "stats", "cluster"}, "", runtime.AssumeColonVerbOpt(false)))
 

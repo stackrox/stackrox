@@ -167,7 +167,7 @@
         ]
       }
     },
-    "/v2/compliance/scan/profile/results/{profileName}": {
+    "/v2/compliance/scan/profiles/results/{profileName}": {
       "get": {
         "summary": "GetComplianceProfileResults retrieves the most recent compliance operator scan results for the specified query\nOptional RawQuery query fields can be combined.",
         "operationId": "ComplianceResultsService_GetComplianceProfileResults",
@@ -356,7 +356,7 @@
         ]
       }
     },
-    "/v2/compliance/scan/results/profile/{profileName}/checks/{checkName}": {
+    "/v2/compliance/scan/results/profiles/{profileName}/checks/{checkName}": {
       "get": {
         "summary": "GetComplianceProfileCheckResult lists status of a check per cluster",
         "operationId": "ComplianceResultsService_GetComplianceProfileCheckResult",

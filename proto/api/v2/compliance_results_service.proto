@@ -121,12 +121,12 @@ service ComplianceResultsService {
   // GetComplianceProfileResults retrieves the most recent compliance operator scan results for the specified query
   // Optional RawQuery query fields can be combined.
   rpc GetComplianceProfileResults(ComplianceProfileResultsRequest) returns (ListComplianceProfileResults) {
-    option (google.api.http) = {get: "/v2/compliance/scan/profile/results/{profile_name}"};
+    option (google.api.http) = {get: "/v2/compliance/scan/profiles/results/{profile_name}"};
   }
 
   // GetComplianceProfileCheckResult lists status of a check per cluster
   rpc GetComplianceProfileCheckResult(ComplianceProfileCheckRequest) returns (ListComplianceCheckClusterResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/results/profile/{profile_name}/checks/{check_name}"};
+    option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/checks/{check_name}"};
   }
 
   // GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
