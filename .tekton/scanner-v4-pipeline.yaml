@@ -49,8 +49,8 @@ spec:
     description: Revision of the Source Repository
     name: revision
     type: string
-  - description: Fully Qualified Output Image
-    name: output-image
+  - description: Output Image Repository
+    name: output-image-repo
     type: string
   - default: .
     description: Path to the source code of an application's component from where
@@ -126,7 +126,10 @@ spec:
   - name: init
     params:
     - name: image-url
-      value: $(params.output-image)
+      # We can't provide a real tag because of it is not known at this time.
+      # We still provide a fake tag to the task to comply with the expected input.
+      # Because 'rebuild' is set to true, this has no effect.
+      value: $(params.output-image-repo)
     - name: rebuild
       value: $(params.rebuild)
     - name: skip-checks
@@ -175,31 +178,13 @@ spec:
   - name: determine-image-tag
     params:
     - name: image
-      value: $(params.output-image)
+      value: $(params.output-image-repo)
     runAfter:
     # This task must run on a freshly cloned repository to prevent seeing any changes from other tasks.
     - clone-repository
     # TODO(ROX-23812): Refactor to a task bundle
-    taskSpec:
-      params:
-      - name: image
-        description: Image without tag
-      results:
-      - name: image-with-tag
-        description: Fully Qualified Image Name with identifying tag
-      steps:
-      - name: determine-image-tag
-        image: registry.access.redhat.com/ubi8:latest
-        env:
-          - name: IMAGE
-            value: $(params.image)
-        script: |
-          #!/usr/bin/env bash
-          set -euo pipefail
-          dnf -y upgrade --nobest
-          dnf -y install git make
-          cd "$(workspaces.source.path)/source"
-          echo -n "${IMAGE%%:*}:$(make --quiet --no-print-directory tag)-fast" | tee "$(results.image-with-tag.path)"
+    taskRef:
+      name: determine-image-tag
     workspaces:
     - name: source
       workspace: workspace
