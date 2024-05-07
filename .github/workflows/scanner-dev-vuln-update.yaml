@@ -48,7 +48,7 @@ jobs:
       STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       STACKROX_NVD_API_CALL_INTERVAL: 6s
     steps:
-    - uses: ./.github/actions/download-artifact-retry
+    - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: updater
         path: /usr/local/bin
@@ -83,7 +83,7 @@ jobs:
     needs:
       - run-updater
     steps:
-    - uses: ./.github/actions/download-artifact-retry
+    - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: vulns
         path: vulns
