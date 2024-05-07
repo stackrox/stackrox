@@ -2,10 +2,10 @@ name: Download artifact with retry
 description: Retry wrapper of download-artifact
 inputs:
   name:
-    description: Artifact name
+    description: 'Name of the artifact to download. If unspecified, all artifacts for the run are downloaded.'
     required: false
   path:
-    description: Artifact path
+    description: 'Destination path. Supports basic tilde expansion. Defaults to $GITHUB_WORKSPACE'
     required: false
 runs:
   using: composite
