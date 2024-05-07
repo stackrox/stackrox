@@ -2,6 +2,7 @@ import React from 'react';
 import {
     Flex,
     PageSection,
+    Pagination,
     Skeleton,
     Split,
     SplitItem,
@@ -39,12 +40,14 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
     const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
     const query = getUrlQueryStringForSearchFilter(querySearchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
-    const { page, perPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
 
     const { data, loading, error } = useNodeVulnerabilities(nodeId, query, page, perPage);
     const summaryRequest = useNodeSummaryData(nodeId, query);
+
+    const nodeCount = data?.node?.nodeVulnerabilityCount ?? 0;
 
     const tableState = getTableUIState({
         isLoading: loading,
@@ -99,6 +102,20 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                                 </Title>
                                 {isFiltered && <DynamicTableLabel />}
                             </Flex>
+                        </SplitItem>
+                        <SplitItem>
+                            <Pagination
+                                itemCount={nodeCount}
+                                perPage={perPage}
+                                page={page}
+                                onSetPage={(_, newPage) => setPage(newPage)}
+                                onPerPageSelect={(_, newPerPage) => {
+                                    if (nodeCount < (page - 1) * newPerPage) {
+                                        setPage(1);
+                                    }
+                                    setPerPage(newPerPage);
+                                }}
+                            />
                         </SplitItem>
                     </Split>
                     <CVEsTable tableState={tableState} />
