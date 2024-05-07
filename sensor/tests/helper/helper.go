@@ -487,14 +487,14 @@ func (c *TestContext) WaitForHello(t *testing.T, timeout time.Duration) *central
 	}
 }
 
-// WaitForSyncEvent will wait until sensor transmits a `Synced` event to Central, at the end of the reconciliation.
-func (c *TestContext) WaitForSyncEvent(t *testing.T, timeout time.Duration) *central.SensorEvent_ResourcesSynced {
+// WaitForSyncEventf will wait until sensor transmits a `Synced` event to Central, at the end of the reconciliation.
+func (c *TestContext) WaitForSyncEventf(t *testing.T, timeout time.Duration, msg string) *central.SensorEvent_ResourcesSynced {
 	ticker := time.NewTicker(defaultTicker)
 	timeoutTimer := time.NewTicker(timeout)
 	for {
 		select {
 		case <-timeoutTimer.C:
-			t.Errorf("timeout (%s) reached waiting for sync event", timeout)
+			t.Errorf("timeout (%s) reached %s", timeout, msg)
 			return nil
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
@@ -505,6 +505,11 @@ func (c *TestContext) WaitForSyncEvent(t *testing.T, timeout time.Duration) *cen
 			}
 		}
 	}
+}
+
+// WaitForSyncEvent will wait until sensor transmits a `Synced` event to Central, at the end of the reconciliation.
+func (c *TestContext) WaitForSyncEvent(t *testing.T, timeout time.Duration) *central.SensorEvent_ResourcesSynced {
+	return c.WaitForSyncEventf(t, timeout, "waiting for sync event")
 }
 
 // WaitForMessageWithEventID will wait until timeout and check if a message with ID was sent to fake central.
