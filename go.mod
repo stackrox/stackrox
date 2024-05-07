@@ -502,4 +502,4 @@ replace (
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.1.0
 )
 
-replace github.com/quay/claircore => github.com/Maddosaurus/claircore v0.0.0-20240429155417-98b34b9b7fbc
+replace github.com/quay/claircore => github.com/Maddosaurus/claircore v0.0.0-20240507094811-14184f475198

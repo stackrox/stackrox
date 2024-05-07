@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/quay/claircore"
@@ -61,7 +60,8 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*claircore.IndexRepor
 	//nolint:staticcheck
 	ctx = context.WithValue(ctx, "manifest_id", h)
 
-	layer, err := constructLayer(ctx)
+	layer, err := constructLayer(ctx, `sha256:`+h)
+	defer layer.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -154,14 +154,17 @@ func getRandomSHA256() string {
 	return fmt.Sprintf("%x", sha256.Sum256(data))
 }
 
-func constructLayer(ctx context.Context) (*claircore.Layer, error) {
+func constructLayer(ctx context.Context, digest string) (*claircore.Layer, error) {
 	hostPath := env.NodeScanningV4HostPath.Setting()
 	zlog.Info(ctx).Msgf("Realizing mount path: %s", hostPath)
-	nodeFS := os.DirFS(hostPath)
-	l := claircore.Layer{}
-	err := l.InitROFS(ctx, nodeFS)
-	if err != nil {
-		return nil, err
+	desc := &claircore.LayerDescription{
+		Digest:    digest,
+		URI:       hostPath,
+		MediaType: "filesystem/path",
+		Headers:   nil,
 	}
+
+	l := claircore.Layer{}
+	l.Init(ctx, desc, nil) // TODO: Is the reader required?
 	return &l, nil
 }

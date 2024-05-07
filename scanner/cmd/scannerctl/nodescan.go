@@ -31,12 +31,10 @@ func nodeScanCmd(ctx context.Context) *cobra.Command {
 			var vr *v4.VulnerabilityReport
 			vr, err = scanner.IndexAndScanNode(ctx)
 			report = vr
-			fmt.Println("Vulnerability Report")
 		} else {
 			var ir *v4.IndexReport
 			ir, err = scanner.CreateNodeIndexReport(ctx)
 			report = ir
-			fmt.Println("Index Report")
 		}
 
 		if err != nil {
@@ -47,6 +45,15 @@ func nodeScanCmd(ctx context.Context) *cobra.Command {
 			return fmt.Errorf("decoding report: %w", err)
 		}
 		fmt.Println(string(reportJSON))
+		switch report.(type) {
+		case *v4.VulnerabilityReport:
+			fmt.Printf("Vulnerability Report contains %d packages with %d vulns\n",
+				len(report.(*v4.VulnerabilityReport).GetContents().GetPackages()),
+				len(report.(*v4.VulnerabilityReport).GetVulnerabilities()))
+		case *v4.IndexReport:
+			fmt.Printf("Index Report contains %d packages\n", len(report.(*v4.IndexReport).GetContents().GetPackages()))
+		}
+
 		return nil
 	}
 	return &cmd
