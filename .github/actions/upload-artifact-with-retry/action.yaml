@@ -2,10 +2,10 @@ name: Upload artifact and retry
 description: Retry wrapper of upload-artifact
 inputs:
   name:
-    description: Artifact name
-    required: true
+    description: 'Artifact name'
+    required: false
   path:
-    description: Artifact path
+    description: 'A file, directory or wildcard pattern that describes what to upload'
     required: true
 runs:
   using: composite
