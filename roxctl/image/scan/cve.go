@@ -46,6 +46,14 @@ type cveJSONResult struct {
 	Result cveJSONStructure `json:"result"`
 }
 
+func (c *cveJSONResult) CountVulnerabilities() int {
+	return c.Result.Summary[totalVulnerabilitiesMapKey]
+}
+
+func (c *cveJSONResult) CountComponents() int {
+	return c.Result.Summary[totalComponentsMapKey]
+}
+
 type cveJSONStructure struct {
 	Summary         map[string]int         `json:"summary"`
 	Vulnerabilities []cveVulnerabilityJSON `json:"vulnerabilities,omitempty"`
