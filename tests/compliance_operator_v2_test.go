@@ -252,7 +252,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 	}
 
 	_, err = service.CreateComplianceScanConfiguration(ctx, duplicateSSBProfileReq)
-	assert.Contains(t, err.Error(), "already exists for profile")
+	assert.Contains(t, err.Error(), "is already used in scan setting binding")
 
 	err = client.Delete(context.TODO(), duplicatedScanSettingBinding)
 	require.NoError(t, err, "failed to delete ScanSettingBinding %s", duplicatedScanSettingBinding.Name)

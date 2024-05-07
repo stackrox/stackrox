@@ -277,7 +277,7 @@ func validateScanSettingBindingsProfiles(scanSettingBindings []*storage.Complian
 			continue
 		}
 		for _, profile := range profiles {
-			if sliceutils.Find(ssbProfiles, profile) != -1 {
+			if slices.Index(ssbProfiles, profile) != -1 {
 				return errors.Errorf("profile %q is already used in scan setting binding %q", profile, binding.GetName())
 			}
 		}
