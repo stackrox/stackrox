@@ -68,6 +68,26 @@ func (s *serviceImpl) PostCollectorRuntimeConfiguration(
 ) (*v1.Empty, error) {
 
 	log.Infof("request.CollectorRuntimeConfiguration= %+v", request.CollectorRuntimeConfiguration)
+	runtimeConfig := request.CollectorRuntimeConfiguration
+	runtimeFilters := runtimeConfig.RuntimeFilters
+	for _, runtimeFilter := range runtimeFilters {
+		log.Infof("runtimeFilter= %+v", runtimeFilter)
+		log.Infof("len(runtimeFilter.rules)= %+v", len(runtimeFilter.Rules))
+		for _, rule := range runtimeFilter.Rules {
+			log.Infof("rule= %+v", rule)
+		}
+	}
+	collections := runtimeConfig.ResourceCollections
+	for _, collection := range collections {
+		log.Infof("collection= %+v", collection)
+		for _, resourceSelector := range collection.ResourceSelectors {
+			log.Infof("resourceSelector= %+v", resourceSelector)
+			for _, rule := range resourceSelector.Rules {
+				log.Infof("rule= %+v", rule)
+			}
+		}
+	}
+
 	err := s.dataStore.SetRuntimeConfiguration(ctx, request.CollectorRuntimeConfiguration)
 
 	msg := &central.MsgToSensor{
