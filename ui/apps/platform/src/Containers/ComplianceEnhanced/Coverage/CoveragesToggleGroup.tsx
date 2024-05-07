@@ -10,7 +10,7 @@ function CoveragesToggleGroup({ tableView = 'checks' }: { tableView: string }) {
     const { profileName } = useParams();
     const history = useHistory();
 
-    const profileScanStats = useContext(ComplianceProfilesContext);
+    const { profileScanStats } = useContext(ComplianceProfilesContext);
 
     const handleToggleChange = (selectedProfile) => {
         history.push(`${complianceEnhancedCoveragePath}/profiles/${selectedProfile}/${tableView}`);
