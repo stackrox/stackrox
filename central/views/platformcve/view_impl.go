@@ -169,7 +169,7 @@ func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
 func withCountQuery(q *v1.Query) *v1.Query {
 	cloned := q.Clone()
 	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.CVEID).AggrFunc(aggregatefunc.Count).Proto(),
+		search.NewQuerySelect(search.CVEID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 	}
 	return cloned
 }
