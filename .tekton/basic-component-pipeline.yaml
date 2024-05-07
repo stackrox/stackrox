@@ -180,26 +180,8 @@ spec:
     # This task must run on a freshly cloned repository to prevent seeing any changes from other tasks.
     - clone-repository
     # TODO(ROX-23812): Refactor to a task bundle
-    taskSpec:
-      params:
-      - name: image
-        description: Image without tag
-      results:
-      - name: image-with-tag
-        description: Fully Qualified Image Name with identifying tag
-      steps:
-      - name: determine-image-tag
-        image: registry.access.redhat.com/ubi8:latest
-        env:
-          - name: IMAGE
-            value: $(params.image)
-        script: |
-          #!/usr/bin/env bash
-          set -euo pipefail
-          dnf -y upgrade --nobest
-          dnf -y install git make
-          cd "$(workspaces.source.path)/source"
-          echo -n "${IMAGE%%:*}:$(make --quiet --no-print-directory tag)-fast" | tee "$(results.image-with-tag.path)"
+    taskRef:
+      name: determine-image-tag
     workspaces:
     - name: source
       workspace: workspace
