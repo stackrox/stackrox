@@ -3,12 +3,13 @@ package email
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"math/rand"
+	"regexp"
 	"strings"
 	"testing"
-	"regexp"
-	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,18 +60,15 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 }
 
 func obtainLastAndExpectedBoundaryString(msgStr string) (string, string, error) {
-	// Obtain boundary and verify the close delimiter 
-	regex, err := regexp.Compile(` boundary="([^"]+)"`)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to compile regex for boundary: %w", err)
-	}
+	// Obtain boundary and verify the close delimiter
+	regex := regexp.MustCompile(` boundary="([^"]+)"`)
 	// Regex will provide two values [boundary="boundaryValue", boundaryValue]
 	boundary := regex.FindStringSubmatch(msgStr)
 	expectedFinalBoundary := fmt.Sprintf("--%s--", boundary[1])
 
 	lines := strings.Split(msgStr, "\n")
 	if len(lines) < 2 {
-		return "", "", fmt.Errorf("message too short to have a final boundary")
+		return "", "", errors.New("message too short to have a final boundary")
 	}
 	lastBoundary := strings.TrimSpace(lines[len(lines)-2])
 
