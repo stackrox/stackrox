@@ -319,12 +319,12 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
-      - uses: ./.github/actions/download-artifact-retry
+      - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: ui-${{ env.ROX_PRODUCT_BRANDING }}-build
           path: ui
 
-      - uses: ./.github/actions/download-artifact-retry
+      - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: cli-build
 
@@ -332,7 +332,7 @@ jobs:
         run: |
           tar xvzf cli-build.tgz
 
-      - uses: ./.github/actions/download-artifact-retry
+      - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
 
@@ -340,7 +340,7 @@ jobs:
         run: |
           tar xvzf go-binaries-build.tgz
 
-      - uses: ./.github/actions/download-artifact-retry
+      - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: docs-build
           path: image/rhel/docs
@@ -608,7 +608,7 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - uses: ./.github/actions/download-artifact-retry
+    - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: cli-build
 
@@ -616,7 +616,7 @@ jobs:
       run: |
         tar xvzf cli-build.tgz
 
-    - uses: ./.github/actions/download-artifact-retry
+    - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: go-binaries-build-amd64-default
 
