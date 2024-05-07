@@ -32,6 +32,11 @@ message ComplianceClusterScanStats {
   ComplianceScanCluster cluster = 2;
 }
 
+message ComplianceScanClusterRequest {
+  string cluster_id = 1;
+  RawQuery query = 2;
+}
+
 // ListComplianceProfileScanStatsResponse provides stats for the profiles within the scans
 message ListComplianceProfileScanStatsResponse {
   repeated ComplianceProfileScanStats scan_stats = 1;
@@ -41,6 +46,7 @@ message ListComplianceProfileScanStatsResponse {
 // ListComplianceClusterScanStatsResponse provides stats for the clusters within the scans
 message ListComplianceClusterScanStatsResponse {
   repeated ComplianceClusterScanStats scan_stats = 1;
+  int32 total_count = 2;
 }
 
 service ComplianceResultsStatsService {
@@ -69,14 +75,9 @@ service ComplianceResultsStatsService {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles/{profile_name}/checks/{check_name}"};
   }
 
-  // GetComplianceClusterScanStats lists current scan stats grouped by cluster
-  // Optional RawQuery query fields can be combined.
-  // Commonly used ones include but are not limited to
-  // - scan: id(s) of the compliance scan
-  // - cluster: id(s) of the cluster
-  // - profile: id(s) of the profile
-  rpc GetComplianceClusterScanStats(RawQuery) returns (ListComplianceClusterScanStatsResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/stats/cluster"};
+  // GetComplianceClusterScanStats lists the current scan stats for a cluster for each scan configuration
+  rpc GetComplianceClusterScanStats(ComplianceScanClusterRequest) returns (ListComplianceClusterScanStatsResponse) {
+    option (google.api.http) = {get: "/v2/compliance/stats/configurations/clusters/{cluster_id}"};
   }
 
   // Deprecated in favor of GetComplianceClusterStats

@@ -120,58 +120,58 @@ func (s *ComplianceResultsStatsServiceTestSuite) TearDownTest() {
 func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanStats() {
 	testCases := []struct {
 		desc         string
-		query        *apiV2.RawQuery
+		query        *apiV2.ComplianceScanClusterRequest
 		expectedResp []*apiV2.ComplianceClusterScanStats
 		expectedErr  error
 		setMocks     func()
 	}{
 		{
-			desc:        "Empty query",
-			query:       &apiV2.RawQuery{Query: ""},
-			expectedErr: nil,
-			expectedResp: []*apiV2.ComplianceClusterScanStats{
-				convertUtils.GetComplianceClusterScanV2Count(s.T(), fixtureconsts.Cluster1),
-				convertUtils.GetComplianceClusterScanV2Count(s.T(), fixtureconsts.Cluster2),
-				convertUtils.GetComplianceClusterScanV2Count(s.T(), fixtureconsts.Cluster3),
+			desc: "Empty query",
+			query: &apiV2.ComplianceScanClusterRequest{
+				ClusterId: fixtureconsts.Cluster1,
+				Query:     &apiV2.RawQuery{Query: ""},
 			},
-			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
-				results := []*datastore.ResourceResultCountByClusterScan{
-					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster1),
-					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster2),
-					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster3),
-				}
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
-				s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
-			},
-		},
-		{
-			desc:        "Query with search field",
-			query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			expectedErr: nil,
 			expectedResp: []*apiV2.ComplianceClusterScanStats{
 				convertUtils.GetComplianceClusterScanV2Count(s.T(), fixtureconsts.Cluster1),
 			},
 			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).
-					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				expectedQ := search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
+					search.EmptyQuery(),
+				)
+
+				countQuery := expectedQ.Clone()
+
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResourceResultCountByClusterScan{
 					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster1),
 				}
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorScanConfigName)
 				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 			},
 		},
 		{
-			desc:        "Query with non-existent field",
-			query:       &apiV2.RawQuery{Query: "Cluster ID:id"},
+			desc: "Query with non-existent field",
+			query: &apiV2.ComplianceScanClusterRequest{
+				ClusterId: "id",
+				Query:     &apiV2.RawQuery{Query: ""},
+			},
 			expectedErr: errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
 			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
-					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				expectedQ := search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ClusterID, "id").ProtoQuery(),
+					search.EmptyQuery(),
+				)
+
+				countQuery := expectedQ.Clone()
+
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(nil, nil).Times(1)
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorScanConfigName)
 			},
 		},
 	}

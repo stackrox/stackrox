@@ -47,13 +47,8 @@ type ComplianceResultsStatsServiceClient interface {
 	GetComplianceProfilesStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceProfileScanStatsResponse, error)
 	// GetComplianceProfileCheckStats lists current stats for a specific cluster check
 	GetComplianceProfileCheckStats(ctx context.Context, in *ComplianceProfileCheckRequest, opts ...grpc.CallOption) (*ListComplianceProfileResults, error)
-	// GetComplianceClusterScanStats lists current scan stats grouped by cluster
-	// Optional RawQuery query fields can be combined.
-	// Commonly used ones include but are not limited to
-	// - scan: id(s) of the compliance scan
-	// - cluster: id(s) of the cluster
-	// - profile: id(s) of the profile
-	GetComplianceClusterScanStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceClusterScanStatsResponse, error)
+	// GetComplianceClusterScanStats lists the current scan stats for a cluster for each scan configuration
+	GetComplianceClusterScanStats(ctx context.Context, in *ComplianceScanClusterRequest, opts ...grpc.CallOption) (*ListComplianceClusterScanStatsResponse, error)
 	// Deprecated in favor of GetComplianceClusterStats
 	GetComplianceOverallClusterStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceClusterOverallStatsResponse, error)
 	GetComplianceClusterStats(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ListComplianceClusterOverallStatsResponse, error)
@@ -94,7 +89,7 @@ func (c *complianceResultsStatsServiceClient) GetComplianceProfileCheckStats(ctx
 	return out, nil
 }
 
-func (c *complianceResultsStatsServiceClient) GetComplianceClusterScanStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceClusterScanStatsResponse, error) {
+func (c *complianceResultsStatsServiceClient) GetComplianceClusterScanStats(ctx context.Context, in *ComplianceScanClusterRequest, opts ...grpc.CallOption) (*ListComplianceClusterScanStatsResponse, error) {
 	out := new(ListComplianceClusterScanStatsResponse)
 	err := c.cc.Invoke(ctx, ComplianceResultsStatsService_GetComplianceClusterScanStats_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -141,13 +136,8 @@ type ComplianceResultsStatsServiceServer interface {
 	GetComplianceProfilesStats(context.Context, *RawQuery) (*ListComplianceProfileScanStatsResponse, error)
 	// GetComplianceProfileCheckStats lists current stats for a specific cluster check
 	GetComplianceProfileCheckStats(context.Context, *ComplianceProfileCheckRequest) (*ListComplianceProfileResults, error)
-	// GetComplianceClusterScanStats lists current scan stats grouped by cluster
-	// Optional RawQuery query fields can be combined.
-	// Commonly used ones include but are not limited to
-	// - scan: id(s) of the compliance scan
-	// - cluster: id(s) of the cluster
-	// - profile: id(s) of the profile
-	GetComplianceClusterScanStats(context.Context, *RawQuery) (*ListComplianceClusterScanStatsResponse, error)
+	// GetComplianceClusterScanStats lists the current scan stats for a cluster for each scan configuration
+	GetComplianceClusterScanStats(context.Context, *ComplianceScanClusterRequest) (*ListComplianceClusterScanStatsResponse, error)
 	// Deprecated in favor of GetComplianceClusterStats
 	GetComplianceOverallClusterStats(context.Context, *RawQuery) (*ListComplianceClusterOverallStatsResponse, error)
 	GetComplianceClusterStats(context.Context, *ComplianceProfileResultsRequest) (*ListComplianceClusterOverallStatsResponse, error)
@@ -166,7 +156,7 @@ func (UnimplementedComplianceResultsStatsServiceServer) GetComplianceProfilesSta
 func (UnimplementedComplianceResultsStatsServiceServer) GetComplianceProfileCheckStats(context.Context, *ComplianceProfileCheckRequest) (*ListComplianceProfileResults, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceProfileCheckStats not implemented")
 }
-func (UnimplementedComplianceResultsStatsServiceServer) GetComplianceClusterScanStats(context.Context, *RawQuery) (*ListComplianceClusterScanStatsResponse, error) {
+func (UnimplementedComplianceResultsStatsServiceServer) GetComplianceClusterScanStats(context.Context, *ComplianceScanClusterRequest) (*ListComplianceClusterScanStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceClusterScanStats not implemented")
 }
 func (UnimplementedComplianceResultsStatsServiceServer) GetComplianceOverallClusterStats(context.Context, *RawQuery) (*ListComplianceClusterOverallStatsResponse, error) {
@@ -242,7 +232,7 @@ func _ComplianceResultsStatsService_GetComplianceProfileCheckStats_Handler(srv i
 }
 
 func _ComplianceResultsStatsService_GetComplianceClusterScanStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RawQuery)
+	in := new(ComplianceScanClusterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -254,7 +244,7 @@ func _ComplianceResultsStatsService_GetComplianceClusterScanStats_Handler(srv in
 		FullMethod: ComplianceResultsStatsService_GetComplianceClusterScanStats_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceResultsStatsServiceServer).GetComplianceClusterScanStats(ctx, req.(*RawQuery))
+		return srv.(ComplianceResultsStatsServiceServer).GetComplianceClusterScanStats(ctx, req.(*ComplianceScanClusterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

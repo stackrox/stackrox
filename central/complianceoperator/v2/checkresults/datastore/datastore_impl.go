@@ -259,17 +259,19 @@ func (d *datastoreImpl) CountByField(ctx context.Context, query *v1.Query, field
 
 	switch field {
 	case search.ClusterID:
-		return d.countByCluster(ctx, query)
+		return d.countByCluster(ctx, query, field)
 	case search.ComplianceOperatorProfileName:
 		return d.countByProfile(ctx, query)
 	case search.ComplianceOperatorCheckName:
 		return d.countByCheck(ctx, query)
+	case search.ComplianceOperatorScanConfigName:
+		return d.countByConfiguration(ctx, query)
 	}
 
 	return 0, errors.Errorf("Unable to group result counts by %q", field)
 }
 
-func (d *datastoreImpl) countByCluster(ctx context.Context, query *v1.Query) (int, error) {
+func (d *datastoreImpl) countByCluster(ctx context.Context, query *v1.Query, field search.FieldLabel) (int, error) {
 	var results []*clusterCount
 	results, err := pgSearch.RunSelectRequestForSchema[clusterCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ClusterID))
 	if err != nil {
@@ -306,6 +308,23 @@ func (d *datastoreImpl) countByProfile(ctx context.Context, query *v1.Query) (in
 func (d *datastoreImpl) countByCheck(ctx context.Context, query *v1.Query) (int, error) {
 	var results []*complianceCheckCount
 	results, err := pgSearch.RunSelectRequestForSchema[complianceCheckCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ComplianceOperatorCheckName))
+	if err != nil {
+		return 0, err
+	}
+	if len(results) == 0 {
+		return 0, nil
+	}
+	if len(results) > 1 {
+		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", query.String())
+		utils.Should(err)
+		return 0, err
+	}
+	return results[0].TotalCount, nil
+}
+
+func (d *datastoreImpl) countByConfiguration(ctx context.Context, query *v1.Query) (int, error) {
+	var results []*configurationCount
+	results, err := pgSearch.RunSelectRequestForSchema[configurationCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ComplianceOperatorScanConfigName))
 	if err != nil {
 		return 0, err
 	}

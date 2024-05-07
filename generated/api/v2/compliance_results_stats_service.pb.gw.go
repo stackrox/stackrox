@@ -236,12 +236,30 @@ func local_request_ComplianceResultsStatsService_GetComplianceProfileCheckStats_
 }
 
 var (
-	filter_ComplianceResultsStatsService_GetComplianceClusterScanStats_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_ComplianceResultsStatsService_GetComplianceClusterScanStats_0 = &utilities.DoubleArray{Encoding: map[string]int{"cluster_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_ComplianceResultsStatsService_GetComplianceClusterScanStats_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsStatsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
+	var protoReq ComplianceScanClusterRequest
 	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["cluster_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
+	}
+
+	protoReq.ClusterId, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
+	}
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -256,8 +274,26 @@ func request_ComplianceResultsStatsService_GetComplianceClusterScanStats_0(ctx c
 }
 
 func local_request_ComplianceResultsStatsService_GetComplianceClusterScanStats_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsStatsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
+	var protoReq ComplianceScanClusterRequest
 	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["cluster_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
+	}
+
+	protoReq.ClusterId, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
+	}
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -694,7 +730,7 @@ var (
 
 	pattern_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6, 1, 0, 4, 1, 5, 7}, []string{"v2", "compliance", "scan", "stats", "profiles", "profile_name", "checks", "check_name"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ComplianceResultsStatsService_GetComplianceClusterScanStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v2", "compliance", "scan", "stats", "cluster"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceResultsStatsService_GetComplianceClusterScanStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"v2", "compliance", "stats", "configurations", "clusters", "cluster_id"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 2, 5}, []string{"v2", "compliance", "scan", "stats", "overall", "cluster"}, "", runtime.AssumeColonVerbOpt(false)))
 
