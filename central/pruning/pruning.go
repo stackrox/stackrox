@@ -381,12 +381,10 @@ func (g *garbageCollectorImpl) removeOrphanedProcesses() {
 		return
 	}
 
-	prunedIndicatorCount, err := g.removeProcesses(processesToRemove, "deployment")
+	deploymentIndicatorCount, err := g.removeProcesses(processesToRemove, "deployment")
 	if err != nil {
 		log.Errorf("[Pruning] Error removing processes orphaned by deployment: %v", err)
 	}
-	log.Infof("[Pruning] Deleted %d orphaned processes",
-		prunedIndicatorCount)
 
 	processesToRemove, err = postgres.GetOrphanedProcessIDsByPod(pruningCtx, g.postgres, orphanWindow)
 	if err != nil {
@@ -394,14 +392,13 @@ func (g *garbageCollectorImpl) removeOrphanedProcesses() {
 		return
 	}
 
-	prunedIndicatorCount, err = g.removeProcesses(processesToRemove, "pod")
+	podIndicatorCount, err := g.removeProcesses(processesToRemove, "pod")
 	if err != nil {
 		log.Errorf("[Pruning] Error removing processes orphaned by pod: %v", err)
 	}
-	log.Infof("[Pruning] Deleted %d orphaned processes",
-		prunedIndicatorCount)
 
-	log.Info("[Process pruning] Pruning of orphaned processes complete")
+	log.Infof("[Pruning] Pruning of orphaned processes complete.  Pruned %d orphaned processes (%d orphaned by deployments and %d orphaned by pods)",
+		deploymentIndicatorCount+podIndicatorCount, deploymentIndicatorCount, podIndicatorCount)
 }
 
 func (g *garbageCollectorImpl) removeProcesses(processesToRemove []string, processParent string) (int, error) {

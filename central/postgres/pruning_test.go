@@ -421,7 +421,7 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			s.Require().NoError(err)
 			idsToDelete = append(idsToDelete, idsByPod...)
 			slices.Sort(idsToDelete)
-			s.Require().Equal(len(c.expectedDeletions), len(slices.Compact(idsToDelete)))
+			s.Require().ElementsMatch(c.expectedDeletions, slices.Compact(idsToDelete))
 
 			// Cleanup
 			var cleanupIDs []string
