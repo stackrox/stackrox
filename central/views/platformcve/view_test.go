@@ -237,6 +237,50 @@ func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECoreWithPagination() {
 	}
 }
 
+func (s *PlatformCVEViewTestSuite) TestCountPlatformCVECore() {
+	for _, tc := range s.testCases() {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			actual, err := s.cveView.Count(sac.WithAllAccess(tc.ctx), tc.q)
+			if tc.expectedErr != "" {
+				s.ErrorContains(err, tc.expectedErr)
+				return
+			}
+			assert.NoError(t, err)
+
+			expected := s.compileExpectedCVECores(tc.matchFilter)
+			assert.Equal(t, len(expected), actual)
+		})
+	}
+}
+
+func (s *PlatformCVEViewTestSuite) TestCountPlatformCVECoreSAC() {
+	for _, tc := range s.testCases() {
+		for _, sacTC := range s.sacTestCases(tc.ctx) {
+			s.T().Run(fmt.Sprintf("SAC desc: %s; test desc: %s ", sacTC.desc, tc.desc), func(t *testing.T) {
+				actual, err := s.cveView.Count(sacTC.ctx, tc.q)
+				if tc.expectedErr != "" {
+					s.ErrorContains(err, tc.expectedErr)
+					return
+				}
+				assert.NoError(t, err)
+
+				// Wrap cluster filter with sac filter.
+				matchFilter := tc.matchFilter
+				baseClusterMatchFilter := matchFilter.matchCluster
+				matchFilter.withClusterFilter(func(cluster *storage.Cluster) bool {
+					if sacTC.visibleClusters.Contains(cluster.GetId()) {
+						return baseClusterMatchFilter(cluster)
+					}
+					return false
+				})
+
+				expected := s.compileExpectedCVECores(tc.matchFilter)
+				assert.Equal(t, len(expected), actual)
+			})
+		}
+	}
+}
+
 func (s *PlatformCVEViewTestSuite) testCases() []testCase {
 	return []testCase{
 		{
@@ -341,6 +385,15 @@ func (s *PlatformCVEViewTestSuite) testCases() []testCase {
 			matchFilter: matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
 				return cluster.GetType() == storage.ClusterType_KUBERNETES_CLUSTER ||
 					cluster.GetType() == storage.ClusterType_OPENSHIFT_CLUSTER
+			}),
+		},
+		{
+			desc: "search by kubernetes version",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.ClusterKubernetesVersion, "9.0").ProtoQuery(),
+			matchFilter: matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
+				return cluster.GetStatus().GetOrchestratorMetadata().GetVersion() == "9.0"
 			}),
 		},
 		{
@@ -633,6 +686,7 @@ func getTestData() (map[string]*storage.Cluster, map[storage.CVE_CVEType][]conve
 		PlatformType: storage.ClusterType_GENERIC_CLUSTER,
 		ProviderType: storage.ClusterMetadata_AKS,
 		Labels:       map[string]string{},
+		K8sVersion:   "9.0",
 		IsOpenshift:  false,
 	})
 	clusterMap[generic1.GetId()] = generic1
@@ -642,6 +696,7 @@ func getTestData() (map[string]*storage.Cluster, map[storage.CVE_CVEType][]conve
 		PlatformType: storage.ClusterType_GENERIC_CLUSTER,
 		ProviderType: storage.ClusterMetadata_ARO,
 		Labels:       map[string]string{},
+		K8sVersion:   "9.0",
 		IsOpenshift:  false,
 	})
 	clusterMap[generic2.GetId()] = generic2
@@ -651,6 +706,7 @@ func getTestData() (map[string]*storage.Cluster, map[storage.CVE_CVEType][]conve
 		PlatformType: storage.ClusterType_KUBERNETES_CLUSTER,
 		ProviderType: storage.ClusterMetadata_EKS,
 		Labels:       map[string]string{},
+		K8sVersion:   "9.0",
 		IsOpenshift:  false,
 	})
 	clusterMap[kubernetes1.GetId()] = kubernetes1
@@ -660,6 +716,7 @@ func getTestData() (map[string]*storage.Cluster, map[storage.CVE_CVEType][]conve
 		PlatformType: storage.ClusterType_KUBERNETES_CLUSTER,
 		ProviderType: storage.ClusterMetadata_GKE,
 		Labels:       map[string]string{},
+		K8sVersion:   "9.0",
 		IsOpenshift:  false,
 	})
 	clusterMap[kubernetes2.GetId()] = kubernetes2
@@ -669,6 +726,7 @@ func getTestData() (map[string]*storage.Cluster, map[storage.CVE_CVEType][]conve
 		PlatformType: storage.ClusterType_OPENSHIFT_CLUSTER,
 		ProviderType: storage.ClusterMetadata_OCP,
 		Labels:       map[string]string{"platform-type": "openshift"},
+		K8sVersion:   "8.0",
 		IsOpenshift:  true,
 	})
 	clusterMap[openshift1.GetId()] = openshift1
@@ -678,6 +736,7 @@ func getTestData() (map[string]*storage.Cluster, map[storage.CVE_CVEType][]conve
 		PlatformType: storage.ClusterType_OPENSHIFT_CLUSTER,
 		ProviderType: storage.ClusterMetadata_OSD,
 		Labels:       map[string]string{"platform-type": "openshift"},
+		K8sVersion:   "8.0",
 		IsOpenshift:  true,
 	})
 	clusterMap[openshift2.GetId()] = openshift2
@@ -687,6 +746,7 @@ func getTestData() (map[string]*storage.Cluster, map[storage.CVE_CVEType][]conve
 		PlatformType: storage.ClusterType_OPENSHIFT4_CLUSTER,
 		ProviderType: storage.ClusterMetadata_OCP,
 		Labels:       map[string]string{"platform-type": "openshift"},
+		K8sVersion:   "8.0",
 		IsOpenshift:  true,
 	})
 	clusterMap[openshift41.GetId()] = openshift41
@@ -696,6 +756,7 @@ func getTestData() (map[string]*storage.Cluster, map[storage.CVE_CVEType][]conve
 		PlatformType: storage.ClusterType_OPENSHIFT4_CLUSTER,
 		ProviderType: storage.ClusterMetadata_OCP,
 		Labels:       map[string]string{"platform-type": "openshift"},
+		K8sVersion:   "8.0",
 		IsOpenshift:  true,
 	})
 	clusterMap[openshift42.GetId()] = openshift42
