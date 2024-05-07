@@ -35,6 +35,15 @@ RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
 
 RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
 
+WORKDIR /go/src/github.com/stackrox/rox/app
+
+COPY . .
+
+# Ensure there will be no unintended -dirty suffix. package-lock is restored because it's touched by Cachi2.
+RUN git restore scripts/konflux/bootstrap-yarn/package-lock.json && \
+    scripts/konflux/fail-build-if-git-is-dirty.sh
+
+ENV GOFLAGS=""
 ENV CGO_ENABLED=1
 # TODO(ROX-19958): figure out if we need BUILD_TAG
 # ENV BUILD_TAG="${CI_VERSION}"
