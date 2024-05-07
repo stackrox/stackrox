@@ -173,38 +173,6 @@ spec:
     - name: basic-auth
       workspace: git-auth
 
-  # TODO(ROX-23257): remove once Central does not depend on rocksdb
-  - name: clone-rocksdb
-    params:
-    - name: url
-      value: 'https://github.com/facebook/rocksdb.git'
-    - name: revision
-      value: "0915c99f01b46f50af8e02da8b6528156f584b7c" # v6.7.3
-    - name: depth
-      value: "1"
-    - name: subdirectory
-      value: source/.konflux/rocksdb
-    runAfter:
-    - clone-repository
-    taskRef:
-      params:
-      - name: name
-        value: git-clone
-      - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-git-clone:0.1@sha256:30709df067659a407968154fd39e99763823d8ecfc6b5cd00a55b68818ec94ba
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values: [ "true" ]
-    workspaces:
-    - name: output
-      workspace: workspace
-    - name: basic-auth
-      workspace: git-auth
-
   - name: copy-subscription-manager-activation-key
     runAfter:
     - clone-repository
@@ -275,7 +243,6 @@ spec:
     runAfter:
     - copy-subscription-manager-activation-key
     - prefetch-dependencies
-    - clone-rocksdb
     - fetch-external-networks
     taskRef:
       params:
