@@ -2,7 +2,9 @@ syntax = "proto3";
 
 package storage;
 
+import "google/protobuf/timestamp.proto";
 import "storage/resource_collection.proto";
+import "storage/user.proto";
 
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
@@ -34,8 +36,8 @@ message Status {
   }
 
   message NetworkEndpointStatus {
-    bool enabled = 2;
-    bool processes_listening_on_port = 3;
+    bool enabled = 1;
+    bool processes_listening_on_port = 2;
   }
 
   oneof status {
@@ -49,11 +51,19 @@ message RuntimeFeatureConfig {
   message RuntimeRule {
     string resource_collection_name = 1;
     Status status = 2;
+    google.protobuf.Timestamp created_at = 3;
+    google.protobuf.Timestamp last_updated = 4;
+    SlimUser created_by = 5;
+    SlimUser updated_by = 6;
   }
 
   RuntimeFeature feature = 1;
   Status default_status = 2;
   repeated RuntimeRule rules = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp last_updated = 5;
+  // The default is not created by a user, but by central so there is no created_by.
+  SlimUser updated_by = 6;
 }
 
 message CollectorRuntimeConfig {
@@ -61,6 +71,7 @@ message CollectorRuntimeConfig {
   repeated ResourceCollection resource_collections = 2;
 }
 
+// Collector needs to know the cluster it is running on to apply the rules correctly.
 message CollectorRuntimeConfigWithCluster {
   string cluster_name = 1;
   CollectorRuntimeConfig config = 2;
