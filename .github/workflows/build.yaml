@@ -100,7 +100,7 @@ jobs:
       - name: Build UI
         run: make -C ui build
 
-      - uses: ./.github/actions/upload-artifact-retry
+      - uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: ui-${{env.ROX_PRODUCT_BRANDING}}-build
           path: |
@@ -133,7 +133,7 @@ jobs:
       - name: Bundle build to preserve permissions
         run: tar -cvzf cli-build.tgz bin
 
-      - uses: ./.github/actions/upload-artifact-retry
+      - uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: cli-build
           path: cli-build.tgz
@@ -199,7 +199,7 @@ jobs:
       - name: Bundle the build to preserve permissions
         run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
 
-      - uses: ./.github/actions/upload-artifact-retry
+      - uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
           path: go-binaries-build.tgz
@@ -233,7 +233,7 @@ jobs:
           # Workaround to handle https://github.com/actions/cache/issues/753
           rm -rf .proto
 
-      - uses: ./.github/actions/upload-artifact-retry
+      - uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: docs-build
           path: |
