@@ -462,42 +462,54 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorPruneBatch() {
-	numIndicators := 5000
+	// Prune number of the batch size to test batching
+	numIndicators := deleteBatchSize
 	suite.setupDataStoreNoPruning()
 
 	ids := suite.buildIDsToPrune(numIndicators)
 
 	// Try to remove indicators by id
 	indicatorCount, err := suite.datastore.PruneProcessIndicators(suite.hasWriteCtx, ids)
-	suite.NoError(err)
-	suite.Equal(numIndicators, indicatorCount)
+	suite.Require().NoError(err)
+	suite.Require().Equal(numIndicators, indicatorCount)
 
-	// Prune under batch size
-	numIndicators = 30
+	// Prune number under the batch size to test batching
+	numIndicators = deleteBatchSize - 1
 	suite.setupDataStoreNoPruning()
 
 	ids = suite.buildIDsToPrune(numIndicators)
 
 	// Try to remove indicators by id
 	indicatorCount, err = suite.datastore.PruneProcessIndicators(suite.hasWriteCtx, ids)
-	suite.NoError(err)
-	suite.Equal(numIndicators, indicatorCount)
+	suite.Require().NoError(err)
+	suite.Require().Equal(numIndicators, indicatorCount)
 
-	// Prune over batch size
-	numIndicators = 5234
+	// Prune over batch size to test batching
+	numIndicators = deleteBatchSize + 1
 	suite.setupDataStoreNoPruning()
 
 	ids = suite.buildIDsToPrune(numIndicators)
 
 	// Try to remove indicators by id
 	indicatorCount, err = suite.datastore.PruneProcessIndicators(suite.hasWriteCtx, ids)
-	suite.NoError(err)
-	suite.Equal(numIndicators, indicatorCount)
+	suite.Require().NoError(err)
+	suite.Require().Equal(numIndicators, indicatorCount)
+
+	// Prune over the max allowed SQL parameters (65K) to ensure batching is performed
+	numIndicators = 70000
+	suite.setupDataStoreNoPruning()
+
+	ids = suite.buildIDsToPrune(numIndicators)
+
+	// Try to remove indicators by id
+	indicatorCount, err = suite.datastore.PruneProcessIndicators(suite.hasWriteCtx, ids)
+	suite.Require().NoError(err)
+	suite.Require().Equal(numIndicators, indicatorCount)
 }
 
 func (suite *IndicatorDataStoreTestSuite) buildIDsToPrune(count int) []string {
 	indicators := suite.generateIndicatorsWithPods([]string{fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3}, []string{"c1", "c2", "c3"})
-	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
+	suite.Require().NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
 	ids := make([]string, 0, count)
@@ -511,7 +523,7 @@ func (suite *IndicatorDataStoreTestSuite) buildIDsToPrune(count int) []string {
 		pruneIndicators = append(pruneIndicators, newIndicator)
 	}
 
-	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, pruneIndicators...))
+	suite.Require().NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, pruneIndicators...))
 
 	return ids
 }

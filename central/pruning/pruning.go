@@ -377,26 +377,26 @@ func (g *garbageCollectorImpl) removeOrphanedProcesses() {
 	// do the same for those orphaned by pod
 	processesToRemove, err := postgres.GetOrphanedProcessIDsByDeployment(pruningCtx, g.postgres, orphanWindow)
 	if err != nil {
-		log.Errorf("Error finding processes orphaned by deployment: %v", err)
+		log.Errorf("[Pruning] Error finding processes orphaned by deployment: %v", err)
 		return
 	}
 
 	prunedIndicatorCount, err := g.removeProcesses(processesToRemove, "deployment")
 	if err != nil {
-		log.Errorf("Error removing processes orphaned by deployment: %v", err)
+		log.Errorf("[Pruning] Error removing processes orphaned by deployment: %v", err)
 	}
 	log.Infof("[Pruning] Deleted %d orphaned processes",
 		prunedIndicatorCount)
 
 	processesToRemove, err = postgres.GetOrphanedProcessIDsByPod(pruningCtx, g.postgres, orphanWindow)
 	if err != nil {
-		log.Errorf("Error finding processes orphaned by pod: %v", err)
+		log.Errorf("[Pruning] Error finding processes orphaned by pod, could not prune process indicators: %v", err)
 		return
 	}
 
 	prunedIndicatorCount, err = g.removeProcesses(processesToRemove, "pod")
 	if err != nil {
-		log.Errorf("Error removing processes orphaned by pod: %v", err)
+		log.Errorf("[Pruning] Error removing processes orphaned by pod: %v", err)
 	}
 	log.Infof("[Pruning] Deleted %d orphaned processes",
 		prunedIndicatorCount)
