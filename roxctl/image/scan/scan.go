@@ -141,7 +141,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		importantCVESeverity.String(),
 		criticalCVESeverity.String(),
 	}, "List of severities to include in the output. Use this to filter for specific severities")
-	c.Flags().BoolVarP(&imageScanCmd.failOnFinding, "fail", "F", false, "Fail if vulnerabilities have been found")
+	c.Flags().BoolVarP(&imageScanCmd.failOnFinding, "fail", "", false, "Fail if vulnerabilities have been found")
 
 	// Deprecated flag
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format and are sure we do not break existing customer scripts
@@ -246,7 +246,7 @@ func (i *imageScanCommand) Scan() error {
 		retry.Tries(i.retryCount+1),
 		retry.OnlyRetryableErrors(),
 		retry.OnFailedAttempts(func(err error) {
-			failedAttempts += 1
+			failedAttempts++
 			i.env.Logger().ErrfLn("Scanning image failed: %v. Retrying after %v seconds...", err, i.retryDelay)
 			time.Sleep(time.Duration(i.retryDelay) * time.Second)
 		}),

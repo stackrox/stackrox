@@ -565,7 +565,7 @@ func (s *imageScanTestSuite) runOutputTests(cases map[string]outputFormatTest, p
 			defer closeF()
 
 			err := imgScanCmd.Scan()
-			s.assertError(err, c)
+			s.Assert().ErrorIs(err, c.error)
 			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
 			s.Require().NoError(err)
 			s.Assert().Equal(string(expectedOutput), out.String())
@@ -581,21 +581,12 @@ func (s *imageScanTestSuite) runOutputTests(cases map[string]outputFormatTest, p
 			defer closeF()
 
 			err := imgScanCmd.Scan()
-			s.assertError(err, c)
+			s.Assert().ErrorIs(err, c.error)
 			expectedOutput, err := os.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
 			s.Require().NoError(err)
 			s.Assert().Equal(string(expectedOutput), out.String())
 			s.Assert().Equal(c.expectedErrorOutputColorized, errOut.String())
 		})
-	}
-}
-
-func (s *imageScanTestSuite) assertError(err error, c outputFormatTest) {
-	if c.failOnFinding {
-		s.Require().Error(err)
-		s.Assert().ErrorIs(err, c.error)
-	} else {
-		s.Require().NoError(err)
 	}
 }
 
