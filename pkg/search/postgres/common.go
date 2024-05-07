@@ -631,6 +631,7 @@ func RunSearchRequest(ctx context.Context, category v1.SearchCategory, q *v1.Que
 
 func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schema *walker.Schema, db postgres.DB) ([]searchPkg.Result, error) {
 	queryStr := query.AsSQL()
+	log.Infof("Search Query SQL: %s", queryStr)
 
 	// Assumes that ids are strings.
 	numPrimaryKeys := len(schema.PrimaryKeys())
