@@ -89,7 +89,7 @@ class ProcessVisualizationTest extends BaseSpecification {
     @Tag("RUNTIME")
     // TODO(ROX-16461): Fails under AKS
     // TODO(ROX-23915): Fails under GKE
-    @IgnoreIf({ Env.CI_JOB_NAME.contains("aks-qa-e2e") || Env.CI_JOB_NAME.contains("gke-qa-e2e") })
+    @IgnoreIf({ Env.CI_JOB_NAME.contains("aks-qa-e2e") || Env.CI_JOB_NAME.contains("gke") })
     def "Verify process visualization on kube-proxy"() {
         when:
         "Check if kube-proxy is running"
