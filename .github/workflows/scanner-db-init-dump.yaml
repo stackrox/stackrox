@@ -58,7 +58,7 @@ jobs:
       #      release branches.
       version: dev
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: updater
           path: /usr/local/bin
@@ -108,7 +108,7 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - uses: actions/download-artifact@v4
+      - uses: ./.github/actions/download-artifact-with-retry
 
       - name: Upload to Google Cloud Bucket
         run: |
