@@ -15,9 +15,7 @@ export function getEntityAttributes(
     config: Partial<CompoundSearchFilterConfig>
 ): SearchFilterAttribute[] {
     if (config[entity] && config[entity]!.attributes) {
-        const attributeValues = Object.values(
-            config[entity]!.attributes as Record<string, SearchFilterAttribute>
-        );
+        const attributeValues = Object.values(config[entity]!.attributes);
         return attributeValues;
     }
     return [];
@@ -28,9 +26,7 @@ export function getDefaultAttribute(
     config: Partial<CompoundSearchFilterConfig>
 ) {
     if (config[entity] && config[entity]!.attributes) {
-        const attributeNames = Object.keys(
-            config[entity]!.attributes as Record<string, SearchFilterAttribute>
-        );
+        const attributeNames = Object.keys(config[entity]!.attributes);
         return attributeNames[0];
     }
     return '';
