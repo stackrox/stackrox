@@ -1,16 +1,15 @@
 {
-  "id": "1a498d97-0cc2-45f5-b32e-1f3cca6a3113",
-  "name": "Required Annotation: Owner/Team",
-  "description": "Alert on deployments missing the 'owner' or 'team' annotation",
-  "rationale": "The 'owner' or 'team' annotation should always be specified so that the deployment can quickly be associated with a specific user or team.",
-  "remediation": "Redeploy your service and set the 'owner' or 'team' annotation to yourself or your team respectively per organizational standards.",
-  "disabled": true,
+  "id": "2db9a279-2aec-4618-a85d-7f1bdf4911b1",
+  "name": "90-Day Image Age",
+  "description": "Alert on deployments with images that haven't been updated in 90 days",
+  "rationale": "Base images are updated frequently with bug fixes and vulnerability patches. Image age exceeding 90 days may indicate a higher risk of vulnerabilities existing in the image.",
+  "remediation": "Rebuild your image, push a new minor version (with a new immutable tag), and update your service to use it.",
   "categories": [
     "DevOps Best Practices",
-    "Security Best Practices",
-    "Supply Chain Security"
+    "Security Best Practices"
   ],
   "lifecycleStages": [
+    "BUILD",
     "DEPLOY"
   ],
   "exclusions": [
@@ -37,10 +36,10 @@
     {
       "policyGroups": [
         {
-          "fieldName": "Required Annotation",
+          "fieldName": "Image Age",
           "values": [
             {
-              "value": "owner|team=.+"
+              "value": "90"
             }
           ]
         }

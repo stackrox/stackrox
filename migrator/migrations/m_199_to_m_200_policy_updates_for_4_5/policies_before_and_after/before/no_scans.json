@@ -6,8 +6,7 @@
   "remediation": "Configure the appropriate registry and scanner integrations so that StackRox can obtain scans for your images.",
   "disabled": true,
   "categories": [
-    "Vulnerability Management",
-    "Supply Chain Security"
+    "Vulnerability Management"
   ],
   "lifecycleStages": [
     "DEPLOY"

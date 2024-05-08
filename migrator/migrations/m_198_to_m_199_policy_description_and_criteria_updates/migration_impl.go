@@ -95,5 +95,14 @@ func migrate(database *types.Databases) error {
 			}
 			return result.Error
 		},
+		func(ctx context.Context) (map[string]string, error) {
+			return nil, nil
+		},
+		func(ctx context.Context, edge *storage.PolicyCategoryEdge) error {
+			return nil
+		},
+		func(ctx context.Context, edge *storage.PolicyCategoryEdge) error {
+			return nil
+		},
 	)
 }

@@ -1,14 +1,13 @@
 {
-  "id": "1a498d97-0cc2-45f5-b32e-1f3cca6a3113",
-  "name": "Required Annotation: Owner/Team",
-  "description": "Alert on deployments missing the 'owner' or 'team' annotation",
-  "rationale": "The 'owner' or 'team' annotation should always be specified so that the deployment can quickly be associated with a specific user or team.",
-  "remediation": "Redeploy your service and set the 'owner' or 'team' annotation to yourself or your team respectively per organizational standards.",
+  "id": "014a03c6-9053-49b5-88ea-c1efcf19804f",
+  "name": "Required Annotation: Email",
+  "description": "Alert on deployments missing the 'email' annotation",
+  "rationale": "The 'email' annotation should always be specified so that issues with the deployment can quickly be routed to the proper party.",
+  "remediation": "Redeploy your service and set the 'email' annotation as your email or your team's email.",
   "disabled": true,
   "categories": [
     "DevOps Best Practices",
-    "Security Best Practices",
-    "Supply Chain Security"
+    "Security Best Practices"
   ],
   "lifecycleStages": [
     "DEPLOY"
@@ -40,7 +39,7 @@
           "fieldName": "Required Annotation",
           "values": [
             {
-              "value": "owner|team=.+"
+              "value": "email=[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+"
             }
           ]
         }
