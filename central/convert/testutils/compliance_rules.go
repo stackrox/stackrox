@@ -71,11 +71,19 @@ func GetRuleV2Storage(_ *testing.T) *storage.ComplianceOperatorRuleV2 {
 	controls := []*storage.RuleControls{
 		{
 			Standard: "NERC-CIP",
-			Controls: []string{"CIP-003-8 R6", "CIP-004-6 R3", "CIP-007-3 R6.1"},
+			Control:  "CIP-003-8 R6",
+		},
+		{
+			Standard: "NERC-CIP",
+			Control:  "CIP-004-6 R3",
+		},
+		{
+			Standard: "NERC-CIP",
+			Control:  "CIP-007-3 R6.1",
 		},
 		{
 			Standard: "PCI-DSS",
-			Controls: []string{"Req-2.2"},
+			Control:  "Req-2.2",
 		},
 	}
 	return &storage.ComplianceOperatorRuleV2{
