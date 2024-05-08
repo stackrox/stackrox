@@ -481,7 +481,7 @@ poll_for_system_test_images() {
     local image_list
     image_list="$(mktemp)"
     populate_image_list "${image_list}"
-    info "Will poll for: $(awk 'print $1' "${image_list}")"
+    info "Will poll for: $(awk '{print $1}' "${image_list}")"
 
     local start_time
     start_time="$(date '+%s')"
