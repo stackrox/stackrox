@@ -26,7 +26,8 @@ func Singleton() Service {
 	}
 
 	serviceInstanceInit.Do(func() {
-		serviceInstance = New(scanSettingsDS.Singleton(), scanSettingBindingsDS.Singleton(), suiteDS.Singleton(), compliancemanager.Singleton())
+		serviceInstance = New(scanSettingsDS.Singleton(), scanSettingBindingsDS.Singleton(), suiteDS.Singleton(),
+			compliancemanager.Singleton(), reportManager.Singleton())
 	})
 	return serviceInstance
 }
