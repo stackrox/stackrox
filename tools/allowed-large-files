@@ -4,7 +4,6 @@ central/alert/datastore/internal/store/postgres/store.go
 central/cluster/datastore/datastore_impl_test.go
 central/compliance/checks/fixtures/scraped.go
 central/compliance/standards/metadata/pci_dss_3_2.go
-central/complianceoperator/v2/checkresults/service/service_impl_test.go
 central/cve/converter/utils/testdata/*
 central/cve/fetcher/testdata/cve-list.json
 central/graphql/resolvers/generated.go
