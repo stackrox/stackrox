@@ -110,6 +110,9 @@ var (
 	// support it but now appear to (ie: Nexus and RHEL).
 	AttemptManifestDigest = registerFeature("Enables attempts to pull manifest digests for all registry integrations", "ROX_ATTEMPT_MANIFEST_DIGEST", true)
 
-	// VulnMgmt2MiscImprovements enables support for misc improvements for VM 2.0 GA
-	VulnMgmt2MiscImprovements = registerFeature("Enables support for misc improvements for VM 2.0 GA", "ROX_VULN_MGMT_2_MISC_IMPROVEMENTS", true)
+	// VulnMgmt2GA enables support for migration changes for VM 2.0 GA
+	VulnMgmt2GA = registerFeature("Enables support for migration changes for VM 2.0 GA", "ROX_VULN_MGMT_2_GA", true)
+
+	// VulnMgmtAdvancedFilters enables support for advanced filters for VM 2.0 GA
+	VulnMgmtAdvancedFilters = registerFeature("Enables support for advanced filters for VM 2.0 GA", "ROX_VULN_MGMT_ADVANCED_FILTERS", true)
 )
