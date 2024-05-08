@@ -42,11 +42,12 @@ jobs:
 
   run-updater:
     needs:
-      - build-updater
+    - build-updater
     runs-on: ubuntu-latest
     env:
       STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       STACKROX_NVD_API_CALL_INTERVAL: 6s
+      MANUAL_URL: "https://raw.githubusercontent.com/stackrox/stackrox/fc6c242b520adf7dcf66ca802af651d69b93caeb/scanner/updater/manual/vulns.yaml"
     steps:
     # Checkout to run ./.github/actions/{download,upload}-artifact-with-retry
     - name: Checkout repository
@@ -67,11 +68,11 @@ jobs:
 
     - name: Run updater (single bundle)
       run: |
-        updater export vulns
+        updater export vulns --manual-url "${{ env.MANUAL_URL }}"
 
     - name: Run updater (multi bundle)
       run: |
-        updater export --split bundles
+        updater export --manual-url "${{ env.MANUAL_URL }}" --split bundles
         zip vulns/vulnerabilities.zip bundles/*.json.zst
 
     - uses: ./.github/actions/upload-artifact-with-retry
@@ -83,7 +84,7 @@ jobs:
   upload-vulnerabilities:
     runs-on: ubuntu-latest
     needs:
-      - run-updater
+    - run-updater
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
     - name: Checkout repository
