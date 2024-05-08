@@ -964,7 +964,7 @@ var (
 
 	pattern_ComplianceResultsService_GetComplianceScanConfigurationResults_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v2", "compliance", "scan", "results", "scan_config_name"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ComplianceResultsService_GetComplianceProfileResults_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"v2", "compliance", "scan", "profiles", "results", "profile_name"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceResultsService_GetComplianceProfileResults_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6}, []string{"v2", "compliance", "scan", "results", "profiles", "profile_name", "checks"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_ComplianceResultsService_GetComplianceProfileCheckResult_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6, 1, 0, 4, 1, 5, 7}, []string{"v2", "compliance", "scan", "results", "profiles", "profile_name", "checks", "check_name"}, "", runtime.AssumeColonVerbOpt(false)))
 
