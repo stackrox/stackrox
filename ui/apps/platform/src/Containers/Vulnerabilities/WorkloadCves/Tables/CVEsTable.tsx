@@ -35,8 +35,8 @@ import {
 import EmptyTableResults from '../components/EmptyTableResults';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
-import CVESelectionTh from '../components/CVESelectionTh';
-import CVESelectionTd from '../components/CVESelectionTd';
+import CVESelectionTh from '../../components/CVESelectionTh';
+import CVESelectionTd from '../../components/CVESelectionTd';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
@@ -227,9 +227,11 @@ function CVEsTable({
                                     <CVESelectionTd
                                         selectedCves={selectedCves}
                                         rowIndex={rowIndex}
-                                        cve={cve}
-                                        summary={summary}
-                                        numAffectedImages={affectedImageCount}
+                                        item={{
+                                            cve,
+                                            summary,
+                                            numAffectedImages: affectedImageCount,
+                                        }}
                                     />
                                 )}
                                 <Td dataLabel="CVE" modifier="nowrap">
