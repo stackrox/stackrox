@@ -6,7 +6,11 @@ import { complianceEnhancedCoveragePath } from 'routePaths';
 
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
 
-function CoveragesToggleGroup({ tableView = 'checks' }: { tableView: string }) {
+type CoveragesToggleGroupProps = {
+    tableView: 'checks' | 'clusters';
+};
+
+function CoveragesToggleGroup({ tableView }: CoveragesToggleGroupProps) {
     const { profileName } = useParams();
     const history = useHistory();
 
@@ -17,16 +21,15 @@ function CoveragesToggleGroup({ tableView = 'checks' }: { tableView: string }) {
     };
     return (
         <ToggleGroup aria-label="Toggle for selected profile view">
-            {profileScanStats &&
-                profileScanStats.scanStats.map((profile) => (
-                    <ToggleGroupItem
-                        key={profile.profileName}
-                        text={profile.profileName}
-                        buttonId="compliance-profiles-toggle-group"
-                        isSelected={profileName === profile.profileName}
-                        onChange={() => handleToggleChange(profile.profileName)}
-                    />
-                ))}
+            {profileScanStats.scanStats.map((profile) => (
+                <ToggleGroupItem
+                    key={profile.profileName}
+                    text={profile.profileName}
+                    buttonId="compliance-profiles-toggle-group"
+                    isSelected={profileName === profile.profileName}
+                    onChange={() => handleToggleChange(profile.profileName)}
+                />
+            ))}
         </ToggleGroup>
     );
 }
