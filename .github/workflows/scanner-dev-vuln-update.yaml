@@ -174,11 +174,12 @@ jobs:
             --platform "linux/${arch}" \
             --load \
             --tag "${arch_image_tag}" \
-            "${DOCKER_ARGS[@]}"
+            "${DOCKER_ARGS[@]}" \
+            -f scanner/image/definitions/Dockerfile .
           
-          docker save -o definitions-image-${arch}.tar.gz "${arch_image_tag}"
+          docker save -o "definitions-image-${arch}.tar.gz" "${arch_image_tag}"
           
-          image_list+="${arch_image_tag}"
+          image_list+=("${arch_image_tag}")
         done
         
         docker manifest create "${BASE_IMAGE_TAG}" "${image_list[@]}"
