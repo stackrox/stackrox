@@ -6,8 +6,7 @@
   "remediation": "Create and apply an appropriate Network Policy of type ingress to all Deployments. See https://kubernetes.io/docs/concepts/services-networking/network-policies/ for details",
   "disabled": true,
   "categories": [
-    "Security Best Practices",
-    "Zero Trust"
+    "Security Best Practices"
   ],
   "lifecycleStages": [
     "DEPLOY"

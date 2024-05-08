@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package m193tom194
+package m199tom200
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/m_193_to_m_194_policy_updates_for_4_3/schema"
+	"github.com/stackrox/rox/migrator/migrations/m_199_to_m_200_policy_updates_for_4_5/schema"
 	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
@@ -45,6 +45,8 @@ func (s *policyMigrationTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), false)
 	s.gormDB = s.db.GetGormDB().WithContext(s.ctx)
 	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTablePoliciesStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTablePolicyCategoriesStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTablePolicyCategoryEdgesStmt)
 
 	// insert other un policies that won't be migrated in the db for migration to run successfully
 	policies := []*storage.Policy{
@@ -84,7 +86,6 @@ func (s *policyMigrationTestSuite) TestMigration() {
 	// Verify for each
 	for _, diff := range policyDiffs {
 		s.Run(fmt.Sprintf("Testing policy %s", diff.PolicyFileName), func() {
-
 			afterPolicy, _ := policymigrationhelper.ReadPolicyFromFile(policyDiffFS, filepath.Join("policies_before_and_after/after", diff.PolicyFileName))
 			afterPolicy.Categories = nil
 

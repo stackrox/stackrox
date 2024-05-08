@@ -5,8 +5,7 @@
   "rationale": "Out-of-date scans may not identify the most recent CVEs.",
   "remediation": "Integrate a scanner with the StackRox Kubernetes Security Platform to trigger scans automatically.",
   "categories": [
-    "Security Best Practices",
-    "Supply Chain Security"
+    "Security Best Practices"
   ],
   "lifecycleStages": [
     "DEPLOY"
