@@ -31,6 +31,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - No migration should be necessary, as the database is not persisted.
 - ROX-23953: Nexus and Red Hat registry integrations will now attempt to pull manifest digests by default (via a `HEAD` request to `/v2/<name>/manifests/<reference>`). This can be disabled by setting env `ROX_ATTEMPT_MANIFEST_DIGEST` to `false`.
   - This fixes one scenario that resulted in an `unsupported digest algorithm` error when using Scanner V4.
+- ROX-20223: Added a new default policy category called "Zero Trust", and the following default policies have been tagged with the category: "Deployments should have at least one ingress Network Policy" and "Unauthorized Network Flow"
+- ROX-20224: Added a new default policy category called "Supply Chain Security", and the following default policies have been tagged with the category: "Images with no scans", "30-day Scan Age", "90-day Image Age", "Required Annotation: Email",
+  "Required Annotation: Owner/Team", "Required Label: Owner/Team" and "Latest tag"
 
 ## [4.4.0]
 

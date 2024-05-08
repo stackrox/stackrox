@@ -3,12 +3,14 @@ package policymigrationhelper
 import (
 	"context"
 	"embed"
+	"fmt"
 	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	pglog "github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // MigratePoliciesWithDiffsAndStore migrates policies with the given diffs.
@@ -105,7 +107,9 @@ func MigratePoliciesWithDiffsAndStoreV2(policyDiffFS embed.FS,
 	policyDiffs []PolicyDiff,
 	getPolicy func(context.Context, string) (*storage.Policy, bool, error),
 	upsertPolicy func(context.Context, *storage.Policy) error,
-) error {
+	getCategories func(context.Context) (map[string]string, error),
+	upsertPolicyCategoryEdge func(context.Context, *storage.PolicyCategoryEdge) error,
+	removePolicyCategoryEdge func(context.Context, *storage.PolicyCategoryEdge) error) error {
 	policiesToMigrate := make(map[string]PolicyChanges, len(policyDiffs))
 	preMigrationPolicies := make(map[string]*storage.Policy, len(policyDiffs))
 	for _, diff := range policyDiffs {
@@ -127,7 +131,7 @@ func MigratePoliciesWithDiffsAndStoreV2(policyDiffFS embed.FS,
 		policiesToMigrate[beforePolicy.GetId()] = PolicyChanges{FieldsToCompare: diff.FieldsToCompare, ToChange: updates}
 		preMigrationPolicies[beforePolicy.GetId()] = beforePolicy
 	}
-	return MigratePoliciesWithStoreV2(policiesToMigrate, preMigrationPolicies, getPolicy, upsertPolicy)
+	return MigratePoliciesWithStoreV2(policiesToMigrate, preMigrationPolicies, getPolicy, upsertPolicy, getCategories, upsertPolicyCategoryEdge, removePolicyCategoryEdge)
 }
 
 // MigratePoliciesWithStoreV2 will migrate all policies in the db as specified by policiesToMigrate assuming the policies in the db
@@ -137,8 +141,15 @@ func MigratePoliciesWithStoreV2(policiesToMigrate map[string]PolicyChanges,
 	comparisonPolicies map[string]*storage.Policy,
 	getPolicy func(context.Context, string) (*storage.Policy, bool, error),
 	upsertPolicy func(context.Context, *storage.Policy) error,
-) error {
+	getCategories func(context.Context) (map[string]string, error),
+	upsertPolicyCategoryEdge func(context.Context, *storage.PolicyCategoryEdge) error,
+	removePolicyCategoryEdge func(context.Context, *storage.PolicyCategoryEdge) error) error {
 	ctx := sac.WithAllAccess(context.Background())
+
+	categories, err := getCategories(ctx)
+	if err != nil {
+		return err
+	}
 
 	for policyID, updateDetails := range policiesToMigrate {
 		policy, exists, err := getPolicy(ctx, policyID)
@@ -156,13 +167,39 @@ func MigratePoliciesWithStoreV2(policiesToMigrate map[string]PolicyChanges,
 			continue
 		}
 
+		// For each category to add, upsert corresponding policy category edges
+		for _, category := range updateDetails.ToChange.CategoriesToAdd {
+			cId, ok := categories[category]
+			if !ok {
+				return errors.New(fmt.Sprintf("policy category %q not found", category))
+			}
+			err = upsertPolicyCategoryEdge(ctx, &storage.PolicyCategoryEdge{
+				Id:         uuid.NewV4().String(),
+				PolicyId:   policyID,
+				CategoryId: cId,
+			})
+			if err != nil {
+				return err
+			}
+		}
+		// For each category to remove, remove corresponding policy category edges
+		for _, category := range updateDetails.ToChange.CategoriesToRemove {
+			cId, ok := categories[category]
+			if !ok {
+				continue
+			}
+			err = removePolicyCategoryEdge(ctx, &storage.PolicyCategoryEdge{CategoryId: cId, PolicyId: policyID})
+			if err != nil {
+				return err
+			}
+		}
 		// Update policy as needed
 		updateDetails.ToChange.applyToPolicy(policy)
+		policy.Categories = []string{}
 		err = upsertPolicy(ctx, policy)
 		if err != nil {
 			return err
 		}
-
 	}
 	return nil
 }

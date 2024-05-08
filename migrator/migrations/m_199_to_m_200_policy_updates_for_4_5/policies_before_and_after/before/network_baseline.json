@@ -5,8 +5,7 @@
   "rationale": "The network baseline is a list of flows that are allowed, and once it is frozen, any flow outside that is a concern.",
   "remediation": "Evaluate this network flow. If deemed to be okay, add it to the baseline. If not, investigate further as required.",
   "categories": [
-    "Anomalous Activity",
-    "Zero Trust"
+    "Anomalous Activity"
   ],
   "lifecycleStages": [
     "RUNTIME"
