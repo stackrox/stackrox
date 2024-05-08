@@ -213,18 +213,43 @@ LIMIT
 # in https://cloud.google.com/bigquery/docs/troubleshoot-quotas#ts-table-import-quota-resolution
 
 _TESTS_TABLE_NAME="acs-san-stackroxci:ci_metrics.stackrox_tests"
-_BATCH_STORAGE_UPLOAD="gs://stackrox-ci-artifacts/test-metrics/upload"
-_BATCH_STORAGE_PROCESSING="gs://stackrox-ci-artifacts/test-metrics/processing"
-_BATCH_STORAGE_DONE="gs://stackrox-ci-artifacts/test-metrics/done"
+_TESTS_STORAGE_DIR="test-metrics"
+
+_CENTRAL_TABLE_NAME="acs-san-stackroxci:ci_metrics.stackrox_central_metrics"
+_CENTRAL_STORAGE_DIR="central-metrics"
+
+_IMAGE_PREFETCHES_TABLE_NAME="acs-san-stackroxci:ci_metrics.stackrox_image_prefetches"
+_IMAGE_PREFETCHES_STORAGE_DIR="image-prefetches-metrics"
+
+_BATCH_STORAGE_ROOT="gs://stackrox-ci-artifacts"
+_BATCH_STORAGE_UPLOAD_SUBDIR="upload"
+
 _BATCH_SIZE=20
 
 save_test_metrics() {
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: save_test_metrics <CSV file>"
     fi
+    _save_metrics "$1" "${_TESTS_STORAGE_DIR}"
+}
 
+save_central_metrics() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: save_central_metrics <CSV file>"
+    fi
+    _save_metrics "$1" "${_CENTRAL_STORAGE_DIR}"
+}
+
+save_image_prefetches_metrics() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: save_image_prefetches_metrics <CSV file>"
+    fi
+    _save_metrics "$1" "${_IMAGE_PREFETCHES_STORAGE_DIR}"
+}
+
+_save_metrics() {
     local csv="$1"
-    local to="${_BATCH_STORAGE_UPLOAD}"
+    local to="${_BATCH_STORAGE_ROOT}/$2/${_BATCH_STORAGE_UPLOAD_SUBDIR}"
 
     info "Saving Big Query test records from ${csv} to ${to}"
 
@@ -232,16 +257,27 @@ save_test_metrics() {
 }
 
 batch_load_test_metrics() {
-    while _load_one_batch; do
-        info "one batch loaded"
+    while _load_one_batch "${_TESTS_STORAGE_DIR}" "${_TESTS_TABLE_NAME}"; do
+        info "one tests batch loaded"
+    done
+    while _load_one_batch "${_CENTRAL_STORAGE_DIR}" "${_CENTRAL_TABLE_NAME}"; do
+        info "one central batch loaded"
+    done
+    while _load_one_batch "${_IMAGE_PREFETCHES_STORAGE_DIR}" "${_IMAGE_PREFETCHES_TABLE_NAME}"; do
+        info "one image prefetches batch loaded"
     done
     info "done loading"
 }
 
 _load_one_batch() {
-    info "Gathering a batch of test metrics to load"
     local files=()
-    for metrics_file in $(gsutil ls "${_BATCH_STORAGE_UPLOAD}"); do
+    local subdir="$1"
+    local table_name=$2
+    info "Gathering a batch of ${subdir} to load"
+    local storage_upload="${_BATCH_STORAGE_ROOT}/${subdir}/${_BATCH_STORAGE_UPLOAD_SUBDIR}"
+    local storage_processing="${_BATCH_STORAGE_ROOT}/${subdir}/processing"
+    local storage_done="${_BATCH_STORAGE_ROOT}/${subdir}/done"
+    for metrics_file in $(gsutil ls "${storage_upload}"); do
         files+=("${metrics_file}")
         [[ "${#files[@]}" -eq "${_BATCH_SIZE}" ]] && break
     done
@@ -254,7 +290,7 @@ _load_one_batch() {
 
     # Move the batch to a new location for processing to guard against reprocess
     local process_location
-    process_location="${_BATCH_STORAGE_PROCESSING}/$(date +%Y-%m-%d-%H-%M-%S.%N)"
+    process_location="${storage_processing}/$(date +%Y-%m-%d-%H-%M-%S.%N)"
     info "Moving the batch to ${process_location}"
     gsutil -m mv "${files[@]}" "${process_location}/"
     gsutil ls -l "${process_location}"
@@ -263,10 +299,10 @@ _load_one_batch() {
     bq load \
         --skip_leading_rows=1 \
         --allow_quoted_newlines \
-        "${_TESTS_TABLE_NAME}" "${process_location}/*"
+        "$table_name" "${process_location}/*"
 
-    info "Moving the processed batch to ${_BATCH_STORAGE_DONE}"
-    gsutil -m mv "${process_location}" "${_BATCH_STORAGE_DONE}/"
+    info "Moving the processed batch to ${storage_done}"
+    gsutil -m mv "${process_location}" "${storage_done}/"
 
     return 0
 }
