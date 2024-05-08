@@ -1,6 +1,8 @@
-// import { complianceV2Url } from './ComplianceCommon';
+import axios from 'services/instance';
 
-// const complianceResultsBaseUrl = `${complianceV2Url}/scan`;
+import { complianceV2Url } from './ComplianceCommon';
+
+const complianceResultsBaseUrl = `${complianceV2Url}/scan`;
 
 export const ComplianceCheckStatusEnum = {
     UNSET_CHECK_STATUS: 'UNSET_CHECK_STATUS',
@@ -44,3 +46,24 @@ export type ComplianceCheckStatusCount = {
     count: number;
     status: ComplianceCheckStatus;
 };
+
+type ComplianceProfileScanStats = {
+    checkStats: ComplianceCheckStatusCount[];
+    profileName: string;
+    title: string;
+    version: string;
+};
+
+export type ListComplianceProfileScanStatsResponse = {
+    scanStats: ComplianceProfileScanStats[];
+    totalCount: number;
+};
+
+/**
+ * Fetches the scan stats grouped by profile.
+ */
+export function getComplianceProfilesStats(): Promise<ListComplianceProfileScanStatsResponse> {
+    return axios
+        .get<ListComplianceProfileScanStatsResponse>(`${complianceResultsBaseUrl}/stats/profiles`)
+        .then((response) => response.data);
+}
