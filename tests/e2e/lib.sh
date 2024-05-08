@@ -277,6 +277,10 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: '"${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
     customize_envVars+=$'\n      - name: ROX_REGISTRY_CLIENT_TIMEOUT'
     customize_envVars+=$'\n        value: '"${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
+    customize_envVars+=$'\n      - name: ROX_VULN_MGMT_2_GA'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_VULN_MGMT_ADVANCED_FILTERS'
+    customize_envVars+=$'\n        value: "true"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
