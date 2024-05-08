@@ -33,7 +33,7 @@ var (
 )
 
 // NewInfoUpdater return a sensor component that periodically collect information about the compliance operator.
-func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration) InfoUpdater {
+func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration, readySignal *concurrency.Signal) InfoUpdater {
 	if updateInterval == 0 {
 		updateInterval = defaultInterval
 	}
@@ -46,6 +46,7 @@ func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration) I
 		stopSig:              concurrency.NewSignal(),
 		updateTicker:         updateTicker,
 		complianceOperatorNS: "openshift-compliance",
+		isReady:              readySignal,
 	}
 }
 
@@ -56,6 +57,7 @@ type updaterImpl struct {
 	response             chan *message.ExpiringMessage
 	stopSig              concurrency.Signal
 	complianceOperatorNS string
+	isReady              *concurrency.Signal
 }
 
 func (u *updaterImpl) Start() error {
@@ -115,6 +117,9 @@ func (u *updaterImpl) run(tickerC <-chan time.Time) {
 func (u *updaterImpl) collectInfoAndSendResponse() bool {
 	info := u.getComplianceOperatorInfo()
 	u.complianceOperatorNS = info.GetNamespace()
+	if info.GetIsInstalled() {
+		u.isReady.Signal()
+	}
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ComplianceOperatorInfo{
