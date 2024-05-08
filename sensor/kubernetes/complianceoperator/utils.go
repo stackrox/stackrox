@@ -14,6 +14,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var (
+	stackroxLabels = map[string]string{
+		"app.kubernetes.io/name": "stackrox",
+	}
+)
+
 type scanNameGetter interface {
 	GetScanName() string
 }
@@ -28,7 +34,7 @@ func validateScanName(req scanNameGetter) error {
 	return nil
 }
 
-func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) *v1alpha1.ScanSetting {
+func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) runtime.Object { // *v1alpha1.ScanSetting {
 	return &v1alpha1.ScanSetting{
 		TypeMeta: v1.TypeMeta{
 			Kind:       complianceoperator.ScanSetting.Kind,
@@ -37,9 +43,7 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 		ObjectMeta: v1.ObjectMeta{
 			Name:      request.GetScanName(),
 			Namespace: namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/name": "stackrox",
-			},
+			Labels:    stackroxLabels,
 			Annotations: map[string]string{
 				"owner": "stackrox",
 			},
@@ -59,7 +63,7 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 	}
 }
 
-func convertCentralRequestToScanSettingBinding(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) *v1alpha1.ScanSettingBinding {
+func convertCentralRequestToScanSettingBinding(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, _ string) runtime.Object { // *v1alpha1.ScanSettingBinding {
 	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
 	for _, profile := range request.GetProfiles() {
 		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
@@ -77,9 +81,7 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 		ObjectMeta: v1.ObjectMeta{
 			Name:      request.GetScanName(),
 			Namespace: namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/name": "stackrox",
-			},
+			Labels:    stackroxLabels,
 			Annotations: map[string]string{
 				"owner": "stackrox",
 			},
@@ -194,4 +196,22 @@ func runtimeObjToUnstructured(obj runtime.Object) (*unstructured.Unstructured, e
 	return &unstructured.Unstructured{
 		Object: unstructuredObj,
 	}, nil
+}
+
+func updateScanSettingFromUpdateRequest(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
+	var scanSetting v1alpha1.ScanSetting
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &scanSetting); err != nil {
+		return nil, errors.Wrap(err, "Could not convert unstructured to scan setting")
+	}
+
+	return runtimeObjToUnstructured(updateScanSettingFromCentralRequest(&scanSetting, req))
+}
+
+func updateScanSettingBindingFromUpdateRequest(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
+	var scanSettingBinding v1alpha1.ScanSettingBinding
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &scanSettingBinding); err != nil {
+		return nil, errors.Wrap(err, "Could not convert unstructured to scan setting")
+	}
+
+	return runtimeObjToUnstructured(updateScanSettingBindingFromCentralRequest(&scanSettingBinding, req.GetScanSettings()))
 }
