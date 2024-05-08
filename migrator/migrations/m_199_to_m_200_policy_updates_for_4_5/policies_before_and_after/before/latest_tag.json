@@ -5,8 +5,7 @@
   "rationale": "Using latest tag can result in running heterogeneous versions of code. Many Docker hosts cache the Docker images, which means newer versions of the latest tag will not be picked up. See https://docs.docker.com/develop/dev-best-practices for more best practices.",
   "remediation": "Consider moving to semantic versioning based on code releases (semver.org) or using the first 12 characters of the source control SHA. This will allow you to tie the Docker image to the code.",
   "categories": [
-    "DevOps Best Practices",
-    "Supply Chain Security"
+    "DevOps Best Practices"
   ],
   "lifecycleStages": [
     "BUILD",
