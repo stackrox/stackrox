@@ -130,6 +130,9 @@ jobs:
     runs-on: ubuntu-latest
     needs:
     - run-updater
+    strategy:
+      matrix:
+        arch: [ "amd64", "arm64", "ppc64le", "s390x" ]
     steps:
     # Required for making the tag
     - name: Checkout repository
@@ -154,22 +157,54 @@ jobs:
     - name: Build and save definitions image
       if: github.event_name == 'pull_request'
       run: |
+        set -e
+        
         TAG="$(make tag)"
         QUAY_TAG_EXPIRATION=1w
-        docker build \
-          -t "stackrox/definitions:$TAG" \
-          --build-arg "LABEL_VERSION=$TAG" \
-          --build-arg "LABEL_RELEASE=$TAG" \
-          --build-arg "QUAY_TAG_EXPIRATION=$QUAY_TAG_EXPIRATION" \
-          -f scanner/image/definitions/Dockerfile .
+        DOCKER_ARGS=(
+          "--tag" "stackrox/definitions:${TAG}-${{ matrix.arch }}"
+          "--build-arg" "LABEL_VERSION=${TAG}"
+          "--build-arg" "LABEL_RELEASE=${TAG}"
+          "--build-arg" "QUAY_TAG_EXPIRATION=${QUAY_TAG_EXPIRATION}"
+        )
         
-        docker save -o definitions-image.tar.gz "stackrox/definitions:$TAG"
+        echo "Building with platform linux/${{ matrix.arch }}"
+        if docker info | grep buildx; then
+          docker buildx build \
+            --platform "linux/${{ matrix.arch }}" \
+            "${DOCKER_ARGS[@]}
+        else
+          docker build \
+          --platform "linux/${{ matrix.arch }}" \
+          "${DOCKER_ARGS[@]}"
+        fi
+        
+        docker save -o definitions-image-${{ matrix.arch }}.tar.gz "stackrox/definitions:${TAG}-${{ matrix.arch }}"
 
     - uses: actions/upload-artifact@v4
       if: github.event_name == 'pull_request'
       with:
-        name: definitions-image
-        path: definitions-image.tar.gz
+        name: definitions-image-${{ matrix.arch }}
+        path: definitions-image-${{ matrix.arch }}.tar.gz
+
+    - name: Create and log image manifest
+      if: github.event_name == 'pull_request'
+      run: |
+        set -e
+        TAG="$(make tag)"
+        # TODO(DO NOT MERGE): Do we have access to the docker images from before? Guess we'll find out :)
+        # TODO(DO NOT MERGE): This kinda sucks. Guess that's why we output the matrix as JSON elsewhere?
+        architectures="amd64,arm64,ppc64le,s390x"
+        image_list=()
+        for arch in architectures; do image_list+="stackrox/definitions:${TAG}-${arch}"; done
+        docker manifest create stackrox/definitions:${TAG} "${image_list[@]}"
+        docker manifest inspect stackrox/definitions:${TAG} > definitions-manifest.json
+
+    - uses: actions/upload-artifact@v4
+      if: github.event_name == 'pull_request'
+      with:
+        name: definitions-manifest
+        path: definitions-manifest.json
 
   #    - name: Build definitions image
   #      run: make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} images
@@ -181,6 +216,19 @@ jobs:
   #      run: |
   #        source ./scripts/ci/lib.sh
   #        push_scanner_image_set ${{ matrix.goarch }}
+
+#    - name: Push Scanner and ScannerDB image manifests
+#      # Skip for external contributions.
+#      if: |
+#        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+#      run: |
+#        source ./scripts/ci/lib.sh
+#
+#        # TODO(DO NOT MERGE): Surely there's a better way to do this?
+#        # If this is updated, be sure to update goarch in define-scanner-job-matrix above.
+#        architectures="amd64,arm64,ppc64le,s390x"
+#
+#        push_scanner_image_manifest_lists "$architectures"
 
   send-notification:
     needs:
