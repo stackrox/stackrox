@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -142,7 +143,15 @@ describe('Risk', () => {
 
             clickTab('Deployment Details');
             cy.get(RiskPageSelectors.imageLink).first().click();
-            cy.location('pathname').should('contain', '/main/vulnerability-management/image');
+
+            if (hasFeatureFlag('ROX_VULN_MGMT_2_GA')) {
+                cy.location('pathname').should(
+                    'contain',
+                    '/main/vulnerabilities/workload-cves/image'
+                );
+            } else {
+                cy.location('pathname').should('contain', '/main/vulnerability-management/image');
+            }
         });
     });
 

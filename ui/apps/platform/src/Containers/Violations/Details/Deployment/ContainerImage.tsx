@@ -21,7 +21,7 @@ type ContainerImageProps = {
 
 function ContainerImage({ image }: ContainerImageProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const areVMMiscImprovementsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_2_MISC_IMPROVEMENTS');
+    const areVMMiscImprovementsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA');
 
     const imageDetailsPageURL = areVMMiscImprovementsEnabled
         ? `${vulnerabilitiesWorkloadCvesPath}/images/${image.id}`
