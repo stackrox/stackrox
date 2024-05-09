@@ -156,20 +156,32 @@ func (s *serviceImpl) getProfileStats(ctx context.Context, parsedQuery *v1.Query
 	}, nil
 }
 
-// GetComplianceClusterScanStats lists current scan stats grouped by cluster
-func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceClusterScanStatsResponse, error) {
+// GetComplianceClusterScanStats lists current scan stats for a cluster for each scan configuration
+func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, request *v2.ComplianceScanClusterRequest) (*v2.ListComplianceClusterScanStatsResponse, error) {
+	if request.GetClusterId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Cluster ID is required")
+	}
+
 	// Fill in Query.
-	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
+	// Add the scan config name as an exact match
+	parsedQuery = search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ClusterID, request.GetClusterId()).ProtoQuery(),
+		parsedQuery,
+	)
+
+	countQuery := parsedQuery.Clone()
+
 	// Fill in pagination.
-	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
+	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
 
 	scanResults, err := s.complianceResultsDS.ComplianceCheckResultStats(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", query)
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for request %v", request)
 	}
 
 	// Need to look up the scan config IDs to return with the results.
@@ -178,14 +190,20 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, query *
 		if _, found := scanConfigToIDs[result.ScanConfigName]; !found {
 			config, err := s.scanConfigDS.GetScanConfigurationByName(ctx, result.ScanConfigName)
 			if err != nil {
-				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", query)
+				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", request)
 			}
 			scanConfigToIDs[result.ScanConfigName] = config.GetId()
 		}
 	}
 
+	count, err := s.complianceResultsDS.CountByField(ctx, countQuery, search.ComplianceOperatorScanConfigName)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for request %v", request)
+	}
+
 	return &v2.ListComplianceClusterScanStatsResponse{
-		ScanStats: storagetov2.ComplianceV2ClusterStats(scanResults, scanConfigToIDs),
+		ScanStats:  storagetov2.ComplianceV2ClusterStats(scanResults, scanConfigToIDs),
+		TotalCount: int32(count),
 	}, nil
 }
 
