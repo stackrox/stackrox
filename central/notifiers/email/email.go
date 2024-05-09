@@ -260,9 +260,9 @@ func (m Message) writeContentBytes(buf *bytes.Buffer) {
 
 	if m.EmbedLogo || len(m.Attachments) > 0 {
 		mixedType = true
-	}
-	if mixedType {
 		buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\r\n", boundary))
+	}
+	if m.EmbedLogo {
 		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
 
 		buf.WriteString("Content-Type: image/png; name=logo.png\r\n")

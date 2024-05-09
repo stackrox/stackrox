@@ -53,18 +53,21 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 	assert.Contains(t, msgStr, "<div>\r\nHow you doin'?\r\n</div>\r\n")
 
 	lastBoundary, expectedFinalBoundary, err := obtainLastAndExpectedBoundaryString(msgStr)
-	if err != nil {
-		t.Fatalf("Failed to compile regex for boundary: %v", err)
+	if assert.NoError(t, err) {
+		assert.Equal(t, expectedFinalBoundary, lastBoundary)
 	}
-	assert.Equal(t, expectedFinalBoundary, lastBoundary)
 }
 
 func obtainLastAndExpectedBoundaryString(msgStr string) (string, string, error) {
-	// Obtain boundary and verify the close delimiter
+	// Obtain boundary to verify the close delimiter
 	regex := regexp.MustCompile(` boundary="([^"]+)"`)
-	// Regex will provide two values [boundary="boundaryValue", boundaryValue]
-	boundary := regex.FindStringSubmatch(msgStr)
-	expectedFinalBoundary := fmt.Sprintf("--%s--", boundary[1])
+	match := regex.FindString(msgStr)
+	if match == "" {
+		return "", "", errors.New("boundary not found in the message")
+	}
+	splitResults := strings.Split(match, "=")
+	boundaryValue := strings.Trim(splitResults[1], `"`)
+	expectedFinalBoundary := fmt.Sprintf("--%s--", boundaryValue)
 
 	lines := strings.Split(msgStr, "\n")
 	if len(lines) < 2 {
@@ -117,10 +120,9 @@ func TestEmailMsgWithMultipleAttachments(t *testing.T) {
 	assert.Contains(t, msgStr, "<div>\r\nHow you doin'?\r\n</div>\r\n")
 
 	lastBoundary, expectedFinalBoundary, err := obtainLastAndExpectedBoundaryString(msgStr)
-	if err != nil {
-		t.Fatalf("Failed to compile regex for boundary: %v", err)
+	if assert.NoError(t, err) {
+		assert.Equal(t, expectedFinalBoundary, lastBoundary)
 	}
-	assert.Equal(t, expectedFinalBoundary, lastBoundary)
 }
 
 func TestEmailMsgNoAttachmentsWithLogo(t *testing.T) {
@@ -148,10 +150,9 @@ func TestEmailMsgNoAttachmentsWithLogo(t *testing.T) {
 	assert.Contains(t, msgStr, "How you doin'?\r\n")
 
 	lastBoundary, expectedFinalBoundary, err := obtainLastAndExpectedBoundaryString(msgStr)
-	if err != nil {
-		t.Fatalf("Failed to compile regex for boundary: %v", err)
+	if assert.NoError(t, err) {
+		assert.Equal(t, expectedFinalBoundary, lastBoundary)
 	}
-	assert.Equal(t, expectedFinalBoundary, lastBoundary)
 }
 
 func TestEmailMsgNoAttachments(t *testing.T) {
