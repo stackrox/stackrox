@@ -5,13 +5,15 @@ import pluralize from 'pluralize';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
 
+type Status = 'pass' | 'fail' | 'other';
+
 type StatusCountIconProps = {
     text: string;
-    status: 'pass' | 'fail' | 'other';
+    status: Status;
     count: number;
 };
 
-function getStatusIcon(status, count) {
+function getStatusIcon(status: Status, count: number) {
     let color = 'var(--pf-v5-global--disabled-color--100)';
     if (count > 0) {
         switch (status) {

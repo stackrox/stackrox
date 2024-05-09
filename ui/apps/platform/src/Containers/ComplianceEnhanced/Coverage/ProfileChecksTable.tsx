@@ -18,7 +18,7 @@ import { getTableUIState } from 'utils/getTableUIState';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
-import CoverageTableViewToggleGroup from './components/CoverageTableViewToggle';
+import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
 import {
     calculateCompliancePercentage,
@@ -53,7 +53,7 @@ function ProfileChecksTable({
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem>
-                        <CoverageTableViewToggleGroup activeToggle="checks" />
+                        <ProfilesTableToggleGroup activeToggle="checks" />
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>

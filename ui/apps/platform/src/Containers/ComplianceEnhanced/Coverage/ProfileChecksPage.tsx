@@ -27,7 +27,7 @@ function ProfileChecksPage() {
                 <CoveragesToggleGroup tableView="checks" />
             </PageSection>
             <PageSection variant="default">
-                <PageSection variant="light">
+                <PageSection variant="light" component="div">
                     <Title headingLevel="h2">Profile results</Title>
                     <Divider />
                     <ProfileChecksTable

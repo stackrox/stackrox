@@ -1,8 +1,6 @@
 import React from 'react';
 import { PageSection, Text, Title } from '@patternfly/react-core';
 
-import PageTitle from 'Components/PageTitle';
-
 function CoveragesPageHeader() {
     return (
         <>

@@ -4,11 +4,11 @@ import { ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import { complianceEnhancedCoveragePath } from 'routePaths';
 
-export type CoverageTableViewToggleGroupProps = {
+export type ProfilesTableToggleGroupProps = {
     activeToggle: 'checks' | 'clusters';
 };
 
-function CoverageTableViewToggleGroup({ activeToggle }: CoverageTableViewToggleGroupProps) {
+function ProfilesTableToggleGroup({ activeToggle }: ProfilesTableToggleGroupProps) {
     const { profileName } = useParams();
     const history = useHistory();
 
@@ -34,4 +34,4 @@ function CoverageTableViewToggleGroup({ activeToggle }: CoverageTableViewToggleG
     );
 }
 
-export default CoverageTableViewToggleGroup;
+export default ProfilesTableToggleGroup;
