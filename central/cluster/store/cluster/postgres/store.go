@@ -125,12 +125,14 @@ func insertIntoClusters(batch *pgx.Batch, obj *storage.Cluster) error {
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
+		obj.GetType(),
 		pgutils.EmptyOrMap(obj.GetLabels()),
 		obj.GetStatus().GetProviderMetadata().GetCluster().GetType(),
+		obj.GetStatus().GetOrchestratorMetadata().GetVersion(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO clusters (Id, Name, Labels, Status_ProviderMetadata_Cluster_Type, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, Status_ProviderMetadata_Cluster_Type = EXCLUDED.Status_ProviderMetadata_Cluster_Type, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO clusters (Id, Name, Type, Labels, Status_ProviderMetadata_Cluster_Type, Status_OrchestratorMetadata_Version, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Labels = EXCLUDED.Labels, Status_ProviderMetadata_Cluster_Type = EXCLUDED.Status_ProviderMetadata_Cluster_Type, Status_OrchestratorMetadata_Version = EXCLUDED.Status_OrchestratorMetadata_Version, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil

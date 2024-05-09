@@ -25,25 +25,30 @@ function ImportPolicyJSONUpload({
     setPolicies,
     policies,
 }: ImportPolicyJSONUploadProps): ReactElement {
-    const [fileContent, setFileContent] = useState('');
+    const [fileContent, setFileContent] = useState<File>();
     const [filename, setFilename] = useState('');
     const [isFileLoading, setIsFileLoading] = useState(false);
 
     function handleCancelModal() {
-        setFileContent('');
+        setFileContent(undefined);
         setFilename('');
         cancelModal();
     }
 
-    function handleFileChange(newFileContent, newFilename) {
+    async function handleFileChange(e, newFileContent) {
         setFileContent(newFileContent);
-        setFilename(newFilename);
+        setFilename(newFileContent.name);
         if (newFileContent) {
-            const jsonObj = JSON.parse(newFileContent);
+            const jsonFile = await newFileContent.text();
+            const jsonObj = JSON.parse(jsonFile);
             if (jsonObj?.policies) {
                 setPolicies(jsonObj.policies);
             }
         }
+    }
+
+    function handleTextOrDataChange(e, value: string) {
+        setFileContent(value as unknown as File);
     }
 
     function handleFileReadStarted() {
@@ -54,6 +59,11 @@ function ImportPolicyJSONUpload({
         setIsFileLoading(false);
     }
 
+    function handleClear() {
+        setFileContent(undefined);
+        setFilename('');
+    }
+
     return (
         <>
             <ModalBoxBody>
@@ -61,21 +71,24 @@ function ImportPolicyJSONUpload({
                 <FileUpload
                     id="policies-json-import"
                     type="text"
-                    className="pf-u-mt-md"
+                    className="pf-v5-u-mt-md"
                     value={fileContent}
                     filename={filename}
                     filenamePlaceholder="Drag and drop a file or upload one"
-                    onChange={handleFileChange}
+                    onFileInputChange={handleFileChange}
+                    onDataChange={handleTextOrDataChange}
+                    onTextChange={handleTextOrDataChange}
                     onReadStarted={handleFileReadStarted}
                     onReadFinished={handleFileReadFinished}
+                    onClearClick={handleClear}
                     isLoading={isFileLoading}
                     browseButtonText="Upload"
                     dropzoneProps={{
-                        accept: '.json',
+                        accept: { 'application/json': ['.json'] },
                     }}
                 />
-                {policies?.length > 0 && fileContent !== '' && (
-                    <Flex direction={{ default: 'column' }} className="pf-u-mt-md">
+                {policies?.length > 0 && fileContent && (
+                    <Flex direction={{ default: 'column' }} className="pf-v5-u-mt-md">
                         <FlexItem>
                             <Title headingLevel="h3">
                                 The following {`${pluralize('policy', policies.length)}`} will be
@@ -84,7 +97,7 @@ function ImportPolicyJSONUpload({
                         </FlexItem>
                         <FlexItem data-testid="policies-to-import">
                             {policies.map(({ id, name }, idx) => (
-                                <div key={id} className={idx === 0 ? '' : 'pf-u-pt-sm'}>
+                                <div key={id} className={idx === 0 ? '' : 'pf-v5-u-pt-sm'}>
                                     {name}
                                 </div>
                             ))}

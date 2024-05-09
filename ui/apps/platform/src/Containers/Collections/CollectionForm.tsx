@@ -14,9 +14,14 @@ import {
     Label,
     TextInput,
     Title,
+    EmptyStateHeader,
+    EmptyStateFooter,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Tr, Td } from '@patternfly/react-table';
+import { Table, Tbody, Tr, Td } from '@patternfly/react-table';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -52,7 +57,7 @@ function AttachedCollectionTable({
     collectionTableCells: CollectionAttacherProps['collectionTableCells'];
 }): ReactElement {
     return collections.length > 0 ? (
-        <TableComposable aria-label="Attached collections">
+        <Table aria-label="Attached collections">
             <Tbody>
                 {collections.map((collection) => (
                     <Tr key={collection.name}>
@@ -64,11 +69,13 @@ function AttachedCollectionTable({
                     </Tr>
                 ))}
             </Tbody>
-        </TableComposable>
+        </Table>
     ) : (
         <EmptyState>
-            <EmptyStateIcon icon={CubesIcon} />
-            <p>There are no other collections attached to this collection</p>
+            <EmptyStateHeader icon={<EmptyStateIcon icon={CubesIcon} />} />
+            <EmptyStateFooter>
+                <p>There are no other collections attached to this collection</p>
+            </EmptyStateFooter>
         </EmptyState>
     );
 }
@@ -309,39 +316,33 @@ function CollectionForm({
 
     return (
         <Form
-            className="pf-u-display-flex pf-u-flex-direction-column pf-u-h-100"
+            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-h-100"
             style={
                 {
-                    '--pf-c-form--GridGap': 0,
+                    '--pf-v5-c-form--GridGap': 0,
                 } as CSSProperties
             }
         >
             <Flex
-                className="pf-u-p-lg pf-u-flex-grow-1 pf-u-background-color-200"
+                className="pf-v5-u-p-lg pf-v5-u-flex-grow-1 pf-v5-u-background-color-200"
                 spaceItems={{ default: 'spaceItemsMd' }}
                 direction={{ default: 'column' }}
             >
                 <Flex
-                    className="pf-u-background-color-100 pf-u-p-lg"
+                    className="pf-v5-u-background-color-100 pf-v5-u-p-lg"
                     direction={{ default: 'column' }}
                     spaceItems={{ default: 'spaceItemsMd' }}
                 >
                     <Title headingLevel="h2">Collection details</Title>
                     <Flex direction={{ default: 'column', lg: 'row' }}>
                         <FlexItem flex={{ default: 'flex_1' }}>
-                            <FormGroup
-                                label="Name"
-                                fieldId="name"
-                                isRequired={!isReadOnly}
-                                helperTextInvalid={nameError}
-                                validated={nameError ? 'error' : 'default'}
-                            >
+                            <FormGroup label="Name" fieldId="name" isRequired={!isReadOnly}>
                                 <TextInput
                                     id="name"
                                     name="name"
                                     value={values.name}
                                     validated={nameError ? 'error' : 'default'}
-                                    onChange={(_, e) => {
+                                    onChange={(e) => {
                                         if (
                                             configError?.type === 'DuplicateName' ||
                                             configError?.type === 'EmptyName'
@@ -353,6 +354,13 @@ function CollectionForm({
                                     onBlur={handleBlur}
                                     readOnlyVariant={isReadOnly ? 'plain' : undefined}
                                 />
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem variant={nameError ? 'error' : 'default'}>
+                                            {nameError}
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
                             </FormGroup>
                         </FlexItem>
                         <FlexItem flex={{ default: 'flex_2' }}>
@@ -361,7 +369,7 @@ function CollectionForm({
                                     id="description"
                                     name="description"
                                     value={values.description}
-                                    onChange={(_, e) => handleChange(e)}
+                                    onChange={(e) => handleChange(e)}
                                     onBlur={handleBlur}
                                     readOnlyVariant={isReadOnly ? 'plain' : undefined}
                                 />
@@ -380,7 +388,7 @@ function CollectionForm({
                             spaceItems={{ default: 'spaceItemsSm' }}
                         >
                             <Title
-                                className={isReadOnly ? 'pf-u-mb-0' : 'pf-u-mb-xs'}
+                                className={isReadOnly ? 'pf-v5-u-mb-0' : 'pf-v5-u-mb-xs'}
                                 headingLevel="h2"
                             >
                                 Collection rules
@@ -396,7 +404,7 @@ function CollectionForm({
                         isExpanded={isRuleSectionOpen}
                     >
                         <Flex
-                            className="pf-u-p-md"
+                            className="pf-v5-u-p-md"
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsMd' }}
                         >
@@ -419,7 +427,7 @@ function CollectionForm({
                                 validationErrors={errors.resourceSelector?.Deployment}
                                 isDisabled={isReadOnly}
                             />
-                            <Label className="pf-u-px-md pf-u-font-size-md pf-u-align-self-center">
+                            <Label className="pf-v5-u-px-md pf-v5-u-font-size-md pf-v5-u-align-self-center">
                                 in
                             </Label>
                             <RuleSelector
@@ -429,7 +437,7 @@ function CollectionForm({
                                 validationErrors={errors.resourceSelector?.Namespace}
                                 isDisabled={isReadOnly}
                             />
-                            <Label className="pf-u-px-md pf-u-font-size-md pf-u-align-self-center">
+                            <Label className="pf-v5-u-px-md pf-v5-u-font-size-md pf-v5-u-align-self-center">
                                 in
                             </Label>
                             <RuleSelector
@@ -453,7 +461,7 @@ function CollectionForm({
                             alignItems={{ default: 'alignItemsCenter' }}
                             spaceItems={{ default: 'spaceItemsSm' }}
                         >
-                            <Title className="pf-u-mb-xs" headingLevel="h2">
+                            <Title className="pf-v5-u-mb-xs" headingLevel="h2">
                                 Attached collections
                             </Title>
                             <Badge isRead>{values.embeddedCollectionIds.length}</Badge>
@@ -488,7 +496,7 @@ function CollectionForm({
                                     collectionTableCells={collectionTableCells}
                                 />
                             ) : (
-                                <div className="pf-u-p-md">
+                                <div className="pf-v5-u-p-md">
                                     <CollectionAttacher
                                         excludedCollectionId={
                                             action.type === 'edit' ? action.collectionId : null
@@ -504,9 +512,9 @@ function CollectionForm({
                 </div>
             </Flex>
             {action.type !== 'view' && (
-                <div className="pf-u-background-color-100 pf-u-p-lg pf-u-py-md">
+                <div className="pf-v5-u-background-color-100 pf-v5-u-p-lg pf-v5-u-py-md">
                     <Button
-                        className="pf-u-mr-md"
+                        className="pf-v5-u-mr-md"
                         onClick={submitForm}
                         isDisabled={isSubmitting || !!configError || !isValid}
                         isLoading={isSubmitting}

@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package storage;
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+message NotifierConfiguration {
+  oneof notifier_config {
+    EmailNotifierConfiguration email_config = 1;
+  }
+
+  // oneof is only used to work around the postgres store limitation. The oneof wrapper can be removed in future
+  // without any impact on the wiring.
+  //
+  // @mandar: "It appears that the DB upserts are encountering failures when handling unset string foreign keys.
+  // My educated assumption is that this might be attributed to the distinction between empty strings and null
+  // values. In Go, we do not differentiate whether an empty string signifies an expected empty value or an
+  // unset value, which is a requirement within SQL."
+  oneof ref {
+    string id = 2; // @gotags: sql:"fk(Notifier:id),restrict-delete"
+  }
+}
+
+message EmailNotifierConfiguration {
+  string notifier_id = 1;
+  repeated string mailing_lists = 2;
+  string custom_subject = 3;
+  string custom_body = 4;
+}

@@ -45,7 +45,9 @@ const (
 type Clusters struct {
 	ID                                string                       `gorm:"column:id;type:uuid;primaryKey"`
 	Name                              string                       `gorm:"column:name;type:varchar;unique"`
+	Type                              storage.ClusterType          `gorm:"column:type;type:integer"`
 	Labels                            map[string]string            `gorm:"column:labels;type:jsonb"`
 	StatusProviderMetadataClusterType storage.ClusterMetadata_Type `gorm:"column:status_providermetadata_cluster_type;type:integer"`
+	StatusOrchestratorMetadataVersion string                       `gorm:"column:status_orchestratormetadata_version;type:varchar"`
 	Serialized                        []byte                       `gorm:"column:serialized;type:bytea"`
 }

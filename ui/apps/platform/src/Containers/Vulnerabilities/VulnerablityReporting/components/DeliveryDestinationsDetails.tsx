@@ -11,9 +11,10 @@ import {
 } from '@patternfly/react-core';
 import React, { ReactElement } from 'react';
 
-import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
+import { isDefaultEmailTemplate } from 'Components/EmailTemplate/EmailTemplate.utils';
 import useIndexKey from 'hooks/useIndexKey';
-import { getDefaultEmailSubject, isDefaultEmailTemplate } from '../forms/emailTemplateFormUtils';
+import { getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
+import { ReportFormValues } from '../forms/useReportFormValues';
 import useEmailTemplateModal from '../hooks/useEmailTemplateModal';
 import EmailTemplatePreview from './EmailTemplatePreview';
 
@@ -36,7 +37,9 @@ function DeliveryDestinationsDetails({
     const deliveryDestinations =
         formValues.deliveryDestinations.length !== 0 ? (
             formValues.deliveryDestinations.map((deliveryDestination) => (
-                <li key={deliveryDestination.notifier?.id}>{deliveryDestination.notifier?.name}</li>
+                <li key={deliveryDestination.emailConfig.notifierId}>
+                    {deliveryDestination.notifierName}
+                </li>
             ))
         ) : (
             <li>None</li>
@@ -45,7 +48,7 @@ function DeliveryDestinationsDetails({
     const mailingLists =
         formValues.deliveryDestinations.length !== 0 ? (
             formValues.deliveryDestinations.map((deliveryDestination) => {
-                const emails = deliveryDestination?.mailingLists.join(', ');
+                const emails = deliveryDestination.emailConfig.mailingLists.join(', ');
                 return <li key={emails}>{emails}</li>;
             })
         ) : (
@@ -55,11 +58,12 @@ function DeliveryDestinationsDetails({
     const emailTemplates =
         formValues.deliveryDestinations.length !== 0 ? (
             formValues.deliveryDestinations.map((deliveryDestination, index) => {
-                const { customSubject, customBody } = deliveryDestination;
-                const isDefaultEmailTemplateApplied = isDefaultEmailTemplate(
+                const { emailConfig } = deliveryDestination;
+                const { customSubject, customBody } = emailConfig;
+                const isDefaultEmailTemplateApplied = isDefaultEmailTemplate({
                     customSubject,
-                    customBody
-                );
+                    customBody,
+                });
                 return (
                     <li key={keyFor(index)}>
                         <Button
@@ -86,7 +90,10 @@ function DeliveryDestinationsDetails({
         formValues.reportParameters.reportScope?.name
     );
 
-    const modalTitle = isDefaultEmailTemplate(selectedEmailSubject, selectedEmailBody)
+    const modalTitle = isDefaultEmailTemplate({
+        customBody: selectedEmailBody,
+        customSubject: selectedEmailSubject,
+    })
         ? 'Default template applied'
         : 'Custom template applied';
 

@@ -2,10 +2,7 @@ import React, { ReactNode } from 'react';
 import {
     Bullseye,
     Divider,
-    DropdownItem,
     Flex,
-    Grid,
-    GridItem,
     PageSection,
     Pagination,
     pluralize,
@@ -15,6 +12,7 @@ import {
     Text,
     Title,
 } from '@patternfly/react-core';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { gql, useQuery } from '@apollo/client';
 
@@ -23,12 +21,17 @@ import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied } from 'utils/searchUtils';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 
+import { DynamicTableLabel } from 'Components/DynamicIcon';
+import {
+    SummaryCardLayout,
+    SummaryCard,
+} from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import {
     SearchOption,
     IMAGE_CVE_SEARCH_OPTION,
@@ -44,7 +47,6 @@ import ImageVulnerabilitiesTable, {
     ImageVulnerability,
     imageVulnerabilitiesFragment,
 } from '../Tables/ImageVulnerabilitiesTable';
-import { DynamicTableLabel } from '../../components/DynamicIcon';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
@@ -52,7 +54,7 @@ import {
     getVulnStateScopedQueryString,
     parseWorkloadQuerySearchFilter,
 } from '../../utils/searchUtils';
-import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
+import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
@@ -179,7 +181,7 @@ function ImagePageVulnerabilities({
                     headingLevel="h2"
                     title={getAxiosErrorMessage(error)}
                     icon={ExclamationCircleIcon}
-                    iconClassName="pf-u-danger-color-100"
+                    iconClassName="pf-v5-u-danger-color-100"
                 >
                     Adjust your filters and try again
                 </EmptyStateTemplate>
@@ -188,7 +190,7 @@ function ImagePageVulnerabilities({
     } else if (loading && !vulnerabilityData) {
         mainContent = (
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner />
             </Bullseye>
         );
     } else if (vulnerabilityData) {
@@ -201,27 +203,33 @@ function ImagePageVulnerabilities({
 
         mainContent = (
             <>
-                <div className="pf-u-px-lg pf-u-pb-lg">
-                    <Grid hasGutter>
-                        <GridItem sm={12} md={6} xl2={4}>
+                <SummaryCardLayout error={error} isLoading={loading}>
+                    <SummaryCard
+                        data={vulnerabilityData.image}
+                        loadingText="Loading image vulnerability summary"
+                        renderer={({ data }) => (
                             <BySeveritySummaryCard
                                 title="CVEs by severity"
-                                severityCounts={vulnCounter}
+                                severityCounts={data.imageCVECountBySeverity}
                                 hiddenSeverities={hiddenSeverities}
                             />
-                        </GridItem>
-                        <GridItem sm={12} md={6} xl2={4}>
+                        )}
+                    />
+                    <SummaryCard
+                        data={vulnerabilityData.image}
+                        loadingText="Loading image vulnerability summary"
+                        renderer={({ data }) => (
                             <CvesByStatusSummaryCard
-                                cveStatusCounts={vulnerabilityData.image.imageCVECountBySeverity}
+                                cveStatusCounts={data.imageCVECountBySeverity}
                                 hiddenStatuses={hiddenStatuses}
                                 isBusy={loading}
                             />
-                        </GridItem>
-                    </Grid>
-                </div>
+                        )}
+                    />
+                </SummaryCardLayout>
                 <Divider />
-                <div className="pf-u-p-lg">
-                    <Split className="pf-u-pb-lg pf-u-align-items-baseline">
+                <div className="pf-v5-u-p-lg">
+                    <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <Title headingLevel="h2">
@@ -261,7 +269,7 @@ function ImagePageVulnerabilities({
                                     </BulkActionsDropdown>
                                 </SplitItem>
                                 <Divider
-                                    className="pf-u-px-lg"
+                                    className="pf-v5-u-px-lg"
                                     orientation={{ default: 'vertical' }}
                                 />
                             </>
@@ -323,16 +331,16 @@ function ImagePageVulnerabilities({
                     onClose={closeModals}
                 />
             )}
-            <PageSection component="div" variant="light" className="pf-u-py-md pf-u-px-xl">
+            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
                 <Text>Review and triage vulnerability data scanned on this image</Text>
             </PageSection>
             <Divider component="div" />
             <PageSection
-                className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
                 <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
-                <div className="pf-u-px-sm pf-u-background-color-100">
+                <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
                     <WorkloadCveFilterToolbar
                         searchOptions={searchOptions}
                         autocompleteSearchContext={{
@@ -341,7 +349,9 @@ function ImagePageVulnerabilities({
                         onFilterChange={() => setPage(1)}
                     />
                 </div>
-                <div className="pf-u-flex-grow-1 pf-u-background-color-100">{mainContent}</div>
+                <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100">
+                    {mainContent}
+                </div>
             </PageSection>
         </>
     );

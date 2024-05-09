@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -212,7 +211,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -331,7 +330,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -454,7 +453,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 
 	// The PLOP is reported since it is in the open state
 	suite.Len(newPlops, 1)
-	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -676,7 +675,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -911,7 +910,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -1407,7 +1406,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 
 	// It's open and included in the API response for the new deployment
 	suite.Len(newPlops, 1)
-	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -1661,7 +1660,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		DeploymentId:  fixtureconsts.Deployment1,
@@ -1708,7 +1707,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -1965,7 +1964,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -2013,7 +2012,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -2314,7 +2313,7 @@ func newIndicatorWithDeployment(id string, age time.Duration, deploymentID strin
 		ContainerName: "",
 		PodId:         "",
 		Signal: &storage.ProcessSignal{
-			Time: timestamp.NowMinus(age),
+			Time: protoconv.NowMinus(age),
 		},
 	}
 }

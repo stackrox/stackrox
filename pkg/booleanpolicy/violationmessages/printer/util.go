@@ -2,7 +2,7 @@ package printer
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -35,7 +35,7 @@ func (t *templateCache) Set(tpl string, tmpl *template.Template) {
 }
 
 func stringSliceToSortedSentence(s []string) string {
-	sort.Strings(s)
+	slices.Sort(s)
 	return stringSliceToSentence(s)
 }
 

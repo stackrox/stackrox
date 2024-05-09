@@ -4,7 +4,7 @@ import {
     ActionsColumn,
     ExpandableRowContent,
     IAction,
-    TableComposable,
+    Table,
     Tbody,
     Td,
     Th,
@@ -19,8 +19,12 @@ import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/Vulnera
 import { VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import useMap from 'hooks/useMap';
-import { getEntityPagePath } from '../../utils/searchUtils';
-import { DynamicColumnIcon } from '../../components/DynamicIcon';
+import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import CvssFormatted from 'Components/CvssFormatted';
+import TooltipTh from 'Components/TooltipTh';
+import DateDistance from 'Components/DateDistance';
+import { getIsSomeVulnerabilityFixable } from '../../utils/vulnerabilityUtils';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
     ImageMetadataContext,
@@ -28,17 +32,13 @@ import ImageComponentVulnerabilitiesTable, {
 } from './ImageComponentVulnerabilitiesTable';
 
 import EmptyTableResults from '../components/EmptyTableResults';
-import DateDistance from '../../components/DateDistance';
-import CvssFormatted from '../../components/CvssFormatted';
-import { getAnyVulnerabilityIsFixable } from './table.utils';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../components/CVESelectionTh';
 import CVESelectionTd from '../components/CVESelectionTd';
-import TooltipTh from '../components/TooltipTh';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
-import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
+import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 
 export const imageVulnerabilitiesFragment = gql`
     ${imageComponentVulnerabilitiesFragment}
@@ -102,7 +102,7 @@ function ImageVulnerabilitiesTable({
         (showExceptionDetailsLink ? 1 : 0);
 
     return (
-        <TableComposable variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
@@ -142,7 +142,10 @@ function ImageVulnerabilitiesTable({
                     },
                     rowIndex
                 ) => {
-                    const isFixable = getAnyVulnerabilityIsFixable(imageComponents);
+                    const vulnerabilities = imageComponents.flatMap(
+                        (imageComponent) => imageComponent.imageVulnerabilities
+                    );
+                    const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
                     const isExpanded = expandedRowSet.has(cve);
 
                     return (
@@ -171,7 +174,11 @@ function ImageVulnerabilitiesTable({
                                         vulnerabilityState={vulnerabilityState}
                                     >
                                         <Link
-                                            to={getEntityPagePath('CVE', cve, vulnerabilityState)}
+                                            to={getWorkloadEntityPagePath(
+                                                'CVE',
+                                                cve,
+                                                vulnerabilityState
+                                            )}
                                         >
                                             {cve}
                                         </Link>
@@ -183,7 +190,7 @@ function ImageVulnerabilitiesTable({
                                     )}
                                 </Td>
                                 <Td modifier="nowrap" dataLabel="CVE status">
-                                    <VulnerabilityFixableIconText isFixable={isFixable} />
+                                    <VulnerabilityFixableIconText isFixable={isFixableInImage} />
                                 </Td>
                                 <Td modifier="nowrap" dataLabel="CVSS">
                                     <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
@@ -203,9 +210,9 @@ function ImageVulnerabilitiesTable({
                                     />
                                 )}
                                 {createTableActions && (
-                                    <Td className="pf-u-px-0">
+                                    <Td className="pf-v5-u-px-0">
                                         <ActionsColumn
-                                            menuAppendTo={() => document.body}
+                                            // menuAppendTo={() => document.body}
                                             items={createTableActions({
                                                 cve,
                                                 summary,
@@ -221,7 +228,7 @@ function ImageVulnerabilitiesTable({
                                     <ExpandableRowContent>
                                         {summary && image ? (
                                             <>
-                                                <p className="pf-u-mb-md">{summary}</p>
+                                                <p className="pf-v5-u-mb-md">{summary}</p>
                                                 <ImageComponentVulnerabilitiesTable
                                                     imageMetadataContext={image}
                                                     componentVulnerabilities={imageComponents}
@@ -237,7 +244,7 @@ function ImageVulnerabilitiesTable({
                     );
                 }
             )}
-        </TableComposable>
+        </Table>
     );
 }
 

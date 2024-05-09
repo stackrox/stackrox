@@ -5,7 +5,7 @@ import {
     ActionsColumn,
     ExpandableRowContent,
     IAction,
-    TableComposable,
+    Table,
     Tbody,
     Td,
     Th,
@@ -18,13 +18,13 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import useMap from 'hooks/useMap';
 import { VulnerabilityState } from 'types/cve.proto';
+import TooltipTh from 'Components/TooltipTh';
+import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import CvssFormatted from 'Components/CvssFormatted';
+import DateDistance from 'Components/DateDistance';
 import { VulnerabilitySeverityLabel } from '../../types';
-import { getEntityPagePath } from '../../utils/searchUtils';
-import TooltipTh from '../components/TooltipTh';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import { DynamicColumnIcon } from '../../components/DynamicIcon';
-import DateDistance from '../../components/DateDistance';
-import CvssFormatted from '../../components/CvssFormatted';
 import {
     getScoreVersionsForTopCVSS,
     sortCveDistroList,
@@ -39,7 +39,7 @@ import CVESelectionTh from '../components/CVESelectionTh';
 import CVESelectionTd from '../components/CVESelectionTd';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
-import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
+import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 
 export const cveListQuery = gql`
     query getImageCVEList(
@@ -144,7 +144,7 @@ function CVEsTable({
         (showExceptionDetailsLink ? 1 : 0);
 
     return (
-        <TableComposable borders={false} variant="compact">
+        <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
@@ -211,7 +211,7 @@ function CVEsTable({
                         <Tbody
                             key={cve}
                             style={{
-                                borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                                borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
                             }}
                             isExpanded={isExpanded}
                         >
@@ -239,7 +239,11 @@ function CVEsTable({
                                         vulnerabilityState={vulnerabilityState}
                                     >
                                         <Link
-                                            to={getEntityPagePath('CVE', cve, vulnerabilityState)}
+                                            to={getWorkloadEntityPagePath(
+                                                'CVE',
+                                                cve,
+                                                vulnerabilityState
+                                            )}
                                         >
                                             {cve}
                                         </Link>
@@ -277,9 +281,9 @@ function CVEsTable({
                                     />
                                 )}
                                 {createTableActions && (
-                                    <Td className="pf-u-px-0">
+                                    <Td className="pf-v5-u-px-0">
                                         <ActionsColumn
-                                            menuAppendTo={() => document.body}
+                                            // menuAppendTo={() => document.body}
                                             items={createTableActions({
                                                 cve,
                                                 summary,
@@ -301,7 +305,7 @@ function CVEsTable({
                     );
                 }
             )}
-        </TableComposable>
+        </Table>
     );
 }
 

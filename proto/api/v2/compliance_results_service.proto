@@ -3,47 +3,49 @@ syntax = "proto3";
 package v2;
 
 import "api/v2/common.proto";
+import "api/v2/compliance_common.proto";
 import "api/v2/search_query.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "v2";
+option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
 
-enum ComplianceCheckStatus {
-  UNSET_CHECK_STATUS = 0;
-  PASS = 1;
-  FAIL = 2;
-  ERROR = 3;
-  INFO = 4;
-  MANUAL = 5;
-  NOT_APPLICABLE = 6;
-  INCONSISTENT = 7;
+// ClusterCheckStatus groups the result of the check by cluster
+message ClusterCheckStatus {
+  ComplianceScanCluster cluster = 1;
+  ComplianceCheckStatus status = 2;
+  google.protobuf.Timestamp created_time = 3;
+  string check_uid = 4;
+  google.protobuf.Timestamp last_scan_time = 5;
 }
 
-message ComplianceScanCluster {
-  string cluster_id = 1;
-  string cluster_name = 2;
-}
-
-// Next tag: 11
-// ComplianceCheckResult provides the results of a compliance check against a rule
+// ComplianceCheckResult details of an instance of a compliance check result
 message ComplianceCheckResult {
   string check_id = 1;
   string check_name = 2;
+  string check_uid = 3;
+  string description = 4;
+  string instructions = 5;
+  string standard = 6;
+  repeated string control = 7;
+  string rationale = 8;
+  repeated string valuesUsed = 9;
+  repeated string warnings = 10;
+  ComplianceCheckStatus status = 11;
+  string rule_name = 12;
+}
 
-  // ClusterCheckStatus groups the result of the check by cluster
-  message ClusterCheckStatus {
-    ComplianceScanCluster cluster = 1;
-    ComplianceCheckStatus status = 2;
-    google.protobuf.Timestamp created_time = 3;
-    string check_uid = 4;
-  }
+// ComplianceClusterCheckStatus provides the status of a compliance check result across clusters
+message ComplianceClusterCheckStatus {
+  string check_id = 1;
+  string check_name = 2;
+
   repeated ClusterCheckStatus clusters = 3;
   string description = 4;
   string instructions = 5;
   string standard = 6;
-  string control = 7;
+  repeated string control = 7;
   string rationale = 8;
   repeated string valuesUsed = 9;
   repeated string warnings = 10;
@@ -53,77 +55,8 @@ message ComplianceCheckResult {
 message ComplianceScanResult {
   string scan_name = 1;
   string profile_name = 2;
-  repeated ComplianceCheckResult check_results = 3;
+  repeated ComplianceClusterCheckStatus check_results = 3;
   string scan_config_id = 4;
-}
-
-// Group the number of occurrences by status
-message ComplianceCheckStatusCount {
-  int32 count = 1;
-  ComplianceCheckStatus status = 2;
-}
-
-// ComplianceScanStatsShim models statistics of checks for a given scan configuration
-message ComplianceScanStatsShim {
-  string scan_name = 1;
-  repeated ComplianceCheckStatusCount check_stats = 2;
-  google.protobuf.Timestamp last_scan = 3;
-  string scan_config_id = 4;
-}
-
-// ComplianceScanResultsOverview provides an overview and stats of the results of a scan configuration
-message ComplianceScanResultsOverview {
-  ComplianceScanStatsShim scan_stats = 1;
-  repeated string profile_name = 2;
-  repeated ComplianceScanCluster cluster = 3;
-}
-
-// ComplianceProfileScanStats provides scan stats overview based on profile
-message ComplianceProfileScanStats {
-  repeated ComplianceCheckStatusCount check_stats = 1;
-  string profile_name = 2;
-}
-
-// Group the number of occurrences by status
-message ComplianceCheckResultStatusCount {
-  string check_name = 1;
-  string rationale = 2;
-  string rule_name = 3;
-  repeated ComplianceCheckStatusCount check_stats = 4;
-}
-
-// ComplianceProfileScanStats provides scan stats overview based on profile
-message ComplianceProfileResults {
-  repeated ComplianceCheckResultStatusCount profile_results = 1;
-  string profile_name = 2;
-}
-
-// ComplianceClusterScanStats provides scan stats overview based on cluster
-message ComplianceClusterScanStats {
-  ComplianceScanStatsShim scan_stats = 1;
-  ComplianceScanCluster cluster = 2;
-}
-
-// ComplianceClusterOverallStats provides overall stats for cluster
-message ComplianceClusterOverallStats {
-  ComplianceScanCluster cluster = 1;
-  repeated ComplianceCheckStatusCount check_stats = 2;
-  repeated string cluster_errors = 3;
-}
-
-// ListComplianceScanResultsOverviewResponse provides overviews for scans
-message ListComplianceScanResultsOverviewResponse {
-  repeated ComplianceScanResultsOverview scan_overviews = 1;
-}
-
-// ListComplianceProfileScanStatsResponse provides stats for the profiles within the scans
-message ListComplianceProfileScanStatsResponse {
-  repeated ComplianceProfileScanStats scan_stats = 1;
-}
-
-// ListComplianceClusterScanStatsResponse provides stats for the clusters within the scans
-message ListComplianceClusterScanStatsResponse {
-  repeated ComplianceClusterScanStats scan_stats = 1;
 }
 
 // ListComplianceScanResultsResponse provides the complete scan results
@@ -131,12 +64,23 @@ message ListComplianceScanResultsResponse {
   repeated ComplianceScanResult scan_results = 1;
 }
 
-// ListComplianceCheckScanStatsResponse provides stats per cluster
-message ListComplianceClusterOverallStatsResponse {
-  repeated ComplianceClusterOverallStats scan_stats = 1;
+// ListComplianceCheckClusterResponse provides stats per cluster
+message ListComplianceCheckClusterResponse {
+  repeated ClusterCheckStatus check_results = 1;
+  string profile_name = 2;
+  string check_name = 3;
+  int32 total_count = 4;
 }
 
-// ComplianceScanResultsCount gives count of scan results
+message ListComplianceCheckResultResponse {
+  repeated ComplianceCheckResult check_results = 1;
+  string profile_name = 2;
+  string cluster_id = 3;
+  int32 total_count = 4;
+  google.protobuf.Timestamp last_scan_time = 5;
+}
+
+// CountComplianceScanResults gives count of scan results
 message CountComplianceScanResults {
   int32 count = 1;
 }
@@ -146,25 +90,16 @@ message ComplianceScanResultsRequest {
   RawQuery query = 2;
 }
 
-message ComplianceProfileResultsRequest {
+message ComplianceProfileClusterRequest {
   string profile_name = 1;
-  RawQuery query = 2;
+  string cluster_id = 2;
+  RawQuery query = 3;
 }
 
 service ComplianceResultsService {
   // GetComplianceScanCheckResult returns the specific result by ID
-  rpc GetComplianceScanCheckResult(ResourceByID) returns (ComplianceCheckResult) {
+  rpc GetComplianceScanCheckResult(ResourceByID) returns (ComplianceClusterCheckStatus) {
     option (google.api.http) = {get: "/v2/compliance/scan/result/{id}"};
-  }
-
-  // GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
-  // Optional RawQuery query fields can be combined.
-  // Commonly used ones include but are not limited to
-  // - scan: id(s) of the compliance scan
-  // - cluster: id(s) of the cluster
-  // - profile: id(s) of the profile
-  rpc GetComplianceScanResultsOverview(RawQuery) returns (ListComplianceScanResultsOverviewResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/overview"};
   }
 
   // GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
@@ -185,46 +120,18 @@ service ComplianceResultsService {
 
   // GetComplianceProfileResults retrieves the most recent compliance operator scan results for the specified query
   // Optional RawQuery query fields can be combined.
-  rpc GetComplianceProfileResults(ComplianceProfileResultsRequest) returns (ComplianceProfileResults) {
-    option (google.api.http) = {get: "/v2/compliance/scan/profile/results/{profile_name}"};
+  rpc GetComplianceProfileResults(ComplianceProfileResultsRequest) returns (ListComplianceProfileResults) {
+    option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/checks"};
   }
 
-  // GetComplianceProfileScanStats lists current scan stats grouped by profile
-  // Optional RawQuery query fields can be combined.
-  // Commonly used ones include but are not limited to
-  // - scan: id(s) of the compliance scan
-  // - cluster: id(s) of the cluster
-  // - profile: id(s) of the profile
-  rpc GetComplianceProfileStats(ComplianceProfileResultsRequest) returns (ListComplianceProfileScanStatsResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/stats/profile/{profile_name}"};
+  // GetComplianceProfileCheckResult lists status of a check per cluster
+  rpc GetComplianceProfileCheckResult(ComplianceProfileCheckRequest) returns (ListComplianceCheckClusterResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/checks/{check_name}"};
   }
 
-  // GetComplianceProfileScanStats lists current scan stats grouped by profile
-  // Optional RawQuery query fields can be combined.
-  // Commonly used ones include but are not limited to
-  // - scan: id(s) of the compliance scan
-  // - cluster: id(s) of the cluster
-  // - profile: id(s) of the profile
-  rpc GetComplianceProfilesStats(RawQuery) returns (ListComplianceProfileScanStatsResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles"};
-  }
-
-  // GetComplianceClusterScanStats lists current scan stats grouped by cluster
-  // Optional RawQuery query fields can be combined.
-  // Commonly used ones include but are not limited to
-  // - scan: id(s) of the compliance scan
-  // - cluster: id(s) of the cluster
-  // - profile: id(s) of the profile
-  rpc GetComplianceClusterScanStats(RawQuery) returns (ListComplianceClusterScanStatsResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/stats/cluster"};
-  }
-
-  rpc GetComplianceOverallClusterStats(RawQuery) returns (ListComplianceClusterOverallStatsResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/stats/overall/cluster"};
-  }
-
-  rpc GetComplianceOverallClusterCount(RawQuery) returns (CountComplianceScanResults) {
-    option (google.api.http) = {get: "/v2/compliance/scan/stats/overall/cluster/count"};
+  // GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
+  rpc GetComplianceProfileClusterResults(ComplianceProfileClusterRequest) returns (ListComplianceCheckResultResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/clusters/{cluster_id}"};
   }
 
   rpc GetComplianceScanResultsCount(RawQuery) returns (CountComplianceScanResults) {

@@ -7,6 +7,8 @@ import { noViolationsClassName, noViolationsColor } from 'constants/severityColo
 
 import { VulnerabilitySeverityLabel } from '../types';
 
+import './SeverityCountLabels.css';
+
 type SeverityCountLabelsProps = {
     criticalCount: number;
     importantCount: number;
@@ -55,7 +57,11 @@ function SeverityCountLabels({
     const low = isLowHidden ? undefined : lowCount;
 
     return (
-        <Flex spaceItems={{ default: 'spaceItemsSm' }} flexWrap={{ default: 'nowrap' }}>
+        <Flex
+            className="severity-count-labels"
+            spaceItems={{ default: 'spaceItemsSm' }}
+            flexWrap={{ default: 'nowrap' }}
+        >
             <Tooltip content={getTooltipContent('critical', critical, entity)}>
                 <Label
                     aria-label={getTooltipContent('critical', critical, entity)}
@@ -63,11 +69,7 @@ function SeverityCountLabels({
                     icon={<CriticalIcon color={critical ? undefined : noViolationsColor} />}
                 >
                     <span className={getClassNameForCount(critical)}>
-                        {!critical && critical !== 0 ? (
-                            <EllipsisHIcon className="pf-u-my-xs" />
-                        ) : (
-                            critical
-                        )}
+                        {!critical && critical !== 0 ? <EllipsisHIcon /> : critical}
                     </span>
                 </Label>
             </Tooltip>
@@ -78,11 +80,7 @@ function SeverityCountLabels({
                     icon={<ImportantIcon color={important ? undefined : noViolationsColor} />}
                 >
                     <span className={getClassNameForCount(important)}>
-                        {!important && important !== 0 ? (
-                            <EllipsisHIcon className="pf-u-my-xs" />
-                        ) : (
-                            important
-                        )}
+                        {!important && important !== 0 ? <EllipsisHIcon /> : important}
                     </span>
                 </Label>
             </Tooltip>
@@ -93,11 +91,7 @@ function SeverityCountLabels({
                     icon={<ModerateIcon color={moderate ? undefined : noViolationsColor} />}
                 >
                     <span className={getClassNameForCount(moderate)}>
-                        {!moderate && moderate !== 0 ? (
-                            <EllipsisHIcon className="pf-u-my-xs" />
-                        ) : (
-                            moderate
-                        )}
+                        {!moderate && moderate !== 0 ? <EllipsisHIcon /> : moderate}
                     </span>
                 </Label>
             </Tooltip>
@@ -108,7 +102,7 @@ function SeverityCountLabels({
                     icon={<LowIcon color={low ? undefined : noViolationsColor} />}
                 >
                     <span className={getClassNameForCount(low)}>
-                        {!low && low !== 0 ? <EllipsisHIcon className="pf-u-my-xs" /> : low}
+                        {!low && low !== 0 ? <EllipsisHIcon /> : low}
                     </span>
                 </Label>
             </Tooltip>

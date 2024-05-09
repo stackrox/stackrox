@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"slices"
 	"sort"
 	"testing"
 
@@ -35,7 +36,7 @@ func getDeploymentsWithSortOption(t *testing.T, field string, reversed bool) []*
 
 func testDeploymentSorting(t *testing.T, field string, extractor func(d *storage.Deployment) string) {
 	sorted := sliceutils.Map(getDeploymentsWithSortOption(t, field, false), extractor)
-	assert.True(t, sort.StringsAreSorted(sorted), "field %s not sorted in response (got %v)", field, sorted)
+	assert.True(t, slices.IsSorted(sorted), "field %s not sorted in response (got %v)", field, sorted)
 
 	sortedReverse := sliceutils.Map(getDeploymentsWithSortOption(t, field, true), extractor)
 	assert.True(t, sort.SliceIsSorted(sortedReverse, func(i, j int) bool {

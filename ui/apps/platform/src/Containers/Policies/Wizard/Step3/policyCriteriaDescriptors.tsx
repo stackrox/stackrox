@@ -249,7 +249,7 @@ export type Descriptor =
 
 export type TableModalDescriptor = {
     type: 'tableModal';
-    component: React.ReactNode;
+    component: typeof ImageSigningTableModal;
     tableType: string;
 } & BaseDescriptor;
 

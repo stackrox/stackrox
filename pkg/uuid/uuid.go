@@ -5,6 +5,8 @@ package uuid
 import (
 	"crypto/sha256"
 	"database/sql/driver"
+	"fmt"
+	"strings"
 
 	"github.com/gofrs/uuid"
 )
@@ -151,4 +153,17 @@ func NewV5(ns UUID, name string) UUID {
 // NewDummy returns a uuid for testing purposes
 func NewDummy() UUID {
 	return FromStringOrNil("aaaaaaaa-bbbb-4011-0000-111111111111")
+}
+
+// NewTestUUID returns a UUID for testing purposes with the given number.
+// If number is negative or greater than 9 then zeroes are returned.
+// Example: 11111111-1111-1111-1111-111111111111.
+func NewTestUUID(d int) UUID {
+	s := fmt.Sprintf("%d", d)
+	return FromStringOrNil(
+		strings.Repeat(s, 8) +
+			strings.Repeat(s, 4) +
+			strings.Repeat(s, 4) +
+			strings.Repeat(s, 4) +
+			strings.Repeat(s, 12))
 }

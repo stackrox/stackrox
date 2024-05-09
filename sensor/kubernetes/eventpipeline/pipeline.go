@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
@@ -31,10 +32,10 @@ import (
 // This component introduces a new type of component to sensor:
 // - The event pipeline is a sensor component. That means, it can send messages to the gRPC stream via the .ResponseC function.
 // - Pipeline components are sub-components inside the event pipeline that process a kubernetes event from start to finish (listener, resolver and output are all pipeline components)
-func New(client client.Interface, configHandler config.Handler, detector detector.Detector, reprocessor reprocessor.Handler, nodeName string, traceWriter io.Writer, storeProvider *resources.StoreProvider, queueSize int) common.SensorComponent {
+func New(client client.Interface, configHandler config.Handler, detector detector.Detector, reprocessor reprocessor.Handler, nodeName string, traceWriter io.Writer, storeProvider *resources.StoreProvider, queueSize int, pubSub *internalmessage.MessageSubscriber) common.SensorComponent {
 	outputQueue := output.New(detector, queueSize)
 	depResolver := resolver.New(outputQueue, storeProvider, queueSize)
-	resourceListener := listener.New(client, configHandler, nodeName, traceWriter, depResolver, storeProvider)
+	resourceListener := listener.New(client, configHandler, nodeName, traceWriter, depResolver, storeProvider, pubSub)
 
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)
@@ -42,7 +43,7 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 	pipelineResponses := make(chan *message.ExpiringMessage)
 	return &eventPipeline{
 		eventsC:     pipelineResponses,
-		stopSig:     concurrency.NewSignal(),
+		stopper:     concurrency.NewStopper(),
 		output:      outputQueue,
 		resolver:    depResolver,
 		listener:    resourceListener,

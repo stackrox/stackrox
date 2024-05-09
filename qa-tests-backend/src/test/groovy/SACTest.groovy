@@ -80,9 +80,7 @@ class SACTest extends BaseSpecification {
 
     static final private Integer WAIT_FOR_RISK_RETRIES =
             isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 80 : 50)
-    static final private String DENY_ALL = isPostgresRun() ?
-        "ffffffff-ffff-fff4-f5ff-fffffffffffe" :
-        'io.stackrox.authz.accessscope.denyall'
+    static final private String DENY_ALL = "ffffffff-ffff-fff4-f5ff-fffffffffffe"
 
     @Shared
     private Map<String, RoleOuterClass.Access> allResourcesAccess
@@ -282,12 +280,14 @@ class SACTest extends BaseSpecification {
         createSecret(DEPLOYMENT_QA1.namespace)
         createSecret(DEPLOYMENT_QA2.namespace)
         useToken("getSummaryCountsToken")
-        def result = SummaryService.getCounts()
         then:
         "Verify correct counts are returned by GetSummaryCounts"
-        assert result.getNumDeployments() == 1
-        assert result.getNumSecrets() == orchestrator.getSecretCount(DEPLOYMENT_QA1.namespace)
-        assert result.getNumImages() == 1
+        withRetry(30, 3) {
+            def result = SummaryService.getCounts()
+            assert result.getNumDeployments() == 1
+            assert result.getNumSecrets() == orchestrator.getSecretCount(DEPLOYMENT_QA1.namespace)
+            assert result.getNumImages() == 1
+        }
         cleanup:
         "Cleanup"
         BaseService.useBasicAuth()

@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -25,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -396,44 +396,46 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			s.testDB = pgtest.ForT(s.T())
 			// Add deployments if necessary
 			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-			s.Nil(err)
+			s.Require().NoError(err)
 			for _, deploymentID := range c.deployments.AsSlice() {
-				s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
+				s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
 			}
 
 			podDS, err := podStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-			s.Nil(err)
+			s.Require().NoError(err)
 			for _, podID := range c.pods.AsSlice() {
 				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
-				s.Nil(err)
+				s.Require().NoError(err)
 			}
 
 			processDatastore, err := processIndicatorDatastore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-			s.Nil(err)
-			s.NoError(processDatastore.AddProcessIndicators(s.ctx, c.initialProcesses...))
+			s.Require().NoError(err)
+			s.Require().NoError(processDatastore.AddProcessIndicators(s.ctx, c.initialProcesses...))
 			countFromDB, err := processDatastore.Count(s.ctx, nil)
-			s.NoError(err)
-			s.Equal(len(c.initialProcesses), countFromDB)
+			s.Require().NoError(err)
+			s.Require().Equal(len(c.initialProcesses), countFromDB)
 
-			PruneOrphanedProcessIndicators(s.ctx, s.testDB.DB, orphanWindow)
-
-			countFromDB, err = processDatastore.Count(s.ctx, nil)
-			s.NoError(err)
-			s.Equal(len(c.initialProcesses)-len(c.expectedDeletions), countFromDB)
+			idsToDelete, err := GetOrphanedProcessIDsByDeployment(s.ctx, s.testDB.DB, orphanWindow)
+			s.Require().NoError(err)
+			idsByPod, err := GetOrphanedProcessIDsByPod(s.ctx, s.testDB.DB, orphanWindow)
+			s.Require().NoError(err)
+			idsToDelete = append(idsToDelete, idsByPod...)
+			slices.Sort(idsToDelete)
+			s.Require().ElementsMatch(c.expectedDeletions, slices.Compact(idsToDelete))
 
 			// Cleanup
 			var cleanupIDs []string
 			for _, process := range c.initialProcesses {
 				cleanupIDs = append(cleanupIDs, process.Id)
 			}
-			s.NoError(processDatastore.RemoveProcessIndicators(s.ctx, cleanupIDs))
+			s.Require().NoError(processDatastore.RemoveProcessIndicators(s.ctx, cleanupIDs))
 
 			for _, deploymentID := range c.deployments.AsSlice() {
-				s.NoError(deploymentDS.RemoveDeployment(s.ctx, fixtureconsts.Cluster1, deploymentID))
+				s.Require().NoError(deploymentDS.RemoveDeployment(s.ctx, fixtureconsts.Cluster1, deploymentID))
 			}
 
 			for _, podID := range c.pods.AsSlice() {
-				s.NoError(podDS.RemovePod(s.ctx, podID))
+				s.Require().NoError(podDS.RemovePod(s.ctx, podID))
 			}
 
 		})
@@ -447,7 +449,7 @@ func (s *PostgresPruningSuite) TestPruneDiscoveredClusters() {
 		// Should be subject to pruning.
 		{
 			Id:            "cd118b6d-0b2e-5ab1-b1fc-c992d58eda9f",
-			LastUpdatedAt: timestamp.TimeBeforeDays(2),
+			LastUpdatedAt: protoconv.TimeBeforeDays(2),
 		},
 		// Should not be subject to pruning.
 		{
@@ -467,12 +469,12 @@ func (s *PostgresPruningSuite) TestPruneDiscoveredClusters() {
 		// Should be subject to pruning.
 		{
 			Id:            "8e1876a3-a0c0-56c3-bccc-961d89f80220",
-			LastUpdatedAt: timestamp.TimeBeforeDays(12),
+			LastUpdatedAt: protoconv.TimeBeforeDays(12),
 		},
 		// Should be subject to pruning.
 		{
 			Id:            "396ad8a4-1cd5-5c2d-9176-bd831c7cc0d7",
-			LastUpdatedAt: timestamp.TimeBeforeDays(365),
+			LastUpdatedAt: protoconv.TimeBeforeDays(365),
 		},
 	}
 	s.Require().NoError(discoveredClustersDS.UpsertTestDiscoveredClusters(s.ctx, s.T(),
@@ -492,7 +494,7 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 		// Should not be subject to pruning.
 		{
 			Id:             "cd118b6d-0b2e-5ab1-b1fc-c992d58eda9f",
-			LastOccurredAt: timestamp.TimeBeforeDays(2),
+			LastOccurredAt: protoconv.TimeBeforeDays(2),
 		},
 		// Should not be subject to pruning.
 		{
@@ -507,7 +509,7 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 		// Should not be subject to pruning.
 		{
 			Id:             "5e2ab54d-0a19-5f31-9093-136d49b6bd94",
-			LastOccurredAt: timestamp.TimeBeforeDays(3),
+			LastOccurredAt: protoconv.TimeBeforeDays(3),
 		},
 		// Should not be subject to pruning.
 		{
@@ -517,12 +519,12 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 		// Should be subject to pruning.
 		{
 			Id:             "8e1876a3-a0c0-56c3-bccc-961d89f80220",
-			LastOccurredAt: timestamp.TimeBeforeDays(12),
+			LastOccurredAt: protoconv.TimeBeforeDays(12),
 		},
 		// Should be subject to pruning.
 		{
 			Id:             "396ad8a4-1cd5-5c2d-9176-bd831c7cc0d7",
-			LastOccurredAt: timestamp.TimeBeforeDays(365),
+			LastOccurredAt: protoconv.TimeBeforeDays(365),
 		},
 	}
 	s.Require().NoError(administrationEventDS.UpsertTestEvents(s.ctx, s.T(),
@@ -555,7 +557,7 @@ func newIndicatorWithDeployment(id string, age time.Duration, deploymentID strin
 		ContainerName: "",
 		PodId:         "",
 		Signal: &storage.ProcessSignal{
-			Time: timestamp.NowMinus(age),
+			Time: protoconv.NowMinus(age),
 		},
 	}
 }

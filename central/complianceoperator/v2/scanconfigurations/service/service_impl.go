@@ -154,6 +154,9 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
+	// To get total count, need the parsed query without the paging.
+	countQuery := parsedQuery.Clone()
+
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
@@ -167,8 +170,14 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 		return nil, errors.Wrap(errox.InvalidArgs, "failed to convert compliance scan configurations.")
 	}
 
+	scanConfigCount, err := s.complianceScanSettingsDS.CountScanConfigurations(ctx, countQuery)
+	if err != nil {
+		return nil, errors.Wrap(errox.NotFound, err.Error())
+	}
+
 	return &v2.ListComplianceScanConfigurationsResponse{
 		Configurations: scanStatuses,
+		TotalCount:     int32(scanConfigCount),
 	}, nil
 }
 

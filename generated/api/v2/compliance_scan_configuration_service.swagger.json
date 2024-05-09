@@ -342,42 +342,6 @@
       },
       "title": "Additional scan status gathered from ComplianceSuite"
     },
-    "ScheduleDaysOfMonth": {
-      "type": "object",
-      "properties": {
-        "days": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
-      "title": "1 for 1st, 2 for 2nd .... 31 for 31st"
-    },
-    "ScheduleDaysOfWeek": {
-      "type": "object",
-      "properties": {
-        "days": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
-      "title": "Sunday = 0, Monday = 1, .... Saturday =  6"
-    },
-    "ScheduleIntervalType": {
-      "type": "string",
-      "enum": [
-        "UNSET",
-        "WEEKLY",
-        "MONTHLY",
-        "DAILY"
-      ],
-      "default": "UNSET"
-    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -449,6 +413,12 @@
         },
         "description": {
           "type": "string"
+        },
+        "notifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2NotifierConfiguration"
+          }
         }
       },
       "title": "Next available tag: 5"
@@ -537,6 +507,26 @@
         }
       }
     },
+    "v2EmailNotifierConfiguration": {
+      "type": "object",
+      "properties": {
+        "notifierId": {
+          "type": "string"
+        },
+        "mailingLists": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "customSubject": {
+          "type": "string"
+        },
+        "customBody": {
+          "type": "string"
+        }
+      }
+    },
     "v2Empty": {
       "type": "object"
     },
@@ -548,9 +538,23 @@
           "items": {
             "$ref": "#/definitions/v2ComplianceScanConfigurationStatus"
           }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
         }
-      },
-      "title": "Next available tag: 2"
+      }
+    },
+    "v2NotifierConfiguration": {
+      "type": "object",
+      "properties": {
+        "emailConfig": {
+          "$ref": "#/definitions/v2EmailNotifierConfiguration"
+        },
+        "notifierName": {
+          "type": "string"
+        }
+      }
     },
     "v2Pagination": {
       "type": "object",
@@ -579,7 +583,7 @@
       "type": "object",
       "properties": {
         "intervalType": {
-          "$ref": "#/definitions/ScheduleIntervalType"
+          "$ref": "#/definitions/v2ScheduleIntervalType"
         },
         "hour": {
           "type": "integer",
@@ -590,12 +594,48 @@
           "format": "int32"
         },
         "daysOfWeek": {
-          "$ref": "#/definitions/ScheduleDaysOfWeek"
+          "$ref": "#/definitions/v2ScheduleDaysOfWeek"
         },
         "daysOfMonth": {
-          "$ref": "#/definitions/ScheduleDaysOfMonth"
+          "$ref": "#/definitions/v2ScheduleDaysOfMonth"
         }
       }
+    },
+    "v2ScheduleDaysOfMonth": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "1 for 1st, 2 for 2nd .... 31 for 31st"
+    },
+    "v2ScheduleDaysOfWeek": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "Sunday = 0, Monday = 1, .... Saturday =  6"
+    },
+    "v2ScheduleIntervalType": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "WEEKLY",
+        "MONTHLY",
+        "DAILY"
+      ],
+      "default": "UNSET"
     },
     "v2SlimUser": {
       "type": "object",

@@ -19,6 +19,10 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
+const (
+	deleteBatchSize = 5000
+)
+
 var (
 	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
 )
@@ -126,6 +130,60 @@ func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) err
 	return nil
 }
 
+func (ds *datastoreImpl) PruneProcessIndicators(ctx context.Context, ids []string) (int, error) {
+	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, sac.ErrResourceAccessDenied
+	}
+
+	return ds.pruneIndicators(ctx, ids), nil
+}
+
+func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string) int {
+	// Previously this used removeIndicators and would call "DeleteMany".  The issue
+	// with that is "DeleteMany" wraps the entire delete into a transaction making it an
+	// all or nothing proposition.  For pruning, if a batch fails it shouldn't fail them all.
+	// A pruning batch that fails to delete would get deleted the next iteration of pruning.
+	// So for pruning, a delete by query will be used and the IDs will be batched.  Failed
+	// batches will be logged and we will move on to the next batch.
+	if len(ids) == 0 {
+		return 0
+	}
+
+	// Batch the deletes
+	initialSize := len(ids)
+	localBatchSize := deleteBatchSize
+	var successfullyPruned int
+	for {
+		if len(ids) == 0 {
+			break
+		}
+
+		if len(ids) < localBatchSize {
+			localBatchSize = len(ids)
+		}
+
+		identifierBatch := ids[:localBatchSize]
+
+		q := pkgSearch.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
+
+		deletedIDs, err := ds.storage.DeleteByQuery(ctx, q)
+		if err != nil {
+			log.Warnf("error pruning a batch of indicators: %v", err)
+		} else {
+			successfullyPruned = successfullyPruned + len(deletedIDs)
+			log.Debugf("successfully pruned a batch of %d process indicators", len(deletedIDs))
+		}
+
+		// Move the slice forward to start the next batch
+		ids = ids[localBatchSize:]
+	}
+
+	log.Infof("successfully pruned %d out of %d indicators", successfullyPruned, initialSize)
+	return successfullyPruned
+}
+
 func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id string) error {
 	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -198,14 +256,12 @@ func (ds *datastoreImpl) prune(ctx context.Context) {
 		}
 		incrementProcessPruningCacheMissesMetric()
 		idsToRemove := pruner.Prune(args)
+		var successfullyPruned int
 		if len(idsToRemove) > 0 {
-			if err := ds.removeIndicators(ctx, idsToRemove); err != nil {
-				log.Errorf("Error while pruning processes: %s", err)
-			} else {
-				incrementPrunedProcessesMetric(len(idsToRemove))
-			}
+			successfullyPruned = ds.pruneIndicators(ctx, idsToRemove)
+			incrementPrunedProcessesMetric(successfullyPruned)
 		}
-		ds.prunedArgsLengthCache[processInfo] = numArgsReceived - len(idsToRemove)
+		ds.prunedArgsLengthCache[processInfo] = numArgsReceived - successfullyPruned
 	}
 
 	// Clean up the prunedArgsLengthCache by processes that are no longer in the DB.

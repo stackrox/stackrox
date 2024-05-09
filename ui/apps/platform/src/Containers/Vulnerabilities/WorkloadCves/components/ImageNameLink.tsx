@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button, Flex, FlexItem, Tooltip, Truncate } from '@patternfly/react-core';
 import { OutlinedCopyIcon } from '@patternfly/react-icons';
 
-import { getEntityPagePath } from '../../utils/searchUtils';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 export type ImageNameLinkProps = {
@@ -37,10 +37,10 @@ function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
             spaceItems={{ default: 'spaceItemsNone' }}
         >
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
-                <Link to={getEntityPagePath('Image', id, vulnerabilityState)}>
+                <Link to={getWorkloadEntityPagePath('Image', id, vulnerabilityState)}>
                     <Truncate position="middle" content={`${remote}:${tag}`} />
                 </Link>{' '}
-                <span className="pf-u-color-200 pf-u-font-size-sm">in {registry}</span>
+                <span className="pf-v5-u-color-200 pf-v5-u-font-size-sm">in {registry}</span>
                 <div>{children}</div>
             </Flex>
             <FlexItem>
@@ -53,7 +53,7 @@ function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
                     content={<div>{copyIconTooltip}</div>}
                 >
                     <Button
-                        className="pf-u-pt-xs"
+                        className="pf-v5-u-pt-xs"
                         id={`copy-image-name-button-${id}`}
                         aria-labelledby={`copy-image-name-text-${id}`}
                         type="button"

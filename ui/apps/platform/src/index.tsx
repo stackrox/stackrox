@@ -14,7 +14,8 @@ import { ApolloProvider } from '@apollo/client';
 import 'css.imports';
 
 import { configure as mobxConfigure } from 'mobx';
-import { setDiagnosticsOptions } from 'monaco-yaml';
+import * as monaco from 'monaco-editor';
+import { configureMonacoYaml } from 'monaco-yaml';
 
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import AppPage from 'Containers/AppPage';
@@ -29,7 +30,7 @@ import configureApollo from './configureApolloClient';
 
 // This enables syntax highlighting for the patternfly code editor
 // Reference: https://github.com/patternfly/patternfly-react/tree/main/packages/react-code-editor#enable-yaml-syntax-highlighting
-setDiagnosticsOptions({
+configureMonacoYaml(monaco, {
     enableSchemaRequest: true,
     hover: true,
     completion: true,
@@ -47,6 +48,7 @@ mobxConfigure({ isolateGlobalState: true });
 installRaven();
 
 const rootNode = document.getElementById('root');
+/* @ts-expect-error `createRoot` expects a non-null argument */
 const root = createRoot(rootNode);
 const history = createHistory();
 const store = configureStore(undefined, history) as Store;
@@ -64,6 +66,12 @@ dispatch(fetchCentralCapabilitiesThunk());
 root.render(
     <Provider store={store}>
         <ApolloProvider client={apolloClient}>
+            {/*
+             (dv 2024-05-01)
+             ConnectedRouter does not explicitly declare `children` as a prop, which is expected by React types >=18
+             so we need to use `@ts-expect-error` to suppress the type error
+            */}
+            {/* @ts-expect-error `connected-react-router does not support React 18 */}
             <ConnectedRouter history={history}>
                 <ThemeProvider>
                     <ErrorBoundary>

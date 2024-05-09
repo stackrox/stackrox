@@ -5,8 +5,6 @@ import {
     Divider,
     PageSection,
     Pagination,
-    Select,
-    SelectOption,
     Spinner,
     Text,
     Title,
@@ -16,12 +14,13 @@ import {
     ToolbarItem,
     debounce,
 } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 
 import PageTitle from 'Components/PageTitle';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { searchCategories } from 'constants/entityTypes';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -137,30 +136,32 @@ function ListeningEndpointsPage() {
             <PageTitle title="Listening Endpoints" />
             <PageSection variant="light">
                 <Title headingLevel="h1">Listening endpoints</Title>
-                <Text>Audit listening endpoints of deployments in your clusters</Text>
+                <Text className="pf-v5-u-pt-xs">
+                    Audit listening endpoints of deployments in your clusters
+                </Text>
             </PageSection>
             <Divider component="div" />
             <PageSection
                 id="listening-endpoints-page"
                 isFilled
-                className="pf-u-display-flex pf-u-flex-direction-column"
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
             >
                 <Toolbar>
                     <ToolbarContent>
-                        <ToolbarGroup className="pf-u-flex-grow-1">
+                        <ToolbarGroup className="pf-v5-u-flex-grow-1">
                             <ToolbarItem
                                 variant="search-filter"
-                                className="pf-u-display-flex pf-u-flex-grow-1"
+                                className="pf-v5-u-display-flex pf-v5-u-flex-grow-1"
                             >
                                 <Select
                                     variant="single"
                                     toggleAriaLabel="Search entity selection menu toggle"
                                     aria-label="Select an entity to filter by"
-                                    onToggle={entityToggle.onToggle}
+                                    onToggle={(_e, v) => entityToggle.onToggle(v)}
                                     onSelect={onEntitySelect}
                                     selections={entity}
                                     isOpen={entityToggle.isOpen}
-                                    className="pf-u-flex-basis-0"
+                                    className="pf-v5-u-flex-basis-0"
                                 >
                                     <SelectOption key="Deployment" value="Deployment">
                                         Deployment
@@ -175,10 +176,10 @@ function ListeningEndpointsPage() {
                                 <Select
                                     typeAheadAriaLabel={`Search by ${entity}`}
                                     aria-label={`Filter by ${entity}`}
-                                    onSelect={(e, value) => {
+                                    onSelect={(_e, value) => {
                                         onSelectAutocompleteValue(value);
                                     }}
-                                    onToggle={autocompleteToggle.onToggle}
+                                    onToggle={(_e, v) => autocompleteToggle.onToggle(v)}
                                     isOpen={autocompleteToggle.isOpen}
                                     placeholderText={`Filter results by ${entity}`}
                                     variant="typeaheadmulti"
@@ -188,7 +189,7 @@ function ListeningEndpointsPage() {
                                     onTypeaheadInputChanged={(val: string) => {
                                         updateSearchValue(val);
                                     }}
-                                    className="pf-u-flex-grow-1"
+                                    className="pf-v5-u-flex-grow-1"
                                 >
                                     {autoCompleteData?.searchAutocomplete?.map((value) => (
                                         <SelectOption key={value} value={value} />
@@ -197,7 +198,7 @@ function ListeningEndpointsPage() {
                             </ToolbarItem>
                         </ToolbarGroup>
                         <ToolbarGroup>
-                            <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                                 <Pagination
                                     itemCount={countQuery.data ?? 0}
                                     page={page}
@@ -213,7 +214,7 @@ function ListeningEndpointsPage() {
                             </ToolbarItem>
                         </ToolbarGroup>
 
-                        <ToolbarGroup className="pf-u-w-100">
+                        <ToolbarGroup className="pf-v5-u-w-100">
                             <SearchFilterChips
                                 filterChipGroupDescriptors={[
                                     { displayName: 'Deployment', searchFilterName: 'Deployment' },
@@ -224,14 +225,14 @@ function ListeningEndpointsPage() {
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <div className="pf-u-background-color-100">
+                <div className="pf-v5-u-background-color-100">
                     {error && (
                         <Bullseye>
                             <EmptyStateTemplate
                                 title="Error loading deployments with listening endpoints"
                                 headingLevel="h2"
                                 icon={ExclamationCircleIcon}
-                                iconClassName="pf-u-danger-color-100"
+                                iconClassName="pf-v5-u-danger-color-100"
                             >
                                 {getAxiosErrorMessage(error.message)}
                             </EmptyStateTemplate>

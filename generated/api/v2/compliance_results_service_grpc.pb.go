@@ -20,15 +20,11 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	ComplianceResultsService_GetComplianceScanCheckResult_FullMethodName               = "/v2.ComplianceResultsService/GetComplianceScanCheckResult"
-	ComplianceResultsService_GetComplianceScanResultsOverview_FullMethodName           = "/v2.ComplianceResultsService/GetComplianceScanResultsOverview"
 	ComplianceResultsService_GetComplianceScanResults_FullMethodName                   = "/v2.ComplianceResultsService/GetComplianceScanResults"
 	ComplianceResultsService_GetComplianceScanConfigurationResults_FullMethodName      = "/v2.ComplianceResultsService/GetComplianceScanConfigurationResults"
 	ComplianceResultsService_GetComplianceProfileResults_FullMethodName                = "/v2.ComplianceResultsService/GetComplianceProfileResults"
-	ComplianceResultsService_GetComplianceProfileStats_FullMethodName                  = "/v2.ComplianceResultsService/GetComplianceProfileStats"
-	ComplianceResultsService_GetComplianceProfilesStats_FullMethodName                 = "/v2.ComplianceResultsService/GetComplianceProfilesStats"
-	ComplianceResultsService_GetComplianceClusterScanStats_FullMethodName              = "/v2.ComplianceResultsService/GetComplianceClusterScanStats"
-	ComplianceResultsService_GetComplianceOverallClusterStats_FullMethodName           = "/v2.ComplianceResultsService/GetComplianceOverallClusterStats"
-	ComplianceResultsService_GetComplianceOverallClusterCount_FullMethodName           = "/v2.ComplianceResultsService/GetComplianceOverallClusterCount"
+	ComplianceResultsService_GetComplianceProfileCheckResult_FullMethodName            = "/v2.ComplianceResultsService/GetComplianceProfileCheckResult"
+	ComplianceResultsService_GetComplianceProfileClusterResults_FullMethodName         = "/v2.ComplianceResultsService/GetComplianceProfileClusterResults"
 	ComplianceResultsService_GetComplianceScanResultsCount_FullMethodName              = "/v2.ComplianceResultsService/GetComplianceScanResultsCount"
 	ComplianceResultsService_GetComplianceScanConfigurationResultsCount_FullMethodName = "/v2.ComplianceResultsService/GetComplianceScanConfigurationResultsCount"
 )
@@ -38,14 +34,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ComplianceResultsServiceClient interface {
 	// GetComplianceScanCheckResult returns the specific result by ID
-	GetComplianceScanCheckResult(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ComplianceCheckResult, error)
-	// GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
-	// Optional RawQuery query fields can be combined.
-	// Commonly used ones include but are not limited to
-	// - scan: id(s) of the compliance scan
-	// - cluster: id(s) of the cluster
-	// - profile: id(s) of the profile
-	GetComplianceScanResultsOverview(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanResultsOverviewResponse, error)
+	GetComplianceScanCheckResult(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ComplianceClusterCheckStatus, error)
 	// GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
 	// Optional RawQuery query fields can be combined.
 	// Commonly used ones include but are not limited to
@@ -58,30 +47,11 @@ type ComplianceResultsServiceClient interface {
 	GetComplianceScanConfigurationResults(ctx context.Context, in *ComplianceScanResultsRequest, opts ...grpc.CallOption) (*ListComplianceScanResultsResponse, error)
 	// GetComplianceProfileResults retrieves the most recent compliance operator scan results for the specified query
 	// Optional RawQuery query fields can be combined.
-	GetComplianceProfileResults(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ComplianceProfileResults, error)
-	// GetComplianceProfileScanStats lists current scan stats grouped by profile
-	// Optional RawQuery query fields can be combined.
-	// Commonly used ones include but are not limited to
-	// - scan: id(s) of the compliance scan
-	// - cluster: id(s) of the cluster
-	// - profile: id(s) of the profile
-	GetComplianceProfileStats(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ListComplianceProfileScanStatsResponse, error)
-	// GetComplianceProfileScanStats lists current scan stats grouped by profile
-	// Optional RawQuery query fields can be combined.
-	// Commonly used ones include but are not limited to
-	// - scan: id(s) of the compliance scan
-	// - cluster: id(s) of the cluster
-	// - profile: id(s) of the profile
-	GetComplianceProfilesStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceProfileScanStatsResponse, error)
-	// GetComplianceClusterScanStats lists current scan stats grouped by cluster
-	// Optional RawQuery query fields can be combined.
-	// Commonly used ones include but are not limited to
-	// - scan: id(s) of the compliance scan
-	// - cluster: id(s) of the cluster
-	// - profile: id(s) of the profile
-	GetComplianceClusterScanStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceClusterScanStatsResponse, error)
-	GetComplianceOverallClusterStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceClusterOverallStatsResponse, error)
-	GetComplianceOverallClusterCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountComplianceScanResults, error)
+	GetComplianceProfileResults(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ListComplianceProfileResults, error)
+	// GetComplianceProfileCheckResult lists status of a check per cluster
+	GetComplianceProfileCheckResult(ctx context.Context, in *ComplianceProfileCheckRequest, opts ...grpc.CallOption) (*ListComplianceCheckClusterResponse, error)
+	// GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
+	GetComplianceProfileClusterResults(ctx context.Context, in *ComplianceProfileClusterRequest, opts ...grpc.CallOption) (*ListComplianceCheckResultResponse, error)
 	GetComplianceScanResultsCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountComplianceScanResults, error)
 	GetComplianceScanConfigurationResultsCount(ctx context.Context, in *ComplianceScanResultsRequest, opts ...grpc.CallOption) (*CountComplianceScanResults, error)
 }
@@ -94,18 +64,9 @@ func NewComplianceResultsServiceClient(cc grpc.ClientConnInterface) ComplianceRe
 	return &complianceResultsServiceClient{cc}
 }
 
-func (c *complianceResultsServiceClient) GetComplianceScanCheckResult(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ComplianceCheckResult, error) {
-	out := new(ComplianceCheckResult)
+func (c *complianceResultsServiceClient) GetComplianceScanCheckResult(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ComplianceClusterCheckStatus, error) {
+	out := new(ComplianceClusterCheckStatus)
 	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceScanCheckResult_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *complianceResultsServiceClient) GetComplianceScanResultsOverview(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanResultsOverviewResponse, error) {
-	out := new(ListComplianceScanResultsOverviewResponse)
-	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceScanResultsOverview_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -130,8 +91,8 @@ func (c *complianceResultsServiceClient) GetComplianceScanConfigurationResults(c
 	return out, nil
 }
 
-func (c *complianceResultsServiceClient) GetComplianceProfileResults(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ComplianceProfileResults, error) {
-	out := new(ComplianceProfileResults)
+func (c *complianceResultsServiceClient) GetComplianceProfileResults(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ListComplianceProfileResults, error) {
+	out := new(ListComplianceProfileResults)
 	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceProfileResults_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -139,45 +100,18 @@ func (c *complianceResultsServiceClient) GetComplianceProfileResults(ctx context
 	return out, nil
 }
 
-func (c *complianceResultsServiceClient) GetComplianceProfileStats(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ListComplianceProfileScanStatsResponse, error) {
-	out := new(ListComplianceProfileScanStatsResponse)
-	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceProfileStats_FullMethodName, in, out, opts...)
+func (c *complianceResultsServiceClient) GetComplianceProfileCheckResult(ctx context.Context, in *ComplianceProfileCheckRequest, opts ...grpc.CallOption) (*ListComplianceCheckClusterResponse, error) {
+	out := new(ListComplianceCheckClusterResponse)
+	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceProfileCheckResult_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *complianceResultsServiceClient) GetComplianceProfilesStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceProfileScanStatsResponse, error) {
-	out := new(ListComplianceProfileScanStatsResponse)
-	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceProfilesStats_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *complianceResultsServiceClient) GetComplianceClusterScanStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceClusterScanStatsResponse, error) {
-	out := new(ListComplianceClusterScanStatsResponse)
-	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceClusterScanStats_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *complianceResultsServiceClient) GetComplianceOverallClusterStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceClusterOverallStatsResponse, error) {
-	out := new(ListComplianceClusterOverallStatsResponse)
-	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceOverallClusterStats_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *complianceResultsServiceClient) GetComplianceOverallClusterCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountComplianceScanResults, error) {
-	out := new(CountComplianceScanResults)
-	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceOverallClusterCount_FullMethodName, in, out, opts...)
+func (c *complianceResultsServiceClient) GetComplianceProfileClusterResults(ctx context.Context, in *ComplianceProfileClusterRequest, opts ...grpc.CallOption) (*ListComplianceCheckResultResponse, error) {
+	out := new(ListComplianceCheckResultResponse)
+	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceProfileClusterResults_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -207,14 +141,7 @@ func (c *complianceResultsServiceClient) GetComplianceScanConfigurationResultsCo
 // for forward compatibility
 type ComplianceResultsServiceServer interface {
 	// GetComplianceScanCheckResult returns the specific result by ID
-	GetComplianceScanCheckResult(context.Context, *ResourceByID) (*ComplianceCheckResult, error)
-	// GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
-	// Optional RawQuery query fields can be combined.
-	// Commonly used ones include but are not limited to
-	// - scan: id(s) of the compliance scan
-	// - cluster: id(s) of the cluster
-	// - profile: id(s) of the profile
-	GetComplianceScanResultsOverview(context.Context, *RawQuery) (*ListComplianceScanResultsOverviewResponse, error)
+	GetComplianceScanCheckResult(context.Context, *ResourceByID) (*ComplianceClusterCheckStatus, error)
 	// GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
 	// Optional RawQuery query fields can be combined.
 	// Commonly used ones include but are not limited to
@@ -227,30 +154,11 @@ type ComplianceResultsServiceServer interface {
 	GetComplianceScanConfigurationResults(context.Context, *ComplianceScanResultsRequest) (*ListComplianceScanResultsResponse, error)
 	// GetComplianceProfileResults retrieves the most recent compliance operator scan results for the specified query
 	// Optional RawQuery query fields can be combined.
-	GetComplianceProfileResults(context.Context, *ComplianceProfileResultsRequest) (*ComplianceProfileResults, error)
-	// GetComplianceProfileScanStats lists current scan stats grouped by profile
-	// Optional RawQuery query fields can be combined.
-	// Commonly used ones include but are not limited to
-	// - scan: id(s) of the compliance scan
-	// - cluster: id(s) of the cluster
-	// - profile: id(s) of the profile
-	GetComplianceProfileStats(context.Context, *ComplianceProfileResultsRequest) (*ListComplianceProfileScanStatsResponse, error)
-	// GetComplianceProfileScanStats lists current scan stats grouped by profile
-	// Optional RawQuery query fields can be combined.
-	// Commonly used ones include but are not limited to
-	// - scan: id(s) of the compliance scan
-	// - cluster: id(s) of the cluster
-	// - profile: id(s) of the profile
-	GetComplianceProfilesStats(context.Context, *RawQuery) (*ListComplianceProfileScanStatsResponse, error)
-	// GetComplianceClusterScanStats lists current scan stats grouped by cluster
-	// Optional RawQuery query fields can be combined.
-	// Commonly used ones include but are not limited to
-	// - scan: id(s) of the compliance scan
-	// - cluster: id(s) of the cluster
-	// - profile: id(s) of the profile
-	GetComplianceClusterScanStats(context.Context, *RawQuery) (*ListComplianceClusterScanStatsResponse, error)
-	GetComplianceOverallClusterStats(context.Context, *RawQuery) (*ListComplianceClusterOverallStatsResponse, error)
-	GetComplianceOverallClusterCount(context.Context, *RawQuery) (*CountComplianceScanResults, error)
+	GetComplianceProfileResults(context.Context, *ComplianceProfileResultsRequest) (*ListComplianceProfileResults, error)
+	// GetComplianceProfileCheckResult lists status of a check per cluster
+	GetComplianceProfileCheckResult(context.Context, *ComplianceProfileCheckRequest) (*ListComplianceCheckClusterResponse, error)
+	// GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
+	GetComplianceProfileClusterResults(context.Context, *ComplianceProfileClusterRequest) (*ListComplianceCheckResultResponse, error)
 	GetComplianceScanResultsCount(context.Context, *RawQuery) (*CountComplianceScanResults, error)
 	GetComplianceScanConfigurationResultsCount(context.Context, *ComplianceScanResultsRequest) (*CountComplianceScanResults, error)
 }
@@ -259,11 +167,8 @@ type ComplianceResultsServiceServer interface {
 type UnimplementedComplianceResultsServiceServer struct {
 }
 
-func (UnimplementedComplianceResultsServiceServer) GetComplianceScanCheckResult(context.Context, *ResourceByID) (*ComplianceCheckResult, error) {
+func (UnimplementedComplianceResultsServiceServer) GetComplianceScanCheckResult(context.Context, *ResourceByID) (*ComplianceClusterCheckStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceScanCheckResult not implemented")
-}
-func (UnimplementedComplianceResultsServiceServer) GetComplianceScanResultsOverview(context.Context, *RawQuery) (*ListComplianceScanResultsOverviewResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceScanResultsOverview not implemented")
 }
 func (UnimplementedComplianceResultsServiceServer) GetComplianceScanResults(context.Context, *RawQuery) (*ListComplianceScanResultsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceScanResults not implemented")
@@ -271,23 +176,14 @@ func (UnimplementedComplianceResultsServiceServer) GetComplianceScanResults(cont
 func (UnimplementedComplianceResultsServiceServer) GetComplianceScanConfigurationResults(context.Context, *ComplianceScanResultsRequest) (*ListComplianceScanResultsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceScanConfigurationResults not implemented")
 }
-func (UnimplementedComplianceResultsServiceServer) GetComplianceProfileResults(context.Context, *ComplianceProfileResultsRequest) (*ComplianceProfileResults, error) {
+func (UnimplementedComplianceResultsServiceServer) GetComplianceProfileResults(context.Context, *ComplianceProfileResultsRequest) (*ListComplianceProfileResults, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceProfileResults not implemented")
 }
-func (UnimplementedComplianceResultsServiceServer) GetComplianceProfileStats(context.Context, *ComplianceProfileResultsRequest) (*ListComplianceProfileScanStatsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceProfileStats not implemented")
+func (UnimplementedComplianceResultsServiceServer) GetComplianceProfileCheckResult(context.Context, *ComplianceProfileCheckRequest) (*ListComplianceCheckClusterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceProfileCheckResult not implemented")
 }
-func (UnimplementedComplianceResultsServiceServer) GetComplianceProfilesStats(context.Context, *RawQuery) (*ListComplianceProfileScanStatsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceProfilesStats not implemented")
-}
-func (UnimplementedComplianceResultsServiceServer) GetComplianceClusterScanStats(context.Context, *RawQuery) (*ListComplianceClusterScanStatsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceClusterScanStats not implemented")
-}
-func (UnimplementedComplianceResultsServiceServer) GetComplianceOverallClusterStats(context.Context, *RawQuery) (*ListComplianceClusterOverallStatsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceOverallClusterStats not implemented")
-}
-func (UnimplementedComplianceResultsServiceServer) GetComplianceOverallClusterCount(context.Context, *RawQuery) (*CountComplianceScanResults, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceOverallClusterCount not implemented")
+func (UnimplementedComplianceResultsServiceServer) GetComplianceProfileClusterResults(context.Context, *ComplianceProfileClusterRequest) (*ListComplianceCheckResultResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceProfileClusterResults not implemented")
 }
 func (UnimplementedComplianceResultsServiceServer) GetComplianceScanResultsCount(context.Context, *RawQuery) (*CountComplianceScanResults, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceScanResultsCount not implemented")
@@ -321,24 +217,6 @@ func _ComplianceResultsService_GetComplianceScanCheckResult_Handler(srv interfac
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceResultsServiceServer).GetComplianceScanCheckResult(ctx, req.(*ResourceByID))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ComplianceResultsService_GetComplianceScanResultsOverview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RawQuery)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ComplianceResultsServiceServer).GetComplianceScanResultsOverview(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ComplianceResultsService_GetComplianceScanResultsOverview_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceResultsServiceServer).GetComplianceScanResultsOverview(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -397,92 +275,38 @@ func _ComplianceResultsService_GetComplianceProfileResults_Handler(srv interface
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceResultsService_GetComplianceProfileStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ComplianceProfileResultsRequest)
+func _ComplianceResultsService_GetComplianceProfileCheckResult_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ComplianceProfileCheckRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ComplianceResultsServiceServer).GetComplianceProfileStats(ctx, in)
+		return srv.(ComplianceResultsServiceServer).GetComplianceProfileCheckResult(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ComplianceResultsService_GetComplianceProfileStats_FullMethodName,
+		FullMethod: ComplianceResultsService_GetComplianceProfileCheckResult_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceResultsServiceServer).GetComplianceProfileStats(ctx, req.(*ComplianceProfileResultsRequest))
+		return srv.(ComplianceResultsServiceServer).GetComplianceProfileCheckResult(ctx, req.(*ComplianceProfileCheckRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceResultsService_GetComplianceProfilesStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RawQuery)
+func _ComplianceResultsService_GetComplianceProfileClusterResults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ComplianceProfileClusterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ComplianceResultsServiceServer).GetComplianceProfilesStats(ctx, in)
+		return srv.(ComplianceResultsServiceServer).GetComplianceProfileClusterResults(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ComplianceResultsService_GetComplianceProfilesStats_FullMethodName,
+		FullMethod: ComplianceResultsService_GetComplianceProfileClusterResults_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceResultsServiceServer).GetComplianceProfilesStats(ctx, req.(*RawQuery))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ComplianceResultsService_GetComplianceClusterScanStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RawQuery)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ComplianceResultsServiceServer).GetComplianceClusterScanStats(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ComplianceResultsService_GetComplianceClusterScanStats_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceResultsServiceServer).GetComplianceClusterScanStats(ctx, req.(*RawQuery))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ComplianceResultsService_GetComplianceOverallClusterStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RawQuery)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ComplianceResultsServiceServer).GetComplianceOverallClusterStats(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ComplianceResultsService_GetComplianceOverallClusterStats_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceResultsServiceServer).GetComplianceOverallClusterStats(ctx, req.(*RawQuery))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ComplianceResultsService_GetComplianceOverallClusterCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RawQuery)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ComplianceResultsServiceServer).GetComplianceOverallClusterCount(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ComplianceResultsService_GetComplianceOverallClusterCount_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceResultsServiceServer).GetComplianceOverallClusterCount(ctx, req.(*RawQuery))
+		return srv.(ComplianceResultsServiceServer).GetComplianceProfileClusterResults(ctx, req.(*ComplianceProfileClusterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -535,10 +359,6 @@ var ComplianceResultsService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ComplianceResultsService_GetComplianceScanCheckResult_Handler,
 		},
 		{
-			MethodName: "GetComplianceScanResultsOverview",
-			Handler:    _ComplianceResultsService_GetComplianceScanResultsOverview_Handler,
-		},
-		{
 			MethodName: "GetComplianceScanResults",
 			Handler:    _ComplianceResultsService_GetComplianceScanResults_Handler,
 		},
@@ -551,24 +371,12 @@ var ComplianceResultsService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ComplianceResultsService_GetComplianceProfileResults_Handler,
 		},
 		{
-			MethodName: "GetComplianceProfileStats",
-			Handler:    _ComplianceResultsService_GetComplianceProfileStats_Handler,
+			MethodName: "GetComplianceProfileCheckResult",
+			Handler:    _ComplianceResultsService_GetComplianceProfileCheckResult_Handler,
 		},
 		{
-			MethodName: "GetComplianceProfilesStats",
-			Handler:    _ComplianceResultsService_GetComplianceProfilesStats_Handler,
-		},
-		{
-			MethodName: "GetComplianceClusterScanStats",
-			Handler:    _ComplianceResultsService_GetComplianceClusterScanStats_Handler,
-		},
-		{
-			MethodName: "GetComplianceOverallClusterStats",
-			Handler:    _ComplianceResultsService_GetComplianceOverallClusterStats_Handler,
-		},
-		{
-			MethodName: "GetComplianceOverallClusterCount",
-			Handler:    _ComplianceResultsService_GetComplianceOverallClusterCount_Handler,
+			MethodName: "GetComplianceProfileClusterResults",
+			Handler:    _ComplianceResultsService_GetComplianceProfileClusterResults_Handler,
 		},
 		{
 			MethodName: "GetComplianceScanResultsCount",

@@ -27,7 +27,7 @@ jobs:
     needs: read-release-versions
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
       volumes:
         # The updater makes heavy use of /tmp files.
         - /tmp:/tmp
@@ -84,6 +84,9 @@ jobs:
         cd scanner
         go build -trimpath -o bin/updater ./cmd/updater
         go clean -cache -modcache
+
+        # TODO(ROX-23684): Ensure previous release versions can coexist with
+        #                  muti-bundle command line arguments.
         ./bin/updater -output-dir=${{ env.ROX_PRODUCT_VERSION }}
 
         # The vulnerability file created by older versions can remain the name

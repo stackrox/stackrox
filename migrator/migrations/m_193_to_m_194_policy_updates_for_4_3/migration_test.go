@@ -86,6 +86,8 @@ func (s *policyMigrationTestSuite) TestMigration() {
 		s.Run(fmt.Sprintf("Testing policy %s", diff.PolicyFileName), func() {
 
 			afterPolicy, _ := policymigrationhelper.ReadPolicyFromFile(policyDiffFS, filepath.Join("policies_before_and_after/after", diff.PolicyFileName))
+			afterPolicy.Categories = nil
+
 			var foundPolicies []schema.Policies
 			result := s.gormDB.Limit(1).Where(&schema.Policies{ID: afterPolicy.GetId()}).Find(&foundPolicies)
 			s.Require().NoError(result.Error)

@@ -3,7 +3,7 @@ import { Divider, Toolbar, ToolbarItem, ToolbarContent, Pagination } from '@patt
 
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 
-import { DynamicTableLabel } from './DynamicIcon';
+import { DynamicTableLabel } from 'Components/DynamicIcon';
 
 export type TableEntityToolbarProps = {
     /** The toolbar component used for searching, filtering, and displaying filter chips */
@@ -43,12 +43,12 @@ function TableEntityToolbar({
                 <ToolbarContent>
                     <ToolbarItem>{entityToggleGroup}</ToolbarItem>
                     {isFiltered && (
-                        <ToolbarItem>
+                        <ToolbarItem alignSelf="center">
                             <DynamicTableLabel />
                         </ToolbarItem>
                     )}
                     {children}
-                    <ToolbarItem alignment={{ default: 'alignRight' }} variant="pagination">
+                    <ToolbarItem align={{ default: 'alignRight' }} variant="pagination">
                         <Pagination
                             itemCount={tableRowCount}
                             page={page}

@@ -92,7 +92,7 @@ function ExcludeConfirmation({
                         numSelectedRows
                     )}?`}
                 </Text>
-                {error && (
+                {!!error && (
                     <Alert
                         variant="danger"
                         title="There was an error excluding one or more deployments"

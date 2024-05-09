@@ -2,7 +2,6 @@ package centralclient
 
 import (
 	"context"
-	"crypto/x509"
 	"time"
 
 	"github.com/pkg/errors"
@@ -19,14 +18,13 @@ import (
 // a gRPC stream internally. This factory is now passed to sensor creation, and it can be
 // more easily mocked when writing unit/integration tests.
 type CentralConnectionFactory interface {
-	SetCentralConnectionWithRetries(ptr *util.LazyClientConn)
+	SetCentralConnectionWithRetries(ptr *util.LazyClientConn, certLoader CertLoader)
 	StopSignal() *concurrency.ErrorSignal
 	OkSignal() *concurrency.Signal
 	Reset()
 }
 
 type centralConnectionFactoryImpl struct {
-	endpoint   string
 	httpClient *Client
 
 	stopSignal concurrency.ErrorSignal
@@ -34,18 +32,13 @@ type centralConnectionFactoryImpl struct {
 }
 
 // NewCentralConnectionFactory returns a factory that can create a gRPC stream between Sensor and Central.
-func NewCentralConnectionFactory(endpoint string) (*centralConnectionFactoryImpl, error) {
-	centralClient, err := NewClient(env.CentralEndpoint.Setting())
-	if err != nil {
-		return nil, errors.Wrap(err, "creating central client")
-	}
+func NewCentralConnectionFactory(centralClient *Client) CentralConnectionFactory {
 	return &centralConnectionFactoryImpl{
-		endpoint:   endpoint,
 		httpClient: centralClient,
 
 		okSignal:   concurrency.NewSignal(),
 		stopSignal: concurrency.NewErrorSignal(),
-	}, nil
+	}
 }
 
 // OkSignal returns a concurrency.Signal that is sends signal once connection object is successfully established
@@ -79,22 +72,12 @@ func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferen
 	return f.httpClient.GetGRPCPreferences(ctx)
 }
 
-// getCentralTLSCerts only logs errors because this feature should not break
-// sensors start-up.
-func (f *centralConnectionFactoryImpl) getCentralTLSCerts() []*x509.Certificate {
-	certs, err := f.httpClient.GetTLSTrustedCerts(context.Background())
-	if err != nil {
-		log.Warnf("Error fetching centrals TLS certs: %s", err)
-	}
-	return certs
-}
-
 // SetCentralConnectionWithRetries will set conn pointer once the connection is ready.
 // This function is supposed to be called asynchronously and allows sensor components to be
 // started with an empty util.LazyClientConn. The pointer will be swapped once this
 // func finishes.
 // f.okSignal is used if the connection is successful and f.stopSignal if the connection failed to start.
-func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn) {
+func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn, certLoader CertLoader) {
 	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
 
 	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
@@ -104,7 +87,7 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 		return
 	}
 
-	certs := f.getCentralTLSCerts()
+	certs := certLoader()
 	if len(certs) != 0 {
 		log.Infof("Add %d central CA certs to gRPC connection", len(certs))
 		for _, c := range certs {

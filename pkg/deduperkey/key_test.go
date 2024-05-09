@@ -2,12 +2,20 @@ package deduperkey
 
 import (
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"os"
+	"path"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -117,4 +125,80 @@ func withKey(resource any, id string) Key {
 		ID:           id,
 		ResourceType: reflect.TypeOf(resource),
 	}
+}
+
+var allSensorEventTypes []string
+
+var whitelist = []string{
+	"SensorEvent",
+	"SensorEvent_SensorHash",
+	"SensorEvent_Synced",
+	"SensorEvent_ReprocessDeployment",
+	"SensorEvent_ComplianceOperatorSuiteV2",
+	"SensorEvent_ResourcesSynced",
+}
+
+func TestAllSensorEventsWereAddedToDeduper(t *testing.T) {
+	pwd, err := os.Getwd()
+	if err != nil {
+		require.NoError(t, err)
+	}
+
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, path.Join(pwd, "../../generated/internalapi/central/sensor_events.pb.go"), nil, 0)
+	require.NoError(t, err)
+
+	allSensorEventTypes = []string{}
+	defer func() { allSensorEventTypes = []string{} }()
+
+	ast.Walk(VisitorFunc(findStructs), file)
+	require.NotEmpty(t, allSensorEventTypes)
+
+	var notFound []string
+sensorEventLoop:
+	for _, sensorEventType := range allSensorEventTypes {
+		// types which are not used by the deduper can be skipped.
+		for _, whitelisted := range whitelist {
+			if sensorEventType == whitelisted {
+				continue sensorEventLoop
+			}
+		}
+
+		for _, deduperType := range deduperTypes {
+			deduperTypeSensorEventRaw := reflect.TypeOf(deduperType).String()
+			deduperTypeSensorEvent := strings.TrimLeft(deduperTypeSensorEventRaw, "*central.")
+
+			if deduperTypeSensorEvent == sensorEventType {
+				continue sensorEventLoop
+			}
+		}
+
+		notFound = append(notFound, sensorEventType)
+	}
+
+	assert.Empty(t, notFound, "Please add the missing types to the deduper keys or the whitelist if it should not be used in the deduper.")
+}
+
+type VisitorFunc func(n ast.Node) ast.Visitor
+
+func (f VisitorFunc) Visit(n ast.Node) ast.Visitor {
+	return f(n)
+}
+
+func findStructs(n ast.Node) ast.Visitor {
+	switch n := n.(type) {
+	case *ast.Package:
+		return VisitorFunc(findStructs)
+	case *ast.File:
+		return VisitorFunc(findStructs)
+	case *ast.GenDecl:
+		if n.Tok == token.TYPE {
+			return VisitorFunc(findStructs)
+		}
+	case *ast.TypeSpec:
+		if strings.HasPrefix(n.Name.Name, "SensorEvent") {
+			allSensorEventTypes = append(allSensorEventTypes, n.Name.Name)
+		}
+	}
+	return nil
 }

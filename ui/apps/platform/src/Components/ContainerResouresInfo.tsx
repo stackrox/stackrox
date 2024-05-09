@@ -19,7 +19,7 @@ function ContainerResourcesInfo({ resources }: ContainerResourcesInfoProps) {
     return (
         <Card>
             <CardTitle>Resources</CardTitle>
-            <CardBody className="pf-u-background-color-200 pf-u-pt-xl pf-u-mx-lg pf-u-mb-lg">
+            <CardBody className="pf-v5-u-background-color-200 pf-v5-u-pt-xl pf-v5-u-mx-lg pf-v5-u-mb-lg">
                 <DescriptionList columnModifier={{ default: '2Col' }} isCompact>
                     <DescriptionListGroup>
                         <DescriptionListTerm>CPU requests (cores)</DescriptionListTerm>

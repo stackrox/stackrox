@@ -122,3 +122,22 @@ func TestUnmarshal(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, msg, decoded)
 }
+
+func TestMerge(t *testing.T) {
+	msgDst := &storage.NamespaceMetadata{
+		Id:          testconsts.NamespaceA,
+		ClusterName: "Cluster 1",
+	}
+
+	msgSrc := &storage.NamespaceMetadata{
+		Name:        "Namespace A",
+		ClusterName: "Cluster 2",
+	}
+
+	Merge(msgDst, msgSrc)
+
+	assert.Equal(t, testconsts.NamespaceA, msgDst.GetId())
+	assert.Equal(t, "Namespace A", msgDst.GetName())
+	assert.Equal(t, "Cluster 2", msgDst.GetClusterName())
+	assert.Equal(t, "", msgDst.GetClusterId())
+}

@@ -6,10 +6,10 @@ import {
     Checkbox,
     Form,
     PageSection,
-    SelectOption,
     TextInput,
     Popover,
 } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { HelpIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
 
@@ -222,7 +222,7 @@ function EmailIntegrationForm({
                             id="notifier.name"
                             value={values.notifier.name}
                             placeholder="(example, Email Integration)"
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -240,7 +240,7 @@ function EmailIntegrationForm({
                             id="notifier.email.server"
                             value={values.notifier.email.server}
                             placeholder="example, smtp.example.com:465"
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -251,12 +251,14 @@ function EmailIntegrationForm({
                         errors={errors}
                     >
                         <>
-                            <div className="pf-u-display-flex pf-u-align-items-flex-start">
+                            <div className="pf-v5-u-display-flex pf-v5-u-align-items-flex-start">
                                 <Checkbox
                                     label="Enable unauthenticated SMTP"
                                     id="notifier.email.unauthenticated"
                                     isChecked={allowUnauthenticatedSmtp}
-                                    onChange={onUpdateUnauthenticatedChange}
+                                    onChange={(_event, isChecked) =>
+                                        onUpdateUnauthenticatedChange(isChecked)
+                                    }
                                     onBlur={handleBlur}
                                 />
                                 <Popover
@@ -267,7 +269,7 @@ function EmailIntegrationForm({
                                         type="button"
                                         aria-label="More info on unauthenticated SMTP field"
                                         onClick={(e) => e.preventDefault()}
-                                        className="pf-c-form__group-label-help"
+                                        className="pf-v5-c-form__group-label-help"
                                     >
                                         <HelpIcon />
                                     </button>
@@ -275,7 +277,7 @@ function EmailIntegrationForm({
                             </div>
                             {allowUnauthenticatedSmtp && (
                                 <Alert
-                                    className="pf-u-mt-md"
+                                    className="pf-v5-u-mt-md"
                                     title="Security Warning"
                                     variant={AlertVariant.warning}
                                     isInline
@@ -304,7 +306,7 @@ function EmailIntegrationForm({
                             placeholder={
                                 allowUnauthenticatedSmtp ? '' : 'example, postmaster@example.com'
                             }
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable || allowUnauthenticatedSmtp}
                         />
@@ -320,7 +322,7 @@ function EmailIntegrationForm({
                                 label="Update token"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -338,7 +340,7 @@ function EmailIntegrationForm({
                             type="password"
                             id="notifier.email.password"
                             value={values.notifier.email.password}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={
                                 !isEditable || !values.updatePassword || allowUnauthenticatedSmtp
@@ -356,7 +358,7 @@ function EmailIntegrationForm({
                         touched={touched}
                         errors={errors}
                         helperText={
-                            <span className="pf-u-font-size-sm">
+                            <span className="pf-v5-u-font-size-sm">
                                 Specifies the email FROM header
                             </span>
                         }
@@ -366,7 +368,7 @@ function EmailIntegrationForm({
                             id="notifier.email.from"
                             value={values.notifier.email.from}
                             placeholder="example, Security Alerts"
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -378,7 +380,7 @@ function EmailIntegrationForm({
                         touched={touched}
                         errors={errors}
                         helperText={
-                            <span className="pf-u-font-size-sm">
+                            <span className="pf-v5-u-font-size-sm">
                                 Specifies the email SENDER header
                             </span>
                         }
@@ -389,7 +391,7 @@ function EmailIntegrationForm({
                             id="notifier.email.sender"
                             value={values.notifier.email.sender}
                             placeholder="example, security-alerts@example.com"
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -407,7 +409,7 @@ function EmailIntegrationForm({
                             id="notifier.labelDefault"
                             value={values.notifier.labelDefault}
                             placeholder="example, security-alerts-recipients@example.com"
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -423,7 +425,7 @@ function EmailIntegrationForm({
                             type="text"
                             id="notifier.labelKey"
                             value={values.notifier.labelKey}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -433,7 +435,9 @@ function EmailIntegrationForm({
                             label="Disable TLS certificate validation (insecure)"
                             id="notifier.email.disableTLS"
                             isChecked={values.notifier.email.disableTLS}
-                            onChange={updateStartTLSAuthMethodOnChange}
+                            onChange={(event, value) =>
+                                updateStartTLSAuthMethodOnChange(value, event)
+                            }
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

@@ -46,6 +46,8 @@ import {
     parseWorkloadQuerySearchFilter,
     getVulnStateScopedQueryString,
 } from '../../utils/searchUtils';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
+
 import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
 import ImagesTableContainer, { imageListQuery } from './ImagesTableContainer';
@@ -152,7 +154,7 @@ function WorkloadCvesOverviewPage() {
     // as a fallback
     const localStorageValue = isFixabilityFiltersEnabled ? storedValue : defaultStorage;
 
-    const pagination = useURLPagination(20);
+    const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const sort = useURLSort({
         sortFields: getWorkloadSortFields(activeEntityTabKey),
@@ -231,10 +233,10 @@ function WorkloadCvesOverviewPage() {
         <>
             <PageTitle title="Workload CVEs Overview" />
             <PageSection
-                className="pf-u-display-flex pf-u-flex-direction-row pf-u-align-items-center"
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
                 variant="light"
             >
-                <Flex direction={{ default: 'column' }} className="pf-u-flex-grow-1">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-flex-grow-1">
                     <Title headingLevel="h1">Workload CVEs</Title>
                     <FlexItem>
                         Prioritize and manage scanned CVEs across images and deployments
@@ -272,7 +274,7 @@ function WorkloadCvesOverviewPage() {
                 <PageSection
                     padding={{ default: 'noPadding' }}
                     component="div"
-                    className="pf-u-pl-lg pf-u-background-color-100"
+                    className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
                 >
                     <VulnerabilityStateTabs onChange={() => pagination.setPage(1)} />
                 </PageSection>

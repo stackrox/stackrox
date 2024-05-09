@@ -24,7 +24,7 @@ SILENT ?= @
 # the pattern is passed to: grep -Ev
 #  usage: "path/to/ignored|another/path"
 # TODO: [ROX-19070] Update postgres store test generation to work for foreign keys
-UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
+UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
 ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
@@ -74,7 +74,7 @@ UNAME_M := $(shell uname -m)
 
 BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
 ifneq ($(UNAME_M),x86_64)
-	BUILD_IMAGE = docker.io/library/golang:$(shell cat EXPECTED_GO_VERSION | cut -c 3-)
+	BUILD_IMAGE = docker.io/library/golang:1.21
 endif
 
 CENTRAL_DB_DOCKER_ARGS :=
@@ -132,6 +132,7 @@ $(call go-tool, MOCKGEN_BIN, go.uber.org/mock/mockgen)
 $(call go-tool, GO_JUNIT_REPORT_BIN, github.com/jstemmer/go-junit-report/v2, tools/test)
 $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tools/linters)
 $(call go-tool, GOVULNCHECK_BIN, golang.org/x/vuln/cmd/govulncheck, tools/linters)
+$(call go-tool, IMAGE_PREFETCHER_DEPLOY, github.com/stackrox/image-prefetcher/deploy, tools/test)
 
 ###########
 ## Style ##
@@ -418,24 +419,17 @@ build-volumes:
 	$(SILENT)docker volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOPATH_VOLUME_NAME)
 	$(SILENT)docker volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOCACHE_VOLUME_NAME)
 
-.PHONY: main-builder-image
-main-builder-image: build-volumes
-	@echo "+ $@"
-	$(SILENT)# Ensure that the go version in the image matches the expected version
-	# If the next line fails, you need to update the go version in rox-ci-image/images/stackrox-build.Dockerfile
-	grep -q "$(shell head -n 1 EXPECTED_GO_VERSION)" <(docker run --rm "$(BUILD_IMAGE)" go version)
-
 .PHONY: main-build
 main-build: build-prep main-build-dockerized
 	@echo "+ $@"
 
 .PHONY: sensor-build-dockerized
-sensor-build-dockerized: main-builder-image
+sensor-build-dockerized: build-volumes
 	@echo "+ $@"
 	docker run $(DOCKER_OPTS) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
 
 .PHONY: sensor-kubernetes-build-dockerized
-sensor-kubernetes-build-dockerized: main-builder-image
+sensor-kubernetes-build-dockerized: build-volumes
 	@echo "+ $@"
 	docker run $(DOCKER_OPTS) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
 
@@ -449,7 +443,7 @@ sensor-kubernetes-build:
 	$(GOBUILD) sensor/kubernetes
 
 .PHONY: main-build-dockerized
-main-build-dockerized: main-builder-image
+main-build-dockerized: build-volumes
 	@echo "+ $@"
 	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
@@ -767,9 +761,6 @@ reinstall-dev-tools: clean-dev-tools
 .PHONY: install-dev-tools
 install-dev-tools: gotools-all
 	@echo "+ $@"
-ifeq ($(UNAME_S),Darwin)
-	@echo "Please manually install RocksDB if you haven't already. See README for details"
-endif
 
 .PHONY: roxvet
 roxvet: skip-dirs := operator/pkg/clientset \
@@ -818,3 +809,11 @@ mitre:
 .PHONY: bootstrap_migration
 bootstrap_migration:
 	$(SILENT)if [[ "x${DESCRIPTION}" == "x" ]]; then echo "Please set a description for your migration in the DESCRIPTION environment variable"; else go run tools/generate-helpers/bootstrap-migration/main.go --root . --description "${DESCRIPTION}" ;fi
+
+.PHONY: image-prefetcher-start
+image-prefetcher-start: $(IMAGE_PREFETCHER_DEPLOY)
+	. scripts/ci/lib.sh; image_prefetcher_start stackrox-images $(IMAGE_PREFETCHER_DEPLOY)
+
+.PHONY: image-prefetcher-await
+image-prefetcher-await:
+	. scripts/ci/lib.sh; image_prefetcher_await stackrox-images

@@ -2,6 +2,10 @@
   "exceptions": {
     "GO-2022-0646": {
       "reason": "Unused portion of the SDK"
+    },
+    "GO-2024-2687": {
+      "reason": "Requires version bump",
+      "until": "2024-05-03T00:00:00Z"
     }
   }
 }

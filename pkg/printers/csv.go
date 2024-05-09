@@ -4,9 +4,9 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"slices"
 
 	"github.com/stackrox/rox/pkg/gjson"
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 // CSVPrinterOption is a functional option for the CSVPrinter.
@@ -15,7 +15,7 @@ type CSVPrinterOption func(*CSVPrinter)
 // WithCSVColumnHeaders is a functional option for setting the CSV column headers.
 func WithCSVColumnHeaders(headers []string) CSVPrinterOption {
 	return func(p *CSVPrinter) {
-		p.columnHeaders = sliceutils.ShallowClone(headers)
+		p.columnHeaders = slices.Clone(headers)
 	}
 }
 

@@ -6,17 +6,23 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGetMetadataIntegration(t *testing.T) {
+	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
+	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
+
+	metricsHandler := types.NewMetricsHandler("docker")
 	dockerHubClient, err := NewDockerRegistry(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
 				Endpoint: "https://registry.k8s.io",
 			},
 		},
-	}, false)
+	}, false, metricsHandler)
 	require.NoError(t, err)
 
 	image := storage.Image{
@@ -29,16 +35,24 @@ func TestGetMetadataIntegration(t *testing.T) {
 	}
 	_, err = dockerHubClient.Metadata(&image)
 	require.Nil(t, err)
+
+	// Make sure that request and histogram metrics but no timeouts have been recorded.
+	assert.NotEmpty(t, metricsHandler.TestCollectRequestCounter(t))
+	assert.Empty(t, metricsHandler.TestCollectTimeoutCounter(t))
+	assert.NotEmpty(t, metricsHandler.TestCollectHistogramCounter(t))
 }
 
 func TestOCIImageIndexManifest(t *testing.T) {
+	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
+	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
+
 	gcrClient, err := NewDockerRegistry(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
 				Endpoint: "https://gcr.io",
 			},
 		},
-	}, false)
+	}, false, nil)
 	require.NoError(t, err)
 
 	image := storage.Image{
@@ -55,13 +69,16 @@ func TestOCIImageIndexManifest(t *testing.T) {
 }
 
 func TestOCIImageIndexManifestWithoutManifestCall(t *testing.T) {
+	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
+	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
+
 	gcrClient, err := NewRegistryWithoutManifestCall(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
 				Endpoint: "https://gcr.io",
 			},
 		},
-	}, false)
+	}, false, nil)
 	require.NoError(t, err)
 
 	image := storage.Image{

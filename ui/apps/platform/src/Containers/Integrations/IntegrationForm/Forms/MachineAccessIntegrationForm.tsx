@@ -8,12 +8,15 @@ import {
     FlexItem,
     Form,
     FormGroup,
+    FormHelperText,
     FormSection,
+    HelperText,
+    HelperTextItem,
     PageSection,
     Popover,
-    SelectOption,
     TextInput,
 } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FieldArray, FormikProvider } from 'formik';
 import { ArrowRightIcon, HelpIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import { IntegrationFormProps } from 'Containers/Integrations/IntegrationForm/integrationFormTypes';
@@ -143,7 +146,7 @@ function MachineAccessIntegrationForm({
                                     Generic
                                 </SelectOption>
                                 <SelectOption key={'GITHUB_ACTIONS'} value={'GITHUB_ACTIONS'}>
-                                    Github action
+                                    GitHub action
                                 </SelectOption>
                             </SelectSingle>
                         </FormLabelGroup>
@@ -159,7 +162,7 @@ function MachineAccessIntegrationForm({
                                 type="text"
                                 id="issuer"
                                 value={values.issuer}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable || values.type === 'GITHUB_ACTIONS'}
                             />
@@ -170,19 +173,23 @@ function MachineAccessIntegrationForm({
                             fieldId="tokenExpirationDuration"
                             touched={touched}
                             errors={errors}
-                            helperText="For example, 3h20m20s"
                         >
                             <TextInput
                                 isRequired
                                 type="text"
                                 id="tokenExpirationDuration"
                                 value={values.tokenExpirationDuration}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem>For example, 3h20m20s</HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                         </FormLabelGroup>
-                        <FormSection title="Rules" titleElement="h3" className="pf-u-mt-0">
+                        <FormSection title="Rules" titleElement="h3" className="pf-v5-u-mt-0">
                             <FieldArray
                                 name="mappings"
                                 render={(arrayHelpers) => (
@@ -206,7 +213,9 @@ function MachineAccessIntegrationForm({
                                                                 value={
                                                                     values.mappings[`${index}`].key
                                                                 }
-                                                                onChange={onChange}
+                                                                onChange={(event, value) =>
+                                                                    onChange(value, event)
+                                                                }
                                                                 onBlur={handleBlur}
                                                                 isDisabled={!isEditable}
                                                             />
@@ -237,17 +246,17 @@ function MachineAccessIntegrationForm({
                                                                         <Button
                                                                             type="button"
                                                                             aria-label="More info for name field"
-                                                                            className="pf-c-form__group-label-help"
+                                                                            className="pf-v5-c-form__group-label-help"
                                                                             style={{
                                                                                 backgroundColor:
                                                                                     'transparent',
                                                                             }}
+                                                                            isInline
                                                                         >
                                                                             <HelpIcon
                                                                                 style={{
                                                                                     color: 'black',
                                                                                 }}
-                                                                                noVerticalAlign
                                                                             />
                                                                         </Button>
                                                                     }
@@ -265,7 +274,9 @@ function MachineAccessIntegrationForm({
                                                                     values.mappings[`${index}`]
                                                                         .valueExpression
                                                                 }
-                                                                onChange={onChange}
+                                                                onChange={(event, value) =>
+                                                                    onChange(value, event)
+                                                                }
                                                                 onBlur={handleBlur}
                                                                 isDisabled={!isEditable}
                                                             />
@@ -282,14 +293,6 @@ function MachineAccessIntegrationForm({
                                                         <FormGroup
                                                             label="Role"
                                                             fieldId={`mappings[${index}].role`}
-                                                            helperTextInvalid={
-                                                                errors[index]?.role || ''
-                                                            }
-                                                            validated={
-                                                                errors[index]?.role
-                                                                    ? 'error'
-                                                                    : 'default'
-                                                            }
                                                         >
                                                             <SelectSingle
                                                                 id={`mappings[${index}].role`}
@@ -308,6 +311,19 @@ function MachineAccessIntegrationForm({
                                                                     />
                                                                 ))}
                                                             </SelectSingle>
+                                                            <FormHelperText>
+                                                                <HelperText>
+                                                                    <HelperTextItem
+                                                                        variant={
+                                                                            errors[index]?.role
+                                                                                ? 'error'
+                                                                                : 'default'
+                                                                        }
+                                                                    >
+                                                                        {errors[index]?.role || ''}
+                                                                    </HelperTextItem>
+                                                                </HelperText>
+                                                            </FormHelperText>
                                                         </FormGroup>
                                                     </FlexItem>
                                                     {isEditable && (
@@ -335,7 +351,7 @@ function MachineAccessIntegrationForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({

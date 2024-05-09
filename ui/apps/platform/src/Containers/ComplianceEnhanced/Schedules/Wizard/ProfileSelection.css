@@ -1,0 +1,10 @@
+/* fixes patternfly 4 bug affecting mobile view table where a blue left-border is added
+to a checkbox. Specifically with a checkbox as the first element in a <Tr> when using
+an expandable section and the expandable section is open. This appears to be fixed
+in patternfly 5. */
+@media (max-width: 768px) {
+    .pf-v5-c-table tbody > tr > :first-child::after {
+        content: none;
+        border-left: none;
+    }
+}

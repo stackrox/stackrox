@@ -7,6 +7,9 @@ import {
     FlexItem,
     Form,
     FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
     TextInput,
     Tooltip,
 } from '@patternfly/react-core';
@@ -35,7 +38,7 @@ const labelIconEffectiveAccessScope = (
         isContentLeftAligned
         maxWidth="24em"
     >
-        <div className="pf-c-button pf-m-plain pf-m-small">
+        <div className="pf-v5-c-button pf-m-plain pf-m-small">
             <OutlinedQuestionCircleIcon />
         </div>
     </Tooltip>
@@ -52,7 +55,7 @@ const labelIconLabelInclusion = (
         isContentLeftAligned
         maxWidth="24em"
     >
-        <div className="pf-c-button pf-m-plain pf-m-small">
+        <div className="pf-v5-c-button pf-m-plain pf-m-small">
             <OutlinedQuestionCircleIcon />
         </div>
     </Tooltip>
@@ -164,31 +167,31 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
     return (
         <Form id="access-scope-form">
             {alertSubmit}
-            <FormGroup
-                label="Name"
-                fieldId="name"
-                isRequired
-                validated={nameValidatedState}
-                helperTextInvalid={nameErrorMessage}
-                className="pf-m-horizontal"
-            >
+            <FormGroup label="Name" fieldId="name" isRequired className="pf-m-horizontal">
                 <TextInput
                     type="text"
                     id="name"
                     value={values.name}
                     validated={nameValidatedState}
-                    onChange={onChange}
+                    onChange={(event, _value) => onChange(_value, event)}
                     isDisabled={isViewing}
                     isRequired
                     className="pf-m-limit-width"
                 />
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem variant={nameValidatedState}>
+                            {nameErrorMessage}
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
             </FormGroup>
             <FormGroup label="Description" fieldId="description" className="pf-m-horizontal">
                 <TextInput
                     type="text"
                     id="description"
                     value={values.description}
-                    onChange={onChange}
+                    onChange={(event, _value) => onChange(_value, event)}
                     isDisabled={isViewing}
                 />
             </FormGroup>
@@ -198,7 +201,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                     direction={{ default: 'row' }}
                     spaceItems={{ default: 'spaceItemsSm', xl: 'spaceItemsLg' }}
                 >
-                    <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
+                    <FlexItem className="pf-v5-u-flex-basis-0" flex={{ default: 'flex_1' }}>
                         <FormGroup
                             label="Allowed resources"
                             fieldId="effectiveAccessScope"
@@ -215,7 +218,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                             />
                         </FormGroup>
                     </FlexItem>
-                    <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
+                    <FlexItem className="pf-v5-u-flex-basis-0" flex={{ default: 'flex_1' }}>
                         <FormGroup
                             label="Label selection rules"
                             fieldId="labelInclusion"

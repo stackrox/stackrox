@@ -2,7 +2,7 @@ package whoami
 
 import (
 	"context"
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -71,7 +71,7 @@ func (cmd *centralWhoAmICommand) whoami() error {
 	for resource := range resourceToAccess {
 		resources = append(resources, resource)
 	}
-	sort.Strings(resources)
+	slices.Sort(resources)
 
 	cmd.env.Logger().PrintfLn(`UserID:
 	%s

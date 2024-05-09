@@ -15,21 +15,24 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
+import TableEntityToolbar from '../../components/TableEntityToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import NodeCveFilterToolbar from '../components/NodeCveFilterToolbar';
 import { NODE_CVE_SEARCH_OPTION } from '../../searchOptions';
 import { parseWorkloadQuerySearchFilter } from '../../utils/searchUtils';
 import { nodeEntityTabValues } from '../../types';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
-import CVEsTableContainer from './CVEsTableContainer';
-import NodesTableContainer from './NodesTableContainer';
+import CVEsTable from './CVEsTable';
+import NodesTable from './NodesTable';
+import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
 
 const searchOptions = [NODE_CVE_SEARCH_OPTION];
 
 function NodeCvesOverviewPage() {
     const [activeEntityTabKey] = useURLStringUnion('entityTab', nodeEntityTabValues);
     const { searchFilter } = useURLSearch();
-    const pagination = useURLPagination(20);
+    const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     // TODO - Need an equivalent function implementation for filter sanitization for Node CVEs
     const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
@@ -40,10 +43,11 @@ function NodeCvesOverviewPage() {
         // TODO - set default sort here
     }
 
-    // TODO - needs to be connected to a query
+    const { data } = useNodeCveEntityCounts(querySearchFilter);
+
     const entityCounts = {
-        CVE: 0,
-        Node: 0,
+        CVE: data?.nodeCVECount ?? 0,
+        Node: data?.nodeCount ?? 0,
     };
 
     const filterToolbar = (
@@ -66,10 +70,10 @@ function NodeCvesOverviewPage() {
             <PageTitle title="Node CVEs Overview" />
             <Divider component="div" />
             <PageSection
-                className="pf-u-display-flex pf-u-flex-direction-row pf-u-align-items-center"
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
                 variant="light"
             >
-                <Flex direction={{ default: 'column' }} className="pf-u-flex-grow-1">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-flex-grow-1">
                     <Title headingLevel="h1">Node CVEs</Title>
                     <FlexItem>Prioritize and manage scanned CVEs across nodes</FlexItem>
                 </Flex>
@@ -78,23 +82,29 @@ function NodeCvesOverviewPage() {
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>
+                            <TableEntityToolbar
+                                filterToolbar={filterToolbar}
+                                entityToggleGroup={entityToggleGroup}
+                                pagination={pagination}
+                                tableRowCount={
+                                    activeEntityTabKey === 'CVE'
+                                        ? entityCounts.CVE
+                                        : entityCounts.Node
+                                }
+                                isFiltered={isFiltered}
+                            />
+                            <Divider component="div" />
                             {activeEntityTabKey === 'CVE' && (
-                                <CVEsTableContainer
-                                    filterToolbar={filterToolbar}
-                                    entityToggleGroup={entityToggleGroup}
+                                <CVEsTable
                                     querySearchFilter={querySearchFilter}
                                     isFiltered={isFiltered}
-                                    rowCount={entityCounts.CVE}
                                     pagination={pagination}
                                 />
                             )}
                             {activeEntityTabKey === 'Node' && (
-                                <NodesTableContainer
-                                    filterToolbar={filterToolbar}
-                                    entityToggleGroup={entityToggleGroup}
+                                <NodesTable
                                     querySearchFilter={querySearchFilter}
                                     isFiltered={isFiltered}
-                                    rowCount={entityCounts.Node}
                                     pagination={pagination}
                                 />
                             )}

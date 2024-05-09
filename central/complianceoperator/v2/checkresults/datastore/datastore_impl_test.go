@@ -649,7 +649,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceClusterStats() {
 	}
 }
 
-func (s *complianceCheckResultDataStoreTestSuite) TestComplianceClusterStatsCount() {
+func (s *complianceCheckResultDataStoreTestSuite) TestCountByFieldCluster() {
 	s.setupTestData()
 	testCases := []struct {
 		desc          string
@@ -692,7 +692,154 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceClusterStatsCoun
 	}
 
 	for _, tc := range testCases {
-		results, err := s.dataStore.ComplianceClusterStatsCount(s.testContexts[tc.scopeKey], tc.query)
+		results, err := s.dataStore.CountByField(s.testContexts[tc.scopeKey], tc.query, search.ClusterID)
+		s.NoError(err)
+		s.Equal(tc.expectedCount, results)
+	}
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) TestCountByFieldProfile() {
+	s.setupTestData()
+	testCases := []struct {
+		desc          string
+		query         *apiV1.Query
+		scopeKey      string
+		expectedCount int
+	}{
+		{
+			desc:          "Empty query - Full access",
+			query:         search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:      testutils.UnrestrictedReadCtx,
+			expectedCount: 1,
+		},
+		{
+			desc:          "Empty query - Only cluster 2 access",
+			query:         search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:      testutils.Cluster2ReadWriteCtx,
+			expectedCount: 1,
+		},
+		{
+			desc:          "Cluster 2 query - Only cluster 2 access",
+			query:         search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			scopeKey:      testutils.Cluster2ReadWriteCtx,
+			expectedCount: 1,
+		},
+		{
+			desc: "Cluster 2 and 3 query - Only cluster 2 access",
+			query: search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).
+				AddStrings(search.ClusterID, testconsts.Cluster3).ProtoQuery(),
+			scopeKey:      testutils.Cluster2ReadWriteCtx,
+			expectedCount: 1,
+		},
+		{
+			desc: "Cluster 2 and 3 query - Full Access",
+			query: search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).
+				AddStrings(search.ClusterID, testconsts.Cluster3).ProtoQuery(),
+			scopeKey:      testutils.UnrestrictedReadCtx,
+			expectedCount: 1,
+		},
+	}
+
+	for _, tc := range testCases {
+		results, err := s.dataStore.CountByField(s.testContexts[tc.scopeKey], tc.query, search.ComplianceOperatorProfileName)
+		s.NoError(err)
+		s.Equal(tc.expectedCount, results)
+	}
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) TestCountByFieldCheck() {
+	s.setupTestData()
+	testCases := []struct {
+		desc          string
+		query         *apiV1.Query
+		scopeKey      string
+		expectedCount int
+	}{
+		{
+			desc:          "Empty query - Full access",
+			query:         search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:      testutils.UnrestrictedReadCtx,
+			expectedCount: 2,
+		},
+		{
+			desc:          "Empty query - Only cluster 2 access",
+			query:         search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:      testutils.Cluster2ReadWriteCtx,
+			expectedCount: 1,
+		},
+		{
+			desc:          "Cluster 2 query - Only cluster 2 access",
+			query:         search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			scopeKey:      testutils.Cluster2ReadWriteCtx,
+			expectedCount: 1,
+		},
+		{
+			desc: "Cluster 2 and 3 query - Only cluster 2 access",
+			query: search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).
+				AddStrings(search.ClusterID, testconsts.Cluster3).ProtoQuery(),
+			scopeKey:      testutils.Cluster2ReadWriteCtx,
+			expectedCount: 1,
+		},
+		{
+			desc: "Cluster 2 and 3 query - Full Access",
+			query: search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).
+				AddStrings(search.ClusterID, testconsts.Cluster3).ProtoQuery(),
+			scopeKey:      testutils.UnrestrictedReadCtx,
+			expectedCount: 2,
+		},
+	}
+
+	for _, tc := range testCases {
+		results, err := s.dataStore.CountByField(s.testContexts[tc.scopeKey], tc.query, search.ComplianceOperatorCheckName)
+		s.NoError(err)
+		s.Equal(tc.expectedCount, results)
+	}
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) TestCountByFieldScanConfig() {
+	s.setupTestData()
+	testCases := []struct {
+		desc          string
+		query         *apiV1.Query
+		scopeKey      string
+		expectedCount int
+	}{
+		{
+			desc:          "Empty query - Full access",
+			query:         search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:      testutils.UnrestrictedReadCtx,
+			expectedCount: 2,
+		},
+		{
+			desc:          "Empty query - Only cluster 2 access",
+			query:         search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:      testutils.Cluster2ReadWriteCtx,
+			expectedCount: 1,
+		},
+		{
+			desc:          "Cluster 2 query - Only cluster 2 access",
+			query:         search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			scopeKey:      testutils.Cluster2ReadWriteCtx,
+			expectedCount: 1,
+		},
+		{
+			desc: "Cluster 2 and 3 query - Only cluster 2 access",
+			query: search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).
+				AddStrings(search.ClusterID, testconsts.Cluster3).ProtoQuery(),
+			scopeKey:      testutils.Cluster2ReadWriteCtx,
+			expectedCount: 1,
+		},
+		{
+			desc: "Cluster 2 and 3 query - Full Access",
+			query: search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).
+				AddStrings(search.ClusterID, testconsts.Cluster3).ProtoQuery(),
+			scopeKey:      testutils.UnrestrictedReadCtx,
+			expectedCount: 2,
+		},
+	}
+
+	for _, tc := range testCases {
+		results, err := s.dataStore.CountByField(s.testContexts[tc.scopeKey], tc.query, search.ComplianceOperatorScanConfigName)
 		s.NoError(err)
 		s.Equal(tc.expectedCount, results)
 	}

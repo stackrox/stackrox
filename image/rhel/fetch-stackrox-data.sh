@@ -4,21 +4,29 @@
 
 set -euxo pipefail
 
+if [[ "$#" -lt "1" ]]; then
+	>&2 echo "Error: please provide target directory where to store downloaded data"
+	exit 6
+fi
+
 fetch_stackrox_data() {
-    mkdir -p /tmp/external-networks
+    local target_dir="${1}"
+
+    local download_dir
+    download_dir="$(mktemp -d --tmpdir external-networks.XXXXXXXXXX)"
     local latest_prefix
     latest_prefix="$(curl --fail https://definitions.stackrox.io/external-networks/latest_prefix)"
-    curl --fail --output /tmp/external-networks/checksum "https://definitions.stackrox.io/${latest_prefix}/checksum"
-    test -s /tmp/external-networks/checksum
+    curl --fail --output "${download_dir}/checksum" "https://definitions.stackrox.io/${latest_prefix}/checksum"
+    test -s "${download_dir}/checksum"
 
-    curl --fail --output /tmp/external-networks/networks "https://definitions.stackrox.io/${latest_prefix}/networks"
-    test -s /tmp/external-networks/networks
+    curl --fail --output "${download_dir}/networks" "https://definitions.stackrox.io/${latest_prefix}/networks"
+    test -s "${download_dir}/networks"
 
-    sha256sum -c <( echo "$(cat /tmp/external-networks/checksum) /tmp/external-networks/networks" )
+    sha256sum -c <( echo "$(cat "${download_dir}/checksum")" "${download_dir}/networks" )
 
-    mkdir /stackrox-data/external-networks
-    zip -jr /stackrox-data/external-networks/external-networks.zip /tmp/external-networks
-    rm -rf /tmp/external-networks
+    mkdir -p "${target_dir}/external-networks"
+    zip -jr --test "${target_dir}/external-networks/external-networks.zip" "${download_dir}"
+    rm -rf "${download_dir}"
 }
 
-fetch_stackrox_data
+fetch_stackrox_data "${1}"

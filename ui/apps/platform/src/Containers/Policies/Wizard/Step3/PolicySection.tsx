@@ -4,7 +4,6 @@ import {
     Card,
     CardHeader,
     CardTitle,
-    CardActions,
     CardBody,
     Button,
     Divider,
@@ -60,54 +59,68 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
     return (
         <>
             <Card isFlat isCompact className={!readOnly ? 'policy-section-card' : ''}>
-                <CardHeader className="policy-section-card-header pf-u-p-0">
-                    <CardTitle className="pf-u-display-flex pf-u-align-self-stretch">
+                <CardHeader
+                    {...(!readOnly && {
+                        actions: {
+                            actions: (
+                                <>
+                                    <Button
+                                        variant="plain"
+                                        className="pf-v5-u-px-sm"
+                                        onClick={() => setIsEditingName(!isEditingName)}
+                                    >
+                                        {isEditingName ? (
+                                            <CheckIcon data-testid="save-section-name-btn" />
+                                        ) : (
+                                            <PencilAltIcon data-testid="edit-section-name-btn" />
+                                        )}
+                                    </Button>
+                                    <Divider
+                                        component="div"
+                                        orientation={{ default: 'vertical' }}
+                                    />
+                                    <Button
+                                        variant="plain"
+                                        className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
+                                        data-testid="delete-section-btn"
+                                        onClick={onDeleteSection}
+                                    >
+                                        <TrashIcon />
+                                    </Button>
+                                </>
+                            ),
+                            hasNoOffset: true,
+                            className: undefined,
+                        },
+                    })}
+                    className="policy-section-card-header pf-v5-u-p-0"
+                >
+                    <CardTitle className="pf-v5-u-display-flex pf-v5-u-align-self-stretch">
                         <Flex
                             alignItems={{ default: 'alignItemsCenter' }}
                             flexWrap={{ default: 'nowrap' }}
                         >
-                            <FlexItem className="pf-u-pl-md">{sectionIndex + 1}</FlexItem>
-                            <Divider component="div" isVertical />
+                            <FlexItem className="pf-v5-u-pl-md">{sectionIndex + 1}</FlexItem>
+                            <Divider component="div" orientation={{ default: 'vertical' }} />
                             <FlexItem>
                                 {isEditingName ? (
                                     <TextInput
                                         id={`policySections[${sectionIndex}].sectionName`}
                                         name={`policySections[${sectionIndex}].sectionName`}
                                         value={values.policySections[sectionIndex].sectionName}
-                                        onChange={onEditSectionName}
+                                        onChange={(e, _) => onEditSectionName(_, e)}
                                     />
                                 ) : (
-                                    <div className="pf-u-py-sm" data-testid="policy-section-name">
+                                    <div
+                                        className="pf-v5-u-py-sm"
+                                        data-testid="policy-section-name"
+                                    >
                                         {sectionName}
                                     </div>
                                 )}
                             </FlexItem>
                         </Flex>
                     </CardTitle>
-                    {!readOnly && (
-                        <CardActions hasNoOffset>
-                            <Button
-                                variant="plain"
-                                className="pf-u-px-sm"
-                                onClick={() => setIsEditingName(!isEditingName)}
-                            >
-                                {isEditingName ? (
-                                    <CheckIcon data-testid="save-section-name-btn" />
-                                ) : (
-                                    <PencilAltIcon data-testid="edit-section-name-btn" />
-                                )}
-                            </Button>
-                            <Divider component="div" isVertical />
-                            <Button
-                                variant="plain"
-                                className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
-                                data-testid="delete-section-btn"
-                                onClick={onDeleteSection}
-                            >
-                                <TrashIcon />
-                            </Button>
-                        </CardActions>
-                    )}
                 </CardHeader>
                 <CardBody className="policy-section-card-body">
                     {policyGroups.map((group, groupIndex) => {
@@ -136,7 +149,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                     )}
                     {showPolicyCriteriaModal && !readOnly && (
                         <Flex
-                            className="pf-u-mt-md"
+                            className="pf-v5-u-mt-md"
                             justifyContent={{ default: 'justifyContentCenter' }}
                         >
                             <FlexItem>

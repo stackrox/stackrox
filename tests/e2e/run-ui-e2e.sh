@@ -28,8 +28,9 @@ test_ui_e2e() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs
 
-    deploy_stackrox
+    # deploy the optional components before stackrox
     deploy_optional_e2e_components
+    deploy_stackrox
 
     run_ui_e2e_tests
 }

@@ -42,7 +42,7 @@ function LabelInclusion({
                     title={
                         <TabTitleText>
                             Cluster
-                            <Badge isRead className="pf-u-ml-sm">
+                            <Badge isRead className="pf-v5-u-ml-sm">
                                 {clusterLabelSelectors.length}
                             </Badge>
                         </TabTitleText>
@@ -54,7 +54,7 @@ function LabelInclusion({
                     title={
                         <TabTitleText>
                             Namespace
-                            <Badge isRead className="pf-u-ml-sm">
+                            <Badge isRead className="pf-v5-u-ml-sm">
                                 {namespaceLabelSelectors.length}
                             </Badge>
                         </TabTitleText>

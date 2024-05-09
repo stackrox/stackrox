@@ -95,7 +95,7 @@ function CancelDeferralModal({
             ]}
         >
             <FormMessage message={message} />
-            <div className="pf-u-pb-md">
+            <div className="pf-v5-u-pb-md">
                 Cancelling a deferral will return the CVE into the vulnerability management
                 workflow.
             </div>
@@ -112,7 +112,7 @@ function CancelDeferralModal({
                         type="text"
                         id="comment"
                         value={formik.values.comment}
-                        onChange={onChange}
+                        onChange={(event, value) => onChange(value, event)}
                         onBlur={formik.handleBlur}
                         placeholder="Enter an appropriate reason to undo"
                     />

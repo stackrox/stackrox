@@ -151,8 +151,8 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 
 	// Remove all the formatting
 	format := bplPolicyFormat
-	f := strings.Replace(format, "\t", "", -1)
-	f = strings.Replace(f, "\n", "", -1)
+	f := strings.ReplaceAll(format, "\t", "")
+	f = strings.ReplaceAll(f, "\n", "")
 
 	tmpl, err := template.New("").Funcs(funcMap).Parse(f)
 	if err != nil {

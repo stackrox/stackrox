@@ -1,0 +1,272 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+    operatorframework.io/installed-alongside-6cfa656b08efb427: openshift-compliance/compliance-operator.v1.4.0
+  creationTimestamp: "2024-04-15T13:29:36Z"
+  generation: 1
+  labels:
+    olm.managed: "true"
+    operators.coreos.com/compliance-operator.openshift-compliance: ""
+  name: scansettings.compliance.openshift.io
+  uid: 9b397ebf-30d6-43b2-8dee-fdae5af8c442
+spec:
+  conversion:
+    strategy: None
+  group: compliance.openshift.io
+  names:
+    kind: ScanSetting
+    listKind: ScanSettingList
+    plural: scansettings
+    shortNames:
+    - ss
+    singular: scansetting
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ScanSetting is the Schema for the scansettings API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          autoApplyRemediations:
+            description: Defines whether or not the remediations should be applied
+              automatically
+            type: boolean
+          autoUpdateRemediations:
+            description: Defines whether or not the remediations should be updated
+              automatically. This is done by deleting the "outdated" object from the
+              remediation.
+            type: boolean
+          debug:
+            description: Enable debug logging of workloads and OpenSCAP
+            type: boolean
+          httpsProxy:
+            description: It is recommended to set the proxy via the config.openshift.io/Proxy
+              object Defines a proxy for the scan to get external resources from.
+              This is useful for disconnected installations with access to a proxy.
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          maxRetryOnTimeout:
+            default: 3
+            description: MaxRetryOnTimeout is the maximum number of times the scan
+              will be retried if it times out.
+            type: integer
+          metadata:
+            type: object
+          noExternalResources:
+            description: Defines that no external resources in the Data Stream should
+              be used. External resources could be, for instance, CVE feeds. This
+              is useful for disconnected installations without access to a proxy.
+            type: boolean
+          priorityClass:
+            description: Defines the PriorityClass to use for launching scan related
+              pods, the Name of a desired PriorityClass should be set here, this is
+              an optional field, if PriorityClass is invalid or not found, it will
+              be ignored.
+            type: string
+          rawResultStorage:
+            description: Specifies settings that pertain to raw result storage.
+            properties:
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: By setting this, it's possible to configure where the
+                  result server instances are run. These instances will mount a Persistent
+                  Volume to store the raw results, so special care should be taken
+                  to schedule these in trusted nodes.
+                type: object
+              pvAccessModes:
+                default:
+                - ReadWriteOnce
+                description: Specifies the access modes that the PersistentVolume
+                  will be created with. The persistent volume will hold the raw results
+                  of the scan.
+                items:
+                  type: string
+                type: array
+              rotation:
+                default: 3
+                description: Specifies the amount of scans for which the raw results
+                  will be stored. Older results will get rotated, and it's the responsibility
+                  of administrators to store these results elsewhere before rotation
+                  happens. Note that a rotation policy of '0' disables rotation entirely.
+                  Defaults to 3.
+                type: integer
+              size:
+                default: 1Gi
+                description: Specifies the amount of storage to ask for storing the
+                  raw results. Note that if re-scans happen, the new results will
+                  also need to be stored. Defaults to 1Gi.
+                type: string
+              storageClassName:
+                description: Specifies the StorageClassName to use when creating the
+                  PersistentVolumeClaim to hold the raw results. By default this is
+                  null, which will attempt to use the default storage class configured
+                  in the cluster. If there is no default class specified then this
+                  needs to be set.
+                nullable: true
+                type: string
+              tolerations:
+                description: Specifies tolerations needed for the result server to
+                  run on the nodes. This is useful in case the target set of nodes
+                  have custom taints that don't allow certain workloads to run. Defaults
+                  to allowing scheduling on master nodes.
+                items:
+                  description: The pod this Toleration is attached to tolerates any
+                    taint that matches the triple <key,value,effect> using the matching
+                    operator <operator>.
+                  properties:
+                    effect:
+                      description: Effect indicates the taint effect to match. Empty
+                        means match all taint effects. When specified, allowed values
+                        are NoSchedule, PreferNoSchedule and NoExecute.
+                      type: string
+                    key:
+                      description: Key is the taint key that the toleration applies
+                        to. Empty means match all taint keys. If the key is empty,
+                        operator must be Exists; this combination means to match all
+                        values and all keys.
+                      type: string
+                    operator:
+                      description: Operator represents a key's relationship to the
+                        value. Valid operators are Exists and Equal. Defaults to Equal.
+                        Exists is equivalent to wildcard for value, so that a pod
+                        can tolerate all taints of a particular category.
+                      type: string
+                    tolerationSeconds:
+                      description: TolerationSeconds represents the period of time
+                        the toleration (which must be of effect NoExecute, otherwise
+                        this field is ignored) tolerates the taint. By default, it
+                        is not set, which means tolerate the taint forever (do not
+                        evict). Zero and negative values will be treated as 0 (evict
+                        immediately) by the system.
+                      format: int64
+                      type: integer
+                    value:
+                      description: Value is the taint value the toleration matches
+                        to. If the operator is Exists, the value should be empty,
+                        otherwise just a regular string.
+                      type: string
+                  type: object
+                type: array
+            type: object
+          remediationEnforcement:
+            description: 'Specifies what to do with remediations of Enforcement type.
+              If left empty, this defaults to "off" which doesn''t create nor apply
+              any enforcement remediations. If set to "all" this creates any enforcement
+              remediations it encounters. Subsequently, this can also be set to a
+              specific type. e.g. setting it to "gatekeeper" will apply any enforcement
+              remediations relevant to the Gatekeeper OPA system. These objects will
+              annotated in the content itself with: complianceascode.io/enforcement-type:
+              <type>'
+            type: string
+          roles:
+            description: "The list of roles to apply node-specific checks to. \n This
+              will be translated to the standard Kubernetes role label `node-role.kubernetes.io/<role
+              name>`. \n It's also possible to specify `@all` as a role, which will
+              run a scan on all nodes by not specifying a node selector as we normally
+              do. The usage of `@all` in OpenShift is discouraged as the operator
+              won't be able to apply remediations unless roles are specified. \n Note
+              that tolerations must still be configured for the opeartor to appropriately
+              schedule scans."
+            items:
+              type: string
+            type: array
+          scanLimits:
+            additionalProperties:
+              anyOf:
+              - type: integer
+              - type: string
+              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+              x-kubernetes-int-or-string: true
+            description: ScanLimits allows to set the resource limits that the scan
+              pods are allowed to use. By default, compliance operator will use sensible
+              defaults (500Mi memory, 100m CPU for the scanner container and 200Mi
+              memory with 100m CPU for the api-resource-collector container).
+            type: object
+          scanTolerations:
+            default:
+            - operator: Exists
+            description: Specifies tolerations needed for the scan to run on the nodes.
+              This is useful in case the target set of nodes have custom taints that
+              don't allow certain workloads to run. Defaults to allowing scheduling
+              on all nodes.
+            items:
+              description: The pod this Toleration is attached to tolerates any taint
+                that matches the triple <key,value,effect> using the matching operator
+                <operator>.
+              properties:
+                effect:
+                  description: Effect indicates the taint effect to match. Empty means
+                    match all taint effects. When specified, allowed values are NoSchedule,
+                    PreferNoSchedule and NoExecute.
+                  type: string
+                key:
+                  description: Key is the taint key that the toleration applies to.
+                    Empty means match all taint keys. If the key is empty, operator
+                    must be Exists; this combination means to match all values and
+                    all keys.
+                  type: string
+                operator:
+                  description: Operator represents a key's relationship to the value.
+                    Valid operators are Exists and Equal. Defaults to Equal. Exists
+                    is equivalent to wildcard for value, so that a pod can tolerate
+                    all taints of a particular category.
+                  type: string
+                tolerationSeconds:
+                  description: TolerationSeconds represents the period of time the
+                    toleration (which must be of effect NoExecute, otherwise this
+                    field is ignored) tolerates the taint. By default, it is not set,
+                    which means tolerate the taint forever (do not evict). Zero and
+                    negative values will be treated as 0 (evict immediately) by the
+                    system.
+                  format: int64
+                  type: integer
+                value:
+                  description: Value is the taint value the toleration matches to.
+                    If the operator is Exists, the value should be empty, otherwise
+                    just a regular string.
+                  type: string
+              type: object
+            type: array
+          schedule:
+            description: Defines a schedule for the scans to run. This is in cronjob
+              format. Note the scan will still be triggered immediately, and the scheduled
+              scans will start running only after the initial results are ready.
+            type: string
+          showNotApplicable:
+            default: false
+            description: Determines whether to hide or show results that are not applicable.
+            type: boolean
+          strictNodeScan:
+            default: true
+            description: Defines whether the scan should proceed if we're not able
+              to scan all the nodes or not. `true` means that the operator should
+              be strict and error out. `false` means that we don't need to be strict
+              and we can proceed.
+            type: boolean
+          suspend:
+            default: false
+            description: Defines if a schedule should be suspended and is a boolean
+              value, defaulting to False.
+            type: boolean
+          timeout:
+            default: 30m
+            description: Timeout is the maximum amount of time the scan can run. If
+              the scan hasn't finished by then, it will be aborted.
+            type: string
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

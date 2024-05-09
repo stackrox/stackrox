@@ -219,6 +219,15 @@
       ],
       "default": "UNSET"
     },
+    "v2COStatus": {
+      "type": "string",
+      "enum": [
+        "HEALTHY",
+        "UNHEALTHY"
+      ],
+      "default": "HEALTHY",
+      "title": "Represents the status of compliance operator"
+    },
     "v2ComplianceIntegration": {
       "type": "object",
       "properties": {
@@ -246,9 +255,12 @@
         },
         "operatorInstalled": {
           "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/definitions/v2COStatus"
         }
       },
-      "title": "Next Tag: 8"
+      "title": "Next Tag: 9"
     },
     "v2CountComplianceIntegrationsResponse": {
       "type": "object",
@@ -268,6 +280,10 @@
           "items": {
             "$ref": "#/definitions/v2ComplianceIntegration"
           }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },

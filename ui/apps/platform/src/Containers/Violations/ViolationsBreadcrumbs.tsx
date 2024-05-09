@@ -19,8 +19,8 @@ const ViolationsBreadcrumbs = ({ current }: ViolationsBreadcrumbsProps): ReactEl
 
     return (
         <>
-            <PageSection variant="light" className="pf-u-py-md">
-                <Breadcrumb className="pf-u-mb-0 pf-u-pl-0">
+            <PageSection variant="light" className="pf-v5-u-py-md">
+                <Breadcrumb className="pf-v5-u-mb-0 pf-v5-u-pl-0">
                     {topLevelBreadcrumb}
                     {subPageBreadcrumb}
                 </Breadcrumb>

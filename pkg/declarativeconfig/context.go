@@ -31,7 +31,8 @@ type ResourceWithTraits interface {
 // HasModifyDeclarativeResourceKey returns a bool indicating whether the given context allows to modify
 // proto messages that are created declaratively.
 func HasModifyDeclarativeResourceKey(ctx context.Context) bool {
-	return ctx.Value(originCheckerKey{}) == allowOnlyDeclarativeOperations
+	val := ctx.Value(originCheckerKey{})
+	return val == allowOnlyDeclarativeOperations || val == allowModifyDeclarativeOrImperative
 }
 
 // CanModifyResource returns whether context holder is allowed to modify resource.

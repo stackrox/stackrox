@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import lowerCase from 'lodash/lowerCase';
 import capitalize from 'lodash/capitalize';
 
-import { vulnManagementPath } from 'routePaths';
-import CollapsibleCard from 'Components/CollapsibleCard';
+import { vulnManagementPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
+import CollapsibleCard from 'Components/CollapsibleCard';
 import KeyValuePairs from './KeyValuePairs';
 
 const containerConfigMap = {
@@ -25,6 +26,13 @@ const getContainerConfigurations = (container) => {
 };
 
 const ContainerImage = ({ image }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const areVMMiscImprovementsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_2_MISC_IMPROVEMENTS');
+
+    const imageDetailsPageURL = areVMMiscImprovementsEnabled
+        ? `${vulnerabilitiesWorkloadCvesPath}/images/${image.id}`
+        : `${vulnManagementPath}/image/${image.id}`;
+
     if (!image?.name?.fullName) {
         return null;
     }
@@ -47,7 +55,7 @@ const ContainerImage = ({ image }) => {
             <div className="font-700 inline">Image Name: </div>
             <Link
                 className="hover:text-primary-800 leading-normal word-break"
-                to={`${vulnManagementPath}/image/${image.id}`}
+                to={imageDetailsPageURL}
             >
                 {image.name.fullName}
             </Link>

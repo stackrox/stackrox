@@ -2,7 +2,7 @@ package resources
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -102,8 +102,8 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsWithServiceAccount() {
 
 			ids := s.deploymentStore.FindDeploymentIDsWithServiceAccount(testCase.queryNs, testCase.querySa)
 			s.Require().Len(ids, len(testCase.expectedIDs), "FindDeploymentIDsWithServiceAccount returned incorrect number of elements")
-			sort.Strings(testCase.expectedIDs)
-			sort.Strings(ids)
+			slices.Sort(testCase.expectedIDs)
+			slices.Sort(ids)
 			s.Equal(testCase.expectedIDs, ids)
 		})
 	}

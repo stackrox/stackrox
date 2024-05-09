@@ -23,12 +23,12 @@ function SecurityContext({ securityContext }: SecurityContextProps) {
     return (
         <Card>
             <CardTitle>Security context</CardTitle>
-            <CardBody className="pf-u-background-color-200 pf-u-pt-xl pf-u-mx-lg pf-u-mb-lg">
+            <CardBody className="pf-v5-u-background-color-200 pf-v5-u-pt-xl pf-v5-u-mx-lg pf-v5-u-mb-lg">
                 {filteredValues.size > 0 ? (
                     <DescriptionList columnModifier={{ default: '2Col' }} isCompact>
                         {Array.from(filteredValues.entries()).map(([key, value]) => {
                             return (
-                                <DescriptionListGroup>
+                                <DescriptionListGroup key={key}>
                                     <DescriptionListTerm>{key}</DescriptionListTerm>
                                     <DescriptionListDescription>{value}</DescriptionListDescription>
                                 </DescriptionListGroup>

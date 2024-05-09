@@ -3,7 +3,7 @@ package cscc
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -139,7 +139,7 @@ func convertEnforcementAction(a storage.EnforcementAction) string {
 // Cloud SCC requires that Finding IDs be alphanumeric (no special characters)
 // and 1-32 characters long. UUIDs are 32 characters if you remove hyphens.
 func convertAlertUUID(u string) string {
-	return strings.Replace(u, "-", "", -1)
+	return strings.ReplaceAll(u, "-", "")
 }
 
 func convertEnforcement(alert *storage.Alert) []Enforcement {
@@ -165,7 +165,7 @@ func convertAlertDescription(alert *storage.Alert) string {
 	for v := range distinct {
 		distinctSlice = append(distinctSlice, v)
 	}
-	sort.Strings(distinctSlice)
+	slices.Sort(distinctSlice)
 	return strings.Join(distinctSlice, " ")
 }
 

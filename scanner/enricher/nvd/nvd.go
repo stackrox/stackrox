@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -415,7 +415,7 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 			Strs("cve", ts).
 			Msg("found CVEs")
 
-		sort.Strings(ts)
+		slices.Sort(ts)
 		cveKey := strings.Join(ts, "_")
 		rec, ok := erCache[cveKey]
 		if !ok {

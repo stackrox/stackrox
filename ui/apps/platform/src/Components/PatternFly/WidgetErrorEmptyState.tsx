@@ -3,7 +3,7 @@ import { Flex } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
 
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 
 export type WidgetErrorEmptyStateProps = {
     children: ReactNode;
@@ -15,7 +15,7 @@ function ErrorIcon(props: SVGIconProps) {
     return (
         <ExclamationCircleIcon
             {...props}
-            style={{ color: 'var(--pf-global--danger-color--200)' }}
+            style={{ color: 'var(--pf-v5-global--danger-color--200)' }}
         />
     );
 }

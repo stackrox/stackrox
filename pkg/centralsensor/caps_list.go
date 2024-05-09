@@ -46,6 +46,12 @@ const (
 	// ComplianceV2Integrations identifies the capability of central to support V2 integrations with compliance operator
 	ComplianceV2Integrations = "ComplianceV2Integrations"
 
+	// ComplianceV2Remediations identifies the capability of central to support V2 compliance operator remediations.
+	ComplianceV2Remediations = "ComplianceV2Remediations"
+
 	// ScannerV4Supported identifies the capability of Central to support Scanner V4 related requests from Sensor.
 	ScannerV4Supported = "ScannerV4Supported"
+
+	// NetworkGraphInternalEntitiesSupported identifies the capability of Central (UI) to display internal entities in the network graph.
+	NetworkGraphInternalEntitiesSupported = "NetworkGraphInternalEntitiesSupported"
 )

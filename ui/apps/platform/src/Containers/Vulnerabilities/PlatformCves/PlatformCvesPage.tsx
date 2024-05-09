@@ -10,8 +10,10 @@ import usePermissions from 'hooks/usePermissions';
 
 import PlatformCvesOverviewPage from './Overview/PlatformCvesOverviewPage';
 import PlatformCvePage from './PlatformCve/PlatformCvePage';
+import ClusterPage from './Cluster/ClusterPage';
 
 const vulnerabilitiesPlatformCveSinglePath = `${vulnerabilitiesPlatformCvesPath}/cves/:cveId`;
+const vulnerabilitiesPlatformClusterSinglePath = `${vulnerabilitiesPlatformCvesPath}/clusters/:clusterId`;
 
 function PlatformCvesPage() {
     const { hasReadAccess } = usePermissions();
@@ -22,6 +24,7 @@ function PlatformCvesPage() {
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Switch>
                 <Route path={vulnerabilitiesPlatformCveSinglePath} component={PlatformCvePage} />
+                <Route path={vulnerabilitiesPlatformClusterSinglePath} component={ClusterPage} />
                 <Route
                     exact
                     path={vulnerabilitiesPlatformCvesPath}

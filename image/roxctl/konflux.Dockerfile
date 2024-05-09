@@ -19,6 +19,7 @@ RUN mkdir -p image/bin
 # TODO(ROX-20240): enable non-release development builds.
 ENV CI=1 GOFLAGS="" GOTAGS="release"
 
+# TODO(ROX-19958): figure out if setting BUILD_TAG is actually needed.
 RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) BUILD_TAG=$(make tag) scripts/go-build.sh ./roxctl && \
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
 
@@ -36,14 +37,14 @@ RUN microdnf upgrade -y --nobest && \
 LABEL \
     com.redhat.component="rhacs-roxctl-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
-    description="The CLI for RHACS" \
-    io.k8s.description="The CLI for RHACS" \
+    description="The CLI for Red Hat Advanced Cluster Security for Kubernetes" \
+    io.k8s.description="The CLI for Red Hat Advanced Cluster Security for Kubernetes" \
     io.k8s.display-name="roxctl" \
     io.openshift.tags="rhacs,roxctl,stackrox" \
     maintainer="Red Hat, Inc." \
     name="rhacs-roxctl-rhel8" \
     source-location="https://github.com/stackrox/stackrox" \
-    summary="The CLI for RHACS" \
+    summary="The CLI for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     # We must set version label to prevent inheriting value set in the base stage.
     # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.

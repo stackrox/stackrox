@@ -1,12 +1,14 @@
 package testutils
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -173,11 +175,11 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 		{
 			ScanName:     scanConfigName1,
 			ScanConfigId: scanConfigName1,
-			CheckResults: []*v2.ComplianceCheckResult{
+			CheckResults: []*v2.ComplianceClusterCheckStatus{
 				{
 					CheckId:   complianceCheckID1,
 					CheckName: complianceCheckName1,
-					Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
+					Clusters: []*v2.ClusterCheckStatus{
 						{
 							Cluster: &v2.ComplianceScanCluster{
 								ClusterId:   fixtureconsts.Cluster1,
@@ -201,7 +203,7 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 				{
 					CheckId:   complianceCheckID2,
 					CheckName: complianceCheckName2,
-					Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
+					Clusters: []*v2.ClusterCheckStatus{
 						{
 							Cluster: &v2.ComplianceScanCluster{
 								ClusterId:   fixtureconsts.Cluster2,
@@ -219,11 +221,11 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 		{
 			ScanName:     scanConfigName2,
 			ScanConfigId: scanConfigName2,
-			CheckResults: []*v2.ComplianceCheckResult{
+			CheckResults: []*v2.ComplianceClusterCheckStatus{
 				{
 					CheckId:   complianceCheckID2,
 					CheckName: complianceCheckName2,
-					Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
+					Clusters: []*v2.ClusterCheckStatus{
 						{
 							Cluster: &v2.ComplianceScanCluster{
 								ClusterId:   fixtureconsts.Cluster1,
@@ -241,11 +243,11 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 		{
 			ScanName:     scanConfigName3,
 			ScanConfigId: scanConfigName3,
-			CheckResults: []*v2.ComplianceCheckResult{
+			CheckResults: []*v2.ComplianceClusterCheckStatus{
 				{
 					CheckId:   complianceCheckID3,
 					CheckName: complianceCheckName3,
-					Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
+					Clusters: []*v2.ClusterCheckStatus{
 						{
 							Cluster: &v2.ComplianceScanCluster{
 								ClusterId:   fixtureconsts.Cluster1,
@@ -374,6 +376,8 @@ func GetComplianceClusterScanV2Count(_ *testing.T, clusterID string) *v2.Complia
 func GetComplianceProfileScanV2Count(_ *testing.T, profileName string) *v2.ComplianceProfileScanStats {
 	return &v2.ComplianceProfileScanStats{
 		ProfileName: profileName,
+		Title:       fmt.Sprintf("test_title_%s", profileName),
+		Version:     fmt.Sprintf("test_version_%s", profileName),
 		CheckStats: []*v2.ComplianceCheckStatusCount{
 			{
 				Count:  failCount,
@@ -408,9 +412,10 @@ func GetComplianceProfileScanV2Count(_ *testing.T, profileName string) *v2.Compl
 }
 
 // GetComplianceProfileResultsV2 returns V2 count matching that from GetComplianceStorageProfileResults
-func GetComplianceProfileResultsV2(_ *testing.T, profileName string) *v2.ComplianceProfileResults {
-	return &v2.ComplianceProfileResults{
+func GetComplianceProfileResultsV2(_ *testing.T, profileName string) *v2.ListComplianceProfileResults {
+	return &v2.ListComplianceProfileResults{
 		ProfileName: profileName,
+		TotalCount:  1,
 		ProfileResults: []*v2.ComplianceCheckResultStatusCount{
 			{
 				CheckName: "check-name",
@@ -467,7 +472,7 @@ func GetComplianceStorageClusterCount(_ *testing.T, clusterID string) *datastore
 }
 
 // GetComplianceClusterV2Count returns V2 count matching that from GetComplianceStorageClusterCount
-func GetComplianceClusterV2Count(_ *testing.T, clusterID string) *v2.ComplianceClusterOverallStats {
+func GetComplianceClusterV2Count(_ *testing.T, clusterID string, lastScanTime *types.Timestamp) *v2.ComplianceClusterOverallStats {
 	return &v2.ComplianceClusterOverallStats{
 		Cluster: &v2.ComplianceScanCluster{
 			ClusterId:   clusterID,
@@ -504,6 +509,7 @@ func GetComplianceClusterV2Count(_ *testing.T, clusterID string) *v2.ComplianceC
 				Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
 			},
 		},
+		LastScanTime: lastScanTime,
 	}
 }
 
@@ -519,25 +525,42 @@ func GetComplianceStorageResult(_ *testing.T) *storage.ComplianceOperatorCheckRe
 		Description:    "description 1",
 		Instructions:   "instructions 1",
 		ScanConfigName: scanConfigName1,
+		RuleRefId:      "test-ref-id",
 	}
 }
 
 // GetConvertedComplianceResult retrieves results that match GetComplianceStorageResult
-func GetConvertedComplianceResult(_ *testing.T) *v2.ComplianceCheckResult {
-	return &v2.ComplianceCheckResult{
+func GetConvertedComplianceResult(_ *testing.T, lastScanTime *types.Timestamp) *v2.ComplianceClusterCheckStatus {
+	return &v2.ComplianceClusterCheckStatus{
 		CheckId:   complianceCheckID1,
 		CheckName: complianceCheckName1,
-		Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
+		Clusters: []*v2.ClusterCheckStatus{
 			{
 				Cluster: &v2.ComplianceScanCluster{
 					ClusterId:   fixtureconsts.Cluster1,
 					ClusterName: clusterName1,
 				},
-				Status:   v2.ComplianceCheckStatus_INFO,
-				CheckUid: complianceCheckUID1,
+				Status:       v2.ComplianceCheckStatus_INFO,
+				CheckUid:     complianceCheckUID1,
+				LastScanTime: lastScanTime,
 			},
 		},
 		Description:  "description 1",
 		Instructions: "instructions 1",
+	}
+}
+
+// GetConvertedCheckResult retrieves results
+func GetConvertedCheckResult(_ *testing.T) []*v2.ComplianceCheckResult {
+	return []*v2.ComplianceCheckResult{
+		{
+			CheckId:      complianceCheckID1,
+			CheckName:    complianceCheckName1,
+			Description:  "description 1",
+			Instructions: "instructions 1",
+			Status:       v2.ComplianceCheckStatus_INFO,
+			CheckUid:     complianceCheckUID1,
+			RuleName:     "test-rule-name",
+		},
 	}
 }

@@ -1,10 +1,11 @@
 import React from 'react';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import useTableSort from 'hooks/patternfly/useTableSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { VulnerabilityState } from 'types/cve.proto';
+import CvssFormatted from 'Components/CvssFormatted';
 import ImageNameLink from '../components/ImageNameLink';
 import {
     imageMetadataContextFragment,
@@ -16,7 +17,6 @@ import {
 import FixedByVersion from '../components/FixedByVersion';
 import DockerfileLayer from '../components/DockerfileLayer';
 import ComponentLocation from '../components/ComponentLocation';
-import CvssFormatted from '../../components/CvssFormatted';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
 export { imageMetadataContextFragment };
@@ -65,10 +65,10 @@ function DeploymentComponentVulnerabilitiesTable({
     );
     const sortedComponentVulns = sortTableData(componentVulns, sortOption);
     return (
-        <TableComposable
-            className="pf-u-p-md"
+        <Table
+            className="pf-v5-u-p-md"
             style={{
-                border: '1px solid var(--pf-c-table--BorderColor)',
+                border: '1px solid var(--pf-v5-c-table--BorderColor)',
             }}
             borders={false}
         >
@@ -101,7 +101,7 @@ function DeploymentComponentVulnerabilitiesTable({
                 // No border on the last row
                 const style =
                     index !== componentVulns.length - 1
-                        ? { borderBottom: '1px solid var(--pf-c-table--BorderColor)' }
+                        ? { borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)' }
                         : {};
                 const hasPendingException = componentVulns.some(
                     (vuln) => vuln.pendingExceptionCount > 0
@@ -140,14 +140,14 @@ function DeploymentComponentVulnerabilitiesTable({
                             </Td>
                         </Tr>
                         <Tr>
-                            <Td colSpan={8} className="pf-u-pt-0">
+                            <Td colSpan={8} className="pf-v5-u-pt-0">
                                 <DockerfileLayer layer={layer} />
                             </Td>
                         </Tr>
                     </Tbody>
                 );
             })}
-        </TableComposable>
+        </Table>
     );
 }
 

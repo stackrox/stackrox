@@ -12,6 +12,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Added Features
 - ROX-18689: ACS will qualify the registry (and path) of images from the container runtime when env var `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is set to `true` on both Central and Sensor.
   - This enables support for CRI-O's unqualified search registries and short name aliases ([more info](https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md)).
+- ROX-23852: `roxctl image scan` now has the option to filter by vulnerability severities using the `--severity` flag.
 
 ### Removed Features
 
@@ -28,16 +29,23 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Adds a label `app.stackrox.io/managed-by: operator` to all helm chart resources and secrets created by the operator
 - ROX-22044: Scanner DB is now based on PostgreSQL 15 instead of 12.
   - No migration should be necessary, as the database is not persisted.
+- ROX-23953: Nexus and Red Hat registry integrations will now attempt to pull manifest digests by default (via a `HEAD` request to `/v2/<name>/manifests/<reference>`). This can be disabled by setting env `ROX_ATTEMPT_MANIFEST_DIGEST` to `false`.
+  - This fixes one scenario that resulted in an `unsupported digest algorithm` error when using Scanner V4.
+- ROX-20223: Added a new default policy category called "Zero Trust", and the following default policies have been tagged with the category: "Deployments should have at least one ingress Network Policy" and "Unauthorized Network Flow"
+- ROX-20224: Added a new default policy category called "Supply Chain Security", and the following default policies have been tagged with the category: "Images with no scans", "30-day Scan Age", "90-day Image Age", "Required Annotation: Email",
+  "Required Annotation: Owner/Team", "Required Label: Owner/Team" and "Latest tag"
 
 ## [4.4.0]
 
 
 ### Added Features
 - Customer-provided PostgreSQL databases are now GA
-- ROX-21235: `/api/extensions/certs/backup` added to provide external database consumers a means to backup certs. `--certs-only` flag added to `roxctl central backup` to exercise that endpoint.
+- ROX-21235: `/api/extensions/certs/backup` added to provide external database consumers a means to back up certs. `--certs-only` flag added to `roxctl central backup` to exercise that endpoint.
 - The "Kubernetes Resource Name" policy criteria now supports regex values. Note: the value must be prefixed with "r/" to activate regex matching.
 - ROX-22238: `roxctl deployment check` results now contain additional information about the Permission Level and applicable Network Policies for a deployment, if `--cluster` and `--namespace` are provided together with `--verbose`.
-- Export APIs have been added for deployments, nodes, pods, and images as a tech preview.
+- Export APIs have been added for deployments (`/v1/export/deployments`), nodes (`/v1/export/nodes`), pods
+  (`/v1/export/pods`), and images (`/v1/export/images`) as a tech preview. They are much more performant for a full
+  export than their REST counterparts. 
 - ROX-21950: `roxctl scanner download-db` has been added to help download version specific offline vulnerability bundles introduced with `Scanner V4`.
 - The new vulnerability scanner named "Scanner V4" has been integrated. At the moment it needs to run side-by-side with the current default scanner named "StackRox Scanner". Installation instructions can be found in the official RHACS documentation.
 - ROX-19932: ACS can pull information about available clusters to secure from

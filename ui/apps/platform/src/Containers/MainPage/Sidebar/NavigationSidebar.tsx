@@ -1,6 +1,13 @@
 import React, { ReactElement } from 'react';
 import { matchPath, useLocation } from 'react-router-dom';
-import { Nav, NavExpandable, NavItemSeparator, NavList, PageSidebar } from '@patternfly/react-core';
+import {
+    Nav,
+    NavExpandable,
+    NavItemSeparator,
+    NavList,
+    PageSidebar,
+    PageSidebarBody,
+} from '@patternfly/react-core';
 
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
@@ -13,7 +20,8 @@ import {
     clustersBasePath,
     collectionsBasePath,
     complianceBasePath,
-    complianceEnhancedClusterComplianceBasePath,
+    complianceEnhancedCoveragePath,
+    complianceEnhancedSchedulesPath,
     configManagementPath,
     dashboardPath,
     exceptionConfigurationPath,
@@ -28,7 +36,6 @@ import {
     systemHealthPath,
     violationsBasePath,
     vulnManagementPath,
-    vulnManagementReportsPath,
     vulnManagementRiskAcceptancePath,
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
@@ -128,10 +135,14 @@ const navDescriptions: NavDescription[] = [
         children: [
             {
                 type: 'link',
-                content: (
-                    <NavigationContent variant="TechPreview">Cluster Compliance</NavigationContent>
-                ),
-                path: complianceEnhancedClusterComplianceBasePath,
+                content: 'Coverage',
+                path: complianceEnhancedCoveragePath,
+                routeKey: 'compliance-enhanced',
+            },
+            {
+                type: 'link',
+                content: 'Schedules',
+                path: complianceEnhancedSchedulesPath,
                 routeKey: 'compliance-enhanced',
             },
         ],
@@ -221,12 +232,6 @@ const navDescriptions: NavDescription[] = [
                 content: 'Risk Acceptance',
                 path: vulnManagementRiskAcceptancePath,
                 routeKey: 'vulnerability-management/risk-acceptance',
-            },
-            {
-                type: 'link',
-                content: 'Reporting',
-                path: vulnManagementReportsPath,
-                routeKey: 'vulnerability-management/reports',
             },
         ],
     },
@@ -435,7 +440,11 @@ function NavigationSidebar({
         </Nav>
     );
 
-    return <PageSidebar nav={Navigation} />;
+    return (
+        <PageSidebar>
+            <PageSidebarBody>{Navigation}</PageSidebarBody>
+        </PageSidebar>
+    );
 }
 
 export default NavigationSidebar;

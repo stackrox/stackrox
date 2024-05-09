@@ -23,7 +23,7 @@ function useToasts(): UseToasts {
         return `${new Date().toISOString()} ${Math.random()}`;
     }
 
-    function addToast(title: string, variant: AlertVariantType = 'default', children: ReactNode) {
+    function addToast(title: string, variant: AlertVariantType = undefined, children: ReactNode) {
         const key = getUniqueId();
         setToasts((prevToasts) => [{ title, variant, key, children }, ...prevToasts]);
     }

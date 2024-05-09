@@ -39,6 +39,7 @@ func Load(ctx context.Context, connString, vulnsURL string) error {
 		Pool:          pool,
 		MetadataStore: metadataStore,
 		URL:           vulnsURL,
+		SkipGC:        true,
 	})
 	if err != nil {
 		return fmt.Errorf("creating updater: %w", err)

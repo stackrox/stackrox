@@ -17,13 +17,13 @@ import {
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { FileAltIcon, SearchIcon } from '@patternfly/react-icons';
 import { gql, useQuery } from '@apollo/client';
 
 import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import { getTableUIState } from 'utils/getTableUIState';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
@@ -35,12 +35,13 @@ import {
 } from 'Containers/Vulnerabilities/searchOptions';
 
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import FilterAutocompleteSelect from 'Containers/Vulnerabilities/components/FilterAutocomplete';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import KeyValueListModal from 'Components/KeyValueListModal';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import DeploymentFilterLink from './DeploymentFilterLink';
 
 type Namespace = {
@@ -50,6 +51,10 @@ type Namespace = {
         clusterId: string;
         clusterName: string;
         labels: {
+            key: string;
+            value: string;
+        }[];
+        annotations: {
             key: string;
             value: string;
         }[];
@@ -67,6 +72,10 @@ const namespacesQuery = gql`
                 clusterId
                 clusterName
                 labels {
+                    key
+                    value
+                }
+                annotations {
                     key
                     value
                 }
@@ -97,7 +106,7 @@ const pollInterval = 30000;
 
 function NamespaceViewPage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
-    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
@@ -116,8 +125,7 @@ function NamespaceViewPage() {
                 ...defaultSearchFilters,
             }),
             pagination: {
-                limit: perPage,
-                offset: page - 1,
+                ...getPaginationParams(page, perPage),
                 sortOption,
             },
         },
@@ -140,7 +148,7 @@ function NamespaceViewPage() {
     return (
         <>
             <PageTitle title="Workload CVEs - Namespace view" />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilitiesWorkloadCvesPath}>
                         Workload CVEs
@@ -154,7 +162,7 @@ function NamespaceViewPage() {
                     direction={{ default: 'column' }}
                     alignItems={{ default: 'alignItemsFlexStart' }}
                 >
-                    <Title headingLevel="h1" className="pf-u-mb-sm">
+                    <Title headingLevel="h1" className="pf-v5-u-mb-sm">
                         Namespace view
                     </Title>
                     <FlexItem>Discover and prioritize namespaces by risk priority</FlexItem>
@@ -169,7 +177,7 @@ function NamespaceViewPage() {
                             onFilterChange={(newFilter) => setSearchFilter(newFilter)}
                             searchOptions={searchOptions}
                         />
-                        <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                             <Pagination
                                 toggleTemplate={({ firstIndex, lastIndex }) => (
                                     <span>
@@ -186,7 +194,7 @@ function NamespaceViewPage() {
                                 isCompact
                             />
                         </ToolbarItem>
-                        <ToolbarGroup aria-label="applied search filters" className="pf-u-w-100">
+                        <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                             <SearchFilterChips
                                 onFilterChange={onFilterChange}
                                 filterChipGroupDescriptors={searchOptions.map(
@@ -201,7 +209,7 @@ function NamespaceViewPage() {
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <TableComposable borders={false}>
+                <Table borders={false}>
                     <Thead noWrap>
                         <Tr>
                             <Th sort={getSortParams('Namespace')} width={30}>
@@ -211,12 +219,13 @@ function NamespaceViewPage() {
                             <Th sort={getSortParams('Cluster')}>Cluster</Th>
                             <Th sort={getSortParams('Deployment Count')}>Deployments</Th>
                             <Th>Labels</Th>
+                            <Th>Annotations</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
                         {tableUIState.type === 'ERROR' && (
                             <Tr>
-                                <Td colSpan={5}>
+                                <Td colSpan={6}>
                                     <TableErrorComponent
                                         error={tableUIState.error}
                                         message="An error occurred. Try refreshing again"
@@ -226,16 +235,16 @@ function NamespaceViewPage() {
                         )}
                         {tableUIState.type === 'LOADING' && (
                             <Tr>
-                                <Td colSpan={5}>
+                                <Td colSpan={6}>
                                     <Bullseye>
-                                        <Spinner isSVG aria-label="Loading table data" />
+                                        <Spinner aria-label="Loading table data" />
                                     </Bullseye>
                                 </Td>
                             </Tr>
                         )}
                         {tableUIState.type === 'EMPTY' && (
                             <Tr>
-                                <Td colSpan={5}>
+                                <Td colSpan={6}>
                                     <Bullseye>
                                         <EmptyStateTemplate
                                             title="There are currently no namespaces"
@@ -250,7 +259,7 @@ function NamespaceViewPage() {
                         )}
                         {tableUIState.type === 'FILTERED_EMPTY' && (
                             <Tr>
-                                <Td colSpan={5}>
+                                <Td colSpan={6}>
                                     <Bullseye>
                                         <EmptyStateTemplate
                                             title="No results found"
@@ -279,7 +288,14 @@ function NamespaceViewPage() {
                         {(tableUIState.type === 'COMPLETE' || tableUIState.type === 'POLLING') &&
                             tableUIState.data.map((namespace) => {
                                 const {
-                                    metadata: { id, name, clusterName, labels, priority },
+                                    metadata: {
+                                        id,
+                                        name,
+                                        clusterName,
+                                        labels,
+                                        annotations,
+                                        priority,
+                                    },
                                     deploymentCount,
                                 } = namespace;
 
@@ -298,11 +314,17 @@ function NamespaceViewPage() {
                                         <Td dataLabel="Labels">
                                             <KeyValueListModal type="label" keyValues={labels} />
                                         </Td>
+                                        <Td dataLabel="Annotations">
+                                            <KeyValueListModal
+                                                type="annotation"
+                                                keyValues={annotations}
+                                            />
+                                        </Td>
                                     </Tr>
                                 );
                             })}
                     </Tbody>
-                </TableComposable>
+                </Table>
             </PageSection>
         </>
     );

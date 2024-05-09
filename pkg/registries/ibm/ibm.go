@@ -2,7 +2,6 @@ package ibm
 
 import (
 	"errors"
-	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -12,15 +11,14 @@ import (
 
 const (
 	username = "iamapikey"
-
-	registryTimeout = 10 * time.Second
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, types.Creator) {
 	return types.IBMType,
-		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
-			return newRegistry(integration, false)
+		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			cfg := types.ApplyCreatorOptions(options...)
+			return newRegistry(integration, false, cfg.GetMetricsHandler())
 		}
 }
 
@@ -28,8 +26,9 @@ func Creator() (string, types.Creator) {
 // Populating the internal repo list will be disabled.
 func CreatorWithoutRepoList() (string, types.Creator) {
 	return types.IBMType,
-		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
-			return newRegistry(integration, true)
+		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			cfg := types.ApplyCreatorOptions(options...)
+			return newRegistry(integration, true, cfg.GetMetricsHandler())
 		}
 }
 
@@ -44,7 +43,9 @@ func validate(ibm *storage.IBMRegistryConfig) error {
 	return errorList.ToError()
 }
 
-func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*docker.Registry, error) {
+func newRegistry(integration *storage.ImageIntegration, disableRepoList bool,
+	metricsHandler *types.MetricsHandler,
+) (*docker.Registry, error) {
 	ibmConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Ibm)
 	if !ok {
 		return nil, errors.New("IBM configuration required")
@@ -56,13 +57,13 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*
 	cfg := &docker.Config{
 		Endpoint:        config.GetEndpoint(),
 		DisableRepoList: disableRepoList,
+		MetricsHandler:  metricsHandler,
+		RegistryType:    integration.GetType(),
 	}
 	cfg.SetCredentials(username, config.GetApiKey())
 	registry, err := docker.NewDockerRegistryWithConfig(cfg, integration)
 	if err != nil {
 		return nil, err
 	}
-	// IBM needs a custom timeout because it's pretty slow
-	registry.Client.Client.Timeout = registryTimeout
 	return registry, nil
 }

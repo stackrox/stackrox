@@ -9,7 +9,7 @@ import {
     pluralize,
     Title,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { AccessScope } from 'services/AccessScopesService';
 import { Role } from 'services/RolesService';
@@ -73,7 +73,7 @@ function AccessScopesList({
         <PageSection variant="light">
             <Title headingLevel="h2">{pluralize(accessScopes.length, 'result')} found</Title>
             {alertDelete}
-            <TableComposable variant="compact">
+            <Table variant="compact">
                 <Thead>
                     <Tr>
                         <Th width={15}>Name</Th>
@@ -106,7 +106,7 @@ function AccessScopesList({
                             </Td>
                             <Td
                                 actions={{
-                                    disable:
+                                    isDisabled:
                                         !hasWriteAccessForPage ||
                                         idDeleting === id ||
                                         !isUserResource(traits) ||
@@ -118,12 +118,12 @@ function AccessScopesList({
                                         },
                                     ],
                                 }}
-                                className="pf-u-text-align-right"
+                                className="pf-v5-u-text-align-right"
                             />
                         </Tr>
                     ))}
                 </Tbody>
-            </TableComposable>
+            </Table>
             <Modal
                 variant={ModalVariant.small}
                 title="Permanently delete access scope?"

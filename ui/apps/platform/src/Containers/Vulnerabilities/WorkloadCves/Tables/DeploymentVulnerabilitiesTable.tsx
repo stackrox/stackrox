@@ -1,14 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-    ExpandableRowContent,
-    TableComposable,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 import { min } from 'date-fns';
 
@@ -17,8 +9,9 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
-import { getEntityPagePath } from '../../utils/searchUtils';
-import { DynamicColumnIcon } from '../../components/DynamicIcon';
+import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import DateDistance from 'Components/DateDistance';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 
 import EmptyTableResults from '../components/EmptyTableResults';
 import DeploymentComponentVulnerabilitiesTable, {
@@ -26,10 +19,12 @@ import DeploymentComponentVulnerabilitiesTable, {
     ImageMetadataContext,
     deploymentComponentVulnerabilitiesFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
-import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
-import DateDistance from '../../components/DateDistance';
+import {
+    getIsSomeVulnerabilityFixable,
+    getHighestVulnerabilitySeverity,
+} from '../../utils/vulnerabilityUtils';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
-import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
+import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 
 export const deploymentWithVulnerabilitiesFragment = gql`
     ${deploymentComponentVulnerabilitiesFragment}
@@ -41,6 +36,7 @@ export const deploymentWithVulnerabilitiesFragment = gql`
         imageVulnerabilities(query: $query, pagination: $pagination) {
             vulnerabilityId: id
             cve
+            operatingSystem
             summary
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
             images(query: $query) {
@@ -59,6 +55,7 @@ export type DeploymentWithVulnerabilities = {
     imageVulnerabilities: {
         vulnerabilityId: string;
         cve: string;
+        operatingSystem: string;
         summary: string;
         pendingExceptionCount: number;
         images: {
@@ -76,6 +73,7 @@ type DeploymentVulnerabilityImageMapping = {
 function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
     vulnerabilityId: string;
     cve: string;
+    operatingSystem: string;
     severity: VulnerabilitySeverity;
     isFixable: boolean;
     discoveredAtImage: Date | null;
@@ -92,11 +90,13 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
     });
 
     return deployment.imageVulnerabilities.map((vulnerability) => {
-        const { vulnerabilityId, cve, summary, images, pendingExceptionCount } = vulnerability;
+        const { vulnerabilityId, cve, operatingSystem, summary, images, pendingExceptionCount } =
+            vulnerability;
         // Severity, Fixability, and Discovered date are all based on the aggregate value of all components
         const allVulnerableComponents = vulnerability.images.flatMap((img) => img.imageComponents);
-        const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerableComponents);
-        const isAnyVulnFixable = getAnyVulnerabilityIsFixable(allVulnerableComponents);
+        const allVulnerabilities = allVulnerableComponents.flatMap((c) => c.imageVulnerabilities);
+        const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerabilities);
+        const isFixableInDeployment = getIsSomeVulnerabilityFixable(allVulnerabilities);
         const allDiscoveredDates = allVulnerableComponents
             .flatMap((c) => c.imageVulnerabilities.map((v) => v.discoveredAtImage))
             .filter((d): d is string => d !== null);
@@ -122,8 +122,9 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
         return {
             vulnerabilityId,
             cve,
+            operatingSystem,
             severity: highestVulnSeverity,
-            isFixable: isAnyVulnFixable,
+            isFixable: isFixableInDeployment,
             discoveredAtImage: oldestDiscoveredVulnDate,
             summary,
             affectedComponentsText,
@@ -151,11 +152,12 @@ function DeploymentVulnerabilitiesTable({
     const vulnerabilities = formatVulnerabilityData(deployment);
 
     return (
-        <TableComposable variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('CVE')}>CVE</Th>
+                    <Th>OS</Th>
                     <Th>CVE severity</Th>
                     <Th>
                         CVE status
@@ -173,6 +175,7 @@ function DeploymentVulnerabilitiesTable({
                 const {
                     vulnerabilityId,
                     cve,
+                    operatingSystem,
                     severity,
                     summary,
                     isFixable,
@@ -181,7 +184,7 @@ function DeploymentVulnerabilitiesTable({
                     discoveredAtImage,
                     pendingExceptionCount,
                 } = vulnerability;
-                const isExpanded = expandedRowSet.has(cve);
+                const isExpanded = expandedRowSet.has(vulnerabilityId);
 
                 return (
                     <Tbody key={vulnerabilityId} isExpanded={isExpanded}>
@@ -190,7 +193,7 @@ function DeploymentVulnerabilitiesTable({
                                 expand={{
                                     rowIndex,
                                     isExpanded,
-                                    onToggle: () => expandedRowSet.toggle(cve),
+                                    onToggle: () => expandedRowSet.toggle(vulnerabilityId),
                                 }}
                             />
                             <Td dataLabel="CVE" modifier="nowrap">
@@ -199,10 +202,19 @@ function DeploymentVulnerabilitiesTable({
                                     cve={cve}
                                     vulnerabilityState={vulnerabilityState}
                                 >
-                                    <Link to={getEntityPagePath('CVE', cve, vulnerabilityState)}>
+                                    <Link
+                                        to={getWorkloadEntityPagePath(
+                                            'CVE',
+                                            cve,
+                                            vulnerabilityState
+                                        )}
+                                    >
                                         {cve}
                                     </Link>
                                 </PendingExceptionLabelLayout>
+                            </Td>
+                            <Td modifier="nowrap" dataLabel="OS">
+                                {operatingSystem}
                             </Td>
                             <Td modifier="nowrap" dataLabel="Severity">
                                 <VulnerabilitySeverityIconText severity={severity} />
@@ -221,7 +233,7 @@ function DeploymentVulnerabilitiesTable({
                                 <ExpandableRowContent>
                                     {summary && images.length > 0 ? (
                                         <>
-                                            <p className="pf-u-mb-md">{summary}</p>
+                                            <p className="pf-v5-u-mb-md">{summary}</p>
                                             <DeploymentComponentVulnerabilitiesTable
                                                 images={images}
                                                 cve={cve}
@@ -237,7 +249,7 @@ function DeploymentVulnerabilitiesTable({
                     </Tbody>
                 );
             })}
-        </TableComposable>
+        </Table>
     );
 }
 

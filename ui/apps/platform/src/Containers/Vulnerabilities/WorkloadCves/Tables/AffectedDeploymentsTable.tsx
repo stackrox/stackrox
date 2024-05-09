@@ -1,22 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Flex, pluralize, Truncate } from '@patternfly/react-core';
-import {
-    TableComposable,
-    Thead,
-    Tr,
-    Th,
-    Tbody,
-    Td,
-    ExpandableRowContent,
-} from '@patternfly/react-table';
+import { Table, Thead, Tr, Th, Tbody, Td, ExpandableRowContent } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { VulnerabilityState } from 'types/cve.proto';
-import { getEntityPagePath } from '../../utils/searchUtils';
-import { DynamicColumnIcon } from '../../components/DynamicIcon';
+import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import DateDistance from 'Components/DateDistance';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DeploymentComponentVulnerabilitiesTable, {
     DeploymentComponentVulnerability,
@@ -25,7 +18,6 @@ import DeploymentComponentVulnerabilitiesTable, {
     imageMetadataContextFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import DateDistance from '../../components/DateDistance';
 import { VulnerabilitySeverityLabel } from '../../types';
 
 export type DeploymentForCve = {
@@ -84,7 +76,7 @@ function AffectedDeploymentsTable({
     return (
         // TODO UX question - Collapse to cards, or allow headers to overflow?
         // <TableComposable gridBreakPoint="grid-xl">
-        <TableComposable variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
@@ -139,7 +131,11 @@ function AffectedDeploymentsTable({
                                     spaceItems={{ default: 'spaceItemsNone' }}
                                 >
                                     <Link
-                                        to={getEntityPagePath('Deployment', id, vulnerabilityState)}
+                                        to={getWorkloadEntityPagePath(
+                                            'Deployment',
+                                            id,
+                                            vulnerabilityState
+                                        )}
                                     >
                                         <Truncate position="middle" content={name} />
                                     </Link>
@@ -179,7 +175,7 @@ function AffectedDeploymentsTable({
                     </Tbody>
                 );
             })}
-        </TableComposable>
+        </Table>
     );
 }
 

@@ -14,13 +14,13 @@ export function getTableRowActionButtonByName(name) {
         .get('a')
         .contains(exactName)
         .then(($el) => {
-            return cy.wrap($el).parent().siblings('td').find('button[aria-label="Actions"]');
+            return cy.wrap($el).parent().siblings('td').find('button[aria-label="Kebab toggle"]');
         });
 }
 
 export function editIntegration(name) {
-    cy.get(`tr:contains('${name}') td.pf-c-table__action button`).click();
+    cy.get(`tr:contains('${name}') td.pf-v5-c-table__action button`).click();
     cy.get(
-        `tr:contains('${name}') td.pf-c-table__action button:contains("Edit Integration")`
+        `tr:contains('${name}') td.pf-v5-c-table__action button:contains("Edit Integration")`
     ).click();
 }

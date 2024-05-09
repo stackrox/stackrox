@@ -1,0 +1,66 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/max-keep-runs: "500"
+    # TODO(ROX-21073): re-enable for all PR branches
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && (source_branch.contains("konflux") || source_branch.contains("rhtap"))
+  creationTimestamp: null
+  labels:
+    appstudio.openshift.io/application: acs
+    appstudio.openshift.io/component: scanner-v4
+    pipelines.appstudio.openshift.io/type: build
+  name: scanner-v4-on-pull-request
+  namespace: rh-acs-tenant
+
+spec:
+
+  params:
+  - name: dockerfile
+    value: scanner/image/scanner/konflux.Dockerfile
+  - name: git-url
+    value: '{{source_url}}'
+  - name: image-expires-after
+    value: '13w'
+  - name: output-image
+    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner-v4:on-pr-{{revision}}
+  - name: path-context
+    value: .
+  - name: revision
+    value: '{{revision}}'
+  - name: rebuild
+    value: 'true'
+  # TODO(ROX-20234): Enable hermetic builds
+  # - name: hermetic
+  #   value: "true"
+  - name: prefetch-input
+    value: '{"type": "gomod", "path": "."}'
+  - name: build-source-image
+    value: 'true'
+  - name: clone-depth
+    value: '0'
+  - name: clone-fetch-tags
+    value: 'true'
+
+  workspaces:
+  - name: workspace
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 3Gi
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+
+  pipelineRef:
+    name: scanner-v4-pipeline

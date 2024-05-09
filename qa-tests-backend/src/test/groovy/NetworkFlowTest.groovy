@@ -467,6 +467,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
+    //ROX-21491 skipping test case for p/z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify connections to external sources"() {
         given:
         "Deployment A, where A communicates to an external target"
@@ -481,7 +483,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
-    @Ignore("ROX-19615")
+    // TODO: additional handling may be needed for P/Z - see ROX-19615
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify connections from external sources"() {
         given:
         "Deployment A, where an external source communicates to A"
@@ -536,21 +539,30 @@ class NetworkFlowTest extends BaseSpecification {
                 }
                 log.debug("All edges of 'router-default' ${defaultRouterId}: ${outNodesRouter}")
             }
-            log.info("Searching for edge coming from INTERNET_EXTERNAL_SOURCE_ID " +
-                "(${Constants.INTERNET_EXTERNAL_SOURCE_ID}) to ${deploymentUid}")
+            log.info("Searching for edge coming from INTERNAL_ENTITIES_SOURCE_ID " +
+                "(${Constants.INTERNAL_ENTITIES_SOURCE_ID}) to ${deploymentUid}")
             List<Edge> edges =
-                    NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
+                    NetworkGraphUtil.checkForEdge(Constants.INTERNAL_ENTITIES_SOURCE_ID, deploymentUid, null, 180)
             if (edges == null || edges.size() == 0) {
-                // Debug dump of all INTERNET_EXTERNAL_SOURCE_ID edges
+                // Debug dump of all INTERNAL_ENTITIES_SOURCE_ID edges
                 def currentGraph = NetworkGraphService.getNetworkGraph()
                 def index = currentGraph.nodesList.findIndexOf {
-                    node -> node.deploymentName == Constants.INTERNET_EXTERNAL_SOURCE_ID
+                    node -> node.deploymentName == Constants.INTERNAL_ENTITIES_SOURCE_ID
                 }
                 List<NetworkNode> outNodes = currentGraph.nodesList.findAll { node ->
                     node.outEdgesMap.containsKey(index)
                 }
-                log.debug("All edges of 'INTERNET_EXTERNAL_SOURCE_ID' " +
-                    "${Constants.INTERNET_EXTERNAL_SOURCE_ID}: ${outNodes}")
+                log.debug("All edges of 'INTERNAL_ENTITIES_SOURCE_ID' " +
+                    "${Constants.INTERNAL_ENTITIES_SOURCE_ID}: ${outNodes}")
+
+                // Debug dump all incoming edges to deploymentUid
+                def targetId = currentGraph.nodesList.findIndexOf {
+                    node -> node.deploymentId == deploymentUid
+                }
+                List<NetworkNode> nginxEdges = currentGraph.nodesList.findAll {
+                    node -> node.outEdges.containsKey(targetId)
+                }
+                log.debug("All edges of ${NGINXCONNECTIONTARGET} ${deploymentUid}: ${nginxEdges}")
             }
             assert edges
         }

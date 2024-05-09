@@ -1,6 +1,14 @@
 import React from 'react';
 import { Field } from 'formik';
-import { Button, Flex, FlexItem, FormGroup } from '@patternfly/react-core';
+import {
+    Button,
+    Flex,
+    FlexItem,
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+} from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 
 const CIDRFormRow = ({ idx, onRemoveRow, errors, touched }) => {
@@ -12,38 +20,41 @@ const CIDRFormRow = ({ idx, onRemoveRow, errors, touched }) => {
     let buttonClassName = '';
     if (idx === 0) {
         buttonClassName = !hasError
-            ? 'pf-m-align-self-flex-end pf-u-mb-sm'
+            ? 'pf-m-align-self-flex-end pf-v5-u-mb-sm'
             : 'pf-m-align-self-center';
     }
 
     return (
         <Flex>
-            <FormGroup
-                label={idx === 0 ? 'CIDR name' : ''}
-                isRequired
-                helperTextInvalid={nameError}
-                validated={showNameError ? 'error' : 'default'}
-                fieldId="cidr-name"
-            >
+            <FormGroup label={idx === 0 ? 'CIDR name' : ''} isRequired fieldId="cidr-name">
                 <Field
                     name={`entities.${idx as string}.entity.name`}
                     type="text"
                     id="cidr-name"
                     placeholder="CIDR name"
                 />
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem variant={showNameError ? 'error' : 'default'}>
+                            {nameError}
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
             </FormGroup>
-            <FormGroup
-                label={idx === 0 ? 'CIDR address' : ''}
-                isRequired
-                helperTextInvalid={cidrError}
-                validated={showCidrError ? 'error' : 'default'}
-            >
+            <FormGroup label={idx === 0 ? 'CIDR address' : ''} isRequired>
                 <Field
                     name={`entities.${idx as string}.entity.cidr`}
                     type="text"
                     id="cidr-block-address"
                     placeholder="192.0.0.2/24"
                 />
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem variant={showCidrError ? 'error' : 'default'}>
+                            {cidrError}
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
             </FormGroup>
             <FlexItem className={buttonClassName}>
                 <Button

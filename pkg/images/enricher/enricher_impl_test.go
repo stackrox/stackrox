@@ -265,11 +265,13 @@ func TestEnricherFlow(t *testing.T) {
 			shortCircuitRegistry: false,
 			shortCircuitScanner:  true,
 			image: &storage.Image{
+				Id: "id",
+			},
+			imageGetter: imageGetterFromImage(&storage.Image{
 				Id:    "id",
 				Name:  &storage.ImageName{Registry: "reg"},
 				Names: []*storage.ImageName{{Registry: "reg"}},
-			},
-			imageGetter: imageGetterFromImage(&storage.Image{Id: "id", Scan: &storage.ImageScan{}}),
+				Scan:  &storage.ImageScan{}}),
 
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -292,6 +294,26 @@ func TestEnricherFlow(t *testing.T) {
 				Names: []*storage.ImageName{{Registry: "reg"}},
 			},
 
+			fsr: newFakeRegistryScanner(opts{
+				requestedMetadata: true,
+				requestedScan:     true,
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: true,
+				ScanResult:   ScanSucceeded,
+			},
+		},
+		{
+			name: " data in both caches but force refetch use names",
+			ctx: EnrichmentContext{
+				FetchOpt: UseImageNamesRefetchCachedValues,
+			},
+			inMetadataCache: true,
+			image: &storage.Image{
+				Id:    "id",
+				Name:  &storage.ImageName{Registry: "reg"},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
 				requestedScan:     true,

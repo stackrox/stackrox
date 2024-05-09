@@ -275,7 +275,7 @@ func (i *localIndexer) IndexContainerImage(
 			return nil, fmt.Errorf("getting layer digests: %w", err)
 		}
 		// TODO Check for non-retryable errors (permission denied, etc.) to report properly.
-		layerReq, err := getLayerRequest(httpClient, imgRef, layerDigest)
+		layerReq, err := getLayerRequest(ctx, httpClient, imgRef, layerDigest)
 		if err != nil {
 			return nil, fmt.Errorf("getting layer request URL and headers (digest: %q): %w",
 				layerDigest.String(), err)
@@ -322,7 +322,7 @@ func getLayerDigests(layer v1.Layer) (ccd claircore.Digest, ld v1.Hash, err erro
 // getLayerRequest sends a partial request to retrieve the layer from the
 // registry and return the request object containing relevant information to
 // populate a container image manifest.
-func getLayerRequest(httpClient *http.Client, imgRef name.Reference, layerDigest v1.Hash) (*http.Request, error) {
+func getLayerRequest(ctx context.Context, httpClient *http.Client, imgRef name.Reference, layerDigest v1.Hash) (*http.Request, error) {
 	imgRepo := imgRef.Context()
 	registryURL := url.URL{
 		Scheme: imgRepo.Scheme(),
@@ -344,6 +344,13 @@ func getLayerRequest(httpClient *http.Client, imgRef name.Reference, layerDigest
 		return nil, err
 	}
 	utils.IgnoreError(res.Body.Close)
+	if res.StatusCode != http.StatusPartialContent {
+		zlog.Debug(ctx).
+			Int("status_code", res.StatusCode).
+			Int("len", int(res.ContentLength)).
+			Str("url", u.String()).
+			Msg("server might not support requests with Range HTTP header")
+	}
 	return res.Request, nil
 }
 

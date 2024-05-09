@@ -1,20 +1,29 @@
 import { FormikProps, useFormik } from 'formik';
-
 import * as yup from 'yup';
 
-import { VulnerabilitySeverity, vulnerabilitySeverities } from 'types/cve.proto';
-import { ImageType, IntervalType, imageTypes, intervalTypes } from 'services/ReportsService.types';
+import {
+    customBodyValidation,
+    customSubjectValidation,
+} from 'Components/EmailTemplate/EmailTemplate.utils';
 import {
     DayOfMonth,
     DayOfWeek,
     daysOfMonth,
     daysOfWeek,
 } from 'Components/PatternFly/DayPickerDropdown';
+import { VulnerabilitySeverity, vulnerabilitySeverities } from 'types/cve.proto';
+import {
+    ImageType,
+    IntervalType,
+    NotifierConfiguration,
+    imageTypes,
+    intervalTypes,
+} from 'services/ReportsService.types';
 
 export type ReportFormValues = {
     reportId: string;
     reportParameters: ReportParametersFormValues;
-    deliveryDestinations: DeliveryDestination[];
+    deliveryDestinations: NotifierConfiguration[];
     schedule: {
         intervalType: IntervalType | null;
         daysOfWeek: DayOfWeek[];
@@ -27,7 +36,7 @@ export type SetReportFormValues = (newFormValues: ReportFormValues) => void;
 export type FormFieldValue =
     | string
     | string[]
-    | DeliveryDestination[]
+    | NotifierConfiguration[]
     | Partial<Record<string, string | string[] | null>>;
 
 export type SetReportFormFieldValue = (fieldName: string, value: FormFieldValue) => void;
@@ -58,21 +67,6 @@ export type ReportScope = {
     name: string;
 };
 
-export type DeliveryDestination = {
-    notifier: ReportNotifier | null;
-    mailingLists: string[];
-    customSubject: string;
-    customBody: string;
-};
-
-export type ReportNotifier = {
-    id: string;
-    name: string;
-};
-
-export const maxEmailSubjectLength = 256;
-export const maxEmailBodyLength = 1500;
-
 export const defaultReportFormValues: ReportFormValues = {
     reportId: '',
     reportParameters: {
@@ -92,19 +86,6 @@ export const defaultReportFormValues: ReportFormValues = {
         daysOfMonth: [],
     },
 };
-
-export const emailSubjectValidation = yup
-    .string()
-    .default('')
-    .max(
-        maxEmailSubjectLength,
-        `Limit your input to ${maxEmailSubjectLength} characters or fewer.`
-    );
-
-export const emailBodyValidation = yup
-    .string()
-    .default('')
-    .max(maxEmailBodyLength, `Limit your input to ${maxEmailBodyLength} characters or fewer.`);
 
 const validationSchema = yup.object().shape({
     reportId: yup.string(),
@@ -138,19 +119,16 @@ const validationSchema = yup.object().shape({
         .array()
         .of(
             yup.object().shape({
-                notifier: yup
-                    .object()
-                    .nullable()
-                    .strict()
-                    .test('is-not-null', 'A notifier is required', (value) => {
-                        return value !== null && value !== undefined;
-                    }),
-                mailingLists: yup
-                    .array()
-                    .of(yup.string())
-                    .min(1, 'At least 1 delivery destination is required'),
-                customSubject: emailSubjectValidation,
-                customBody: emailBodyValidation,
+                emailConfig: yup.object().shape({
+                    notifierId: yup.string().required('A notifier is required'),
+                    mailingLists: yup
+                        .array()
+                        .of(yup.string())
+                        .min(1, 'At least 1 delivery destination is required'),
+                    customSubject: customSubjectValidation,
+                    customBody: customBodyValidation,
+                }),
+                notifierName: yup.string(),
             })
         )
         .strict()

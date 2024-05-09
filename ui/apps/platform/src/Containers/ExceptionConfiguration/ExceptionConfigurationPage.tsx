@@ -3,7 +3,7 @@ import { Bullseye, PageSection, Spinner, Tab, Tabs, Title } from '@patternfly/re
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import PageTitle from 'Components/PageTitle';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { useVulnerabilitiesExceptionConfig } from './useVulnerabilitiesExceptionConfig';
@@ -37,13 +37,13 @@ function ExceptionConfigurationPage() {
                                 <Spinner aria-label="Loading current vulnerability exception configuration" />
                             </Bullseye>
                         )}
-                        {configLoadError && (
+                        {!!configLoadError && (
                             <Bullseye>
                                 <EmptyStateTemplate
                                     title="Error loading vulnerability exception configuration"
                                     headingLevel="h2"
                                     icon={ExclamationCircleIcon}
-                                    iconClassName="pf-u-danger-color-100"
+                                    iconClassName="pf-v5-u-danger-color-100"
                                 >
                                     {getAxiosErrorMessage(configLoadError)}
                                 </EmptyStateTemplate>

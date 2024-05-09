@@ -26,6 +26,8 @@ var (
 	ClusterScope          = newFieldLabel("Cluster Scope")
 	ClusterType           = newFieldLabel("Cluster Type")
 	ClusterDiscoveredTime = newFieldLabel("Cluster Discovered Time")
+	PlatformType          = newFieldLabel("Cluster Platform Type")
+	KubernetesVersion     = newFieldLabel("Cluster Kubernetes Version")
 
 	// cluster health search fields
 	ClusterStatus          = newFieldLabel("Cluster Status")
@@ -209,6 +211,7 @@ var (
 	ComplianceOperatorVersion                = newFieldLabel("Compliance Operator Version")
 	ComplianceOperatorScanName               = newFieldLabel("Compliance Scan Name")
 	ComplianceOperatorSeverity               = newFieldLabel("Compliance Rule Severity")
+	ComplianceOperatorStatus                 = newFieldLabel("Compliance Operator Status")
 	ComplianceOperatorCheckStatus            = newFieldLabel("Compliance Check Status")
 	ComplianceOperatorRuleName               = newFieldLabel("Compliance Rule Name")
 	ComplianceOperatorProfileID              = newFieldLabel("Compliance Profile ID")
@@ -218,6 +221,7 @@ var (
 	ComplianceOperatorProfileVersion         = newFieldLabel("Compliance Profile Version")
 	ComplianceOpeatorInstaled                = newFieldLabel("Compliance Operator Installed")
 	ComplianceOperatorStandard               = newFieldLabel("Compliance Standard")
+	ComplianceOperatorControl                = newFieldLabel("Compliance Control")
 	ComplianceOperatorScanConfig             = newFieldLabel("Compliance Scan Config ID")
 	ComplianceOperatorScanConfigName         = newFieldLabel("Compliance Scan Config Name")
 	ComplianceOperatorCheckID                = newFieldLabel("Compliance Check ID")
@@ -235,6 +239,7 @@ var (
 	ComplianceOperatorProfileRef             = newFieldLabel("Profile Ref ID")
 	ComplianceOperatorScanRef                = newFieldLabel("Scan Ref ID")
 	ComplianceOperatorRuleRef                = newFieldLabel("Rule Ref ID")
+	ComplianceOperatorRemediationName        = newFieldLabel("Compliance Remediation Name")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")

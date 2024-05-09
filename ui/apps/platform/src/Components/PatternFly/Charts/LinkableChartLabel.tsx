@@ -17,7 +17,7 @@ export type LinkableChartLabelProps = ChartLabelProps & {
 export function LinkableChartLabel({ linkWith, ...props }: LinkableChartLabelProps) {
     return (
         <Link to={linkWith(props)}>
-            <ChartLabel {...props} style={{ fill: 'var(--pf-global--link--Color)' }} />
+            <ChartLabel {...props} style={{ fill: 'var(--pf-v5-global--link--Color)' }} />
         </Link>
     );
 }

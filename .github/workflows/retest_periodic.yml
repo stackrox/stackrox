@@ -4,7 +4,8 @@ on:
   schedule:
   - cron: 5 * * * *
 jobs:
-  triage-report:
+  retest:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -17,9 +18,9 @@ jobs:
     - name: Setup Go environment
       uses: actions/setup-go@v5
       with:
-        go-version-file: tools/retest/go.mod
+        go-version-file: go.mod
 
     - name: Retest
       env:
         GITHUB_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
-      run: cd tools/retest && go run main.go
+      run: cd tools/retest && go run ./...

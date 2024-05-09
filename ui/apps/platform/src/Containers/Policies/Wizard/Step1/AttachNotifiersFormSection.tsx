@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { Title, Button, Bullseye } from '@patternfly/react-core';
 import { useField } from 'formik';
 
@@ -43,14 +43,14 @@ function AttachNotifiersFormSection() {
     }
 
     return (
-        <div className="pf-u-px-lg">
+        <div className="pf-v5-u-px-lg">
             <Title headingLevel="h2">Attach notifiers</Title>
-            <div className="pf-u-mb-md pf-u-mt-sm">
+            <div className="pf-v5-u-mb-md pf-v5-u-mt-sm">
                 Forward policy violations to external tooling by selecting one or more notifiers
                 from existing integrations.
             </div>
             {notifiers.length > 0 && (
-                <TableComposable aria-label="Attach notifiers table" borders>
+                <Table aria-label="Attach notifiers table" borders>
                     <Thead>
                         <Tr>
                             <Th
@@ -78,13 +78,13 @@ function AttachNotifiersFormSection() {
                             </Tr>
                         ))}
                     </Tbody>
-                </TableComposable>
+                </Table>
             )}
             {notifiers.length === 0 && (
                 <>
                     No notifiers found. Add notifiers in the Integrations Page to add them to this
                     policy.
-                    <Bullseye className="pf-u-mt-md">
+                    <Bullseye className="pf-v5-u-mt-md">
                         <Button
                             variant="secondary"
                             component="a"

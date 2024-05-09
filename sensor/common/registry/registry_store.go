@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
+	"github.com/stackrox/rox/sensor/common/registry/metrics"
 )
 
 const (
@@ -82,14 +83,22 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 	})
 
 	store := &Store{
-		factory:                     regFactory,
-		store:                       make(map[string]registries.Set),
-		checkTLSFunc:                tlscheck.CheckTLS,
-		globalRegistries:            registries.NewSet(regFactory, types.WithGCPTokenManager(gcp.Singleton())),
-		centralRegistryIntegrations: registries.NewSet(regFactory, types.WithGCPTokenManager(gcp.Singleton())),
-		clusterLocalRegistryHosts:   set.NewStringSet(),
-		tlsCheckResults:             expiringcache.NewExpiringCache(tlsCheckTTL),
-		knownSecretIDs:              set.NewStringSet(),
+		factory:      regFactory,
+		store:        make(map[string]registries.Set),
+		checkTLSFunc: tlscheck.CheckTLS,
+		globalRegistries: registries.NewSet(
+			regFactory,
+			types.WithMetricsHandler(metrics.Singleton()),
+			types.WithGCPTokenManager(gcp.Singleton()),
+		),
+		centralRegistryIntegrations: registries.NewSet(
+			regFactory,
+			types.WithMetricsHandler(metrics.Singleton()),
+			types.WithGCPTokenManager(gcp.Singleton()),
+		),
+		clusterLocalRegistryHosts: set.NewStringSet(),
+		tlsCheckResults:           expiringcache.NewExpiringCache(tlsCheckTTL),
+		knownSecretIDs:            set.NewStringSet(),
 	}
 
 	if checkTLS != nil {

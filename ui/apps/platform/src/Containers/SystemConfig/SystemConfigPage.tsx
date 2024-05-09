@@ -70,7 +70,7 @@ const SystemConfigPage = (): ReactElement => {
     if (isLoading) {
         content = (
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner />
             </Bullseye>
         );
     } else if (systemConfig) {
@@ -98,7 +98,7 @@ const SystemConfigPage = (): ReactElement => {
 
     return (
         <>
-            <PageSection variant="light" sticky="top">
+            <PageSection variant="light">
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">System Configuration</Title>

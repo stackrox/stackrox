@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
+	"golang.org/x/exp/maps"
 )
 
 const (
@@ -244,7 +245,7 @@ func (m *managerImpl) runReconciliation() {
 }
 
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
-	log.Debugf("Run reconciliation for the next handlers: %v", maputil.Keys(transformedMessagesByHandler))
+	log.Debugf("Run reconciliation for the next handlers: %v", maps.Keys(transformedMessagesByHandler))
 
 	hasChanges := m.calculateHashAndIndicateChanges(transformedMessagesByHandler)
 

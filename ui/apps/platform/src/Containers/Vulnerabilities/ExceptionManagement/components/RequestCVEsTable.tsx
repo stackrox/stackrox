@@ -1,14 +1,6 @@
 import React from 'react';
 import { Bullseye, Flex, PageSection, Spinner, Text, Title } from '@patternfly/react-core';
-import {
-    ExpandableRowContent,
-    TableComposable,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { SearchIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import { Link } from 'react-router-dom';
@@ -22,9 +14,11 @@ import {
     VulnerabilityState,
 } from 'services/VulnerabilityExceptionService';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
+import CvssFormatted from 'Components/CvssFormatted';
+import DateDistance from 'Components/DateDistance';
 import {
     aggregateByCVSS,
     aggregateByCreatedTime,
@@ -36,10 +30,9 @@ import {
 } from '../../utils/sortUtils';
 import { CVEListQueryResult, cveListQuery } from '../../WorkloadCves/Tables/CVEsTable';
 import { VulnerabilitySeverityLabel } from '../../types';
-import { getEntityPagePath } from '../../utils/searchUtils';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
+import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import CvssFormatted from '../../components/CvssFormatted';
-import DateDistance from '../../components/DateDistance';
 
 import { getImageScopeSearchValue } from '../utils';
 
@@ -56,7 +49,7 @@ function RequestCVEsTable({
     expandedRowSet,
     vulnerabilityState,
 }: RequestCVEsTableProps) {
-    const { page, perPage, setPage } = useURLPagination(20);
+    const { page, perPage, setPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
         sortFields: getWorkloadSortFields('CVE'),
         defaultSortOption: getDefaultWorkloadSortOption('CVE'),
@@ -84,7 +77,7 @@ function RequestCVEsTable({
     if (loading && !data) {
         return (
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner />
             </Bullseye>
         );
     }
@@ -104,7 +97,7 @@ function RequestCVEsTable({
         <PageSection variant="light">
             <Flex direction={{ default: 'column' }}>
                 <Title headingLevel="h2">{data?.imageCVEs.length || 0} results found</Title>
-                <TableComposable variant="compact">
+                <Table variant="compact">
                     <Thead noWrap>
                         <Tr>
                             <Td />
@@ -174,7 +167,7 @@ function RequestCVEsTable({
                                         IMAGE: queryObject.Image,
                                     },
                                 };
-                                const cveURL = getEntityPagePath(
+                                const cveURL = getWorkloadEntityPagePath(
                                     'CVE',
                                     cve,
                                     vulnerabilityState,
@@ -235,7 +228,7 @@ function RequestCVEsTable({
                                 );
                             }
                         )}
-                </TableComposable>
+                </Table>
             </Flex>
         </PageSection>
     );

@@ -3,6 +3,8 @@ package scan
 import (
 	"context"
 	"io"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -133,6 +135,13 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds")
 	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
 	c.Flags().StringVar(&imageScanCmd.cluster, "cluster", "", "Cluster name or ID to delegate image scan to")
+	c.Flags().StringSliceVar(&imageScanCmd.severities, "severity", []string{
+		lowCVESeverity.String(),
+		moderateCVESeverity.String(),
+		importantCVESeverity.String(),
+		criticalCVESeverity.String(),
+	}, "List of severities to include in the output. Use this to filter for specific severities")
+	c.Flags().BoolVarP(&imageScanCmd.failOnFinding, "fail", "", false, "Fail if vulnerabilities have been found")
 
 	// Deprecated flag
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format and are sure we do not break existing customer scripts
@@ -156,6 +165,8 @@ type imageScanCommand struct {
 	retryCount     int
 	timeout        time.Duration
 	cluster        string
+	severities     []string
+	failOnFinding  bool
 
 	// injected or constructed values
 	env                environment.Environment
@@ -207,23 +218,44 @@ func (i *imageScanCommand) Validate() error {
 				"only specify json or csv", i.format)
 		}
 	}
+
+	validSeverities := []string{
+		lowCVESeverity.String(),
+		moderateCVESeverity.String(),
+		importantCVESeverity.String(),
+		criticalCVESeverity.String(),
+	}
+
+	for _, severity := range i.severities {
+		severity := strings.ToUpper(severity)
+		if !slices.Contains(validSeverities, severity) {
+			return errox.InvalidArgs.Newf("invalid severity %q used. Choose one of [%s]", severity,
+				strings.Join(validSeverities, ", "))
+		}
+	}
+
 	return nil
 }
 
 // Scan will execute the image scan with retry functionality
 func (i *imageScanCommand) Scan() error {
+	var failedAttempts int
 	err := retry.WithRetry(func() error {
 		return i.scanImage()
 	},
 		retry.Tries(i.retryCount+1),
 		retry.OnlyRetryableErrors(),
 		retry.OnFailedAttempts(func(err error) {
+			failedAttempts++
 			i.env.Logger().ErrfLn("Scanning image failed: %v. Retrying after %v seconds...", err, i.retryDelay)
 			time.Sleep(time.Duration(i.retryDelay) * time.Second)
 		}),
 	)
 	if err != nil {
-		return errors.Wrapf(err, "scaning image failed after %d retries", i.retryCount)
+		if failedAttempts > 0 {
+			return errors.Wrapf(err, "image scan failed after %d retries", failedAttempts)
+		}
+		return errors.Wrap(err, "image scan failed")
 	}
 	return nil
 }
@@ -268,7 +300,7 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 		return legacyPrintFormat(imageResult, i.format, i.env.InputOutput().Out(), i.env.Logger())
 	}
 
-	cveSummary := newCVESummaryForPrinting(imageResult.GetScan())
+	cveSummary := newCVESummaryForPrinting(imageResult.GetScan(), i.severities)
 
 	if !i.standardizedFormat {
 		printCVESummary(i.image, cveSummary.Result.Summary, i.env.Logger())
@@ -279,9 +311,11 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 	}
 
 	if !i.standardizedFormat {
-		printCVEWarning(cveSummary.Result.Summary[totalVulnerabilitiesMapKey],
-			cveSummary.Result.Summary[totalComponentsMapKey],
-			i.env.Logger())
+		printCVEWarning(cveSummary.CountVulnerabilities(), cveSummary.CountComponents(), i.env.Logger())
+	}
+
+	if cveCount := cveSummary.CountVulnerabilities(); i.failOnFinding && cveCount > 0 {
+		return newErrVulnerabilityFound(cveCount)
 	}
 	return nil
 }

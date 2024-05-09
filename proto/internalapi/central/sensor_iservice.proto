@@ -22,7 +22,7 @@ import "internalapi/central/telemetry.proto";
 import "storage/cluster.proto";
 import "storage/image.proto";
 
-option go_package = "central";
+option go_package = "./internalapi/central;central";
 
 // next available tag: 19
 message MsgFromSensor {

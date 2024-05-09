@@ -145,9 +145,10 @@ func insertIntoComplianceOperatorRuleV2Controls(batch *pgx.Batch, obj *storage.R
 		complianceOperatorRuleV2ID,
 		idx,
 		obj.GetStandard(),
+		obj.GetControl(),
 	}
 
-	finalStr := "INSERT INTO compliance_operator_rule_v2_controls (compliance_operator_rule_v2_Id, idx, Standard) VALUES($1, $2, $3) ON CONFLICT(compliance_operator_rule_v2_Id, idx) DO UPDATE SET compliance_operator_rule_v2_Id = EXCLUDED.compliance_operator_rule_v2_Id, idx = EXCLUDED.idx, Standard = EXCLUDED.Standard"
+	finalStr := "INSERT INTO compliance_operator_rule_v2_controls (compliance_operator_rule_v2_Id, idx, Standard, Control) VALUES($1, $2, $3, $4) ON CONFLICT(compliance_operator_rule_v2_Id, idx) DO UPDATE SET compliance_operator_rule_v2_Id = EXCLUDED.compliance_operator_rule_v2_Id, idx = EXCLUDED.idx, Standard = EXCLUDED.Standard, Control = EXCLUDED.Control"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -239,6 +240,7 @@ func copyFromComplianceOperatorRuleV2Controls(ctx context.Context, s pgSearch.De
 		"compliance_operator_rule_v2_id",
 		"idx",
 		"standard",
+		"control",
 	}
 
 	for idx, obj := range objs {
@@ -251,6 +253,7 @@ func copyFromComplianceOperatorRuleV2Controls(ctx context.Context, s pgSearch.De
 			complianceOperatorRuleV2ID,
 			idx,
 			obj.GetStandard(),
+			obj.GetControl(),
 		})
 
 		// if we hit our batch size we need to push the data

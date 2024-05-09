@@ -1,6 +1,5 @@
 import { gql } from '@apollo/client';
 import sortBy from 'lodash/sortBy';
-import { severityRankings } from 'constants/vulnerabilities';
 import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
 import { ApiSortOption } from 'types/search';
 
@@ -216,59 +215,4 @@ export function sortTableData<TableRowType extends TableDataRow>(
         sortedRows.reverse();
     }
     return sortedRows;
-}
-
-/**
- * Get the highest severity of any vulnerability in the image.
- */
-export function getHighestVulnerabilitySeverity(
-    imageComponents: ImageComponentVulnerability[]
-): VulnerabilitySeverity {
-    let topSeverity: VulnerabilitySeverity = 'UNKNOWN_VULNERABILITY_SEVERITY';
-    imageComponents.forEach((component) => {
-        component.imageVulnerabilities.forEach(({ severity }) => {
-            if (
-                isVulnerabilitySeverity(severity) &&
-                severityRankings[severity] > severityRankings[topSeverity]
-            ) {
-                topSeverity = severity;
-            }
-        });
-    });
-    return topSeverity;
-}
-
-/**
- * Get whether or not the image has any fixable vulnerabilities.
- */
-export function getAnyVulnerabilityIsFixable(
-    imageComponents: ImageComponentVulnerability[]
-): boolean {
-    return imageComponents.some((component) =>
-        component.imageVulnerabilities.some(({ fixedByVersion }) => fixedByVersion !== '')
-    );
-}
-
-export function getHighestCvssScore(
-    imageComponents: {
-        imageVulnerabilities: {
-            cvss: number;
-            scoreVersion: string;
-        }[];
-    }[]
-): {
-    cvss: number;
-    scoreVersion: string;
-} {
-    let topCvss = 0;
-    let topScoreVersion = 'N/A';
-    imageComponents.forEach((component) => {
-        component.imageVulnerabilities.forEach(({ cvss, scoreVersion }) => {
-            if (cvss > topCvss) {
-                topCvss = cvss;
-                topScoreVersion = scoreVersion;
-            }
-        });
-    });
-    return { cvss: topCvss, scoreVersion: topScoreVersion };
 }

@@ -4,14 +4,12 @@ import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import { getHelperElementByLabel, getInputByLabel } from '../../helpers/formHelpers';
 
 import {
-    visitComplianceEnhancedClusterComplianceFromLeftNav,
+    visitComplianceEnhancedSchedulesFromLeftNav,
     visitComplianceEnhancedScanConfigs,
-    visitComplianceEnhancedClusterCompliance,
-    clusterComplianceCoveragePath,
-    clusterComplianceScanConfigsPath,
+    complianceEnhancedScanConfigsPath,
 } from './ComplianceEnhanced.helpers';
 
-describe('Compliance Dashboard', () => {
+describe('Compliance Schedules', () => {
     withAuth();
 
     before(function () {
@@ -20,19 +18,11 @@ describe('Compliance Dashboard', () => {
         }
     });
 
-    it('should visit cluster compliance from the left nav and default to coverage view', () => {
-        visitComplianceEnhancedClusterComplianceFromLeftNav();
+    it('should visit schedules using the left nav', () => {
+        visitComplianceEnhancedSchedulesFromLeftNav();
 
-        cy.location('pathname').should('eq', clusterComplianceCoveragePath);
+        cy.location('pathname').should('eq', complianceEnhancedScanConfigsPath);
         cy.title().should('match', getRegExpForTitleWithBranding('Cluster compliance'));
-    });
-
-    it('should visit scan configurations scheduling from tab nav menu', () => {
-        visitComplianceEnhancedClusterCompliance();
-        cy.get('a.pf-c-nav__link').contains('Schedules').click();
-
-        cy.location('pathname').should('eq', clusterComplianceScanConfigsPath);
-        cy.get('a.pf-c-nav__link').contains('Schedules').should('have.class', 'pf-m-current');
     });
 
     it('should have expected elements on the scan configs page', () => {
@@ -48,21 +38,21 @@ describe('Compliance Dashboard', () => {
 
         // check empty state message and call-to-action
         cy.get('h2:contains("No scan schedules")');
-        cy.get('.pf-c-empty-state__content a:contains("Create scan schedule")').click();
+        cy.get('.pf-v5-c-empty-state__content a:contains("Create scan schedule")').click();
         cy.location('search').should('eq', '?action=create');
 
-        cy.get('.pf-c-wizard__footer button:contains("Cancel")').click();
+        cy.get('.pf-v5-c-wizard__footer button:contains("Cancel")').click();
     });
 
     it('should have have a form to add a new scan config', () => {
         visitComplianceEnhancedScanConfigs();
 
-        cy.get('.pf-c-toolbar__content a:contains("Create scan schedule")').click();
+        cy.get('.pf-v5-c-toolbar__content a:contains("Create scan schedule")').click();
 
         cy.get(`h1:contains("Create scan schedule")`);
 
         // Step 0, should start out with disabled Back button
-        cy.get('.pf-c-wizard__footer button:contains("Back")').should('be.disabled');
+        cy.get('.pf-v5-c-wizard__footer button:contains("Back")').should('be.disabled');
 
         // Step 1, check empty fields
         getInputByLabel('Name').click().blur();
@@ -77,7 +67,7 @@ describe('Compliance Dashboard', () => {
         getHelperElementByLabel('Time').contains('Time is required');
 
         getInputByLabel('Frequency').click();
-        cy.get('.pf-c-select.pf-m-expanded button:contains("Weekly")').click();
+        cy.get('.pf-v5-c-select.pf-m-expanded button:contains("Weekly")').click();
         getInputByLabel('On day(s)').click().click(); // blur with no selection
         getInputByLabel('Name').click();
 
@@ -86,10 +76,10 @@ describe('Compliance Dashboard', () => {
         // Step 2, check valid form and save
         getInputByLabel('Name').clear().type('scooby-doo');
         getInputByLabel('On day(s)').click();
-        cy.get('.pf-c-select.pf-m-expanded .pf-c-check__label:contains("Tuesday")').click();
+        cy.get('.pf-v5-c-select.pf-m-expanded .pf-v5-c-check__label:contains("Tuesday")').click();
         cy.get('input[aria-label="Time picker"]').click(); // PF Datepicker doesn't follow pattern used by helper function
-        cy.get('.pf-c-menu.pf-m-scrollable button:contains("12:30 AM")').click();
+        cy.get('.pf-v5-c-menu.pf-m-scrollable button:contains("12:30 AM")').click();
 
-        cy.get('.pf-c-wizard__footer button:contains("Next")').click();
+        cy.get('.pf-v5-c-wizard__footer button:contains("Next")').click();
     });
 });

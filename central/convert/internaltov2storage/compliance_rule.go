@@ -9,8 +9,7 @@ import (
 )
 
 const (
-	standardsKey = "policies.open-cluster-management.io/standards"
-
+	standardsKey          = "policies.open-cluster-management.io/standards"
 	controlAnnotationBase = "control.compliance.openshift.io/"
 )
 
@@ -46,27 +45,36 @@ func ComplianceOperatorRule(sensorData *central.ComplianceOperatorRuleV2, cluste
 	standards := strings.Split(sensorData.GetAnnotations()[standardsKey], ",")
 	controls := make([]*storage.RuleControls, 0, len(standards))
 	for _, standard := range standards {
-		controls = append(controls, &storage.RuleControls{
-			Standard: standard,
-			Controls: strings.Split(sensorData.GetAnnotations()[controlAnnotationBase+standard], ";"),
-		})
+		controlAnnotationValues := strings.Split(sensorData.GetAnnotations()[controlAnnotationBase+standard], ";")
+
+		// Add a control entry for each Control + Standard. This data is intentionally denormalized for easier querying.
+		for _, controlValue := range controlAnnotationValues {
+			controls = append(controls, &storage.RuleControls{
+				Standard: standard,
+				Control:  controlValue,
+			})
+		}
 	}
 
+	parentRule := sensorData.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]
+
 	return &storage.ComplianceOperatorRuleV2{
-		Id:          sensorData.GetId(),
-		RuleId:      sensorData.GetRuleId(),
-		Name:        sensorData.GetName(),
-		RuleType:    sensorData.GetRuleType(),
-		Severity:    severityToV2[sensorData.GetSeverity()],
-		Labels:      sensorData.GetLabels(),
-		Annotations: sensorData.GetAnnotations(),
-		Title:       sensorData.GetTitle(),
-		Description: sensorData.GetDescription(),
-		Rationale:   sensorData.GetRationale(),
-		Fixes:       fixes,
-		Warning:     sensorData.GetWarning(),
-		Controls:    controls,
-		ClusterId:   clusterID,
-		RuleRefId:   BuildNameRefID(clusterID, sensorData.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]),
+		Id:           sensorData.GetId(),
+		RuleId:       sensorData.GetRuleId(),
+		Name:         sensorData.GetName(),
+		RuleType:     sensorData.GetRuleType(),
+		Severity:     severityToV2[sensorData.GetSeverity()],
+		Labels:       sensorData.GetLabels(),
+		Annotations:  sensorData.GetAnnotations(),
+		Title:        sensorData.GetTitle(),
+		Description:  sensorData.GetDescription(),
+		Rationale:    sensorData.GetRationale(),
+		Fixes:        fixes,
+		Warning:      sensorData.GetWarning(),
+		Controls:     controls,
+		ClusterId:    clusterID,
+		RuleRefId:    BuildNameRefID(clusterID, parentRule),
+		Instructions: sensorData.GetInstructions(),
+		ParentRule:   parentRule,
 	}
 }

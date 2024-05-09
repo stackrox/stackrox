@@ -26,7 +26,7 @@ function ViewLinks({ id, resultCategory, searchResultCategoryMap }: ViewLinksPro
                             isInline
                             component={LinkShim}
                             href={id ? `${basePath}/${id}` : basePath}
-                            className="pf-u-text-nowrap"
+                            className="pf-v5-u-text-nowrap"
                         >
                             {linkText}
                         </Button>

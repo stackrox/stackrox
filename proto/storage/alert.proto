@@ -8,7 +8,7 @@ import "storage/network_flow.proto";
 import "storage/policy.proto";
 import "storage/process_indicator.proto";
 
-option go_package = "storage";
+option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
 message Alert {
@@ -127,7 +127,7 @@ message Alert {
   }
 
   // For run-time phase alert, a maximum of 40 violations are retained.
-  repeated Violation violations = 5; // @gotags: sensorhash:"ignore" search:"-"
+  repeated Violation violations = 5; // @gotags: search:"-"
   ProcessViolation process_violation = 13; // @gotags: search:"-"
 
   Enforcement enforcement = 6;

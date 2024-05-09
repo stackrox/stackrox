@@ -283,7 +283,7 @@ deploy_scaled_workload() {
         --set system.enablePodSecurityPolicies=false \
         --set clusterName=scale-remote \
         --set image.main.tag="${EARLIER_TAG}" \
-        --set image.collector.tag="$(make collector-tag)" \
+        --set image.collector.tag="${EARLIER_TAG}" \
         --set centralEndpoint="$API_ENDPOINT"
 
     sensor_wait

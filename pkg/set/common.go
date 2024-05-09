@@ -1,6 +1,6 @@
 package set
 
-// TODO: remove these shortcuts to comonly used types, made to avoid huge diff.
+// TODO: remove these shortcuts to commonly used types, made to avoid huge diff.
 
 // StringSet is a set of strings.
 type StringSet = Set[string]

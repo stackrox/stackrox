@@ -23,14 +23,14 @@ function SeverityTile({ severity, violationCount, link }: SeverityTileProps) {
             style={
                 { '--pf-severity-tile-color': policySeverityColorMap[severity] } as CSSProperties
             }
-            className="pf-severity-tile pf-u-w-100 pf-u-px-md pf-u-py-sm pf-u-align-items-center"
+            className="pf-severity-tile pf-v5-u-w-100 pf-v5-u-px-md pf-v5-u-py-sm pf-v5-u-align-items-center"
             key={severity}
             variant={ButtonVariant.link}
             component={LinkShim}
             href={link}
         >
             <Stack>
-                <StackItem className="pf-u-font-weight-bold pf-u-font-size-xl">
+                <StackItem className="pf-v5-u-font-weight-bold pf-v5-u-font-size-xl">
                     {violationCount}
                 </StackItem>
                 <StackItem>{severityLabels[severity]}</StackItem>

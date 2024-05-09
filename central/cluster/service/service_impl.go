@@ -19,10 +19,10 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"google.golang.org/grpc"
 )
@@ -137,7 +137,7 @@ func (s *serviceImpl) getClusterRetentionInfo(ctx context.Context, cluster *stor
 		return nil, nil
 	}
 
-	if sliceutils.MapsIntersect(clusterRetentionConfig.GetIgnoreClusterLabels(), cluster.GetLabels()) {
+	if maputil.MapsIntersect(clusterRetentionConfig.GetIgnoreClusterLabels(), cluster.GetLabels()) {
 		return &v1.DecommissionedClusterRetentionInfo{
 			RetentionInfo: &v1.DecommissionedClusterRetentionInfo_IsExcluded{
 				IsExcluded: true,

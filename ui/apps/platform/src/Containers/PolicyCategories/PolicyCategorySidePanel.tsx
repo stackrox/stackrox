@@ -9,6 +9,9 @@ import {
     Form,
     FormGroup,
     ActionGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
 } from '@patternfly/react-core';
 
 import { PolicyCategory } from 'types/policy.proto';
@@ -51,7 +54,7 @@ function PolicyCategorySidePanel({
 
     const { values, handleChange, dirty, handleSubmit } = formik;
 
-    function onChange(_value, event) {
+    function onChange(event: React.FormEvent) {
         handleChange(event);
     }
 
@@ -63,8 +66,8 @@ function PolicyCategorySidePanel({
 
     return (
         <>
-            <PageSection isFilled variant="light" className="pf-u-h-100">
-                <Flex direction={{ default: 'column' }} className="pf-u-h-100">
+            <PageSection isFilled variant="light" className="pf-v5-u-h-100">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-h-100">
                     <Flex
                         justifyContent={{ default: 'justifyContentSpaceBetween' }}
                         fullWidth={{ default: 'fullWidth' }}
@@ -81,7 +84,6 @@ function PolicyCategorySidePanel({
                                 fieldId="policy-category-name"
                                 label="Category name"
                                 isRequired
-                                helperText="Provide a descriptive and unique category name."
                             >
                                 <TextInput
                                     id="name"
@@ -89,6 +91,13 @@ function PolicyCategorySidePanel({
                                     value={values.name}
                                     onChange={onChange}
                                 />
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem>
+                                            Provide a descriptive and unique category name.
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
                             </FormGroup>
                             <ActionGroup>
                                 {dirty && (

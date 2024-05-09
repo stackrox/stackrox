@@ -6,11 +6,14 @@ var (
 	// Phone-Home telemetry variables:
 
 	// TelemetryEndpoint is the URL to send telemetry to.
-	TelemetryEndpoint = RegisterSetting("ROX_TELEMETRY_ENDPOINT", AllowEmpty())
+	TelemetryEndpoint = RegisterSetting("ROX_TELEMETRY_ENDPOINT",
+		WithDefault("https://console.redhat.com/connections/api"), AllowEmpty())
 
 	// TelemetryConfigURL to retrieve the telemetry configuration from.
 	// TODO(ROX-17726): Set default URL for self-managed installations use.
-	TelemetryConfigURL = RegisterSetting("ROX_TELEMETRY_CONFIG_URL", WithDefault("hardcoded"))
+	// AllowEmpty() allows for disabling the downloading, and for providing a
+	// custom key to release binary versions.
+	TelemetryConfigURL = RegisterSetting("ROX_TELEMETRY_CONFIG_URL", AllowEmpty(), WithDefault("hardcoded"))
 
 	// TelemetryFrequency is the frequency at which we will report telemetry.
 	TelemetryFrequency = registerDurationSetting("ROX_TELEMETRY_FREQUENCY", 10*time.Minute)

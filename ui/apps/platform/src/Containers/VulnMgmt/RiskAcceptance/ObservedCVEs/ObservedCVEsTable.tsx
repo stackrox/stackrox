@@ -1,13 +1,12 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td, IActions } from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th, Td, IActions } from '@patternfly/react-table';
 import {
     Bullseye,
     Button,
     ButtonVariant,
     Divider,
-    DropdownItem,
     Flex,
     FlexItem,
     PageSection,
@@ -18,6 +17,7 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
 
 import useTableSelection from 'hooks/useTableSelection';
 
@@ -27,7 +27,7 @@ import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/Vulner
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
 import usePermissions from 'hooks/usePermissions';
 import { SearchFilter } from 'types/search';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { GetSortParams } from 'hooks/patternfly/useTableSort';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
@@ -162,7 +162,7 @@ function ObservedCVEsTable({
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             itemCount={itemCount}
                             page={page}
@@ -186,7 +186,7 @@ function ObservedCVEsTable({
                 </Toolbar>
             )}
             <Divider component="div" />
-            <TableComposable aria-label="Observed CVEs Table" variant="compact" borders>
+            <Table aria-label="Observed CVEs Table" variant="compact" borders>
                 <Thead>
                     <Tr>
                         <Th
@@ -208,7 +208,7 @@ function ObservedCVEsTable({
                         <Tr>
                             <Td colSpan={7}>
                                 <Bullseye>
-                                    <Spinner isSVG size="sm" />
+                                    <Spinner size="sm" />
                                 </Bullseye>
                             </Td>
                         </Tr>
@@ -293,7 +293,7 @@ function ObservedCVEsTable({
                                         <DateTimeFormat time={row.discoveredAtImage} />
                                     </Td>
                                     <Td
-                                        className="pf-u-text-align-right"
+                                        className="pf-v5-u-text-align-right"
                                         actions={{
                                             items: actions,
                                         }}
@@ -303,7 +303,7 @@ function ObservedCVEsTable({
                         })
                     )}
                 </Tbody>
-            </TableComposable>
+            </Table>
             <DeferralFormModal
                 isOpen={cvesToBeAssessed?.type === 'DEFERRAL'}
                 numCVEsToBeAssessed={cvesToBeAssessed?.cves.length || 0}

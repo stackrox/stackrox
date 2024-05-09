@@ -268,7 +268,7 @@ function Roles(): ReactElement {
                 {alertGroups}
                 {counterFetching !== 0 ? (
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner />
                     </Bullseye>
                 ) : isList ? (
                     <RolesList

@@ -1,7 +1,7 @@
 import withAuth from '../../helpers/basicAuth';
 import { tryDeleteCollection, visitCollections } from './Collections.helpers';
 
-/* 
+/*
     Each test in this spec builds upon the previous by executing another piece
     of the collection CRUD workflow.
 */
@@ -18,7 +18,7 @@ describe('Create collection', () => {
 
         visitCollections();
 
-        cy.get('a:contains("Create collection")').click();
+        cy.get('a:contains("Create collection")').first().click();
         cy.get('input[name="name"]').type(collectionName);
         cy.get('input[name="description"]').type('A collection for financial data');
 
@@ -119,7 +119,7 @@ describe('Create collection', () => {
 
         // Delete the clone first, since the `:contains()` selector cannot do an exact match
         // Delete one from the main collection table
-        cy.get(`tr:has(a:contains("${clonedName}")) button[aria-label="Actions"]`).click();
+        cy.get(`tr:has(a:contains("${clonedName}")) button[aria-label="Kebab toggle"]`).click();
         cy.get('button:contains("Delete collection")').click();
         cy.get('*[role="dialog"] button:contains("Delete")').click();
         cy.get('*:contains("Successfully deleted")');

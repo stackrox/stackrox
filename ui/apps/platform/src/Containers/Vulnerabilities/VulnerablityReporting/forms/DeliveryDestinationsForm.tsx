@@ -19,23 +19,23 @@ import { FormikProps } from 'formik';
 import isEqual from 'lodash/isEqual';
 
 import {
-    DeliveryDestination,
-    ReportFormValues,
-} from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
-import usePermissions from 'hooks/usePermissions';
-import {
     EmailTemplateFormData,
-    defaultEmailBody,
-    getDefaultEmailSubject,
     isDefaultEmailTemplate,
-} from 'Containers/Vulnerabilities/VulnerablityReporting/forms/emailTemplateFormUtils';
-
+} from 'Components/EmailTemplate/EmailTemplate.utils';
+import EmailTemplateModal, {
+    TemplatePreviewArgs,
+} from 'Components/EmailTemplate/EmailTemplateModal';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useIndexKey from 'hooks/useIndexKey';
+import usePermissions from 'hooks/usePermissions';
+import { NotifierConfiguration } from 'services/ReportsService.types';
+
 import NotifierSelection from './NotifierSelection';
-import EmailTemplateFormModal from './EmailTemplateFormModal';
+import { defaultEmailBody, getDefaultEmailSubject } from './emailTemplateFormUtils';
+import { ReportFormValues } from './useReportFormValues';
+import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import useEmailTemplateModal from '../hooks/useEmailTemplateModal';
 
 export type DeliveryDestinationsFormParams = {
@@ -68,20 +68,42 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
         );
         if (index >= 0) {
             const prevDeliveryDestination = formik.values.deliveryDestinations[index];
+            const { emailConfig } = prevDeliveryDestination;
             formik.setFieldValue(`deliveryDestinations[${index}]`, {
                 ...prevDeliveryDestination,
-                customSubject: formData.emailSubject,
-                customBody: formData.emailBody,
+                emailConfig: {
+                    ...emailConfig,
+                    customSubject: formData.customSubject,
+                    customBody: formData.customBody,
+                },
             });
         }
     }
 
+    function renderTemplatePreview({
+        customBody,
+        customSubject,
+        customSubjectDefault,
+    }: TemplatePreviewArgs) {
+        return (
+            <EmailTemplatePreview
+                emailSubject={customSubject}
+                emailBody={customBody}
+                defaultEmailSubject={customSubjectDefault}
+                reportParameters={formik.values.reportParameters}
+            />
+        );
+    }
+
     function addDeliveryDestination() {
-        const newDeliveryDestination: DeliveryDestination = {
-            notifier: null,
-            mailingLists: [],
-            customSubject: '',
-            customBody: '',
+        const newDeliveryDestination: NotifierConfiguration = {
+            emailConfig: {
+                notifierId: '',
+                mailingLists: [],
+                customSubject: '',
+                customBody: '',
+            },
+            notifierName: '',
         };
         const newDeliveryDestinations = [
             ...formik.values.deliveryDestinations,
@@ -129,7 +151,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
     return (
         <>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">{title}</Title>
                     </FlexItem>
@@ -144,20 +166,28 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                 />
             )}
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Form className="pf-u-py-lg pf-u-px-lg">
+                <Form className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <Flex direction={{ default: 'column' }}>
                         <FlexItem flex={{ default: 'flexNone' }}>
                             <ul>
                                 {formik.values.deliveryDestinations.map(
                                     (deliveryDestination, index) => {
+                                        const { emailConfig, notifierName } = deliveryDestination;
+                                        const {
+                                            customBody,
+                                            customSubject,
+                                            mailingLists,
+                                            notifierId,
+                                        } = emailConfig;
+                                        const selectedNotifier =
+                                            notifierId.length === 0
+                                                ? null
+                                                : { id: notifierId, name: notifierName };
                                         const fieldId = `deliveryDestinations[${index}]`;
                                         const isDefaultEmailTemplateApplied =
-                                            isDefaultEmailTemplate(
-                                                deliveryDestination.customSubject,
-                                                deliveryDestination.customBody
-                                            );
+                                            isDefaultEmailTemplate({ customBody, customSubject });
                                         return (
-                                            <li key={keyFor(index)} className="pf-u-mb-md">
+                                            <li key={keyFor(index)} className="pf-v5-u-mb-md">
                                                 <Card>
                                                     <CardTitle>
                                                         <Flex
@@ -186,16 +216,12 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                                                     <CardBody>
                                                         <NotifierSelection
                                                             prefixId={fieldId}
-                                                            selectedNotifier={
-                                                                deliveryDestination.notifier
-                                                            }
-                                                            mailingLists={
-                                                                deliveryDestination.mailingLists
-                                                            }
+                                                            selectedNotifier={selectedNotifier}
+                                                            mailingLists={mailingLists}
                                                             allowCreate={hasNotifierWriteAccess}
                                                             formik={formik}
                                                         />
-                                                        <div className="pf-u-mt-md">
+                                                        <div className="pf-v5-u-mt-md">
                                                             <FormLabelGroup
                                                                 label="Email template"
                                                                 labelIcon={
@@ -341,15 +367,15 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                     </Flex>
                 </Form>
             </PageSection>
-            <EmailTemplateFormModal
+            <EmailTemplateModal
                 isOpen={isEmailTemplateModalOpen}
                 onClose={closeEmailTemplateModal}
                 onChange={onEmailTemplateChange}
-                initialEmailSubject={selectedEmailSubject}
-                initialEmailBody={selectedEmailBody}
-                defaultEmailSubject={defaultEmailSubject}
-                defaultEmailBody={defaultEmailBody}
-                reportParameters={formik.values.reportParameters}
+                customBodyDefault={defaultEmailBody}
+                customBodyInitial={selectedEmailBody}
+                customSubjectDefault={defaultEmailSubject}
+                customSubjectInitial={selectedEmailSubject}
+                renderTemplatePreview={renderTemplatePreview}
             />
         </>
     );

@@ -9,12 +9,8 @@ import spock.lang.Unroll
 
 @Tag("PZ")
 class AutocompleteTest extends BaseSpecification {
-    private static final SearchCategory VULNERABILITY_SEARCH_CATEGORY =
-        isPostgresRun() ?
-            SearchCategory.IMAGE_VULNERABILITIES :
-            SearchCategory.VULNERABILITIES
-
-    private static final String GROUP_AUTOCOMPLETE = isPostgresRun() ? "GROUP" : "group"
+    private static final SearchCategory VULNERABILITY_SEARCH_CATEGORY = SearchCategory.IMAGE_VULNERABILITIES
+    private static final String GROUP_AUTOCOMPLETE = "GROUP"
 
     @Tag("BAT")
     @Tag("COMPATIBILITY")

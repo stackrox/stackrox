@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { PageHeader } from '@patternfly/react-core';
+import { PageHeader } from '@patternfly/react-core/deprecated';
 
 import BrandLogo from 'Components/PatternFly/BrandLogo';
 import MastheadToolbar from './MastheadToolbar';

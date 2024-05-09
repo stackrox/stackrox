@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
+import { Icon } from '@patternfly/react-core';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
 
@@ -13,7 +14,11 @@ export type NoEntitiesIconTextProps = {
  * Otherwise, render as plain text.
  */
 function NoEntitiesIconText({ text, isTextOnly }: NoEntitiesIconTextProps): ReactElement {
-    const icon = <ExclamationTriangleIcon color="var(--pf-global--warning-color--100)" />;
+    const icon = (
+        <Icon>
+            <ExclamationTriangleIcon color="var(--pf-v5-global--warning-color--100)" />
+        </Icon>
+    );
 
     return <IconText icon={icon} text={text} isTextOnly={isTextOnly} />;
 }

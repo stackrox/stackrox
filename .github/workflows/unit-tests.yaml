@@ -18,7 +18,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -26,6 +26,8 @@ jobs:
         fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -79,7 +81,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -87,6 +89,8 @@ jobs:
         fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Run Postgres
       run: |
@@ -129,7 +133,7 @@ jobs:
   go-bench:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -137,6 +141,8 @@ jobs:
         fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Run Postgres
       run: |
@@ -168,12 +174,14 @@ jobs:
   ui:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
     - name: Checkout
       uses: actions/checkout@v4
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Create combined mono repo lock file
       uses: ./.github/actions/create-concatenated-ui-monorepo-lock
@@ -207,7 +215,7 @@ jobs:
   local-roxctl-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -216,6 +224,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -243,7 +253,7 @@ jobs:
   shell-unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -252,6 +262,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Shell Unit Tests
       run: make shell-unit-tests
@@ -274,7 +286,7 @@ jobs:
   openshift-ci-unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.62
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -283,6 +295,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: OpenShift CI Wrapper Unit Tests
         run: make -C .openshift-ci test

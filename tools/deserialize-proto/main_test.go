@@ -84,7 +84,7 @@ func TestPrintProtoMessages(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			tmpOut := &bytes.Buffer{}
-			err := printProtoMessages(tc.in, tmpOut, tc.msg)
+			err := printProtoMessagesFromStdin(tc.in, tmpOut, tc.msg)
 			if tc.err != nil {
 				assert.ErrorIs(t, err, tc.err)
 			} else {

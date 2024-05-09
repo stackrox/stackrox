@@ -7,18 +7,18 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"sort"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
+	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
@@ -179,13 +179,13 @@ func (n *notifierCmd) construct(cmd *cobra.Command) error {
 	n.namespace = namespace
 
 	if anyFlagChanged(n.genericFlagSet) {
-		keys := maputil.Keys(n.gcHeaders)
-		sort.Strings(keys)
+		keys := maps.Keys(n.gcHeaders)
+		slices.Sort(keys)
 		for _, k := range keys {
 			n.gc.Headers = append(n.gc.Headers, declarativeconfig.KeyValuePair{Key: k, Value: n.gcHeaders[k]})
 		}
-		keys = maputil.Keys(n.gcExtraFields)
-		sort.Strings(keys)
+		keys = maps.Keys(n.gcExtraFields)
+		slices.Sort(keys)
 		for _, k := range keys {
 			n.gc.ExtraFields = append(n.gc.ExtraFields, declarativeconfig.KeyValuePair{Key: k, Value: n.gcExtraFields[k]})
 		}
@@ -199,8 +199,8 @@ func (n *notifierCmd) construct(cmd *cobra.Command) error {
 	}
 
 	if anyFlagChanged(n.splunkFlagSet) {
-		keys := maputil.Keys(n.scSourceTypes)
-		sort.Strings(keys)
+		keys := maps.Keys(n.scSourceTypes)
+		slices.Sort(keys)
 		for _, k := range keys {
 			n.sc.SourceTypes = append(n.sc.SourceTypes, declarativeconfig.SourceTypePair{Key: k, Value: n.scSourceTypes[k]})
 		}

@@ -158,7 +158,7 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 	return b.store.Upsert(ctx, namespace)
 }
 
-// UpdateNamespace updates a namespace to bolt
+// UpdateNamespace updates a namespace to the database
 func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.NamespaceMetadata) error {
 	if ok, err := namespaceSAC.WriteAllowed(ctx); err != nil {
 		return err

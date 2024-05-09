@@ -3,10 +3,8 @@ import React, { ReactElement } from 'react';
 import { PublicConfig } from 'types/config.proto';
 import {
     Card,
-    CardActions,
     CardBody,
     CardHeader,
-    CardHeaderMain,
     CardTitle,
     DescriptionList,
     DescriptionListDescription,
@@ -28,13 +26,27 @@ const PublicConfigLoginDetails = ({
 
     return (
         <Card isFlat data-testid="login-notice-config">
-            <CardHeader>
-                <CardHeaderMain>
-                    <CardTitle component="h3">Login configuration</CardTitle>
-                </CardHeaderMain>
-                <CardActions data-testid="login-notice-state">
-                    {isEnabled ? <Label color="green">Enabled</Label> : <Label>Disabled</Label>}
-                </CardActions>
+            <CardHeader
+                actions={{
+                    actions: (
+                        <>
+                            {isEnabled ? (
+                                <Label color="green">Enabled</Label>
+                            ) : (
+                                <Label>Disabled</Label>
+                            )}
+                        </>
+                    ),
+                    hasNoOffset: false,
+                    className: undefined,
+                }}
+                data-testid="login-notice-state"
+            >
+                {
+                    <>
+                        <CardTitle component="h3">Login configuration</CardTitle>
+                    </>
+                }
             </CardHeader>
             <Divider component="div" />
             <CardBody>

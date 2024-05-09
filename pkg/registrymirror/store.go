@@ -9,16 +9,16 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/containers/image/v5/pkg/sysregistriesv2"
 	ciTypes "github.com/containers/image/v5/types"
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/reference"
 	configV1 "github.com/openshift/api/config/v1"
 	operatorV1Alpha1 "github.com/openshift/api/operator/v1alpha1"
 	"github.com/openshift/runtime-utils/pkg/registries"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"golang.org/x/exp/maps"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -345,5 +345,5 @@ func (s *FileStore) getAllMirrorSets() ([]*operatorV1Alpha1.ImageContentSourcePo
 	s.ruleRWMutex.RLock()
 	defer s.ruleRWMutex.RUnlock()
 
-	return maputil.Values(s.icspRules), maputil.Values(s.idmsRules), maputil.Values(s.itmsRules)
+	return maps.Values(s.icspRules), maps.Values(s.idmsRules), maps.Values(s.itmsRules)
 }

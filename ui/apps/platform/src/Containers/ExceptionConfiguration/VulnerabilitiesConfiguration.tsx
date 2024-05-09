@@ -9,15 +9,19 @@ import {
     Flex,
     Form,
     FormGroup,
-    FormGroupProps,
+    FormHelperText,
     Grid,
     GridItem,
+    HelperText,
+    HelperTextItem,
+    HelperTextItemProps,
     PageSection,
     Split,
     SplitItem,
     Switch,
     Text,
     TextInput,
+    TextInputProps,
     Title,
 } from '@patternfly/react-core';
 import get from 'lodash/get';
@@ -50,25 +54,33 @@ function NumericSetting({
     helperTextInvalid,
 }: BaseSettingProps & {
     value: number;
-    validated: FormGroupProps['validated'];
-    helperTextInvalid: FormGroupProps['helperTextInvalid'];
+    validated: HelperTextItemProps['variant'];
+    helperTextInvalid: string;
 }) {
     return (
         <>
             <GridItem span={8} md={4} xl={3}>
-                <FormGroup validated={validated} helperTextInvalid={helperTextInvalid}>
+                <FormGroup>
                     <Flex direction={{ default: 'row' }} flexWrap={{ default: 'nowrap' }}>
                         <TextInput
                             id={`${fieldId}.numDays`}
                             type="number"
-                            style={{ width: '100px' }}
                             value={value}
-                            onChange={(_, e) => handleChange(e)}
+                            onChange={(e) => handleChange(e)}
                             isDisabled={!isSettingEnabled || isDisabled}
-                            validated={validated}
+                            validated={validated as TextInputProps['validated']}
                         />
                         <span>days</span>
                     </Flex>
+                    {helperTextInvalid && (
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem variant={validated}>
+                                    {helperTextInvalid}
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
+                    )}
                 </FormGroup>
             </GridItem>
             <GridItem span={4} md={8} xl={9}>
@@ -79,7 +91,7 @@ function NumericSetting({
                         labelOff="Disabled"
                         isChecked={isSettingEnabled}
                         isDisabled={isDisabled}
-                        onChange={(_, e) => handleChange(e)}
+                        onChange={(e) => handleChange(e)}
                     />
                 </FormGroup>
             </GridItem>
@@ -98,10 +110,10 @@ function BooleanSetting({
 }) {
     return (
         <>
-            <GridItem className="pf-u-py-xs" span={8} md={4} xl={3}>
+            <GridItem className="pf-v5-u-py-xs" span={8} md={4} xl={3}>
                 <p>{label}</p>
             </GridItem>
-            <GridItem className="pf-u-py-xs" span={4} md={8} xl={9}>
+            <GridItem className="pf-v5-u-py-xs" span={4} md={8} xl={9}>
                 <FormGroup>
                     <Switch
                         id={fieldId}
@@ -109,7 +121,7 @@ function BooleanSetting({
                         labelOff="Disabled"
                         isChecked={isSettingEnabled}
                         isDisabled={isDisabled}
-                        onChange={(_, e) => handleChange(e)}
+                        onChange={(e) => handleChange(e)}
                     />
                 </FormGroup>
             </GridItem>
@@ -234,8 +246,8 @@ function VulnerabilitiesConfiguration({
 
     return (
         <>
-            <div className="pf-u-py-md pf-u-px-md pf-u-px-lg-on-xl">
-                <Split className="pf-u-align-items-center">
+            <div className="pf-v5-u-py-md pf-v5-u-px-md pf-v5-u-px-lg-on-xl">
+                <Split className="pf-v5-u-align-items-center">
                     <SplitItem isFilled>
                         <Text>Configure exception behavior for vulnerabilities</Text>
                     </SplitItem>
@@ -256,7 +268,7 @@ function VulnerabilitiesConfiguration({
             <Divider component="div" />
             <PageSection variant="light" component="div">
                 <Title headingLevel="h2">Configure exception times</Title>
-                <Form className="pf-u-py-lg">
+                <Form className="pf-v5-u-py-lg">
                     <Grid hasGutter>
                         {dayOptions.map(({ numDays, enabled }, index) => {
                             const fieldIdPrefix = `expiryOptions.dayOptions[${index}]`;

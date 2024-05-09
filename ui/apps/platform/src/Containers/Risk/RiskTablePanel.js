@@ -6,7 +6,7 @@ import useDeepCompareEffect from 'use-deep-compare-effect';
 import { Bullseye } from '@patternfly/react-core';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import TableHeader from 'Components/TableHeader';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
@@ -115,7 +115,7 @@ function RiskTablePanel({
                             title="Unable to load deployments"
                             headingLevel="h2"
                             icon={ExclamationTriangleIcon}
-                            iconClassName="pf-u-warning-color-100"
+                            iconClassName="pf-v5-u-warning-color-100"
                         >
                             {errorMessageDeployments}
                         </EmptyStateTemplate>

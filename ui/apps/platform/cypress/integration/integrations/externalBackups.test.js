@@ -166,8 +166,8 @@ describe('Backup Integrations', () => {
                 body: { centralCanUseCloudBackupIntegrations: 'CapabilityDisabled' },
             });
             cy.get('h2:contains("Backup Integrations")').should('not.exist');
-            cy.get('a .pf-c-card__title:contains("Amazon S3")').should('not.exist');
-            cy.get('a .pf-c-card__title:contains("Google Cloud Storage")').should('not.exist');
+            cy.get('a .pf-v5-c-card__title:contains("Amazon S3")').should('not.exist');
+            cy.get('a .pf-v5-c-card__title:contains("Google Cloud Storage")').should('not.exist');
 
             visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities(
                 {

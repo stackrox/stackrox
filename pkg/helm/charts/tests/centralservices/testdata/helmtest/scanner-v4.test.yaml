@@ -118,7 +118,7 @@ tests:
     .services["scanner-v4-matcher"] | assertThat(. != null)
     .services["scanner-v4-db"] | assertThat(. != null)
   tests:
-  - name: "receives newly generated TLS certificats with keys"
+  - name: "receives newly generated TLS certificates with keys"
     expect: |
       .secrets["scanner-v4-indexer-tls"].stringData | assertThat(.["cert.pem"] | contains("BEGIN CERTIFICATE"))
       .secrets["scanner-v4-matcher-tls"].stringData | assertThat(.["cert.pem"] | contains("BEGIN CERTIFICATE"))

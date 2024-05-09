@@ -11,7 +11,7 @@ import {
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { FileAltIcon, SearchIcon } from '@patternfly/react-icons';
 
 import useURLPagination from 'hooks/useURLPagination';
@@ -23,7 +23,7 @@ import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import useURLSort from 'hooks/useURLSort';
 import PageTitle from 'Components/PageTitle';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import {
     RequestExpires,
     RequestIDLink,
@@ -41,6 +41,7 @@ import {
     REQUESTER_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
 } from '../searchOptions';
+import { DEFAULT_VM_PAGE_SIZE } from '../constants';
 import { getTableUIState } from '../../../utils/getTableUIState';
 
 const searchOptions: SearchOption[] = [
@@ -64,7 +65,7 @@ const defaultSortOption = {
 
 function PendingApprovals() {
     const { searchFilter, setSearchFilter } = useURLSearch();
-    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
@@ -120,7 +121,7 @@ function PendingApprovals() {
                         onFilterChange={(newFilter) => setSearchFilter(newFilter)}
                         searchOptions={searchOptions}
                     />
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             toggleTemplate={({ firstIndex, lastIndex }) => (
                                 <span>
@@ -137,7 +138,7 @@ function PendingApprovals() {
                             isCompact
                         />
                     </ToolbarItem>
-                    <ToolbarGroup aria-label="applied search filters" className="pf-u-w-100">
+                    <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                         <SearchFilterChips
                             onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={searchOptions.map(({ label, value }) => {
@@ -150,7 +151,7 @@ function PendingApprovals() {
                     </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>
-            <TableComposable borders={false}>
+            <Table borders={false}>
                 <Thead noWrap>
                     <Tr>
                         <Th sort={getSortParams('Request Name')}>Request name</Th>
@@ -167,7 +168,7 @@ function PendingApprovals() {
                         <Tr>
                             <Td colSpan={7}>
                                 <Bullseye>
-                                    <Spinner isSVG aria-label="Loading table data" />
+                                    <Spinner aria-label="Loading table data" />
                                 </Bullseye>
                             </Td>
                         </Tr>
@@ -260,7 +261,7 @@ function PendingApprovals() {
                             );
                         })}
                 </Tbody>
-            </TableComposable>
+            </Table>
         </PageSection>
     );
 }

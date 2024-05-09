@@ -14,7 +14,7 @@ import {
     TextVariants,
     Title,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import exampleReportsCSVData from 'Containers/Vulnerabilities/VulnerablityReporting/exampleReportsCSVData';
 
@@ -32,7 +32,7 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactE
     return (
         <>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">{title}</Title>
                     </FlexItem>
@@ -42,14 +42,14 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactE
             <PageSection
                 variant="light"
                 padding={{ default: 'noPadding' }}
-                className="pf-u-py-lg pf-u-px-lg"
+                className="pf-v5-u-py-lg pf-v5-u-px-lg"
             >
                 <ReportParametersDetails formValues={formValues} />
-                <Divider component="div" className="pf-u-py-md" />
+                <Divider component="div" className="pf-v5-u-py-md" />
                 <DeliveryDestinationsDetails formValues={formValues} />
-                <Divider component="div" className="pf-u-py-md" />
+                <Divider component="div" className="pf-v5-u-py-md" />
                 <ScheduleDetails formValues={formValues} />
-                <Divider component="div" className="pf-u-py-md" />
+                <Divider component="div" className="pf-v5-u-py-md" />
                 <Card>
                     <CardTitle>CVE report format</CardTitle>
                     <CardBody>
@@ -58,7 +58,7 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactE
                                 A sample preview to illustrate the selected parameters in a format
                                 of CSV with nonactual data.
                             </Text>
-                            <Text component={TextVariants.p} className="pf-u-font-weight-bold">
+                            <Text component={TextVariants.p} className="pf-v5-u-font-weight-bold">
                                 Sara-reporting.csv
                             </Text>
                             <Text component={TextVariants.small}>
@@ -67,7 +67,7 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactE
                             </Text>
                         </TextContent>
                         <div className="overflow-x-auto">
-                            <TableComposable>
+                            <Table>
                                 <Thead noWrap>
                                     <Tr>
                                         <Th>Cluster</Th>
@@ -129,7 +129,7 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactE
                                         }
                                     )}
                                 </Tbody>
-                            </TableComposable>
+                            </Table>
                         </div>
                     </CardBody>
                 </Card>

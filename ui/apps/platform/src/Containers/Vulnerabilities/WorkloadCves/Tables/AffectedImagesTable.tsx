@@ -1,27 +1,21 @@
 import React from 'react';
 import { gql } from '@apollo/client';
-import {
-    ExpandableRowContent,
-    TableComposable,
-    Tbody,
-    Td,
-    Thead,
-    Th,
-    Tr,
-} from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { VulnerabilityState } from 'types/cve.proto';
+import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import CvssFormatted from 'Components/CvssFormatted';
+import DateDistance from 'Components/DateDistance';
 import {
-    getAnyVulnerabilityIsFixable,
+    getIsSomeVulnerabilityFixable,
     getHighestCvssScore,
     getHighestVulnerabilitySeverity,
-} from './table.utils';
+} from '../../utils/vulnerabilityUtils';
 import ImageNameLink from '../components/ImageNameLink';
-import { DynamicColumnIcon } from '../../components/DynamicIcon';
 
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
@@ -29,8 +23,6 @@ import ImageComponentVulnerabilitiesTable, {
     imageMetadataContextFragment,
 } from './ImageComponentVulnerabilitiesTable';
 import EmptyTableResults from '../components/EmptyTableResults';
-import DateDistance from '../../components/DateDistance';
-import CvssFormatted from '../../components/CvssFormatted';
 import { WatchStatus } from '../../types';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
@@ -98,7 +90,7 @@ function AffectedImagesTable({
     const expandedRowSet = useSet<string>();
 
     return (
-        <TableComposable variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
@@ -120,9 +112,12 @@ function AffectedImagesTable({
             {images.length === 0 && <EmptyTableResults colSpan={7} />}
             {images.map((image, rowIndex) => {
                 const { id, name, operatingSystem, scanTime, imageComponents } = image;
-                const topSeverity = getHighestVulnerabilitySeverity(imageComponents);
-                const isFixable = getAnyVulnerabilityIsFixable(imageComponents);
-                const { cvss, scoreVersion } = getHighestCvssScore(imageComponents);
+                const vulnerabilities = imageComponents.flatMap(
+                    (imageComponent) => imageComponent.imageVulnerabilities
+                );
+                const topSeverity = getHighestVulnerabilitySeverity(vulnerabilities);
+                const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
+                const { cvss, scoreVersion } = getHighestCvssScore(vulnerabilities);
                 const hasPendingException = imageComponents.some((imageComponent) =>
                     imageComponent.imageVulnerabilities.some(
                         (imageVulnerability) => imageVulnerability.pendingExceptionCount > 0
@@ -161,7 +156,7 @@ function AffectedImagesTable({
                                 <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
                             <Td dataLabel="CVE status" modifier="nowrap">
-                                <VulnerabilityFixableIconText isFixable={isFixable} />
+                                <VulnerabilityFixableIconText isFixable={isFixableInImage} />
                             </Td>
                             <Td dataLabel="Operating system">{operatingSystem}</Td>
                             <Td dataLabel="Affected components">
@@ -187,7 +182,7 @@ function AffectedImagesTable({
                     </Tbody>
                 );
             })}
-        </TableComposable>
+        </Table>
     );
 }
 

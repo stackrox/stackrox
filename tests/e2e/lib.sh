@@ -143,6 +143,7 @@ export_test_environment() {
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
     ci_export ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL "${ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL:-true}"
     ci_export ROX_VULN_MGMT_NODE_PLATFORM_CVES "${ROX_VULN_MGMT_NODE_PLATFORM_CVES:-true}"
+    ci_export ROX_VULN_MGMT_2_MISC_IMPROVEMENTS "${ROX_VULN_MGMT_2_MISC_IMPROVEMENTS:-true}"
     ci_export ROX_WORKLOAD_CVES_FIXABILITY_FILTERS "${ROX_WORKLOAD_CVES_FIXABILITY_FILTERS:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_MOVE_INIT_BUNDLES_UI "${ROX_MOVE_INIT_BUNDLES_UI:-true}"
@@ -155,6 +156,8 @@ export_test_environment() {
     ci_export ROX_AUTH_MACHINE_TO_MACHINE "${ROX_AUTH_MACHINE_TO_MACHINE:-true}"
     ci_export ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA "${ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA:-true}"
     ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
+    ci_export ROX_REGISTRY_RESPONSE_TIMEOUT "${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
+    ci_export ROX_REGISTRY_CLIENT_TIMEOUT "${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -269,6 +272,10 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_REPORTING'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_REGISTRY_RESPONSE_TIMEOUT'
+    customize_envVars+=$'\n        value: '"${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
+    customize_envVars+=$'\n      - name: ROX_REGISTRY_CLIENT_TIMEOUT'
+    customize_envVars+=$'\n        value: '"${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
@@ -1133,27 +1140,34 @@ db_backup_and_restore_test() {
 handle_e2e_progress_failures() {
     info "Checking for progress events"
 
-    local images_available=("Image_Availability" "Are the required images are available?")
-    local stackrox_deployed=("Stackrox_Deployment" "Was Stackrox was deployed to the cluster?")
+    local images_available=("Image_Availability" "Were the required images built successfully by GitHub Actions?")
+    local stackrox_deployed=("Stackrox_Deployment" "Was Stackrox deployed to the cluster?")
 
     local check_deployment=false
 
     if [[ -f "${STATE_IMAGES_AVAILABLE}" ]]; then
-        save_junit_success "${images_available[@]}" || true
+        save_junit_success "${images_available[@]}"
         check_deployment=true
     else
-        save_junit_failure "${images_available[@]}" \
-            "Did the images build OK? If yes then the poll_for_system_test_images() timeout might need to be increased."
+        local build_results="build results are unknown"
+        if [[ -f "${STATE_BUILD_RESULTS}" ]]; then
+            build_results="$(cat "${STATE_BUILD_RESULTS}")"
+        fi
+        read -r -d '' build_details <<- _EO_DETAILS_ || true
+Check the build workflow runs on GitHub:
+${build_results}
+_EO_DETAILS_
+        save_junit_failure "${images_available[@]}" "${build_details}"
     fi
 
     if $check_deployment; then
         if [[ -f "${STATE_DEPLOYED}" ]]; then
-            save_junit_success "${stackrox_deployed[@]}" || true
+            save_junit_success "${stackrox_deployed[@]}"
         else
-            save_junit_failure "${stackrox_deployed[@]}" "Check the build log" || true
+            save_junit_failure "${stackrox_deployed[@]}" "Check the build log"
         fi
     else
-        save_junit_skipped "${stackrox_deployed[@]}" || true
+        save_junit_skipped "${stackrox_deployed[@]}"
     fi
 }
 

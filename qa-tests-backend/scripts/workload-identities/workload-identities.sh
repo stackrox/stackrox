@@ -40,7 +40,8 @@ setup_gcp_workload_identities() {
     setup_gcp_variables
 
     # Connect the stackrox ci service account to the workload identity of Central.
-    gcloud iam service-accounts add-iam-policy-binding "${service_account}" \
+    retry 5 true \
+        gcloud iam service-accounts add-iam-policy-binding "${service_account}" \
         --member="principal://iam.googleapis.com/projects/${project}/locations/global/workloadIdentityPools/${cluster}/subject/${subject_central}" \
         --role=roles/iam.workloadIdentityUser
 
@@ -57,7 +58,8 @@ cleanup_gcp_workload_identities() {
     setup_gcp
     setup_gcp_variables
 
-    gcloud iam service-accounts remove-iam-policy-binding "${service_account}" \
+    retry 5 true \
+        gcloud iam service-accounts remove-iam-policy-binding "${service_account}" \
         --member="principal://iam.googleapis.com/projects/${project}/locations/global/workloadIdentityPools/${cluster}/subject/${subject_central}" \
         --role=roles/iam.workloadIdentityUser
 }

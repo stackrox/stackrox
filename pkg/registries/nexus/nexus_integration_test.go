@@ -12,6 +12,9 @@ import (
 
 // This requires a Nexus Sonatype registry with a proxy to Dockerhub
 func TestNexus(t *testing.T) {
+	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
+	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
+
 	endpoint := os.Getenv("NEXUS_ENDPOINT")
 	if endpoint == "" {
 		t.Skipf("ENDPOINT is required for Nexus integration test")
@@ -28,7 +31,7 @@ func TestNexus(t *testing.T) {
 				Password: "admin123",
 			},
 		},
-	}, nil)
+	})
 	require.NoError(t, err)
 
 	endpoint = urlfmt.TrimHTTPPrefixes(endpoint)

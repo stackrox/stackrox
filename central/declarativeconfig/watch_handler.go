@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
@@ -104,7 +105,7 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 		return
 	}
 	log.Debug("Found changes in declarative configuration files, reconciliation will be triggered")
-	w.updater.UpdateDeclarativeConfigContents(w.id, maputil.Values(fileContents))
+	w.updater.UpdateDeclarativeConfigContents(w.id, maps.Values(fileContents))
 }
 
 func (w *watchHandler) OnWatchError(err error) {
@@ -138,8 +139,8 @@ func (w *watchHandler) compareHashesForChanges(fileContents map[string][]byte) b
 // the list of updated files. Otherwise, returns false.
 // In the end, the cached values will be changed to reflect the passed file contents.
 func (w *watchHandler) checkForDeletedFiles(fileContents map[string][]byte) bool {
-	cachedFileNames := set.NewStringSet(maputil.Keys(w.cachedFileHashes)...)
-	fileNames := set.NewStringSet(maputil.Keys(fileContents)...)
+	cachedFileNames := set.NewStringSet(maps.Keys(w.cachedFileHashes)...)
+	fileNames := set.NewStringSet(maps.Keys(fileContents)...)
 
 	// Retrieve all files that are within the cache, but are not present anymore in the current file contents.
 	removedFiles := cachedFileNames.Difference(fileNames)

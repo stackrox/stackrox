@@ -7,7 +7,7 @@ import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import { useTheme } from 'Containers/ThemeProvider';
 import queryService from 'utils/queryService';
 
@@ -94,7 +94,7 @@ const WorkflowEntityPage = ({
                     title="Unable to load data"
                     headingLevel="h3"
                     icon={ExclamationTriangleIcon}
-                    iconClassName="pf-u-warning-color-100"
+                    iconClassName="pf-v5-u-warning-color-100"
                 >
                     {error.message}
                 </EmptyStateTemplate>

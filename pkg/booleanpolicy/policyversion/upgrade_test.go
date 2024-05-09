@@ -157,7 +157,7 @@ func TestGetUpgradersByVersions(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			actual := getUpgradersByVersions(tc.upgraders, versions[:])
+			actual := getUpgradersByVersions(tc.upgraders, versions)
 			require.Len(t, actual, len(versions))
 
 			// Since func values are deeply equal iff both are nil,

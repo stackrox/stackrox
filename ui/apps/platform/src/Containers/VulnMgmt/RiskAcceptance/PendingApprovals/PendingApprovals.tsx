@@ -6,7 +6,7 @@ import queryService from 'utils/queryService';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
 import { SearchFilter } from 'types/search';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import PendingApprovalsTable from './PendingApprovalsTable';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 

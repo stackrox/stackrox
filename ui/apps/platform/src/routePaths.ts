@@ -35,14 +35,8 @@ export const collectionsPath = `${mainPath}/collections/:collectionId?`;
 export const complianceBasePath = `${mainPath}/compliance`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
 export const complianceEnhancedBasePath = `${mainPath}/compliance-enhanced`;
-export const complianceEnhancedStatusPath = `${complianceEnhancedBasePath}/status`;
-export const complianceEnhancedStatusScansPath = `${complianceEnhancedStatusPath}/scans/:id`;
-export const complianceEnhancedClusterComplianceBasePath = `${complianceEnhancedBasePath}/cluster-compliance`;
-export const complianceEnhancedScanConfigsPath = `${complianceEnhancedClusterComplianceBasePath}/scan-configs`;
-export const complianceEnhancedScanConfigDetailPath = `${complianceEnhancedScanConfigsPath}/:scanConfigId`;
-export const complianceEnhancedCoveragePath = `${complianceEnhancedClusterComplianceBasePath}/coverage`;
-export const complianceEnhancedCoverageClustersPath = `${complianceEnhancedCoveragePath}/clusters/:clusterId`;
-export const complianceEnhancedCoverageProfilesPath = `${complianceEnhancedCoveragePath}/profiles/:profileId`;
+export const complianceEnhancedCoveragePath = `${complianceEnhancedBasePath}/coverage`;
+export const complianceEnhancedSchedulesPath = `${complianceEnhancedBasePath}/schedules`;
 export const configManagementPath = `${mainPath}/configmanagement`;
 export const dashboardPath = `${mainPath}/dashboard`;
 export const dataRetentionPath = `${mainPath}/retention`;
@@ -73,7 +67,6 @@ export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const violationsBasePath = `${mainPath}/violations`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
-export const vulnManagementReportsPath = `${vulnManagementPath}/reports`;
 export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
 export const vulnerabilityNamespaceViewPath = `${vulnerabilitiesWorkloadCvesPath}/namespace-view`;
@@ -182,8 +175,6 @@ export type RouteKey =
     | 'user'
     | 'violations'
     | 'vulnerabilities/reports' // add prefix because reports might become ambiguous in the future
-    // Reports must precede generic Vulnerability Management in Body and so here for consistency.
-    | 'vulnerability-management/reports'
     // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
     | 'vulnerability-management/risk-acceptance'
     | 'vulnerability-management'
@@ -346,11 +337,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
-    // Reports must precede generic Vulnerability Management in Body and so here for consistency.
-    'vulnerability-management/reports': {
-        featureFlagRequirements: allDisabled(['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS']),
-        resourceAccessRequirements: everyResource(['Integration', 'WorkflowAdministration']),
-    },
     // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
     'vulnerability-management/risk-acceptance': {
         resourceAccessRequirements: everyResource([
@@ -444,8 +430,6 @@ export const urlEntityTypes: Record<string, string> = {
 
 const vulnManagementPathToLabelMap: Record<string, string> = {
     [vulnManagementPath]: 'Dashboard',
-    // TODO: add mapping for Deferrals
-    [vulnManagementReportsPath]: 'Reporting',
     [vulnManagementRiskAcceptancePath]: 'Risk Acceptance',
 };
 

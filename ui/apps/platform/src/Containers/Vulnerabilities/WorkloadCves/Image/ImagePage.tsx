@@ -24,10 +24,11 @@ import isEmpty from 'lodash/isEmpty';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLPagination from 'hooks/useURLPagination';
 
+import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
@@ -38,6 +39,7 @@ import ImageDetailBadges, {
     imageDetailsFragment,
 } from '../components/ImageDetailBadges';
 import getImageScanMessage from '../utils/getImageScanMessage';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 const workloadCveOverviewImagePath = getOverviewPagePath('Workload', {
     vulnerabilityState: 'OBSERVED',
@@ -81,7 +83,7 @@ function ImagePage() {
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
     const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
 
-    const pagination = useURLPagination(20);
+    const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const imageData = data && data.image;
     const imageName = imageData?.name
@@ -99,7 +101,7 @@ function ImagePage() {
                         title={getAxiosErrorMessage(error)}
                         headingLevel="h2"
                         icon={ExclamationCircleIcon}
-                        iconClassName="pf-u-danger-color-100"
+                        iconClassName="pf-v5-u-danger-color-100"
                     />
                 </Bullseye>
             </PageSection>
@@ -114,7 +116,7 @@ function ImagePage() {
                             direction={{ default: 'column' }}
                             alignItems={{ default: 'alignItemsFlexStart' }}
                         >
-                            <Title headingLevel="h1" className="pf-u-m-0">
+                            <Title headingLevel="h1" className="pf-v5-u-m-0">
                                 {imageName}
                             </Title>
                             {sha && (
@@ -122,7 +124,7 @@ function ImagePage() {
                                     hoverTip="Copy SHA"
                                     clickTip="Copied!"
                                     variant="inline-compact"
-                                    className="pf-u-display-inline-flex pf-u-align-items-center pf-u-mt-sm pf-u-mb-md pf-u-font-size-sm"
+                                    className="pf-v5-u-display-inline-flex pf-v5-u-align-items-center pf-v5-u-mt-sm pf-v5-u-mb-md pf-v5-u-font-size-sm"
                                 >
                                     {sha}
                                 </ClipboardCopy>
@@ -130,7 +132,7 @@ function ImagePage() {
                             <ImageDetailBadges imageData={imageData} />
                             {!isEmpty(scanMessage) && (
                                 <Alert
-                                    className="pf-u-w-100"
+                                    className="pf-v5-u-w-100"
                                     variant="warning"
                                     isInline
                                     title="CVE data may be inaccurate"
@@ -146,18 +148,14 @@ function ImagePage() {
                             )}
                         </Flex>
                     ) : (
-                        <Flex
-                            direction={{ default: 'column' }}
-                            spaceItems={{ default: 'spaceItemsXs' }}
-                            className="pf-u-w-50"
-                        >
-                            <Skeleton screenreaderText="Loading image name" fontSize="2xl" />
-                            <Skeleton screenreaderText="Loading image metadata" fontSize="sm" />
-                        </Flex>
+                        <HeaderLoadingSkeleton
+                            nameScreenreaderText="Loading image name"
+                            metadataScreenreaderText="Loading image metadata"
+                        />
                     )}
                 </PageSection>
                 <PageSection
-                    className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                    className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                     padding={{ default: 'noPadding' }}
                 >
                     <Tabs
@@ -167,12 +165,12 @@ function ImagePage() {
                             pagination.setPage(1);
                         }}
                         component={TabsComponent.nav}
-                        className="pf-u-pl-md pf-u-background-color-100"
+                        className="pf-v5-u-pl-md pf-v5-u-background-color-100"
                         mountOnEnter
                         unmountOnExit
                     >
                         <Tab
-                            className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                             eventKey="Vulnerabilities"
                             title={<TabTitleText>Vulnerabilities</TabTitleText>}
                         >
@@ -190,7 +188,7 @@ function ImagePage() {
                             />
                         </Tab>
                         <Tab
-                            className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                             eventKey="Resources"
                             title={<TabTitleText>Resources</TabTitleText>}
                         >
@@ -205,7 +203,7 @@ function ImagePage() {
     return (
         <>
             <PageTitle title={`Workload CVEs - Image ${imageData ? imageName : ''}`} />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewImagePath}>
                         Images

@@ -11,6 +11,9 @@ import (
 )
 
 func TestRHEL(t *testing.T) {
+	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
+	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
+
 	_, creator := Creator()
 	reg, err := creator(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Docker{
@@ -18,7 +21,7 @@ func TestRHEL(t *testing.T) {
 				Endpoint: "registry.access.redhat.com",
 			},
 		},
-	}, nil)
+	})
 	require.NoError(t, err)
 
 	m, err := reg.Metadata(&storage.Image{

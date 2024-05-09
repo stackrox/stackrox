@@ -64,6 +64,12 @@ var (
 		Group:   GetGroupVersion().Group,
 		Version: GetGroupVersion().Version,
 	})
+	ComplianceRemediation = registerAPIResource(v1.APIResource{
+		Name:    "complianceremediations",
+		Kind:    "ComplianceRemediation",
+		Group:   GetGroupVersion().Group,
+		Version: GetGroupVersion().Version,
+	})
 )
 
 // GetGroupVersion return the group version that uniquely represents the API set of compliance operator CRs.

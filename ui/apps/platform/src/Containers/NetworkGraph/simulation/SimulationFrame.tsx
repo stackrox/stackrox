@@ -20,7 +20,7 @@ function SimulationFrame({ isSimulating, children }: SimulationFrameProps) {
             {children}
             {isSimulating && (
                 <Flex
-                    className="pf-u-p-sm"
+                    className="pf-v5-u-p-sm"
                     style={{
                         backgroundColor: 'rgb(224,233,242)',
                         position: 'absolute',
@@ -31,10 +31,10 @@ function SimulationFrame({ isSimulating, children }: SimulationFrameProps) {
                     alignItems={{ default: 'alignItemsCenter' }}
                 >
                     <FlexItem>
-                        <ScreenIcon className="pf-u-info-color-100" />
+                        <ScreenIcon className="pf-v5-u-info-color-100" />
                     </FlexItem>
                     <FlexItem>
-                        <div className="pf-u-info-color-100">Simulated view</div>
+                        <div className="pf-v5-u-info-color-100">Simulated view</div>
                     </FlexItem>
                 </Flex>
             )}

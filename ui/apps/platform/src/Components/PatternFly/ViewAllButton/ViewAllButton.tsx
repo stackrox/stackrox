@@ -5,7 +5,7 @@ import './ViewAllButton.css';
 
 const ViewAllButton = ({ url }: { url: string }): ReactElement => {
     return (
-        <HashLink to={url} className="view-all-button pf-c-button pf-m-tertiary pf-m-small">
+        <HashLink to={url} className="view-all-button pf-v5-c-button pf-m-tertiary pf-m-small">
             View All
         </HashLink>
     );

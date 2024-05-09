@@ -180,7 +180,8 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	}
 
 	// Copy the fields from scannedImage into image, EnrichImage expecting modification in place
-	*image = *scannedImage
+	image.Reset()
+	protocompat.Merge(image, scannedImage)
 
 	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
@@ -217,6 +218,7 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 
 	e.useExistingSignature(image, existingImage, option)
 	e.useExistingSignatureVerificationData(image, existingImage, option, hasChangedNames)
+	e.useExistingImageName(image, existingImage, option)
 	return e.useExistingScan(image, existingImage, option)
 }
 
@@ -338,7 +340,8 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 		return false, nil
 	}
 
-	if enrichmentContext.FetchOpt != ForceRefetch {
+	if !enrichmentContext.FetchOpt.forceRefetchCachedValues() &&
+		enrichmentContext.FetchOpt != UseImageNamesRefetchCachedValues {
 		// The metadata in the cache is always up-to-date with respect to the current metadataVersion
 		if metadataValue := e.metadataCache.Get(getRef(image)); metadataValue != nil {
 			e.metrics.IncrementMetadataCacheHit()
@@ -546,6 +549,13 @@ func (e *enricherImpl) useExistingSignatureVerificationData(img *storage.Image, 
 
 	if existingImg.GetSignatureVerificationData() != nil {
 		img.SignatureVerificationData = existingImg.GetSignatureVerificationData()
+	}
+}
+
+func (e *enricherImpl) useExistingImageName(img *storage.Image, existingImg *storage.Image, option FetchOption) {
+	// We only want to overwrite the top-level image name if we are ignoring cached values.
+	if !option.forceRefetchCachedValues() {
+		img.Name = existingImg.Name
 	}
 }
 

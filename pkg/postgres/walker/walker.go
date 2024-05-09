@@ -353,7 +353,7 @@ func typeIsEnum(typ reflect.Type) bool {
 func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 	for i := 0; i < original.NumField(); i++ {
 		structField := original.Field(i)
-		if strings.HasPrefix(structField.Name, "XXX") {
+		if protoreflect.IsInternalGeneratorField(structField) {
 			continue
 		}
 		opts := getPostgresOptions(structField.Tag.Get("sql"), schema.Parent == nil, ctx.ignorePK, ctx.ignoreUnique, ctx.ignoreFKs, ctx.ignoreIndex)
@@ -451,37 +451,13 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 		case reflect.Float32, reflect.Float64:
 			schema.AddFieldWithType(field, postgres.Numeric, opts)
 		case reflect.Interface:
-			// If it is a oneof then call XXX_OneofWrappers to get the types.
-			// The return values is a slice of interfaces that are nil type pointers
 			if structField.Tag.Get("protobuf_oneof") == "" {
 				panic("non-oneof interface is not handled")
-
-			}
-			ptrToOriginal := reflect.PtrTo(original)
-
-			methodName := fmt.Sprintf("Get%s", field.Name)
-			oneofGetter, ok := ptrToOriginal.MethodByName(methodName)
-			if !ok {
-				panic("didn't find oneof function, did the naming change?")
-			}
-			oneofInterfaces := oneofGetter.Func.Call([]reflect.Value{reflect.New(original)})
-			if len(oneofInterfaces) != 1 {
-				panic(fmt.Sprintf("found %d interfaces returned from oneof getter", len(oneofInterfaces)))
 			}
 
-			oneofInterface := oneofInterfaces[0].Type()
-
-			method, ok := ptrToOriginal.MethodByName("XXX_OneofWrappers")
-			if !ok {
-				panic(fmt.Sprintf("XXX_OneofWrappers should exist for all protobuf oneofs, not found for %s", original.Name()))
-			}
-			out := method.Func.Call([]reflect.Value{reflect.New(original)})
-			actualOneOfFields := out[0].Interface().([]interface{})
-			for _, f := range actualOneOfFields {
-				typ := reflect.TypeOf(f)
-				if typ.Implements(oneofInterface) {
-					handleStruct(ctx, schema, typ.Elem())
-				}
+			oneOfFieldTypes := protocompat.GetOneOfTypesByFieldIndex(original, i)
+			for _, oneOfFieldType := range oneOfFieldTypes {
+				handleStruct(ctx, schema, oneOfFieldType.Elem())
 			}
 		default:
 			panic(fmt.Sprintf("Type %s for field %s is not currently handled", original.Kind(), field.Name))

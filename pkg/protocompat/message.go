@@ -65,3 +65,11 @@ type ClonedUnmarshaler[T any] interface {
 	proto.Unmarshaler
 	*T
 }
+
+// Merge merges src into dst.
+// Required and optional fields that are set in src will be set to that value in dst.
+// Elements of repeated fields will be appended.
+// Merge panics if src and dst are not the same type, or if dst is nil.
+func Merge(dst, src Message) {
+	proto.Merge(dst, src)
+}

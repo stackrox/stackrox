@@ -2,6 +2,7 @@ package compliancemanager
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/adhocore/gronx"
@@ -21,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -169,7 +169,7 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 	// TODO(ROX-22398): if we restrict cluster deletion, this is where we would do it before any updates are done.
 	var deletedClusters []string
 	for _, oldCluster := range oldScanConfig.GetClusters() {
-		if sliceutils.Find(clusters, oldCluster.GetClusterId()) == -1 {
+		if slices.Index(clusters, oldCluster.GetClusterId()) == -1 {
 			deletedClusters = append(deletedClusters, oldCluster.ClusterId)
 		}
 	}

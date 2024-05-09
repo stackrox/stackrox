@@ -11,7 +11,7 @@ func Creator() (string, types.Creator) {
 	return types.ArtifactRegistryType,
 		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
 			cfg := types.ApplyCreatorOptions(options...)
-			return google.NewRegistry(integration, false, cfg.GetGCPTokenManager())
+			return google.NewRegistry(integration, false, cfg.GetMetricsHandler(), cfg.GetGCPTokenManager())
 		}
 }
 
@@ -21,6 +21,6 @@ func CreatorWithoutRepoList() (string, types.Creator) {
 	return types.ArtifactRegistryType,
 		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
 			cfg := types.ApplyCreatorOptions(options...)
-			return google.NewRegistry(integration, true, cfg.GetGCPTokenManager())
+			return google.NewRegistry(integration, true, cfg.GetMetricsHandler(), cfg.GetGCPTokenManager())
 		}
 }

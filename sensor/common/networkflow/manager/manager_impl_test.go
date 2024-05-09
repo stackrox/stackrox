@@ -863,7 +863,7 @@ func (b *sendNetflowsSuite) TestSendTwoUpdatesOnConnectionChanged() {
 	b.expectDetections(2)
 
 	pair := createConnectionPair()
-	b.updateConn(pair.lastSeen(timestamp.FromProtobuf(timestamp.NowMinus(time.Hour))))
+	b.updateConn(pair.lastSeen(timestamp.FromProtobuf(protoconv.NowMinus(time.Hour))))
 	b.thenTickerTicks()
 	b.assertOneUpdatedCloseConnection()
 
@@ -878,8 +878,8 @@ func (b *sendNetflowsSuite) TestUpdatesGetBufferedWhenUnread() {
 	b.expectDetections(4)
 
 	// four times without reading
-	for i := 0; i < 4; i++ {
-		ts := timestamp.NowMinus(time.Duration(4-i) * time.Hour)
+	for i := 4; i > 0; i-- {
+		ts := protoconv.NowMinus(time.Duration(i) * time.Hour)
 		b.updateConn(createConnectionPair().lastSeen(timestamp.FromProtobuf(ts)))
 		b.thenTickerTicks()
 		time.Sleep(100 * time.Millisecond) // Immediately ticking without waiting causes unexpected behavior
@@ -895,8 +895,8 @@ func (b *sendNetflowsSuite) TestCallsDetectionEvenOnFullBuffer() {
 	b.expectLookups(6)
 	b.expectDetections(6)
 
-	for i := 0; i < 6; i++ {
-		ts := timestamp.NowMinus(time.Duration(6-i) * time.Hour)
+	for i := 6; i > 0; i-- {
+		ts := protoconv.NowMinus(time.Duration(i) * time.Hour)
 		b.updateConn(createConnectionPair().lastSeen(timestamp.FromProtobuf(ts)))
 		b.thenTickerTicks()
 		time.Sleep(100 * time.Millisecond)

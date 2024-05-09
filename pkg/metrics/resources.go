@@ -37,4 +37,5 @@ const (
 	ComplianceOperatorProfileV2
 	ComplianceOperatorScanV2
 	ComplianceOperatorSuiteV2
+	ComplianceOperatorRemediationV2
 )

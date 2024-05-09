@@ -127,7 +127,7 @@ function SyslogIntegrationForm({
                                 type="text"
                                 id="name"
                                 value={values.name}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -143,7 +143,7 @@ function SyslogIntegrationForm({
                                 isRequired
                                 id="syslog.localFacility"
                                 value={values.syslog.localFacility}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             >
@@ -176,7 +176,7 @@ function SyslogIntegrationForm({
                                 id="syslog.tcpConfig.hostname"
                                 value={values.syslog.tcpConfig.hostname}
                                 placeholder="(example, host.example.com)"
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -194,7 +194,7 @@ function SyslogIntegrationForm({
                                 type="number"
                                 id="syslog.tcpConfig.port"
                                 value={values.syslog.tcpConfig.port}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -235,7 +235,7 @@ function SyslogIntegrationForm({
                                 label="Use TLS"
                                 id="syslog.tcpConfig.useTls"
                                 isChecked={values.syslog.tcpConfig.useTls}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -245,12 +245,12 @@ function SyslogIntegrationForm({
                                 label="Disable TLS certificate validation (insecure)"
                                 id="syslog.tcpConfig.skipTlsVerify"
                                 isChecked={values.syslog.tcpConfig.skipTlsVerify}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
-                        <FormSection title="Extra Fields" titleElement="h3" className="pf-u-mt-0">
+                        <FormSection title="Extra Fields" titleElement="h3" className="pf-v5-u-mt-0">
                             <FieldArray
                                 name="syslog.extraFields"
                                 render={(arrayHelpers) => (
@@ -278,7 +278,7 @@ function SyslogIntegrationForm({
                                                                             .extraFields[`${index}`]
                                                                             .key
                                                                     }
-                                                                    onChange={onChange}
+                                                                    onChange={(event, value) => onChange(value, event)}
                                                                     onBlur={handleBlur}
                                                                     isDisabled={!isEditable}
                                                                 />
@@ -300,7 +300,7 @@ function SyslogIntegrationForm({
                                                                             .extraFields[`${index}`]
                                                                             .value
                                                                     }
-                                                                    onChange={onChange}
+                                                                    onChange={(event, value) => onChange(value, event)}
                                                                     onBlur={handleBlur}
                                                                     isDisabled={!isEditable}
                                                                 />
@@ -333,7 +333,7 @@ function SyslogIntegrationForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({

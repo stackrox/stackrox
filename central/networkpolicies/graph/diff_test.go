@@ -1,13 +1,13 @@
 package graph
 
 import (
+	"slices"
 	"sort"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,8 +22,8 @@ type nodeSpec struct {
 type nodeSpecMap map[string]nodeSpec
 
 func sortedIDs(ids []string) []string {
-	result := sliceutils.ShallowClone(ids)
-	sort.Strings(result)
+	result := slices.Clone(ids)
+	slices.Sort(result)
 	return result
 }
 

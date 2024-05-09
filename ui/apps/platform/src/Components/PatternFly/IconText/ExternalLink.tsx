@@ -1,5 +1,5 @@
 import React, { ReactElement, ReactNode } from 'react';
-import { Flex } from '@patternfly/react-core';
+import { Flex, Icon } from '@patternfly/react-core';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 
 export type ExternalLinkProps = {
@@ -20,7 +20,9 @@ function ExternalLink({ children }: ExternalLinkProps): ReactElement {
             spaceItems={{ default: 'spaceItemsSm' }}
         >
             {children}
-            <ExternalLinkAltIcon color="var(--pf-global--link--Color)" />
+            <Icon>
+                <ExternalLinkAltIcon color="var(--pf-v5-global--link--Color)" />
+            </Icon>
         </Flex>
     );
 }

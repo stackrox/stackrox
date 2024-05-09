@@ -54,6 +54,8 @@ ci_exit_trap() {
 
     if [[ "${exit_code}" == "0" ]]; then
         set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_PASSED}"
+    elif [[ "${exit_code}" == "130" ]]; then
+        set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_CANCELED}"
     else
         set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_FAILED}"
     fi
@@ -476,15 +478,121 @@ poll_for_system_test_images() {
 
     require_environment "QUAY_RHACS_ENG_BEARER_TOKEN"
 
+    local image_list
+    image_list="$(mktemp)"
+    populate_image_list "${image_list}"
+    info "Will poll for: $(awk '{print $1}' "${image_list}")"
+
+    local start_time
+    start_time="$(date '+%s')"
+
+    while true; do
+        local all_exist=true
+        local tag
+        local image
+        while read -r image tag
+        do
+            if ! check_rhacs_eng_image_exists "$image" "$tag"; then
+                info "$image does not exist"
+                all_exist=false
+                break
+            fi
+        done < "$image_list"
+
+        if $all_exist; then
+            info "All images exist"
+            break
+        fi
+        if (( $(date '+%s') - start_time > time_limit )); then
+            local commit_sha
+            commit_sha="$(get_commit_sha)"
+            check_build_workflows "${commit_sha}"
+            die "ERROR: Timed out waiting for images after ${time_limit} seconds"
+        fi
+
+        sleep 60
+    done
+
+    touch "${STATE_IMAGES_AVAILABLE}"
+}
+
+image_prefetcher_start() {
+    local ns="prefetch-images"
+    local name="$1"
+    local image_prefetcher_deploy="$2"
+    local manifest
+    manifest=$(mktemp)
+    # TODO(porridge): retrieve from go.mod file once there is an official registry with image tags matching git tags.
+    local image_prefetcher_version="v0.0.11"
+    case "${CI_JOB_NAME}" in
+    gke-*|*-gke-*)
+        flavor=vanilla
+        ;;
+    *)
+        flavor=ocp
+        ;;
+    esac
+
+    # daemonset
+    ${image_prefetcher_deploy} "$name" $image_prefetcher_version $flavor stackrox > "$manifest"
+
+    # image list
+    local image_tag_list
+    image_tag_list=$(mktemp)
+    populate_image_list "${image_tag_list}"
+    # convert format from "basename tag" to "quay.io/.../basename:tag" expected by pre-fetcher
+    local image_list
+    image_list=$(mktemp)
+    awk '{print "quay.io/rhacs-eng/" $1 ":" $2}' "$image_tag_list" > "$image_list"
+    rm -f "$image_tag_list"
+    echo "---" >> "$manifest"
+    kubectl create --dry-run=client -o yaml --namespace=$ns configmap "$name" --from-file="images.txt=$image_list" >> "$manifest"
+
+    # pull secret
+    NAMESPACE=$ns make -C operator stackrox-image-pull-secret
+
+    # apply daemonset and configmap
+    retry 5 true kubectl apply --namespace=$ns -f "$manifest"
+    rm -f "$image_list" "$manifest"
+}
+
+image_prefetcher_await() {
+    local ns="prefetch-images"
+    local name="$1"
+    kubectl rollout status daemonset "$name" -n "$ns" --timeout 15m
+}
+
+populate_image_list() {
+    local image_list="$1"
+
+    local tag
+    tag="$(make --quiet --no-print-directory tag)"
+    local operator_metadata_tag
+    operator_metadata_tag="$(echo "v${tag}" | sed 's,x,0,')"
+    local operator_controller_tag="${tag//x/0}"
+
     # Require images based on the job
     case "$CI_JOB_NAME" in
         *-operator-e2e-tests)
-            reqd_images=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index"
-                         "main" "central-db" "collector" "collector-slim"
-                         "scanner" "scanner-db" "scanner-v4" "scanner-v4-db")
+            cat >> "${image_list}" << END
+stackrox-operator ${operator_controller_tag}
+stackrox-operator-bundle ${operator_metadata_tag}
+stackrox-operator-index ${operator_metadata_tag}
+main ${tag}
+central-db ${tag}
+collector ${tag}
+collector-slim ${tag}
+scanner ${tag}
+scanner-db ${tag}
+scanner-v4 ${tag}
+scanner-v4-db ${tag}
+END
             ;;
         *-race-condition-qa-e2e-tests)
-            reqd_images=("main-rcd" "roxctl")
+            cat >> "${image_list}" << END
+main ${tag}-rcd
+roxctl ${tag}
+END
             if is_in_PR_context && ! pr_has_label "ci-build-race-condition-debug"; then
                 echo "ERROR: Your PR is missing the \"ci-build-race-condition-debug\" label."
                 echo "ERROR: This label is required to build the images for $CI_JOB_NAME."
@@ -494,61 +602,37 @@ poll_for_system_test_images() {
             fi
             ;;
         *)
-            reqd_images=("main" "roxctl")
+            cat >> "${image_list}" << END
+main ${tag}
+roxctl ${tag}
+END
             ;;
     esac
 
-    if [[ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]] && [[ ! " ${reqd_images[*]} " =~ " central-db " ]]; then
-        reqd_images+=("central-db")
+    if [[ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]]; then
+            cat >> "${image_list}" << END
+central-db ${tag}
+END
     fi
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
-        reqd_images+=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index")
+            cat >> "${image_list}" << END
+stackrox-operator ${operator_controller_tag}
+stackrox-operator-bundle ${operator_metadata_tag}
+stackrox-operator-index ${operator_metadata_tag}
+END
     fi
 
-    info "Will poll for: ${reqd_images[*]}"
-
-    local tag
-    tag="$(make --quiet --no-print-directory tag)"
-    local start_time
-    start_time="$(date '+%s')"
-
-    while true; do
-        local all_exist=true
-        for image in "${reqd_images[@]}"
-        do
-            if ! check_rhacs_eng_image_exists "$image" "$tag"; then
-                info "$image does not exist"
-                all_exist=false
-                break
-            fi
-        done
-
-        if $all_exist; then
-            info "All images exist"
-            break
-        fi
-        if (( $(date '+%s') - start_time > time_limit )); then
-           die "ERROR: Timed out waiting for images after ${time_limit} seconds"
-        fi
-        sleep 60
-    done
-
-    touch "${STATE_IMAGES_AVAILABLE}"
+    # Remove duplicates.
+    unique="$(mktemp)"
+    sort -u "${image_list}" > "${unique}"
+    cat "${unique}" > "${image_list}"
+    rm -f "${unique}"
 }
 
 check_rhacs_eng_image_exists() {
     local name="$1"
     local tag="$2"
-
-    if [[ "$name" =~ stackrox-operator-(bundle|index) ]]; then
-        tag="$(echo "v${tag}" | sed 's,x,0,')"
-    elif [[ "$name" == "stackrox-operator" ]]; then
-        tag="${tag//x/0}"
-    elif [[ "$name" == "main-rcd" ]]; then
-        name="main"
-        tag="${tag}-rcd"
-    fi
 
     local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"
     info "Checking for $name using $url"
@@ -558,6 +642,23 @@ check_rhacs_eng_image_exists() {
     [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
 }
 
+check_build_workflows() {
+    local commit_sha="$1"
+
+    {
+        echo
+        info "GitHub Actions workflow status for build.yaml:"
+        check-workflow-run \
+            --workflow=build.yaml \
+            --head-SHA="${commit_sha}"
+
+        echo
+        info "GitHub Actions workflow status for scanner-build.yaml:"
+        check-workflow-run \
+            --workflow=scanner-build.yaml \
+            --head-SHA="${commit_sha}"
+    } | tee "${STATE_BUILD_RESULTS}" || true
+}
 
 check_scanner_version() {
     if ! is_release_version "$(make --quiet --no-print-directory scanner-tag)"; then
@@ -750,6 +851,8 @@ get_base_ref() {
         else
             die "Expect PULL_BASE_REF or CLONEREFS_OPTIONS"
         fi
+    elif is_GITHUB_ACTIONS; then
+        echo "${GITHUB_BASE_REF}"
     else
         die "unsupported"
     fi
@@ -786,6 +889,8 @@ get_repo_full_name() {
 get_commit_sha() {
     if is_OPENSHIFT_CI; then
         echo "${PULL_PULL_SHA:-${PULL_BASE_SHA}}"
+    elif is_GITHUB_ACTIONS; then
+        echo "${GITHUB_SHA}"
     else
         die "unsupported"
     fi
@@ -1052,6 +1157,15 @@ openshift_ci_e2e_mods() {
         # shellcheck disable=SC1090
         source "$envfile"
     fi
+
+    if [[ "${JOB_NAME:-}" =~ -eks- ]]; then
+        # Explicitly set AWS creds from the stackrox-stackrox-e2e-tests vault to
+        # override any from other vaults e.g. automation-flavors.
+        AWS_ACCESS_KEY_ID="$(cat /tmp/vault/stackrox-stackrox-e2e-tests/AWS_ACCESS_KEY_ID)"
+        AWS_SECRET_ACCESS_KEY="$(cat /tmp/vault/stackrox-stackrox-e2e-tests/AWS_SECRET_ACCESS_KEY)"
+        export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+        aws sts get-caller-identity | jq -r '.Arn'
+    fi
 }
 
 operator_e2e_test_setup() {
@@ -1189,6 +1303,8 @@ post_process_test_results() {
         else
             if [[ "${PULL_BASE_REF:-unknown}" =~ ^release ]]; then
                 create_jiras="false"
+            elif [[ "${JOB_NAME:-unknown}" =~ interop ]]; then
+                create_jiras="false"
             else
                 create_jiras="true"
             fi
@@ -1206,7 +1322,7 @@ post_process_test_results() {
         # we will fallback to short commit
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.18/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.20/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
@@ -1885,10 +2001,6 @@ slack_prow_notice() {
             # send to #acs-release-notifications
             webhook_url="${RELEASE_WORKFLOW_NOTIFY_WEBHOOK}"
         fi
-    elif is_nightly_run; then
-        build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*stackrox*night*"
-        # send to #acs-nightly-ci-runs
-        webhook_url="${NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK}"
     else
         die "unexpected"
     fi

@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"sort"
+	"slices"
 
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/reference"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
@@ -48,7 +48,7 @@ func validateParamsAndNormalizeClusterType(p *apiparams.Scanner) (storage.Cluste
 				validClusterTypes = append(validClusterTypes, clusterString)
 			}
 		}
-		sort.Strings(validClusterTypes)
+		slices.Sort(validClusterTypes)
 		errorList.AddStringf("invalid cluster type: %q; valid options are %+v", p.ClusterType, validClusterTypes)
 	}
 
@@ -77,15 +77,15 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 
 	scannerV4IndexerCert, err := mtls.IssueNewCert(mtls.ScannerV4IndexerSubject)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not issue certifiate for Scanner V4 Indexer")
+		return nil, errors.Wrap(err, "could not issue certificate for Scanner V4 Indexer")
 	}
 	scannerV4MatcherCert, err := mtls.IssueNewCert(mtls.ScannerV4MatcherSubject)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not issue certifiate for Scanner V4 Matcher")
+		return nil, errors.Wrap(err, "could not issue certificate for Scanner V4 Matcher")
 	}
 	scannerV4DBCert, err := mtls.IssueNewCert(mtls.ScannerV4DBSubject)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not issue certifiate for Scanner V4 DB")
+		return nil, errors.Wrap(err, "could not issue certificate for Scanner V4 DB")
 	}
 
 	flavor := defaults.GetImageFlavorFromEnv()

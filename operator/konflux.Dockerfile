@@ -12,6 +12,7 @@ RUN scripts/konflux/fail-build-if-git-is-dirty.sh
 # TODO(ROX-20240): enable non-release development builds.
 ENV CI=1 GOFLAGS="" GOTAGS="release" CGO_ENABLED=1
 
+# TODO(ROX-19958): figure out if setting BUILD_TAG is actually needed.
 RUN GOOS=linux GOARCH=$(go env GOARCH) BUILD_TAG=$(make tag) scripts/go-build.sh operator && \
     cp bin/linux_$(go env GOARCH)/operator image/bin/operator
 
@@ -28,7 +29,7 @@ LABEL \
     maintainer="Red Hat, Inc." \
     name="rhacs-rhel8-operator" \
     source-location="https://github.com/stackrox/stackrox" \
-    summary="Operator for RHACS" \
+    summary="Operator for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     # We must set version label to prevent inheriting value set in the base stage.
     # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.

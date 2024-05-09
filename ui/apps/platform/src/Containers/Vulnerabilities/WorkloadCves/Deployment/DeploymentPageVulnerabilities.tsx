@@ -1,15 +1,11 @@
 import React from 'react';
 import {
-    Alert,
     Bullseye,
     Divider,
     Flex,
-    Grid,
-    GridItem,
     PageSection,
     Pagination,
     pluralize,
-    Skeleton,
     Spinner,
     Split,
     SplitItem,
@@ -23,10 +19,14 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied } from 'utils/searchUtils';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
+import { DynamicTableLabel } from 'Components/DynamicIcon';
+import {
+    SummaryCardLayout,
+    SummaryCard,
+} from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import {
     SearchOption,
     COMPONENT_SEARCH_OPTION,
@@ -34,9 +34,8 @@ import {
     IMAGE_CVE_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
 } from '../../searchOptions';
-import { DynamicTableLabel } from '../../components/DynamicIcon';
 import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
-import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
+import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
     resourceCountByCveSeverityAndStatusFragment,
     ResourceCountByCveSeverityAndStatus,
@@ -190,18 +189,18 @@ function DeploymentPageVulnerabilities({
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-u-py-md pf-u-px-xl">
+            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
                 <Text>
                     Review and triage vulnerability data scanned for images within this deployment
                 </Text>
             </PageSection>
             <Divider component="div" />
             <PageSection
-                className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
                 <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
-                <div className="pf-u-px-sm pf-u-background-color-100">
+                <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
                     <WorkloadCveFilterToolbar
                         autocompleteSearchContext={{
                             'Deployment ID': deploymentId,
@@ -210,49 +209,34 @@ function DeploymentPageVulnerabilities({
                         onFilterChange={() => setPage(1)}
                     />
                 </div>
-                <div className="pf-u-flex-grow-1 pf-u-background-color-100">
-                    <div className="pf-u-px-lg pf-u-pb-lg">
-                        {summaryRequest.error && (
-                            <Alert
-                                title="There was an error loading the summary data for this deployment"
-                                isInline
-                                variant="danger"
-                            >
-                                {getAxiosErrorMessage(summaryRequest.error)}
-                            </Alert>
-                        )}
-                        {summaryRequest.loading && !summaryData && (
-                            <Skeleton
-                                style={{ height: '120px' }}
-                                screenreaderText="Loading deployment summary data"
+                <SummaryCardLayout error={summaryRequest.error} isLoading={summaryRequest.loading}>
+                    <SummaryCard
+                        data={summaryData?.deployment}
+                        loadingText="Loading deployment summary data"
+                        renderer={({ data }) => (
+                            <BySeveritySummaryCard
+                                title="CVEs by severity"
+                                severityCounts={data.imageCVECountBySeverity}
+                                hiddenSeverities={hiddenSeverities}
                             />
                         )}
-                        {!summaryRequest.error && summaryData && summaryData.deployment && (
-                            <Grid hasGutter>
-                                <GridItem sm={12} md={6} xl2={4}>
-                                    <BySeveritySummaryCard
-                                        title="CVEs by severity"
-                                        severityCounts={
-                                            summaryData.deployment.imageCVECountBySeverity
-                                        }
-                                        hiddenSeverities={hiddenSeverities}
-                                    />
-                                </GridItem>
-                                <GridItem sm={12} md={6} xl2={4}>
-                                    <CvesByStatusSummaryCard
-                                        cveStatusCounts={
-                                            summaryData.deployment.imageCVECountBySeverity
-                                        }
-                                        hiddenStatuses={hiddenStatuses}
-                                        isBusy={summaryRequest.loading}
-                                    />
-                                </GridItem>
-                            </Grid>
+                    />
+                    <SummaryCard
+                        data={summaryData?.deployment}
+                        loadingText="Loading deployment summary data"
+                        renderer={({ data }) => (
+                            <CvesByStatusSummaryCard
+                                cveStatusCounts={data.imageCVECountBySeverity}
+                                hiddenStatuses={hiddenStatuses}
+                                isBusy={summaryRequest.loading}
+                            />
                         )}
-                    </div>
-                    <Divider />
-                    <div className="pf-u-p-lg">
-                        <Split className="pf-u-pb-lg pf-u-align-items-baseline">
+                    />
+                </SummaryCardLayout>
+                <Divider />
+                <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100">
+                    <div className="pf-v5-u-p-lg">
+                        <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
                             <SplitItem isFilled>
                                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                     <Title headingLevel="h2">
@@ -286,7 +270,7 @@ function DeploymentPageVulnerabilities({
                         )}
                         {vulnerabilityRequest.loading && !vulnerabilityData && (
                             <Bullseye>
-                                <Spinner isSVG />
+                                <Spinner />
                             </Bullseye>
                         )}
                         {vulnerabilityData && vulnerabilityData.deployment && (

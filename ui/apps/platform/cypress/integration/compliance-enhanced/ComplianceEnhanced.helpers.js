@@ -5,16 +5,11 @@ import { visit } from '../../helpers/visit';
 
 export const basePath = '/main/compliance-enhanced';
 export const statusDashboardPath = `${basePath}/status`;
-export const clusterCompliancePath = `${basePath}/cluster-compliance`;
-export const clusterComplianceCoveragePath = `${clusterCompliancePath}/coverage`;
-export const clusterComplianceScanConfigsPath = `${clusterCompliancePath}/scan-configs`;
+export const complianceEnhancedCoveragePath = `${basePath}/coverage`;
+export const complianceEnhancedScanConfigsPath = `${basePath}/schedules`;
 
 // visit helpers
 export const scanConfigsAlias = 'configurations';
-
-// TODO: (vjw, 13 Nov 2023) after the API endpoints for the dashboard are published,
-// we will add them to the routeMatcherMap here
-const routeMatcherMapForComplianceDashboard = null;
 
 const routeMatcherMapForComplianceScanConfigs = {
     [scanConfigsAlias]: {
@@ -23,39 +18,30 @@ const routeMatcherMapForComplianceScanConfigs = {
     },
 };
 
-export function visitComplianceEnhancedFromLeftNav(staticResponseMap) {
-    visitFromLeftNavExpandable(
-        'Compliance (2.0)',
-        'Compliance Status',
-        routeMatcherMapForComplianceDashboard,
-        staticResponseMap
-    );
-}
-
-export function visitComplianceEnhancedDashboard(staticResponseMap) {
-    // TODO: (vjw, 1 Nov 2023) add routes matchers to this function, after API is available for Status
-    visit(basePath, routeMatcherMapForComplianceDashboard, staticResponseMap);
-    cy.get(`h1:contains("Compliance")`);
-}
-
-export function visitComplianceEnhancedClusterComplianceFromLeftNav(staticResponseMap) {
-    visitFromLeftNavExpandable('Compliance (2.0)', 'Cluster Compliance', null, staticResponseMap);
+export function visitComplianceEnhancedCoverageFromLeftNav(staticResponseMap) {
+    visitFromLeftNavExpandable('Compliance (2.0)', 'Coverage', null, staticResponseMap);
 
     cy.get(`h1:contains("Cluster compliance")`);
 }
 
-export function visitComplianceEnhancedClusterCompliance(staticResponseMap) {
-    visit(clusterCompliancePath, null, staticResponseMap);
+export function visitComplianceEnhancedSchedulesFromLeftNav(staticResponseMap) {
+    visitFromLeftNavExpandable('Compliance (2.0)', 'Schedules', null, staticResponseMap);
+
+    cy.get(`h1:contains("Cluster compliance")`);
+}
+
+export function visitComplianceEnhancedCoverage(staticResponseMap) {
+    visit(complianceEnhancedCoveragePath, null, staticResponseMap);
 
     cy.get(`h1:contains("Cluster compliance")`);
 }
 
 export function visitComplianceEnhancedScanConfigs(staticResponseMap) {
     visit(
-        clusterComplianceScanConfigsPath,
+        complianceEnhancedScanConfigsPath,
         routeMatcherMapForComplianceScanConfigs,
         staticResponseMap
     );
 
-    cy.get('a.pf-c-nav__link').contains('Schedules').should('have.class', 'pf-m-current');
+    cy.get('a.pf-v5-c-nav__link').contains('Schedules').should('have.class', 'pf-m-current');
 }

@@ -1,17 +1,21 @@
 import React, { useState, useEffect, ReactElement } from 'react';
-import { Button, Flex, FlexItem, SelectOption, TextInput } from '@patternfly/react-core';
+import { Button, Flex, FlexItem, TextInput } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FormikProps } from 'formik';
 import isEqual from 'lodash/isEqual';
 import resolvePath from 'object-resolve-path';
 
+import EmailNotifierModal from 'Components/EmailNotifier/EmailNotifierModal';
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { fetchIntegration } from 'services/IntegrationsService';
 import { NotifierIntegration } from 'types/notifier.proto';
-import { ReportFormValues, ReportNotifier } from './useReportFormValues';
+import { ReportFormValues } from './useReportFormValues';
 
-// eslint-disable-next-line import/no-named-as-default
-import EmailNotifierFormModal from './EmailNotifierFormModal';
+type ReportNotifier = {
+    id: string;
+    name: string;
+};
 
 type NotifierSelectionProps = {
     prefixId: string;
@@ -58,18 +62,22 @@ function NotifierSelection({
 
     function onMailingListsChange(value) {
         const explodedEmails: string = value.split(',').map((email) => email.trim() as string);
-        formik.setFieldValue(`${prefixId}.mailingLists`, explodedEmails);
+        formik.setFieldValue(`${prefixId}.emailConfig.mailingLists`, explodedEmails);
     }
 
     function onNotifierChange(_id, selectionId) {
         const notifierObject = notifiers.find((notifier) => notifier.id === selectionId);
         if (notifierObject) {
             const notifierMailingLists = notifierObject.labelDefault.split(',');
-            const prevDeliveryDestination = resolvePath(formik.values, prefixId);
+            const deliveryDestinationPrev = resolvePath(formik.values, prefixId);
+            const { emailConfig: emailConfigPrev } = deliveryDestinationPrev;
             formik.setFieldValue(prefixId, {
-                ...prevDeliveryDestination,
-                notifier: notifierObject,
-                mailingLists: mailingLists.length === 0 ? notifierMailingLists : mailingLists,
+                emailConfig: {
+                    ...emailConfigPrev,
+                    notifierId: notifierObject.id,
+                    mailingLists: mailingLists.length === 0 ? notifierMailingLists : mailingLists,
+                },
+                notifierName: notifierObject.name,
             });
             setIsEmailNotifierModalOpen(false);
         }
@@ -90,7 +98,7 @@ function NotifierSelection({
     function onSetToDefaultNotifierMailingLists() {
         const notifierMailingLists = getDefaultNotifierMailingLists();
         if (notifierMailingLists) {
-            formik.setFieldValue(`${prefixId}.mailingLists`, notifierMailingLists);
+            formik.setFieldValue(`${prefixId}.emailConfig.mailingLists`, notifierMailingLists);
         }
     }
 
@@ -102,7 +110,7 @@ function NotifierSelection({
     return (
         <>
             <FormLabelGroup
-                className="pf-u-mb-md"
+                className="pf-v5-u-mb-md"
                 isRequired
                 label="Email notifier"
                 fieldId={`${prefixId}.notifier`}
@@ -140,7 +148,7 @@ function NotifierSelection({
             <FormLabelGroup
                 isRequired
                 label="Distribution list"
-                fieldId={`${prefixId}.mailingLists`}
+                fieldId={`${prefixId}.emailConfig.mailingLists`}
                 helperText="Enter an audience, who will receive the scheduled report. Multiple email addresses can be entered with comma separators."
                 errors={formik.errors}
             >
@@ -148,23 +156,23 @@ function NotifierSelection({
                     isRequired
                     type="text"
                     value={joinedMailingLists}
-                    onChange={onMailingListsChange}
+                    onChange={(_event, value) => onMailingListsChange(value)}
                     placeholder="annie@example.com,jack@example.com"
                 />
             </FormLabelGroup>
             {selectedNotifier && (
                 <Button
-                    className="pf-u-mt-sm"
+                    className="pf-v5-u-mt-sm"
                     variant="link"
                     isInline
-                    isSmall
+                    size="sm"
                     onClick={onSetToDefaultNotifierMailingLists}
                     isDisabled={isResetToDefaultDisabled}
                 >
                     Reset to default
                 </Button>
             )}
-            <EmailNotifierFormModal
+            <EmailNotifierModal
                 isOpen={isEmailNotifierModalOpen}
                 updateNotifierList={setLastAddedNotifier}
                 onToggleEmailNotifierModal={onToggleEmailNotifierModal}

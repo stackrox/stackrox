@@ -9,12 +9,14 @@ jobs:
   build-updater:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.66
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.69
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       - uses: ./.github/actions/cache-go-dependencies
 
       - name: Build updater
@@ -73,7 +75,7 @@ jobs:
       - name: Run updater
         run: |
           chmod +x /usr/local/bin/updater
-          updater \
+          updater import \
               --vulns-url "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/$version/vulns.json.zst" \
               --db-conn 'host=localhost user=postgres database=postgres password=scanner'
 

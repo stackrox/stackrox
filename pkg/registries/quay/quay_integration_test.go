@@ -16,6 +16,9 @@ const (
 )
 
 func TestQuay(t *testing.T) {
+	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
+	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
+
 	integration := &storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Quay{
 			Quay: &storage.QuayConfig{
@@ -25,7 +28,7 @@ func TestQuay(t *testing.T) {
 		},
 	}
 
-	q, err := newRegistry(integration, false)
+	q, err := newRegistry(integration, false, nil)
 	assert.NoError(t, err)
 	assert.NoError(t, filterOkErrors(q.Test()))
 }

@@ -1,0 +1,105 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  name: complianceremediations.compliance.openshift.io
+spec:
+  conversion:
+    strategy: None
+  group: compliance.openshift.io
+  names:
+    kind: ComplianceRemediation
+    listKind: ComplianceRemediationList
+    plural: complianceremediations
+    shortNames:
+    - cr
+    - remediations
+    - remediation
+    - rems
+    singular: complianceremediation
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.applicationState
+      name: State
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ComplianceRemediation represents a remediation that can be applied
+          to the cluster to fix the found issues.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Contains the definition of what the remediation should be
+            properties:
+              apply:
+                description: Whether the remediation should be picked up and applied
+                  by the operator
+                type: boolean
+              current:
+                description: Defines the remediation that is proposed by the scan.
+                  If there is no "outdated" remediation in this object, the "current"
+                  remediation is what will be applied.
+                properties:
+                  object:
+                    description: The remediation payload. This would normally be a
+                      full Kubernetes object.
+                    type: object
+                    x-kubernetes-embedded-resource: true
+                    x-kubernetes-preserve-unknown-fields: true
+                type: object
+              outdated:
+                description: In case there was a previous remediation proposed by
+                  a previous scan, and that remediation now differs, the old remediation
+                  will be kept in this "outdated" key. This requires admin intervention
+                  to remove this outdated object and ensure the current is what's
+                  applied.
+                properties:
+                  object:
+                    description: The remediation payload. This would normally be a
+                      full Kubernetes object.
+                    type: object
+                    x-kubernetes-embedded-resource: true
+                    x-kubernetes-preserve-unknown-fields: true
+                type: object
+              type:
+                default: Configuration
+                description: 'The type of remediation that this object applies. The
+                  available types are: Configuration and Enforcement. Where the Configuration
+                  type fixes a configuration to match a compliance expectation. The
+                  Enforcement type, on the other hand, ensures that the cluster stays
+                  in compliance via means of authorization.'
+                enum:
+                - Configuration
+                - Enforcement
+                type: string
+            required:
+            - apply
+            type: object
+          status:
+            description: Contains information on the remediation (whether it's applied
+              or not)
+            properties:
+              applicationState:
+                default: NotApplied
+                description: Whether the remediation is already applied or not
+                type: string
+              errorMessage:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true

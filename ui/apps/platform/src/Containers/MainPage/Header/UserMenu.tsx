@@ -4,7 +4,12 @@ import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import initials from 'initials';
-import { Dropdown, DropdownItem, DropdownSeparator, DropdownToggle } from '@patternfly/react-core';
+import {
+    Dropdown,
+    DropdownItem,
+    DropdownSeparator,
+    DropdownToggle,
+} from '@patternfly/react-core/deprecated';
 
 import useAnalytics, { INVITE_USERS_MODAL_OPENED } from 'hooks/useAnalytics';
 import usePermissions from 'hooks/usePermissions';
@@ -15,7 +20,7 @@ import { userBasePath } from 'routePaths';
 import User from 'utils/User';
 
 const userMenuStyleConstant = {
-    '--pf-u-min-width--MinWidth': '20ch',
+    '--pf-v5-u-min-width--MinWidth': '20ch',
     pointerEvents: 'none',
 } as CSSProperties;
 
@@ -53,7 +58,7 @@ function UserMenu({ logout, setInviteModalVisibility, userData }) {
         <DropdownItem
             key="user"
             description={<span data-testid="menu-user-roles">{displayRoles}</span>}
-            className="pf-u-min-width"
+            className="pf-v5-u-min-width"
             style={userMenuStyleConstant}
         >
             {displayName}
@@ -83,7 +88,11 @@ function UserMenu({ logout, setInviteModalVisibility, userData }) {
         : [...startOfUserMenu, ...endOfUserMenu];
 
     const toggle = (
-        <DropdownToggle aria-label="User menu" onToggle={setIsOpen} toggleIndicator={null}>
+        <DropdownToggle
+            aria-label="User menu"
+            onToggle={(_event, val) => setIsOpen(val)}
+            toggleIndicator={null}
+        >
             <span className="h-10 w-10 flex items-center justify-center leading-none text-xl border border-base-400 rounded-full">
                 {name ? initials(name) : '--'}
             </span>

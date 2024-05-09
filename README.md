@@ -290,9 +290,9 @@ Then go to https://localhost:8000/ in your web browser.
 
 - **E2E Dev Docs**: Refer to [qa-tests-backend/README.md](./qa-tests-backend/README.md)
 
-- **Pull request guidelines**: [contributing.md](./github/contributing.md)
+- **Pull request guidelines**: [contributing.md](./.github/contributing.md)
 
-- **Go coding style guide**: [go-coding-style.md](./github/go-coding-style.md) 
+- **Go coding style guide**: [go-coding-style.md](./.github/go-coding-style.md) 
 
 ### Quickstart
 
@@ -304,14 +304,11 @@ The following tools are necessary to test code and build image(s):
 
 * [Make](https://www.gnu.org/software/make/)
 * [Go](https://golang.org/dl/)
-  * Get the version specified in [EXPECTED_GO_VERSION](./EXPECTED_GO_VERSION).
-* Various Go linters and RocksDB dependencies that can be installed using `make reinstall-dev-tools`.
+* Various Go linters that can be installed using `make reinstall-dev-tools`.
 * UI build tooling as specified in [ui/README.md](ui/README.md#Build-Tooling).
 * [Docker](https://docs.docker.com/get-docker/)
   * Note: Docker Desktop now requires a paid subscription for larger, enterprise companies.
   * Some StackRox devs recommend [Colima](https://github.com/abiosoft/colima)
-* [RocksDB](https://rocksdb.org/)
-  * Follow [Mac](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-darwin.md#install-rocksdb) or [Linux](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-linux.md#install-rocksdb) guide)
 * [Xcode](https://developer.apple.com/xcode/) command line tools (macOS only)
 * [Bats](https://github.com/sstephenson/bats) is used to run certain shell tests.
   You can obtain it with `brew install bats` or `npm install -g bats`.
@@ -367,7 +364,6 @@ git clone git@github.com:stackrox/stackrox.git
 
 To sweeten your experience, install [the workflow scripts](#productivity) beforehand.
 
-First install RocksDB. Follow [Mac](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-darwin.md#install-rocksdb) or [Linux](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-linux.md#install-rocksdb) guidelines
 ```bash
 $ cd $GOPATH/src/github.com/stackrox/stackrox
 $ make install-dev-tools
@@ -380,7 +376,7 @@ Development can either happen in GCP or locally with
 Note that Docker Desktop and Colima are more suited for macOS development, because the cluster will have access to images built with `make image` locally without additional configuration. Also, Collector has better support for these than minikube where drivers may not be available.
 
 ```bash
-# To keep the StackRox Central's RocksDB state between restarts, set:
+# To keep the StackRox Central's Postgres DB state between database upgrades and restarts, set:
 $ export STORAGE=pvc
 
 # To save time on rebuilds by skipping UI builds, set:

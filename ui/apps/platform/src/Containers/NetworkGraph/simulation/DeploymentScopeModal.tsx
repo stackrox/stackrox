@@ -10,10 +10,10 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
-import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
 
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useTableSort from 'hooks/patternfly/useTableSort';
 import { SearchFilter } from 'types/search';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
@@ -86,7 +86,7 @@ function DeploymentScopeModal({
         >
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             isCompact
                             itemCount={scopeDeploymentCount}
@@ -109,7 +109,7 @@ function DeploymentScopeModal({
                         title="There was an error loading deployments"
                         headingLevel="h2"
                         icon={ExclamationCircleIcon}
-                        iconClassName="pf-u-danger-color-100"
+                        iconClassName="pf-v5-u-danger-color-100"
                     >
                         {error.message}
                     </EmptyStateTemplate>
@@ -121,7 +121,7 @@ function DeploymentScopeModal({
                 </Bullseye>
             )}
             {!error && (
-                <TableComposable variant="compact">
+                <Table variant="compact">
                     <Thead noWrap>
                         <Tr>
                             <Th width={50} sort={getSortParams('Deployment')}>
@@ -140,7 +140,7 @@ function DeploymentScopeModal({
                             </Tr>
                         ))}
                     </Tbody>
-                </TableComposable>
+                </Table>
             )}
         </Modal>
     );

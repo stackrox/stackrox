@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-    Dropdown,
-    DropdownToggle,
-    DropdownItem,
-    Button,
-    Tooltip,
-    Flex,
-    FlexItem,
-} from '@patternfly/react-core';
+import { Button, Tooltip, Flex, FlexItem } from '@patternfly/react-core';
+import { Dropdown, DropdownToggle, DropdownItem } from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import { policiesBasePath } from 'routePaths';
@@ -49,9 +42,9 @@ function PoliciesTablePageActionButtons({
                 <Dropdown
                     toggle={
                         <DropdownToggle
-                            onToggle={onToggleDropdown}
+                            onToggle={(_event, toggleDropdown) => onToggleDropdown(toggleDropdown)}
                             toggleIndicator={CaretDownIcon}
-                            isPrimary
+                            toggleVariant="primary"
                             id="add-policy-dropdown-toggle"
                         >
                             Add Policy

@@ -2,6 +2,7 @@ package helper
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"log"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/centralclient"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/certs"
 	"github.com/stackrox/rox/sensor/debugger/message"
@@ -487,14 +489,14 @@ func (c *TestContext) WaitForHello(t *testing.T, timeout time.Duration) *central
 	}
 }
 
-// WaitForSyncEvent will wait until sensor transmits a `Synced` event to Central, at the end of the reconciliation.
-func (c *TestContext) WaitForSyncEvent(t *testing.T, timeout time.Duration) *central.SensorEvent_ResourcesSynced {
+// WaitForSyncEventf will wait until sensor transmits a `Synced` event to Central, at the end of the reconciliation.
+func (c *TestContext) WaitForSyncEventf(t *testing.T, timeout time.Duration, msg string) *central.SensorEvent_ResourcesSynced {
 	ticker := time.NewTicker(defaultTicker)
 	timeoutTimer := time.NewTicker(timeout)
 	for {
 		select {
 		case <-timeoutTimer.C:
-			t.Errorf("timeout (%s) reached waiting for sync event", timeout)
+			t.Errorf("timeout (%s) reached %s", timeout, msg)
 			return nil
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
@@ -505,6 +507,11 @@ func (c *TestContext) WaitForSyncEvent(t *testing.T, timeout time.Duration) *cen
 			}
 		}
 	}
+}
+
+// WaitForSyncEvent will wait until sensor transmits a `Synced` event to Central, at the end of the reconciliation.
+func (c *TestContext) WaitForSyncEvent(t *testing.T, timeout time.Duration) *central.SensorEvent_ResourcesSynced {
+	return c.WaitForSyncEventf(t, timeout, "waiting for sync event")
 }
 
 // WaitForMessageWithEventID will wait until timeout and check if a message with ID was sent to fake central.
@@ -847,10 +854,15 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 	t.Setenv("ROX_MTLS_CA_KEY_FILE", path.Join(c.config.CertFilePath, "/caKey.pem"))
 
 	k8sClient := client.MustCreateInterfaceFromRest(env.Client().RESTConfig())
+	centralHTTPServer := NewCentralHTTPTestServer(t)
+	centralEndpoint := centralHTTPServer.URL
+	t.Setenv("ROX_CENTRAL_ENDPOINT", centralEndpoint)
+
 	sensorConfig := sensor.ConfigWithDefaults().
 		WithK8sClient(k8sClient).
 		WithLocalSensor(true).
-		WithCentralConnectionFactory(c.grpcFactory)
+		WithCentralConnectionFactory(c.grpcFactory).
+		WithCertLoader(centralclient.StaticCertLoader([]*x509.Certificate{centralHTTPServer.Certificate()}))
 	if cfg.RealCerts {
 		certFetcher := certs.NewCertificateFetcher(k8sClient,
 			certs.WithOutputDir(c.config.CertFilePath),
@@ -885,6 +897,7 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 	c.stopFn = func() {
 		s.Stop()
 		c.fakeCentral.KillSwitch.Done()
+		centralHTTPServer.Close()
 	}
 
 	go s.Start()
@@ -960,6 +973,16 @@ func (c *TestContext) ApplyResourceAndWait(ctx context.Context, t *testing.T, ns
 	}
 
 	return fn, nil
+}
+
+// ApplyWithManifestDir applies all the yaml files located in 'dirPath' that match 'pattern'.
+func (c *TestContext) ApplyWithManifestDir(ctx context.Context, dirPath string, pattern string) (func() error, error) {
+	if err := decoder.ApplyWithManifestDir(ctx, c.r, dirPath, pattern, []resources.CreateOption{}); err != nil {
+		return nil, err
+	}
+	return func() error {
+		return decoder.DeleteWithManifestDir(ctx, c.r, dirPath, pattern, []resources.DeleteOption{})
+	}, nil
 }
 
 // ApplyResource creates a Kubernetes resource in namespace `ns` from a resource definition (see

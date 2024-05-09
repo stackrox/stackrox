@@ -2,7 +2,6 @@ package service
 
 import (
 	"reflect"
-	"strings"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -15,14 +14,14 @@ func TestSummaryTypeToResourceMap(t *testing.T) {
 	summaryCountsRespType := reflect.TypeOf(v1.SummaryCountsResponse{})
 
 	for i := 0; i < summaryCountsRespType.NumField(); i++ {
-		name := summaryCountsRespType.Field(i).Name
+		field := summaryCountsRespType.Field(i)
 		// This ignores hidden metadata fields in the proto.
-		if strings.HasPrefix(name, "XXX_") {
+		if field.Tag.Get("protobuf") == "" {
 			continue
 		}
-		_, ok := summaryTypeToResourceMetadata[name]
+		_, ok := summaryTypeToResourceMetadata[field.Name]
 		// This is a programming error. If you see this, add the new summarized type you've added to the
 		// summaryTypeToResource map!
-		assert.True(t, ok, "Please add type %s to the summaryTypeToResource map used by the authorizer", name)
+		assert.True(t, ok, "Please add type %s to the summaryTypeToResource map used by the authorizer", field.Name)
 	}
 }

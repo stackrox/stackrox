@@ -1,14 +1,11 @@
 import React, { useEffect } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import {
-    Alert,
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
     Divider,
     Flex,
-    Grid,
-    GridItem,
     PageSection,
     Pagination,
     Skeleton,
@@ -26,13 +23,17 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { Pagination as PaginationParam } from 'services/types';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import useAnalytics, { WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED } from 'hooks/useAnalytics';
 
+import { DynamicTableLabel } from 'Components/DynamicIcon';
+import {
+    SummaryCardLayout,
+    SummaryCard,
+} from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import {
     SearchOption,
     IMAGE_SEARCH_OPTION,
@@ -51,8 +52,8 @@ import {
     parseWorkloadQuerySearchFilter,
 } from '../../utils/searchUtils';
 import { getDefaultWorkloadSortOption } from '../../utils/sortUtils';
-import { DynamicTableLabel } from '../../components/DynamicIcon';
 import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import AffectedImagesTable, {
@@ -67,7 +68,7 @@ import AffectedDeploymentsTable, {
 import AffectedImages from '../SummaryCards/AffectedImages';
 import BySeveritySummaryCard, {
     ResourceCountsByCveSeverity,
-} from '../SummaryCards/BySeveritySummaryCard';
+} from '../../components/BySeveritySummaryCard';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
@@ -191,7 +192,7 @@ function ImageCvePage() {
         },
         currentVulnerabilityState
     );
-    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const [entityTab] = useURLStringUnion('entityTab', imageCveEntities);
 
@@ -342,9 +343,11 @@ function ImageCvePage() {
             <PageTitle
                 title={`Workload CVEs - ImageCVE ${metadataRequest.data?.imageCVE?.cve ?? ''}`}
             />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={workloadCveOverviewCvePath}>CVEs</BreadcrumbItemLink>
+                    <BreadcrumbItemLink to={workloadCveOverviewCvePath}>
+                        Workload CVEs
+                    </BreadcrumbItemLink>
                     {!metadataRequest.error && (
                         <BreadcrumbItem isActive>
                             {cveName ?? (
@@ -368,14 +371,14 @@ function ImageCvePage() {
                 )}
             </PageSection>
             <Divider component="div" />
-            <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
+            <PageSection className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1">
                 <VulnerabilityStateTabs
                     titleOverrides={{ observed: 'Workloads' }}
                     isBox
                     onChange={() => setPage(1)}
                 />
-                <div className="pf-u-background-color-100">
-                    <div className="pf-u-px-sm">
+                <div className="pf-v5-u-background-color-100">
+                    <div className="pf-v5-u-px-sm">
                         <WorkloadCveFilterToolbar
                             searchOptions={searchOptions}
                             autocompleteSearchContext={{
@@ -384,48 +387,37 @@ function ImageCvePage() {
                             onFilterChange={() => setPage(1)}
                         />
                     </div>
-                    <div className="pf-u-px-lg pf-u-pb-lg">
-                        {summaryRequest.error && (
-                            <Alert
-                                title="There was an error loading the summary data for this CVE"
-                                isInline
-                                variant="danger"
-                            >
-                                {getAxiosErrorMessage(summaryRequest.error)}
-                            </Alert>
-                        )}
-                        {summaryRequest.loading && !summaryRequest.data && (
-                            <Skeleton
-                                style={{ height: '120px' }}
-                                screenreaderText="Loading image cve summary data"
-                            />
-                        )}
-                        {!summaryRequest.error && summaryRequest.data && (
-                            <Grid hasGutter>
-                                <GridItem sm={12} md={6} xl2={4}>
-                                    <AffectedImages
-                                        className="pf-u-h-100"
-                                        affectedImageCount={severitySummary.affectedImageCount}
-                                        totalImagesCount={summaryRequest.data.totalImageCount}
-                                    />
-                                </GridItem>
-                                <GridItem sm={12} md={6} xl2={4}>
-                                    <BySeveritySummaryCard
-                                        className="pf-u-h-100"
-                                        title="Images by severity"
-                                        severityCounts={
-                                            severitySummary.affectedImageCountBySeverity
-                                        }
-                                        hiddenSeverities={hiddenSeverities}
-                                    />
-                                </GridItem>
-                            </Grid>
-                        )}
-                    </div>
+                    <SummaryCardLayout
+                        error={summaryRequest.error}
+                        isLoading={summaryRequest.loading}
+                    >
+                        <SummaryCard
+                            data={summaryRequest.data}
+                            loadingText="Loading image CVE summary data"
+                            renderer={({ data }) => (
+                                <AffectedImages
+                                    className="pf-v5-u-h-100"
+                                    affectedImageCount={severitySummary.affectedImageCount}
+                                    totalImagesCount={data.totalImageCount}
+                                />
+                            )}
+                        />
+                        <SummaryCard
+                            data={severitySummary}
+                            loadingText="Loading image CVE summary data"
+                            renderer={({ data }) => (
+                                <BySeveritySummaryCard
+                                    title="Images by severity"
+                                    severityCounts={data.affectedImageCountBySeverity}
+                                    hiddenSeverities={hiddenSeverities}
+                                />
+                            )}
+                        />
+                    </SummaryCardLayout>
                 </div>
                 <Divider />
-                <div className="pf-u-background-color-100 pf-u-flex-grow-1">
-                    <Split className="pf-u-px-lg pf-u-py-md pf-u-align-items-baseline">
+                <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1">
+                    <Split className="pf-v5-u-px-lg pf-v5-u-py-md pf-v5-u-align-items-baseline">
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <EntityTypeToggleGroup
@@ -463,13 +455,13 @@ function ImageCvePage() {
                         <>
                             {tableLoading && !tableDataAvailable && (
                                 <Bullseye>
-                                    <Spinner isSVG />
+                                    <Spinner />
                                 </Bullseye>
                             )}
                             {tableDataAvailable && (
                                 <>
                                     <Divider />
-                                    <div className="pf-u-px-lg workload-cves-table-container">
+                                    <div className="pf-v5-u-px-lg workload-cves-table-container">
                                         {entityTab === 'Image' && (
                                             <AffectedImagesTable
                                                 images={imageData?.images ?? []}
