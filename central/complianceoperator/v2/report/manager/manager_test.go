@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -18,6 +20,9 @@ type ManagerTestSuite struct {
 }
 
 func (m *ManagerTestSuite) SetupSuite() {
+	if features.ComplianceReporting.Enabled() {
+		return
+	}
 	m.ctx = sac.WithAllAccess(context.Background())
 
 }
@@ -34,9 +39,13 @@ func TestComplianceProfileService(t *testing.T) {
 
 func (m *ManagerTestSuite) TestSubmitReportRequest() {
 	manager := New(m.datastore)
-	err := manager.SubmitReportRequest(m.ctx, "test_scan_config")
+	reportRequest := &storage.ComplianceOperatorScanConfigurationV2{
+		ScanConfigName: "test_scan",
+		Id:             "test_scan_config",
+	}
+	err := manager.SubmitReportRequest(m.ctx, reportRequest)
 	m.Require().NoError(err)
-	err = manager.SubmitReportRequest(m.ctx, "test_scan_config")
+	err = manager.SubmitReportRequest(m.ctx, reportRequest)
 	m.Require().Error(err)
 }
 

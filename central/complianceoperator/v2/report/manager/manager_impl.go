@@ -9,12 +9,13 @@ import (
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
-	log         logging.Logger
+	log         = logging.LoggerForModule()
 	maxRequests = 10
 )
 
@@ -25,11 +26,11 @@ type reportRequest struct {
 type managerImpl struct {
 	datastore            scanConfigurationDS.DataStore
 	runningReportConfigs map[string]*reportRequest
-	//channel for report job requests
+	// channel for report job requests
 	reportRequests chan *reportRequest
 	stopper        concurrency.Stopper
 
-	//Mutex to synchronize access to runningReportConfigs map
+	// Mutex to synchronize access to runningReportConfigs map
 	mu sync.Mutex
 }
 
@@ -43,6 +44,10 @@ func New(scanConfigDS scanConfigurationDS.DataStore) Manager {
 }
 
 func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
+	if features.ComplianceReporting.Enabled() {
+		return nil
+	}
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -50,7 +55,7 @@ func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *stora
 		return errors.New(fmt.Sprintf("Report request for scan configuration %q already in process", scanConfig.GetScanConfigName()))
 	}
 
-	log.Infof("Submitting report for scan at %v for execution", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822))
+	log.Infof("Submitting report for scan config %s at %v for execution", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822))
 	req := &reportRequest{
 		scanConfig,
 	}
@@ -76,7 +81,7 @@ func (m *managerImpl) generateReport(req *reportRequest) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// TODO: Implement business logic for querying, formatting and sending report over email
+	// TODO ROX-24172: Implement business logic for querying, formatting and sending report over email
 	logging.Infof("Executing report request for scan config %q", req.scanConfig.GetId())
 	delete(m.runningReportConfigs, req.scanConfig.GetId())
 }
