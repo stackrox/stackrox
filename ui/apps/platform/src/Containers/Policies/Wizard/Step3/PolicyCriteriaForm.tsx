@@ -8,6 +8,7 @@ import { Policy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getPolicyDescriptors } from 'Containers/Policies/policies.utils';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
+import PolicyCriteriaOptions from './PolicyCriteriaOptions';
 import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
 
 import './PolicyCriteriaForm.css';
@@ -97,7 +98,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
         <DndProvider backend={HTML5Backend}>
             <Flex fullWidth={{ default: 'fullWidth' }} className="pf-v5-u-h-100">
                 <Flex
-                    flex={{ default: 'flex_1' }}
+                    flex={{ default: 'flex_2' }}
                     direction={{ default: 'column' }}
                     className="pf-v5-u-h-100"
                     spaceItems={{ default: 'spaceItemsNone' }}
@@ -126,6 +127,14 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                     >
                         <BooleanPolicyLogicSection />
                     </Flex>
+                </Flex>
+                <Divider component="div" orientation={{ default: 'vertical' }} />
+                <Flex
+                    flex={{ default: 'flex_1' }}
+                    className="pf-v5-u-h-100 pf-v5-u-pt-lg"
+                    id="policy-criteria-keys-container"
+                >
+                    <PolicyCriteriaOptions descriptors={filteredDescriptors} />
                 </Flex>
                 <Divider component="div" orientation={{ default: 'vertical' }} />
                 {!showPolicyCriteriaModal && (
