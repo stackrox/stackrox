@@ -187,7 +187,7 @@ func NewContextWithConfig(t *testing.T, config Config) (*TestContext, error) {
 		},
 	}
 
-	tc.StartFakeGRPC()
+	tc.StartFakeGRPC(config.CentralCaps...)
 	tc.startSensorInstance(t, envConfig, config)
 
 	return &tc, nil
@@ -290,18 +290,19 @@ func (c *TestContext) StopCentralGRPC() {
 
 // RestartFakeCentralConnection creates a new fake central connection and updates factory pointers.
 // It calls StopCentralGRPC to make sure current fake central is stopped before creating new instance.
-func (c *TestContext) RestartFakeCentralConnection() {
+func (c *TestContext) RestartFakeCentralConnection(centralCaps ...string) {
 	c.StopCentralGRPC()
-	c.StartFakeGRPC()
+	c.StartFakeGRPC(centralCaps...)
 }
 
 // StartFakeGRPC will start a gRPC server to act as Central.
-func (c *TestContext) StartFakeGRPC() {
+func (c *TestContext) StartFakeGRPC(centralCaps ...string) {
 	c.deduperStateLock.Lock()
 	defer c.deduperStateLock.Unlock()
+	c.centralStopped.Store(false)
 
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
-		message.SensorHello(certID),
+		message.SensorHello(certID, centralCaps...),
 		message.ClusterConfig(),
 		message.PolicySync(c.config.InitialSystemPolicies),
 		message.BaselineSync([]*storage.ProcessBaseline{}),
@@ -839,6 +840,7 @@ func GetAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name strin
 
 // Config allows tests to inject ACS policies in the tests
 type Config struct {
+	CentralCaps                 []string
 	InitialSystemPolicies       []*storage.Policy
 	CertFilePath                string
 	SendDeduperState            bool
