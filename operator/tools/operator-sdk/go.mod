@@ -1,4 +1,4 @@
-module github.com/stackrox/rox/operator/tools/kuttl
+module github.com/stackrox/rox/operator/tools/operator-sdk
 
 go 1.21
 
