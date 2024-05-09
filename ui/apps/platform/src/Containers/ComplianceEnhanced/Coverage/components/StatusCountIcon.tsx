@@ -19,7 +19,7 @@ function getStatusIcon(status, count) {
                 color = 'var(--pf-v5-global--danger-color--100)';
                 break;
             case 'pass':
-                color = 'var(--pf-v5-global--success-color--100)';
+                color = 'var(--pf-v5-global--primary-color--100)';
                 break;
             case 'other':
                 color = 'var(--pf-v5-global--disabled-color--100)';

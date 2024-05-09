@@ -11,7 +11,7 @@ import {
     ToolbarItem,
     Tooltip,
 } from '@patternfly/react-core';
-import { Table, TableText, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { ComplianceCheckResultStatusCount } from 'services/ComplianceResultsService';
 import { getTableUIState } from 'utils/getTableUIState';
@@ -25,6 +25,8 @@ import {
     getCompliancePfClassName,
     getStatusCounts,
 } from './compliance.coverage.utils';
+
+import './ProfileChecksTable.css';
 
 export type ProfileChecksTableProps = {
     isLoading: boolean;
@@ -59,7 +61,7 @@ function ProfileChecksTable({
             <Table>
                 <Thead>
                     <Tr>
-                        <Th width={50}>Check</Th>
+                        <Th width={60}>Check</Th>
                         <Th modifier="fitContent">Controls</Th>
                         <Th modifier="fitContent">Fail status</Th>
                         <Th modifier="fitContent">Pass status</Th>
@@ -90,27 +92,32 @@ function ProfileChecksTable({
                                     passCount,
                                     totalCount
                                 );
+                                const progressBarId = `progress-bar-${checkName}`;
+
                                 return (
                                     <Tr key={checkName}>
                                         <Td dataLabel="Check">
-                                            <TableText wrapModifier="wrap">
-                                                <Link
-                                                    to={generatePath(coverageCheckDetailsPath, {
-                                                        checkName,
-                                                        profileName,
-                                                    })}
-                                                >
-                                                    {checkName}
-                                                </Link>
-                                            </TableText>
-                                            <TableText wrapModifier="truncate">
+                                            <Link
+                                                to={generatePath(coverageCheckDetailsPath, {
+                                                    checkName,
+                                                    profileName,
+                                                })}
+                                            >
+                                                {checkName}
+                                            </Link>
+                                            {/*
+                                                grid display is required to prevent the cell from
+                                                expanding to the text length. The Truncate PF component
+                                                is not used here because it displays a tooltip on hover
+                                            */}
+                                            <div style={{ display: 'grid' }}>
                                                 <Text
                                                     component={TextVariants.small}
-                                                    className="pf-v5-u-color-200"
+                                                    className="pf-v5-u-color-200 truncate-text"
                                                 >
                                                     {rationale}
                                                 </Text>
-                                            </TableText>
+                                            </div>
                                         </Td>
                                         <Td dataLabel="Controls" modifier="fitContent">
                                             placeholder
@@ -138,7 +145,7 @@ function ProfileChecksTable({
                                         </Td>
                                         <Td dataLabel="Compliance">
                                             <Progress
-                                                id={`progress-bar-${checkName}`}
+                                                id={progressBarId}
                                                 value={passPercentage}
                                                 measureLocation={ProgressMeasureLocation.outside}
                                                 className={getCompliancePfClassName(passPercentage)}
@@ -152,7 +159,7 @@ function ProfileChecksTable({
                                                 }
                                                 triggerRef={() =>
                                                     document.getElementById(
-                                                        `progress-bar-${checkName}`
+                                                        progressBarId
                                                     ) as HTMLButtonElement
                                                 }
                                             />
