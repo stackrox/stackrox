@@ -87,6 +87,7 @@ type ReportGetter interface {
 type Indexer interface {
 	ReportGetter
 	IndexContainerImage(context.Context, string, string, ...Option) (*claircore.IndexReport, error)
+	DeleteIndexReports(context.Context, ...string) ([]claircore.Digest, error)
 	Close(context.Context) error
 	Ready(context.Context) error
 }
@@ -361,6 +362,22 @@ func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*clai
 		return nil, false, err
 	}
 	return i.libIndex.IndexReport(ctx, manifestDigest)
+}
+
+func (i *localIndexer) DeleteIndexReports(ctx context.Context, hashIDs ...string) ([]claircore.Digest, error) {
+	digests := make([]claircore.Digest, 0, len(hashIDs))
+	for _, hashID := range hashIDs {
+		manifestDigest, err := createManifestDigest(hashID)
+		if err != nil {
+			// TODO: log we were unable to convert ID.
+			continue
+		}
+		digests = append(digests, manifestDigest)
+	}
+	if len(digests) == 0 {
+		return nil, errors.New("bad")
+	}
+	return i.libIndex.DeleteManifests(ctx, digests...)
 }
 
 // createManifestDigest creates a unique claircore.Digest from a Scanner's manifest hash ID.
