@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	log          logging.Logger
-	maxsizeQueue = 10
+	log         logging.Logger
+	maxRequests = 10
 )
 
 type reportRequest struct {
@@ -37,8 +37,8 @@ func New(scanConfigDS scanConfigurationDS.DataStore) Manager {
 	return &managerImpl{
 		datastore:            scanConfigDS,
 		stopper:              concurrency.NewStopper(),
-		runningReportConfigs: make(map[string]*reportRequest, m),
-		reportRequests:       make(chan *reportRequest, maxsizeQueue),
+		runningReportConfigs: make(map[string]*reportRequest, maxRequests),
+		reportRequests:       make(chan *reportRequest, maxRequests),
 	}
 }
 
@@ -87,7 +87,7 @@ func (m *managerImpl) runReports() {
 		select {
 		case <-m.stopper.Flow().StopRequested():
 			return
-		case req := <-m.queuedReports:
+		case req := <-m.reportRequests:
 			logging.Infof("Executing report %q at %v", req.scanConfig.GetId(), time.Now().Format(time.RFC822))
 			go m.generateReport(req)
 		}
