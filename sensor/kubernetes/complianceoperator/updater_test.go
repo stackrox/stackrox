@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
@@ -267,7 +268,8 @@ func getKeys(m map[string]bool) []string {
 
 func (s *UpdaterTestSuite) getInfo(times int, updateInterval time.Duration) *central.ComplianceOperatorInfo {
 	timer := time.NewTimer(responseTimeout)
-	updater := NewInfoUpdater(s.client, updateInterval)
+	readySignal := concurrency.NewSignal()
+	updater := NewInfoUpdater(s.client, updateInterval, &readySignal)
 
 	updater.Notify(common.SensorComponentEventSyncFinished)
 	err := updater.Start()
