@@ -67,7 +67,6 @@ func (s *serviceImpl) PostCollectorRuntimeConfiguration(
 	request *v1.PostCollectorRuntimeConfigurationRequest,
 ) (*v1.Empty, error) {
 
-	log.Infof("request.CollectorRuntimeConfiguration= %+v", request.CollectorRuntimeConfiguration)
 	err := s.dataStore.SetRuntimeConfiguration(ctx, request.CollectorRuntimeConfiguration)
 
 	msg := &central.MsgToSensor{
