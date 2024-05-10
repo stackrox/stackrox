@@ -146,25 +146,18 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
+	// UUID is only used by Scanner V2, if empty we assume this is from V4.
+	if r.URL.Query().Get(`uuid`) == "" {
+		h.getV4(w, r)
+		return
+	}
+	h.getV2(w, r)
+}
+
+func (h *httpHandler) getV2(w http.ResponseWriter, r *http.Request) {
 	uuid := r.URL.Query().Get(`uuid`)
 	fileName := r.URL.Query().Get(`file`)
-	v := r.URL.Query().Get(`version`)
-	// If only file is requested, then this is request for Scanner v4 mapping file.
-	if fileName != "" && uuid == "" && v == "" {
-		if v4FileName, exists := v4FileMapping[fileName]; exists {
-			h.getV4(r.Context(), w, r, mappingUpdaterType, v4FileName)
-			return
-		}
-		writeErrorNotFound(w)
-		return
-	}
-	// If only version is provided, this is for Scanner V4 vuln file
-	if v != "" && uuid == "" && fileName == "" {
-		h.getV4(r.Context(), w, r, vulnerabilityUpdaterType, v)
-		return
-	}
 
-	// At this point, we assume the request is from Scanner v2.
 	if uuid == "" {
 		writeErrorBadRequest(w)
 		return
@@ -453,10 +446,11 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 }
 
 func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, updaterKey, fileName string) (file *vulDefFile, err error) {
+	log.Debugf("Fetching scanner V4 %s file: %s", t, updaterKey)
+
 	if !h.online {
 		return h.openMostRecentV4OfflineFile(ctx, t, updaterKey, fileName)
 	}
-	log.Debugf("Getting v4 data for updater key: %s", updaterKey)
 	u := h.getUpdater(t, updaterKey)
 	var onlineFile *vulDefFile
 	// Ensure the updater is running.
@@ -466,7 +460,7 @@ func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, u
 		return nil, err
 	}
 	if openedFile == nil {
-		return nil, fmt.Errorf("Scanner V4 %s file %s not found", t, updaterKey)
+		return nil, fmt.Errorf("scanner V4 %s file %s not found", t, updaterKey)
 	}
 	log.Debugf("Compressed data file is available: %s", openedFile.Name())
 	toClose := func(f *vulDefFile) {
@@ -609,39 +603,46 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, func(), err
 	return tmpFile, cleanup, nil
 }
 
-func (h *httpHandler) getV4(ctx context.Context, w http.ResponseWriter, r *http.Request, t updaterType, key string) {
-	log.Debugf("Fetching scanner V4 %s file: %s", t, key)
+func (h *httpHandler) getV4(w http.ResponseWriter, r *http.Request) {
+	fileName := r.URL.Query().Get(`file`)
+	v := r.URL.Query().Get(`version`)
+	ctx := r.Context()
 
 	var err error
 	var f *vulDefFile
 
-	switch t {
-	case mappingUpdaterType:
-		f, err = h.openMostRecentV4File(ctx, t, mappingUpdaterKey, key)
-	case vulnerabilityUpdaterType:
-		if version.GetVersionKind(key) == version.NightlyKind {
-			// get dev for nightly at this moment
-			key = "dev"
+	switch {
+	case fileName != "" && v == "":
+		// If only file is requested, then this is request for Scanner v4 mapping file.
+		v4FileName, exists := v4FileMapping[fileName]
+		if !exists {
+			writeErrorNotFound(w)
+			return
 		}
-		f, err = h.openMostRecentV4File(ctx, t, key, "")
+		f, err = h.openMostRecentV4File(ctx, mappingUpdaterType, mappingUpdaterKey, v4FileName)
+	case fileName == "" && v != "":
+		// If only version is provided, this is for Scanner V4 vuln file
+		if version.GetVersionKind(v) == version.NightlyKind {
+			// get dev for nightly at this moment
+			v = "dev"
+		}
+		f, err = h.openMostRecentV4File(ctx, vulnerabilityUpdaterType, v, "")
 		if err == nil {
 			w.Header().Set("Content-Type", "application/zstd")
 		}
 	default:
-		errMsg := fmt.Sprintf("unknown Scanner V4 updater type: %s", t)
-		log.Error(errMsg)
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
+		writeErrorBadRequest(w)
 		return
 	}
 
 	if err != nil {
-		errMsg := fmt.Sprintf("could not read %s file %q: %v", t, key, err)
+		errMsg := fmt.Sprintf("could not read: %s", err)
 		log.Error(errMsg)
 		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
 		return
 	}
 	defer utils.IgnoreError(f.Close)
-	http.ServeContent(w, r, f.Name(), f.modTime, f)
+	serveContent(w, r, f.Name(), f.modTime, f)
 }
 
 func (h *httpHandler) startUpdaterAndOpenFile(u *requestedUpdater) (*os.File, time.Time, error) {
