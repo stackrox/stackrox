@@ -78,8 +78,8 @@ function NotifierConfigurationForm({
                                                 onClick={() => {
                                                     const notifierConfigurationsFiltered =
                                                         notifierConfigurations.filter(
-                                                            (notifierConfigurationTODO) =>
-                                                                notifierConfigurationTODO !==
+                                                            (notifierConfigurationArg) =>
+                                                                notifierConfigurationArg !==
                                                                 notifierConfiguration
                                                         );
                                                     setFieldValue(
