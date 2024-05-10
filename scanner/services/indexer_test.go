@@ -41,13 +41,14 @@ func (s *indexerServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
-func createRequest(id, url, username string) *v4.CreateIndexReportRequest {
+func createRequest(id, url, username string, insecure bool) *v4.CreateIndexReportRequest {
 	return &v4.CreateIndexReportRequest{
 		HashId: id,
 		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
 			ContainerImage: &v4.ContainerImageLocator{
-				Url:      url,
-				Username: username,
+				Url:                   url,
+				Username:              username,
+				InsecureSkipTlsVerify: insecure,
 			},
 		},
 	}
@@ -65,24 +66,24 @@ func (s *indexerServiceTestSuite) TestAuthz() {
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEnabled() {
-	s.setupMock(hashID, 1, &claircore.IndexReport{Success: true}, nil)
-	req := createRequest(hashID, imageURL, "sample username")
+	s.setupMock(hashID, 2, &claircore.IndexReport{Success: true}, nil)
+	req := createRequest(hashID, imageURL, "sample username", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
 	s.Equal(&v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuthDisabled() {
-	s.setupMock(hashID, 0, &claircore.IndexReport{Success: true}, nil)
-	req := createRequest(hashID, imageURL, "")
+	s.setupMock(hashID, 1, &claircore.IndexReport{Success: true}, nil)
+	req := createRequest(hashID, imageURL, "", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
 	s.Equal(&v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenIndexerError_thenInternalError() {
-	s.setupMock(hashID, 0, nil, errors.New(`indexer said "ouch"`))
-	req := createRequest(hashID, imageURL, "")
+	s.setupMock(hashID, 1, nil, errors.New(`indexer said "ouch"`))
+	req := createRequest(hashID, imageURL, "", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.ErrorContains(err, "ouch")
 	s.Nil(r)
@@ -93,9 +94,9 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenDigest_thenNoError(
 	iURL := "https://foobar:443/image:sha256@sha256:3d44fa76c2c83ed9296e4508b436ff583397cac0f4bad85c2b4ecc193ddb5106"
 	s.indexerMock.
 		EXPECT().
-		IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Eq(iURL), gomock.Len(0)).
+		IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Eq(iURL), gomock.Len(1)).
 		Return(&claircore.IndexReport{Success: true}, nil)
-	req := createRequest(hashID, iURL, "")
+	req := createRequest(hashID, iURL, "", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
 	s.Equal(&v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
@@ -156,7 +157,8 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 					HashId: "/v4/containerimage/foobar",
 					ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
 						ContainerImage: &v4.ContainerImageLocator{
-							Url: "sample-url",
+							Url:                   "sample-url",
+							InsecureSkipTlsVerify: false,
 						},
 					},
 				},
@@ -170,7 +172,8 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 					HashId: "/v4/containerimage/foobar",
 					ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
 						ContainerImage: &v4.ContainerImageLocator{
-							Url: "https://invalid-image-reference",
+							Url:                   "https://invalid-image-reference",
+							InsecureSkipTlsVerify: false,
 						},
 					},
 				},
