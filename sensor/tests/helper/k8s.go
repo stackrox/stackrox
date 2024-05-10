@@ -17,6 +17,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
+	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 )
 
 func getGVR(api apiMetaV1.APIResource) schema.GroupVersionResource {
@@ -76,7 +78,30 @@ func (c *TestContext) AssertResourceDoesNotExist(ctx context.Context, t *testing
 		}
 		_, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
 		return err != nil && kubeAPIErr.IsNotFound(err)
-	}, 120*time.Second, 10*time.Millisecond)
+	}, 30*time.Second, 10*time.Millisecond)
+}
+
+// WaitForResourceDelete wait for a resource to be deleted
+func (c *TestContext) WaitForResourceDelete(ctx context.Context, t *testing.T, resourceName string, namespace string, api apiMetaV1.APIResource) {
+	client, err := dynamic.NewForConfig(c.r.GetConfig())
+	require.NoError(t, err)
+
+	var cli dynamic.ResourceInterface
+	var obj *unstructured.Unstructured
+	require.Eventually(t, func() bool {
+		cli = client.Resource(getGVR(api))
+		if namespace != "" {
+			cli = client.Resource(getGVR(api)).Namespace(namespace)
+		}
+		obj, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
+		return err == nil || kubeAPIErr.IsNotFound(err)
+	}, 30*time.Second, 10*time.Millisecond)
+
+	if obj != nil {
+		if err := wait.For(conditions.New(c.r).ResourceDeleted(obj)); err != nil {
+			t.Logf("failed to wait for resource %s deletion", resourceName)
+		}
+	}
 }
 
 // GetContainerIdsFromPod retrieves the container ids from a given pod.

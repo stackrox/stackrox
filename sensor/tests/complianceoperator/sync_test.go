@@ -3,6 +3,7 @@ package complianceoperator
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -14,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -59,6 +61,13 @@ var (
 			},
 		},
 	}
+
+	namespaceAPIResource = v1.APIResource{
+		Name:    "namespaces",
+		Kind:    "Namespace",
+		Group:   "",
+		Version: "v1",
+	}
 )
 
 func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
@@ -79,12 +88,18 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 	require.NoError(t, err)
 
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, tc *helper.TestContext, _ map[string]k8s.Object) {
+		// Wait for the sync
+		tc.WaitForSyncEvent(t, 30*time.Second)
+		tc.GetFakeCentral().ClearReceivedBuffer()
+
 		ctx := context.Background()
 		// Create the Compliance Operator CRDs
 		deleteCRDsFn, err := tc.ApplyWithManifestDir(context.Background(), "../../../tests/complianceoperator/crds", "*")
 		t.Cleanup(func() {
 			// Deleting the namespace should take care of all the resources created in this test
 			utils.IgnoreError(deleteCRDsFn)
+			// Wait for the namespace to be deleted
+			tc.WaitForResourceDelete(ctx, t, coNamespace, "", namespaceAPIResource)
 		})
 
 		require.NoError(t, err)
@@ -99,40 +114,46 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage(testScanConfig))
 
 		// Assert the resources are created
-		scanSetting := tc.AssertResourceDoesExist(ctx, t, "test", coNamespace, complianceoperator.ScanSetting.APIResource)
-		scanSettingBinding := tc.AssertResourceDoesExist(ctx, t, "test", coNamespace, complianceoperator.ScanSettingBinding.APIResource)
+		scanSetting := tc.AssertResourceDoesExist(ctx, t, testScanConfig.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSetting.APIResource)
+		scanSettingBinding := tc.AssertResourceDoesExist(ctx, t, testScanConfig.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSettingBinding.APIResource)
 
 		assertScanSetting(t, testScanConfig, scanSetting)
 		assertScanSettingBinding(t, testScanConfig, scanSettingBinding)
 
 		// Restart connection
 		tc.RestartFakeCentralConnection(centralCaps...)
+		// Wait for the sync
+		tc.WaitForSyncEvent(t, 30*time.Second)
+		tc.GetFakeCentral().ClearReceivedBuffer()
 
 		// Send a SyncScanConfigs Message
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage(updatedTestScanConfig, testScanConfig2))
 
-		scanSetting = tc.AssertResourceWasUpdated(ctx, t, "test", coNamespace, complianceoperator.ScanSetting.APIResource, scanSetting.GetResourceVersion())
-		scanSettingBinding = tc.AssertResourceWasUpdated(ctx, t, "test", coNamespace, complianceoperator.ScanSettingBinding.APIResource, scanSettingBinding.GetResourceVersion())
+		scanSetting = tc.AssertResourceWasUpdated(ctx, t, updatedTestScanConfig.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSetting.APIResource, scanSetting.GetResourceVersion())
+		scanSettingBinding = tc.AssertResourceWasUpdated(ctx, t, updatedTestScanConfig.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSettingBinding.APIResource, scanSettingBinding.GetResourceVersion())
 
 		assertScanSetting(t, updatedTestScanConfig, scanSetting)
 		assertScanSettingBinding(t, updatedTestScanConfig, scanSettingBinding)
 
-		scanSetting = tc.AssertResourceDoesExist(ctx, t, "test-2", coNamespace, complianceoperator.ScanSetting.APIResource)
-		scanSettingBinding = tc.AssertResourceDoesExist(ctx, t, "test-2", coNamespace, complianceoperator.ScanSettingBinding.APIResource)
+		scanSetting = tc.AssertResourceDoesExist(ctx, t, testScanConfig2.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSetting.APIResource)
+		scanSettingBinding = tc.AssertResourceDoesExist(ctx, t, testScanConfig2.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSettingBinding.APIResource)
 
 		assertScanSetting(t, testScanConfig2, scanSetting)
 		assertScanSettingBinding(t, testScanConfig2, scanSettingBinding)
 
 		// Restart connection
 		tc.RestartFakeCentralConnection(centralCaps...)
+		// Wait for the sync
+		tc.WaitForSyncEvent(t, 30*time.Second)
+		tc.GetFakeCentral().ClearReceivedBuffer()
 
 		// Send a SyncScanConfigs Message
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage())
 
-		tc.AssertResourceDoesNotExist(ctx, t, "test", coNamespace, complianceoperator.ScanSetting.APIResource)
-		tc.AssertResourceDoesNotExist(ctx, t, "test", coNamespace, complianceoperator.ScanSettingBinding.APIResource)
-		tc.AssertResourceDoesNotExist(ctx, t, "test-2", coNamespace, complianceoperator.ScanSetting.APIResource)
-		tc.AssertResourceDoesNotExist(ctx, t, "test-2", coNamespace, complianceoperator.ScanSettingBinding.APIResource)
+		tc.AssertResourceDoesNotExist(ctx, t, testScanConfig.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSetting.APIResource)
+		tc.AssertResourceDoesNotExist(ctx, t, testScanConfig.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSettingBinding.APIResource)
+		tc.AssertResourceDoesNotExist(ctx, t, testScanConfig2.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSetting.APIResource)
+		tc.AssertResourceDoesNotExist(ctx, t, testScanConfig2.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSettingBinding.APIResource)
 		t.Log("Test_ComplianceOperatorScanConfigSync assertions finished")
 	}))
 }
