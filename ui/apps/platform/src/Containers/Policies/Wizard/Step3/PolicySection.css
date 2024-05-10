@@ -18,6 +18,8 @@
 /* for large size screens, change the policy sections to be width limited */
 @media (min-width: 992px) {
     .policy-section-card {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
         min-width: 450px;
         max-width: 450px;
         height: 100%;

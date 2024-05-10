@@ -3,6 +3,7 @@ import {
     Button,
     Divider,
     Flex,
+    FlexItem,
     Title,
     Toolbar,
     ToolbarContent,
@@ -17,6 +18,8 @@ import { useFormikContext } from 'formik';
 import { Policy } from 'types/policy.proto';
 import { Descriptor } from './policyCriteriaDescriptors';
 import { getEmptyPolicyFieldCard } from '../../policies.utils';
+
+import './PolicyCriteriaOptions.css';
 
 function getKeysByCategory(keys) {
     const categories = {};
@@ -132,28 +135,36 @@ function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCrit
     }
 
     const toolbar = (
-        <Toolbar style={{ padding: 0 }}>
-            <ToolbarContent style={{ padding: 0 }}>
-                <ToolbarItem widths={{ default: '100%' }}>
-                    <TreeViewSearch
-                        onSearch={onSearch}
-                        id="input-search"
-                        name="search-input"
-                        aria-label="Filter policy criteria"
-                    />
-                </ToolbarItem>
-            </ToolbarContent>
-        </Toolbar>
+        <>
+            <Toolbar style={{ padding: 0 }}>
+                <ToolbarContent style={{ padding: 0 }}>
+                    <ToolbarItem widths={{ default: '100%' }}>
+                        <TreeViewSearch
+                            onSearch={onSearch}
+                            id="input-search"
+                            name="search-input"
+                            aria-label="Filter policy criteria"
+                        />
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
+            <Divider component="div" className="pf-u-mb-sm pf-u-mt-md" />
+        </>
     );
 
     return (
-        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
-            <Title headingLevel="h2">Drag out policy fields</Title>
-            <Divider component="div" className="pf-u-mb-sm pf-u-mt-md" />
-            <Button variant="link" onClick={() => setAllExpanded(!allExpanded)}>
-                {allExpanded && 'Collapse all'}
-                {!allExpanded && 'Expand all'}
-            </Button>
+        <Flex
+            className="pf-v5-u-w-100"
+            direction={{ default: 'column' }}
+            spaceItems={{ default: 'spaceItemsNone' }}
+        >
+            <Title headingLevel="h3">Add policy criteria to (here)</Title>
+            <FlexItem>
+                <Button variant="link" onClick={() => setAllExpanded(!allExpanded)}>
+                    {allExpanded && 'Collapse all'}
+                    {!allExpanded && 'Expand all'}
+                </Button>
+            </FlexItem>
             <TreeView
                 activeItems={activeItems}
                 data={filteredItems}
