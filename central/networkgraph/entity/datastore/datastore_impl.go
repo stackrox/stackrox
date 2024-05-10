@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -413,16 +414,15 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	defer ds.netEntityLock.Unlock()
 
 	var ids []string
-	if err := ds.storage.Walk(ctx, func(obj *storage.NetworkEntity) error {
-		// Skip default ones.
-		if obj.GetInfo().GetExternalSource().GetDefault() {
+	if err := ds.storage.WalkByQuery(ctx,
+		pkgSearch.NewQueryBuilder().AddBools(pkgSearch.DefaultExternalSource, false).ProtoQuery(),
+		func(obj *storage.NetworkEntity) error {
+			if clusterID == obj.GetScope().GetClusterId() {
+				ids = append(ids, obj.GetInfo().GetId())
+			}
 			return nil
-		}
-		if clusterID == obj.GetScope().GetClusterId() {
-			ids = append(ids, obj.GetInfo().GetId())
-		}
-		return nil
-	}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 
