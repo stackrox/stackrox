@@ -25,6 +25,9 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const showPolicyCriteriaModal = isFeatureFlagEnabled('ROX_POLICY_CRITERIA_MODAL');
+    const showAccessiblePolicyCriteria = isFeatureFlagEnabled(
+        'ROX_ACCESSIBLE_POLICY_CRITERIA_EDITING'
+    );
 
     function addNewPolicySection() {
         if (values.policySections.length < MAX_POLICY_SECTIONS) {
@@ -131,18 +134,19 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                     </Flex>
                 </Flex>
                 <Divider component="div" orientation={{ default: 'vertical' }} />
-                <Flex
-                    flex={{ default: 'flex_1' }}
-                    className="pf-v5-u-h-100 pf-v5-u-pt-lg"
-                    id="policy-criteria-keys-container"
-                >
-                    <PolicyCriteriaOptions
-                        descriptors={filteredDescriptors}
-                        selectedSectionIndex={selectedSectionIndex}
-                    />
-                </Flex>
-                <Divider component="div" orientation={{ default: 'vertical' }} />
-                {!showPolicyCriteriaModal && (
+                {!showPolicyCriteriaModal && showAccessiblePolicyCriteria && (
+                    <Flex
+                        flex={{ default: 'flex_1' }}
+                        className="pf-v5-u-h-100 pf-v5-u-pt-lg"
+                        id="policy-criteria-keys-container"
+                    >
+                        <PolicyCriteriaOptions
+                            descriptors={filteredDescriptors}
+                            selectedSectionIndex={selectedSectionIndex}
+                        />
+                    </Flex>
+                )}
+                {!showPolicyCriteriaModal && !showAccessiblePolicyCriteria && (
                     <Flex
                         className="pf-v5-u-h-100 pf-v5-u-pt-lg"
                         id="policy-criteria-keys-container"
