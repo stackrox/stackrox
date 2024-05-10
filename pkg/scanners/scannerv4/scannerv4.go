@@ -8,7 +8,6 @@ import (
 
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -110,24 +109,20 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, nil
 	}
 
-	var opts []name.Option
-	if rc.Insecure {
-		opts = append(opts, name.Insecure)
-	}
-
 	auth := authn.Basic{
 		Username: rc.Username,
 		Password: rc.Password,
 	}
 
-	digest, err := pkgscanner.DigestFromImage(image, opts...)
+	digest, err := pkgscanner.DigestFromImage(image)
 	if err != nil {
 		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
-	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth)
+	opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: rc.GetInsecure()}
+	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt)
 	if err != nil {
 		return nil, fmt.Errorf("index and scan image report (reference: %q): %w", digest.Name(), err)
 	}

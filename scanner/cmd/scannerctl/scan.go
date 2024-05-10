@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/scanner/cmd/scannerctl/authn"
 	"github.com/stackrox/rox/scanner/indexer"
 )
@@ -61,13 +62,16 @@ func scanCmd(ctx context.Context) *cobra.Command {
 				ref.DigestStr(), *imageDigest)
 		}
 		var report any
+		opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: false}
 		if *indexOnly {
 			var ir *v4.IndexReport
-			ir, err = scanner.GetOrCreateImageIndex(ctx, ref, auth)
+			// TODO(ROX-23898): add flag for skipping TLS verification.
+			ir, err = scanner.GetOrCreateImageIndex(ctx, ref, auth, opt)
 			report = ir
 		} else {
 			var vr *v4.VulnerabilityReport
-			vr, err = scanner.IndexAndScanImage(ctx, ref, auth)
+			// TODO(ROX-23898): add flag for skipping TLS verification.
+			vr, err = scanner.IndexAndScanImage(ctx, ref, auth, opt)
 			report = vr
 		}
 
