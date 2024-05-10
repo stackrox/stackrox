@@ -37,15 +37,19 @@ import useDeleteModal, {
     isErrorDeleteResult,
 } from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteModal';
 
+import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
+import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
+
+import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
-import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
+import { defaultEmailBody, getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
 import ReportJobs from './ReportJobs';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
@@ -286,7 +290,26 @@ function ViewVulnReportPage() {
                         >
                             <ReportParametersDetails formValues={reportFormValues} />
                             <Divider component="div" className="pf-v5-u-py-md" />
-                            <DeliveryDestinationsDetails formValues={reportFormValues} />
+                            <NotifierConfigurationView
+                                customBodyDefault={defaultEmailBody}
+                                customSubjectDefault={getDefaultEmailSubject(
+                                    reportFormValues.reportParameters.reportName,
+                                    reportFormValues.reportParameters.reportScope?.name
+                                )}
+                                notifierConfigurations={reportFormValues.deliveryDestinations}
+                                renderTemplatePreview={({
+                                    customBody,
+                                    customSubject,
+                                    customSubjectDefault,
+                                }: TemplatePreviewArgs) => (
+                                    <EmailTemplatePreview
+                                        emailSubject={customSubject}
+                                        emailBody={customBody}
+                                        defaultEmailSubject={customSubjectDefault}
+                                        reportParameters={reportFormValues.reportParameters}
+                                    />
+                                )}
+                            />
                             <Divider component="div" className="pf-v5-u-py-md" />
                             <ScheduleDetails formValues={reportFormValues} />
                         </PageSection>

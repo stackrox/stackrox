@@ -46,9 +46,13 @@ import useAuthStatus from 'hooks/useAuthStatus';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
+import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
+import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
+
+import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
-import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
+import { defaultEmailBody, getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
 import ReportJobStatus from './ReportJobStatus';
 import JobDetails from './JobDetails';
 
@@ -336,8 +340,33 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                                         className="pf-v5-u-my-md"
                                                     />
                                                     <FlexItem>
-                                                        <DeliveryDestinationsDetails
-                                                            formValues={formValues}
+                                                        <NotifierConfigurationView
+                                                            customBodyDefault={defaultEmailBody}
+                                                            customSubjectDefault={getDefaultEmailSubject(
+                                                                formValues.reportParameters
+                                                                    .reportName,
+                                                                formValues.reportParameters
+                                                                    .reportScope?.name
+                                                            )}
+                                                            notifierConfigurations={
+                                                                formValues.deliveryDestinations
+                                                            }
+                                                            renderTemplatePreview={({
+                                                                customBody,
+                                                                customSubject,
+                                                                customSubjectDefault,
+                                                            }: TemplatePreviewArgs) => (
+                                                                <EmailTemplatePreview
+                                                                    emailSubject={customSubject}
+                                                                    emailBody={customBody}
+                                                                    defaultEmailSubject={
+                                                                        customSubjectDefault
+                                                                    }
+                                                                    reportParameters={
+                                                                        formValues.reportParameters
+                                                                    }
+                                                                />
+                                                            )}
                                                         />
                                                     </FlexItem>
                                                     <Divider

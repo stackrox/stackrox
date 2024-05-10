@@ -2,41 +2,28 @@ import React, { ReactElement } from 'react';
 import {
     Alert,
     AlertVariant,
-    Button,
-    Card,
-    CardBody,
-    CardTitle,
     Divider,
     Flex,
     FlexItem,
     Form,
     PageSection,
     Title,
-    Tooltip,
 } from '@patternfly/react-core';
-import { HelpIcon, PencilAltIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import { FormikProps } from 'formik';
-import isEqual from 'lodash/isEqual';
 
-import {
-    EmailTemplateFormData,
-    isDefaultEmailTemplate,
-} from 'Components/EmailTemplate/EmailTemplate.utils';
-import EmailTemplateModal, {
-    TemplatePreviewArgs,
-} from 'Components/EmailTemplate/EmailTemplateModal';
+import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
+import NotifierConfigurationForm from 'Components/NotifierConfiguration/NotifierConfigurationForm';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import useIndexKey from 'hooks/useIndexKey';
 import usePermissions from 'hooks/usePermissions';
-import { NotifierConfiguration } from 'services/ReportsService.types';
 
-import NotifierSelection from './NotifierSelection';
-import { defaultEmailBody, getDefaultEmailSubject } from './emailTemplateFormUtils';
+import {
+    defaultEmailBody as customBodyDefault,
+    getDefaultEmailSubject,
+} from './emailTemplateFormUtils';
 import { ReportFormValues } from './useReportFormValues';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
-import useEmailTemplateModal from '../hooks/useEmailTemplateModal';
 
 export type DeliveryDestinationsFormParams = {
     title: string;
@@ -45,40 +32,12 @@ export type DeliveryDestinationsFormParams = {
 
 function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormParams): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
-    const hasNotifierWriteAccess = hasReadWriteAccess('Integration');
-    const { keyFor } = useIndexKey();
+    const hasWriteAccessForIntegration = hasReadWriteAccess('Integration');
 
-    const {
-        isEmailTemplateModalOpen,
-        closeEmailTemplateModal,
-        selectedEmailSubject,
-        selectedEmailBody,
-        selectedDeliveryDestination,
-        setSelectedDeliveryDestination,
-    } = useEmailTemplateModal();
-
-    const defaultEmailSubject = getDefaultEmailSubject(
+    const customSubjectDefault = getDefaultEmailSubject(
         formik.values.reportParameters.reportName,
         formik.values.reportParameters.reportScope?.name
     );
-
-    function onEmailTemplateChange(formData: EmailTemplateFormData) {
-        const index = formik.values.deliveryDestinations.findIndex((deliveryDestination) =>
-            isEqual(deliveryDestination, selectedDeliveryDestination)
-        );
-        if (index >= 0) {
-            const prevDeliveryDestination = formik.values.deliveryDestinations[index];
-            const { emailConfig } = prevDeliveryDestination;
-            formik.setFieldValue(`deliveryDestinations[${index}]`, {
-                ...prevDeliveryDestination,
-                emailConfig: {
-                    ...emailConfig,
-                    customSubject: formData.customSubject,
-                    customBody: formData.customBody,
-                },
-            });
-        }
-    }
 
     function renderTemplatePreview({
         customBody,
@@ -95,40 +54,15 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
         );
     }
 
-    function addDeliveryDestination() {
-        const newDeliveryDestination: NotifierConfiguration = {
-            emailConfig: {
-                notifierId: '',
-                mailingLists: [],
-                customSubject: '',
-                customBody: '',
+    function onDeleteLastNotifierConfiguration() {
+        formik.setValues({
+            ...formik.values,
+            schedule: {
+                intervalType: null,
+                daysOfWeek: [],
+                daysOfMonth: [],
             },
-            notifierName: '',
-        };
-        const newDeliveryDestinations = [
-            ...formik.values.deliveryDestinations,
-            newDeliveryDestination,
-        ];
-        formik.setFieldValue('deliveryDestinations', newDeliveryDestinations);
-    }
-
-    function removeDeliveryDestination(index: number) {
-        const newDeliveryDestinations = formik.values.deliveryDestinations.filter((item, i) => {
-            return index !== i;
         });
-        if (newDeliveryDestinations.length === 0) {
-            formik.setValues({
-                ...formik.values,
-                deliveryDestinations: newDeliveryDestinations,
-                schedule: {
-                    intervalType: null,
-                    daysOfWeek: [],
-                    daysOfMonth: [],
-                },
-            });
-        } else {
-            formik.setFieldValue('deliveryDestinations', newDeliveryDestinations);
-        }
     }
 
     function onScheduledRepeatChange(_id, selection) {
@@ -169,125 +103,19 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                 <Form className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <Flex direction={{ default: 'column' }}>
                         <FlexItem flex={{ default: 'flexNone' }}>
-                            <ul>
-                                {formik.values.deliveryDestinations.map(
-                                    (deliveryDestination, index) => {
-                                        const { emailConfig, notifierName } = deliveryDestination;
-                                        const {
-                                            customBody,
-                                            customSubject,
-                                            mailingLists,
-                                            notifierId,
-                                        } = emailConfig;
-                                        const selectedNotifier =
-                                            notifierId.length === 0
-                                                ? null
-                                                : { id: notifierId, name: notifierName };
-                                        const fieldId = `deliveryDestinations[${index}]`;
-                                        const isDefaultEmailTemplateApplied =
-                                            isDefaultEmailTemplate({ customBody, customSubject });
-                                        return (
-                                            <li key={keyFor(index)} className="pf-v5-u-mb-md">
-                                                <Card>
-                                                    <CardTitle>
-                                                        <Flex
-                                                            alignItems={{
-                                                                default: 'alignItemsCenter',
-                                                            }}
-                                                        >
-                                                            <FlexItem flex={{ default: 'flex_1' }}>
-                                                                Delivery destination
-                                                            </FlexItem>
-                                                            <FlexItem>
-                                                                <Button
-                                                                    variant="plain"
-                                                                    aria-label="Delete delivery destination"
-                                                                    onClick={() => {
-                                                                        removeDeliveryDestination(
-                                                                            index
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    <TrashIcon />
-                                                                </Button>
-                                                            </FlexItem>
-                                                        </Flex>
-                                                    </CardTitle>
-                                                    <CardBody>
-                                                        <NotifierSelection
-                                                            prefixId={fieldId}
-                                                            selectedNotifier={selectedNotifier}
-                                                            mailingLists={mailingLists}
-                                                            allowCreate={hasNotifierWriteAccess}
-                                                            formik={formik}
-                                                        />
-                                                        <div className="pf-v5-u-mt-md">
-                                                            <FormLabelGroup
-                                                                label="Email template"
-                                                                labelIcon={
-                                                                    <Tooltip
-                                                                        content={
-                                                                            isDefaultEmailTemplateApplied ? (
-                                                                                <div>
-                                                                                    Default template
-                                                                                    applied. Edit to
-                                                                                    customize.
-                                                                                </div>
-                                                                            ) : (
-                                                                                <div>
-                                                                                    Custom template
-                                                                                    applied. Edit to
-                                                                                    customize.
-                                                                                </div>
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <Button
-                                                                            variant="plain"
-                                                                            aria-label="More info for email template field"
-                                                                            aria-describedby={`${fieldId}.customSubject`}
-                                                                        >
-                                                                            <HelpIcon aria-label="More info for email template field" />
-                                                                        </Button>
-                                                                    </Tooltip>
-                                                                }
-                                                                fieldId={`${fieldId}.customSubject`}
-                                                                errors={formik.errors}
-                                                                isRequired
-                                                            >
-                                                                <Button
-                                                                    variant="link"
-                                                                    isInline
-                                                                    icon={<PencilAltIcon />}
-                                                                    onClick={() => {
-                                                                        setSelectedDeliveryDestination(
-                                                                            deliveryDestination
-                                                                        );
-                                                                    }}
-                                                                    iconPosition="right"
-                                                                >
-                                                                    {isDefaultEmailTemplateApplied
-                                                                        ? 'Default template applied'
-                                                                        : 'Custom template applied'}
-                                                                </Button>
-                                                            </FormLabelGroup>
-                                                        </div>
-                                                    </CardBody>
-                                                </Card>
-                                            </li>
-                                        );
-                                    }
-                                )}
-                                <li>
-                                    <Button
-                                        variant="link"
-                                        icon={<PlusCircleIcon />}
-                                        onClick={addDeliveryDestination}
-                                    >
-                                        Add delivery destination
-                                    </Button>
-                                </li>
-                            </ul>
+                            <NotifierConfigurationForm
+                                customBodyDefault={customBodyDefault}
+                                customSubjectDefault={customSubjectDefault}
+                                errors={formik.errors}
+                                fieldIdPrefix="deliveryDestinations"
+                                hasWriteAccessForIntegration={hasWriteAccessForIntegration}
+                                notifierConfigurations={formik.values.deliveryDestinations}
+                                onDeleteLastNotifierConfiguration={
+                                    onDeleteLastNotifierConfiguration
+                                }
+                                renderTemplatePreview={renderTemplatePreview}
+                                setFieldValue={formik.setFieldValue}
+                            />
                         </FlexItem>
                     </Flex>
                     <Divider component="div" />
@@ -367,16 +195,6 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                     </Flex>
                 </Form>
             </PageSection>
-            <EmailTemplateModal
-                isOpen={isEmailTemplateModalOpen}
-                onClose={closeEmailTemplateModal}
-                onChange={onEmailTemplateChange}
-                customBodyDefault={defaultEmailBody}
-                customBodyInitial={selectedEmailBody}
-                customSubjectDefault={defaultEmailSubject}
-                customSubjectInitial={selectedEmailSubject}
-                renderTemplatePreview={renderTemplatePreview}
-            />
         </>
     );
 }

@@ -16,12 +16,15 @@ import {
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import exampleReportsCSVData from 'Containers/Vulnerabilities/VulnerablityReporting/exampleReportsCSVData';
-
+import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
+import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
+
+import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
-import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
+import exampleReportsCSVData from '../exampleReportsCSVData';
+import { defaultEmailBody, getDefaultEmailSubject } from './emailTemplateFormUtils';
 
 export type ReportReviewFormParams = {
     title: string;
@@ -46,7 +49,26 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactE
             >
                 <ReportParametersDetails formValues={formValues} />
                 <Divider component="div" className="pf-v5-u-py-md" />
-                <DeliveryDestinationsDetails formValues={formValues} />
+                <NotifierConfigurationView
+                    customBodyDefault={defaultEmailBody}
+                    customSubjectDefault={getDefaultEmailSubject(
+                        formValues.reportParameters.reportName,
+                        formValues.reportParameters.reportScope?.name
+                    )}
+                    notifierConfigurations={formValues.deliveryDestinations}
+                    renderTemplatePreview={({
+                        customBody,
+                        customSubject,
+                        customSubjectDefault,
+                    }: TemplatePreviewArgs) => (
+                        <EmailTemplatePreview
+                            emailSubject={customSubject}
+                            emailBody={customBody}
+                            defaultEmailSubject={customSubjectDefault}
+                            reportParameters={formValues.reportParameters}
+                        />
+                    )}
+                />
                 <Divider component="div" className="pf-v5-u-py-md" />
                 <ScheduleDetails formValues={formValues} />
                 <Divider component="div" className="pf-v5-u-py-md" />

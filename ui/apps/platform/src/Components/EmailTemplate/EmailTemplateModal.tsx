@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect } from 'react';
+import React, { ReactElement } from 'react';
 import { Button, Modal, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 import isEmpty from 'lodash/isEmpty';
@@ -13,43 +13,38 @@ export type TemplatePreviewArgs = {
 };
 
 export type EmailTemplateModalProps = {
-    isOpen: boolean;
-    onClose: () => void;
-    onChange: (formData: EmailTemplateFormData) => void;
     customBodyDefault: string;
     customBodyInitial: string;
     customSubjectDefault: string;
     customSubjectInitial: string;
+    onChange: ((formData: EmailTemplateFormData) => void) | null;
+    onClose: () => void;
     renderTemplatePreview?: (args: TemplatePreviewArgs) => ReactElement;
+    title: string;
 };
 
 function EmailTemplateModal({
-    isOpen,
-    onClose,
-    onChange,
     customBodyDefault,
     customBodyInitial,
     customSubjectDefault,
     customSubjectInitial,
+    onChange,
+    onClose,
     renderTemplatePreview,
+    title,
 }: EmailTemplateModalProps) {
     const formik = useFormik<EmailTemplateFormData>({
         initialValues: { customSubject: customSubjectInitial, customBody: customBodyInitial },
         validationSchema: emailTemplateValidationSchema,
         onSubmit: (formValues) => {
-            onChange(formValues);
-            onCloseHandler();
+            if (onChange) {
+                onChange(formValues);
+            }
+            onClose();
         },
     });
-    const { errors, isSubmitting, resetForm, setValues, submitForm, values } = formik;
+    const { errors, isSubmitting, submitForm, values } = formik;
     const { customBody, customSubject } = values;
-
-    useEffect(() => {
-        if (isOpen) {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            setValues({ customSubject: customSubjectInitial, customBody: customBodyInitial });
-        }
-    }, [customSubjectInitial, customBodyInitial, setValues, isOpen]);
 
     const isApplyDisabled =
         isSubmitting ||
@@ -57,40 +52,44 @@ function EmailTemplateModal({
         (customSubject === customSubjectInitial && customBody === customBodyInitial);
     const isPreviewDisabled = isSubmitting || !isEmpty(errors);
 
-    function onCloseHandler() {
-        resetForm();
-        onClose();
-    }
-
     const emailTemplateForm = (
         <EmailTemplateForm
             customBodyDefault={customBodyDefault}
             customSubjectDefault={customSubjectDefault}
             formik={formik}
+            isReadOnly={!onChange}
         />
     );
+
+    const actions = onChange
+        ? [
+              <Button
+                  key="confirm"
+                  variant="primary"
+                  onClick={submitForm}
+                  isDisabled={isApplyDisabled}
+                  isLoading={isSubmitting}
+              >
+                  Apply
+              </Button>,
+              <Button key="cancel" variant="link" isInline onClick={onClose}>
+                  Cancel
+              </Button>,
+          ]
+        : [
+              <Button key="cancel" variant="secondary" isInline onClick={onClose}>
+                  Close
+              </Button>,
+          ];
 
     return (
         <Modal
             variant="medium"
-            title="Edit email template"
+            title={title}
             description="Customize the email subject and body as needed, or leave it empty to use the default template."
-            isOpen={isOpen}
-            onClose={onCloseHandler}
-            actions={[
-                <Button
-                    key="confirm"
-                    variant="primary"
-                    onClick={submitForm}
-                    isDisabled={isApplyDisabled}
-                    isLoading={isSubmitting}
-                >
-                    Apply
-                </Button>,
-                <Button key="cancel" variant="plain" isInline onClick={onCloseHandler}>
-                    Cancel
-                </Button>,
-            ]}
+            isOpen
+            onClose={onClose}
+            actions={actions}
         >
             {renderTemplatePreview ? (
                 <Tabs defaultActiveKey={0} role="region">
