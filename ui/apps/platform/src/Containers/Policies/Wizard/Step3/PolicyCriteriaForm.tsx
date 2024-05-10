@@ -89,6 +89,8 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
         );
     }
 
+    const selectedSectionIndex = 0;
+
     return (
         // TODO: (vjw, 15-Nov-2023) remove the DndProvider after the PolicyCriteriaModal flag has been made unflagged
         /*
@@ -134,7 +136,10 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                     className="pf-v5-u-h-100 pf-v5-u-pt-lg"
                     id="policy-criteria-keys-container"
                 >
-                    <PolicyCriteriaOptions descriptors={filteredDescriptors} />
+                    <PolicyCriteriaOptions
+                        descriptors={filteredDescriptors}
+                        selectedSectionIndex={selectedSectionIndex}
+                    />
                 </Flex>
                 <Divider component="div" orientation={{ default: 'vertical' }} />
                 {!showPolicyCriteriaModal && (

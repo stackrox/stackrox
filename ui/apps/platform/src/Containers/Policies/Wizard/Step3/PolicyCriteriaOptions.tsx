@@ -12,8 +12,11 @@ import {
     TreeViewSearch,
 } from '@patternfly/react-core';
 import { kebabCase } from 'lodash';
+import { useFormikContext } from 'formik';
 
+import { Policy } from 'types/policy.proto';
 import { Descriptor } from './policyCriteriaDescriptors';
+import { getEmptyPolicyFieldCard } from '../../policies.utils';
 
 function getKeysByCategory(keys) {
     const categories = {};
@@ -54,11 +57,18 @@ function getPolicyFieldsAsTree(existingGroups, descriptors): TreeViewDataItem[] 
     return treeList;
 }
 
-function PolicyCriteriaOptions({ descriptors }) {
+type PolicyCriteriaOptionsProps = {
+    descriptors: Descriptor[];
+    selectedSectionIndex: number;
+};
+
+function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCriteriaOptionsProps) {
     const [activeItems, setActiveItems] = useState<TreeViewDataItem[]>([]);
     const [allExpanded, setAllExpanded] = useState(false);
     const [filteredItems, setFilteredItems] = useState<TreeViewDataItem[]>([]);
     const [isFiltered, setIsFiltered] = useState(false);
+    const { values, setFieldValue } = useFormikContext<Policy>();
+    const { policyGroups } = values.policySections[selectedSectionIndex];
 
     const treeDataItems = useMemo(() => getPolicyFieldsAsTree([], descriptors), [descriptors]);
 
@@ -103,6 +113,24 @@ function PolicyCriteriaOptions({ descriptors }) {
         }
     }
 
+    function addPolicyFieldCardHandler(fieldCard) {
+        setFieldValue(`policySections[${selectedSectionIndex as unknown as string}].policyGroups`, [
+            ...policyGroups,
+            fieldCard,
+        ]);
+    }
+
+    function addField() {
+        const itemKey = activeItems[0].title;
+        const itemToAdd = descriptors.find(
+            (descriptor) => descriptor.shortName === itemKey || descriptor.name === itemKey
+        );
+        const newPolicyFieldCard = getEmptyPolicyFieldCard(itemToAdd);
+
+        addPolicyFieldCardHandler(newPolicyFieldCard);
+        close();
+    }
+
     const toolbar = (
         <Toolbar style={{ padding: 0 }}>
             <ToolbarContent style={{ padding: 0 }}>
@@ -136,6 +164,9 @@ function PolicyCriteriaOptions({ descriptors }) {
                 allExpanded={allExpanded || isFiltered}
                 toolbar={toolbar}
             />
+            <Button variant="primary" onClick={addField} isDisabled={activeItems.length === 0}>
+                Add policy field
+            </Button>
         </Flex>
     );
 }
