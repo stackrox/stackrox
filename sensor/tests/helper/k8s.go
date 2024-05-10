@@ -45,6 +45,24 @@ func (c *TestContext) AssertResourceDoesExist(ctx context.Context, t *testing.T,
 	return obj
 }
 
+// AssertResourceWasUpdated asserts whether the given resource was updated in the cluster
+func (c *TestContext) AssertResourceWasUpdated(ctx context.Context, t *testing.T, resourceName string, namespace string, api apiMetaV1.APIResource, oldResourceVersion string) *unstructured.Unstructured {
+	client, err := dynamic.NewForConfig(c.r.GetConfig())
+	require.NoError(t, err)
+
+	var cli dynamic.ResourceInterface
+	var obj *unstructured.Unstructured
+	require.Eventually(t, func() bool {
+		cli = client.Resource(getGVR(api))
+		if namespace != "" {
+			cli = client.Resource(getGVR(api)).Namespace(namespace)
+		}
+		obj, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
+		return err == nil && obj.GetResourceVersion() != oldResourceVersion
+	}, 30*time.Second, 10*time.Millisecond)
+	return obj
+}
+
 // AssertResourceDoesNotExist asserts whether the given resource does not exit in the cluster
 func (c *TestContext) AssertResourceDoesNotExist(ctx context.Context, t *testing.T, resourceName string, namespace string, api apiMetaV1.APIResource) {
 	client, err := dynamic.NewForConfig(c.r.GetConfig())
