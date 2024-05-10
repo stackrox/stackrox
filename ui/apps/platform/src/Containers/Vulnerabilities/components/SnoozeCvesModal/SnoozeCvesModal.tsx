@@ -33,7 +33,7 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
         }
     );
 
-    const { values, setFieldValue, handleSubmit, submitForm, isSubmitting } = useFormik({
+    const { values, setFieldValue, submitForm, isSubmitting } = useFormik({
         initialValues: {
             cves: cves.map(({ cve }) => cve),
             duration: '0',
@@ -55,7 +55,27 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
             : 'Unsnoozed CVEs will appear in vulnerability reports and trigger policy violations';
 
     return (
-        <Modal aria-label={title} title={title} onClose={onClose} isOpen variant="small">
+        <Modal
+            aria-label={title}
+            title={title}
+            onClose={onClose}
+            isOpen
+            variant="small"
+            actions={[
+                <Button
+                    className="pf-v5-u-display-flex pf-v5-u-align-items-center"
+                    isLoading={isSubmitting}
+                    isDisabled={isSubmitting || isSuccess}
+                    onClick={submitForm}
+                    countOptions={{ isRead: true, count: cves.length }}
+                >
+                    <span>{action === 'SNOOZE' ? 'Snooze CVEs' : 'Unsnooze CVEs'}</span>
+                </Button>,
+                <Button isDisabled={isSubmitting} variant="link" onClick={onClose}>
+                    {isSuccess ? 'Close' : 'Cancel'}
+                </Button>,
+            ]}
+        >
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                 {isSuccess && (
                     <Alert variant="success" isInline title="Request submitted successfully" />
@@ -70,8 +90,8 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
                     </Alert>
                 )}
                 <Text>{text}</Text>
-                <Form onSubmit={handleSubmit} style={{ minHeight: 0 }}>
-                    {action === 'SNOOZE' && (
+                {action === 'SNOOZE' && (
+                    <Form style={{ minHeight: 0 }}>
                         <FormGroup fieldId="snooze-duration" label="Snooze duration">
                             <Flex
                                 direction={{ default: 'column' }}
@@ -91,22 +111,8 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
                                 ))}
                             </Flex>
                         </FormGroup>
-                    )}
-                    <Flex>
-                        <Button
-                            className="pf-v5-u-display-flex pf-v5-u-align-items-center"
-                            isLoading={isSubmitting}
-                            isDisabled={isSubmitting || isSuccess}
-                            onClick={submitForm}
-                            countOptions={{ isRead: true, count: cves.length }}
-                        >
-                            <span>{action === 'SNOOZE' ? 'Snooze CVEs' : 'Unsnooze CVEs'}</span>
-                        </Button>
-                        <Button isDisabled={isSubmitting} variant="secondary" onClick={onClose}>
-                            {isSuccess ? 'Close' : 'Cancel'}
-                        </Button>
-                    </Flex>
-                </Form>
+                    </Form>
+                )}
             </Flex>
         </Modal>
     );
