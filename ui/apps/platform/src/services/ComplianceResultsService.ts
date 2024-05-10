@@ -59,11 +59,37 @@ export type ListComplianceProfileScanStatsResponse = {
     totalCount: number;
 };
 
+export type ComplianceCheckResultStatusCount = {
+    checkName: string;
+    rationale: string;
+    ruleName: string;
+    checkStats: ComplianceCheckStatusCount[];
+};
+
+type ListComplianceProfileResults = {
+    profileResults: ComplianceCheckResultStatusCount[];
+    profileName: string;
+    totalCount: number;
+};
+
 /**
  * Fetches the scan stats grouped by profile.
  */
 export function getComplianceProfilesStats(): Promise<ListComplianceProfileScanStatsResponse> {
     return axios
         .get<ListComplianceProfileScanStatsResponse>(`${complianceResultsBaseUrl}/stats/profiles`)
+        .then((response) => response.data);
+}
+
+/**
+ * Fetches the profile check results.
+ */
+export function getComplianceProfileResults(
+    profileName: string
+): Promise<ListComplianceProfileResults> {
+    return axios
+        .get<ListComplianceProfileResults>(
+            `${complianceResultsBaseUrl}/profile/results/${profileName}`
+        )
         .then((response) => response.data);
 }
