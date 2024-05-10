@@ -445,14 +445,44 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 	return
 }
 
-func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, updaterKey, fileName string) (file *vulDefFile, err error) {
-	log.Debugf("Fetching scanner V4 %s file: %s", t, updaterKey)
+func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, updaterKey, fileName string) (*vulDefFile, error) {
+	log.Debugf("Fetching scanner V4 (online: %t): file %q: updater key %q", h.online, t, updaterKey)
 
+	file, err := h.openMostRecentV4OfflineFile(ctx, t, updaterKey, fileName)
 	if !h.online {
-		return h.openMostRecentV4OfflineFile(ctx, t, updaterKey, fileName)
+		return file, err
 	}
+	if err != nil {
+		log.Debugf("Failed to access offline file (ignore the message if no "+
+			"offline bundle has been uploaded): %v", err)
+	}
+
+	offlineFile := file
+
+	defer func() {
+		if offlineFile != nil {
+			_ = offlineFile.Close()
+		}
+	}()
+
+	file, err = h.openMostRecentV4OnlineFile(ctx, t, updaterKey, fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	// If the offline files are newer, return them instead.
+	if offlineFile != nil && offlineFile.modTime.After(file.modTime) {
+		_ = file.Close()
+		// Set nil to protect the deferred close.
+		file, offlineFile = offlineFile, nil
+	}
+
+	return file, err
+}
+
+// openMostRecentV4OnlineFile gets desired "online" file, which is pulled and managed by the updater.
+func (h *httpHandler) openMostRecentV4OnlineFile(_ context.Context, t updaterType, updaterKey, fileName string) (*vulDefFile, error) {
 	u := h.getUpdater(t, updaterKey)
-	var onlineFile *vulDefFile
 	// Ensure the updater is running.
 	u.Start()
 	openedFile, onlineTime, err := u.file.Open()
@@ -463,11 +493,6 @@ func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, u
 		return nil, fmt.Errorf("scanner V4 %s file %s not found", t, updaterKey)
 	}
 	log.Debugf("Compressed data file is available: %s", openedFile.Name())
-	toClose := func(f *vulDefFile) {
-		if file != f && f != nil {
-			utils.IgnoreError(f.Close)
-		}
-	}
 	switch t {
 	case mappingUpdaterType:
 		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), fileName)
@@ -475,25 +500,11 @@ func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, u
 			return nil, err
 		}
 		defer cleanUp()
-		onlineFile = &vulDefFile{File: targetFile, modTime: onlineTime}
+		return &vulDefFile{File: targetFile, modTime: onlineTime}, nil
 	case vulnerabilityUpdaterType:
-		onlineFile = &vulDefFile{File: openedFile, modTime: onlineTime}
-	default:
-		return nil, fmt.Errorf("unknown Scanner V4 updater type: %s", t)
+		return &vulDefFile{File: openedFile, modTime: onlineTime}, nil
 	}
-	defer toClose(onlineFile)
-	file = onlineFile
-
-	offlineFile, err := h.openMostRecentV4OfflineFile(ctx, t, updaterKey, fileName)
-	if err != nil {
-		log.Debugf("failed to access offline file: %v, ignore the message if no offline bundle has been uploaded", err)
-	}
-	defer toClose(offlineFile)
-
-	if offlineFile != nil && offlineFile.modTime.After(onlineTime) {
-		file = offlineFile
-	}
-	return file, nil
+	return nil, fmt.Errorf("unknown Scanner V4 updater type: %s", t)
 }
 
 // openMostRecentV4OfflineFile gets desired offline file from compressed bundle: offlineScannerV4DefinitionBlobName
@@ -608,8 +619,9 @@ func (h *httpHandler) getV4(w http.ResponseWriter, r *http.Request) {
 	v := r.URL.Query().Get(`version`)
 	ctx := r.Context()
 
-	var err error
-	var f *vulDefFile
+	var uType updaterType
+	var uKey string
+	var filename string
 
 	switch {
 	case fileName != "" && v == "":
@@ -619,28 +631,35 @@ func (h *httpHandler) getV4(w http.ResponseWriter, r *http.Request) {
 			writeErrorNotFound(w)
 			return
 		}
-		f, err = h.openMostRecentV4File(ctx, mappingUpdaterType, mappingUpdaterKey, v4FileName)
+		uType = mappingUpdaterType
+		uKey = mappingUpdaterKey
+		filename = v4FileName
 	case fileName == "" && v != "":
 		// If only version is provided, this is for Scanner V4 vuln file
 		if version.GetVersionKind(v) == version.NightlyKind {
 			// get dev for nightly at this moment
 			v = "dev"
 		}
-		f, err = h.openMostRecentV4File(ctx, vulnerabilityUpdaterType, v, "")
-		if err == nil {
-			w.Header().Set("Content-Type", "application/zstd")
-		}
+		uType = vulnerabilityUpdaterType
+		uKey = v
+		filename = ""
 	default:
 		writeErrorBadRequest(w)
 		return
 	}
 
+	f, err := h.openMostRecentV4File(ctx, uType, uKey, filename)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not read: %s", err)
 		log.Error(errMsg)
 		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
 		return
 	}
+
+	if uType == vulnerabilityUpdaterType {
+		w.Header().Set("Content-Type", "application/zstd")
+	}
+
 	defer utils.IgnoreError(f.Close)
 	serveContent(w, r, f.Name(), f.modTime, f)
 }
