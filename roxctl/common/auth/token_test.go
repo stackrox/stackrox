@@ -1,4 +1,4 @@
-package common
+package auth
 
 import (
 	"fmt"
@@ -33,7 +33,8 @@ func (s *tokenSuite) SetupTest() {
 func (s *tokenSuite) Test_RetrieveAuthToken_WithEnv() {
 	s.T().Setenv(env.TokenEnv.EnvVar(), testTokenVal)
 
-	got, err := retrieveAuthToken()
+	method := tokenMethod{}
+	got, err := method.retrieveAuthToken()
 
 	s.Require().NoError(err)
 	s.Equal(got, testTokenVal, "Did not receive correct rox auth token from environment")
@@ -56,7 +57,8 @@ func (s *tokenSuite) Test_RetrieveAuthToken_WithFileEnv() {
 func (s *tokenSuite) Test_RetrieveAuthToken_ShouldTrimLeadingAndTrailingWhitespace() {
 	s.T().Setenv(env.TokenEnv.EnvVar(), fmt.Sprintf(" \n %s \n", testTokenVal))
 
-	got, err := retrieveAuthToken()
+	method := tokenMethod{}
+	got, err := method.retrieveAuthToken()
 
 	s.Require().NoError(err)
 	s.Equal(got, testTokenVal, "Expected auth token without whitespaces")
@@ -65,7 +67,8 @@ func (s *tokenSuite) Test_RetrieveAuthToken_ShouldTrimLeadingAndTrailingWhitespa
 func (s *tokenSuite) Test_RetrieveAuthToken_ShouldTrimLeadingAndTrailingWhitespace_Windows() {
 	s.T().Setenv(env.TokenEnv.EnvVar(), fmt.Sprintf(" \r %s \r", testTokenVal))
 
-	got, err := retrieveAuthToken()
+	method := tokenMethod{}
+	got, err := method.retrieveAuthToken()
 
 	s.Require().NoError(err)
 	s.Equal(got, testTokenVal, "Expected auth token without whitespaces")
