@@ -5,6 +5,12 @@ import { Alert, Bullseye, Spinner } from '@patternfly/react-core';
 import { complianceEnhancedCoveragePath } from 'routePaths';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
+import {
+    coverageCheckDetailsPath,
+    coverageClusterDetailsPath,
+    coverageProfileChecksPath,
+    coverageProfileClustersPath,
+} from './compliance.coverage.routes';
 import CheckDetailsPage from './CheckDetailsPage';
 import ClusterDetailsPage from './ClusterDetailsPage';
 import ComplianceProfilesProvider, {
@@ -47,26 +53,10 @@ function CoverageContent() {
 
     return (
         <Switch>
-            <Route
-                exact
-                path={`${complianceEnhancedCoveragePath}/profiles/:profileName/checks`}
-                component={ProfileChecksPage}
-            />
-            <Route
-                exact
-                path={`${complianceEnhancedCoveragePath}/profiles/:profileName/clusters`}
-                component={ProfileClustersPage}
-            />
-            <Route
-                exact
-                path={`${complianceEnhancedCoveragePath}/profiles/:profileName/checks/:checkName`}
-                component={CheckDetailsPage}
-            />
-            <Route
-                exact
-                path={`${complianceEnhancedCoveragePath}/profiles/:profileName/clusters/:clusterName`}
-                component={ClusterDetailsPage}
-            />
+            <Route exact path={coverageProfileChecksPath} component={ProfileChecksPage} />
+            <Route exact path={coverageProfileClustersPath} component={ProfileClustersPage} />
+            <Route exact path={coverageCheckDetailsPath} component={CheckDetailsPage} />
+            <Route exact path={coverageClusterDetailsPath} component={ClusterDetailsPage} />
             <Route
                 exact
                 path={[
