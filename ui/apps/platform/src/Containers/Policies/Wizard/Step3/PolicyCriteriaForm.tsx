@@ -24,7 +24,6 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     const { criteriaLocked } = values;
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const showPolicyCriteriaModal = isFeatureFlagEnabled('ROX_POLICY_CRITERIA_MODAL');
     const showAccessiblePolicyCriteria = isFeatureFlagEnabled(
         'ROX_ACCESSIBLE_POLICY_CRITERIA_EDITING'
     );
@@ -133,12 +132,16 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         <BooleanPolicyLogicSection />
                     </Flex>
                 </Flex>
-                <Divider component="div" orientation={{ default: 'vertical' }} />
-                {!showPolicyCriteriaModal && showAccessiblePolicyCriteria && (
+                <Divider
+                    component="div"
+                    orientation={{ default: 'vertical' }}
+                    className="acs-no-trailing-margin"
+                />
+                {showAccessiblePolicyCriteria && (
                     <Flex
                         flex={{ default: 'flex_1' }}
-                        className="pf-v5-u-h-100 pf-v5-u-pt-lg"
-                        id="policy-criteria-keys-container"
+                        className="pf-v5-u-h-100 pf-v5-u-pt-lg pf-v5-u-w-100"
+                        id="policy-criteria-options-container"
                     >
                         <PolicyCriteriaOptions
                             descriptors={filteredDescriptors}
@@ -146,7 +149,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         />
                     </Flex>
                 )}
-                {!showPolicyCriteriaModal && !showAccessiblePolicyCriteria && (
+                {!showAccessiblePolicyCriteria && (
                     <Flex
                         className="pf-v5-u-h-100 pf-v5-u-pt-lg"
                         id="policy-criteria-keys-container"
