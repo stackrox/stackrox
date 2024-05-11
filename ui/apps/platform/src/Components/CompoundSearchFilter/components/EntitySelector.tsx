@@ -8,7 +8,7 @@ import SimpleSelect from './SimpleSelect';
 
 export type EntitySelectorProps = {
     selectedEntity: string;
-    onChange: (value) => void;
+    onChange: (value: string | number | undefined) => void;
     config: Partial<CompoundSearchFilterConfig>;
 };
 
@@ -21,7 +21,6 @@ function EntitySelector({ selectedEntity, onChange, config }: EntitySelectorProp
 
     return (
         <SimpleSelect
-            id="compound-search-entity-selector"
             value={selectedEntity}
             onChange={onChange}
             ariaLabelMenu="compound search filter entity selector menu"

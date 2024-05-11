@@ -444,6 +444,19 @@ export type NodeComponentAttribute = keyof NodeComponentSearchFilterConfig['attr
 
 // Compound search filter config
 
+export const compoundSearchFilter = {
+    Image: imageSearchFilterConfig,
+    Deployment: deploymentSearchFilterConfig,
+    Namespace: namespaceSearchFilterConfig,
+    Cluster: clusterSearchFilterConfig,
+    Node: nodeSearchFilterConfig,
+    ImageCVE: imageCVESearchFilterConfig,
+    NodeCVE: nodeCVESearchFilterConfig,
+    PlatformCVE: platformCVESearchFilterConfig,
+    ImageComponent: imageComponentSearchFilterConfig,
+    NodeComponent: nodeComponentSearchFilterConfig,
+};
+
 export type CompoundSearchFilterConfig = {
     Image: ImageSearchFilterConfig;
     Deployment: DeploymentSearchFilterConfig;
@@ -456,6 +469,8 @@ export type CompoundSearchFilterConfig = {
     ImageComponent: ImageComponentSearchFilterConfig;
     NodeComponent: NodeComponentSearchFilterConfig;
 };
+
+export const compoundSearchEntityNames = Object.keys(compoundSearchFilter);
 
 export type SearchFilterEntityName = keyof CompoundSearchFilterConfig;
 

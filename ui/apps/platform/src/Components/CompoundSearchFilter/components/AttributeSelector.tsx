@@ -12,7 +12,7 @@ import SimpleSelect from './SimpleSelect';
 export type AttributeSelectorProps = {
     selectedEntity: SearchFilterEntityName;
     selectedAttribute: string;
-    onChange: (value) => void;
+    onChange: (value: string | number | undefined) => void;
     config: Partial<CompoundSearchFilterConfig>;
 };
 
@@ -30,7 +30,6 @@ function AttributeSelector({
 
     return (
         <SimpleSelect
-            id="compound-search-attribute-selector"
             value={selectedAttribute}
             onChange={onChange}
             ariaLabelMenu="compound search filter attribute selector menu"

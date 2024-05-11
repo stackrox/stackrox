@@ -1,4 +1,5 @@
 import {
+    CompoundSearchFilterConfig,
     deploymentSearchFilterConfig,
     imageCVESearchFilterConfig,
     imageSearchFilterConfig,
@@ -8,7 +9,7 @@ import { getEntities, getEntityAttributes, getDefaultEntity, getDefaultAttribute
 describe('utils', () => {
     describe('getEntities', () => {
         it('should get the entities in a config object', () => {
-            const config = {
+            const config: Partial<CompoundSearchFilterConfig> = {
                 Image: imageSearchFilterConfig,
                 Deployment: deploymentSearchFilterConfig,
                 ImageCVE: imageCVESearchFilterConfig,
@@ -22,7 +23,7 @@ describe('utils', () => {
 
     describe('getEntityAttributes', () => {
         it('should get the attributes of an entity in a config object', () => {
-            const config = {
+            const config: Partial<CompoundSearchFilterConfig> = {
                 Image: imageSearchFilterConfig,
                 Deployment: deploymentSearchFilterConfig,
                 ImageCVE: imageCVESearchFilterConfig,
@@ -61,10 +62,24 @@ describe('utils', () => {
 
     describe('getDefaultEntity', () => {
         it('should get the default (first) entity in a config object', () => {
-            const config = {
+            const config: Partial<CompoundSearchFilterConfig> = {
                 Image: imageSearchFilterConfig,
                 Deployment: deploymentSearchFilterConfig,
                 ImageCVE: imageCVESearchFilterConfig,
+            };
+
+            const result = getDefaultEntity(config);
+
+            expect(result).toStrictEqual('Image');
+        });
+
+        // @TODO: Worth considering if we want to ignore vs. highlight the issue
+        it("should ignore entity names that aren't valid", () => {
+            const config = {
+                BOGUS: {
+                    hello: 'friend',
+                },
+                Image: imageSearchFilterConfig,
             };
 
             const result = getDefaultEntity(config);
@@ -75,7 +90,7 @@ describe('utils', () => {
 
     describe('getDefaultAttribute', () => {
         it('should get the default (first) attribute of a specific entity in a config object', () => {
-            const config = {
+            const config: Partial<CompoundSearchFilterConfig> = {
                 Image: imageSearchFilterConfig,
                 Deployment: deploymentSearchFilterConfig,
                 ImageCVE: imageCVESearchFilterConfig,

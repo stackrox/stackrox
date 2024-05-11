@@ -2,6 +2,7 @@ import {
     CompoundSearchFilterConfig,
     SearchFilterAttribute,
     SearchFilterEntityName,
+    compoundSearchEntityNames,
 } from '../types';
 
 export function getEntities(config: Partial<CompoundSearchFilterConfig>): SearchFilterEntityName[] {
@@ -9,11 +10,15 @@ export function getEntities(config: Partial<CompoundSearchFilterConfig>): Search
     return entities;
 }
 
+function isSearchFilterEntity(key: string): key is SearchFilterEntityName {
+    return compoundSearchEntityNames.includes(key);
+}
+
 export function getDefaultEntity(
     config: Partial<CompoundSearchFilterConfig>
-): SearchFilterEntityName {
-    const defaultEntity = Object.keys(config)[0] as SearchFilterEntityName;
-    return defaultEntity;
+): SearchFilterEntityName | undefined {
+    const entities = Object.keys(config).filter(isSearchFilterEntity);
+    return entities[0];
 }
 
 export function getEntityAttributes(
@@ -37,5 +42,5 @@ export function getDefaultAttribute(
         const attributeNames = Object.keys(entityConfig.attributes);
         return attributeNames[0];
     }
-    return '';
+    return undefined;
 }

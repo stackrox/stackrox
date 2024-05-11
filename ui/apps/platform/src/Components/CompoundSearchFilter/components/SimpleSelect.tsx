@@ -9,9 +9,8 @@ import {
 
 export type SimpleSelectProps = {
     value: string | number | undefined;
-    onChange: (value: string) => void;
+    onChange: (value: string | number | undefined) => void;
     children: ReactElement<typeof SelectOption>[];
-    id: string;
     isDisabled?: boolean;
     ariaLabelMenu?: string;
     ariaLabelToggle?: string;
@@ -21,10 +20,9 @@ function SimpleSelect({
     value,
     onChange,
     children,
-    id,
     isDisabled = false,
-    ariaLabelMenu = '',
-    ariaLabelToggle = '',
+    ariaLabelMenu,
+    ariaLabelToggle,
 }: SimpleSelectProps) {
     const [isOpen, setIsOpen] = React.useState(false);
 
@@ -36,7 +34,7 @@ function SimpleSelect({
         _event: React.MouseEvent<Element, MouseEvent> | undefined,
         newValue: string | number | undefined
     ) => {
-        onChange(newValue as string);
+        onChange(newValue);
         setIsOpen(false);
     };
 
@@ -54,7 +52,6 @@ function SimpleSelect({
 
     return (
         <Select
-            id={id}
             aria-label={ariaLabelMenu}
             isOpen={isOpen}
             selected={value}

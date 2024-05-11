@@ -23,10 +23,21 @@ function CompoundSearchFilter({
     defaultAttribute,
 }: CompoundSearchFilterProps) {
     const [selectedEntity, setSelectedEntity] = useState(() => {
-        return defaultEntity ?? getDefaultEntity(config);
+        if (defaultEntity) {
+            return defaultEntity;
+        }
+        return getDefaultEntity(config);
     });
+
     const [selectedAttribute, setSelectedAttribute] = useState(() => {
-        return defaultAttribute ?? getDefaultAttribute(getDefaultEntity(config), config);
+        if (defaultAttribute) {
+            return defaultAttribute;
+        }
+        const defaultEntity = getDefaultEntity(config);
+        if (!defaultEntity) {
+            return undefined;
+        }
+        return getDefaultAttribute(defaultEntity, config);
     });
 
     useEffect(() => {
@@ -46,8 +57,11 @@ function CompoundSearchFilter({
             <EntitySelector
                 selectedEntity={selectedEntity}
                 onChange={(value) => {
-                    setSelectedEntity(value);
-                    const defaultAttribute = getDefaultAttribute(value, config);
+                    setSelectedEntity(value as SearchFilterEntityName);
+                    const defaultAttribute = getDefaultAttribute(
+                        value as SearchFilterEntityName,
+                        config
+                    );
                     setSelectedAttribute(defaultAttribute);
                 }}
                 config={config}
@@ -55,7 +69,7 @@ function CompoundSearchFilter({
             <AttributeSelector
                 selectedEntity={selectedEntity}
                 selectedAttribute={selectedAttribute}
-                onChange={(value) => setSelectedAttribute(value)}
+                onChange={(value) => setSelectedAttribute(value as SearchFilterAttributeName)}
                 config={config}
             />
         </Flex>
