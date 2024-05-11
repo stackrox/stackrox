@@ -1,15 +1,6 @@
 import React, { useCallback } from 'react';
 import { Breadcrumb, BreadcrumbItem, Divider, PageSection } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom';
-import {
-    BanIcon,
-    CheckCircleIcon,
-    ExclamationTriangleIcon,
-    InfoIcon,
-    SecurityIcon,
-    UnknownIcon,
-    WrenchIcon,
-} from '@patternfly/react-icons';
 
 import { complianceEnhancedCoveragePath } from 'routePaths';
 import useRestQuery from 'hooks/useRestQuery';
@@ -22,49 +13,6 @@ import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import DetailsPageHeader, { PageHeaderLabel } from './components/DetailsPageHeader';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
-
-const STATUS_LABELS: Record<ComplianceCheckStatus, string> = {
-    FAIL: 'Fail',
-    INFO: 'Info',
-    PASS: 'Pass',
-    ERROR: 'Error',
-    MANUAL: 'Manual',
-    INCONSISTENT: 'Inconsistent',
-    NOT_APPLICABLE: 'Not applicable',
-    UNSET_CHECK_STATUS: 'Unset check status',
-};
-
-function getCheckStatIcon(status: ComplianceCheckStatus) {
-    switch (status) {
-        case 'FAIL':
-            return <SecurityIcon color="red" />;
-        case 'INFO':
-            return <InfoIcon />;
-        case 'PASS':
-            return <CheckCircleIcon color="blue" />;
-        case 'ERROR':
-            return <ExclamationTriangleIcon />;
-        case 'MANUAL':
-            return <WrenchIcon />;
-        case 'INCONSISTENT':
-            return <UnknownIcon />;
-        case 'NOT_APPLICABLE':
-            return <BanIcon />;
-        default:
-            return null;
-    }
-}
-
-function getCheckStatColor(status: ComplianceCheckStatus) {
-    switch (status) {
-        case 'FAIL':
-            return 'red';
-        case 'PASS':
-            return 'blue';
-        default:
-            return 'grey';
-    }
-}
 
 function sortCheckStats(a: ComplianceCheckStatusCount, b: ComplianceCheckStatusCount) {
     const order: ComplianceCheckStatus[] = [
