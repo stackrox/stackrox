@@ -27,6 +27,7 @@ type ClusterStatusObject = {
     icon: ReactElement;
     statusText: string;
     tooltipText: string;
+    color: LabelProps['color'];
 };
 
 export const ComplianceStatus = {
@@ -120,6 +121,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         ),
         statusText: 'Pass',
         tooltipText: 'Check was successful',
+        color: 'blue',
     },
     [ComplianceCheckStatusEnum.FAIL]: {
         icon: (
@@ -129,6 +131,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         ),
         statusText: 'Fail',
         tooltipText: 'Check was unsuccessful',
+        color: 'red',
     },
     [ComplianceCheckStatusEnum.ERROR]: {
         icon: (
@@ -138,6 +141,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         ),
         statusText: 'Error',
         tooltipText: 'Check ran successfully, but could not complete',
+        color: 'grey',
     },
     [ComplianceCheckStatusEnum.INFO]: {
         icon: (
@@ -148,6 +152,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         statusText: 'Info',
         tooltipText:
             'Check was successful and found something not severe enough to be considered an error',
+        color: 'grey',
     },
     [ComplianceCheckStatusEnum.MANUAL]: {
         icon: (
@@ -157,6 +162,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         ),
         statusText: 'Manual',
         tooltipText: 'Check cannot automatically assess the status and manual check is required',
+        color: 'grey',
     },
     [ComplianceCheckStatusEnum.NOT_APPLICABLE]: {
         icon: (
@@ -166,6 +172,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         ),
         statusText: 'Not Applicable',
         tooltipText: 'Check did not run as it is not applicable',
+        color: 'grey',
     },
     [ComplianceCheckStatusEnum.INCONSISTENT]: {
         icon: (
@@ -175,6 +182,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         ),
         statusText: 'Inconsistent',
         tooltipText: 'Different nodes report different results',
+        color: 'grey',
     },
     [ComplianceCheckStatusEnum.UNSET_CHECK_STATUS]: {
         icon: (
@@ -184,6 +192,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         ),
         statusText: 'Unset', // TODO: ask about this status
         tooltipText: '',
+        color: 'grey',
     },
 };
 

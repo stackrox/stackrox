@@ -21,6 +21,7 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import DetailsPageHeader, { PageHeaderLabel } from './components/DetailsPageHeader';
+import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 
 const STATUS_LABELS: Record<ComplianceCheckStatus, string> = {
     FAIL: 'Fail',
@@ -113,12 +114,12 @@ function CheckDetails() {
         data?.checkStats
             .sort(sortCheckStats)
             .reduce((acc, checkStat) => {
-                const statusLabel = STATUS_LABELS[checkStat.status];
-                if (statusLabel) {
+                const statusObject = getClusterResultsStatusObject(checkStat.status);
+                if (statusObject) {
                     const label: PageHeaderLabel = {
-                        text: `${statusLabel}: ${checkStat.count}`,
-                        icon: getCheckStatIcon(checkStat.status),
-                        color: getCheckStatColor(checkStat.status),
+                        text: statusObject.statusText,
+                        icon: statusObject.icon,
+                        color: statusObject.color,
                     };
                     return [...acc, label];
                 }
