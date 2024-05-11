@@ -1,25 +1,45 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Flex } from '@patternfly/react-core';
 
-import { CompoundSearchFilterConfig } from '../types';
+import {
+    CompoundSearchFilterConfig,
+    SearchFilterAttributeName,
+    SearchFilterEntityName,
+} from '../types';
+import { getDefaultAttribute, getDefaultEntity } from '../utils/utils';
 
 import EntitySelector from './EntitySelector';
 import AttributeSelector from './AttributeSelector';
-import { getDefaultAttribute, getDefaultEntity } from '../utils/utils';
 
 export type CompoundSearchFilterProps = {
     config: Partial<CompoundSearchFilterConfig>;
+    defaultEntity?: SearchFilterEntityName;
+    defaultAttribute?: SearchFilterAttributeName;
 };
 
-function CompoundSearchFilter({ config }: CompoundSearchFilterProps) {
+function CompoundSearchFilter({
+    config,
+    defaultEntity,
+    defaultAttribute,
+}: CompoundSearchFilterProps) {
     const [selectedEntity, setSelectedEntity] = useState(() => {
-        return getDefaultEntity(config);
+        return defaultEntity ?? getDefaultEntity(config);
     });
     const [selectedAttribute, setSelectedAttribute] = useState(() => {
-        const defaultEntity = getDefaultEntity(config);
-        const defaultAttribute = getDefaultAttribute(defaultEntity, config);
-        return defaultAttribute;
+        return defaultAttribute ?? getDefaultAttribute(getDefaultEntity(config), config);
     });
+
+    useEffect(() => {
+        if (defaultEntity) {
+            setSelectedEntity(defaultEntity);
+        }
+    }, [defaultEntity]);
+
+    useEffect(() => {
+        if (defaultAttribute) {
+            setSelectedAttribute(defaultAttribute);
+        }
+    }, [defaultAttribute]);
 
     return (
         <Flex spaceItems={{ default: 'spaceItemsNone' }}>

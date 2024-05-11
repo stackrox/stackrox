@@ -457,6 +457,16 @@ export type CompoundSearchFilterConfig = {
     NodeComponent: NodeComponentSearchFilterConfig;
 };
 
-export type SearchFilterEntity = keyof CompoundSearchFilterConfig;
+export type SearchFilterEntityName = keyof CompoundSearchFilterConfig;
 
 export type EntitySearchFilterConfig = ValueOf<Required<CompoundSearchFilterConfig>>;
+
+export type SearchFilterAttributeName =
+    | ImageAttribute
+    | DeploymentAttribute
+    | ClusterAttribute
+    | NodeAttribute
+    | ImageCVEAttribute
+    | NodeCVEAttribute
+    | PlatformCVEAttribute
+    | ImageComponentAttribute;

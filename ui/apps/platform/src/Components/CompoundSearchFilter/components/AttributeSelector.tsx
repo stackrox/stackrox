@@ -3,14 +3,14 @@ import { SelectOption } from '@patternfly/react-core';
 
 import {
     CompoundSearchFilterConfig,
-    SearchFilterEntity,
+    SearchFilterEntityName,
 } from 'Components/CompoundSearchFilter/types';
 import { getEntityAttributes } from 'Components/CompoundSearchFilter/utils/utils';
 
 import SimpleSelect from './SimpleSelect';
 
 export type AttributeSelectorProps = {
-    selectedEntity: SearchFilterEntity;
+    selectedEntity: SearchFilterEntityName;
     selectedAttribute: string;
     onChange: (value) => void;
     config: Partial<CompoundSearchFilterConfig>;
