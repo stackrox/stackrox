@@ -8,8 +8,8 @@ import {
 } from '../types';
 import { getDefaultAttribute, getDefaultEntity } from '../utils/utils';
 
-import EntitySelector from './EntitySelector';
-import AttributeSelector from './AttributeSelector';
+import EntitySelector, { SelectedEntity } from './EntitySelector';
+import AttributeSelector, { SelectedAttribute } from './AttributeSelector';
 
 export type CompoundSearchFilterProps = {
     config: Partial<CompoundSearchFilterConfig>;
@@ -22,14 +22,14 @@ function CompoundSearchFilter({
     defaultEntity,
     defaultAttribute,
 }: CompoundSearchFilterProps) {
-    const [selectedEntity, setSelectedEntity] = useState(() => {
+    const [selectedEntity, setSelectedEntity] = useState<SelectedEntity>(() => {
         if (defaultEntity) {
             return defaultEntity;
         }
         return getDefaultEntity(config);
     });
 
-    const [selectedAttribute, setSelectedAttribute] = useState(() => {
+    const [selectedAttribute, setSelectedAttribute] = useState<SelectedAttribute>(() => {
         if (defaultAttribute) {
             return defaultAttribute;
         }

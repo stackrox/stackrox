@@ -1,6 +1,7 @@
 import {
     CompoundSearchFilterConfig,
     SearchFilterAttribute,
+    SearchFilterAttributeName,
     SearchFilterEntityName,
     compoundSearchEntityNames,
 } from '../types';
@@ -36,10 +37,10 @@ export function getEntityAttributes(
 export function getDefaultAttribute(
     entity: SearchFilterEntityName,
     config: Partial<CompoundSearchFilterConfig>
-) {
+): SearchFilterAttributeName | undefined {
     const entityConfig = config[entity];
     if (entityConfig && entityConfig.attributes) {
-        const attributeNames = Object.keys(entityConfig.attributes);
+        const attributeNames = Object.keys(entityConfig.attributes) as SearchFilterAttributeName[];
         return attributeNames[0];
     }
     return undefined;
