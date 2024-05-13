@@ -1,4 +1,7 @@
+import qs from 'qs';
+
 import axios from 'services/instance';
+import { getPaginationParams } from 'utils/searchUtils';
 
 import {
     ComplianceCheckStatus,
@@ -33,11 +36,20 @@ export type ComplianceCheckResult = {
  * Fetches the profile check results.
  */
 export function getComplianceProfileResults(
-    profileName: string
+    profileName: string,
+    page: number,
+    perPage: number
 ): Promise<ListComplianceProfileResults> {
+    const queryParameters = {
+        query: {
+            pagination: getPaginationParams(page, perPage),
+        },
+    };
+    const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
+
     return axios
         .get<ListComplianceProfileResults>(
-            `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks`
+            `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks?${params}`
         )
         .then((response) => response.data);
 }
