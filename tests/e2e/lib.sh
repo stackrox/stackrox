@@ -145,6 +145,7 @@ export_test_environment() {
     ci_export ROX_VULN_MGMT_NODE_PLATFORM_CVES "${ROX_VULN_MGMT_NODE_PLATFORM_CVES:-true}"
     ci_export ROX_VULN_MGMT_2_GA "${ROX_VULN_MGMT_2_GA:-true}"
     ci_export ROX_VULN_MGMT_ADVANCED_FILTERS "${ROX_VULN_MGMT_ADVANCED_FILTERS:-true}"
+    ci_export ROX_VULN_MGMT_LEGACY_SNOOZE "${ROX_VULN_MGMT_LEGACY_SNOOZE:-true}"
     ci_export ROX_WORKLOAD_CVES_FIXABILITY_FILTERS "${ROX_WORKLOAD_CVES_FIXABILITY_FILTERS:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_MOVE_INIT_BUNDLES_UI "${ROX_MOVE_INIT_BUNDLES_UI:-true}"
@@ -280,6 +281,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_VULN_MGMT_2_GA'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_VULN_MGMT_ADVANCED_FILTERS'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_VULN_MGMT_LEGACY_SNOOZE'
     customize_envVars+=$'\n        value: "true"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
