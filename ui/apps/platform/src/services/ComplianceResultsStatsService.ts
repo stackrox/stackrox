@@ -5,9 +5,12 @@ import axios from 'services/instance';
 import {
     ComplianceCheckResultStatusCount,
     ComplianceCheckStatusCount,
+    ListComplianceClusterOverallStatsResponse,
     ListComplianceProfileResults,
     complianceV2Url,
 } from './ComplianceCommon';
+
+const complianceResultsStatsBaseUrl = `${complianceV2Url}/scan/stats`;
 
 type ComplianceProfileScanStats = {
     checkStats: ComplianceCheckStatusCount[];
@@ -26,7 +29,20 @@ export type ListComplianceProfileScanStatsResponse = {
  */
 export function getComplianceProfilesStats(): Promise<ListComplianceProfileScanStatsResponse> {
     return axios
-        .get<ListComplianceProfileScanStatsResponse>(`${complianceV2Url}/scan/stats/profiles`)
+        .get<ListComplianceProfileScanStatsResponse>(`${complianceResultsStatsBaseUrl}/profiles`)
+        .then((response) => response.data);
+}
+
+/**
+ * Fetches the profile cluster results.
+ */
+export function getComplianceClusterStats(
+    profileName: string
+): Promise<ListComplianceClusterOverallStatsResponse> {
+    return axios
+        .get<ListComplianceClusterOverallStatsResponse>(
+            `${complianceResultsStatsBaseUrl}/profiles/${profileName}/clusters`
+        )
         .then((response) => response.data);
 }
 

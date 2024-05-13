@@ -36,3 +36,15 @@ export type ListComplianceProfileResults = {
     profileName: string;
     totalCount: number;
 };
+
+export type ComplianceClusterOverallStats = {
+    cluster: ComplianceScanCluster;
+    checkStats: ComplianceCheckStatusCount[];
+    clusterErrors: string[];
+    lastScanTime: string; // ISO 8601 date string
+};
+
+export type ListComplianceClusterOverallStatsResponse = {
+    scanStats: ComplianceClusterOverallStats[];
+    totalCount: number;
+};
