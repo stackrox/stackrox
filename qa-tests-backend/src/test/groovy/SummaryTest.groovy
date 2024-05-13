@@ -153,6 +153,12 @@ class SummaryTest extends BaseSpecification {
                         .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
                         .build()
                 log.info javers.compare(stackroxDeploymentNames, orchestratorNamespace.deploymentCount).prettyPrint()
+                for (String deployment : stackroxDeploymentNames) {
+                    log.info "stackrox deployment ${deployment}"
+                }
+                for (String deployment : orchestrator.getDeployments(stackroxNamespace.metadata.name)) {
+                    log.info("orchestrator deployment ${deployment}")
+                }
                 diff = true
             }
             log.info "Namespace ${stackroxNamespace.metadata.name}"
