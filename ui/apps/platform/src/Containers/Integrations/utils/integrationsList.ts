@@ -205,6 +205,12 @@ export const notifierIntegrationsDescriptors: NotifierIntegrationDescriptor[] = 
         type: 'email',
     },
     {
+        image: email,
+        label: 'ACSCS Email',
+        type: 'acscsEmail',
+        featureFlagDependency: 'ROX_ACSCS_EMAIL_NOTIFIER',
+    },
+    {
         image: google,
         label: 'Google Cloud SCC',
         type: 'cscc',
