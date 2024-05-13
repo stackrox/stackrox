@@ -1,7 +1,7 @@
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 
-export default function useCanSnoozeCves(): boolean {
+export default function useHasLegacySnoozeAbility(): boolean {
     const { hasReadWriteAccess } = usePermissions();
     const { isFeatureFlagEnabled } = useFeatureFlags();
 

@@ -24,7 +24,7 @@ import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import { parseWorkloadQuerySearchFilter } from '../../utils/searchUtils';
 import { platformEntityTabValues } from '../../types';
-import useCanSnoozeCves from '../../hooks/useCanSnoozeCves';
+import useHasLegacySnoozeAbility from '../../hooks/useCanSnoozeCves';
 
 import ClustersTable from './ClustersTable';
 import CVEsTable from './CVEsTable';
@@ -40,7 +40,7 @@ function PlatformCvesOverviewPage() {
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const isViewingSnoozedCves = querySearchFilter['CVE Snoozed'] === 'true';
-    const canSnoozeCves = useCanSnoozeCves();
+    const canSnoozeCves = useHasLegacySnoozeAbility();
     const selectedCves = useMap<string, { cve: string }>();
 
     function onEntityTabChange() {
