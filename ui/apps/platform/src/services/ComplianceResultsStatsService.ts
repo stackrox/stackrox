@@ -38,7 +38,7 @@ export function getComplianceProfileCheckStats(
     checkName: string
 ): Promise<ComplianceCheckResultStatusCount> {
     const url = generatePath(
-        `${complianceV2Url}/scan/stats/profile/:profileName/checks/:checkName`,
+        `${complianceV2Url}/scan/stats/profiles/:profileName/checks/:checkName`,
         { profileName, checkName }
     );
     return axios

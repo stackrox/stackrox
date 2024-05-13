@@ -2,16 +2,12 @@ import axios from 'services/instance';
 
 import {
     ComplianceCheckStatus,
+    ComplianceScanCluster,
     complianceV2Url,
     ListComplianceProfileResults,
 } from './ComplianceCommon';
 
 const complianceResultsBaseUrl = `${complianceV2Url}/scan`;
-
-type ComplianceScanCluster = {
-    clusterId: string;
-    clusterName: string;
-};
 
 export type ClusterCheckStatus = {
     cluster: ComplianceScanCluster;

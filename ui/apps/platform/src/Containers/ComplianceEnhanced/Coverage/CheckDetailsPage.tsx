@@ -65,7 +65,7 @@ function CheckDetails() {
                 const statusObject = getClusterResultsStatusObject(checkStat.status);
                 if (statusObject) {
                     const label: PageHeaderLabel = {
-                        text: statusObject.statusText,
+                        text: `${statusObject.statusText}: ${checkStat.count}`,
                         icon: statusObject.icon,
                         color: statusObject.color,
                     };

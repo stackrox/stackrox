@@ -121,7 +121,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         ),
         statusText: 'Pass',
         tooltipText: 'Check was successful',
-        color: 'blue',
+        color: 'green',
     },
     [ComplianceCheckStatusEnum.FAIL]: {
         icon: (
