@@ -37,7 +37,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   "Required Annotation: Owner/Team", "Required Label: Owner/Team" and "Latest tag"
 - ROX-21207: All usage of RocksDB has been removed.
   - Support to directly upgrade from any ACS version 3.74.x or earlier to version 4.5 has been deprecated. ACS version 3.74.x or earlier MUST be upgraded to version 4.4.x before proceeding to version 4.5 or later.
-
+- ROX-14990: When generating manifests for OpenShift, roxctl now defaults to OpenShift 4.x instead of OpenShift 3.x.
 
 ## [4.4.0]
 
