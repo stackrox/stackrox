@@ -180,10 +180,12 @@ $(call go-tool, CONTROLLER_GEN, sigs.k8s.io/controller-tools/cmd/controller-gen,
 $(call go-tool, ENVTEST, sigs.k8s.io/controller-runtime/tools/setup-envtest, tools/envtest)
 $(call go-tool, KUSTOMIZE, sigs.k8s.io/kustomize/kustomize/v5, tools/kustomize)
 $(call go-tool, OPERATOR_SDK, github.com/operator-framework/operator-sdk/cmd/operator-sdk, tools/operator-sdk)
+$(call go-tool, OLM, github.com/operator-framework/operator-lifecycle-manager/cmd/olm, tools/operator-sdk)
 $(call go-tool, KUTTL, github.com/kudobuilder/kuttl/cmd/kubectl-kuttl, tools/kuttl)
 $(call go-tool, YQ, github.com/mikefarah/yq/v4, tools/yq)
 
 OPERATOR_SDK_VERSION = $(shell cd tools/operator-sdk; go list -m -f '{{ .Version }}' github.com/operator-framework/operator-sdk)
+OLM_VERSION = $(shell cd tools/operator-sdk; go list -m -f '{{ .Version }}' github.com/operator-framework/operator-lifecycle-manager)
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
@@ -330,7 +332,7 @@ endif
 
 .PHONY: olm-install
 olm-install: operator-sdk ## Install OLM on Kubernetes cluster
-	$(OPERATOR_SDK) olm install
+	$(OPERATOR_SDK) olm install --version=$(OLM_VERSION)
 
 .PHONY: olm-uninstall
 olm-uninstall: operator-sdk ## Uninstall OLM previously installed on Kubernetes cluster
