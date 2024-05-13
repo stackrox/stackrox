@@ -24,7 +24,7 @@ import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import { parseWorkloadQuerySearchFilter } from '../../utils/searchUtils';
 import { platformEntityTabValues } from '../../types';
-import useHasLegacySnoozeAbility from '../../hooks/useCanSnoozeCves';
+import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
 
 import ClustersTable from './ClustersTable';
 import CVEsTable from './CVEsTable';
