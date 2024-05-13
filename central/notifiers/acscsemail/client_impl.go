@@ -63,7 +63,7 @@ func (c *clientImpl) SendMessage(ctx context.Context, msg AcscsMessage) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to send HTTP request")
 	}
-	defer res.Body.Close()
+	defer utils.IgnoreError(res.Body.Close())
 
 	if res.StatusCode > 300 {
 		return fmt.Errorf("request to %s failed with HTTP status: %d", c.url, res.StatusCode)
