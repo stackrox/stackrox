@@ -40,6 +40,7 @@ import ImageDetailBadges, {
 } from '../components/ImageDetailBadges';
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
+import { getImageBaseNameDisplay } from '../utils/images';
 
 const workloadCveOverviewImagePath = getOverviewPagePath('Workload', {
     vulnerabilityState: 'OBSERVED',
@@ -86,9 +87,11 @@ function ImagePage() {
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const imageData = data && data.image;
-    const imageName = imageData?.name
-        ? `${imageData.name.registry}/${imageData.name.remote}:${imageData.name.tag}`
-        : 'NAME UNKNOWN';
+    const imageName = imageData?.name;
+    const imageDisplayName =
+        imageData && imageName
+            ? `${imageName.registry}/${getImageBaseNameDisplay(imageData.id, imageName)}`
+            : 'NAME UNKNOWN';
     const scanMessage = getImageScanMessage(imageData?.notes || [], imageData?.scanNotes || []);
 
     let mainContent: ReactNode | null = null;
@@ -117,7 +120,7 @@ function ImagePage() {
                             alignItems={{ default: 'alignItemsFlexStart' }}
                         >
                             <Title headingLevel="h1" className="pf-v5-u-m-0">
-                                {imageName}
+                                {imageDisplayName}
                             </Title>
                             {sha && (
                                 <ClipboardCopy
@@ -202,7 +205,7 @@ function ImagePage() {
 
     return (
         <>
-            <PageTitle title={`Workload CVEs - Image ${imageData ? imageName : ''}`} />
+            <PageTitle title={`Workload CVEs - Image ${imageData ? imageDisplayName : ''}`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewImagePath}>
@@ -211,7 +214,7 @@ function ImagePage() {
                     {!error && (
                         <BreadcrumbItem isActive>
                             {imageData ? (
-                                imageName
+                                imageDisplayName
                             ) : (
                                 <Skeleton screenreaderText="Loading image name" width="200px" />
                             )}

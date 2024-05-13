@@ -4,6 +4,7 @@ import { Button, Flex, FlexItem, Tooltip, Truncate } from '@patternfly/react-cor
 import { OutlinedCopyIcon } from '@patternfly/react-icons';
 
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
+import { getImageBaseNameDisplay } from '../utils/images';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 export type ImageNameLinkProps = {
@@ -20,11 +21,14 @@ function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
     const vulnerabilityState = useVulnerabilityState();
     const [copyIconTooltip, setCopyIconTooltip] = useState('Copy image name');
 
-    const { registry, remote, tag } = name;
+    const { registry } = name;
+
+    // If tag is not provided, use the image hash (id) full the full image name
+    const baseName = getImageBaseNameDisplay(id, name);
 
     function copyImageName() {
         navigator?.clipboard
-            ?.writeText(`${registry}/${remote}:${tag}`)
+            ?.writeText(`${registry}/${baseName}`)
             .then(() => setCopyIconTooltip('Copied!'))
             .catch(() => {}); /* Nothing to do */
     }
@@ -38,7 +42,7 @@ function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
         >
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
                 <Link to={getWorkloadEntityPagePath('Image', id, vulnerabilityState)}>
-                    <Truncate position="middle" content={`${remote}:${tag}`} />
+                    <Truncate position="middle" content={baseName} />
                 </Link>{' '}
                 <span className="pf-v5-u-color-200 pf-v5-u-font-size-sm">in {registry}</span>
                 <div>{children}</div>
