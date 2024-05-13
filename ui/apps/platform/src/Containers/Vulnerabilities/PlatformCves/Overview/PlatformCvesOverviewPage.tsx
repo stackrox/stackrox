@@ -40,7 +40,7 @@ function PlatformCvesOverviewPage() {
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const isViewingSnoozedCves = querySearchFilter['CVE Snoozed'] === 'true';
-    const canSnoozeCves = useHasLegacySnoozeAbility();
+    const hasLegacySnoozeAbility = useHasLegacySnoozeAbility();
     const selectedCves = useMap<string, { cve: string }>();
 
     function onEntityTabChange() {
@@ -92,7 +92,7 @@ function PlatformCvesOverviewPage() {
                             }
                             isFiltered={isFiltered}
                         >
-                            {canSnoozeCves && (
+                            {hasLegacySnoozeAbility && (
                                 <ToolbarItem align={{ default: 'alignRight' }}>
                                     <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
                                         <DropdownItem
@@ -115,7 +115,7 @@ function PlatformCvesOverviewPage() {
                                 isFiltered={isFiltered}
                                 pagination={pagination}
                                 selectedCves={selectedCves}
-                                canSelectRows={canSnoozeCves}
+                                canSelectRows={hasLegacySnoozeAbility}
                                 createRowActions={() => []}
                             />
                         )}
