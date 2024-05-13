@@ -212,9 +212,8 @@ func (l *loopImpl) ReprocessSignatureVerifications(firstIntegration bool) {
 	// Signal that we should reprocess signature verifications for all images. This will only trigger a reprocess with
 	// refetch of signature verification results.
 	// If the signal is already triggered, then the current signal is effectively deduped.
-	l.signatureVerificationSig.Signal()
-
 	l.firstSignatureIntegration.Set(firstIntegration)
+	l.signatureVerificationSig.Signal()
 }
 
 func (l *loopImpl) sendDeployments(deploymentIDs []string) {
