@@ -72,7 +72,7 @@ func TestSendMessage(t *testing.T) {
 				"Authorization": {"Bearer test-token"},
 			},
 			// RawMessage is the b64 encoded value of "test message content" defined in the inputMessage
-			expectedBodyStr: `{"To":["test@test.acscs-email.test"],"RawMessage":"dGVzdCBtZXNzYWdlIGNvbnRlbnQ="}`,
+			expectedBodyStr: `{"to":["test@test.acscs-email.test"],"rawMessage":"dGVzdCBtZXNzYWdlIGNvbnRlbnQ="}`,
 		},
 	}
 
