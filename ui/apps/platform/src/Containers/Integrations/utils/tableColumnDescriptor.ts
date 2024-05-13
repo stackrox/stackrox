@@ -160,6 +160,12 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
             { accessor: 'labelKey', Header: 'Recipient Annotation Key' },
             { accessor: 'email.server', Header: 'Server' },
         ],
+        acscsEmail: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'labelDefault', Header: 'Default Recipient' },
+            { accessor: 'labelKey', Header: 'Recipient Annotation Key' },
+            { accessor: 'email.server', Header: 'Server' },
+        ],
         cscc: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'cscc.sourceId', Header: 'Google Cloud SCC Source ID' },
