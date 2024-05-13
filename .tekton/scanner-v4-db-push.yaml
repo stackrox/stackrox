@@ -25,8 +25,8 @@ spec:
     value: '{{repo_url}}'
   - name: image-expires-after
     value: '13w'
-  - name: output-image
-    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner-v4-db:{{revision}}
+  - name: output-image-repo
+    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner-v4-db
   - name: path-context
     value: .
   - name: revision
@@ -36,16 +36,15 @@ spec:
   # TODO(ROX-20234): Enable hermetic builds
   # - name: hermetic
   #   value: "true"
-  # No language dependencies are required for central-v4-db image.
+  # No language dependencies are required for scanner-v4-db image.
   - name: prefetch-input
     value: ''
   - name: build-source-image
     value: 'true'
   - name: clone-depth
-    # A shallow repo clone is sufficient for scanner-v4-db build.
-    value: '1'
+    value: '0'
   - name: clone-fetch-tags
-    value: 'false'
+    value: 'true'
 
   workspaces:
   - name: workspace
