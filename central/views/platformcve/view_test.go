@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package platformcve
 
 import (
@@ -188,16 +190,15 @@ func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECoreSAC() {
 				assert.NoError(t, err)
 
 				// Wrap cluster filter with sac filter.
-				matchFilter := tc.matchFilter
-				baseClusterMatchFilter := matchFilter.matchCluster
-				matchFilter.withClusterFilter(func(cluster *storage.Cluster) bool {
+				filterWithSAC := matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
 					if sacTC.visibleClusters.Contains(cluster.GetId()) {
-						return baseClusterMatchFilter(cluster)
+						return tc.matchFilter.matchCluster(cluster)
 					}
 					return false
 				})
+				filterWithSAC.matchCVEParts = tc.matchFilter.matchCVEParts
 
-				expected := s.compileExpectedCVECores(tc.matchFilter)
+				expected := s.compileExpectedCVECores(filterWithSAC)
 				assert.Equal(t, len(expected), len(actual))
 				assert.ElementsMatch(t, expected, actual)
 			})
@@ -207,8 +208,9 @@ func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECoreSAC() {
 
 func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECoreWithPagination() {
 	for _, paginationTc := range s.paginationTestCases() {
-		for _, baseTc := range s.testCases() {
-			tc := &baseTc
+		testCases := s.testCases()
+		for i := range testCases {
+			tc := &testCases[i]
 			applyPaginationProps(tc, paginationTc)
 			s.T().Run(tc.desc, func(t *testing.T) {
 				actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q)
@@ -232,6 +234,49 @@ func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECoreWithPagination() {
 						record.GetClusterCount(),
 					)
 				}
+			})
+		}
+	}
+}
+
+func (s *PlatformCVEViewTestSuite) TestGetClusterIDs() {
+	for _, tc := range s.testCases() {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			// Such testcases are meant only for Get().
+			if tc.expectedErr != "" {
+				return
+			}
+
+			actualAffectedClusterIDs, err := s.cveView.GetClusterIDs(sac.WithAllAccess(tc.ctx), tc.q)
+			assert.NoError(t, err)
+			expectedAffectedClusterIDs := s.compileExpectedAffectedClusterIDs(tc.matchFilter)
+			assert.ElementsMatch(t, expectedAffectedClusterIDs, actualAffectedClusterIDs)
+		})
+	}
+}
+
+func (s *PlatformCVEViewTestSuite) TestGetClusterIDsSAC() {
+	for _, tc := range s.testCases() {
+		for _, sacTC := range s.sacTestCases(tc.ctx) {
+			s.T().Run(fmt.Sprintf("SAC desc: %s; test desc: %s ", sacTC.desc, tc.desc), func(t *testing.T) {
+				// Such testcases are meant only for Get().
+				if tc.expectedErr != "" {
+					return
+				}
+				actualAffectedClusterIDs, err := s.cveView.GetClusterIDs(sacTC.ctx, tc.q)
+				assert.NoError(t, err)
+
+				// Wrap cluster filter with sac filter.
+				filterWithSAC := matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
+					if sacTC.visibleClusters.Contains(cluster.GetId()) {
+						return tc.matchFilter.matchCluster(cluster)
+					}
+					return false
+				})
+				filterWithSAC.matchCVEParts = tc.matchFilter.matchCVEParts
+
+				expectedAffectedClusterIDs := s.compileExpectedAffectedClusterIDs(filterWithSAC)
+				assert.ElementsMatch(t, expectedAffectedClusterIDs, actualAffectedClusterIDs)
 			})
 		}
 	}
@@ -265,16 +310,15 @@ func (s *PlatformCVEViewTestSuite) TestCountPlatformCVECoreSAC() {
 				assert.NoError(t, err)
 
 				// Wrap cluster filter with sac filter.
-				matchFilter := tc.matchFilter
-				baseClusterMatchFilter := matchFilter.matchCluster
-				matchFilter.withClusterFilter(func(cluster *storage.Cluster) bool {
+				filterWithSAC := matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
 					if sacTC.visibleClusters.Contains(cluster.GetId()) {
-						return baseClusterMatchFilter(cluster)
+						return tc.matchFilter.matchCluster(cluster)
 					}
 					return false
 				})
+				filterWithSAC.matchCVEParts = tc.matchFilter.matchCVEParts
 
-				expected := s.compileExpectedCVECores(tc.matchFilter)
+				expected := s.compileExpectedCVECores(filterWithSAC)
 				assert.Equal(t, len(expected), actual)
 			})
 		}
@@ -671,6 +715,23 @@ func (s *PlatformCVEViewTestSuite) compileExpectedCVECoresWithPagination(filter 
 		end = len(expected)
 	}
 	return expected[offset:end]
+}
+
+func (s *PlatformCVEViewTestSuite) compileExpectedAffectedClusterIDs(filter *filterImpl) []string {
+	affectedClusterIDs := set.NewStringSet()
+	for _, cveParts := range s.cvePartsList {
+		if !filter.matchCVEParts(cveParts) {
+			continue
+		}
+		for _, child := range cveParts.Children {
+			cluster, exists := s.clusterMap[child.ClusterID]
+			if !exists || !filter.matchCluster(cluster) {
+				continue
+			}
+			affectedClusterIDs.Add(cluster.GetId())
+		}
+	}
+	return affectedClusterIDs.AsSlice()
 }
 
 func applyPaginationProps(baseTc *testCase, paginationTc paginationTestCase) {
