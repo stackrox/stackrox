@@ -22,8 +22,7 @@ import (
 )
 
 const (
-	noteOpenShift4xMode = "Deployment files are generated in OpenShift 4.x mode. Set the --openshift-version flag to 4 to suppress this note, or to 3 for deploying to OpenShift 3.x."
-	defaultBundlePath   = "central-bundle"
+	defaultBundlePath = "central-bundle"
 )
 
 type flagsWrapper struct {
@@ -164,7 +163,6 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 		clusterType := storage.ClusterType_OPENSHIFT4_CLUSTER
 		switch openshiftVersion {
 		case 0:
-			cliEnvironment.Logger().InfofLn("%s", noteOpenShift4xMode)
 		case 3:
 			clusterType = storage.ClusterType_OPENSHIFT_CLUSTER
 		case 4:
