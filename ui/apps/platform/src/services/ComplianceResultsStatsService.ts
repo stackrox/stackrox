@@ -2,7 +2,12 @@ import { generatePath } from 'react-router-dom';
 
 import axios from 'services/instance';
 
-import { ComplianceCheckStatusCount, complianceV2Url } from './ComplianceCommon';
+import {
+    ComplianceCheckResultStatusCount,
+    ComplianceCheckStatusCount,
+    ListComplianceProfileResults,
+    complianceV2Url,
+} from './ComplianceCommon';
 
 type ComplianceProfileScanStats = {
     checkStats: ComplianceCheckStatusCount[];
@@ -24,19 +29,6 @@ export function getComplianceProfilesStats(): Promise<ListComplianceProfileScanS
         .get<ListComplianceProfileScanStatsResponse>(`${complianceV2Url}/scan/stats/profiles`)
         .then((response) => response.data);
 }
-
-export type ComplianceCheckResultStatusCount = {
-    checkName: string;
-    rationale: string;
-    ruleName: string;
-    checkStats: ComplianceCheckStatusCount[];
-};
-
-export type ListComplianceProfileResults = {
-    profileResults: ComplianceCheckResultStatusCount[];
-    profileName: string;
-    totalCount: number;
-};
 
 /*
  * Fetches the scan stats for a specific profile check

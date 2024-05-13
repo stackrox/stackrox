@@ -4,6 +4,7 @@ import {
     ComplianceCheckStatusCount,
     ComplianceCheckStatus,
     complianceV2Url,
+    ListComplianceProfileResults,
 } from './ComplianceCommon';
 
 const complianceResultsBaseUrl = `${complianceV2Url}/scan`;
@@ -42,19 +43,6 @@ type ComplianceProfileScanStats = {
 
 export type ListComplianceProfileScanStatsResponse = {
     scanStats: ComplianceProfileScanStats[];
-    totalCount: number;
-};
-
-export type ComplianceCheckResultStatusCount = {
-    checkName: string;
-    rationale: string;
-    ruleName: string;
-    checkStats: ComplianceCheckStatusCount[];
-};
-
-type ListComplianceProfileResults = {
-    profileResults: ComplianceCheckResultStatusCount[];
-    profileName: string;
     totalCount: number;
 };
 
