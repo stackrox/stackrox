@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { resourceTypes } from 'constants/entityTypes';
 
-type SnoozeableCveType = typeof resourceTypes.CLUSTER_CVE | typeof resourceTypes.NODE_CVE;
-type SnoozeAction = 'SNOOZE' | 'UNSNOOZE';
+export type SnoozeableCveType = 'CLUSTER_CVE' | 'NODE_CVE';
+export type SnoozeAction = 'SNOOZE' | 'UNSNOOZE';
 
 export default function useSnoozeCvesModal() {
     const [snoozeModalOptions, setSnoozeModalOptions] = useState<{

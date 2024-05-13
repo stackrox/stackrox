@@ -2,12 +2,12 @@ import React from 'react';
 import { Alert, Modal, Text, Button, Flex, Form, Radio, FormGroup } from '@patternfly/react-core';
 import { FormikHelpers, useFormik } from 'formik';
 
-import { resourceTypes } from 'constants/entityTypes';
 import { durations, snoozeDurations } from 'constants/timeWindows';
 import useRestMutation from 'hooks/useRestMutation';
 import { suppressVulns, unsuppressVulns } from 'services/VulnerabilitiesService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { ValueOf } from 'utils/type.utils';
+import { SnoozeAction, SnoozeableCveType } from './useSnoozeCveModal';
 
 const durationOptions = ['DAY', 'WEEK', 'MONTH', 'UNSET'] as const;
 
@@ -17,8 +17,8 @@ type FormValues = {
 };
 
 export type SnoozeCvesModalProps = {
-    action: 'SNOOZE' | 'UNSNOOZE';
-    cveType: typeof resourceTypes.NODE_CVE | typeof resourceTypes.CLUSTER_CVE;
+    action: SnoozeAction;
+    cveType: SnoozeableCveType;
     cves: { cve: string }[];
     onSuccess: () => void;
     onClose: () => void;

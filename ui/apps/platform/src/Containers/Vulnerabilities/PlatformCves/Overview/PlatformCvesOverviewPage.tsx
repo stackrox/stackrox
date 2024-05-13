@@ -12,7 +12,6 @@ import {
 import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { useApolloClient } from '@apollo/client';
 
-import { resourceTypes } from 'constants/entityTypes';
 import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
@@ -123,7 +122,7 @@ function PlatformCvesOverviewPage() {
                                                     action: isViewingSnoozedCves
                                                         ? 'UNSNOOZE'
                                                         : 'SNOOZE',
-                                                    cveType: resourceTypes.CLUSTER_CVE,
+                                                    cveType: 'CLUSTER_CVE',
                                                     cves: Array.from(selectedCves.values()),
                                                 })
                                             }
@@ -143,7 +142,7 @@ function PlatformCvesOverviewPage() {
                                 selectedCves={selectedCves}
                                 canSelectRows={hasLegacySnoozeAbility}
                                 createRowActions={snoozeActionCreator(
-                                    resourceTypes.CLUSTER_CVE,
+                                    'CLUSTER_CVE',
                                     isViewingSnoozedCves ? 'UNSNOOZE' : 'SNOOZE'
                                 )}
                             />
