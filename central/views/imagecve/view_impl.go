@@ -35,7 +35,7 @@ func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 	}
 
 	var results []*imageCVECoreCount
-	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreCount](ctx, v.db, v.schema, withCountQuery(q))
+	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreCount](ctx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
 	if err != nil {
 		return 0, err
 	}
@@ -311,13 +311,5 @@ func withCountBySeveritySelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.
 					AddBools(search.Fixable, true).ProtoQuery(),
 			).Proto(),
 	)
-	return cloned
-}
-
-func withCountQuery(q *v1.Query) *v1.Query {
-	cloned := q.Clone()
-	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.CVE).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
-	}
 	return cloned
 }

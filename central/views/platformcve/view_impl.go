@@ -33,7 +33,7 @@ func (v *platformCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, 
 	}
 
 	var results []*platformCVECoreCount
-	results, err = pgSearch.RunSelectRequestForSchema[platformCVECoreCount](ctx, v.db, v.schema, withCountQuery(q))
+	results, err = pgSearch.RunSelectRequestForSchema[platformCVECoreCount](ctx, v.db, v.schema, common.WithCountQuery(q, search.CVEID))
 	if err != nil {
 		return 0, err
 	}
@@ -163,13 +163,5 @@ func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
 					).ProtoQuery(),
 			).Proto(),
 	)
-	return cloned
-}
-
-func withCountQuery(q *v1.Query) *v1.Query {
-	cloned := q.Clone()
-	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.CVEID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
-	}
 	return cloned
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -20,10 +21,19 @@ func WithSACFilter(ctx context.Context, targetResource permissions.ResourceMetad
 	if err != nil {
 		return nil, err
 	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+
+	if clusterLevelResource(targetResource) {
+		sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+	} else {
+		sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	}
 	if err != nil {
 		return nil, err
 	}
 
 	return search.FilterQueryByQuery(query, sacQueryFilter), nil
+}
+
+func clusterLevelResource(targetResource permissions.ResourceMetadata) bool {
+	return targetResource == resources.Cluster || targetResource == resources.Node
 }
