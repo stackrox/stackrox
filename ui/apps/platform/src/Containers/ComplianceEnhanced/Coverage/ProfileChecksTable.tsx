@@ -2,6 +2,7 @@ import React from 'react';
 import { generatePath, Link } from 'react-router-dom';
 import {
     Divider,
+    Pagination,
     Progress,
     ProgressMeasureLocation,
     Text,
@@ -14,6 +15,7 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';
 import { getTableUIState } from 'utils/getTableUIState';
 
@@ -31,22 +33,28 @@ import './ProfileChecksTable.css';
 export type ProfileChecksTableProps = {
     isLoading: boolean;
     error: Error | undefined;
-    profileChecks: ComplianceCheckResultStatusCount[];
+    profileChecksResults: ComplianceCheckResultStatusCount[];
+    profileChecksResultsCount: number;
     profileName: string;
+    pagination: UseURLPaginationResult;
 };
 
 function ProfileChecksTable({
     isLoading,
     error,
-    profileChecks,
+    profileChecksResults,
+    profileChecksResultsCount,
     profileName,
+    pagination,
 }: ProfileChecksTableProps) {
     const tableState = getTableUIState({
         isLoading,
-        data: profileChecks,
+        data: profileChecksResults,
         error,
         searchFilter: {},
     });
+
+    const { page, perPage, setPage, setPerPage } = pagination;
 
     return (
         <>
@@ -54,6 +62,15 @@ function ProfileChecksTable({
                 <ToolbarContent>
                     <ToolbarItem>
                         <ProfilesTableToggleGroup activeToggle="checks" />
+                    </ToolbarItem>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={profileChecksResultsCount}
+                            page={page}
+                            perPage={perPage}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
+                        />
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>

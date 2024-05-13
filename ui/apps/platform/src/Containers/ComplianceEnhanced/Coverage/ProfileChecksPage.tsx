@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Divider, PageSection, Title } from '@patternfly/react-core';
 
 import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
 import { getComplianceProfileResults } from 'services/ComplianceResultsService';
 
 import PageTitle from 'Components/PageTitle';
@@ -12,10 +13,13 @@ import ProfileChecksTable from './ProfileChecksTable';
 
 function ProfileChecksPage() {
     const { profileName } = useParams();
+    const pagination = useURLPagination(10);
+
+    const { page, perPage } = pagination;
 
     const fetchProfileChecks = useCallback(
-        () => getComplianceProfileResults(profileName),
-        [profileName]
+        () => getComplianceProfileResults(profileName, page, perPage),
+        [page, perPage, profileName]
     );
     const { data: profileChecks, loading: isLoading, error } = useRestQuery(fetchProfileChecks);
 
@@ -33,8 +37,10 @@ function ProfileChecksPage() {
                     <ProfileChecksTable
                         isLoading={isLoading}
                         error={error}
-                        profileChecks={profileChecks?.profileResults ?? []}
+                        profileChecksResults={profileChecks?.profileResults ?? []}
+                        profileChecksResultsCount={profileChecks?.totalCount ?? 0}
                         profileName={profileName}
+                        pagination={pagination}
                     />
                 </PageSection>
             </PageSection>
