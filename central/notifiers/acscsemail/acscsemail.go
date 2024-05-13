@@ -19,8 +19,8 @@ import (
 )
 
 type AcscsMessage struct {
-	To         []string
-	RawMessage []byte
+	To         []string `json:"to"`
+	RawMessage []byte   `json:"rawMessage"`
 }
 
 func newACSCSEmail(notifier *storage.Notifier, client Client, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,
