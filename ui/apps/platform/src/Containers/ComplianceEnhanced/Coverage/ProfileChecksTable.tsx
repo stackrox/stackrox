@@ -13,9 +13,9 @@ import {
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { ComplianceCheckResultStatusCount } from 'services/ComplianceResultsService';
-import { getTableUIState } from 'utils/getTableUIState';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';
+import { getTableUIState } from 'utils/getTableUIState';
 
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';

@@ -15,7 +15,7 @@ import {
     ComplianceCheckStatus,
     ComplianceCheckStatusCount,
     ComplianceCheckStatusEnum,
-} from 'services/ComplianceResultsService';
+} from 'services/ComplianceCommon';
 
 // Thresholds for compliance status
 const DANGER_THRESHOLD = 50;
