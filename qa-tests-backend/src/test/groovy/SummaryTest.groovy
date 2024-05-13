@@ -127,6 +127,10 @@ class SummaryTest extends BaseSpecification {
             def start = System.currentTimeMillis()
             while (stackroxNamespace.numDeployments != orchestratorNamespace.deploymentCount.size() &&
                 (System.currentTimeMillis() - start) < (30 * 1000)) {
+                orchestratorNamespaces = orchestrator.getNamespaceDetails()
+                orchestratorNamespace = orchestratorNamespaces.find {
+                    it.uid == stackroxNamespace.metadata.id
+                }
                 stackroxNamespace = NamespaceService.getNamespace(stackroxNamespace.metadata.id)
                 log.info "There is a difference in the deployment count for namespace "+
                         stackroxNamespace.metadata.name
@@ -151,6 +155,8 @@ class SummaryTest extends BaseSpecification {
                 log.info javers.compare(stackroxDeploymentNames, orchestratorNamespace.deploymentCount).prettyPrint()
                 diff = true
             }
+            log.info "Namespace ${stackroxNamespace.metadata.name}"
+            log.info "stackrox number of deployments ${stackroxNamespace.numDeployments} orchestrator ${orchestratorNamespace.deploymentCount.size()}"
             assert stackroxNamespace.metadata.clusterId == ClusterService.getClusterId()
             assert stackroxNamespace.metadata.name == orchestratorNamespace.name
             assert stackroxNamespace.metadata.labelsMap == orchestratorNamespace.labels
