@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 
 import { assertClustersPage, visitClusters } from '../Clusters.helpers';
 import {
@@ -11,12 +10,6 @@ import {
 
 describe('Discovered clusters', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_CLOUD_SOURCES')) {
-            this.skip();
-        }
-    });
 
     it('visits from clusters page', () => {
         visitClusters();
