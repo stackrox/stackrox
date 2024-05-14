@@ -136,6 +136,9 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		DeploymentTiming:     nil,
 		DeploymentReferences: []component.DeploymentReference{},
 	}
+	if deploymentWrap != nil && deploymentWrap.GetNamespace() == "kube-system" {
+		log.Infof("================ Object %s action %s", deploymentWrap.GetName(), action)
+	}
 	// If the object is a pod, process the pod event.
 	if objAsPod != nil {
 		var owningDeploymentID string
