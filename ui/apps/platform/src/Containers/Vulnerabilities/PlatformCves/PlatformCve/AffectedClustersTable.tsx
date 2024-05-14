@@ -14,7 +14,7 @@ import { displayClusterType } from '../utils/stringUtils';
 
 export const sortFields = {
     Cluster: 'Cluster',
-    ClusterType: 'Cluster Type',
+    ClusterType: 'Cluster Platform Type',
     ClusterKubernetesVersion: 'Cluster Kubernetes Version',
 } as const;
 export const defaultSortOption = { field: 'Cluster', direction: 'asc' } as const;
