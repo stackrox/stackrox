@@ -135,6 +135,17 @@ message ComplianceOperatorClusterScanConfigStatus {
   string cluster_name = 5;
 }
 
+// Next Tag: 7
+message ComplianceOperatorBenchmarkV2 {
+  string id = 1; // @gotags: sql:"pk,id,type(uuid)"
+  string name = 2; // @gotags: search:"Compliance Benchmark Name,hidden"
+  string version = 3;
+  string description = 4;
+  // Example: https://control.compliance.openshift.io/CIS-OCP
+  string profile_annotation = 5;
+  string provider = 6;
+}
+
 // Next Tag: 18
 // This object has been flattened vs joining with rule.  The rationale is to spend the time to query rule
 // while processing results vs reporting them to the user.  Additionally, flattening it helps with the historical data
