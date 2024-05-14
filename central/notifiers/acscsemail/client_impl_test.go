@@ -120,3 +120,34 @@ type testRoundTripper func(req *http.Request) (*http.Response, error)
 func (t testRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	return t(req)
 }
+
+func copyMap(m map[string]interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+	for k, v := range m {
+		switch v := v.(type) {
+		case map[string]interface{}:
+			result[k] = copyMap(v)
+		default:
+			result[k] = v
+		}
+	}
+	return result
+}
+
+func TestCopyMap(t *testing.T) {
+	oldMap := make(map[string]interface{})
+	number := 2
+
+	oldMap["test"] = &number
+	newMap := copyMap(oldMap)
+
+	oldNumber, ok := oldMap["test"].(*int)
+	if ok {
+		*oldNumber = 3
+	}
+
+	newNumber, ok := newMap["test"].(*int)
+	if ok {
+		t.Fatal(*newNumber)
+	}
+}

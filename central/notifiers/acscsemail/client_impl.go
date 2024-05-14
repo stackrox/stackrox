@@ -25,6 +25,13 @@ var _ Client = &clientImpl{}
 
 var client *clientImpl
 
+// ClientSingleton returns an instance of the default ACSCS email service client implementation.
+// It uses HTTP to communicate to the ACSCS email service instead of SMTP, because the ACSCS email service
+// acts as a direct proxy to underlying cloud email service APIs e.g. AWS SES. Using HTTP here has several benefits:
+// 1. Matches the core knowledge of ACSCS team
+// 2. Authentication with K8s service account tokens is easier
+// 3. Reduced latency and complexity compared to SMTP, since SMTP involves a lot of back and forth messaging
+// between client and server.
 func ClientSingleton() Client {
 	if client != nil {
 		return client
