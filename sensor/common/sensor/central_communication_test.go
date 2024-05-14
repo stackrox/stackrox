@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -374,7 +375,7 @@ func newMessagesMatcher(errorMsg string, msgs ...*central.MsgFromSensor) *messag
 			if x.GetEvent() == nil || y.GetEvent() == nil {
 				return false
 			}
-			return x.GetEvent().GetId() == y.GetEvent().GetId() && cmp.Equal(x.GetEvent().GetDeployment(), y.GetEvent().GetDeployment())
+			return x.GetEvent().GetId() == y.GetEvent().GetId() && cmp.Equal(x.GetEvent().GetDeployment(), y.GetEvent().GetDeployment(), cmpopts.IgnoreUnexported(storage.Deployment{}))
 		},
 	}
 	for _, m := range msgs {
