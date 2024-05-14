@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -13,24 +12,47 @@ import (
 
 func Test_sendProps(t *testing.T) {
 	teleMock := mocks.NewMockTelemeter(gomock.NewController(t))
-	captureTrack := func(id string, props map[string]any) *gomock.Call {
-		return teleMock.EXPECT().Track("Updated Secured Cluster Identity",
+
+	// Custom gomock.Matcher for telemeter.CallOptions:
+	matchOptions := func(fn func(*telemeter.CallOptions) bool) gomock.Matcher {
+		return gomock.Cond(func(o any) bool {
+			opts := &telemeter.CallOptions{}
+			apply := (o).(telemeter.Option)
+			apply(opts)
+			return fn(opts)
+		})
+	}
+
+	t.Run("Test custom matcher", func(t *testing.T) {
+		matchUserID := func(co *telemeter.CallOptions) bool {
+			return co.UserID == "testID"
+		}
+		if !matchOptions(matchUserID).
+			Matches(telemeter.WithUserID("testID")) {
+			t.Error()
+		}
+	})
+
+	// Let's construct an expectation for a telemeter.Track calls for a given
+	// secured cluster ID and a set of secured cluster properties.
+	captureTrack := func(id string, value string) *gomock.Call {
+		return teleMock.EXPECT().Track(
+			// Event name:
+			"Updated Secured Cluster Identity",
+			// Event properties:
 			nil,
-			// Check the cluster ID option:
-			gomock.Cond(func(x any) bool {
-				opts := &telemeter.CallOptions{}
-				apply := (x).(telemeter.Option)
-				apply(opts)
+			//
+			// Now go the variadic ...telemeter.Option:
+			//
+			// Match the cluster ID:
+			matchOptions(func(opts *telemeter.CallOptions) bool {
 				return opts.ClientID == id
 			}),
-			// Whatever group option:
+			// Whatever group:
 			gomock.Any(),
-			// Check the properties map option:
-			gomock.Cond(func(x any) bool {
-				opts := &telemeter.CallOptions{}
-				apply := (x).(telemeter.Option)
-				apply(opts)
-				return reflect.DeepEqual(props, opts.Traits)
+			// Match the properties map:
+			matchOptions(func(opts *telemeter.CallOptions) bool {
+				return opts.Traits["property"] == value
 			}))
 	}
 
@@ -41,8 +63,8 @@ func Test_sendProps(t *testing.T) {
 	cluster2 := &storage.Cluster{Id: "id 2"}
 
 	t.Run("Send properties once per cluster", func(t *testing.T) {
-		first := captureTrack(cluster1.Id, map[string]any{"property": "old"}).Times(1)
-		captureTrack(cluster2.Id, map[string]any{"property": "old"}).Times(1).After(first)
+		first := captureTrack(cluster1.Id, "old").Times(1)
+		captureTrack(cluster2.Id, "old").Times(1).After(first)
 
 		sendProps(cfg, cluster1, map[string]any{"property": "old"})
 		sendProps(cfg, cluster2, map[string]any{"property": "old"})
@@ -51,8 +73,8 @@ func Test_sendProps(t *testing.T) {
 	})
 
 	t.Run("Send updated properties once per cluster", func(t *testing.T) {
-		first := captureTrack(cluster1.Id, map[string]any{"property": "new"}).Times(1)
-		captureTrack(cluster2.Id, map[string]any{"property": "new"}).Times(1).After(first)
+		first := captureTrack(cluster1.Id, "new").Times(1)
+		captureTrack(cluster2.Id, "new").Times(1).After(first)
 
 		sendProps(cfg, cluster1, map[string]any{"property": "new"})
 		sendProps(cfg, cluster2, map[string]any{"property": "new"})

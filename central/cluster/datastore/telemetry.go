@@ -2,13 +2,15 @@ package datastore
 
 import (
 	"context"
-	"reflect"
+	"crypto/sha256"
+	"encoding/base64"
+	"fmt"
 	"time"
 
-	"github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	cache "github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
@@ -17,9 +19,11 @@ import (
 
 const securedClusterClient = "Secured Cluster"
 
-// clusterIdentityCache keeps the last reported properties of the connected
-// secured clusters.
-var clusterIdentityCache = expirable.NewLRU(100, func(key string, value map[string]any) {}, 24*time.Hour)
+// clusterIdentityCache keeps the hash of the last reported properties
+// of the connected secured clusters.
+// The items are not refreshed on Get, and so will be reported once a day.
+// The properties of the disconnected clusters will also be evicted in a day.
+var clusterIdentityCache = cache.NewExpiringCache(24 * time.Hour)
 
 func trackClusterRegistered(cluster *storage.Cluster) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
@@ -126,13 +130,23 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 	sendProps(cfg, cluster, props)
 }
 
+func hash(props map[string]any) string {
+	h := sha256.New()
+	for key, value := range props {
+		_, _ = h.Write(([]byte)(key))
+		_, _ = h.Write(([]byte)(fmt.Sprintf("%v", value)))
+	}
+	return base64.StdEncoding.EncodeToString(h.Sum(nil))
+}
+
 func sendProps(cfg *phonehome.Config, cluster *storage.Cluster, props map[string]any) {
 	clusterID := cluster.GetId()
-	if lastProps, ok := clusterIdentityCache.Get(clusterID); ok && reflect.DeepEqual(lastProps, props) {
+	h := hash(props)
+	if lastHash := clusterIdentityCache.Get(clusterID); lastHash != nil && h == (lastHash).(string) {
 		// Nothing has been changed since last report.
 		return
 	}
-	clusterIdentityCache.Add(clusterID, props)
+	clusterIdentityCache.Add(clusterID, h)
 	opts := []telemeter.Option{
 		telemeter.WithClient(clusterID, securedClusterClient),
 		telemeter.WithGroups(cfg.GroupType, cfg.GroupID),
