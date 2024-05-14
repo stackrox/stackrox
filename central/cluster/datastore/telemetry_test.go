@@ -19,7 +19,8 @@ func Test_sendProps(t *testing.T) {
 			// Check the cluster ID option:
 			gomock.Cond(func(x any) bool {
 				opts := &telemeter.CallOptions{}
-				(x).(telemeter.Option)(opts)
+				apply := (x).(telemeter.Option)
+				apply(opts)
 				return opts.ClientID == id
 			}),
 			// Whatever group option:
@@ -27,7 +28,8 @@ func Test_sendProps(t *testing.T) {
 			// Check the properties map option:
 			gomock.Cond(func(x any) bool {
 				opts := &telemeter.CallOptions{}
-				(x).(telemeter.Option)(opts)
+				apply := (x).(telemeter.Option)
+				apply(opts)
 				return reflect.DeepEqual(props, opts.Traits)
 			}))
 	}
