@@ -34,8 +34,8 @@ import ImageComponentVulnerabilitiesTable, {
 import EmptyTableResults from '../components/EmptyTableResults';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
-import CVESelectionTh from '../components/CVESelectionTh';
-import CVESelectionTd from '../components/CVESelectionTd';
+import CVESelectionTh from '../../components/CVESelectionTh';
+import CVESelectionTd from '../../components/CVESelectionTd';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
@@ -162,9 +162,7 @@ function ImageVulnerabilitiesTable({
                                     <CVESelectionTd
                                         selectedCves={selectedCves}
                                         rowIndex={rowIndex}
-                                        cve={cve}
-                                        summary={summary}
-                                        numAffectedImages={1}
+                                        item={{ cve, summary, numAffectedImages: 1 }}
                                     />
                                 )}
                                 <Td dataLabel="CVE" modifier="nowrap">
