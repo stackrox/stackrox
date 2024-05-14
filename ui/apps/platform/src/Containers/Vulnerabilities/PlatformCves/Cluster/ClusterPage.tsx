@@ -113,7 +113,9 @@ function ClusterPage() {
                         {activeTabKey === vulnTabKey && (
                             <ClusterPageVulnerabilities clusterId={clusterId} />
                         )}
-                        {activeTabKey === detailTabKey && <ClusterPageDetails />}
+                        {activeTabKey === detailTabKey && (
+                            <ClusterPageDetails clusterId={clusterId} />
+                        )}
                     </PageSection>
                 </>
             )}

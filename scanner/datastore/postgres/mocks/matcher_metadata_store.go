@@ -40,31 +40,60 @@ func (m *MockMatcherMetadataStore) EXPECT() *MockMatcherMetadataStoreMockRecorde
 	return m.recorder
 }
 
-// GetLastVulnerabilityUpdate mocks base method.
-func (m *MockMatcherMetadataStore) GetLastVulnerabilityUpdate(arg0 context.Context) (time.Time, error) {
+// GCVulnerabilityUpdates mocks base method.
+func (m *MockMatcherMetadataStore) GCVulnerabilityUpdates(ctx context.Context, activeUpdaters []string, lastUpdate time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLastVulnerabilityUpdate", arg0)
+	ret := m.ctrl.Call(m, "GCVulnerabilityUpdates", ctx, activeUpdaters, lastUpdate)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GCVulnerabilityUpdates indicates an expected call of GCVulnerabilityUpdates.
+func (mr *MockMatcherMetadataStoreMockRecorder) GCVulnerabilityUpdates(ctx, activeUpdaters, lastUpdate any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GCVulnerabilityUpdates", reflect.TypeOf((*MockMatcherMetadataStore)(nil).GCVulnerabilityUpdates), ctx, activeUpdaters, lastUpdate)
+}
+
+// GetLastVulnerabilityUpdate mocks base method.
+func (m *MockMatcherMetadataStore) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLastVulnerabilityUpdate", ctx)
 	ret0, _ := ret[0].(time.Time)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetLastVulnerabilityUpdate indicates an expected call of GetLastVulnerabilityUpdate.
-func (mr *MockMatcherMetadataStoreMockRecorder) GetLastVulnerabilityUpdate(arg0 any) *gomock.Call {
+func (mr *MockMatcherMetadataStoreMockRecorder) GetLastVulnerabilityUpdate(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastVulnerabilityUpdate", reflect.TypeOf((*MockMatcherMetadataStore)(nil).GetLastVulnerabilityUpdate), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastVulnerabilityUpdate", reflect.TypeOf((*MockMatcherMetadataStore)(nil).GetLastVulnerabilityUpdate), ctx)
+}
+
+// GetOrSetLastVulnerabilityUpdate mocks base method.
+func (m *MockMatcherMetadataStore) GetOrSetLastVulnerabilityUpdate(ctx context.Context, bundle string, lastUpdate time.Time) (time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrSetLastVulnerabilityUpdate", ctx, bundle, lastUpdate)
+	ret0, _ := ret[0].(time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrSetLastVulnerabilityUpdate indicates an expected call of GetOrSetLastVulnerabilityUpdate.
+func (mr *MockMatcherMetadataStoreMockRecorder) GetOrSetLastVulnerabilityUpdate(ctx, bundle, lastUpdate any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrSetLastVulnerabilityUpdate", reflect.TypeOf((*MockMatcherMetadataStore)(nil).GetOrSetLastVulnerabilityUpdate), ctx, bundle, lastUpdate)
 }
 
 // SetLastVulnerabilityUpdate mocks base method.
-func (m *MockMatcherMetadataStore) SetLastVulnerabilityUpdate(arg0 context.Context, arg1 time.Time) error {
+func (m *MockMatcherMetadataStore) SetLastVulnerabilityUpdate(ctx context.Context, bundle string, lastUpdate time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetLastVulnerabilityUpdate", arg0, arg1)
+	ret := m.ctrl.Call(m, "SetLastVulnerabilityUpdate", ctx, bundle, lastUpdate)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetLastVulnerabilityUpdate indicates an expected call of SetLastVulnerabilityUpdate.
-func (mr *MockMatcherMetadataStoreMockRecorder) SetLastVulnerabilityUpdate(arg0, arg1 any) *gomock.Call {
+func (mr *MockMatcherMetadataStoreMockRecorder) SetLastVulnerabilityUpdate(ctx, bundle, lastUpdate any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastVulnerabilityUpdate", reflect.TypeOf((*MockMatcherMetadataStore)(nil).SetLastVulnerabilityUpdate), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastVulnerabilityUpdate", reflect.TypeOf((*MockMatcherMetadataStore)(nil).SetLastVulnerabilityUpdate), ctx, bundle, lastUpdate)
 }

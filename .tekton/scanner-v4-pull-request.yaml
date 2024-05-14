@@ -27,8 +27,8 @@ spec:
     value: '{{source_url}}'
   - name: image-expires-after
     value: '13w'
-  - name: output-image
-    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner-v4:on-pr-{{revision}}
+  - name: output-image-repo
+    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner-v4
   - name: path-context
     value: .
   - name: revision

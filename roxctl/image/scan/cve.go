@@ -1,6 +1,7 @@
 package scan
 
 import (
+	"slices"
 	"sort"
 	"strings"
 
@@ -45,6 +46,14 @@ type cveJSONResult struct {
 	Result cveJSONStructure `json:"result"`
 }
 
+func (c *cveJSONResult) CountVulnerabilities() int {
+	return c.Result.Summary[totalVulnerabilitiesMapKey]
+}
+
+func (c *cveJSONResult) CountComponents() int {
+	return c.Result.Summary[totalComponentsMapKey]
+}
+
 type cveJSONStructure struct {
 	Summary         map[string]int         `json:"summary"`
 	Vulnerabilities []cveVulnerabilityJSON `json:"vulnerabilities,omitempty"`
@@ -63,15 +72,16 @@ type cveVulnerabilityJSON struct {
 // all relevant information regarding components and CVEs and a summary of all found CVE by
 // severity
 // NOTE: The returned *cveJSONResult CAN be passed to json.Marshal
-func newCVESummaryForPrinting(scanResults *storage.ImageScan) *cveJSONResult {
+func newCVESummaryForPrinting(scanResults *storage.ImageScan, severities []string) *cveJSONResult {
 	var vulnerabilitiesJSON []cveVulnerabilityJSON
 	components := sortComponentsByName(scanResults.GetComponents())
 	vulnSummaryMap := createNumOfVulnerabilitiesBySeverityMap()
+	severitiesToInclude := createSeveritiesToInclude(severities)
 	uniqueCVEs := set.NewStringSet()
 
 	for _, comp := range components {
 		vulns := comp.GetVulns()
-		vulnsJSON := getVulnerabilityJSON(vulns, comp, vulnSummaryMap, uniqueCVEs)
+		vulnsJSON := getVulnerabilityJSON(vulns, comp, vulnSummaryMap, uniqueCVEs, severitiesToInclude)
 		if len(vulnsJSON) != 0 {
 			vulnerabilitiesJSON = append(vulnerabilitiesJSON, vulnsJSON...)
 			vulnSummaryMap[totalComponentsMapKey]++
@@ -87,13 +97,18 @@ func newCVESummaryForPrinting(scanResults *storage.ImageScan) *cveJSONResult {
 }
 
 func getVulnerabilityJSON(vulnerabilities []*storage.EmbeddedVulnerability, comp *storage.EmbeddedImageScanComponent,
-	numOfVulnsBySeverity map[string]int, uniqueCVEs set.StringSet) []cveVulnerabilityJSON {
+	numOfVulnsBySeverity map[string]int, uniqueCVEs set.StringSet,
+	severitiesToInclude []cveSeverity) []cveVulnerabilityJSON {
 	// sort vulnerabilities by severity
 	vulnerabilities = sortVulnerabilitiesForSeverity(vulnerabilities)
 
 	vulnerabilitiesJSON := make([]cveVulnerabilityJSON, 0, len(vulnerabilities))
 	for _, vulnerability := range vulnerabilities {
 		severity := cveSeverityFromVulnerabilitySeverity(vulnerability.GetSeverity())
+		if !slices.Contains(severitiesToInclude, severity) {
+			continue
+		}
+
 		vulnJSON := cveVulnerabilityJSON{
 			CveID:                 vulnerability.GetCve(),
 			CveSeverity:           severity.String(),
@@ -147,4 +162,12 @@ func createNumOfVulnerabilitiesBySeverityMap() map[string]int {
 	m[totalVulnerabilitiesMapKey] = 0
 	m[totalComponentsMapKey] = 0
 	return m
+}
+
+func createSeveritiesToInclude(severities []string) []cveSeverity {
+	severitiesToInclude := make([]cveSeverity, 0, len(severities))
+	for _, severity := range severities {
+		severitiesToInclude = append(severitiesToInclude, cveSeverityFromString(severity))
+	}
+	return severitiesToInclude
 }

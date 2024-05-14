@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	types "github.com/stackrox/rox/pkg/protocompat"
 )
 
 type checkResultKey struct {
@@ -20,12 +21,12 @@ type scanResultKey struct {
 }
 
 // ComplianceV2CheckResult converts a storage check result to a v2 check result
-func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2) *v2.ComplianceClusterCheckStatus {
+func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTime *types.Timestamp) *v2.ComplianceClusterCheckStatus {
 	converted := &v2.ComplianceClusterCheckStatus{
 		CheckId:   incoming.GetCheckId(),
 		CheckName: incoming.GetCheckName(),
 		Clusters: []*v2.ClusterCheckStatus{
-			clusterStatus(incoming),
+			clusterStatus(incoming, lastScanTime),
 		},
 		Description:  incoming.GetDescription(),
 		Instructions: incoming.GetInstructions(),
@@ -58,10 +59,10 @@ func ComplianceV2ScanResults(incoming []*storage.ComplianceOperatorCheckResultV2
 		// First time seeing this rule in the results.
 		if !found {
 			orderedKeys = append(orderedKeys, key)
-			resultsByScanCheck[key] = ComplianceV2CheckResult(result)
+			resultsByScanCheck[key] = ComplianceV2CheckResult(result, nil)
 		} else {
 			// Append the new cluster status to the v2 check result.
-			workingResult.Clusters = append(workingResult.Clusters, clusterStatus(result))
+			workingResult.Clusters = append(workingResult.Clusters, clusterStatus(result, nil))
 			resultsByScanCheck[key] = workingResult
 		}
 	}
@@ -102,145 +103,6 @@ func ComplianceV2ScanResults(incoming []*storage.ComplianceOperatorCheckResultV2
 		})
 	}
 
-	return convertedResults
-}
-
-// ComplianceV2ClusterStats converts the counts to the v2 stats
-func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClusterScan, scanToScanID map[string]string) []*v2.ComplianceClusterScanStats {
-	var convertedResults []*v2.ComplianceClusterScanStats
-
-	for _, resultCount := range resultCounts {
-		convertedResults = append(convertedResults, &v2.ComplianceClusterScanStats{
-			Cluster: &v2.ComplianceScanCluster{
-				ClusterId:   resultCount.ClusterID,
-				ClusterName: resultCount.ClusterName,
-			},
-			ScanStats: &v2.ComplianceScanStatsShim{
-				ScanName:     resultCount.ScanConfigName,
-				ScanConfigId: scanToScanID[resultCount.ScanConfigName],
-				CheckStats: []*v2.ComplianceCheckStatusCount{
-					{
-						Count:  int32(resultCount.FailCount),
-						Status: v2.ComplianceCheckStatus_FAIL,
-					},
-					{
-						Count:  int32(resultCount.InfoCount),
-						Status: v2.ComplianceCheckStatus_INFO,
-					},
-					{
-						Count:  int32(resultCount.PassCount),
-						Status: v2.ComplianceCheckStatus_PASS,
-					},
-					{
-						Count:  int32(resultCount.ErrorCount),
-						Status: v2.ComplianceCheckStatus_ERROR,
-					},
-					{
-						Count:  int32(resultCount.ManualCount),
-						Status: v2.ComplianceCheckStatus_MANUAL,
-					},
-					{
-						Count:  int32(resultCount.InconsistentCount),
-						Status: v2.ComplianceCheckStatus_INCONSISTENT,
-					},
-					{
-						Count:  int32(resultCount.NotApplicableCount),
-						Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
-					},
-				},
-			},
-		})
-	}
-	return convertedResults
-}
-
-// ComplianceV2ClusterOverallStats converts the counts to the v2 stats
-func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCountByCluster, clusterErrors map[string][]string) []*v2.ComplianceClusterOverallStats {
-	var convertedResults []*v2.ComplianceClusterOverallStats
-
-	for _, resultCount := range resultCounts {
-		convertedResults = append(convertedResults, &v2.ComplianceClusterOverallStats{
-			Cluster: &v2.ComplianceScanCluster{
-				ClusterId:   resultCount.ClusterID,
-				ClusterName: resultCount.ClusterName,
-			},
-			ClusterErrors: clusterErrors[resultCount.ClusterID],
-			CheckStats: []*v2.ComplianceCheckStatusCount{
-				{
-					Count:  int32(resultCount.FailCount),
-					Status: v2.ComplianceCheckStatus_FAIL,
-				},
-				{
-					Count:  int32(resultCount.InfoCount),
-					Status: v2.ComplianceCheckStatus_INFO,
-				},
-				{
-					Count:  int32(resultCount.PassCount),
-					Status: v2.ComplianceCheckStatus_PASS,
-				},
-				{
-					Count:  int32(resultCount.ErrorCount),
-					Status: v2.ComplianceCheckStatus_ERROR,
-				},
-				{
-					Count:  int32(resultCount.ManualCount),
-					Status: v2.ComplianceCheckStatus_MANUAL,
-				},
-				{
-					Count:  int32(resultCount.InconsistentCount),
-					Status: v2.ComplianceCheckStatus_INCONSISTENT,
-				},
-				{
-					Count:  int32(resultCount.NotApplicableCount),
-					Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
-				},
-			},
-		})
-	}
-	return convertedResults
-}
-
-// ComplianceV2ProfileStats converts the counts to the v2 stats
-func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByProfile, profileMap map[string]*storage.ComplianceOperatorProfileV2) []*v2.ComplianceProfileScanStats {
-	var convertedResults []*v2.ComplianceProfileScanStats
-
-	for _, resultCount := range resultCounts {
-		convertedResults = append(convertedResults, &v2.ComplianceProfileScanStats{
-			ProfileName: resultCount.ProfileName,
-			Title:       profileMap[resultCount.ProfileName].GetTitle(),
-			Version:     profileMap[resultCount.ProfileName].GetProfileVersion(),
-			CheckStats: []*v2.ComplianceCheckStatusCount{
-				{
-					Count:  int32(resultCount.FailCount),
-					Status: v2.ComplianceCheckStatus_FAIL,
-				},
-				{
-					Count:  int32(resultCount.InfoCount),
-					Status: v2.ComplianceCheckStatus_INFO,
-				},
-				{
-					Count:  int32(resultCount.PassCount),
-					Status: v2.ComplianceCheckStatus_PASS,
-				},
-				{
-					Count:  int32(resultCount.ErrorCount),
-					Status: v2.ComplianceCheckStatus_ERROR,
-				},
-				{
-					Count:  int32(resultCount.ManualCount),
-					Status: v2.ComplianceCheckStatus_MANUAL,
-				},
-				{
-					Count:  int32(resultCount.InconsistentCount),
-					Status: v2.ComplianceCheckStatus_INCONSISTENT,
-				},
-				{
-					Count:  int32(resultCount.NotApplicableCount),
-					Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
-				},
-			},
-		})
-	}
 	return convertedResults
 }
 
@@ -290,10 +152,10 @@ func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfi
 }
 
 // ComplianceV2CheckClusterResults converts the storage check results to v2 scan results
-func ComplianceV2CheckClusterResults(incoming []*storage.ComplianceOperatorCheckResultV2) []*v2.ClusterCheckStatus {
+func ComplianceV2CheckClusterResults(incoming []*storage.ComplianceOperatorCheckResultV2, lastTimeMap map[string]*types.Timestamp) []*v2.ClusterCheckStatus {
 	clusterResults := make([]*v2.ClusterCheckStatus, 0, len(incoming))
 	for _, result := range incoming {
-		clusterResults = append(clusterResults, clusterStatus(result))
+		clusterResults = append(clusterResults, clusterStatus(result, lastTimeMap[result.ClusterId]))
 	}
 
 	return clusterResults
@@ -320,14 +182,15 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 	return clusterResults
 }
 
-func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2) *v2.ClusterCheckStatus {
+func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTime *types.Timestamp) *v2.ClusterCheckStatus {
 	return &v2.ClusterCheckStatus{
 		Cluster: &v2.ComplianceScanCluster{
 			ClusterId:   incoming.GetClusterId(),
 			ClusterName: incoming.GetClusterName(),
 		},
-		Status:      convertComplianceCheckStatus(incoming.Status),
-		CreatedTime: incoming.GetCreatedTime(),
-		CheckUid:    incoming.GetId(),
+		Status:       convertComplianceCheckStatus(incoming.Status),
+		CreatedTime:  incoming.GetCreatedTime(),
+		CheckUid:     incoming.GetId(),
+		LastScanTime: lastScanTime,
 	}
 }

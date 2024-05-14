@@ -3,7 +3,7 @@ package graph
 import (
 	"bytes"
 	"context"
-	"sort"
+	"slices"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -704,7 +704,7 @@ func flattenEdges(edges ...[]testEdge) []testEdge {
 }
 
 func mockNode(node string, namespace string, internetAccess, nonIsolatedIngress, nonIsolatedEgress bool, queryMatch bool, policies ...string) *v1.NetworkNode {
-	sort.Strings(policies)
+	slices.Sort(policies)
 	return &v1.NetworkNode{
 		Entity: &storage.NetworkEntityInfo{
 			Type: storage.NetworkEntityInfo_DEPLOYMENT,

@@ -8,11 +8,16 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	categorypostgresstore "github.com/stackrox/rox/migrator/migrations/policymigrationhelper/categorypostgresstorefortest"
+	categorySchema "github.com/stackrox/rox/migrator/migrations/policymigrationhelper/categorypostgresstorefortest/schema"
+	edgeypostgresstore "github.com/stackrox/rox/migrator/migrations/policymigrationhelper/edgepostgresstorefortest"
+	edgeSchema "github.com/stackrox/rox/migrator/migrations/policymigrationhelper/edgepostgresstorefortest/schema"
 	policypostgresstore "github.com/stackrox/rox/migrator/migrations/policymigrationhelper/policypostgresstorefortest"
-	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper/policypostgresstorefortest/schema"
+	policySchema "github.com/stackrox/rox/migrator/migrations/policymigrationhelper/policypostgresstorefortest/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -29,16 +34,24 @@ func TestPostgresPolicyMigrator(t *testing.T) {
 
 type postgresPolicyMigratorTestSuite struct {
 	suite.Suite
-	ctx   context.Context
-	db    *pghelper.TestPostgres
-	store policypostgresstore.Store
+	ctx           context.Context
+	db            *pghelper.TestPostgres
+	store         policypostgresstore.Store
+	categoryStore categorypostgresstore.Store
+	edgeStore     edgeypostgresstore.Store
 }
 
 func (s *postgresPolicyMigratorTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), false)
 	s.ctx = sac.WithAllAccess(context.Background())
-	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTablePoliciesStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), policySchema.CreateTablePoliciesStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), categorySchema.CreateTablePolicyCategoriesStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), edgeSchema.CreateTablePolicyCategoryEdgesStmt)
+
 	s.store = policypostgresstore.New(s.db, s.T())
+	s.categoryStore = categorypostgresstore.New(s.db, s.T())
+	s.edgeStore = edgeypostgresstore.New(s.db, s.T())
+
 }
 
 func (s *postgresPolicyMigratorTestSuite) TearDownTest() {
@@ -49,6 +62,8 @@ func (s *postgresPolicyMigratorTestSuite) comparePolicyWithDB(policyID string, p
 	newPolicy, exists, err := s.store.Get(s.ctx, policyID)
 	s.NoError(err)
 	s.True(exists)
+
+	policy.Categories = nil
 	s.EqualValues(policy, newPolicy)
 }
 
@@ -56,10 +71,14 @@ func (s *postgresPolicyMigratorTestSuite) comparePolicyWithDB(policyID string, p
 func (s *postgresPolicyMigratorTestSuite) getTestCaseFunctions() map[string]func(map[string]PolicyChanges, map[string]*storage.Policy) error {
 	return map[string]func(map[string]PolicyChanges, map[string]*storage.Policy) error{
 		"MigratePoliciesWithStore": func(policiesToMigrate map[string]PolicyChanges, comparisonPolicies map[string]*storage.Policy) error {
-			return MigratePoliciesWithStore(policiesToMigrate, comparisonPolicies, s.store.Exists, s.store.Get, s.store.Upsert)
+			return MigratePoliciesWithStore(policiesToMigrate, comparisonPolicies,
+				s.store.Exists, s.store.Get, s.store.Upsert)
 		},
 		"MigratePoliciesWithStoreV2": func(policiesToMigrate map[string]PolicyChanges, comparisonPolicies map[string]*storage.Policy) error {
-			return MigratePoliciesWithStoreV2(policiesToMigrate, comparisonPolicies, s.store.Get, s.store.Upsert)
+			return MigratePoliciesWithStoreV2(policiesToMigrate, comparisonPolicies, s.store.Get, s.store.Upsert,
+				s.getAllCategories,
+				s.edgeStore.Upsert,
+				s.deleteEdge)
 		},
 	}
 }
@@ -198,6 +217,9 @@ func (s *postgresPolicyMigratorTestSuite) TestExclusionAreAddedAndRemovedAsNeces
 		comparisonPolicies,
 		s.store.Get,
 		s.store.Upsert,
+		s.getAllCategories,
+		s.edgeStore.Upsert,
+		s.deleteEdge,
 	))
 
 	// Policy exclusions should be updated
@@ -232,4 +254,120 @@ func testPolicy(id string) *storage.Policy {
 			{Name: "exclusion name", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace name"}}},
 		},
 	}
+}
+
+// Test that categories can get added and removed appropriately
+func (s *postgresPolicyMigratorTestSuite) TestCategoriesAreAddedAndRemovedAsNecessary() {
+	policy := testPolicy(policyID)
+
+	// Add a bunch of exclusions into the DB
+	policy.Categories = []string{"cat-1", "cat-2", "my-cat", "cat-2", "cat-4", "duped-category"}
+
+	s.NoError(s.store.Upsert(s.ctx, policy))
+
+	for _, c := range policy.Categories {
+		s.NoError(s.categoryStore.Upsert(s.ctx, &storage.PolicyCategory{
+			Id:        c,
+			Name:      c,
+			IsDefault: true,
+		}))
+	}
+	s.NoError(s.categoryStore.Upsert(s.ctx, &storage.PolicyCategory{
+		Id:        "category-2-changed",
+		Name:      "category-2-changed",
+		IsDefault: true,
+	}))
+	s.NoError(s.categoryStore.Upsert(s.ctx, &storage.PolicyCategory{
+		Id:        "category-5",
+		Name:      "category-5",
+		IsDefault: true,
+	}))
+
+	comparisonPolicies := map[string]*storage.Policy{
+		policyID: policy,
+	}
+
+	policiesToMigrate := map[string]PolicyChanges{
+		policyID: {
+			FieldsToCompare: []FieldComparator{PolicySectionComparator},
+			ToChange: PolicyUpdates{
+				CategoriesToAdd:    []string{"category-2-changed", "category-5", "duped-category"},
+				CategoriesToRemove: []string{"cat-2", "cat-4", "i-dont-exist"},
+			},
+		},
+	}
+
+	s.NoError(MigratePoliciesWithStoreV2(
+		policiesToMigrate,
+		comparisonPolicies,
+		s.store.Get,
+		s.store.Upsert,
+		s.getAllCategories,
+		s.edgeStore.Upsert,
+		s.deleteEdge,
+	))
+
+	// Policy categories should be updated
+	policy.Categories = []string{"cat-1", "my-cat", "cat-2", "duped-category", "category-2-changed", "category-5"}
+	s.comparePolicyWithDB(policyID, policy)
+}
+
+// Test that exclusions are added if the policy never had any before
+func (s *postgresPolicyMigratorTestSuite) TestCategoriesAreAddedEvenIfPolicyHadNoneBefore() {
+	policy := testPolicy(policyID)
+
+	// Remove all categories to start with
+	policy.Categories = nil
+	s.NoError(s.store.Upsert(s.ctx, policy))
+	s.NoError(s.categoryStore.Upsert(s.ctx, &storage.PolicyCategory{
+		Id:        "category-added",
+		Name:      "category-added",
+		IsDefault: true,
+	}))
+
+	comparisonPolicies := map[string]*storage.Policy{
+		policyID: policy,
+	}
+
+	policiesToMigrate := map[string]PolicyChanges{
+		policyID: {
+			FieldsToCompare: []FieldComparator{PolicySectionComparator},
+			ToChange: PolicyUpdates{
+				CategoriesToAdd: []string{"category-added"},
+			},
+		},
+	}
+
+	s.NoError(MigratePoliciesWithStoreV2(
+		policiesToMigrate,
+		comparisonPolicies,
+		s.store.Get,
+		s.store.Upsert,
+		s.getAllCategories,
+		s.edgeStore.Upsert,
+		s.deleteEdge,
+	))
+
+	// Policy categories should be updated
+	policy.Categories = []string{"category-added"}
+	s.comparePolicyWithDB(policyID, policy)
+}
+
+func (s *postgresPolicyMigratorTestSuite) getAllCategories(ctx context.Context) (map[string]string, error) {
+	categories, err := s.categoryStore.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	categoryMap := make(map[string]string, len(categories))
+	for _, c := range categories {
+		categoryMap[c.Name] = c.Id
+	}
+	return categoryMap, nil
+}
+
+func (s *postgresPolicyMigratorTestSuite) deleteEdge(ctx context.Context, edge *storage.PolicyCategoryEdge) error {
+	_, err := s.edgeStore.DeleteByQuery(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.PolicyID, edge.GetPolicyId()).
+		AddExactMatches(search.PolicyCategoryID, edge.GetCategoryId()).ProtoQuery())
+	return err
 }

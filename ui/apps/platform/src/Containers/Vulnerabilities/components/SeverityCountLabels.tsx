@@ -7,6 +7,8 @@ import { noViolationsClassName, noViolationsColor } from 'constants/severityColo
 
 import { VulnerabilitySeverityLabel } from '../types';
 
+import './SeverityCountLabels.css';
+
 type SeverityCountLabelsProps = {
     criticalCount: number;
     importantCount: number;
@@ -55,7 +57,11 @@ function SeverityCountLabels({
     const low = isLowHidden ? undefined : lowCount;
 
     return (
-        <Flex spaceItems={{ default: 'spaceItemsSm' }} flexWrap={{ default: 'nowrap' }}>
+        <Flex
+            className="severity-count-labels"
+            spaceItems={{ default: 'spaceItemsSm' }}
+            flexWrap={{ default: 'nowrap' }}
+        >
             <Tooltip content={getTooltipContent('critical', critical, entity)}>
                 <Label
                     aria-label={getTooltipContent('critical', critical, entity)}

@@ -1,21 +1,25 @@
 run:
   timeout: 240m
-  skip-dirs:
-  - pkg/complianceoperator/api
-  - scanner/updater/rhel        # TODO(ROX-21539): Remove when CSAF/VEX arrives
   build-tags:
   - integration
   - sql_integration
   modules-download-mode: readonly
+  go: "1.21"
 
 output:
-  format: "junit-xml:report.xml,colored-line-number"
+  formats:
+    - format: colored-line-number
+    - format: junit-xml
+      path: report.xml
 
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   exclude-use-default: false
 
+  exclude-dirs:
+  - pkg/complianceoperator/api
+  - scanner/updater/rhel        # TODO(ROX-21539): Remove when CSAF/VEX arrives
   exclude-rules:
     - path: "(central|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale)/"
       linters:
@@ -118,7 +122,6 @@ linters-settings:
     - 'os\.Stderr(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?'
     - 'os\.Stdin(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?'
   staticcheck:
-    go: "1.20"
     checks: [all,-ST1000,-ST1001,-ST1003,-ST1005,-SA1019,-SA4001,-ST1016]
   wrapcheck:
     ignoreSigRegexps:

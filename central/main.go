@@ -45,6 +45,7 @@ import (
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	v2ComplianceResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/service"
+	v2ComplianceStats "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/stats/service"
 	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	complianceOperatorIntegrationService "github.com/stackrox/rox/central/complianceoperator/v2/integration/service"
 	v2ComplianceProfiles "github.com/stackrox/rox/central/complianceoperator/v2/profiles/service"
@@ -449,6 +450,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
 		servicesToRegister = append(servicesToRegister, complianceScanSettings.Singleton())
 		servicesToRegister = append(servicesToRegister, v2ComplianceResults.Singleton())
+		servicesToRegister = append(servicesToRegister, v2ComplianceStats.Singleton())
 		servicesToRegister = append(servicesToRegister, v2ComplianceProfiles.Singleton())
 		servicesToRegister = append(servicesToRegister, v2ComplianceRules.Singleton())
 	}

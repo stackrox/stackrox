@@ -24,7 +24,7 @@ SILENT ?= @
 # the pattern is passed to: grep -Ev
 #  usage: "path/to/ignored|another/path"
 # TODO: [ROX-19070] Update postgres store test generation to work for foreign keys
-UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
+UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
 ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
@@ -87,12 +87,18 @@ ifeq ($(GOARCH),s390x)
 		--build-arg="RPMS_BASE_TAG=stream9"
 endif
 
-ifeq ($(UNAME_S),Darwin)
-BIND_GOCACHE ?= 0
-BIND_GOPATH ?= 0
-else
+# By default, assume we are going to use a bind mount volume instead of a standalone one.
 BIND_GOCACHE ?= 1
 BIND_GOPATH ?= 1
+
+# Only resort to local volumes on X86_64 Darwin, since on ARM Darwin the permissions of the
+# standalone volume will be mapped to root instead of the local user, making the build fail.
+# An alternative is to chown the directory of the standalone volume within the container.
+ifeq ($(UNAME_S),Darwin)
+ifneq ($(UNAME_M),arm64)
+BIND_GOCACHE ?= 0
+BIND_GOPATH ?= 0
+endif
 endif
 
 ifeq ($(BIND_GOCACHE),1)

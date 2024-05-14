@@ -1,0 +1,149 @@
+{
+  "id": "38bf79e7-48bf-4ab1-b72f-38e8ad8b4ec3",
+  "name": "Deployments should have at least one ingress Network Policy",
+  "description": "Alerts if deployments are missing an ingress Network Policy",
+  "rationale": "Pods that lack ingress Network Policies have unrestricted reachability on the network and may be exposed to attacks",
+  "remediation": "Create and apply an appropriate Network Policy of type ingress to all Deployments. See https://kubernetes.io/docs/concepts/services-networking/network-policies/ for details",
+  "disabled": true,
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-apiserver namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-apiserver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-scheduler namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-scheduler"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-controller-manager namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-controller-manager"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-sdn namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-sdn"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-network-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-network-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-multus namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-multus"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-cluster-version namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-version"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on node-ca DaemonSet in the openshift-image-registry namespace",
+      "deployment": {
+        "name": "node-ca",
+        "scope": {
+          "namespace": "openshift-image-registry"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on host network usage within the openshift-etcd namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-etcd"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on host network usage within the openshift-machine-config-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-machine-config-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on host network usage within the openshift-monitoring namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-monitoring"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on host network usage within the openshift-machine-api namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-machine-api"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on host network usage within the openshift-cluster-node-tuning-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-node-tuning-operator"
+        }
+      }
+    }
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "Alert on missing ingres Network Policy",
+      "policyGroups": [
+        {
+          "fieldName": "Has Ingress Network Policy",
+          "values": [
+            {
+              "value": "false"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

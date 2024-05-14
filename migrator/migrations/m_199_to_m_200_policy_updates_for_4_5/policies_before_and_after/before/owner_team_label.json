@@ -1,0 +1,52 @@
+{
+  "id": "550081a1-ad3a-4eab-a874-8eb68fab2bbd",
+  "name": "Required Label: Owner/Team",
+  "description": "Alert on deployments missing the 'owner' or 'team' label",
+  "rationale": "The 'owner' or 'team' label should always be specified so that the deployment can quickly be associated with a specific user or team.",
+  "remediation": "Redeploy your service and set the 'owner' or 'team' label to yourself or your team respectively per organizational standards.",
+  "disabled": true,
+  "categories": [
+    "DevOps Best Practices",
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    }
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Required Label",
+          "values": [
+            {
+              "value": "owner|team=.+"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

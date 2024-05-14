@@ -1,0 +1,52 @@
+{
+  "id": "2db9a279-2aec-4618-a85d-7f1bdf4911b1",
+  "name": "90-Day Image Age",
+  "description": "Alert on deployments with images that haven't been updated in 90 days",
+  "rationale": "Base images are updated frequently with bug fixes and vulnerability patches. Image age exceeding 90 days may indicate a higher risk of vulnerabilities existing in the image.",
+  "remediation": "Rebuild your image, push a new minor version (with a new immutable tag), and update your service to use it.",
+  "categories": [
+    "DevOps Best Practices",
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    }
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Image Age",
+          "values": [
+            {
+              "value": "90"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

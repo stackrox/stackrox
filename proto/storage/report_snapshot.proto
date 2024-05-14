@@ -4,6 +4,7 @@ package storage;
 
 import "google/protobuf/timestamp.proto";
 import "storage/report_configuration.proto";
+import "storage/report_notifier_configuration.proto";
 import "storage/schedule.proto";
 import "storage/user.proto";
 

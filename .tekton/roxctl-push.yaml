@@ -26,8 +26,8 @@ spec:
   - name: image-expires-after
     # TODO(ROX-20230): make release images not expire.
     value: '13w'
-  - name: output-image
-    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/roxctl:{{revision}}
+  - name: output-image-repo
+    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/roxctl
   - name: path-context
     value: .
   - name: revision

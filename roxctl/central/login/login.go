@@ -284,6 +284,7 @@ func (l *loginCommand) verifyLoginAuthProviders() error {
 	if err != nil {
 		return errors.Wrap(err, "requesting login auth providers")
 	}
+	defer utils.IgnoreError(resp.Body.Close)
 
 	var loginAuthProviders v1.GetLoginAuthProvidersResponse
 	if err := jsonpb.Unmarshal(resp.Body, &loginAuthProviders); err != nil {

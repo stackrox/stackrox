@@ -1,0 +1,159 @@
+{
+  "id": "2e90874a-3521-44de-85c6-5720f519a701",
+  "name": "Latest tag",
+  "description": "Alert on deployments with images using tag 'latest'",
+  "rationale": "Using latest tag can result in running heterogeneous versions of code. Many Docker hosts cache the Docker images, which means newer versions of the latest tag will not be picked up. See https://docs.docker.com/develop/dev-best-practices for more best practices.",
+  "remediation": "Consider moving to semantic versioning based on code releases (semver.org) or using the first 12 characters of the source control SHA. This will allow you to tie the Docker image to the code.",
+  "categories": [
+    "DevOps Best Practices"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on deployment sre-pod-network-connectivity-check-pruner in namespace openshift-network-diagnostics",
+      "deployment": {
+        "name": "sre-pod-network-connectivity-check-pruner",
+        "scope": {
+          "namespace": "openshift-network-diagnostics"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment osd-delete-ownerrefs-serviceaccounts in namespace openshift-sre-pruning",
+      "deployment": {
+        "name": "osd-delete-ownerrefs-serviceaccounts",
+        "scope": {
+          "namespace": "openshift-sre-pruning"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment sre-build-test in namespace openshift-build-test",
+      "deployment": {
+        "name": "sre-build-test",
+        "scope": {
+          "namespace": "openshift-build-test"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment osd-delete-backplane-script-resources in namespace openshift-backplane-managed-scripts",
+      "deployment": {
+        "name": "osd-delete-backplane-script-resources",
+        "scope": {
+          "namespace": "openshift-backplane-managed-scripts"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment sre-ebs-iops-reporter in namespace openshift-monitoring",
+      "deployment": {
+        "name": "sre-ebs-iops-reporter",
+        "scope": {
+          "namespace": "openshift-monitoring"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment sre-stuck-ebs-vols in namespace openshift-monitoring",
+      "deployment": {
+        "name": "sre-stuck-ebs-vols",
+        "scope": {
+          "namespace": "openshift-monitoring"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment osd-delete-backplane-serviceaccounts in namespace openshift-backplane",
+      "deployment": {
+        "name": "osd-delete-backplane-serviceaccounts",
+        "scope": {
+          "namespace": "openshift-backplane"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment deployments-pruner in namespace openshift-sre-pruning",
+      "deployment": {
+        "name": "deployments-pruner",
+        "scope": {
+          "namespace": "openshift-sre-pruning"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment osd-patch-subscription-source in namespace openshift-marketplace",
+      "deployment": {
+        "name": "osd-patch-subscription-source",
+        "scope": {
+          "namespace": "openshift-marketplace"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment sre-dns-latency-exporter in namespace openshift-monitoring",
+      "deployment": {
+        "name": "sre-dns-latency-exporter",
+        "scope": {
+          "namespace": "openshift-monitoring"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment osd-rebalance-infra-nodes in namespace openshift-monitoring",
+      "deployment": {
+        "name": "osd-rebalance-infra-nodes",
+        "scope": {
+          "namespace": "openshift-monitoring"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment osd-rebalance-infra-node in namespace openshift-monitoring",
+      "deployment": {
+        "name": "osd-rebalance-infra-node",
+        "scope": {
+          "namespace": "openshift-monitoring"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    }
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Image Tag",
+          "values": [
+            {
+              "value": "latest"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

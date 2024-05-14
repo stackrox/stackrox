@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -395,44 +396,46 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			s.testDB = pgtest.ForT(s.T())
 			// Add deployments if necessary
 			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-			s.Nil(err)
+			s.Require().NoError(err)
 			for _, deploymentID := range c.deployments.AsSlice() {
-				s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
+				s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
 			}
 
 			podDS, err := podStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-			s.Nil(err)
+			s.Require().NoError(err)
 			for _, podID := range c.pods.AsSlice() {
 				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
-				s.Nil(err)
+				s.Require().NoError(err)
 			}
 
 			processDatastore, err := processIndicatorDatastore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-			s.Nil(err)
-			s.NoError(processDatastore.AddProcessIndicators(s.ctx, c.initialProcesses...))
+			s.Require().NoError(err)
+			s.Require().NoError(processDatastore.AddProcessIndicators(s.ctx, c.initialProcesses...))
 			countFromDB, err := processDatastore.Count(s.ctx, nil)
-			s.NoError(err)
-			s.Equal(len(c.initialProcesses), countFromDB)
+			s.Require().NoError(err)
+			s.Require().Equal(len(c.initialProcesses), countFromDB)
 
-			PruneOrphanedProcessIndicators(s.ctx, s.testDB.DB, orphanWindow)
-
-			countFromDB, err = processDatastore.Count(s.ctx, nil)
-			s.NoError(err)
-			s.Equal(len(c.initialProcesses)-len(c.expectedDeletions), countFromDB)
+			idsToDelete, err := GetOrphanedProcessIDsByDeployment(s.ctx, s.testDB.DB, orphanWindow)
+			s.Require().NoError(err)
+			idsByPod, err := GetOrphanedProcessIDsByPod(s.ctx, s.testDB.DB, orphanWindow)
+			s.Require().NoError(err)
+			idsToDelete = append(idsToDelete, idsByPod...)
+			slices.Sort(idsToDelete)
+			s.Require().ElementsMatch(c.expectedDeletions, slices.Compact(idsToDelete))
 
 			// Cleanup
 			var cleanupIDs []string
 			for _, process := range c.initialProcesses {
 				cleanupIDs = append(cleanupIDs, process.Id)
 			}
-			s.NoError(processDatastore.RemoveProcessIndicators(s.ctx, cleanupIDs))
+			s.Require().NoError(processDatastore.RemoveProcessIndicators(s.ctx, cleanupIDs))
 
 			for _, deploymentID := range c.deployments.AsSlice() {
-				s.NoError(deploymentDS.RemoveDeployment(s.ctx, fixtureconsts.Cluster1, deploymentID))
+				s.Require().NoError(deploymentDS.RemoveDeployment(s.ctx, fixtureconsts.Cluster1, deploymentID))
 			}
 
 			for _, podID := range c.pods.AsSlice() {
-				s.NoError(podDS.RemovePod(s.ctx, podID))
+				s.Require().NoError(podDS.RemovePod(s.ctx, podID))
 			}
 
 		})

@@ -108,7 +108,7 @@ function NodePage() {
                         tabIndex={0}
                     >
                         {activeTabKey === vulnTabKey && <NodePageVulnerabilities nodeId={nodeId} />}
-                        {activeTabKey === detailTabKey && <NodePageDetails />}
+                        {activeTabKey === detailTabKey && <NodePageDetails nodeId={nodeId} />}
                     </PageSection>
                 </>
             )}
