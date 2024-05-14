@@ -67,6 +67,10 @@ var (
 	// remoteTransport is the http.RoundTripper to use when talking to image registries.
 	remoteTransport         = proxiedRemoteTransport(false)
 	insecureRemoteTransport = proxiedRemoteTransport(true)
+
+	// regsNoRange is a set of registries which do not accept the Range HTTP header.
+	// This is used for logging purposes, only.
+	regsNoRange = make(map[string]struct{})
 )
 
 func proxiedRemoteTransport(insecure bool) http.RoundTripper {
@@ -363,6 +367,13 @@ func getLayerRequest(ctx context.Context, httpClient *http.Client, imgRef name.R
 	}
 	utils.IgnoreError(res.Body.Close)
 	if res.StatusCode != http.StatusPartialContent {
+		if _, exists := regsNoRange[registryURL.Host]; !exists {
+			regsNoRange[registryURL.Host] = struct{}{}
+			zlog.Warn(ctx).
+				Str("registry", registryURL.Host).
+				Msg("Range HTTP header may not be supported, so indexing may required about twice as many image pulls")
+		}
+
 		zlog.Debug(ctx).
 			Int("status_code", res.StatusCode).
 			Int("len", int(res.ContentLength)).
