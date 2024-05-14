@@ -12,6 +12,7 @@ import {
     TreeViewDataItem,
     TreeViewSearch,
 } from '@patternfly/react-core';
+import { PlusCircleIcon } from '@patternfly/react-icons';
 import { kebabCase } from 'lodash';
 import { useFormikContext } from 'formik';
 
@@ -54,6 +55,7 @@ function getPolicyFieldsAsTree(existingGroups, descriptors): TreeViewDataItem[] 
                 name: child.longName,
                 title: child.shortName || child.name,
                 id: kebabCase(child.shortName),
+                icon: <PlusCircleIcon />,
             })),
     }));
 
@@ -66,7 +68,7 @@ type PolicyCriteriaOptionsProps = {
 };
 
 function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCriteriaOptionsProps) {
-    const [activeItems, setActiveItems] = useState<TreeViewDataItem[]>([]);
+    // const [activeItems, setActiveItems] = useState<TreeViewDataItem[]>([]);
     const [allExpanded, setAllExpanded] = useState(false);
     const [filteredItems, setFilteredItems] = useState<TreeViewDataItem[]>([]);
     const [isFiltered, setIsFiltered] = useState(false);
@@ -112,7 +114,14 @@ function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCrit
     function onSelect(evt, treeViewItem) {
         // Ignore folders for selection
         if (treeViewItem && !treeViewItem.children) {
-            setActiveItems([treeViewItem]);
+            // setActiveItems([treeViewItem]);
+            const itemKey = treeViewItem.title;
+            const itemToAdd = descriptors.find(
+                (descriptor) => descriptor.shortName === itemKey || descriptor.name === itemKey
+            );
+            const newPolicyFieldCard = getEmptyPolicyFieldCard(itemToAdd);
+
+            addPolicyFieldCardHandler(newPolicyFieldCard);
         }
     }
 
@@ -123,16 +132,16 @@ function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCrit
         ]);
     }
 
-    function addField() {
-        const itemKey = activeItems[0].title;
-        const itemToAdd = descriptors.find(
-            (descriptor) => descriptor.shortName === itemKey || descriptor.name === itemKey
-        );
-        const newPolicyFieldCard = getEmptyPolicyFieldCard(itemToAdd);
+    // function addField() {
+    //     const itemKey = activeItems[0].title;
+    //     const itemToAdd = descriptors.find(
+    //         (descriptor) => descriptor.shortName === itemKey || descriptor.name === itemKey
+    //     );
+    //     const newPolicyFieldCard = getEmptyPolicyFieldCard(itemToAdd);
 
-        addPolicyFieldCardHandler(newPolicyFieldCard);
-        close();
-    }
+    //     addPolicyFieldCardHandler(newPolicyFieldCard);
+    //     close();
+    // }
 
     const toolbar = (
         <>
@@ -166,7 +175,7 @@ function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCrit
                 </Button>
             </FlexItem>
             <TreeView
-                activeItems={activeItems}
+                // activeItems={activeItems}
                 data={filteredItems}
                 onSelect={onSelect}
                 hasSelectableNodes
@@ -175,9 +184,9 @@ function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCrit
                 allExpanded={allExpanded || isFiltered}
                 toolbar={toolbar}
             />
-            <Button variant="primary" onClick={addField} isDisabled={activeItems.length === 0}>
+            {/* <Button variant="primary" onClick={addField} isDisabled={activeItems.length === 0}>
                 Add policy field
-            </Button>
+            </Button> */}
         </Flex>
     );
 }
