@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
+	"github.com/stackrox/rox/scanner/enricher/partial"
 	"github.com/stackrox/rox/scanner/updater/manual"
 )
 
@@ -87,6 +88,10 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
+	}
+	err = filterPackages(r.Packages, r.Enrichments)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: filtering packages: %w", err)
 	}
 	pkgFixedBy, err := pkgFixedBy(r.Enrichments)
 	if err != nil {
@@ -583,6 +588,30 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 		}
 	}
 	return ret, nil
+}
+
+// filterPackages filters out packages from the given map based on the given enrichments.
+func filterPackages(packages map[string]*claircore.Package, enrichments map[string][]json.RawMessage) error {
+	enrichmentsList := enrichments[partial.Type]
+	if len(enrichmentsList) == 0 {
+		return nil
+	}
+
+	var pkgIDs []string
+	// The partial enrichment always contains only one element.
+	err := json.Unmarshal(enrichmentsList[0], &pkgIDs)
+	if err != nil {
+		return err
+	}
+	if len(pkgIDs) == 0 {
+		return nil
+	}
+
+	for _, pkgID := range pkgIDs {
+		delete(packages, pkgID)
+	}
+
+	return nil
 }
 
 func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, error) {

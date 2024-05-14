@@ -21,35 +21,45 @@ import (
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
+	"github.com/stackrox/rox/scanner/enricher/partial"
 	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/matcher/updater/distribution"
 	"github.com/stackrox/rox/scanner/matcher/updater/vuln"
 )
 
-// matcherNames specifies the ClairCore matchers to use.
-var matcherNames = []string{
-	"alpine-matcher",
-	"aws-matcher",
-	"debian-matcher",
-	"gobin",
-	"java-maven",
-	"oracle",
-	"photon",
-	"python",
-	"rhel-container-matcher",
-	"rhel",
-	"ruby-gem",
-	"suse",
-	"ubuntu-matcher",
-}
+var (
+	// matcherNames specifies the ClairCore matchers to use.
+	matcherNames = []string{
+		"alpine-matcher",
+		"aws-matcher",
+		"debian-matcher",
+		"gobin",
+		"java-maven",
+		"oracle",
+		"photon",
+		"python",
+		"rhel-container-matcher",
+		"rhel",
+		"ruby-gem",
+		"suse",
+		"ubuntu-matcher",
+	}
+
+	enrichers = []driver.Enricher{
+		&nvd.Enricher{},
+		&fixedby.Enricher{},
+	}
+)
 
 func init() {
-	if env.ScannerV4NodeJSSupport.BooleanSetting() {
-		// ClairCore does not register the Node.js factory by default.
-		m := nodejs.Matcher{}
-		mf := driver.MatcherStatic(&m)
-		registry.Register(m.Name(), mf)
-		matcherNames = append(matcherNames, m.Name())
+	// ClairCore does not register the Node.js factory by default.
+	m := nodejs.Matcher{}
+	mf := driver.MatcherStatic(&m)
+	registry.Register(m.Name(), mf)
+	matcherNames = append(matcherNames, m.Name())
+
+	if env.ScannerV4PartialNodeJSSupport.BooleanSetting() {
+		enrichers = append(enrichers, &partial.Enricher{})
 	}
 }
 

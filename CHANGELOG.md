@@ -16,11 +16,16 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-22376: Add a new notifier integration to enable notification via email for ACS Cloud Service managed centrals
 - ROX-24411: `roxctl image scan --output=csv` and `roxctl image scan --output=table` now include the fixed version by default.
 - ROX-24173: A new export API `/v1/export/vuln-mgmt/workloads` for workload vulnerabilities has been added. It provides a performant way of exporting both deployments and images in a single query which will hold all relevant data for vulnerability management.
+- ROX-21768: Scanner V4 may not be configured to return partial Node.js results via `ROX_SCANNER_V4_PARTIAL_NODE_JS_SUPPORT` (default is `false`).
+  - Scanner v2 (aka StackRox Scanner) always returned partial results for programming languages such that only packages with known vulnerabilities were returned. This flag allows users to enable this functionality in Scanner V4 for Node.js, only.
 
 ### Removed Features
 
 - Dropped support for older Helm versions: For rendering the Helm charts stackrox-central-services and
   stackrox-secured-cluster-services a Helm version >= 3.9.0 is now required.
+- `ROX_SCANNER_V4_NODE_JS_SUPPORT` is removed.
+  - This flag originally allowed users to configure if Scanner V4 should support Node.js.
+  - This is replaced with `ROX_SCANNER_V4_PARTIAL_NODE_JS_SUPPORT`.
 
 ### Deprecated Features
 
