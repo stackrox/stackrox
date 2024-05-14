@@ -45,7 +45,7 @@ function PlatformCvesOverviewPage() {
     const querySearchFilter = searchFilter;
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
-    const isViewingSnoozedCves = querySearchFilter['CVE Snoozed'] === 'true';
+    const isViewingSnoozedCves = querySearchFilter['CVE Snoozed']?.[0] === 'true';
     const hasLegacySnoozeAbility = useHasLegacySnoozeAbility();
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();

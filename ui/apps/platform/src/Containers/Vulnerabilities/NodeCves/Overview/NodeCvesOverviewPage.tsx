@@ -7,15 +7,23 @@ import {
     FlexItem,
     Card,
     CardBody,
+    ToolbarItem,
 } from '@patternfly/react-core';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
+import { useApolloClient } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
+import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import useMap from 'hooks/useMap';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
+import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
+import useSnoozeCveModal from '../../components/SnoozeCvesModal/useSnoozeCveModal';
+import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
 import TableEntityToolbar from '../../components/TableEntityToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import NodeCveFilterToolbar from '../components/NodeCveFilterToolbar';
@@ -30,6 +38,8 @@ import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
 const searchOptions = [NODE_CVE_SEARCH_OPTION, SNOOZED_NODE_CVE_SEARCH_OPTION];
 
 function NodeCvesOverviewPage() {
+    const apolloClient = useApolloClient();
+
     const [activeEntityTabKey] = useURLStringUnion('entityTab', nodeEntityTabValues);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
@@ -37,6 +47,11 @@ function NodeCvesOverviewPage() {
     // TODO - Need an equivalent function implementation for filter sanitization for Node CVEs
     const querySearchFilter = searchFilter;
     const isFiltered = getHasSearchApplied(querySearchFilter);
+
+    const isViewingSnoozedCves = querySearchFilter['CVE Snoozed']?.[0] === 'true';
+    const hasLegacySnoozeAbility = useHasLegacySnoozeAbility();
+    const selectedCves = useMap<string, { cve: string }>();
+    const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
 
     function onEntityTabChange() {
         pagination.setPage(1);
@@ -67,6 +82,19 @@ function NodeCvesOverviewPage() {
 
     return (
         <>
+            {snoozeModalOptions && (
+                <SnoozeCvesModal
+                    {...snoozeModalOptions}
+                    onSuccess={() => {
+                        // Refresh the data after snoozing/unsnoozing CVEs
+                        apolloClient.cache.evict({ fieldName: 'nodeCVEs' });
+                        apolloClient.cache.evict({ fieldName: 'nodeCVECount' });
+                        apolloClient.cache.gc();
+                        selectedCves.clear();
+                    }}
+                    onClose={() => setSnoozeModalOptions(null)}
+                />
+            )}
             <PageTitle title="Node CVEs Overview" />
             <Divider component="div" />
             <PageSection
@@ -100,13 +128,43 @@ function NodeCvesOverviewPage() {
                                         : entityCounts.Node
                                 }
                                 isFiltered={isFiltered}
-                            />
+                            >
+                                {hasLegacySnoozeAbility && (
+                                    <ToolbarItem align={{ default: 'alignRight' }}>
+                                        <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                                            <DropdownItem
+                                                key="bulk-snooze-cve"
+                                                component="button"
+                                                onClick={() =>
+                                                    setSnoozeModalOptions({
+                                                        action: isViewingSnoozedCves
+                                                            ? 'UNSNOOZE'
+                                                            : 'SNOOZE',
+                                                        cveType: 'NODE_CVE',
+                                                        cves: Array.from(selectedCves.values()),
+                                                    })
+                                                }
+                                            >
+                                                {isViewingSnoozedCves
+                                                    ? 'Unsnooze CVEs'
+                                                    : 'Snooze CVEs'}
+                                            </DropdownItem>
+                                        </BulkActionsDropdown>
+                                    </ToolbarItem>
+                                )}
+                            </TableEntityToolbar>
                             <Divider component="div" />
                             {activeEntityTabKey === 'CVE' && (
                                 <CVEsTable
                                     querySearchFilter={querySearchFilter}
                                     isFiltered={isFiltered}
                                     pagination={pagination}
+                                    selectedCves={selectedCves}
+                                    canSelectRows={hasLegacySnoozeAbility}
+                                    createRowActions={snoozeActionCreator(
+                                        'NODE_CVE',
+                                        isViewingSnoozedCves ? 'UNSNOOZE' : 'SNOOZE'
+                                    )}
                                 />
                             )}
                             {activeEntityTabKey === 'Node' && (
