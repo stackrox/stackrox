@@ -77,7 +77,7 @@ type grpcConfig struct {
 
 func makeCtxWithCommandHeader(ctx context.Context) context.Context {
 	md := metadata.New(nil)
-	setCustomHeaders(md)
+	setCustomHeaders(md.Set)
 	return metadata.NewOutgoingContext(ctx, md)
 }
 

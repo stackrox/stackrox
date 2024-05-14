@@ -111,14 +111,14 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 	return resp, nil
 }
 
-func setCustomHeaders(h interface{ Set(string, ...string) }) {
-	h.Set(clientconn.RoxctlCommandHeader, RoxctlCommand)
-	h.Set(clientconn.RoxctlCommandIndexHeader, fmt.Sprint(RoxctlCommandIndex.Add(1)))
+func setCustomHeaders(headers func(string, ...string)) {
+	headers(clientconn.RoxctlCommandHeader, RoxctlCommand)
+	headers(clientconn.RoxctlCommandIndexHeader, fmt.Sprint(RoxctlCommandIndex.Add(1)))
 }
 
 // Do executes a http.Request
 func (client *roxctlClientImpl) Do(req *http.Request) (*http.Response, error) {
-	setCustomHeaders(phonehome.Headers(req.Header))
+	setCustomHeaders(phonehome.Headers(req.Header).Set)
 
 	resp, err := client.http.Do(req)
 	// The url.Error returned by go-retryablehttp needs to be unwrapped to retrieve the correct timeout settings.
