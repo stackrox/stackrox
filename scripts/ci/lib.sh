@@ -581,7 +581,7 @@ mark_collector_release() {
     fi
 
     local tag="$1"
-    local username="roxbot"
+    local username="${GITHUB_USERNAME}"
 
     info "Check out collector source code"
 
@@ -592,11 +592,6 @@ mark_collector_release() {
 
     collector_version="$(cat COLLECTOR_VERSION)"
     pushd /tmp/collector || exit
-    gitbot(){
-        git -c "user.name=RoxBot" -c "user.email=roxbot@stackrox.com" \
-            -c "url.https://${GITHUB_TOKEN}:x-oauth-basic@github.com/.insteadOf=https://github.com/" \
-            "${@}"
-    }
     gitbot checkout master && gitbot pull
 
     branch_name="release-${tag}/update-RELEASED_VERSIONS"
@@ -634,6 +629,13 @@ mark_collector_release() {
             --body "Add entry into the RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
     fi
     popd
+}
+
+gitbot() {
+    git -c "user.name=${GITHUB_USERNAME}" \
+        -c "user.email=${GITHUB_EMAIL}" \
+        -c "url.https://${GITHUB_TOKEN}:x-oauth-basic@github.com/.insteadOf=https://github.com/" \
+        "${@}"
 }
 
 is_tagged() {
