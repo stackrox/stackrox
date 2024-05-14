@@ -901,7 +901,7 @@ func TestEnrichWithSignature_Success(t *testing.T) {
 			updated, err := e.enrichWithSignature(emptyCtx, c.ctx, c.img)
 			assert.NoError(t, err)
 			assert.Equal(t, c.updated, updated)
-			assert.ElementsMatch(t, c.expectedSigs, c.img.GetSignature().GetSignatures())
+			assert.ElementsMatch(t, c.expectedSigs, c.img.GetSignature().Clone().GetSignatures())
 		})
 	}
 }
@@ -1357,7 +1357,7 @@ func TestUpdateFromDatabase_ImageNames(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			testImg := img.Clone()
 			_ = e.updateImageFromDatabase(context.Background(), testImg, testCase.opt)
-			assert.ElementsMatch(t, testImg.GetNames(), testCase.expectedImageNames)
+			assert.ElementsMatch(t, testCase.expectedImageNames, testImg.Clone().GetNames())
 		})
 	}
 }

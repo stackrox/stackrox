@@ -20,6 +20,7 @@ import (
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -302,7 +303,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
 
 	// Only the merged alert will be updated.
-	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protoutils.GetEqMessageGoMockMatcher(expectedMergedAlert)).Return(nil)
 
 	// Updated alert should notify
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
@@ -330,7 +331,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsNoNotify() {
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
 
 	// Only the merged alert will be updated.
-	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protoutils.GetEqMessageGoMockMatcher(expectedMergedAlert)).Return(nil)
 
 	// Updated alert should not notify
 
@@ -388,7 +389,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	expectedMergedAlert.Violations = expectedMergedAlert.Violations[:maxRunTimeViolationsPerAlert]
 
 	// Only the merged alert will be updated.
-	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protoutils.GetEqMessageGoMockMatcher(expectedMergedAlert)).Return(nil)
 
 	// Updated alert should notify if set to
 	if env.NotifyOnEveryRuntimeEvent() {
@@ -422,7 +423,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	expectedMergedAlert.Violations = expectedMergedAlert.Violations[:maxRunTimeViolationsPerAlert]
 
 	// Only the merged alert will be updated.
-	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protoutils.GetEqMessageGoMockMatcher(expectedMergedAlert)).Return(nil)
 
 	// Updated alert should not notify
 
@@ -451,7 +452,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 	expectedMergedAlert := newAlert.Clone()
 
 	// Only the merged alert will be updated.
-	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protoutils.GetEqMessageGoMockMatcher(expectedMergedAlert)).Return(nil)
 
 	// Updated alert should notify if set to
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
@@ -482,7 +483,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 	expectedMergedAlert := newAlert.Clone()
 
 	// Only the merged alert will be updated.
-	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protoutils.GetEqMessageGoMockMatcher(expectedMergedAlert)).Return(nil)
 
 	// Updated alert should not notify
 

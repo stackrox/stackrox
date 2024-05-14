@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestTestSingleKeyStructSerialization(t *testing.T) {
@@ -16,5 +17,5 @@ func TestTestSingleKeyStructSerialization(t *testing.T) {
 	assert.NoError(t, err)
 	conv, err := ConvertTestSingleKeyStructToProto(m)
 	assert.NoError(t, err)
-	assert.Equal(t, obj, conv)
+	assert.True(t, proto.Equal(obj, conv))
 }

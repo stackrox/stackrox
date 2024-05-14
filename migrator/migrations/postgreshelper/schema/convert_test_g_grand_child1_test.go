@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestTestGGrandChild1Serialization(t *testing.T) {
@@ -16,5 +17,5 @@ func TestTestGGrandChild1Serialization(t *testing.T) {
 	assert.NoError(t, err)
 	conv, err := ConvertTestGGrandChild1ToProto(m)
 	assert.NoError(t, err)
-	assert.Equal(t, obj, conv)
+	assert.True(t, proto.Equal(obj, conv))
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestBlobSerialization(t *testing.T) {
@@ -17,5 +18,5 @@ func TestBlobSerialization(t *testing.T) {
 	assert.NoError(t, err)
 	conv, err := ConvertBlobToProto(m)
 	assert.NoError(t, err)
-	assert.Equal(t, obj, conv)
+	assert.True(t, proto.Equal(obj, conv))
 }

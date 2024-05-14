@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/test"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -146,6 +147,9 @@ func checkAliasRecursive(t *testing.T, orig, cloned reflect.Value) {
 		checkAliasRecursive(t, orig.Elem(), cloned.Elem())
 	case reflect.Struct:
 		for i := 0; i < orig.NumField(); i++ {
+			if protoreflect.IsInternalGeneratorField(orig.Type().Field(i)) {
+				continue
+			}
 			checkAliasRecursive(t, orig.Field(i), cloned.Field(i))
 		}
 	case reflect.UnsafePointer:

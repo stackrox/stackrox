@@ -14,6 +14,7 @@ import (
 	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -205,7 +206,7 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 		AddExactMatches(search.SubjectName, expectedSA.Name).
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		ProtoQuery()
-	suite.mockBindingStore.EXPECT().Search(gomock.Any(), clusterScopeQuery).AnyTimes().
+	suite.mockBindingStore.EXPECT().Search(gomock.Any(), protoutils.GetEqMessageGoMockMatcher(clusterScopeQuery)).AnyTimes().
 		Return([]search.Result{
 			{
 				ID: clusterRoleBinding.GetId(),
@@ -225,7 +226,7 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 		AddExactMatches(search.SubjectName, expectedSA.Name).
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		ProtoQuery()
-	suite.mockBindingStore.EXPECT().Search(gomock.Any(), namespaceScopeQuery).AnyTimes().
+	suite.mockBindingStore.EXPECT().Search(gomock.Any(), protoutils.GetEqMessageGoMockMatcher(namespaceScopeQuery)).AnyTimes().
 		Return([]search.Result{
 			{
 				ID: rolebinding.GetId(),
