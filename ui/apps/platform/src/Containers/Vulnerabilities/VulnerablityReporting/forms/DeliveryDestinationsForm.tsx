@@ -55,13 +55,11 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
     }
 
     function onDeleteLastNotifierConfiguration() {
-        formik.setValues({
-            ...formik.values,
-            schedule: {
-                intervalType: null,
-                daysOfWeek: [],
-                daysOfMonth: [],
-            },
+        // Update only the schedule because spread ...formik.values overwrites deletion of last notifier.
+        formik.setFieldValue('schedule', {
+            intervalType: null,
+            daysOfWeek: [],
+            daysOfMonth: [],
         });
     }
 
