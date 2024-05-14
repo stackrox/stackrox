@@ -146,7 +146,7 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 	s.Equal(testRP.UserAgent, rp.UserAgent)
 	s.Nil(rp.UserID)
 	s.Equal("request", rp.GRPCReq)
-	s.Equal([]string{testRP.UserAgent}, rp.Headers.Get(userAgentKey))
+	s.Equal([]string{testRP.UserAgent}, rp.Headers(userAgentKey))
 }
 
 func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo() {
@@ -167,7 +167,7 @@ func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo() {
 	s.Equal("request", rp.GRPCReq)
 	s.Equal("/wrapped/http", rp.Path)
 	s.Equal(http.MethodPatch, rp.Method)
-	s.Equal([]string{"user"}, rp.Headers.Get(userAgentKey))
+	s.Equal([]string{"user"}, rp.Headers(userAgentKey))
 }
 
 type testBody struct {
@@ -220,5 +220,5 @@ func (s *interceptorTestSuite) TestHttpRequestInfo() {
 	s.Equal(testRP.Code, rp.Code)
 	s.Equal(testRP.UserAgent, rp.UserAgent)
 	s.Equal(mockID, rp.UserID)
-	s.Equal([]string{testRP.UserAgent}, rp.Headers.Get(userAgentKey))
+	s.Equal([]string{testRP.UserAgent}, rp.Headers(userAgentKey))
 }

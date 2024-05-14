@@ -18,7 +18,7 @@ type RequestParams struct {
 	GRPCReq   any
 	HTTPReq   *http.Request
 	// HTTP Headers or, for pure gRPC, the metadata.
-	Headers interface{ Get(string) []string }
+	Headers func(string) []string
 }
 
 // ServiceMethod describes a service method with its gRPC and HTTP variants.
