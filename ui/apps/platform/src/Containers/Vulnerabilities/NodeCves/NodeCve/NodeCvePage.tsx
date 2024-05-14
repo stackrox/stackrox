@@ -31,7 +31,6 @@ import {
     getHiddenSeverities,
     getOverviewPagePath,
     getRegexScopedQueryString,
-    parseWorkloadQuerySearchFilter,
 } from '../../utils/searchUtils';
 import CvePageHeader from '../../components/CvePageHeader';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
@@ -44,7 +43,8 @@ const nodeCveOverviewCvePath = getOverviewPagePath('Node', { entityTab: 'CVE' })
 
 function NodeCvePage() {
     const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
+    // TODO - Need an equivalent function implementation for filter sanitization for Node CVEs
+    const querySearchFilter = searchFilter;
 
     // We need to scope all queries to the *exact* CVE name so that we don't accidentally get
     // data that matches a prefix of the CVE name in the nested fields
