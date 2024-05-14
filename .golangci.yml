@@ -60,9 +60,6 @@ linters-settings:
     - fmt.Printf
     - fmt.Println
     - github.com/stackrox/rox/pkg/utils.Should
-    - io.Copy(*bytes.Buffer)
-    - io.Copy(os.Stdout)
-    - io/ioutil.ReadFile
   gosec:
     includes:
     - G101
