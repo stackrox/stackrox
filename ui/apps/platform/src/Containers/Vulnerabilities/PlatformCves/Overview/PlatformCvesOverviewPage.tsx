@@ -7,7 +7,9 @@ import {
     FlexItem,
     Card,
     CardBody,
+    ToolbarItem,
 } from '@patternfly/react-core';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
 
 import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -16,10 +18,13 @@ import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
 import TableEntityToolbar from 'Containers/Vulnerabilities/components/TableEntityToolbar';
+import useMap from 'hooks/useMap';
+import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import { parseWorkloadQuerySearchFilter } from '../../utils/searchUtils';
 import { platformEntityTabValues } from '../../types';
+import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
 
 import ClustersTable from './ClustersTable';
 import CVEsTable from './CVEsTable';
@@ -33,6 +38,10 @@ function PlatformCvesOverviewPage() {
     // TODO - Need an equivalent function implementation for filter sanitization for Platform CVEs
     const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
+
+    const isViewingSnoozedCves = querySearchFilter['CVE Snoozed'] === 'true';
+    const hasLegacySnoozeAbility = useHasLegacySnoozeAbility();
+    const selectedCves = useMap<string, { cve: string }>();
 
     function onEntityTabChange() {
         pagination.setPage(1);
@@ -82,13 +91,32 @@ function PlatformCvesOverviewPage() {
                                     : entityCounts.Cluster
                             }
                             isFiltered={isFiltered}
-                        />
+                        >
+                            {hasLegacySnoozeAbility && (
+                                <ToolbarItem align={{ default: 'alignRight' }}>
+                                    <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                                        <DropdownItem
+                                            key="bulk-snooze-cve"
+                                            component="button"
+                                            onClick={() => {
+                                                // TODO
+                                            }}
+                                        >
+                                            {isViewingSnoozedCves ? 'Unsnooze CVEs' : 'Snooze CVEs'}
+                                        </DropdownItem>
+                                    </BulkActionsDropdown>
+                                </ToolbarItem>
+                            )}
+                        </TableEntityToolbar>
                         <Divider component="div" />
                         {activeEntityTabKey === 'CVE' && (
                             <CVEsTable
                                 querySearchFilter={querySearchFilter}
                                 isFiltered={isFiltered}
                                 pagination={pagination}
+                                selectedCves={selectedCves}
+                                canSelectRows={hasLegacySnoozeAbility}
+                                createRowActions={() => []}
                             />
                         )}
                         {activeEntityTabKey === 'Cluster' && (
