@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/tools/roxvet/analyzers/sortslices"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/storeinterface"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/structuredlogs"
-	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckederrors"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckedifassign"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/undeferredmutexunlocks"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/unusedroxctlargs"
@@ -27,7 +26,6 @@ func main() {
 		godoccapitalizationmismatch.Analyzer,
 		dontprintferr.Analyzer,
 		storeinterface.Analyzer,
-		uncheckederrors.Analyzer,
 		needlessformat.Analyzer,
 		regexes.Analyzer,
 		uncheckedifassign.Analyzer,

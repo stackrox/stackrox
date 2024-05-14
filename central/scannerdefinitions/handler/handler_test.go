@@ -291,7 +291,7 @@ func (s *handlerTestSuite) TestServeHTTP_v4_Offline_Get() {
 	if err != nil {
 		return
 	}
-	defer resp.Body.Close()
+	defer utils.IgnoreError(resp.Body.Close)
 	if resp.StatusCode != http.StatusOK {
 		return
 	}

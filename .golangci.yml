@@ -44,6 +44,25 @@ issues:
 
 
 linters-settings:
+  errcheck:
+    check-type-assertions: false
+    check-blank: false
+    disable-default-exclusions: false
+    exclude-functions:
+    - (*bytes.Buffer).WriteString
+    - (*strings.Builder).WriteByte
+    - (*strings.Builder).WriteRune
+    - (*strings.Builder).WriteString
+    - fmt.Fprint
+    - fmt.Fprintf
+    - fmt.Fprintln
+    - fmt.Print
+    - fmt.Printf
+    - fmt.Println
+    - github.com/stackrox/rox/pkg/utils.Should
+    - io.Copy(*bytes.Buffer)
+    - io.Copy(os.Stdout)
+    - io/ioutil.ReadFile
   gosec:
     includes:
     - G101
@@ -141,7 +160,7 @@ linters:
     # - depguard
     # - dogsled
     # - dupl
-    # - errcheck
+    - errcheck
     # - funlen
     - forbidigo
     # - gochecknoglobals
