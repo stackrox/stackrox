@@ -19,8 +19,8 @@ import (
 )
 
 type AcscsMessage struct {
-	To         []string
-	RawMessage []byte
+	To         []string `json:"to"`
+	RawMessage []byte   `json:"rawMessage"`
 }
 
 func newACSCSEmail(notifier *storage.Notifier, client Client, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,
@@ -88,7 +88,7 @@ func (e *acscsEmail) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, c
 	subject := email.NetworkPolicySubject(clusterName)
 	body, err := email.FormatNetworkPolicyYAML(yaml, clusterName)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to format network policy message")
 	}
 
 	msg := email.Message{

@@ -894,8 +894,9 @@ func TestEnrichWithSignature_Success(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			e := enricherImpl{
-				integrations:     integrationsSetMock,
-				signatureFetcher: c.sigFetcher,
+				integrations:               integrationsSetMock,
+				signatureFetcher:           c.sigFetcher,
+				signatureIntegrationGetter: fakeSignatureIntegrationGetter("test", false),
 			}
 			updated, err := e.enrichWithSignature(emptyCtx, c.ctx, c.img)
 			assert.NoError(t, err)
@@ -948,7 +949,8 @@ func TestEnrichWithSignature_Failures(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			e := enricherImpl{
-				integrations: c.integrationSet,
+				integrations:               c.integrationSet,
+				signatureIntegrationGetter: fakeSignatureIntegrationGetter("test", false),
 			}
 			updated, err := e.enrichWithSignature(emptyCtx,
 				EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly}, c.img)

@@ -5,7 +5,7 @@ import useRestQuery from 'hooks/useRestQuery';
 import {
     getComplianceProfilesStats,
     ListComplianceProfileScanStatsResponse,
-} from 'services/ComplianceResultsService';
+} from 'services/ComplianceResultsStatsService';
 
 type ComplianceProfilesContextValue = {
     profileScanStats: ListComplianceProfileScanStatsResponse;

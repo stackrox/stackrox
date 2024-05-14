@@ -19,7 +19,6 @@ metadata:
   namespace: rh-acs-tenant
 
 spec:
-
   params:
   - name: dockerfile
     value: image/postgres/konflux.Dockerfile
@@ -27,8 +26,8 @@ spec:
     value: '{{repo_url}}'
   - name: image-expires-after
     value: '13w'
-  - name: output-image
-    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/central-db:on-pr-{{revision}}
+  - name: output-image-repo
+    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/central-db
   - name: path-context
     value: .
   - name: revision
@@ -43,11 +42,10 @@ spec:
     value: ''
   - name: build-source-image
     value: 'true'
-  # A shallow repo clone is sufficient for central-db build.
   - name: clone-depth
-    value: '1'
+    value: '0'
   - name: clone-fetch-tags
-    value: 'false'
+    value: 'true'
 
   workspaces:
   - name: workspace

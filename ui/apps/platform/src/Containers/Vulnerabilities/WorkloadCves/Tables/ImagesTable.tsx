@@ -38,6 +38,7 @@ export const imageListQuery = gql`
                     total
                 }
             }
+            priority
             operatingSystem
             deploymentCount(query: $query)
             watchStatus
@@ -66,6 +67,7 @@ type Image = {
         moderate: { total: number };
         low: { total: number };
     };
+    priority: number;
     operatingSystem: string;
     deploymentCount: number;
     watchStatus: WatchStatus;
@@ -98,7 +100,7 @@ function ImagesTable({
     onWatchImage,
     onUnwatchImage,
 }: ImagesTableProps) {
-    const colSpan = hasWriteAccessForWatchedImage ? 7 : 6;
+    const colSpan = hasWriteAccessForWatchedImage ? 8 : 7;
 
     return (
         <Table borders={false} variant="compact">
@@ -106,6 +108,7 @@ function ImagesTable({
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Image')}>Image</Th>
+                    <Th sort={getSortParams('Image Risk Priority')}>Risk priority</Th>
                     <TooltipTh tooltip="CVEs by severity across this image">
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
@@ -126,6 +129,7 @@ function ImagesTable({
                     id,
                     name,
                     imageCVECountBySeverity,
+                    priority,
                     operatingSystem,
                     deploymentCount,
                     metadata,
@@ -175,6 +179,12 @@ function ImagesTable({
                                     ) : (
                                         'Image name not available'
                                     )}
+                                </Td>
+                                <Td
+                                    dataLabel="Risk priority"
+                                    className="pf-v5-u-pr-2xl pf-v5-u-text-align-center-on-md"
+                                >
+                                    {priority}
                                 </Td>
                                 <Td dataLabel="CVEs by severity">
                                     <SeverityCountLabels

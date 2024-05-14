@@ -66,11 +66,12 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 			Password: req.GetContainerImage().GetPassword(),
 		}))
 	}
-
+	opts = append(opts, indexer.InsecureSkipTLSVerify(req.GetContainerImage().GetInsecureSkipTlsVerify()))
 	// Create index report.
 	zlog.Info(ctx).
 		Str("image_url", req.GetContainerImage().GetUrl()).
 		Bool("has_auth", hasAuth).
+		Bool("insecure_skip_tls_verify", req.GetContainerImage().GetInsecureSkipTlsVerify()).
 		Msg("creating index report for container image")
 	clairReport, err := s.indexer.IndexContainerImage(
 		ctx,

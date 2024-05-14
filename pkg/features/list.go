@@ -91,6 +91,9 @@ var (
 	// VulnMgmtNodePlatformCVEs enables new APIs and UI for VM 2.0 Node and Platform CVEs
 	VulnMgmtNodePlatformCVEs = registerFeature("Enables support for Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_NODE_PLATFORM_CVES", false)
 
+	// VulnMgmtLegacySnooze enables APIs and UI for the legacy VM 1.0 "snooze CVE" functionality in the new VM 2.0 sections
+	VulnMgmtLegacySnooze = registerFeature("Enables the ability to snooze Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_LEGACY_SNOOZE", false)
+
 	// ComplianceReporting enables support for compliance reporting.
 	ComplianceReporting = registerFeature("Enable support for V2 compliance reporting", "ROX_COMPLIANCE_REPORTING", false)
 
@@ -110,6 +113,9 @@ var (
 	// support it but now appear to (ie: Nexus and RHEL).
 	AttemptManifestDigest = registerFeature("Enables attempts to pull manifest digests for all registry integrations", "ROX_ATTEMPT_MANIFEST_DIGEST", true)
 
-	// VulnMgmt2MiscImprovements enables support for misc improvements for VM 2.0 GA
-	VulnMgmt2MiscImprovements = registerFeature("Enables support for misc improvements for VM 2.0 GA", "ROX_VULN_MGMT_2_MISC_IMPROVEMENTS", true)
+	// VulnMgmt2GA enables support for migration changes for VM 2.0 GA
+	VulnMgmt2GA = registerFeature("Enables support for migration changes for VM 2.0 GA", "ROX_VULN_MGMT_2_GA", false)
+
+	// VulnMgmtAdvancedFilters enables support for advanced filters for VM 2.0 GA
+	VulnMgmtAdvancedFilters = registerFeature("Enables support for advanced filters for VM 2.0 GA", "ROX_VULN_MGMT_ADVANCED_FILTERS", false)
 )

@@ -3,23 +3,18 @@ import { Td } from '@patternfly/react-table';
 
 import useMap from 'hooks/useMap';
 
-export type CVESelectionTdProps = {
-    selectedCves: ReturnType<
-        typeof useMap<string, { cve: string; summary: string; numAffectedImages: number }>
-    >;
+export type CVESelectionTdProps<T extends { cve: string }> = {
+    selectedCves: ReturnType<typeof useMap<string, T>>;
     rowIndex: number;
-    cve: string;
-    summary: string;
-    numAffectedImages: number;
+    item: T;
 };
 
-function CVESelectionTd({
+function CVESelectionTd<T extends { cve: string }>({
     selectedCves,
     rowIndex,
-    cve,
-    summary,
-    numAffectedImages,
-}: CVESelectionTdProps) {
+    item,
+}: CVESelectionTdProps<T>) {
+    const { cve } = item;
     return (
         <Td
             select={{
@@ -28,7 +23,7 @@ function CVESelectionTd({
                     if (selectedCves.has(cve)) {
                         selectedCves.remove(cve);
                     } else {
-                        selectedCves.set(cve, { cve, summary, numAffectedImages });
+                        selectedCves.set(cve, item);
                     }
                 },
                 isSelected: selectedCves.has(cve),
