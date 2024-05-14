@@ -4,6 +4,7 @@ import (
 	"runtime"
 
 	"github.com/docker/distribution/manifest/manifestlist"
+	godigest "github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -47,7 +48,7 @@ func HandleV2ManifestList(r *Registry, remote, ref string) (*storage.ImageMetada
 
 // HandleV2Manifest takes in a v2 ref and returns the image metadata
 func HandleV2Manifest(r *Registry, remote, ref string) (*storage.ImageMetadata, error) {
-	metadata, err := r.Client.ManifestV2(remote, ref)
+	metadata, dig, err := r.Client.ManifestV2WithDigest(remote, ref)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +67,7 @@ func HandleV2Manifest(r *Registry, remote, ref string) (*storage.ImageMetadata, 
 	return &storage.ImageMetadata{
 		V1: v1Metadata,
 		V2: &storage.V2Metadata{
-			Digest: ref,
+			Digest: imageReference(ref, dig),
 		},
 		LayerShas: layers,
 	}, nil
@@ -83,7 +84,7 @@ func HandleOCIImageIndex(r *Registry, remote, ref string) (*storage.ImageMetadat
 
 // HandleOCIManifest handles fetching data if the media type is OCI
 func HandleOCIManifest(r *Registry, remote, ref string) (*storage.ImageMetadata, error) {
-	metadata, err := r.Client.ManifestOCI(remote, ref)
+	metadata, dig, err := r.Client.ManifestOCIWithDigest(remote, ref)
 	if err != nil {
 		return nil, err
 	}
@@ -102,8 +103,20 @@ func HandleOCIManifest(r *Registry, remote, ref string) (*storage.ImageMetadata,
 	return &storage.ImageMetadata{
 		V1: v1Metadata,
 		V2: &storage.V2Metadata{
-			Digest: ref,
+			Digest: imageReference(ref, dig),
 		},
 		LayerShas: layers,
 	}, nil
+}
+
+// imageReference will return digest if it is populated and ref is not a digest.
+// Otherwise returns ref.
+func imageReference(ref string, digest godigest.Digest) string {
+	if digest != "" {
+		if _, err := godigest.Parse(ref); err != nil {
+			return string(digest)
+		}
+	}
+
+	return ref
 }

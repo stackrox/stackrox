@@ -2483,8 +2483,8 @@ github.com/spiffe/go-spiffe/v2 v2.2.0 h1:9Vf06UsvsDbLYK/zJ4sYsIsHmMFknUD+feA7IYo
 github.com/spiffe/go-spiffe/v2 v2.2.0/go.mod h1:Urzb779b3+IwDJD2ZbN8fVl3Aa8G4N/PiUe6iXC0XxU=
 github.com/stackrox/cosign/v2 v2.0.0-20240412144741-15f5395d853a h1:qoXejTh+3Uln8SfDxFW3r1bE1PHjVAEc2I8NE8k3Xtk=
 github.com/stackrox/cosign/v2 v2.0.0-20240412144741-15f5395d853a/go.mod h1:JZlRD2uaEjVAvZ1XJ3QkkZJhTqSDVtLaet+C/TMR81Y=
-github.com/stackrox/docker-registry-client v0.1.0 h1:TbNgSP3dhNbLAqlwyTIYNXbNvl9TDTAbh+cfzVyJ6II=
-github.com/stackrox/docker-registry-client v0.1.0/go.mod h1:4TU+pA11iczIvhtL0own2OJcJXc1o26tBHDivaXhlZU=
+github.com/stackrox/docker-registry-client v0.0.0-20240503205310-734f1bdc64c9 h1:LhqNJ7dwS1rkkrWx5n856oF/5l3zKBV1vIdSr3+qIJY=
+github.com/stackrox/docker-registry-client v0.0.0-20240503205310-734f1bdc64c9/go.mod h1:4TU+pA11iczIvhtL0own2OJcJXc1o26tBHDivaXhlZU=
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd h1:vEjp7Q66zd4W72//Uk3uyVN50Mh/nFLbN9pb7CVK7mE=
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd/go.mod h1:HILeV3i/EyJz844GcrC3+oU7oZONhjfujaIYBMJ/bZE=
 github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2 h1:gRDa1g3wlX7UDjv8nwkXcvnMbjFQkLPa6kDZJ6WpyZo=
