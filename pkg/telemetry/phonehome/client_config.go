@@ -3,6 +3,7 @@ package phonehome
 import (
 	"context"
 	"net/http"
+	"testing"
 	"time"
 
 	"github.com/stackrox/rox/pkg/httputil"
@@ -101,6 +102,13 @@ func (cfg *Config) Telemeter() telemeter.Telemeter {
 		}
 	})
 	return cfg.telemeter
+}
+
+// SetTelemeter sets the telemeter to be used by the instance.
+// Dependency injection for testing purposes.
+func (cfg *Config) SetTelemeter(t telemeter.Telemeter, _ *testing.T) {
+	cfg.onceTelemeter.Do(func() {})
+	cfg.telemeter = t
 }
 
 // AddInterceptorFunc appends the custom list of telemetry interceptors with the

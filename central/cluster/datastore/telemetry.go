@@ -123,13 +123,18 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 	}
 	props["Orchestrator Version"] = omd.GetVersion()
 
+	sendProps(cfg, cluster, props)
+}
+
+func sendProps(cfg *phonehome.Config, cluster *storage.Cluster, props map[string]any) {
+	clusterID := cluster.GetId()
 	if lastProps, ok := clusterIdentityCache.Get(clusterID); ok && reflect.DeepEqual(lastProps, props) {
 		// Nothing has been changed since last report.
 		return
 	}
 	clusterIdentityCache.Add(clusterID, props)
 	opts := []telemeter.Option{
-		telemeter.WithClient(cluster.GetId(), securedClusterClient),
+		telemeter.WithClient(clusterID, securedClusterClient),
 		telemeter.WithGroups(cfg.GroupType, cfg.GroupID),
 		telemeter.WithTraits(props),
 		// Segment drops events with the same properties from the same day.
