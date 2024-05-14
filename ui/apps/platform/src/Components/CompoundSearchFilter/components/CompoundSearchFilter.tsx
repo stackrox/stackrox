@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Flex } from '@patternfly/react-core';
+import { Split } from '@patternfly/react-core';
 
 import {
     CompoundSearchFilterConfig,
@@ -10,6 +10,7 @@ import { getDefaultAttribute, getDefaultEntity } from '../utils/utils';
 
 import EntitySelector, { SelectedEntity } from './EntitySelector';
 import AttributeSelector, { SelectedAttribute } from './AttributeSelector';
+import CompoundSearchFilterInputField, { InputFieldValue } from './CompoundSearchFilterInputField';
 
 export type CompoundSearchFilterProps = {
     config: Partial<CompoundSearchFilterConfig>;
@@ -40,6 +41,8 @@ function CompoundSearchFilter({
         return getDefaultAttribute(defaultEntity, config);
     });
 
+    const [inputValue, setInputValue] = useState<InputFieldValue>('');
+
     useEffect(() => {
         if (defaultEntity) {
             setSelectedEntity(defaultEntity);
@@ -53,7 +56,7 @@ function CompoundSearchFilter({
     }, [defaultAttribute]);
 
     return (
-        <Flex spaceItems={{ default: 'spaceItemsNone' }}>
+        <Split>
             <EntitySelector
                 selectedEntity={selectedEntity}
                 onChange={(value) => {
@@ -63,16 +66,34 @@ function CompoundSearchFilter({
                         config
                     );
                     setSelectedAttribute(defaultAttribute);
+                    setInputValue('');
                 }}
                 config={config}
             />
             <AttributeSelector
                 selectedEntity={selectedEntity}
                 selectedAttribute={selectedAttribute}
-                onChange={(value) => setSelectedAttribute(value as SearchFilterAttributeName)}
+                onChange={(value) => {
+                    setSelectedAttribute(value as SearchFilterAttributeName);
+                    setInputValue('');
+                }}
                 config={config}
             />
-        </Flex>
+            <CompoundSearchFilterInputField
+                selectedEntity={selectedEntity}
+                selectedAttribute={selectedAttribute}
+                value={inputValue}
+                onChange={(value) => {
+                    setInputValue(value);
+                }}
+                onSearch={(value) => {
+                    // @TODO: Add search filter value to URL search
+                    // eslint-disable-next-line no-alert
+                    alert(value);
+                }}
+                config={config}
+            />
+        </Split>
     );
 }
 
