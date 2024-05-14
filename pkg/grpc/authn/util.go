@@ -8,8 +8,12 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
+type getter interface {
+	Get(string) []string
+}
+
 // ExtractToken extracts the token of the given type (e.g., "Bearer") from the given metadata.
-func ExtractToken(md interface{ Get(string) []string }, tokenType string) string {
+func ExtractToken(md getter, tokenType string) string {
 	authHeaders := md.Get("authorization")
 	if len(authHeaders) != 1 {
 		return ""
