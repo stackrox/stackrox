@@ -1,0 +1,7 @@
+{
+  "name": "CIS Benchmarks",
+  "version": "1.2.0+",
+  "description": "",
+  "profileAnnotation": "ocp4-cis",
+  "provider": ""
+}
