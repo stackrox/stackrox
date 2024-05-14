@@ -1,5 +1,3 @@
-import randomstring from 'randomstring';
-
 export function getInputByLabel(label) {
     return cy
         .contains('label', label)
@@ -52,10 +50,5 @@ export function getDescriptionListGroup(term, description) {
 
 export function generateNameWithDate(name) {
     const randomValue = new Date().toISOString();
-    return `${name}-${randomValue}`;
-}
-
-export function generateNameWithRandomString(name) {
-    const randomValue = randomstring.generate(10);
     return `${name}-${randomValue}`;
 }

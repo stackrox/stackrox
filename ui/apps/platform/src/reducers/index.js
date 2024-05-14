@@ -5,7 +5,6 @@ import { connectRouter } from 'connected-react-router';
 import bindSelectors from 'utils/bindSelectors';
 import apiTokens, { selectors as apiTokenSelectors } from './apitokens';
 import auth, { selectors as authSelectors } from './auth';
-import clusterInitBundles, { selectors as clusterInitBundleSelectors } from './clusterInitBundles';
 import machineAccessConfigs, {
     selectors as machineAccessConfigSelectors,
 } from './machineAccessConfigs';
@@ -37,7 +36,6 @@ import cloudSources, { selectors as cloudSourcesSelectors } from './cloudSources
 const appReducer = combineReducers({
     apiTokens,
     auth,
-    clusterInitBundles,
     machineAccessConfigs,
     feedback,
     formMessages,
@@ -74,7 +72,6 @@ const getRoute = (state) => state.router;
 const getApp = (state) => state.app;
 const getAPITokens = (state) => getApp(state).apiTokens;
 const getAuth = (state) => getApp(state).auth;
-const getClusterInitBundles = (state) => getApp(state).clusterInitBundles;
 const getMachineAccessConfigs = (state) => getApp(state).machineAccessConfigs;
 const getFeedback = (state) => getApp(state).feedback;
 const getFormMessages = (state) => getApp(state).formMessages;
@@ -97,7 +94,6 @@ const getCloudSources = (state) => getApp(state).cloudSources;
 const boundSelectors = {
     ...bindSelectors(getAPITokens, apiTokenSelectors),
     ...bindSelectors(getAuth, authSelectors),
-    ...bindSelectors(getClusterInitBundles, clusterInitBundleSelectors),
     ...bindSelectors(getMachineAccessConfigs, machineAccessConfigSelectors),
     ...bindSelectors(getFeedback, feedbackSelectors),
     ...bindSelectors(getFormMessages, formMessageSelectors),

@@ -16,9 +16,6 @@ var (
 	// PreventSensorRestartOnDisconnect enables a new behavior in Sensor where it avoids restarting when the gRPC connection with Central ends.
 	PreventSensorRestartOnDisconnect = registerUnchangeableFeature("Prevent Sensor restart on disconnect", "ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", true)
 
-	// MoveInitBundlesUI is front-end only move from integrations to clusters route.
-	MoveInitBundlesUI = registerUnchangeableFeature("Move init-bundles UI", "ROX_MOVE_INIT_BUNDLES_UI", true)
-
 	// ComplianceEnhancements enables APIs and UI pages for Compliance 2.0
 	ComplianceEnhancements = registerFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", true)
 
