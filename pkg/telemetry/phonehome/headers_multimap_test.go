@@ -51,7 +51,7 @@ func TestGetFirst(t *testing.T) {
 	h.Add("key", "value2")
 	assert.Equal(t, []string{"value1", "value2"}, h.Values("key"))
 
-	assert.Equal(t, "value1", GetFirst(Headers(h), "key"))
-	assert.Equal(t, "", GetFirst(Headers(h), "nokey"))
+	assert.Equal(t, "value1", GetFirst(Headers(h).Get, "key"))
+	assert.Equal(t, "", GetFirst(Headers(h).Get, "nokey"))
 	assert.Equal(t, "", GetFirst(nil, "nokey"))
 }

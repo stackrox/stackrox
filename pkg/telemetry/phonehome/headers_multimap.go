@@ -24,11 +24,11 @@ func (h Headers) Set(key string, values ...string) {
 }
 
 // GetFirst returns the first value of the header by key, or empty string.
-func GetFirst(header interface{ Get(string) []string }, key string) string {
-	if header == nil {
+func GetFirst(headers func(string) []string, key string) string {
+	if headers == nil {
 		return ""
 	}
-	if values := header.Get(key); len(values) > 0 {
+	if values := headers(key); len(values) > 0 {
 		return values[0]
 	}
 	return ""
