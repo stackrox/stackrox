@@ -37,6 +37,7 @@ import (
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
@@ -70,7 +71,7 @@ var (
 
 	// regsNoRange is a set of registries which do not accept the Range HTTP header.
 	// This is used for logging purposes, only.
-	regsNoRange = make(map[string]struct{})
+	regsNoRange sync.Map
 )
 
 func proxiedRemoteTransport(insecure bool) http.RoundTripper {
@@ -367,8 +368,8 @@ func getLayerRequest(ctx context.Context, httpClient *http.Client, imgRef name.R
 	}
 	utils.IgnoreError(res.Body.Close)
 	if res.StatusCode != http.StatusPartialContent {
-		if _, exists := regsNoRange[registryURL.Host]; !exists {
-			regsNoRange[registryURL.Host] = struct{}{}
+		if _, exists := regsNoRange.Load(registryURL.Host); !exists {
+			regsNoRange.Store(registryURL.Host, struct{}{})
 			zlog.Warn(ctx).
 				Str("registry", registryURL.Host).
 				Msg("Range HTTP header may not be supported, so indexing may required about twice as many image pulls")
