@@ -38,7 +38,6 @@ import S3IntegrationForm from './Forms/S3IntegrationForm';
 import GcsIntegrationForm from './Forms/GcsIntegrationForm';
 // auth plugins
 import ApiTokenIntegrationForm from './Forms/ApiTokenIntegrationForm';
-import ClusterInitBundleIntegrationForm from './Forms/ClusterInitBundleIntegrationForm';
 import MachineAccessIntegrationForm from './Forms/MachineAccessIntegrationForm';
 // signature integrations
 import SignatureIntegrationForm from './Forms/SignatureIntegrationForm';
@@ -100,7 +99,6 @@ const ComponentFormMap = {
     },
     authProviders: {
         apitoken: ApiTokenIntegrationForm,
-        clusterInitBundle: ClusterInitBundleIntegrationForm,
         machineAccess: MachineAccessIntegrationForm,
     },
     cloudSources: {

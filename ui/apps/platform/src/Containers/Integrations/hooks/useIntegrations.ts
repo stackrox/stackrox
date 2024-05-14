@@ -7,7 +7,6 @@ import { Integration, IntegrationSource, IntegrationType } from '../utils/integr
 
 const selectIntegrations = createStructuredSelector({
     apiTokens: selectors.getAPITokens,
-    clusterInitBundles: selectors.getClusterInitBundles,
     machineAccessConfigs: selectors.getMachineAccessConfigs,
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations,
@@ -26,7 +25,6 @@ export type UseIntegrationsResponse = Integration[];
 const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResponse => {
     const {
         apiTokens,
-        clusterInitBundles,
         machineAccessConfigs,
         notifiers,
         backups,
@@ -44,9 +42,6 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
                 // Integrations Authentication Tokens differ from Access Control Auth providers.
                 if (type === 'apitoken') {
                     return apiTokens;
-                }
-                if (type === 'clusterInitBundle') {
-                    return clusterInitBundles;
                 }
                 if (type === 'machineAccess') {
                     return machineAccessConfigs;

@@ -32,7 +32,6 @@ import useAnalytics, {
     SECURE_A_CLUSTER_LINK_CLICKED,
 } from 'hooks/useAnalytics';
 import useAuthStatus from 'hooks/useAuthStatus';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
@@ -50,7 +49,6 @@ import { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { filterAllowedSearch, convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
-import { getVersionedDocs } from 'utils/versioning';
 import {
     clustersBasePath,
     clustersDelegatedScanningPath,
@@ -63,7 +61,6 @@ import ManageTokensButton from './Components/ManageTokensButton';
 import SecureClusterModal from './InitBundles/SecureClusterModal';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
-import AddClusterPrompt from './AddClusterPrompt';
 import NoClustersPage from './NoClustersPage';
 
 export type ClustersTablePanelProps = {
@@ -85,9 +82,6 @@ function ClustersTablePanel({
 
     const { currentUser } = useAuthStatus();
     const hasAdminRole = Boolean(currentUser?.userInfo?.roles.some(({ name }) => name === 'Admin')); // optional chaining just in case of the unexpected
-
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isMoveInitBundlesEnabled = isFeatureFlagEnabled('ROX_MOVE_INIT_BUNDLES_UI');
 
     const [isInstallMenuOpen, setIsInstallMenuOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -159,38 +153,18 @@ function ClustersTablePanel({
         </div>
     ));
 
-    const { version } = metadata;
-
     /* eslint-disable no-nested-ternary */
     const installMenuOptions = [
-        isMoveInitBundlesEnabled ? (
-            <DropdownItem
-                key="init-bundle"
-                onClick={() => {
-                    analyticsTrack({
-                        event: SECURE_A_CLUSTER_LINK_CLICKED,
-                        properties: { source: 'Secure a Cluster Dropdown' },
-                    });
-                }}
-                component={
-                    <Link to={clustersSecureClusterPath}>Init bundle installation methods</Link>
-                }
-            />
-        ) : version ? (
-            <DropdownItem
-                key="link"
-                description="Cluster installation guides"
-                href={getVersionedDocs(version, 'installing/acs-installation-platforms.html')}
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                View instructions
-            </DropdownItem>
-        ) : (
-            <DropdownItem key="version-missing" isPlainText>
-                Instructions unavailable; version missing
-            </DropdownItem>
-        ),
+        <DropdownItem
+            key="init-bundle"
+            onClick={() => {
+                analyticsTrack({
+                    event: SECURE_A_CLUSTER_LINK_CLICKED,
+                    properties: { source: 'Secure a Cluster Dropdown' },
+                });
+            }}
+            component={<Link to={clustersSecureClusterPath}>Init bundle installation methods</Link>}
+        />,
         <DropdownItem
             key="legacy"
             component={
@@ -203,7 +177,7 @@ function ClustersTablePanel({
                         })
                     }
                 >
-                    {isMoveInitBundlesEnabled ? 'Legacy installation method' : 'New cluster'}
+                    Legacy installation method
                 </Link>
             }
         />,
@@ -268,15 +242,7 @@ function ClustersTablePanel({
     //
     // After there is a response, if there are no clusters nor search filter:
     if (currentClusters.length === 0 && !hasSearchApplied) {
-        return isMoveInitBundlesEnabled ? (
-            <NoClustersPage isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
-        ) : (
-            <PageSection variant="light">
-                <Bullseye>
-                    <AddClusterPrompt />
-                </Bullseye>
-            </PageSection>
-        );
+        return <NoClustersPage isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />;
     }
 
     function setSelectedClusterId(cluster: Cluster) {
