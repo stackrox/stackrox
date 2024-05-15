@@ -349,7 +349,7 @@ deps: $(shell find $(BASE_DIR) -name "go.sum")
 	$(SILENT)test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
 	$(SILENT)go mod tidy
 ifdef CI
-	$(SILENT)GOTOOLCHAIN=local go mod tidy || { >&2 echo "gotoolchain does not match with installed Go version" ; exit 1 ; }
+	$(SILENT)GOTOOLCHAIN=local go mod tidy || { >&2 echo "Go toolchain does not match with installed Go version. This is a compatibility check that prevents breaking downstream builds. If you really need to update the toolchain version, ask in #forum-acs-golang" ; exit 1 ; }
 	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
 	go mod verify
 endif
