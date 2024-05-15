@@ -23,18 +23,17 @@ function ObservedCveModeSelect({
     setObservedCveMode,
 }: ObservedCveModeSelectProps) {
     const [isCveModeSelectOpen, setIsCveModeSelectOpen] = useState(false);
+    const isViewingWithCves = observedCveMode === 'WITH_CVES';
 
-    const menuToggleIcon =
-        observedCveMode === 'WITH_CVES' ? (
-            <SecurityIcon color={CRITICAL_SEVERITY_COLOR} />
-        ) : (
-            <UnknownIcon />
-        );
+    const menuToggleIcon = isViewingWithCves ? (
+        <SecurityIcon color={CRITICAL_SEVERITY_COLOR} />
+    ) : (
+        <UnknownIcon />
+    );
 
-    const menuToggleText =
-        observedCveMode === 'WITH_CVES'
-            ? 'View image vulnerabilities'
-            : 'View images without vulnerabilities';
+    const menuToggleText = isViewingWithCves
+        ? 'View image vulnerabilities'
+        : 'View images without vulnerabilities';
 
     return (
         <Select

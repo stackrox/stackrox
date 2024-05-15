@@ -217,6 +217,13 @@ export function getVulnStateScopedQueryString(
     });
 }
 
+export function getZeroCveScopedQueryString(searchFilter: QuerySearchFilter): string {
+    return getRequestQueryStringForSearchFilter({
+        'Image CVE Count': '0',
+        ...applyRegexSearchModifiers(searchFilter),
+    });
+}
+
 /**
  * Returns the statuses that should be used to query for exception counts given
  * the current vulnerability state.
