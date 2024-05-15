@@ -88,16 +88,27 @@ class OperatorE2eTest(BaseTest):
         self._operator_cluster_type = operator_cluster_type
 
     def run(self):
+        print(f"Running on cluster type {self._operator_cluster_type}")
         if (
             self._operator_cluster_type
-            != OperatorE2eTest.OPERATOR_CLUSTER_TYPE_OPENSHIFT4
+            == OperatorE2eTest.OPERATOR_CLUSTER_TYPE_OPENSHIFT4
         ):
-            print(
-                f"Running on cluster type {self._operator_cluster_type}, installing OLM"
+            print("Removing unused catalog sources")
+            self.run_with_graceful_kill(
+                ["kubectl", "patch", "operatorhub.config.openshift.io", "cluster", "--type=json",
+                 "-p", '[{"op": "add", "path": "/spec/disableAllDefaultSources", "value": true}]'],
+                OperatorE2eTest.OLM_SETUP_TIMEOUT_SEC,
             )
+        else:
+            print("Installing OLM")
             self.run_with_graceful_kill(
                 ["make", "-C", "operator", "olm-install"],
-                OperatorE2eTest.TEST_TIMEOUT_SEC,
+                OperatorE2eTest.OLM_SETUP_TIMEOUT_SEC,
+            )
+            print("Removing unused catalog source(s)")
+            self.run_with_graceful_kill(
+                ["kubectl", "delete", "catalogsource.operators.coreos.com", "--namespace=olm", "--all"],
+                OperatorE2eTest.OLM_SETUP_TIMEOUT_SEC,
             )
 
         print("Executing operator e2e tests")

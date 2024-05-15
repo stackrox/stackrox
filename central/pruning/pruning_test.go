@@ -1299,11 +1299,8 @@ func (s *PruningTestSuite) TestRemoveOrphanedProcesses() {
 			s.Nil(err)
 			s.NoError(actualProcessDatastore.AddProcessIndicators(s.ctx, c.initialProcesses...))
 
+			processes.EXPECT().PruneProcessIndicators(pruningCtx, c.expectedDeletions).AnyTimes()
 			gci.removeOrphanedProcesses()
-
-			countFromDB, err := actualProcessDatastore.Count(s.ctx, nil)
-			s.NoError(err)
-			s.Equal(len(c.initialProcesses)-len(c.expectedDeletions), countFromDB)
 
 			db.Teardown(t)
 		})

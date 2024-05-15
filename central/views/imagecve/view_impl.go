@@ -35,7 +35,7 @@ func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 	}
 
 	var results []*imageCVECoreCount
-	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreCount](ctx, v.db, v.schema, withCountQuery(q))
+	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreCount](ctx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
 	if err != nil {
 		return 0, err
 	}
@@ -101,8 +101,24 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 		return nil, err
 	}
 
+	var cveIDsToFilter []string
+	if q.GetPagination().GetLimit() > 0 || q.GetPagination().GetOffset() > 0 {
+		// TODO(@charmik) : Update the SQL query generator to not include 'ORDER BY' and 'GROUP BY' fields in the select clause (before where).
+		//  SQL syntax does not need those fields in the select clause. The below query for example would work fine
+		//  "SELECT JSONB_AGG(DISTINCT(image_cves.Id)) AS cve_id FROM image_cves GROUP BY image_cves.CveBaseInfo_Cve ORDER BY MAX(image_cves.Cvss) DESC LIMIT 20;"
+		var identifiersList []*imageCVECoreResponse
+		identifiersList, err = pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](ctx, v.db, v.schema, withSelectCVEIdentifiersQuery(q))
+		if err != nil {
+			return nil, err
+		}
+
+		for _, idList := range identifiersList {
+			cveIDsToFilter = append(cveIDsToFilter, idList.CVEIDs...)
+		}
+	}
+
 	var results []*imageCVECoreResponse
-	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](ctx, v.db, v.schema, withSelectQuery(q, options))
+	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](ctx, v.db, v.schema, withSelectCVECoreResponseQuery(q, cveIDsToFilter, options))
 	if err != nil {
 		return nil, err
 	}
@@ -166,8 +182,23 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 	return ret, nil
 }
 
-func withSelectQuery(q *v1.Query, options views.ReadOptions) *v1.Query {
+func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	cloned := q.Clone()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{search.CVE.String()},
+	}
+	return cloned
+}
+
+func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, options views.ReadOptions) *v1.Query {
+	cloned := q.Clone()
+	if len(cveIDsToFilter) > 0 {
+		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
+		cloned.Pagination = q.GetPagination()
+	}
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
@@ -280,13 +311,5 @@ func withCountBySeveritySelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.
 					AddBools(search.Fixable, true).ProtoQuery(),
 			).Proto(),
 	)
-	return cloned
-}
-
-func withCountQuery(q *v1.Query) *v1.Query {
-	cloned := q.Clone()
-	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.CVE).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
-	}
 	return cloned
 }

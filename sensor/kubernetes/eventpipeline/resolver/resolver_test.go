@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
@@ -49,6 +50,7 @@ func (s *resolverSuite) TearDownTest() {
 }
 
 func (s *resolverSuite) SetupTest() {
+	s.T().Setenv(features.SensorAggregateDeploymentReferenceOptimization.EnvVar(), "true")
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.mockOutput = mocks.NewMockOutputQueue(s.mockCtrl)

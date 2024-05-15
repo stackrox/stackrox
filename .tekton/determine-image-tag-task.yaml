@@ -1,0 +1,26 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: determine-image-tag
+  namespace: rh-acs-tenant
+# TODO(ROX-23812): Refactor to a task bundle
+spec:
+  description: Determines the tag for the output image using the StackRox convention from 'make tag' output.
+  params:
+  results:
+  - name: image-tag
+    description: Image Tag determined by custom logic.
+  steps:
+  - name: determine-image-tag
+    image: registry.access.redhat.com/ubi8:latest
+    script: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      dnf -y upgrade --nobest
+      dnf -y install git make
+      cd "$(workspaces.source.path)/source"
+      scripts/konflux/fail-build-if-git-is-dirty.sh
+      echo -n "$(make --quiet --no-print-directory tag)-fast" | tee "$(results.image-tag.path)"
+  workspaces:
+    - name: source
+      description: The workspace where source code is included.

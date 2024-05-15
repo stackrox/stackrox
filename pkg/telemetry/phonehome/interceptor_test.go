@@ -133,7 +133,7 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 	}
 
 	md := metadata.New(nil)
-	md.Set("User-Agent", testRP.UserAgent)
+	md.Set(userAgentKey, testRP.UserAgent)
 	ctx := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Net: "pipe"}})
 
 	rih := requestinfo.NewRequestInfoHandler()
@@ -146,15 +146,16 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 	s.Equal(testRP.UserAgent, rp.UserAgent)
 	s.Nil(rp.UserID)
 	s.Equal("request", rp.GRPCReq)
+	s.Equal([]string{testRP.UserAgent}, rp.Headers(userAgentKey))
 }
 
 func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo() {
 	req, _ := http.NewRequest("PATCH", "/wrapped/http", nil)
-	req.Header.Add("user-agent", "user")
+	req.Header.Add(userAgentKey, "user")
 	rih := requestinfo.NewRequestInfoHandler()
 	ctx := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Net: "pipe"}})
 	md := rih.AnnotateMD(ctx, req)
-	md.Set("User-Agent", "gateway")
+	md.Set(userAgentKey, "gateway")
 
 	ctx, err := rih.UpdateContextForGRPC(metadata.NewIncomingContext(ctx, md))
 	s.NoError(err)
@@ -166,6 +167,7 @@ func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo() {
 	s.Equal("request", rp.GRPCReq)
 	s.Equal("/wrapped/http", rp.Path)
 	s.Equal(http.MethodPatch, rp.Method)
+	s.Equal([]string{"user"}, rp.Headers(userAgentKey))
 }
 
 type testBody struct {
@@ -210,7 +212,7 @@ func (s *interceptorTestSuite) TestHttpRequestInfo() {
 
 	req, err := http.NewRequest(http.MethodPost, "https://test"+testRP.Path+"?test_key=test_value", nil)
 	s.NoError(err)
-	req.Header.Add("User-Agent", testRP.UserAgent)
+	req.Header.Add(userAgentKey, testRP.UserAgent)
 
 	ctx := authn.ContextWithIdentity(context.Background(), testRP.UserID, nil)
 	rp := getHTTPRequestDetails(ctx, req, 200)
@@ -218,4 +220,5 @@ func (s *interceptorTestSuite) TestHttpRequestInfo() {
 	s.Equal(testRP.Code, rp.Code)
 	s.Equal(testRP.UserAgent, rp.UserAgent)
 	s.Equal(mockID, rp.UserID)
+	s.Equal([]string{testRP.UserAgent}, rp.Headers(userAgentKey))
 }

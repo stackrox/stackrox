@@ -40,6 +40,10 @@ type complianceCheckCount struct {
 	TotalCount int `db:"compliance_check_name_count"`
 }
 
+type configurationCount struct {
+	TotalCount int `db:"compliance_scan_config_name_count"`
+}
+
 // ResourceResultCountByProfile represents shape of the stats query for compliance operator results
 type ResourceResultCountByProfile struct {
 	PassCount          int    `db:"pass_count"`

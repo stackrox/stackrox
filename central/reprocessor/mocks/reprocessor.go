@@ -55,15 +55,15 @@ func (mr *MockLoopMockRecorder) ReprocessRiskForDeployments(deploymentIDs ...any
 }
 
 // ReprocessSignatureVerifications mocks base method.
-func (m *MockLoop) ReprocessSignatureVerifications() {
+func (m *MockLoop) ReprocessSignatureVerifications(firstIntegration bool) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ReprocessSignatureVerifications")
+	m.ctrl.Call(m, "ReprocessSignatureVerifications", firstIntegration)
 }
 
 // ReprocessSignatureVerifications indicates an expected call of ReprocessSignatureVerifications.
-func (mr *MockLoopMockRecorder) ReprocessSignatureVerifications() *gomock.Call {
+func (mr *MockLoopMockRecorder) ReprocessSignatureVerifications(firstIntegration any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReprocessSignatureVerifications", reflect.TypeOf((*MockLoop)(nil).ReprocessSignatureVerifications))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReprocessSignatureVerifications", reflect.TypeOf((*MockLoop)(nil).ReprocessSignatureVerifications), firstIntegration)
 }
 
 // ShortCircuit mocks base method.

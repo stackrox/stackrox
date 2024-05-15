@@ -18,7 +18,7 @@ export type ResourceType =
     | 'POLICY'
     | 'CONTROL';
 
-export const resourceTypes: Record<ResourceType, ResourceType> = {
+export const resourceTypes = {
     NAMESPACE: 'NAMESPACE',
     CLUSTER: 'CLUSTER',
     NODE: 'NODE',
@@ -35,7 +35,7 @@ export const resourceTypes: Record<ResourceType, ResourceType> = {
     CLUSTER_CVE: 'CLUSTER_CVE',
     POLICY: 'POLICY',
     CONTROL: 'CONTROL',
-};
+} as const;
 
 export type RbacConfigType = 'SUBJECT' | 'SERVICE_ACCOUNT' | 'ROLE';
 

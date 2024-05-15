@@ -61,12 +61,18 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-       {{- if ._rox.env.openshift }}
+        {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
         {{- end }}
         - name: ROX_METRICS_PORT
           value: ":{{- ._rox.scannerV4.indexer.metricsPort -}}"
+        {{- if ._rox.monitoring.openshift.enabled }}
+        - name: ROX_ENABLE_SECURE_METRICS
+          value: "true"
+        - name: ROX_SECURE_METRICS_PORT
+          value: ":9091"
+        {{- end }}
         {{- include "srox.envVars" (list . "deployment" "scanner-v4-indexer" "indexer") | nindent 8 }}
         resources:
           {{- ._rox.scannerV4.indexer._resources | nindent 10 }}
@@ -80,6 +86,10 @@ spec:
         - name: monitoring
           containerPort: {{ ._rox.scannerV4.indexer.metricsPort }}
         {{- end}}
+        {{- if ._rox.monitoring.openshift.enabled }}
+        - containerPort: 9091
+          name: monitoring-tls
+        {{- end }}
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
@@ -114,6 +124,11 @@ spec:
         - name: db-password
           mountPath: /run/secrets/stackrox.io/secrets
           readOnly: true
+        {{- if ._rox.monitoring.openshift.enabled }}
+        - name: monitoring-tls
+          mountPath: /run/secrets/stackrox.io/monitoring-tls
+          readOnly: true
+        {{- end }}
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
       securityContext:
         runAsNonRoot: true
@@ -147,5 +162,10 @@ spec:
       - name: db-password
         secret:
           secretName: scanner-v4-db-password
+      {{- if ._rox.monitoring.openshift.enabled }}
+      - name: monitoring-tls
+        secret:
+          secretName: scanner-v4-indexer-monitoring-tls
+      {{- end }}
       {{- include "srox.injectedCABundleVolume" . | nindent 6 }}
 {{- end }}

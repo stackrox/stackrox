@@ -1,0 +1,34 @@
+{
+  "id": "1b74ffdd-8e67-444c-9814-1c23863c8ccb",
+  "name": "Unauthorized Network Flow",
+  "description": "This policy generates a violation for the network flows that fall outside baselines for which 'alert on anomalous violations' is set.",
+  "rationale": "The network baseline is a list of flows that are allowed, and once it is frozen, any flow outside that is a concern.",
+  "remediation": "Evaluate this network flow. If deemed to be okay, add it to the baseline. If not, investigate further as required.",
+  "categories": [
+    "Anomalous Activity"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "Unauthorized Network Flow",
+      "policyGroups": [
+        {
+          "fieldName": "Unexpected Network Flow Detected",
+          "values": [
+            {
+              "value": "true"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/scans/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 )
@@ -27,6 +28,9 @@ type DataStore interface {
 
 	// DeleteScanByCluster deletes scans by cluster
 	DeleteScanByCluster(ctx context.Context, clusterID string) error
+
+	// SearchScans returns the scans for the given query
+	SearchScans(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorScanV2, error)
 }
 
 // New returns an instance of DataStore.

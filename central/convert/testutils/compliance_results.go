@@ -8,6 +8,7 @@ import (
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -471,7 +472,7 @@ func GetComplianceStorageClusterCount(_ *testing.T, clusterID string) *datastore
 }
 
 // GetComplianceClusterV2Count returns V2 count matching that from GetComplianceStorageClusterCount
-func GetComplianceClusterV2Count(_ *testing.T, clusterID string) *v2.ComplianceClusterOverallStats {
+func GetComplianceClusterV2Count(_ *testing.T, clusterID string, lastScanTime *types.Timestamp) *v2.ComplianceClusterOverallStats {
 	return &v2.ComplianceClusterOverallStats{
 		Cluster: &v2.ComplianceScanCluster{
 			ClusterId:   clusterID,
@@ -508,6 +509,7 @@ func GetComplianceClusterV2Count(_ *testing.T, clusterID string) *v2.ComplianceC
 				Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
 			},
 		},
+		LastScanTime: lastScanTime,
 	}
 }
 
@@ -528,7 +530,7 @@ func GetComplianceStorageResult(_ *testing.T) *storage.ComplianceOperatorCheckRe
 }
 
 // GetConvertedComplianceResult retrieves results that match GetComplianceStorageResult
-func GetConvertedComplianceResult(_ *testing.T) *v2.ComplianceClusterCheckStatus {
+func GetConvertedComplianceResult(_ *testing.T, lastScanTime *types.Timestamp) *v2.ComplianceClusterCheckStatus {
 	return &v2.ComplianceClusterCheckStatus{
 		CheckId:   complianceCheckID1,
 		CheckName: complianceCheckName1,
@@ -538,8 +540,9 @@ func GetConvertedComplianceResult(_ *testing.T) *v2.ComplianceClusterCheckStatus
 					ClusterId:   fixtureconsts.Cluster1,
 					ClusterName: clusterName1,
 				},
-				Status:   v2.ComplianceCheckStatus_INFO,
-				CheckUid: complianceCheckUID1,
+				Status:       v2.ComplianceCheckStatus_INFO,
+				CheckUid:     complianceCheckUID1,
+				LastScanTime: lastScanTime,
 			},
 		},
 		Description:  "description 1",

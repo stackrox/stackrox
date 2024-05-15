@@ -87,12 +87,18 @@ ifeq ($(GOARCH),s390x)
 		--build-arg="RPMS_BASE_TAG=stream9"
 endif
 
-ifeq ($(UNAME_S),Darwin)
-BIND_GOCACHE ?= 0
-BIND_GOPATH ?= 0
-else
+# By default, assume we are going to use a bind mount volume instead of a standalone one.
 BIND_GOCACHE ?= 1
 BIND_GOPATH ?= 1
+
+# Only resort to local volumes on X86_64 Darwin, since on ARM Darwin the permissions of the
+# standalone volume will be mapped to root instead of the local user, making the build fail.
+# An alternative is to chown the directory of the standalone volume within the container.
+ifeq ($(UNAME_S),Darwin)
+ifneq ($(UNAME_M),arm64)
+BIND_GOCACHE ?= 0
+BIND_GOPATH ?= 0
+endif
 endif
 
 ifeq ($(BIND_GOCACHE),1)
@@ -343,6 +349,7 @@ deps: $(shell find $(BASE_DIR) -name "go.sum")
 	$(SILENT)test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
 	$(SILENT)go mod tidy
 ifdef CI
+	$(SILENT)GOTOOLCHAIN=local go mod tidy || { >&2 echo "Go toolchain does not match with installed Go version. This is a compatibility check that prevents breaking downstream builds. If you really need to update the toolchain version, ask in #forum-acs-golang" ; exit 1 ; }
 	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
 	go mod verify
 endif

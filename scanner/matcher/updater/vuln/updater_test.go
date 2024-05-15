@@ -14,6 +14,7 @@ import (
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
+	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -56,7 +57,7 @@ func testHTTPServer(t *testing.T) (*httptest.Server, time.Time) {
 	return srv, now
 }
 
-func TestUpdate(t *testing.T) {
+func TestSingleBundleUpdate(t *testing.T) {
 	srv, now := testHTTPServer(t)
 
 	locker := &testLocker{
@@ -90,7 +91,7 @@ func TestUpdate(t *testing.T) {
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now.Add(-time.Minute), nil)
 	metadataStore.EXPECT().
-		SetLastVulnerabilityUpdate(gomock.Any(), now).
+		SetLastVulnerabilityUpdate(gomock.Any(), gomock.Eq(postgres.SingleBundleUpdateKey), now).
 		Return(nil)
 	err = u.Update(context.Background())
 	assert.NoError(t, err)

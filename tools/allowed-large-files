@@ -47,6 +47,7 @@ scanner/updater/rhel/testdata/rhel-report.json
 scripts/ci/lib.sh
 sensor/tests/data/policies.json
 sensor/upgrader/preflight/testdata/k8s-1.22.json.gz
+tests/e2e/lib.sh
 tests/performance/load/package-lock.json
 ui/apps/platform/src/fonts/Open_Sans_Regular.json
 ui/apps/platform/src/images/globalSearchEmptyState.svg

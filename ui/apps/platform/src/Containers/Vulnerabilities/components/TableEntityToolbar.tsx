@@ -43,7 +43,7 @@ function TableEntityToolbar({
                 <ToolbarContent>
                     <ToolbarItem>{entityToggleGroup}</ToolbarItem>
                     {isFiltered && (
-                        <ToolbarItem>
+                        <ToolbarItem alignSelf="center">
                             <DynamicTableLabel />
                         </ToolbarItem>
                     )}

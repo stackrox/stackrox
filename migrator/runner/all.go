@@ -34,4 +34,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_vulnerability_requests_for_legacy"
 	_ "github.com/stackrox/rox/migrator/migrations/m_197_to_m_198_add_oidc_claim_mappings"
 	_ "github.com/stackrox/rox/migrator/migrations/m_198_to_m_199_policy_description_and_criteria_updates"
+	_ "github.com/stackrox/rox/migrator/migrations/m_199_to_m_200_policy_updates_for_4_5"
 )

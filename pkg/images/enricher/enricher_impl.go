@@ -734,6 +734,18 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		return false, nil
 	}
 
+	// Fetch signature integrations from the data store.
+	sigIntegrations, err := e.signatureIntegrationGetter(sac.WithAllAccess(ctx))
+	if err != nil {
+		return false, errors.Wrap(err, "fetching signature integrations")
+	}
+
+	// Short-circuit if no integrations are available.
+	if len(sigIntegrations) == 0 {
+		// Contrary to the signature verification step we will retain existing signatures.
+		return false, nil
+	}
+
 	imgName := img.GetName().GetFullName()
 
 	if err := e.checkRegistryForImage(img); err != nil {

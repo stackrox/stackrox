@@ -461,6 +461,48 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
 	suite.NoError(err, "expected no error trying to write with permissions")
 }
 
+func (suite *IndicatorDataStoreTestSuite) TestIndicatorPruneBatch() {
+	// Prune number of the batch size to test batching
+	batchCases := []int{
+		deleteBatchSize,     // Prune number of the batch size to test batching
+		deleteBatchSize - 1, // Prune number under the batch size to test batching
+		deleteBatchSize + 1, // Prune over batch size to test batching
+		70000,               // Prune over the max allowed SQL parameters (65K) to ensure batching is performed
+	}
+
+	for _, batchSize := range batchCases {
+		suite.setupDataStoreNoPruning()
+
+		ids := suite.buildIDsToPrune(batchSize)
+
+		// Try to remove indicators by id
+		indicatorCount, err := suite.datastore.PruneProcessIndicators(suite.hasWriteCtx, ids)
+		suite.Require().NoError(err)
+		suite.Require().Equal(batchSize, indicatorCount)
+	}
+}
+
+func (suite *IndicatorDataStoreTestSuite) buildIDsToPrune(count int) []string {
+	indicators := suite.generateIndicatorsWithPods([]string{fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3}, []string{"c1", "c2", "c3"})
+	suite.Require().NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
+	suite.verifyIndicatorsAre(indicators...)
+
+	ids := make([]string, 0, count)
+	pruneIndicators := make([]*storage.ProcessIndicator, 0, count)
+
+	for i := 0; i < count; i++ {
+		id := uuid.NewV4().String()
+		newIndicator := indicators[0].Clone()
+		newIndicator.Id = id
+		ids = append(ids, id)
+		pruneIndicators = append(pruneIndicators, newIndicator)
+	}
+
+	suite.Require().NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, pruneIndicators...))
+
+	return ids
+}
+
 func TestProcessIndicatorReindexSuite(t *testing.T) {
 	suite.Run(t, new(ProcessIndicatorReindexSuite))
 }

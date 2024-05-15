@@ -5,11 +5,19 @@ import { Truncate } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { UseURLSortResult } from 'hooks/useURLSort';
 import { TableUIState } from 'utils/getTableUIState';
 import { ClusterType } from 'types/cluster.proto';
 
 import { getPlatformEntityPagePath } from '../../utils/searchUtils';
 import { displayClusterType } from '../utils/stringUtils';
+
+export const sortFields = {
+    Cluster: 'Cluster',
+    ClusterType: 'Cluster Type',
+    ClusterKubernetesVersion: 'Cluster Kubernetes Version',
+} as const;
+export const defaultSortOption = { field: 'Cluster', direction: 'asc' } as const;
 
 export const affectedClusterFragment = gql`
     fragment AffectedClusterFragment on Cluster {
@@ -37,9 +45,10 @@ export type AffectedCluster = {
 
 export type AffectedClustersTableProps = {
     tableState: TableUIState<AffectedCluster>;
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
-function AffectedClustersTable({ tableState }: AffectedClustersTableProps) {
+function AffectedClustersTable({ tableState, getSortParams }: AffectedClustersTableProps) {
     return (
         <Table
             borders={tableState.type === 'COMPLETE'}
@@ -50,9 +59,11 @@ function AffectedClustersTable({ tableState }: AffectedClustersTableProps) {
         >
             <Thead noWrap>
                 <Tr>
-                    <Th>Cluster</Th>
-                    <Th>Cluster type</Th>
-                    <Th>Kubernetes version</Th>
+                    <Th sort={getSortParams(sortFields.Cluster)}>Cluster</Th>
+                    <Th sort={getSortParams(sortFields.ClusterType)}>Cluster type</Th>
+                    <Th sort={getSortParams(sortFields.ClusterKubernetesVersion)}>
+                        Kubernetes version
+                    </Th>
                 </Tr>
             </Thead>
             <TbodyUnified

@@ -1,6 +1,7 @@
 package vuln
 
 import (
+	"archive/zip"
 	"context"
 	"errors"
 	"fmt"
@@ -23,6 +24,7 @@ import (
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 )
@@ -218,7 +220,8 @@ func (u *Updater) Start() error {
 		go u.runGCFullPeriodic()
 	}
 
-	// Start immediately, all matchers will compete to grab the updater lock.
+	// Start immediately, all matchers will compete to update each vulnerability
+	// bundle if multi-bundle mode is on, or the single bundle.
 	timer := time.NewTimer(0)
 	defer timer.Stop()
 	for {
@@ -255,7 +258,7 @@ func (u *Updater) Initialized(ctx context.Context) bool {
 	if ts.IsZero() {
 		return false
 	}
-	zlog.Info(ctx).Msg("previous run exists: setting updater to initialized")
+	zlog.Info(ctx).Msg("all vulnerability bundles were updated at least once: setting to initialized")
 	u.initialized.Store(true)
 	return true
 }
@@ -264,8 +267,14 @@ func (u *Updater) Initialized(ctx context.Context) bool {
 //
 // Note: periodic full GC will not be started.
 func (u *Updater) Update(ctx context.Context) error {
-	if err := u.runUpdate(ctx); err != nil {
-		return err
+	if features.ScannerV4MultiBundle.Enabled() {
+		if err := u.runMultiBundleUpdate(ctx); err != nil {
+			return err
+		}
+	} else {
+		if err := u.runSingleBundleUpdate(ctx); err != nil {
+			return err
+		}
 	}
 	if !u.skipGC {
 		u.runGC(ctx)
@@ -273,16 +282,16 @@ func (u *Updater) Update(ctx context.Context) error {
 	return nil
 }
 
-// runUpdate updates the vulnerability data.
-func (u *Updater) runUpdate(ctx context.Context) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.runUpdate")
+// runSingleBundleUpdate updates the vulnerability data with one single bundle.
+func (u *Updater) runSingleBundleUpdate(ctx context.Context) error {
+	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.runSingleBundleUpdate")
 
 	// Use TryLock instead of Lock to prevent simultaneous updates.
 	ctx, done := u.locker.TryLock(ctx, updateName)
 	defer done()
 	if err := ctx.Err(); err != nil {
 		zlog.Info(ctx).
-			Str("updater", updateName).
+			Str("lock", updateName).
 			Msg("did not obtain lock, skipping update run")
 		return nil
 	}
@@ -326,7 +335,7 @@ func (u *Updater) runUpdate(ctx context.Context) error {
 		return err
 	}
 
-	if err := u.metadataStore.SetLastVulnerabilityUpdate(ctx, timestamp); err != nil {
+	if err := u.metadataStore.SetLastVulnerabilityUpdate(ctx, postgres.SingleBundleUpdateKey, timestamp); err != nil {
 		return err
 	}
 
@@ -334,9 +343,122 @@ func (u *Updater) runUpdate(ctx context.Context) error {
 		zlog.Info(ctx).Msg("finished initial updater run: setting updater to initialized")
 	}
 
+	return nil
+}
+
+// runMultiBundleUpdate updates the vulnerability data with a multi-bundle.
+func (u *Updater) runMultiBundleUpdate(ctx context.Context) error {
+	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.runMultiBundleUpdate")
+
+	prevTime, err := u.metadataStore.GetLastVulnerabilityUpdate(ctx)
+	if err != nil {
+		zlog.Debug(ctx).
+			Err(err).
+			Msg("did not get previous vuln update timestamp")
+		return err
+	}
 	zlog.Info(ctx).
-		Str("timestamp", timestamp.Format(http.TimeFormat)).
-		Msg("new vuln update")
+		Time("timestamp", prevTime).
+		Msg("previous vuln update")
+
+	zipFile, zipTime, err := u.fetch(ctx, prevTime)
+	if err != nil {
+		return err
+	}
+	if zipFile == nil {
+		// Nothing to update at this time.
+		zlog.Info(ctx).Msg("no new vulnerability update")
+		return nil
+	}
+	defer func() {
+		if err := zipFile.Close(); err != nil {
+			zlog.Error(ctx).Err(err).Msg("closing temp update file")
+		}
+		if err := os.Remove(zipFile.Name()); err != nil {
+			zlog.Error(ctx).Err(err).Msgf("removing temp update file %q", zipFile.Name())
+		}
+	}()
+
+	zipInfo, err := zipFile.Stat()
+	if err != nil {
+		return err
+	}
+	zipReader, err := zip.NewReader(zipFile, zipInfo.Size())
+	if err != nil {
+		return err
+	}
+
+	// Iterate through each vulnerability bundle in the .zip archive
+	names := make([]string, 0, len(zipReader.File))
+	for i := range zipReader.File {
+		bundleF := zipReader.File[i]
+		names = append(names, bundleF.Name)
+		ctx := zlog.ContextWithValues(ctx, "bundle", bundleF.Name)
+		zlog.Info(ctx).Msg("starting bundle update")
+		if err := u.updateBundle(ctx, bundleF, zipTime, prevTime); err != nil {
+			zlog.Error(ctx).Err(err).Msg("updating bundle failed")
+			return fmt.Errorf("updating bundle %s: %w", bundleF.Name, err)
+		}
+		zlog.Info(ctx).Msg("completed bundle update")
+	}
+
+	// Clean updaters that were deleted (not in the zip and older than this update).
+	// Safe to be run concurrently.
+	err = u.metadataStore.GCVulnerabilityUpdates(ctx, names, zipTime)
+	if err != nil {
+		return fmt.Errorf("cleaning vuln updates: %w", err)
+	}
+
+	_ = u.Initialized(ctx)
+
+	return nil
+}
+
+func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time.Time, prevTime time.Time) error {
+	// Use TryLock to prevent simultaneous updates for the same bundle.
+	lCtx, lDone := u.locker.TryLock(ctx, zipF.Name)
+	defer lDone()
+	if err := lCtx.Err(); err != nil {
+		zlog.Info(ctx).Err(err).Msg("skipping: did not obtain lock")
+		return nil
+	}
+
+	// Ensure there is an update timestamp for this bundle, and check if it's newer
+	// than this update.
+	lastTime, err := u.metadataStore.GetOrSetLastVulnerabilityUpdate(lCtx, zipF.Name, prevTime)
+	if err != nil {
+		return fmt.Errorf("querying last update: %w", err)
+	}
+	if !lastTime.Before(zipTime) {
+		zlog.Info(ctx).
+			Time("last_update_time", lastTime).
+			Time("update_time", zipTime).
+			Msg("skipping: last update time is greater or equal to the zip archive time")
+		return nil
+	}
+
+	r, err := zipF.Open()
+	if err != nil {
+		return fmt.Errorf("opening bundle: %w", err)
+	}
+	defer func() {
+		_ = r.Close()
+	}()
+
+	dec, err := zstd.NewReader(r)
+	if err != nil {
+		return fmt.Errorf("creating zstd reader: %w", err)
+	}
+	defer dec.Close()
+
+	if err := u.importVulns(lCtx, dec); err != nil {
+		return fmt.Errorf("importing vulnerabilities: %w", err)
+	}
+
+	err = u.metadataStore.SetLastVulnerabilityUpdate(lCtx, zipF.Name, zipTime)
+	if err != nil {
+		return fmt.Errorf("updating timestamp (import was successful): %w", err)
+	}
 
 	return nil
 }

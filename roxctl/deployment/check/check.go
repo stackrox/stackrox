@@ -196,18 +196,23 @@ func (d *deploymentCheckCommand) Validate() error {
 }
 
 func (d *deploymentCheckCommand) Check() error {
+	var failedAttempts int
 	err := retry.WithRetry(func() error {
 		return d.checkDeployment()
 	},
 		retry.Tries(d.retryCount+1),
 		retry.OnlyRetryableErrors(),
 		retry.OnFailedAttempts(func(err error) {
+			failedAttempts++
 			d.env.Logger().ErrfLn("Checking deployment failed: %v. Retrying after %d seconds...",
 				err, d.retryDelay)
 			time.Sleep(time.Duration(d.retryDelay) * time.Second)
 		}))
 	if err != nil {
-		return errors.Wrapf(err, "checking deployment failed after %d retries", d.retryCount)
+		if failedAttempts > 0 {
+			return errors.Wrapf(err, "checking deployment failed after %d retries", failedAttempts)
+		}
+		return errors.Wrap(err, "checking deployment failed")
 	}
 	return nil
 }
@@ -240,7 +245,7 @@ func (d *deploymentCheckCommand) checkDeployment() error {
 
 	alerts, ignoredObjRefs, remarks, err := d.getAlertsAndIgnoredObjectRefs(combinedDeployments)
 	if err != nil {
-		return errors.Wrap(retry.MakeRetryable(err), "retrieving alerts from central")
+		return errors.Wrap(common.MakeRetryable(err), "retrieving alerts from central")
 	}
 
 	return d.printResults(alerts, ignoredObjRefs, remarks)

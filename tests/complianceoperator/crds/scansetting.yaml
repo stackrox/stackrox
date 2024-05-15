@@ -10,7 +10,6 @@ metadata:
     olm.managed: "true"
     operators.coreos.com/compliance-operator.openshift-compliance: ""
   name: scansettings.compliance.openshift.io
-  resourceVersion: "95034"
   uid: 9b397ebf-30d6-43b2-8dee-fdae5af8c442
 spec:
   conversion:

@@ -17,8 +17,15 @@ import (
 //
 //go:generate mockgen-wrapper
 type MatcherMetadataStore interface {
-	GetLastVulnerabilityUpdate(context.Context) (time.Time, error)
-	SetLastVulnerabilityUpdate(context.Context, time.Time) error
+	// GetLastVulnerabilityUpdate returns a timestamp representing the last update timestamp of all vulnerability bundles.
+	GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error)
+	// SetLastVulnerabilityUpdate sets the last update timestamp of one vulnerability bundle.
+	SetLastVulnerabilityUpdate(ctx context.Context, bundle string, lastUpdate time.Time) error
+	// GetOrSetLastVulnerabilityUpdate get the last update timestamp of one vulnerability bundle,
+	// or set it to the specified value if it does not exist.
+	GetOrSetLastVulnerabilityUpdate(ctx context.Context, bundle string, lastUpdate time.Time) (time.Time, error)
+	// GCVulnerabilityUpdates clean-up unknown and obsolete update timestamps.
+	GCVulnerabilityUpdates(ctx context.Context, activeUpdaters []string, lastUpdate time.Time) error
 }
 
 type matcherMetadataStore struct {

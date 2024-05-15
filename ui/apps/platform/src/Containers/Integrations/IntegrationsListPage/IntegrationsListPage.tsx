@@ -17,11 +17,9 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import { actions as integrationsActions } from 'reducers/integrations';
 import { actions as apitokensActions } from 'reducers/apitokens';
-import { actions as clusterInitBundlesActions } from 'reducers/clusterInitBundles';
 import { actions as machineAccessActions } from 'reducers/machineAccessConfigs';
 import { actions as cloudSourcesActions } from 'reducers/cloudSources';
 import { integrationsPath } from 'routePaths';
-import { ClusterInitBundle } from 'services/ClustersService';
 
 import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
 import useFeatureFlags from 'hooks/useFeatureFlags';
@@ -40,13 +38,11 @@ import {
     DeleteAPITokensConfirmationText,
     DeleteIntegrationsConfirmationText,
 } from './ConfirmationTexts';
-import DeleteClusterInitBundleConfirmationModal from './DeleteClusterInitBundleConfirmationModal';
 import IntegrationsTable from './IntegrationsTable';
 
 function IntegrationsListPage({
     deleteIntegrations,
     triggerBackup,
-    fetchClusterInitBundles,
     revokeAPITokens,
     deleteMachineAccessConfigs,
     deleteCloudSources,
@@ -95,16 +91,6 @@ function IntegrationsListPage({
 
     function onCancelDeleteIntegrationIds() {
         setDeletingIntegrationIds([]);
-    }
-
-    /*
-     * Instead of using bundleId arg to delete bundle from integrations in local state,
-     * use Redux fetch action to indirectly update integrations and re-render the list,
-     * because confirmation modal has already made the revokeClusterInitBundles request.
-     */
-    function handleDeleteClusterInitBundle() {
-        setDeletingIntegrationIds([]);
-        fetchClusterInitBundles();
     }
 
     return (
@@ -156,19 +142,6 @@ function IntegrationsListPage({
                     />
                 </ConfirmationModal>
             )}
-            {isClusterInitBundle && (
-                <DeleteClusterInitBundleConfirmationModal
-                    bundle={
-                        deletingIntegrationIds.length === 1
-                            ? (integrations.find(
-                                  (integration) => integration.id === deletingIntegrationIds[0]
-                              ) as unknown as ClusterInitBundle)
-                            : undefined
-                    }
-                    handleCancel={onCancelDeleteIntegrationIds}
-                    handleDelete={handleDeleteClusterInitBundle}
-                />
-            )}
             {!isAPIToken && !isClusterInitBundle && (
                 <ConfirmationModal
                     ariaLabel="Confirm delete"
@@ -189,7 +162,6 @@ function IntegrationsListPage({
 const mapDispatchToProps = {
     deleteIntegrations: integrationsActions.deleteIntegrations,
     triggerBackup: integrationsActions.triggerBackup,
-    fetchClusterInitBundles: clusterInitBundlesActions.fetchClusterInitBundles.request,
     revokeAPITokens: apitokensActions.revokeAPITokens,
     deleteMachineAccessConfigs: machineAccessActions.deleteMachineAccessConfigs,
     deleteCloudSources: cloudSourcesActions.deleteCloudSources,

@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { generateNameWithDate, getInputByLabel } from '../../../helpers/formHelpers';
 
 import { interactAndVisitClusters } from '../Clusters.helpers';
@@ -17,12 +16,6 @@ import {
 
 describe('Cluster init bundles InitBundlesForm', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_MOVE_INIT_BUNDLES_UI')) {
-            this.skip();
-        }
-    });
 
     it('visits clusters from breadcrumb link', () => {
         visitInitBundleForm();

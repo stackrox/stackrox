@@ -35,6 +35,7 @@ func ParseConfig(source string) (*Config, error) {
 }
 
 // Connect wraps pgxpool.Connect
+// Example source postgres://jack:secret@pg.example.com:5432/mydb
 func Connect(ctx context.Context, sourceWithDatabase string) (*db, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, 10*time.Second)
 	defer cancel()

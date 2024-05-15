@@ -26,15 +26,12 @@ import {
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import { getHasSearchApplied } from 'utils/searchUtils';
+import useURLSort from 'hooks/useURLSort';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import CvePageHeader from '../../components/CvePageHeader';
-import {
-    getOverviewPagePath,
-    getRegexScopedQueryString,
-    parseWorkloadQuerySearchFilter,
-} from '../../utils/searchUtils';
+import { getOverviewPagePath, getRegexScopedQueryString } from '../../utils/searchUtils';
 import useAffectedClusters from './useAffectedClusters';
-import AffectedClustersTable from './AffectedClustersTable';
+import AffectedClustersTable, { sortFields, defaultSortOption } from './AffectedClustersTable';
 import usePlatformCveMetadata from './usePlatformCveMetadata';
 import ClustersByTypeSummaryCard from './ClustersByTypeSummaryCard';
 import AffectedClustersSummaryCard from './AffectedClustersSummaryCard';
@@ -45,7 +42,8 @@ const workloadCveOverviewCvePath = getOverviewPagePath('Platform', {
 
 function PlatformCvePage() {
     const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
+    // TODO - Need an equivalent function implementation for filter sanitization for Platform CVEs
+    const querySearchFilter = searchFilter;
 
     // We need to scope all queries to the *exact* CVE name so that we don't accidentally get
     // data that matches a prefix of the CVE name in the nested fields
@@ -57,11 +55,17 @@ function PlatformCvePage() {
     });
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields: Object.values(sortFields),
+        defaultSortOption,
+        onSort: () => setPage(1),
+    });
 
     const { affectedClustersRequest, clusterData, clusterCount } = useAffectedClusters(
         query,
         page,
-        perPage
+        perPage,
+        sortOption
     );
     const metadataRequest = usePlatformCveMetadata(cveId, query, page, perPage);
     const cveName = metadataRequest.data?.platformCVE?.cve;
@@ -143,7 +147,7 @@ function PlatformCvePage() {
                             />
                         </SplitItem>
                     </Split>
-                    <AffectedClustersTable tableState={tableState} />
+                    <AffectedClustersTable tableState={tableState} getSortParams={getSortParams} />
                 </div>
             </PageSection>
         </>

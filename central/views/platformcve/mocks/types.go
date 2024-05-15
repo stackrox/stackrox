@@ -14,7 +14,6 @@ import (
 	reflect "reflect"
 	time "time"
 
-	views "github.com/stackrox/rox/central/views"
 	platformcve "github.com/stackrox/rox/central/views/platformcve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -114,6 +113,20 @@ func (mr *MockCveCoreMockRecorder) GetClusterCount() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterCount", reflect.TypeOf((*MockCveCore)(nil).GetClusterCount))
 }
 
+// GetClusterCountByPlatformType mocks base method.
+func (m *MockCveCore) GetClusterCountByPlatformType() platformcve.ClusterCountByPlatformType {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClusterCountByPlatformType")
+	ret0, _ := ret[0].(platformcve.ClusterCountByPlatformType)
+	return ret0
+}
+
+// GetClusterCountByPlatformType indicates an expected call of GetClusterCountByPlatformType.
+func (mr *MockCveCoreMockRecorder) GetClusterCountByPlatformType() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterCountByPlatformType", reflect.TypeOf((*MockCveCore)(nil).GetClusterCountByPlatformType))
+}
+
 // GetFirstDiscoveredTime mocks base method.
 func (m *MockCveCore) GetFirstDiscoveredTime() *time.Time {
 	m.ctrl.T.Helper()
@@ -165,19 +178,34 @@ func (m *MockCveView) EXPECT() *MockCveViewMockRecorder {
 	return m.recorder
 }
 
-// Get mocks base method.
-func (m *MockCveView) Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]platformcve.CveCore, error) {
+// Count mocks base method.
+func (m *MockCveView) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, q, options)
+	ret := m.ctrl.Call(m, "Count", ctx, q)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Count indicates an expected call of Count.
+func (mr *MockCveViewMockRecorder) Count(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockCveView)(nil).Count), ctx, q)
+}
+
+// Get mocks base method.
+func (m *MockCveView) Get(ctx context.Context, q *v1.Query) ([]platformcve.CveCore, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", ctx, q)
 	ret0, _ := ret[0].([]platformcve.CveCore)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockCveViewMockRecorder) Get(ctx, q, options any) *gomock.Call {
+func (mr *MockCveViewMockRecorder) Get(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCveView)(nil).Get), ctx, q, options)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCveView)(nil).Get), ctx, q)
 }
 
 // GetClusterIDs mocks base method.

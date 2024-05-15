@@ -87,7 +87,14 @@ func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, requestedInt
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create signature integration")
 	}
-	s.reprocessingLoop.ReprocessSignatureVerifications()
+
+	// In case this was the first integration we added, signal this to the reprocessing loop.
+	integrations, err := s.datastore.GetAllSignatureIntegrations(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list signature integrations")
+	}
+
+	s.reprocessingLoop.ReprocessSignatureVerifications(len(integrations) == 1)
 	return integration, nil
 }
 
@@ -99,7 +106,7 @@ func (s *serviceImpl) PutSignatureIntegration(ctx context.Context, integration *
 
 	// Only trigger reprocessing of signature verification results when the keys have been updated.
 	if hasUpdatedKeys {
-		s.reprocessingLoop.ReprocessSignatureVerifications()
+		s.reprocessingLoop.ReprocessSignatureVerifications(false)
 	}
 	return &v1.Empty{}, nil
 }
@@ -109,6 +116,6 @@ func (s *serviceImpl) DeleteSignatureIntegration(ctx context.Context, id *v1.Res
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to delete signature integration")
 	}
-	s.reprocessingLoop.ReprocessSignatureVerifications()
+	s.reprocessingLoop.ReprocessSignatureVerifications(false)
 	return &v1.Empty{}, nil
 }

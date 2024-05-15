@@ -145,7 +145,7 @@ function WorkloadCveFilterToolbar({
 
     if (isFixabilityFiltersEnabled) {
         filterChipGroupDescriptors.push({
-            displayName: 'Fixable',
+            displayName: 'CVE status',
             searchFilterName: 'FIXABLE',
             render: (filter: string) => (
                 <FilterChip
