@@ -1,8 +1,10 @@
 package segment
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/mitchellh/hashstructure/v2"
 	segment "github.com/segmentio/analytics-go/v3"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -112,6 +114,18 @@ func (t *segmentTelemeter) getAnonymousID(o *telemeter.CallOptions) string {
 		return o.ClientID
 	}
 	return t.clientID
+}
+
+// makeMessageID generates and ID based on the provided event data.
+// This may allow Segment to deduplicate events.
+func (t *segmentTelemeter) makeMessageID(event string, props map[string]any, o *telemeter.CallOptions) string {
+	if o == nil || len(o.MessageIDSalt) == 0 {
+		return ""
+	}
+	h, _ := hashstructure.Hash([]any{
+		props, o.Traits, event, t.getUserID(o), t.getAnonymousID(o), o.MessageIDSalt},
+		hashstructure.FormatV2, nil)
+	return fmt.Sprintf("%x", h)
 }
 
 func (t *segmentTelemeter) makeContext(o *telemeter.CallOptions) *segment.Context {
@@ -253,6 +267,7 @@ func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...tel
 	options := telemeter.ApplyOptions(opts)
 
 	track := segment.Track{
+		MessageId:   t.makeMessageID(event, props, options),
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Event:       event,
