@@ -88,9 +88,9 @@ func generateFileName(obj k8sutil.Object, suffix string) string {
 		namespace = "_global"
 	}
 
-	groupDirectory := obj.GetLabels()["groupDirectory"]
+	groupDirectory := obj.GetLabels()["app"]
 	if groupDirectory == "" {
-		groupDirectory = obj.GetLabels()["groupDirectory.kubernetes.io/name"]
+		groupDirectory = obj.GetLabels()["app.kubernetes.io/name"]
 	}
 
 	// Group compliance CRDs into a single directory
