@@ -148,6 +148,7 @@ function NotifierMailingLists({
                 <TextInput
                     isRequired
                     type="text"
+                    id={`${fieldIdPrefixForFormikAndPatternFly}.emailConfig.mailingLists`}
                     value={mailingListsString}
                     onChange={(_event, value) => setMailingLists(value)}
                     placeholder="annie@example.com,jack@example.com"
