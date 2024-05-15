@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 import { Button, Card, CardBody, CardTitle, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 import { HelpIcon, PencilAltIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import { FormikErrors } from 'formik';
@@ -9,10 +9,17 @@ import EmailTemplateModal, {
 } from 'Components/EmailTemplate/EmailTemplateModal';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useIndexKey from 'hooks/useIndexKey';
-import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+import {
+    NotifierIntegrationBase,
+    fetchNotifierIntegrations,
+} from 'services/NotifierIntegrationsService';
 import { NotifierConfiguration } from 'services/ReportsService.types';
 
 import NotifierMailingLists from './NotifierMailingLists';
+
+function isEmailNotifier(notifier: NotifierIntegrationBase) {
+    return notifier.type === 'email';
+}
 
 function splitAndTrimMailingListsString(mailingListsString: string): string[] {
     return mailingListsString.split(',').map((email) => email.trim());
@@ -42,14 +49,30 @@ function NotifierConfigurationForm({
     setFieldValue,
 }: NotifierConfigurationFormProps): ReactElement {
     const { keyFor } = useIndexKey();
+    const [notifiers, setNotifiers] = useState<NotifierIntegrationBase[]>([]);
+    const [isLoadingNotifiers, setIsLoadingNotifiers] = useState(false);
     const [notifierConfigurationSelected, setNotifierConfigurationSelected] =
         useState<NotifierConfiguration | null>(null);
+
+    useEffect(() => {
+        setIsLoadingNotifiers(true);
+        fetchNotifierIntegrations()
+            .then((notifiersFetched) => {
+                setNotifiers(notifiersFetched.filter(isEmailNotifier));
+            })
+            .catch(() => {
+                // TODO display message when there is a place for minor errors
+            })
+            .finally(() => {
+                setIsLoadingNotifiers(false);
+            });
+    }, []);
 
     return (
         <>
             <ul>
                 {notifierConfigurations.map((notifierConfiguration, index) => {
-                    const { emailConfig } = notifierConfiguration;
+                    const { emailConfig, notifierName } = notifierConfiguration;
                     const { customBody, customSubject, mailingLists, notifierId } = emailConfig;
                     // Caller provides name of property in formik values. For example:
                     // 'deliveryDestinations' for Vulnerability Reports
@@ -105,8 +128,11 @@ function NotifierConfigurationForm({
                                         errors={errors}
                                         fieldIdPrefix={fieldId}
                                         hasWriteAccessForIntegration={hasWriteAccessForIntegration}
+                                        isLoadingNotifiers={isLoadingNotifiers}
                                         mailingLists={mailingLists}
                                         notifierId={notifierId}
+                                        notifierName={notifierName}
+                                        notifiers={notifiers}
                                         setMailingLists={(mailingListsString: string) => {
                                             setFieldValue(
                                                 `${fieldId}.emailConfig.mailingLists`,
@@ -128,6 +154,7 @@ function NotifierConfigurationForm({
                                                 notifierName: notifier.name,
                                             });
                                         }}
+                                        setNotifiers={setNotifiers}
                                     />
                                     <div className="pf-v5-u-mt-md">
                                         <FormLabelGroup

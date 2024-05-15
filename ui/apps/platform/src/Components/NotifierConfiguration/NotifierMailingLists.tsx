@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ReactElement } from 'react';
+import React, { useState, ReactElement } from 'react';
 import { Button, Flex, FlexItem, TextInput } from '@patternfly/react-core';
 import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FormikErrors } from 'formik';
@@ -19,33 +19,30 @@ type NotifierMailingListsProps = {
     errors: FormikErrors<unknown>;
     fieldIdPrefix: string;
     hasWriteAccessForIntegration: boolean;
+    isLoadingNotifiers: boolean;
     mailingLists: string[];
     notifierId: string;
+    notifierName: string;
+    notifiers: NotifierIntegrationBase[];
     setMailingLists: (mailingListsString: string) => void;
     setNotifier: (notifier: NotifierIntegrationBase) => void;
+    setNotifiers: (notifiers: NotifierIntegrationBase[]) => void;
 };
 
 function NotifierMailingLists({
     errors,
     fieldIdPrefix,
     hasWriteAccessForIntegration,
+    isLoadingNotifiers,
     mailingLists,
     notifierId,
+    notifierName,
+    notifiers,
     setMailingLists,
     setNotifier,
+    setNotifiers,
 }: NotifierMailingListsProps): ReactElement {
-    const [notifiers, setNotifiers] = useState<NotifierIntegrationBase[]>([]);
     const [isEmailNotifierModalOpen, setIsEmailNotifierModalOpen] = useState(false);
-
-    useEffect(() => {
-        fetchNotifierIntegrations()
-            .then((notifiersFetched) => {
-                setNotifiers(notifiersFetched.filter(isEmailNotifier));
-            })
-            .catch(() => {
-                // TODO display message when there is a place for minor errors
-            });
-    }, []);
 
     function updateNotifierList(notifierAdded: NotifierIntegrationBase) {
         fetchNotifierIntegrations()
@@ -87,6 +84,19 @@ function NotifierMailingLists({
         }
     }
 
+    // Special case to prevent initial temporary render of id instead of name.
+    const selectOptions =
+        isLoadingNotifiers && notifierId
+            ? [
+                  <SelectOption key={notifierId} value={notifierId}>
+                      {notifierName}
+                  </SelectOption>,
+              ]
+            : notifiers.map(({ id, name }) => (
+                  <SelectOption key={id} value={id}>
+                      {name}
+                  </SelectOption>
+              ));
     const mailingListsString = mailingLists.join(', ');
 
     return (
@@ -102,6 +112,7 @@ function NotifierMailingLists({
                     <FlexItem>
                         <SelectSingle
                             id={`${fieldIdPrefix}.notifier`}
+                            isDisabled={isLoadingNotifiers}
                             toggleAriaLabel="Select a notifier"
                             value={notifierId}
                             handleSelect={onSelectNotifier}
@@ -118,11 +129,7 @@ function NotifierMailingLists({
                                 )
                             }
                         >
-                            {notifiers.map(({ id, name }) => (
-                                <SelectOption key={id} value={id}>
-                                    {name}
-                                </SelectOption>
-                            ))}
+                            {selectOptions}
                         </SelectSingle>
                     </FlexItem>
                 </Flex>
