@@ -191,6 +191,10 @@ const navDescriptions: NavDescription[] = [
                 routeKey: 'compliance-enhanced',
             },
             {
+                type: 'separator',
+                key: 'preceding-classic-compliance',
+            },
+            {
                 type: 'link',
                 content: 'PLACEHOLDER',
                 path: complianceBasePath,
