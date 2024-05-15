@@ -11,9 +11,13 @@ import './BooleanPolicyLogicSection.css';
 
 type BooleanPolicyLogicSectionProps = {
     readOnly?: boolean;
+    selectedSection?: number;
 };
 
-function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSectionProps) {
+function BooleanPolicyLogicSection({
+    selectedSection = -1,
+    readOnly = false,
+}: BooleanPolicyLogicSectionProps) {
     const { values } = useFormikContext<Policy>();
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
@@ -35,6 +39,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                                 sectionIndex={sectionIndex}
                                 descriptors={filteredDescriptors}
                                 readOnly={readOnly}
+                                isSelected={sectionIndex === selectedSection}
                             />
                         </GridItem>
                         {/* this grid item takes up 1 column specified here so that two policy sections & OR dividers can fit in one row */}

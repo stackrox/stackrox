@@ -27,9 +27,15 @@ type PolicySectionProps = {
     sectionIndex: number;
     descriptors: Descriptor[];
     readOnly?: boolean;
+    isSelected?: boolean;
 };
 
-function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySectionProps) {
+function PolicySection({
+    sectionIndex,
+    descriptors,
+    readOnly = false,
+    isSelected = false,
+}: PolicySectionProps) {
     const [isEditingName, setIsEditingName] = React.useState(false);
     const { isModalOpen, openModal, closeModal } = useModal();
     const { values, setFieldValue, handleChange } = useFormikContext<Policy>();
@@ -58,7 +64,13 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
 
     return (
         <>
-            <Card isFlat isCompact className={!readOnly ? 'policy-section-card' : ''}>
+            <Card
+                isFlat
+                isCompact
+                isSelected={isSelected}
+                isSelectable
+                className={!readOnly ? 'policy-section-card' : ''}
+            >
                 <CardHeader
                     {...(!readOnly && {
                         actions: {
