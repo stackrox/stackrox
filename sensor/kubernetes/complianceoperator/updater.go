@@ -11,12 +11,15 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/authorization/v1"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
@@ -29,8 +32,39 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log  = logging.LoggerForModule()
+	once = sync.Once{}
 )
+
+// registerDiagnosticComplianceOperatorObjects adds compliance operator objects to the default objects to pull in the diagnostic bundles
+func (u *updaterImpl) registerDiagnosticComplianceOperatorObjects(info *central.ComplianceOperatorInfo) {
+	log.Infof("Add compliance operator objects to diagnostic bundles with namespace: %s", info.GetNamespace())
+	registerFunc := func(cfg k8sintrospect.Config) k8sintrospect.Config {
+		cfg.Objects = append(cfg.Objects, k8sintrospect.ObjectConfig{
+			GVK: complianceoperator.ComplianceScan.GroupVersionKind(),
+		}, k8sintrospect.ObjectConfig{
+			GVK: complianceoperator.ComplianceSuite.GroupVersionKind(),
+		}, k8sintrospect.ObjectConfig{
+			GVK: complianceoperator.ComplianceRemediation.GroupVersionKind(),
+		}, k8sintrospect.ObjectConfig{
+			GVK: complianceoperator.ComplianceCheckResult.GroupVersionKind(),
+		}, k8sintrospect.ObjectConfig{
+			GVK: complianceoperator.Profile.GroupVersionKind(),
+		}, k8sintrospect.ObjectConfig{
+			GVK: complianceoperator.TailoredProfile.GroupVersionKind(),
+		}, k8sintrospect.ObjectConfig{
+			GVK: complianceoperator.ScanSettingBinding.GroupVersionKind(),
+		}, k8sintrospect.ObjectConfig{
+			GVK: complianceoperator.ScanSetting.GroupVersionKind(),
+		})
+		cfg.Namespaces = append(cfg.Namespaces, info.GetNamespace())
+		return cfg
+	}
+
+	once.Do(func() {
+		telemetry.RegisterDiagnosticConfigurationFunc(registerFunc)
+	})
+}
 
 // NewInfoUpdater return a sensor component that periodically collect information about the compliance operator.
 func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration) InfoUpdater {
@@ -115,6 +149,11 @@ func (u *updaterImpl) run(tickerC <-chan time.Time) {
 func (u *updaterImpl) collectInfoAndSendResponse() bool {
 	info := u.getComplianceOperatorInfo()
 	u.complianceOperatorNS = info.GetNamespace()
+
+	// Register compliance operator objects for diagnostic bundles if it was found.
+	if info.GetIsInstalled() && info.GetNamespace() != "" {
+		u.registerDiagnosticComplianceOperatorObjects(info)
+	}
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ComplianceOperatorInfo{

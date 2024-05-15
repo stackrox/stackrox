@@ -52,6 +52,16 @@ type commandHandler struct {
 	pendingContextCancelsMutex sync.Mutex
 }
 
+// DiagnosticConfigurationFunc is a function that modifies the diagnostic configuration.
+type DiagnosticConfigurationFunc func(config k8sintrospect.Config) k8sintrospect.Config
+
+var diagnosticConfigurationFuncs []DiagnosticConfigurationFunc
+
+// RegisterDiagnosticConfigurationFunc registers a new function to modify the diagnostic configuration.
+func RegisterDiagnosticConfigurationFunc(fn DiagnosticConfigurationFunc) {
+	diagnosticConfigurationFuncs = append(diagnosticConfigurationFuncs, fn)
+}
+
 // NewCommandHandler creates a new network policies command handler.
 func NewCommandHandler(client kubernetes.Interface, provider store.Provider) common.SensorComponent {
 	return newCommandHandler(client, provider)
@@ -274,7 +284,12 @@ func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 		return errors.Wrap(err, "error parsing since timestamp")
 	}
 
-	return k8sintrospect.Collect(subCtx, k8sintrospect.DefaultConfigWithSecrets(), restCfg, fileCb, sinceTs)
+	cfg := k8sintrospect.DefaultConfigWithSecrets()
+	for _, fn := range diagnosticConfigurationFuncs {
+		cfg = fn(cfg)
+	}
+
+	return k8sintrospect.Collect(subCtx, cfg, restCfg, fileCb, sinceTs)
 }
 
 func (h *commandHandler) handleClusterInfoRequest(ctx context.Context,

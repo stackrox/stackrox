@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	compv1alpha1 "github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
+	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
@@ -86,14 +88,21 @@ func generateFileName(obj k8sutil.Object, suffix string) string {
 		namespace = "_global"
 	}
 
-	app := obj.GetLabels()["app"]
-	if app == "" {
-		app = obj.GetLabels()["app.kubernetes.io/name"]
+	groupDirectory := obj.GetLabels()["groupDirectory"]
+	if groupDirectory == "" {
+		groupDirectory = obj.GetLabels()["groupDirectory.kubernetes.io/name"]
 	}
-	if app == "" {
-		app = "_ungrouped"
+
+	// Group compliance CRDs into a single directory
+	if groupDirectory == "" && obj.GetObjectKind().GroupVersionKind().Group == compv1alpha1.SchemeGroupVersion.Group {
+		groupDirectory = obj.GetObjectKind().GroupVersionKind().Kind
+	} else {
+		groupDirectory = "_ungrouped"
 	}
-	return fmt.Sprintf("%s/%s/%s-%s%s", namespace, app, strings.ToLower(obj.GetObjectKind().GroupVersionKind().Kind), obj.GetName(), suffix)
+
+	fileName := fmt.Sprintf("%s/%s/%s-%s%s", namespace, groupDirectory, strings.ToLower(obj.GetObjectKind().GroupVersionKind().Kind), obj.GetName(), suffix)
+	log.Warningf("Generated file name: %s", fileName)
+	return fileName
 }
 
 func (c *collector) emitFile(obj k8sutil.Object, suffix string, data []byte) error {
@@ -138,6 +147,8 @@ func (c *collector) createDynamicClients() map[schema.GroupVersionKind]dynamic.N
 				Version: gv.Version,
 				Kind:    apiResource.Kind,
 			}
+			log.Warningf("GVK DYNAMIC CLIENT: %+v", gvk)
+
 			if _, ok := gvkSet[gvk]; !ok {
 				continue
 			}
@@ -408,6 +419,7 @@ func (c *collector) Run() error {
 		for _, objCfg := range c.cfg.Objects {
 			objClient := clientMap[objCfg.GVK]
 			if objClient == nil {
+				log.Warningf("Error generating diagnostic bundle. No client found for %s", objCfg.GVK.String())
 				continue
 			}
 			if err := c.collectObjectsData(ns, objCfg, objClient); err != nil {
