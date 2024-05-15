@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stackrox/rox/central/notifiers/acscsemail/message"
+	acscsMocks "github.com/stackrox/rox/central/notifiers/acscsemail/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
@@ -20,7 +22,7 @@ import (
 
 func TestReportNotify(t *testing.T) {
 	mockController := gomock.NewController(t)
-	clientMock := NewMockClient(mockController)
+	clientMock := acscsMocks.NewMockClient(mockController)
 
 	acscsEmail := &acscsEmail{
 		client: clientMock,
@@ -32,8 +34,8 @@ func TestReportNotify(t *testing.T) {
 	expectTo := []string{"test@test.acscs-mail-test.com"}
 	expectedSubject := "Test Email"
 
-	var actualMsg AcscsMessage
-	clientMock.EXPECT().SendMessage(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, msg AcscsMessage) error {
+	var actualMsg message.AcscsEmail
+	clientMock.EXPECT().SendMessage(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, msg message.AcscsEmail) error {
 		actualMsg = msg
 		return nil
 	})
@@ -88,9 +90,9 @@ func TestAlertNotify(t *testing.T) {
 	metadataGetter.EXPECT().GetAnnotationValue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(expectedTo)
 
-	mockClient := NewMockClient(mockController)
-	var actualMsg AcscsMessage
-	mockClient.EXPECT().SendMessage(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, msg AcscsMessage) error {
+	mockClient := acscsMocks.NewMockClient(mockController)
+	var actualMsg message.AcscsEmail
+	mockClient.EXPECT().SendMessage(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, msg message.AcscsEmail) error {
 		actualMsg = msg
 		return nil
 	})
@@ -123,10 +125,10 @@ func TestAlertNotify(t *testing.T) {
 
 func TestNetworkPolicyYAMLNotify(t *testing.T) {
 	mockController := gomock.NewController(t)
-	mockClient := NewMockClient(mockController)
+	mockClient := acscsMocks.NewMockClient(mockController)
 
-	var actualMsg AcscsMessage
-	mockClient.EXPECT().SendMessage(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, msg AcscsMessage) error {
+	var actualMsg message.AcscsEmail
+	mockClient.EXPECT().SendMessage(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, msg message.AcscsEmail) error {
 		actualMsg = msg
 		return nil
 	})
@@ -170,10 +172,10 @@ func TestNetworkPolicyYAMLNotify(t *testing.T) {
 
 func TestACSCSEmailTest(t *testing.T) {
 	mockController := gomock.NewController(t)
-	mockClient := NewMockClient(mockController)
+	mockClient := acscsMocks.NewMockClient(mockController)
 
-	var actualMsg AcscsMessage
-	mockClient.EXPECT().SendMessage(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, msg AcscsMessage) error {
+	var actualMsg message.AcscsEmail
+	mockClient.EXPECT().SendMessage(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, msg message.AcscsEmail) error {
 		actualMsg = msg
 		return nil
 	})

@@ -8,7 +8,9 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/notifiers/acscsemail/message"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/satoken"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -42,13 +44,13 @@ func ClientSingleton() Client {
 	client = &clientImpl{
 		loadToken:  satoken.LoadTokenFromFile,
 		url:        url,
-		httpClient: http.DefaultClient,
+		httpClient: &http.Client{Transport: proxy.RoundTripper()},
 	}
 
 	return client
 }
 
-func (c *clientImpl) SendMessage(ctx context.Context, msg AcscsMessage) error {
+func (c *clientImpl) SendMessage(ctx context.Context, msg message.AcscsEmail) error {
 	token, err := c.loadToken()
 	if err != nil {
 		return errors.Wrap(err, "failed to load authorization token")
