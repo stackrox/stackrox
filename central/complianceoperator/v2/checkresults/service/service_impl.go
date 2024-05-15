@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
@@ -154,12 +155,18 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to retrieve scan data for result %q", req.GetId())
 	}
-	// There should only be a single object for a scan ref id
-	if len(scans) != 1 {
+	if len(scans) == 0 {
 		return nil, errors.Errorf("Unable to retrieve scan data for result %q", req.GetId())
 	}
 
-	return storagetov2.ComplianceV2CheckResult(scanResult, scans[0].LastExecutedTime), nil
+	var lastScanTime *types.Timestamp
+	for _, scan := range scans {
+		if types.CompareTimestamps(scan.LastExecutedTime, lastScanTime) > 0 {
+			lastScanTime = scan.LastExecutedTime
+		}
+	}
+
+	return storagetov2.ComplianceV2CheckResult(scanResult, lastScanTime), nil
 }
 
 // GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
@@ -292,7 +299,7 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 	// Lookup the scans to get the last scan time
 	clusterLastScan := make(map[string]*types.Timestamp, len(scanResults))
 	for _, result := range scanResults { // Check the Compliance Scan object to get the scan time.
-		lastExecutedTime, err := s.getLastScanTime(ctx, result.ClusterId, request.GetProfileName())
+		lastExecutedTime, err := utils.GetLastScanTime(ctx, result.ClusterId, request.GetProfileName(), s.scanDS)
 		if err != nil {
 			return nil, err
 		}
@@ -364,7 +371,7 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 	}
 
 	// Check the Compliance Scan object to get the scan time.
-	lastExecutedTime, err := s.getLastScanTime(ctx, request.GetClusterId(), request.GetProfileName())
+	lastExecutedTime, err := utils.GetLastScanTime(ctx, request.GetClusterId(), request.GetProfileName(), s.scanDS)
 	if err != nil {
 		return nil, err
 	}
@@ -408,21 +415,4 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 	return &v2.ListComplianceScanResultsResponse{
 		ScanResults: storagetov2.ComplianceV2ScanResults(scanResults, scanConfigToIDs),
 	}, nil
-}
-
-func (s *serviceImpl) getLastScanTime(ctx context.Context, clusterID string, profileName string) (*types.Timestamp, error) {
-	// Check the Compliance Scan object to get the scan time.
-	scanQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, profileName).
-		AddExactMatches(search.ClusterID, clusterID).
-		ProtoQuery()
-	scans, err := s.scanDS.SearchScans(ctx, scanQuery)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to retrieve scan data for cluster %q and profile %q", clusterID, profileName)
-	}
-	// There should only be a single object for a profile/cluster pair
-	if len(scans) != 1 {
-		return nil, errors.Errorf("Unable to retrieve scan data for cluster %q and profile %q", clusterID, profileName)
-	}
-
-	return scans[0].LastExecutedTime, nil
 }
