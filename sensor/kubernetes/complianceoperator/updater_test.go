@@ -229,7 +229,7 @@ func (s *UpdaterTestSuite) TestCheckRequiredComplianceCRDsExist() {
 				}
 			},
 			expectError:      true,
-			expectedErrorMsg: "required GroupVersionKind \"TailoredProfile/v1alpha1, Kind=TailoredProfile\" not found",
+			expectedErrorMsg: "required GroupVersionKind \"compliance.openshift.io/v1alpha1, Kind=TailoredProfile\" not found",
 			msg:              "checkRequiredComplianceCRDsExist should return an error when detectedKinds is empty",
 		},
 	}
