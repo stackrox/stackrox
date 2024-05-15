@@ -28,7 +28,14 @@ fi
 
 cache=""
 if [[ -n "${KUBECONFIG}" ]]; then
-  cache="/tmp/$(md5 -q ${KUBECONFIG})"
+  if command -v md5sum &> /dev/null; then
+    cache="/tmp/$(md5sum -q ${KUBECONFIG})"
+  elif command -v md5 &> /dev/null; then
+    cache="/tmp/$(md5 -q ${KUBECONFIG})"
+  else
+    echo "No md5 or md5sum found"
+    exit 1
+  fi
 fi
 endpoint="localhost:8000"
 password="$(cat "$DIR/../deploy/k8s/central-deploy/password")"
