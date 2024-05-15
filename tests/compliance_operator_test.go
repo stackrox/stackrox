@@ -43,6 +43,8 @@ var (
 	unusedProfile = "rhcos4-anssi-bp28-high"
 )
 
+const defaultWaitTime = 10 * time.Second
+
 func getCurrentComplianceResults(t *testing.T) (rhcos, ocp *storage.ComplianceRunResults) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	managementService := v1.NewComplianceManagementServiceClient(conn)
@@ -111,7 +113,7 @@ func getCurrentComplianceResults(t *testing.T) (rhcos, ocp *storage.ComplianceRu
 }
 
 func checkResult(t *testing.T, results map[string]*storage.ComplianceResultValue, rule string, state storage.ComplianceState) {
-	assert.Equal(t, state, results[rule].GetOverallState())
+	assert.Equal(t, state.String(), results[rule].GetOverallState().String(), "expected result states did not match")
 }
 
 func checkMachineConfigResult(t *testing.T, entityResults map[string]*storage.ComplianceRunResults_EntityResults, machineConfig, rule string, state storage.ComplianceState) {
@@ -167,7 +169,7 @@ func TestDeleteAndAddRule(t *testing.T) {
 	err = ruleClient.Delete(context.Background(), envVarRule, metav1.DeleteOptions{})
 	assert.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultWaitTime)
 
 	rhcosResults, ocpResults := getCurrentComplianceResults(t)
 	require.NotNil(t, rhcosResults)
@@ -190,7 +192,7 @@ func TestDeleteAndAddRule(t *testing.T) {
 	_, err = ruleClient.Create(context.Background(), rule, metav1.CreateOptions{})
 	assert.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultWaitTime)
 
 	checkBaseResults(t)
 }
@@ -208,7 +210,7 @@ func TestDeleteAndAddScanSettingBinding(t *testing.T) {
 	err = ssbClient.Delete(context.Background(), rhcosProfileName, metav1.DeleteOptions{})
 	assert.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultWaitTime)
 
 	rhcosResults, ocpResults := getCurrentComplianceResults(t)
 	assert.Nil(t, rhcosResults)
@@ -222,7 +224,7 @@ func TestDeleteAndAddScanSettingBinding(t *testing.T) {
 	_, err = ssbClient.Create(context.Background(), ssb, metav1.CreateOptions{})
 	assert.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultWaitTime)
 
 	checkBaseResults(t)
 }
@@ -240,7 +242,7 @@ func TestDeleteAndAddProfile(t *testing.T) {
 	err = profileClient.Delete(context.Background(), rhcosProfileName, metav1.DeleteOptions{})
 	require.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultWaitTime)
 
 	rhcosResults, ocpResults := getCurrentComplianceResults(t)
 	assert.Nil(t, rhcosResults)
@@ -254,7 +256,7 @@ func TestDeleteAndAddProfile(t *testing.T) {
 	_, err = profileClient.Create(context.Background(), profile, metav1.CreateOptions{})
 	assert.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultWaitTime)
 
 	checkBaseResults(t)
 }
@@ -278,7 +280,7 @@ func TestUpdateProfile(t *testing.T) {
 	profileObj, err = profileClient.Update(context.Background(), profileObj, metav1.UpdateOptions{})
 	assert.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultWaitTime)
 
 	rhcosResults, ocpResults := getCurrentComplianceResults(t)
 	require.NotNil(t, rhcosResults)
@@ -299,7 +301,7 @@ func TestUpdateProfile(t *testing.T) {
 	_, err = profileClient.Update(context.Background(), profileObj, metav1.UpdateOptions{})
 	assert.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultWaitTime)
 
 	checkBaseResults(t)
 }
