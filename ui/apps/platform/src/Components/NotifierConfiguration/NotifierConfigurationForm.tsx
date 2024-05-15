@@ -29,7 +29,11 @@ export type NotifierConfigurationFormProps = {
     customBodyDefault: string;
     customSubjectDefault: string;
     errors: FormikErrors<unknown>;
-    fieldIdPrefix: string;
+    // Caller provides name of property in formik.values and PatternFly fieldId props.
+    // For example:
+    // 'deliveryDestinations' for Vulnerability Reports
+    // 'report.notifierConfigurations' for Compliance Reports
+    fieldIdPrefixForFormikAndPatternFly: string;
     hasWriteAccessForIntegration: boolean;
     notifierConfigurations: NotifierConfiguration[];
     onDeleteLastNotifierConfiguration?: () => void;
@@ -41,7 +45,7 @@ function NotifierConfigurationForm({
     customBodyDefault,
     customSubjectDefault,
     errors,
-    fieldIdPrefix,
+    fieldIdPrefixForFormikAndPatternFly,
     hasWriteAccessForIntegration,
     notifierConfigurations,
     onDeleteLastNotifierConfiguration,
@@ -74,10 +78,7 @@ function NotifierConfigurationForm({
                 {notifierConfigurations.map((notifierConfiguration, index) => {
                     const { emailConfig, notifierName } = notifierConfiguration;
                     const { customBody, customSubject, mailingLists, notifierId } = emailConfig;
-                    // Caller provides name of property in formik values. For example:
-                    // 'deliveryDestinations' for Vulnerability Reports
-                    // 'notifierConfigurations' for Compliance Reports
-                    const fieldId = `${fieldIdPrefix}[${index}]`;
+                    const fieldId = `${fieldIdPrefixForFormikAndPatternFly}[${index}]`;
                     const isDefaultEmailTemplateApplied = isDefaultEmailTemplate({
                         customBody,
                         customSubject,
@@ -106,7 +107,7 @@ function NotifierConfigurationForm({
                                                                 notifierConfiguration
                                                         );
                                                     setFieldValue(
-                                                        fieldIdPrefix,
+                                                        fieldIdPrefixForFormikAndPatternFly,
                                                         notifierConfigurationsFiltered
                                                     );
                                                     if (
@@ -126,7 +127,7 @@ function NotifierConfigurationForm({
                                 <CardBody>
                                     <NotifierMailingLists
                                         errors={errors}
-                                        fieldIdPrefix={fieldId}
+                                        fieldIdPrefixForFormikAndPatternFly={fieldId}
                                         hasWriteAccessForIntegration={hasWriteAccessForIntegration}
                                         isLoadingNotifiers={isLoadingNotifiers}
                                         mailingLists={mailingLists}
@@ -224,7 +225,7 @@ function NotifierConfigurationForm({
                                 },
                                 notifierName: '',
                             };
-                            setFieldValue(fieldIdPrefix, [
+                            setFieldValue(fieldIdPrefixForFormikAndPatternFly, [
                                 ...notifierConfigurations,
                                 notifierConfiguration,
                             ]);

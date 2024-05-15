@@ -17,7 +17,11 @@ function isEmailNotifier(notifier: NotifierIntegrationBase) {
 
 type NotifierMailingListsProps = {
     errors: FormikErrors<unknown>;
-    fieldIdPrefix: string;
+    // Caller provides name of property in formik.values and PatternFly fieldId props.
+    // For example:
+    // 'deliveryDestinations[0]' for Vulnerability Reports
+    // 'report.notifierConfigurations[0]' for Compliance Reports
+    fieldIdPrefixForFormikAndPatternFly: string;
     hasWriteAccessForIntegration: boolean;
     isLoadingNotifiers: boolean;
     mailingLists: string[];
@@ -31,7 +35,7 @@ type NotifierMailingListsProps = {
 
 function NotifierMailingLists({
     errors,
-    fieldIdPrefix,
+    fieldIdPrefixForFormikAndPatternFly,
     hasWriteAccessForIntegration,
     isLoadingNotifiers,
     mailingLists,
@@ -105,13 +109,13 @@ function NotifierMailingLists({
                 className="pf-v5-u-mb-md"
                 isRequired
                 label="Email notifier"
-                fieldId={`${fieldIdPrefix}.notifier`}
+                fieldId={`${fieldIdPrefixForFormikAndPatternFly}.notifier`}
                 errors={errors}
             >
                 <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsFlexEnd' }}>
                     <FlexItem>
                         <SelectSingle
-                            id={`${fieldIdPrefix}.notifier`}
+                            id={`${fieldIdPrefixForFormikAndPatternFly}.notifier`}
                             isDisabled={isLoadingNotifiers}
                             toggleAriaLabel="Select a notifier"
                             value={notifierId}
@@ -137,7 +141,7 @@ function NotifierMailingLists({
             <FormLabelGroup
                 isRequired
                 label="Distribution list"
-                fieldId={`${fieldIdPrefix}.emailConfig.mailingLists`}
+                fieldId={`${fieldIdPrefixForFormikAndPatternFly}.emailConfig.mailingLists`}
                 helperText="Enter an audience, who will receive the scheduled report. Multiple email addresses can be entered with comma separators."
                 errors={errors}
             >

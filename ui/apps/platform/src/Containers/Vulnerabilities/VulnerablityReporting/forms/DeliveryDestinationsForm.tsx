@@ -105,7 +105,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                                 customBodyDefault={customBodyDefault}
                                 customSubjectDefault={customSubjectDefault}
                                 errors={formik.errors}
-                                fieldIdPrefix="deliveryDestinations"
+                                fieldIdPrefixForFormikAndPatternFly="deliveryDestinations"
                                 hasWriteAccessForIntegration={hasWriteAccessForIntegration}
                                 notifierConfigurations={formik.values.deliveryDestinations}
                                 onDeleteLastNotifierConfiguration={
