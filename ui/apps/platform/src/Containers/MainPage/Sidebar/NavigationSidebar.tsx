@@ -196,7 +196,7 @@ const navDescriptions: NavDescription[] = [
             },
             {
                 type: 'link',
-                content: 'PLACEHOLDER',
+                content: 'Workload Compliance',
                 path: complianceBasePath,
                 routeKey: 'compliance',
                 isActive: (pathname) =>
