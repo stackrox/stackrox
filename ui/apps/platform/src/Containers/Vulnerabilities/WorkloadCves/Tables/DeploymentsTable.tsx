@@ -64,6 +64,7 @@ type DeploymentsTableProps = {
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];
+    showCveDetailFields: boolean;
 };
 
 function DeploymentsTable({
@@ -71,6 +72,7 @@ function DeploymentsTable({
     getSortParams,
     isFiltered,
     filteredSeverities,
+    showCveDetailFields,
 }: DeploymentsTableProps) {
     const vulnerabilityState = useVulnerabilityState();
     return (
@@ -79,11 +81,15 @@ function DeploymentsTable({
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Deployment')}>Deployment</Th>
-                    <Th sort={getSortParams('Deployment Risk Priority')}>Risk priority</Th>
-                    <TooltipTh tooltip="CVEs by severity across this deployment">
-                        CVEs by severity
-                        {isFiltered && <DynamicColumnIcon />}
-                    </TooltipTh>
+                    {showCveDetailFields && (
+                        <Th sort={getSortParams('Deployment Risk Priority')}>Risk priority</Th>
+                    )}
+                    {showCveDetailFields && (
+                        <TooltipTh tooltip="CVEs by severity across this deployment">
+                            CVEs by severity
+                            {isFiltered && <DynamicColumnIcon />}
+                        </TooltipTh>
+                    )}
                     <Th sort={getSortParams('Cluster')}>Cluster</Th>
                     <Th sort={getSortParams('Namespace')}>Namespace</Th>
                     <Th>
@@ -128,22 +134,26 @@ function DeploymentsTable({
                                         <Truncate position="middle" content={name} />
                                     </Link>
                                 </Td>
-                                <Td
-                                    dataLabel="Risk priority"
-                                    className="pf-v5-u-pr-2xl pf-v5-u-text-align-center-on-md"
-                                >
-                                    {priority}
-                                </Td>
-                                <Td>
-                                    <SeverityCountLabels
-                                        criticalCount={criticalCount}
-                                        importantCount={importantCount}
-                                        moderateCount={moderateCount}
-                                        lowCount={lowCount}
-                                        entity="deployment"
-                                        filteredSeverities={filteredSeverities}
-                                    />
-                                </Td>
+                                {showCveDetailFields && (
+                                    <Td
+                                        dataLabel="Risk priority"
+                                        className="pf-v5-u-pr-2xl pf-v5-u-text-align-center-on-md"
+                                    >
+                                        {priority}
+                                    </Td>
+                                )}
+                                {showCveDetailFields && (
+                                    <Td>
+                                        <SeverityCountLabels
+                                            criticalCount={criticalCount}
+                                            importantCount={importantCount}
+                                            moderateCount={moderateCount}
+                                            lowCount={lowCount}
+                                            entity="deployment"
+                                            filteredSeverities={filteredSeverities}
+                                        />
+                                    </Td>
+                                )}
                                 <Td>{clusterName}</Td>
                                 <Td>{namespace}</Td>
                                 <Td>
