@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/notifiers/acscsemail/message"
 	"github.com/stackrox/rox/central/notifiers/email"
 	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
@@ -17,11 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/utils"
 )
-
-type AcscsMessage struct {
-	To         []string `json:"to"`
-	RawMessage []byte   `json:"rawMessage"`
-}
 
 func newACSCSEmail(notifier *storage.Notifier, client Client, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,
 	cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*acscsEmail, error) {
@@ -108,7 +104,7 @@ func (e *acscsEmail) ReportNotify(ctx context.Context, zippedReportData *bytes.B
 }
 
 func (e *acscsEmail) send(ctx context.Context, msg *email.Message) error {
-	apiMsg := AcscsMessage{
+	apiMsg := message.AcscsEmail{
 		To: msg.To,
 		// using ContentBytes instead of Bytes here to allow prepending From and to headers by the
 		// ACSCS email service

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stackrox/rox/central/notifiers/acscsemail/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,7 +23,7 @@ func TestSendMessage(t *testing.T) {
 		return "", tokenErr
 	}
 
-	defaultMsg := AcscsMessage{
+	defaultMsg := message.AcscsEmail{
 		To:         []string{"test@test.acscs-email.test"},
 		RawMessage: []byte("test message content"),
 	}
@@ -31,7 +32,7 @@ func TestSendMessage(t *testing.T) {
 
 	tests := map[string]struct {
 		tokenFunc       func() (string, error)
-		inputMessage    AcscsMessage
+		inputMessage    message.AcscsEmail
 		expectedError   error
 		ctx             context.Context
 		response        *http.Response
