@@ -196,7 +196,7 @@ func Test_makeMessageID(t *testing.T) {
 	t.Run("Empty ID with no salt added", func(t *testing.T) {
 		id1 := tt.makeMessageID("test event", props, &telemeter.CallOptions{})
 		assert.Empty(t, id1)
-		id1 = tt.makeMessageID("test event", props, nil)
+		id1 = tt.makeMessageID("test event", nil, nil)
 		assert.Empty(t, id1)
 	})
 }

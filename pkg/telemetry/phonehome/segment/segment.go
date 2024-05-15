@@ -122,9 +122,14 @@ func (t *segmentTelemeter) makeMessageID(event string, props map[string]any, o *
 	if o == nil || len(o.MessageIDSalt) == 0 {
 		return ""
 	}
-	h, _ := hashstructure.Hash([]any{
+	h, err := hashstructure.Hash([]any{
 		props, o.Traits, event, t.getUserID(o), t.getAnonymousID(o), o.MessageIDSalt},
 		hashstructure.FormatV2, nil)
+	if err != nil {
+		log.Error("Failed to generate Segment message ID: ", err)
+		// Let Segment generate the id.
+		return ""
+	}
 	return fmt.Sprintf("%x", h)
 }
 
@@ -179,6 +184,7 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 	traits := segment.NewTraits()
 
 	identity := segment.Identify{
+		MessageId:   t.makeMessageID("identify", props, options),
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Traits:      traits,
@@ -211,6 +217,7 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 
 func (t *segmentTelemeter) group(props map[string]any, options *telemeter.CallOptions) {
 	group := segment.Group{
+		MessageId:   t.makeMessageID("group", props, options),
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Traits:      props,
