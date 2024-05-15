@@ -13,6 +13,12 @@ import { SecurityIcon, UnknownIcon } from '@patternfly/react-icons';
 import { CRITICAL_SEVERITY_COLOR } from 'constants/severityColors';
 import { ObservedCveMode, isObservedCveMode, observedCveModeValues } from '../../types';
 
+export const WITH_CVE_OPTION_TITLE = 'Image vulnerabilities';
+export const WITHOUT_CVE_OPTION_TITLE = 'Images without vulnerabilities';
+export const WITH_CVE_OPTION_DESCRIPTION = 'Images and deployments observed with CVEs';
+export const WITHOUT_CVE_OPTION_DESCRIPTION =
+    'Images and deployments observed without CVEs (results may be inaccurate due to scanner errors)';
+
 export type ObservedCveModeSelectProps = {
     observedCveMode: ObservedCveMode;
     setObservedCveMode: (value: ObservedCveMode) => void;
@@ -66,15 +72,15 @@ function ObservedCveModeSelect({
             <SelectList style={{ maxWidth: '300px' }}>
                 <SelectOption
                     value={observedCveModeValues[0]}
-                    description="Images and deployments observed with CVEs"
+                    description={WITH_CVE_OPTION_DESCRIPTION}
                 >
-                    Image vulnerabilities
+                    {WITH_CVE_OPTION_TITLE}
                 </SelectOption>
                 <SelectOption
                     value={observedCveModeValues[1]}
-                    description="Images observed without CVEs (results may be inaccurate due to scanner errors)"
+                    description={WITHOUT_CVE_OPTION_DESCRIPTION}
                 >
-                    Images without vulnerabilities
+                    {WITHOUT_CVE_OPTION_TITLE}
                 </SelectOption>
             </SelectList>
         </Select>
