@@ -29,6 +29,13 @@ function isSelectType(
     return attributeObject.inputType === 'select';
 }
 
+function ensureStringArray(value: InputFieldValue): string[] {
+    if (value === undefined || typeof value === 'number' || typeof value === 'string') {
+        return [];
+    }
+    return value;
+}
+
 function CompoundSearchFilterInputField({
     selectedEntity,
     selectedAttribute,
@@ -63,7 +70,7 @@ function CompoundSearchFilterInputField({
     }
     if (isSelectType(attributeObject)) {
         const attributeLabel = attributeObject.displayName.toLowerCase();
-        const selection = value as string[];
+        const selection = ensureStringArray(value);
         const selectOptions = attributeObject.inputProps.options;
 
         return (
@@ -81,10 +88,10 @@ function CompoundSearchFilterInputField({
                         return (
                             <SelectOption
                                 hasCheckbox
-                                value={option}
-                                isSelected={selection.includes(option)}
+                                value={option.value}
+                                isSelected={selection.includes(option.value)}
                             >
-                                {option}
+                                {option.label}
                             </SelectOption>
                         );
                     })

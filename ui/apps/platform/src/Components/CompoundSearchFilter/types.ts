@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-duplicate-type-constituents */
+import { sourceTypeLabels, sourceTypes } from 'types/image.proto';
 import { ValueOf } from 'utils/type.utils';
 
 export type SearchFilterConfig = {
@@ -17,7 +18,7 @@ export type BaseSearchFilterAttribute = {
 export interface SelectSearchFilterAttribute extends BaseSearchFilterAttribute {
     inputType: 'select';
     inputProps: {
-        options: string[];
+        options: { label: string; value: string }[];
     };
 }
 
@@ -88,8 +89,7 @@ export type ImageSearchFilterConfig = {
 
 export type ImageAttribute = keyof ImageSearchFilterConfig['attributes'];
 
-export type ImageAttributeInputType =
-    ImageSearchFilterConfig['attributes'][keyof ImageSearchFilterConfig['attributes']]['inputType'];
+export type ImageAttributeInputType = ValueOf<ImageSearchFilterConfig['attributes']>['inputType'];
 
 // Deployment search filter
 
@@ -126,8 +126,9 @@ export type DeploymentSearchFilterConfig = {
 
 export type DeploymentAttribute = keyof DeploymentSearchFilterConfig['attributes'];
 
-export type DeploymentAttributeInputType =
-    DeploymentSearchFilterConfig['attributes'][keyof DeploymentSearchFilterConfig['attributes']]['inputType'];
+export type DeploymentAttributeInputType = ValueOf<
+    DeploymentSearchFilterConfig['attributes']
+>['inputType'];
 
 // Namespace search filter
 
@@ -164,8 +165,9 @@ export type NamespaceSearchFilterConfig = {
 
 export type NamespaceAttribute = keyof NamespaceSearchFilterConfig['attributes'];
 
-export type NamespaceAttributeInputType =
-    NamespaceSearchFilterConfig['attributes'][keyof NamespaceSearchFilterConfig['attributes']]['inputType'];
+export type NamespaceAttributeInputType = ValueOf<
+    NamespaceSearchFilterConfig['attributes']
+>['inputType'];
 
 // Cluster search filter
 
@@ -202,8 +204,9 @@ export type ClusterSearchFilterConfig = {
 
 export type ClusterAttribute = keyof ClusterSearchFilterConfig['attributes'];
 
-export type ClusterAttributeInputType =
-    ClusterSearchFilterConfig['attributes'][keyof ClusterSearchFilterConfig['attributes']]['inputType'];
+export type ClusterAttributeInputType = ValueOf<
+    ClusterSearchFilterConfig['attributes']
+>['inputType'];
 
 // Node search filter
 
@@ -264,8 +267,7 @@ export type NodeSearchFilterConfig = {
 
 export type NodeAttribute = keyof NodeSearchFilterConfig['attributes'];
 
-export type NodeAttributeInputType =
-    NodeSearchFilterConfig['attributes'][keyof NodeSearchFilterConfig['attributes']]['inputType'];
+export type NodeAttributeInputType = ValueOf<NodeSearchFilterConfig['attributes']>['inputType'];
 
 // Image CVE search filter
 
@@ -297,7 +299,7 @@ export const imageCVESearchFilterConfig = {
             searchTerm: 'CVE Type',
             inputType: 'select',
             inputProps: {
-                options: [],
+                options: [{ label: 'Image CVE', value: 'IMAGE_CVE' }],
             },
         },
     },
@@ -311,8 +313,9 @@ export type ImageCVESearchFilterConfig = {
 
 export type ImageCVEAttribute = keyof ImageCVESearchFilterConfig['attributes'];
 
-export type ImageCVEAttributeInputType =
-    ImageCVESearchFilterConfig['attributes'][keyof ImageCVESearchFilterConfig['attributes']]['inputType'];
+export type ImageCVEAttributeInputType = ValueOf<
+    ImageCVESearchFilterConfig['attributes']
+>['inputType'];
 
 // Node CVE search filter
 
@@ -345,7 +348,10 @@ export const nodeCVESearchFilterConfig = {
             searchTerm: 'CVE Snoozed',
             inputType: 'select',
             inputProps: {
-                options: ['True', 'False'],
+                options: [
+                    { label: 'True', value: 'True' },
+                    { label: 'False', value: 'False' },
+                ],
             },
         },
     },
@@ -359,8 +365,9 @@ export type NodeCVESearchFilterConfig = {
 
 export type NodeCVEAttribute = keyof NodeCVESearchFilterConfig['attributes'];
 
-export type NodeCVEAttributeInputType =
-    NodeCVESearchFilterConfig['attributes'][keyof NodeCVESearchFilterConfig['attributes']]['inputType'];
+export type NodeCVEAttributeInputType = ValueOf<
+    NodeCVESearchFilterConfig['attributes']
+>['inputType'];
 
 // Platform CVE search filter
 
@@ -392,7 +399,10 @@ export const platformCVESearchFilterConfig = {
             searchTerm: 'CVE Snoozed',
             inputType: 'select',
             inputProps: {
-                options: ['True', 'False'],
+                options: [
+                    { label: 'True', value: 'True' },
+                    { label: 'False', value: 'False' },
+                ],
             },
         },
         Type: {
@@ -401,8 +411,11 @@ export const platformCVESearchFilterConfig = {
             searchTerm: 'CVE Type',
             inputType: 'select',
             inputProps: {
-                // @TODO: Need to add the possible options for this
-                options: [],
+                options: [
+                    { label: 'K8s CVE', value: 'K8S_CVE' },
+                    { label: 'Istio CVE', value: 'ISTIO_CVE' },
+                    { label: 'Openshift CVE', value: 'OPENSHIFT_CVE' },
+                ],
             },
         },
     },
@@ -416,8 +429,9 @@ export type PlatformCVESearchFilterConfig = {
 
 export type PlatformCVEAttribute = keyof PlatformCVESearchFilterConfig['attributes'];
 
-export type PlatformCVEAttributeInputType =
-    PlatformCVESearchFilterConfig['attributes'][keyof PlatformCVESearchFilterConfig['attributes']]['inputType'];
+export type PlatformCVEAttributeInputType = ValueOf<
+    PlatformCVESearchFilterConfig['attributes']
+>['inputType'];
 
 // Image Component search filter
 
@@ -437,8 +451,9 @@ export const imageComponentSearchFilterConfig = {
             searchTerm: 'Component Source',
             inputType: 'select',
             inputProps: {
-                // @TODO: Need to add the possible options for this
-                options: [],
+                options: sourceTypes.map((sourceType) => {
+                    return { label: sourceTypeLabels[sourceType], value: sourceType };
+                }),
             },
         },
         Version: {
@@ -458,8 +473,9 @@ export type ImageComponentSearchFilterConfig = {
 
 export type ImageComponentAttribute = keyof ImageComponentSearchFilterConfig['attributes'];
 
-export type ImageComponentAttributeInputType =
-    ImageComponentSearchFilterConfig['attributes'][keyof ImageComponentSearchFilterConfig['attributes']]['inputType'];
+export type ImageComponentAttributeInputType = ValueOf<
+    ImageComponentSearchFilterConfig['attributes']
+>['inputType'];
 
 // Node Component search filter
 
@@ -472,15 +488,6 @@ export const nodeComponentSearchFilterConfig = {
             filterChipLabel: 'Node Component Name',
             searchTerm: 'Component',
             inputType: 'autocomplete',
-        },
-        Source: {
-            displayName: 'Source',
-            filterChipLabel: 'Node Component Source',
-            searchTerm: 'Component Source',
-            inputType: 'select',
-            inputProps: {
-                options: ['GO', 'OS'],
-            },
         },
         Version: {
             displayName: 'Version',
@@ -499,8 +506,9 @@ export type NodeComponentSearchFilterConfig = {
 
 export type NodeComponentAttribute = keyof NodeComponentSearchFilterConfig['attributes'];
 
-export type NodeComponentAttributeInputType =
-    NodeComponentSearchFilterConfig['attributes'][keyof NodeComponentSearchFilterConfig['attributes']]['inputType'];
+export type NodeComponentAttributeInputType = ValueOf<
+    NodeComponentSearchFilterConfig['attributes']
+>['inputType'];
 
 // Compound search filter config
 

@@ -35,10 +35,11 @@ function CheckboxSelect({
         _event: React.MouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
-        if (selection.includes(value as string)) {
+        // @TODO: Consider what to do if the value is an invalid value
+        if (selection.includes(String(value))) {
             onChange(selection.filter((id) => id !== value));
         } else {
-            onChange([...selection, value as string]);
+            onChange([...selection, String(value)]);
         }
     };
 

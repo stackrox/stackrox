@@ -6,6 +6,7 @@ import CompoundSearchFilter from './CompoundSearchFilter';
 import {
     clusterSearchFilterConfig,
     deploymentSearchFilterConfig,
+    imageComponentSearchFilterConfig,
     imageSearchFilterConfig,
     nodeComponentSearchFilterConfig,
 } from '../types';
@@ -155,16 +156,16 @@ describe(Cypress.spec.relative, () => {
         cy.get('input[aria-label="Filter results by image tag"]').should('exist');
     });
 
-    it('should display the select input for the node component source search filter', () => {
+    it('should display the select input for the image component source search filter', () => {
         const config = {
             Image: imageSearchFilterConfig,
-            NodeComponent: nodeComponentSearchFilterConfig,
+            ImageComponent: imageComponentSearchFilterConfig,
         };
 
         setup(config);
 
         cy.get(selectors.entitySelectToggle).click();
-        cy.get(selectors.entitySelectItem('Node Component')).click();
+        cy.get(selectors.entitySelectItem('Image Component')).click();
 
         cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
 
