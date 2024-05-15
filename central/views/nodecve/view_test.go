@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
-	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	converterV2 "github.com/stackrox/rox/central/cve/converter/v2"
+	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
+	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
@@ -89,11 +89,11 @@ func (f *filterImpl) withCVEPartsFilter(fn func(cveParts converter.ClusterCVEPar
 	return f
 }
 
-func TestPlatformCVEView(t *testing.T) {
-	suite.Run(t, new(PlatformCVEViewTestSuite))
+func TestNodeCVEView(t *testing.T) {
+	suite.Run(t, new(NodeCVEViewTestSuite))
 }
 
-type PlatformCVEViewTestSuite struct {
+type NodeCVEViewTestSuite struct {
 	suite.Suite
 
 	testDB  *pgtest.TestPostgres
@@ -105,14 +105,13 @@ type PlatformCVEViewTestSuite struct {
 	cvePartsList       []converter.ClusterCVEParts
 }
 
-func (s *PlatformCVEViewTestSuite) SetupSuite() {
+func (s *NodeCVEViewTestSuite) SetupSuite() {
 	ctx := sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 
 	// Initialize the datastore.
-	clusterDatastore, err := clusterDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.Require().NoError(err)
-	clusterCVEDatastore, err := clusterCVEDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	nodeDatastore := nodeDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	nodeCVEDatastore, err := nodeCVEDataStore.GetTestPostgresDataStore(s.T(), s.testDB)
 	s.Require().NoError(err)
 
 	clusterNameToIDMap := make(map[string]string)
@@ -144,11 +143,11 @@ func (s *PlatformCVEViewTestSuite) SetupSuite() {
 	s.cveView = NewCVEView(s.testDB.DB)
 }
 
-func (s *PlatformCVEViewTestSuite) TearDownSuite() {
+func (s *NodeCVEViewTestSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECore() {
+func (s *NodeCVEViewTestSuite) TestGetNodeCVECore() {
 	for _, tc := range s.testCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q)
@@ -176,7 +175,7 @@ func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECore() {
 	}
 }
 
-func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECoreSAC() {
+func (s *NodeCVEViewTestSuite) TestGetNodeCVECoreSAC() {
 	for _, tc := range s.testCases() {
 		for _, sacTC := range s.sacTestCases(tc.ctx) {
 			s.T().Run(fmt.Sprintf("SAC desc: %s; test desc: %s ", sacTC.desc, tc.desc), func(t *testing.T) {
@@ -205,7 +204,7 @@ func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECoreSAC() {
 	}
 }
 
-func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECoreWithPagination() {
+func (s *NodeCVEViewTestSuite) TestGetNodeCVECoreWithPagination() {
 	for _, paginationTc := range s.paginationTestCases() {
 		for _, baseTc := range s.testCases() {
 			tc := &baseTc
@@ -237,7 +236,7 @@ func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECoreWithPagination() {
 	}
 }
 
-func (s *PlatformCVEViewTestSuite) TestCountPlatformCVECore() {
+func (s *NodeCVEViewTestSuite) TestCountNodeCVECore() {
 	for _, tc := range s.testCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			actual, err := s.cveView.Count(sac.WithAllAccess(tc.ctx), tc.q)
@@ -253,7 +252,7 @@ func (s *PlatformCVEViewTestSuite) TestCountPlatformCVECore() {
 	}
 }
 
-func (s *PlatformCVEViewTestSuite) TestCountPlatformCVECoreSAC() {
+func (s *NodeCVEViewTestSuite) TestCountNodeCVECoreSAC() {
 	for _, tc := range s.testCases() {
 		for _, sacTC := range s.sacTestCases(tc.ctx) {
 			s.T().Run(fmt.Sprintf("SAC desc: %s; test desc: %s ", sacTC.desc, tc.desc), func(t *testing.T) {
@@ -281,7 +280,7 @@ func (s *PlatformCVEViewTestSuite) TestCountPlatformCVECoreSAC() {
 	}
 }
 
-func (s *PlatformCVEViewTestSuite) testCases() []testCase {
+func (s *NodeCVEViewTestSuite) testCases() []testCase {
 	return []testCase{
 		{
 			desc:        "search all",
@@ -476,7 +475,7 @@ func (s *PlatformCVEViewTestSuite) testCases() []testCase {
 	}
 }
 
-func (s *PlatformCVEViewTestSuite) sacTestCases(ctx context.Context) []sacTestCase {
+func (s *NodeCVEViewTestSuite) sacTestCases(ctx context.Context) []sacTestCase {
 	return []sacTestCase{
 		{
 			desc: "All clusters visible",
@@ -536,7 +535,7 @@ func (s *PlatformCVEViewTestSuite) sacTestCases(ctx context.Context) []sacTestCa
 	}
 }
 
-func (s *PlatformCVEViewTestSuite) paginationTestCases() []paginationTestCase {
+func (s *NodeCVEViewTestSuite) paginationTestCases() []paginationTestCase {
 	return []paginationTestCase{
 		{
 			desc: "Offset: 0, Limit: 6, Order By: CVSS descending",
@@ -595,7 +594,7 @@ func (s *PlatformCVEViewTestSuite) paginationTestCases() []paginationTestCase {
 	}
 }
 
-func (s *PlatformCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []CveCore {
+func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []CveCore {
 	var expected []CveCore
 	for _, cveParts := range s.cvePartsList {
 		if !filter.matchCVEParts(cveParts) {
@@ -655,7 +654,7 @@ func (s *PlatformCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) [
 	return expected
 }
 
-func (s *PlatformCVEViewTestSuite) compileExpectedCVECoresWithPagination(filter *filterImpl, less lessFunc, offset, limit int) []CveCore {
+func (s *NodeCVEViewTestSuite) compileExpectedCVECoresWithPagination(filter *filterImpl, less lessFunc, offset, limit int) []CveCore {
 	expected := s.compileExpectedCVECores(filter)
 	if less != nil {
 		sort.SliceStable(expected, less(expected))
@@ -820,13 +819,13 @@ func generateTestCluster(tcf *testClusterFields) *storage.Cluster {
 	}
 }
 
-func generateTestCVE(cve string, cveType storage.CVE_CVEType, cvss float32) *storage.ClusterCVE {
-	return &storage.ClusterCVE{
-		Id: pkgCVE.ID(cve, cveType.String()),
+func generateTestCVE(cve string, os string, cvss float32) *storage.NodeCVE {
+	return &storage.NodeCVE{
+		Id: pkgCVE.ID(cve, os),
 		CveBaseInfo: &storage.CVEInfo{
 			Cve: cve,
 		},
-		Type: cveType,
-		Cvss: cvss,
+		Cvss:            cvss,
+		OperatingSystem: os,
 	}
 }
