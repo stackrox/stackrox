@@ -41,6 +41,55 @@ tests:
     env.openshift: 4
   tests: *enabled-test
 
+- name: "When enabled with Scanner V4"
+  set:
+    monitoring.openshift.enabled: true
+    env.openshift: 4
+    scannerV4:
+      disable: false
+  tests:
+    - name: "resources are created for prometheus-operator"
+      expect: |
+        .roles["secured-cluster-prometheus-k8s"] | assertThat(. != null)
+        .rolebindings["secured-cluster-prometheus-k8s"] | assertThat(. != null)
+        .rolebindings["rhacs-sensor-auth-reader-stackrox"] | assertThat(. != null)
+        .servicemonitors["sensor-monitor-stackrox"] | [
+            assertThat(.metadata.namespace == "openshift-monitoring"),
+            assertThat(.spec.endpoints[].port == "monitoring-tls")
+          ]
+        .rolebindings["rhacs-scanner-v4-auth-reader-stackrox"] | assertThat(. != null)
+        .servicemonitors["scanner-v4-monitor-stackrox"] | [
+            assertThat(.metadata.namespace == "openshift-monitoring"),
+            assertThat(.spec.endpoints[].port == "indexer-monitoring-tls")
+          ]
+
+    - name: "secure metrics endpoint is enabled"
+      expect: |
+        .deployments.sensor.spec.template.spec.containers[0].env[] |
+          select(.name == "ROX_ENABLE_SECURE_METRICS") | assertThat(.value == "true")
+        .deployments.sensor.spec.template.spec.containers[0].ports[] |
+          select(.name == "monitoring-tls") | assertThat(.containerPort == 9091)
+        .deployments.sensor.spec.template.spec.containers[0].volumeMounts[] |
+          select(.name == "monitoring-tls") | assertThat(.mountPath == "/run/secrets/stackrox.io/monitoring-tls")
+        .services.sensor.spec.ports[] | select(.name == "monitoring-tls") | [
+            assertThat(.targetPort == "monitoring-tls"),
+            assertThat(.port == 9091)
+          ]
+        .networkpolicys["sensor-monitoring-tls"] | assertThat(. != null)
+        .deployments["scanner-v4-indexer"].spec.template.spec.containers[0].env[] |
+          select(.name == "ROX_ENABLE_SECURE_METRICS") | assertThat(.value == "true")
+        .deployments["scanner-v4-indexer"].spec.template.spec.containers[0].env[] |
+          select(.name == "ROX_SECURE_METRICS_PORT") | assertThat(.value == ":9091")
+        .deployments["scanner-v4-indexer"].spec.template.spec.containers[0].ports[] |
+          select(.name == "monitoring-tls") | assertThat(.containerPort == 9091)
+        .deployments["scanner-v4-indexer"].spec.template.spec.containers[0].volumeMounts[] |
+          select(.name == "monitoring-tls") | assertThat(.mountPath == "/run/secrets/stackrox.io/monitoring-tls")
+        .services["scanner-v4-indexer"].spec.ports[] | select(.name == "indexer-monitoring-tls") | [
+            assertThat(.targetPort == "monitoring-tls"),
+            assertThat(.port == 9091)
+          ]
+        .networkpolicys["scanner-v4-indexer-monitoring-tls"] | assertThat(. != null)
+
 - name: "When enabled via default value"
   set:
     env.openshift: 4
