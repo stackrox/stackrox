@@ -28,7 +28,7 @@ message Image {
     int32 components = 7; // @gotags: search:"Component Count,store,hidden"
   }
   oneof set_cves {
-    int32 cves = 8; // @gotags: search:"CVE Count,store,hidden"
+    int32 cves = 8; // @gotags: search:"Image CVE Count,store,hidden"
   }
   oneof set_fixable {
     int32 fixable_cves = 9; // @gotags: search:"Fixable CVE Count,store,hidden"

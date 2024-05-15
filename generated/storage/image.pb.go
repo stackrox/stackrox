@@ -279,7 +279,7 @@ type Image_Components struct {
 	Components int32 `protobuf:"varint,7,opt,name=components,proto3,oneof" json:"components,omitempty" search:"Component Count,store,hidden"` // @gotags: search:"Component Count,store,hidden"
 }
 type Image_Cves struct {
-	Cves int32 `protobuf:"varint,8,opt,name=cves,proto3,oneof" json:"cves,omitempty" search:"CVE Count,store,hidden"` // @gotags: search:"CVE Count,store,hidden"
+	Cves int32 `protobuf:"varint,8,opt,name=cves,proto3,oneof" json:"cves,omitempty" search:"Image CVE Count,store,hidden"` // @gotags: search:"Image CVE Count,store,hidden"
 }
 type Image_FixableCves struct {
 	FixableCves int32 `protobuf:"varint,9,opt,name=fixable_cves,json=fixableCves,proto3,oneof" json:"fixable_cves,omitempty" search:"Fixable CVE Count,store,hidden"` // @gotags: search:"Fixable CVE Count,store,hidden"
