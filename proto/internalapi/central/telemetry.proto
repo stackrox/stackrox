@@ -3,7 +3,6 @@ syntax = "proto3";
 package central;
 
 import "google/protobuf/timestamp.proto";
-import "internalapi/central/compliance_operator.proto";
 
 option go_package = "./internalapi/central;central";
 
@@ -24,7 +23,6 @@ message PullTelemetryDataRequest {
   TelemetryDataType data_type = 2;
   int64 timeout_ms = 3;
   google.protobuf.Timestamp since = 4;
-  ComplianceOperatorInfo compliance_operator_info = 5;
 }
 
 message TelemetryResponsePayload {

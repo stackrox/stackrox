@@ -114,6 +114,7 @@ func (m *CancelPullTelemetryDataRequest) Clone() *CancelPullTelemetryDataRequest
 	return cloned
 }
 
+// PullTelemetryDataRequest requests telemetry at Sensor
 type PullTelemetryDataRequest struct {
 	RequestId            string                                     `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	DataType             PullTelemetryDataRequest_TelemetryDataType `protobuf:"varint,2,opt,name=data_type,json=dataType,proto3,enum=central.PullTelemetryDataRequest_TelemetryDataType" json:"data_type,omitempty"`
