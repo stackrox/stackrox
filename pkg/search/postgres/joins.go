@@ -5,7 +5,9 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -138,9 +140,29 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string
 	reachableFields := make(map[string]searchFieldMetadata)
 	queue := []bfsQueueElem{{schema: src}}
 	visited := set.NewStringSet()
+
+	imageCveEdgesSchemaInQueue := false
+	if src == schema.ImageCveEdgesSchema {
+		imageCveEdgesSchemaInQueue = true
+	}
+
 	for len(queue) > 0 && len(unreachedFields) > 0 {
 		currElem := queue[0]
 		queue = queue[1:]
+
+		// Step 1: Avoid using ImageCveEdgesSchema unless there is no other way to get to the required fields.
+		// If ImageCveEdgesSchema is root schema, then it is unavoidable.
+		if currElem.schema == schema.ImageCveEdgesSchema && currElem.schema != src {
+			imageCveEdgesSchemaInQueue = true
+			// If there are more schemas to expand in queue, expand them first. Hopefully we will find all required fields
+			//   without having to use ImageCveEdgesSchema.
+			// But if there are no more schemas to expand, and we still have unreachable fields,
+			//   then they must be fields of ImageCveEdgesSchema. In that case ImageCveEdgesSchema is unavoidable.
+			if len(queue) > 0 {
+				queue = append(queue, currElem)
+				continue
+			}
+		}
 		if !visited.Add(currElem.schema.Table) {
 			continue
 		}
@@ -180,6 +202,13 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string
 					continue allRelationshipsLoop
 				}
 			}
+
+			// We want to make sure ImageCveEdgesSchema gets added only once to queue. If there are multiple copies of
+			// ImageCveEdgesSchema in the queue, then we can enter an infinite loop trying to push one copy after another
+			// to the end of queue.
+			if rel.OtherSchema == schema.ImageCveEdgesSchema && imageCveEdgesSchemaInQueue {
+				continue
+			}
 			newElem := bfsQueueElem{
 				schema: rel.OtherSchema,
 			}
@@ -200,6 +229,11 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string
 	joinTreeRoot.removeUnnecessaryRelations(reachableFields)
 
 	return joinTreeRoot.toInnerJoins(), reachableFields
+}
+
+func containsImageCveEdgeSchemaFields(fields set.StringSet) bool {
+	return fields.Contains(strings.ToLower(search.VulnerabilityState.String())) ||
+		fields.Contains(strings.ToLower(search.FirstImageOccurrenceTimestamp.String()))
 }
 
 // removeUnnecessaryRelations removes inner join tables where the same column

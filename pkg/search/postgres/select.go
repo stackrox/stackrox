@@ -66,6 +66,11 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 		return nil, nil
 	}
 
+	innerJoins, err = handleImageCveEdgesTableInJoins(schema, innerJoins)
+	if err != nil {
+		return nil, err
+	}
+
 	parsedQuery := &query{
 		Schema:     schema,
 		QueryType:  queryType,
