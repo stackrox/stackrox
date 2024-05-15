@@ -33,7 +33,7 @@ if [[ -n "${KUBECONFIG}" ]]; then
   elif command -v md5 &> /dev/null; then
     cache="/tmp/$(md5 -q ${KUBECONFIG})"
   else
-    echo "No md5 or md5sum found"
+    echo "Programs md5 or md5sum were not found. Exiting."
     exit 1
   fi
 fi
