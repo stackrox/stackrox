@@ -101,7 +101,6 @@ func generateFileName(obj k8sutil.Object, suffix string) string {
 	}
 
 	fileName := fmt.Sprintf("%s/%s/%s-%s%s", namespace, groupDirectory, strings.ToLower(obj.GetObjectKind().GroupVersionKind().Kind), obj.GetName(), suffix)
-	log.Warningf("Generated file name: %s", fileName)
 	return fileName
 }
 
