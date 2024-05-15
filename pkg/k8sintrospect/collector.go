@@ -146,8 +146,6 @@ func (c *collector) createDynamicClients() map[schema.GroupVersionKind]dynamic.N
 				Version: gv.Version,
 				Kind:    apiResource.Kind,
 			}
-			log.Warningf("GVK DYNAMIC CLIENT: %+v", gvk)
-
 			if _, ok := gvkSet[gvk]; !ok {
 				continue
 			}
