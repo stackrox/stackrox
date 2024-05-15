@@ -94,6 +94,7 @@ var (
 	ClusterCVEFixedBy              = newFieldLabel("Cluster CVE Fixed By")
 	ClusterCVEFixable              = newFieldLabel("Cluster CVE Fixable")
 	FixableCVECount                = newFieldLabel("Fixable CVE Count")
+	ImageCVECount                  = newFieldLabel("Image CVE Count")
 	LastUpdatedTime                = newFieldLabel("Last Updated")
 	ImageTopCVSS                   = newFieldLabel("Image Top CVSS")
 	NodeTopCVSS                    = newFieldLabel("Node Top CVSS")
