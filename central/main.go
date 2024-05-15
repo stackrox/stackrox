@@ -49,7 +49,6 @@ import (
 	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	complianceOperatorIntegrationService "github.com/stackrox/rox/central/complianceoperator/v2/integration/service"
 	v2ComplianceProfiles "github.com/stackrox/rox/central/complianceoperator/v2/profiles/service"
-	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	v2ComplianceRules "github.com/stackrox/rox/central/complianceoperator/v2/rules/service"
 	complianceScanSettings "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
@@ -933,11 +932,6 @@ func waitForTerminationSignal() {
 	} else {
 		stoppables = append(stoppables,
 			stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"})
-	}
-
-	if features.ComplianceReporting.Enabled() {
-		stoppables = append(stoppables,
-			stoppableWithName{complianceReportManager.Singleton(), "compliance reports manager"})
 	}
 
 	if features.AdministrationEvents.Enabled() {
