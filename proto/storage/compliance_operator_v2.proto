@@ -142,7 +142,7 @@ message ComplianceOperatorBenchmarkV2 {
   string version = 3;
   string description = 4;
   // Example: https://control.compliance.openshift.io/CIS-OCP
-  string profile_annotation = 5;
+  repeated string profile_annotation = 5;
   string provider = 6;
 }
 
