@@ -115,4 +115,7 @@ var (
 
 	// VulnMgmtAdvancedFilters enables support for advanced filters for VM 2.0 GA
 	VulnMgmtAdvancedFilters = registerFeature("Enables support for advanced filters for VM 2.0 GA", "ROX_VULN_MGMT_ADVANCED_FILTERS", false)
+
+	// ClassicCompliance spike to see about hiding CO from classic compliance
+	ClassicCompliance = registerFeature("Enables showing CO in classic compliance", "ROX_CLASSIC_COMPLIANCE", false)
 )
