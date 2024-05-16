@@ -89,7 +89,7 @@ function ReportParametersDetails({ formValues }: ReportParametersDetailsProps): 
                         </DescriptionListDescription>
                     </DescriptionListGroup>
                     <DescriptionListGroup>
-                        <DescriptionListTerm>Report scope</DescriptionListTerm>
+                        <DescriptionListTerm>Collection included</DescriptionListTerm>
                         <DescriptionListDescription>
                             {formValues.reportParameters.reportScope?.name || 'None'}
                         </DescriptionListDescription>
