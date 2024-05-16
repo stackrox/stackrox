@@ -15,12 +15,16 @@ import {
     Title,
 } from '@patternfly/react-core';
 
+import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { ComplianceIntegration } from 'services/ComplianceIntegrationService';
 import { ComplianceProfileSummary } from 'services/ComplianceProfileService';
 
 import {
     convertFormikParametersToSchedule,
+    customBodyDefault,
     formatScanSchedule,
+    getSubjectDefault,
     ScanConfigFormValues,
 } from '../compliance.scanConfigs.utils';
 
@@ -32,6 +36,8 @@ export type ProfileSelectionProps = {
 
 function ReviewConfig({ clusters, profiles, errorMessage }: ProfileSelectionProps) {
     const { values: formikValues }: FormikContextType<ScanConfigFormValues> = useFormikContext();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
 
     const scanSchedule = convertFormikParametersToSchedule(formikValues.parameters);
     const formattedScanSchedule = formatScanSchedule(scanSchedule);
@@ -98,6 +104,16 @@ function ReviewConfig({ clusters, profiles, errorMessage }: ProfileSelectionProp
                         ))}
                     </TextList>
                 </StackItem>
+                {isComplianceReportingEnabled && (
+                    <StackItem>
+                        <Title headingLevel="h3">Report configuration</Title>
+                        <NotifierConfigurationView
+                            customBodyDefault={customBodyDefault}
+                            customSubjectDefault={getSubjectDefault(formikValues.parameters.name)}
+                            notifierConfigurations={formikValues.report.notifierConfigurations}
+                        />
+                    </StackItem>
+                )}
             </Stack>
         </>
     );
