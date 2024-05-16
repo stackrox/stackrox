@@ -1,11 +1,11 @@
 import { useCallback } from 'react';
-import useURLParameter from './useURLParameter';
+import useURLParameter, { Action } from './useURLParameter';
 
 export type UseURLPaginationResult = {
     page: number;
     perPage: number;
-    setPage: (page: number) => void;
-    setPerPage: (perPage: number) => void;
+    setPage: (page: number, historyAction?: Action | undefined) => void;
+    setPerPage: (perPage: number, historyAction?: Action | undefined) => void;
 };
 
 function safeNumber(val: unknown, defaultVal: number) {
@@ -18,13 +18,17 @@ function useURLPagination(defaultPerPage: number): UseURLPaginationResult {
     const [page, setPageString] = useURLParameter('page', '1');
     const [perPage, setPerPageString] = useURLParameter('perPage', `${defaultPerPage}`);
     const setPage = useCallback(
-        (num: number) => setPageString(num > 1 ? String(num) : undefined),
+        (num: number, historyAction?: Action | undefined) =>
+            setPageString(num > 1 ? String(num) : undefined, historyAction),
         [setPageString]
     );
     const setPerPage = useCallback(
-        (num: number) => {
-            setPageString('1');
-            setPerPageString(num !== defaultPerPage ? String(num) : undefined);
+        (num: number, historyAction?: Action | undefined) => {
+            // If the history action is 'replace', we replace both the perPage and page in-place.
+            // If the history action is 'push', we push a new perPage and replace the page in
+            // order to keep a single record on the history stack.
+            setPerPageString(num !== defaultPerPage ? String(num) : undefined, historyAction);
+            setPageString('1', 'replace');
         },
         [setPageString, setPerPageString, defaultPerPage]
     );
