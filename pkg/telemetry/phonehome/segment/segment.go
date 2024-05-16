@@ -6,6 +6,7 @@ import (
 
 	"github.com/mitchellh/hashstructure/v2"
 	segment "github.com/segmentio/analytics-go/v3"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
@@ -14,6 +15,9 @@ import (
 var (
 	log                     = logging.LoggerForModule()
 	_   telemeter.Telemeter = (*segmentTelemeter)(nil)
+	// expiringIDCache stores the computed message IDs to drop duplicates if
+	// requested.
+	expiringIDCache = expiringcache.NewExpiringCache(24 * time.Hour)
 )
 
 type segmentTelemeter struct {
@@ -133,6 +137,18 @@ func (t *segmentTelemeter) makeMessageID(event string, props map[string]any, o *
 	return fmt.Sprintf("%s-%x", o.MessageIDPrefix, h)
 }
 
+// isDuplicate returns whether the ID exists in the cache. Adds it if not found.
+func isDuplicate(id string) bool {
+	if id == "" {
+		return false
+	}
+	if expiringIDCache.Get(id) == nil {
+		expiringIDCache.Add(id, true)
+		return false
+	}
+	return true
+}
+
 func (t *segmentTelemeter) makeContext(o *telemeter.CallOptions) *segment.Context {
 	var ctx *segment.Context
 
@@ -181,10 +197,15 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 
 	options := telemeter.ApplyOptions(opts)
 
+	id := t.makeMessageID("identify", props, options)
+	if options.DropDuplicates && isDuplicate(id) {
+		return
+	}
+
 	traits := segment.NewTraits()
 
 	identity := segment.Identify{
-		MessageId:   t.makeMessageID("identify", props, options),
+		MessageId:   id,
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Traits:      traits,
@@ -204,7 +225,11 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 		return
 	}
 	options := telemeter.ApplyOptions(opts)
-	t.group(props, options)
+	id := t.makeMessageID("group", props, options)
+	if options.DropDuplicates && isDuplicate(id) {
+		return
+	}
+	t.group(id, props, options)
 
 	if len(props) != 0 {
 		go func() {
@@ -215,9 +240,9 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 	}
 }
 
-func (t *segmentTelemeter) group(props map[string]any, options *telemeter.CallOptions) {
+func (t *segmentTelemeter) group(id string, props map[string]any, options *telemeter.CallOptions) {
 	group := segment.Group{
-		MessageId:   t.makeMessageID("group", props, options),
+		MessageId:   id,
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Traits:      props,
@@ -273,8 +298,13 @@ func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...tel
 
 	options := telemeter.ApplyOptions(opts)
 
+	id := t.makeMessageID(event, props, options)
+	if options.DropDuplicates && isDuplicate(id) {
+		return
+	}
+
 	track := segment.Track{
-		MessageId:   t.makeMessageID(event, props, options),
+		MessageId:   id,
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Event:       event,

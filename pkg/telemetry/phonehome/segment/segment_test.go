@@ -8,6 +8,7 @@ import (
 	"time"
 
 	segment "github.com/segmentio/analytics-go/v3"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -133,7 +134,7 @@ func Test_GroupWithProps(t *testing.T) {
 	options := telemeter.ApplyOptions(
 		[]telemeter.Option{telemeter.WithGroups("Test", "test-group-id")},
 	)
-	tt.group(map[string]any{"key": "value"}, options)
+	tt.group("id", map[string]any{"key": "value"}, options)
 	tt.groupFix(options, ti)
 	tt.Stop()
 	s.Close()
@@ -198,5 +199,77 @@ func Test_makeMessageID(t *testing.T) {
 		assert.Empty(t, id1)
 		id1 = tt.makeMessageID("test event", nil, nil)
 		assert.Empty(t, id1)
+	})
+}
+
+type testClock struct {
+	t time.Time
+}
+
+func (tc *testClock) Now() time.Time {
+	return tc.t
+}
+
+func (tc *testClock) add(d time.Duration) {
+	tc.t = tc.t.Add(d)
+}
+
+func Test_isDuplicate(t *testing.T) {
+	var tc testClock = testClock{time.Now()}
+
+	// Override the global cache with custom clock for testing purposes:
+	expiringIDCache = expiringcache.NewExpiringCacheWithClock(&tc, 1*time.Hour)
+
+	assert.False(t, isDuplicate("id1"))
+	assert.False(t, isDuplicate("id2"))
+	assert.True(t, isDuplicate("id1"))
+	assert.True(t, isDuplicate("id2"))
+
+	tc.add(1 * time.Hour)
+	tc.add(1 * time.Second)
+	assert.False(t, isDuplicate("id1"))
+	assert.False(t, isDuplicate("id2"))
+}
+
+func TestTrackWithNoDuplicates(t *testing.T) {
+	var tc testClock = testClock{time.Now()}
+
+	// Override the global cache with custom clock for testing purposes:
+	expiringIDCache = expiringcache.NewExpiringCacheWithClock(&tc, 1*time.Hour)
+
+	var i int32
+
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&i, 1)
+	}))
+	defer s.Close()
+
+	today := tc.t.Format(time.DateOnly)
+
+	t.Run("only one message", func(t *testing.T) {
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+		for i := 0; i < 5; i++ {
+			tt.Track("test event", nil, telemeter.WithNoDuplicates(today))
+		}
+		tt.Stop()
+		assert.Equal(t, int32(1), i, "Track call had to issue 1 message")
+	})
+	t.Run("one message after cache expiry", func(t *testing.T) {
+		tc.add(time.Hour)
+		tc.add(time.Second)
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+		for i := 0; i < 5; i++ {
+			tt.Track("test event", nil, telemeter.WithNoDuplicates(today))
+		}
+		tt.Stop()
+		assert.Equal(t, int32(2), i, "Track call had to issue 2 messages")
+	})
+	t.Run("different salt", func(t *testing.T) {
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+		for i := 0; i < 5; i++ {
+			tt.Track("test event", nil, telemeter.WithNoDuplicates("aujourdhui"))
+		}
+		tt.Stop()
+		assert.Equal(t, int32(3), i, "Track call had to issue 3 messages")
 	})
 }

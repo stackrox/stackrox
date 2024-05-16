@@ -7,6 +7,7 @@ type CallOptions struct {
 	ClientID        string
 	ClientType      string
 	MessageIDPrefix string
+	DropDuplicates  bool
 
 	// [group type: [group id]]
 	Groups map[string][]string
@@ -67,6 +68,18 @@ func WithTraits(traits map[string]any) Option {
 func WithMessageIDPrefix(prefix string) Option {
 	return func(o *CallOptions) {
 		o.MessageIDPrefix = prefix
+	}
+}
+
+// WithNoDuplicates enables the use of the expiring cache to check for
+// previously sent messages.
+// The message ID is cached since the first use of WithNoDuplicates, meaning if
+// some message was sent without this option, it won't be considered in the
+// consequent call with the option.
+func WithNoDuplicates(prefix string) Option {
+	return func(o *CallOptions) {
+		o.MessageIDPrefix = prefix
+		o.DropDuplicates = true
 	}
 }
 
