@@ -41,10 +41,15 @@ const (
 	definitionsBaseDir = "scannerdefinitions"
 
 	// scannerDefsSubZipName represents the offline zip bundle for CVEs for Scanner.
-	scannerDefsSubZipName   = "scanner-defs.zip"
+	scannerDefsSubZipName  = "scanner-defs.zip"
+	scannerUpdateURLSuffix = "diff.zip"
+
 	scannerV4DefsSubZipName = "scanner-v4-defs.zip"
 	// scannerV4DefsPrefix helps to search the v4 offline zip bundle for CVEs
-	scannerV4DefsPrefix = "scanner-v4-defs"
+	scannerV4DefsPrefix    = "scanner-v4-defs"
+	scannerV4VulnSubDir    = "v4/vulnerability-bundles"
+	scannerV4MappingSubDir = "v4/redhat-repository-mappings"
+	scannerV4MappingFile   = "mapping.zip"
 
 	// offlineScannerDefinitionBlobName represents the blob name of offline/fallback zip bundle for CVEs for Scanner.
 	offlineScannerDefinitionBlobName = "/offline/scanner/" + scannerDefsSubZipName
@@ -52,17 +57,8 @@ const (
 	// offlineScannerV4DefinitionBlobName represents the blob name of offline/fallback zip bundle for CVEs for Scanner V4.
 	offlineScannerV4DefinitionBlobName = "/offline/scanner/v4/" + scannerV4DefsSubZipName
 
-	scannerUpdateDomain    = "https://definitions.stackrox.io"
-	scannerUpdateURLSuffix = "diff.zip"
-
 	defaultCleanupInterval = 4 * time.Hour
 	defaultCleanupAge      = 1 * time.Hour
-
-	v4VulnSubDir      = "v4/vulnerability-bundles"
-	v4MappingSubDir   = "v4/redhat-repository-mappings"
-	mappingFile       = "mapping.zip"
-	v4VulnFile        = "vulns.json.zst"
-	mappingUpdaterKey = "mapping"
 )
 
 //go:generate stringer -type=updaterType
@@ -75,6 +71,8 @@ const (
 )
 
 var (
+	scannerUpdateBaseURL *url.URL
+
 	client = &http.Client{
 		Transport: proxy.RoundTripper(),
 		Timeout:   5 * time.Minute,
@@ -106,6 +104,14 @@ type httpHandler struct {
 	updaters      map[string]*requestedUpdater
 	onlineVulnDir string
 	blobStore     blob.Datastore
+}
+
+func init() {
+	var err error
+	scannerUpdateBaseURL, err = url.Parse("https://definitions.stackrox.io")
+	if err != nil {
+		panic(err)
+	}
 }
 
 // New creates a new http.Handler to handle vulnerability data.
@@ -222,34 +228,38 @@ func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime t
 	http.ServeContent(w, r, name, modTime, content)
 }
 
-// getUpdater gets or creates the updater for the scanner definitions
-// identified by the given key/uuid.
-// If the updater is created here, it is no started here, as it is a blocking operation.
-func (h *httpHandler) getUpdater(t updaterType, key string) *requestedUpdater {
+// getUpdater gets or creates an updater for the scanner definitions identified
+// by the given updater type and a URL path to the definitions file. If the
+// updater was created, it is no started here, callers are expected to start it.
+func (h *httpHandler) getUpdater(t updaterType, urlPath string) *requestedUpdater {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
-	updater, exists := h.updaters[key]
+	fileName := strings.ReplaceAll(filepath.Join(t.String(), urlPath), "/", "-")
+	updater, exists := h.updaters[fileName]
 	if !exists {
-		filePath := filepath.Join(h.onlineVulnDir, key)
-
-		var urlStr string
+		var updateURL *url.URL
+		var ext string
 		switch t {
 		case mappingUpdaterType:
-			urlStr, _ = url.JoinPath(scannerUpdateDomain, v4MappingSubDir, mappingFile)
-			filePath += ".zip"
+			updateURL = scannerUpdateBaseURL.JoinPath(scannerV4MappingSubDir, scannerV4MappingFile)
+			ext = ".zip"
 		case vulnerabilityUpdaterType:
-			urlStr, _ = url.JoinPath(scannerUpdateDomain, v4VulnSubDir, key, v4VulnFile)
-			filePath += ".json.zst"
+			updateURL = scannerUpdateBaseURL.JoinPath(scannerV4VulnSubDir, urlPath)
+			ext = ".json.zst"
 		default: // uuid
-			urlStr, _ = url.JoinPath(scannerUpdateDomain, key, scannerUpdateURLSuffix)
-			filePath += ".zip"
+			updateURL = scannerUpdateBaseURL.JoinPath(urlPath, scannerUpdateURLSuffix)
+			ext = ".zip"
 		}
-
-		h.updaters[key] = &requestedUpdater{
-			updater: newUpdater(file.New(filePath), client, urlStr, h.interval),
+		filePath := filepath.Join(h.onlineVulnDir, fileName)
+		// Use a default extension if the URL path does not contain one.
+		if filepath.Ext(fileName) == "" {
+			filePath += ext
 		}
-		updater = h.updaters[key]
+		updater = &requestedUpdater{
+			updater: newUpdater(file.New(filePath), client, updateURL.String(), h.interval),
+		}
+		h.updaters[fileName] = updater
 	}
 
 	updater.lastRequestedTime = time.Now()
@@ -445,10 +455,23 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 	return
 }
 
-func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, updaterKey, fileName string) (*vulDefFile, error) {
-	log.Debugf("Fetching scanner V4 (online: %t): file %q: updater key %q", h.online, t, updaterKey)
+// v4OpenOpts are options to open most recent V4 definition files.
+type v4OpenOpts struct {
+	// urlPath specifies the update URL path when setting up online updaters.
+	urlPath string
+	// mappingFile specifies the mapping file to open for mappings updaters.
+	mappingFile string
+	// vulnVersion specifies the version of the vulnerability bundle for
+	// vulnerability updaters.
+	vulnVersion string
+	// vulnBundle specifies the vulnerability bundle name for vulnerability updaters.
+	vulnBundle string
+}
 
-	file, err := h.openMostRecentV4OfflineFile(ctx, t, updaterKey, fileName)
+func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, opts v4OpenOpts) (*vulDefFile, error) {
+	log.Debugf("Fetching scanner V4 (online: %t): type %s: options: %#v", h.online, t, opts)
+
+	file, err := h.openMostRecentV4OfflineFile(ctx, t, opts)
 	if !h.online {
 		return file, err
 	}
@@ -465,7 +488,7 @@ func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, u
 		}
 	}()
 
-	file, err = h.openMostRecentV4OnlineFile(ctx, t, updaterKey, fileName)
+	file, err = h.openMostRecentV4OnlineFile(ctx, t, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -481,8 +504,8 @@ func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, u
 }
 
 // openMostRecentV4OnlineFile gets desired "online" file, which is pulled and managed by the updater.
-func (h *httpHandler) openMostRecentV4OnlineFile(_ context.Context, t updaterType, updaterKey, fileName string) (*vulDefFile, error) {
-	u := h.getUpdater(t, updaterKey)
+func (h *httpHandler) openMostRecentV4OnlineFile(_ context.Context, t updaterType, opts v4OpenOpts) (*vulDefFile, error) {
+	u := h.getUpdater(t, opts.urlPath)
 	// Ensure the updater is running.
 	u.Start()
 	openedFile, onlineTime, err := u.file.Open()
@@ -490,12 +513,12 @@ func (h *httpHandler) openMostRecentV4OnlineFile(_ context.Context, t updaterTyp
 		return nil, err
 	}
 	if openedFile == nil {
-		return nil, fmt.Errorf("scanner V4 %s file %s not found", t, updaterKey)
+		return nil, fmt.Errorf("scanner V4 %s file %s not found", t, opts.urlPath)
 	}
 	log.Debugf("Compressed data file is available: %s", openedFile.Name())
 	switch t {
 	case mappingUpdaterType:
-		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), fileName)
+		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), opts.mappingFile)
 		if err != nil {
 			return nil, err
 		}
@@ -508,8 +531,8 @@ func (h *httpHandler) openMostRecentV4OnlineFile(_ context.Context, t updaterTyp
 }
 
 // openMostRecentV4OfflineFile gets desired offline file from compressed bundle: offlineScannerV4DefinitionBlobName
-func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updaterType, updaterKey, fileName string) (*vulDefFile, error) {
-	log.Debugf("Getting v4 offline data for updater key: %s", updaterKey)
+func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updaterType, opts v4OpenOpts) (*vulDefFile, error) {
+	log.Debugf("Getting v4 offline data for updater: type %s: options: %#v", t, opts)
 	openedFile, err := h.openOfflineBlob(ctx, offlineScannerV4DefinitionBlobName)
 	if err == nil && openedFile == nil {
 		log.Warnf("Blob %s does not exist", offlineScannerV4DefinitionBlobName)
@@ -521,7 +544,7 @@ func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updater
 	switch t {
 	case mappingUpdaterType:
 		// search mapping file
-		fileName = filepath.Base(fileName)
+		fileName := filepath.Base(opts.mappingFile)
 		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), fileName)
 		if err != nil {
 			return nil, err
@@ -541,13 +564,13 @@ func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updater
 		}
 		defer utils.IgnoreError(mf.Close)
 
-		if offlineV != minorVersionPattern.FindString(updaterKey) && (updaterKey != "dev" || buildinfo.ReleaseBuild) {
-			msg := fmt.Sprintf("failed to get offline vuln file, uploaded file is version: %s and requested file version is: %s", offlineV, updaterKey)
+		if offlineV != minorVersionPattern.FindString(opts.vulnVersion) && (opts.vulnVersion != "dev" || buildinfo.ReleaseBuild) {
+			msg := fmt.Sprintf("failed to get offline vuln file, uploaded file is version: %s and requested file version is: %s", offlineV, opts.vulnVersion)
 			log.Errorf(msg)
 			return nil, errors.New(msg)
 		}
 
-		vulns, cleanUp, err := openFromArchive(openedFile.Name(), "vulns.json.zst")
+		vulns, cleanUp, err := openFromArchive(openedFile.Name(), opts.vulnBundle)
 		if err != nil {
 			return nil, err
 		}
@@ -620,8 +643,7 @@ func (h *httpHandler) getV4(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var uType updaterType
-	var uKey string
-	var filename string
+	var opts v4OpenOpts
 
 	switch {
 	case fileName != "" && v == "":
@@ -632,8 +654,7 @@ func (h *httpHandler) getV4(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		uType = mappingUpdaterType
-		uKey = mappingUpdaterKey
-		filename = v4FileName
+		opts.mappingFile = v4FileName
 	case fileName == "" && v != "":
 		// If only version is provided, this is for Scanner V4 vuln file
 		if version.GetVersionKind(v) == version.NightlyKind {
@@ -641,14 +662,16 @@ func (h *httpHandler) getV4(w http.ResponseWriter, r *http.Request) {
 			v = "dev"
 		}
 		uType = vulnerabilityUpdaterType
-		uKey = v
-		filename = ""
+		bundle := "vulns.json.zst"
+		opts.urlPath = path.Join(v, bundle)
+		opts.vulnVersion = v
+		opts.vulnBundle = bundle
 	default:
 		writeErrorBadRequest(w)
 		return
 	}
 
-	f, err := h.openMostRecentV4File(ctx, uType, uKey, filename)
+	f, err := h.openMostRecentV4File(ctx, uType, opts)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not read: %s", err)
 		log.Error(errMsg)
