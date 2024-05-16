@@ -145,24 +145,28 @@ class SummaryTest extends BaseSpecification {
                 log.info "StackRox has ${stackroxNamespace.numDeployments}, "+
                         "the orchestrator has ${orchestratorNamespace.deploymentCount.size()}"
                 log.info "This diff may help with debug, however deployment names may be different between APIs"
-                List<String> stackroxDeploymentNames = Services.getDeployments(
+                List<objects.Deployment> stackroxDeploymentNames = Services.getDeployments(
                         SearchServiceOuterClass.RawQuery.newBuilder().setQuery(
                                 "Namespace:${ stackroxNamespace.metadata.name }").build()
-                )*.name
+                )
                 Javers javers = JaversBuilder.javers()
                         .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
                         .build()
                 log.info javers.compare(stackroxDeploymentNames, orchestratorNamespace.deploymentCount).prettyPrint()
-                for (String deployment : stackroxDeploymentNames) {
-                    log.info "stackrox deployment ${deployment}"
-                }
-                for (String deployment : orchestrator.getDeployments(stackroxNamespace.metadata.name)) {
-                    log.info("orchestrator deployment ${deployment}")
-                }
                 diff = true
             }
             log.info "Namespace ${stackroxNamespace.metadata.name}"
             log.info "stackrox number of deployments ${stackroxNamespace.numDeployments} orchestrator ${orchestratorNamespace.deploymentCount.size()}"
+            List<objects.Deployment> stackroxDeploymentNames = Services.getDeployments(
+                    SearchServiceOuterClass.RawQuery.newBuilder().setQuery(
+                            "Namespace:${ stackroxNamespace.metadata.name }").build()
+            )
+            for (String deployment : stackroxDeploymentNames) {
+                log.info "stackrox deployment ${deployment}"
+            }
+            for (Tuple resource : orchestratorNamespace.deploymentCount) {
+                log.info("orchestrator ${resource.get(0)} ${resource.get(1)}")
+            }
             assert stackroxNamespace.metadata.clusterId == ClusterService.getClusterId()
             assert stackroxNamespace.metadata.name == orchestratorNamespace.name
             assert stackroxNamespace.metadata.labelsMap == orchestratorNamespace.labels

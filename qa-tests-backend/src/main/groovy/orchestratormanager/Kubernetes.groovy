@@ -1310,16 +1310,23 @@ class Kubernetes implements OrchestratorMain {
                         uid: it.metadata.uid,
                         name: it.metadata.name,
                         labels: it.metadata.labels,
-                        deploymentCount: getDeploymentCount(it.metadata.name) +
-                                getDaemonSetCount(it.metadata.name) +
-                                getStaticPodCount(it.metadata.name) +
-                                getStatefulSetCount(it.metadata.name) +
-                                getJobCount(it.metadata.name),
-                        secretsCount: getSecretCount(it.metadata.name),
+                        deploymentCount: mapToResourceKind(getDeploymentCount(it.metadata.name), "Deployment") +
+                                mapToResourceKind(getDaemonSetCount(it.metadata.name), "DaemonSet") +
+                                mapToResourceKind(getStaticPodCount(it.metadata.name), "Pod") +
+                                mapToResourceKind(getStatefulSetCount(it.metadata.name), "StatefulSets") +
+                                mapToResourceKind(getJobCount(it.metadata.name), "Job"),
                         networkPolicyCount: getNetworkPolicyCount(it.metadata.name)
                 )
             }
         }
+    }
+
+    static List<Tuple> mapToResourceKind(Collection<String> resources, String kind) {
+        List<Tuple> ret = new ArrayList<>()
+        for (String resource : resources) {
+            ret.add(new Tuple(kind, resource))
+        }
+        return ret
     }
 
     def addNamespaceAnnotation(String ns, String key, String value) {
