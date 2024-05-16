@@ -12,6 +12,7 @@ import (
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -31,6 +32,8 @@ var (
 	profileUID1 = uuid.NewV4().String()
 	profileUID2 = uuid.NewV4().String()
 	profileUID3 = uuid.NewV4().String()
+
+	log = logging.LoggerForModule()
 )
 
 func TestComplianceProfileDataStore(t *testing.T) {
@@ -332,6 +335,7 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfilesNames() {
 		clusterIDs     []string
 		testContext    context.Context
 		expectedRecord []string
+		expectedCount  int
 	}{
 		{
 			desc:           "Cluster 1 - Full access",
@@ -339,6 +343,7 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfilesNames() {
 			clusterIDs:     []string{testconsts.Cluster1},
 			testContext:    s.testContexts[testutils.UnrestrictedReadCtx],
 			expectedRecord: []string{"a-rhcos-moderate", "ocp4", "rhcos-moderate"},
+			expectedCount:  3,
 		},
 		{
 			desc:           "Cluster 1, 2 - Full access",
@@ -346,6 +351,7 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfilesNames() {
 			clusterIDs:     clusterIDs,
 			testContext:    s.testContexts[testutils.UnrestrictedReadCtx],
 			expectedRecord: []string{"a-rhcos-moderate", "ocp4"},
+			expectedCount:  2,
 		},
 		{
 			desc:           "Cluster 1, 2 - Full access paging for record 2",
@@ -353,6 +359,7 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfilesNames() {
 			clusterIDs:     clusterIDs,
 			testContext:    s.testContexts[testutils.UnrestrictedReadCtx],
 			expectedRecord: []string{"ocp4"},
+			expectedCount:  2, // because of paging, total count will be 2
 		},
 		{
 			desc:           "Cluster 1 - Only cluster 2 access",
@@ -360,6 +367,7 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfilesNames() {
 			clusterIDs:     []string{testconsts.Cluster1},
 			testContext:    s.testContexts[testutils.Cluster2ReadWriteCtx],
 			expectedRecord: nil,
+			expectedCount:  0,
 		},
 		{
 			desc:           "Cluster 2 query - Only cluster 2 access",
@@ -367,6 +375,7 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfilesNames() {
 			clusterIDs:     []string{testconsts.Cluster2},
 			testContext:    s.testContexts[testutils.Cluster2ReadWriteCtx],
 			expectedRecord: []string{"a-rhcos-moderate", "ocp4"},
+			expectedCount:  2,
 		},
 		{
 			desc:           "Cluster 1 and 2 query - Only cluster 2 access",
@@ -374,6 +383,7 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfilesNames() {
 			clusterIDs:     []string{testconsts.Cluster1, testconsts.Cluster2},
 			testContext:    s.testContexts[testutils.Cluster2ReadWriteCtx],
 			expectedRecord: []string{"a-rhcos-moderate", "ocp4"},
+			expectedCount:  2,
 		},
 		{
 			desc:           "Cluster 3 query - Cluster 1 and 2 access",
@@ -381,10 +391,12 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfilesNames() {
 			clusterIDs:     []string{testconsts.Cluster3},
 			testContext:    s.testContexts[testutils.UnrestrictedReadWriteCtx],
 			expectedRecord: nil,
+			expectedCount:  0,
 		},
 	}
 
 	for _, tc := range testCases {
+		log.Info(tc.desc)
 		profiles, err := s.dataStore.GetProfilesNames(tc.testContext, tc.query, tc.clusterIDs)
 		s.Require().NoError(err)
 		if tc.expectedRecord == nil {
@@ -392,7 +404,9 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfilesNames() {
 		} else {
 			s.Require().ElementsMatch(profiles, tc.expectedRecord)
 		}
-
+		count, err := s.dataStore.CountDistinctProfiles(tc.testContext, tc.query, tc.clusterIDs)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedCount, count)
 	}
 }
 

@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	profileSearch "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/search"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -16,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -141,7 +139,8 @@ func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query, clust
 }
 
 type distinctProfileCount struct {
-	TotalCount int `db:"compliance_profile_name_count"`
+	TotalCount int    `db:"compliance_profile_name_count"`
+	Name       string `db:"compliance_profile_name"`
 }
 
 // CountDistinctProfiles returns count of distinct profiles matching query
@@ -156,26 +155,27 @@ func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query, 
 		q,
 	)
 
+	//query.Selects = []*v1.QuerySelect{
+	//	search.NewQuerySelect(search.ComplianceOperatorProfileName).Distinct().Proto(),
+	//}
+	query.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorProfileName.String(),
+		},
+	}
+
 	var results []*distinctProfileCount
 	results, err := pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, d.db, schema.ComplianceOperatorProfileV2Schema, withCountQuery(query, search.ComplianceOperatorProfileName))
 	if err != nil {
 		return 0, err
 	}
-	if len(results) == 0 {
-		return 0, nil
-	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
-		utils.Should(err)
-		return 0, err
-	}
-	return results[0].TotalCount, nil
+	return len(results), nil
 }
 
 func withCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
 	cloned := q.Clone()
 	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Proto(),
 	}
 	return cloned
 }
