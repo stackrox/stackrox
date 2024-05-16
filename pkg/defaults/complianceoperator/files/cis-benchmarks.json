@@ -1,7 +1,8 @@
 {
+  "id": "4d0d96f7-3782-41ba-b3b7-c040686a421c",
   "name": "CIS Benchmarks",
-  "version": "1.2.0+",
+  "version": "v1.5.0",
   "description": "",
-  "profileAnnotation": "ocp4-cis",
-  "provider": ""
+  "profileAnnotation": ["control.compliance.openshift.io/CIS-OCP"],
+  "provider": "cis"
 }
