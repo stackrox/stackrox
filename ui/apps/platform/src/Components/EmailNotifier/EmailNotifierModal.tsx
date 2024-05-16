@@ -72,6 +72,7 @@ function EmailNotifierModal({
             onClose={onHandleCancel}
             actions={[
                 <FormSaveButton
+                    key="save"
                     onSave={onHandleSubmit}
                     isSubmitting={isSubmitting}
                     isTesting={false}
@@ -79,7 +80,9 @@ function EmailNotifierModal({
                 >
                     Save integration
                 </FormSaveButton>,
-                <FormCancelButton onCancel={onHandleCancel}>Cancel</FormCancelButton>,
+                <FormCancelButton key="cancel" onCancel={onHandleCancel}>
+                    Cancel
+                </FormCancelButton>,
             ]}
         >
             <FormMessage message={message} />
