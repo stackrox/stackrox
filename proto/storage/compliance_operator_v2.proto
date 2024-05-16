@@ -135,7 +135,7 @@ message ComplianceOperatorClusterScanConfigStatus {
   string cluster_name = 5;
 }
 
-// Next Tag: 7
+// Next Tag: 8
 message ComplianceOperatorBenchmarkV2 {
   string id = 1; // @gotags: sql:"pk,id,type(uuid)"
   string name = 2; // @gotags: search:"Compliance Benchmark Name,hidden"
@@ -144,6 +144,7 @@ message ComplianceOperatorBenchmarkV2 {
   // Example: https://control.compliance.openshift.io/CIS-OCP
   repeated string profile_annotation = 5;
   string provider = 6;
+  repeated string profile_names = 7;
 }
 
 // Next Tag: 18
