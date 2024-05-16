@@ -448,7 +448,7 @@ func TestEnricherFlow(t *testing.T) {
 			registrySet := registryMocks.NewMockSet(ctrl)
 			if !c.shortCircuitRegistry {
 				registrySet.EXPECT().IsEmpty().AnyTimes().Return(false)
-				registrySet.EXPECT().GetAll().AnyTimes().Return([]types.ImageRegistry{fsr})
+				registrySet.EXPECT().GetAllUnique().AnyTimes().Return([]types.ImageRegistry{fsr})
 				set.EXPECT().RegistrySet().AnyTimes().Return(registrySet)
 			}
 
@@ -499,7 +499,7 @@ func TestCVESuppression(t *testing.T) {
 	fsr := newFakeRegistryScanner(opts{})
 	registrySet := registryMocks.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(false).AnyTimes()
-	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr}).AnyTimes()
+	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{fsr}).AnyTimes()
 
 	scannerSet := scannerMocks.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(false)
@@ -541,7 +541,7 @@ func TestZeroIntegrations(t *testing.T) {
 
 	registrySet := registryMocks.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(true).AnyTimes()
-	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
+	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{}).AnyTimes()
 
 	scannerSet := scannerMocks.NewMockSet(ctrl)
 	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{}).AnyTimes()
@@ -571,7 +571,7 @@ func TestZeroIntegrationsInternal(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	registrySet := registryMocks.NewMockSet(ctrl)
-	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
+	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{}).AnyTimes()
 
 	scannerSet := scannerMocks.NewMockSet(ctrl)
 	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{}).AnyTimes()
@@ -598,7 +598,7 @@ func TestRegistryMissingFromImage(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	registrySet := registryMocks.NewMockSet(ctrl)
-	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
+	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{}).AnyTimes()
 
 	fsr := newFakeRegistryScanner(opts{})
 	scannerSet := scannerMocks.NewMockSet(ctrl)
@@ -632,7 +632,7 @@ func TestZeroRegistryIntegrations(t *testing.T) {
 
 	registrySet := registryMocks.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(true).AnyTimes()
-	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
+	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{}).AnyTimes()
 
 	fsr := newFakeRegistryScanner(opts{})
 	scannerSet := scannerMocks.NewMockSet(ctrl)
@@ -668,7 +668,7 @@ func TestNoMatchingRegistryIntegration(t *testing.T) {
 	})
 	registrySet := registryMocks.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(false).AnyTimes()
-	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr}).AnyTimes()
+	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{fsr}).AnyTimes()
 
 	scannerSet := scannerMocks.NewMockSet(ctrl)
 	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
@@ -699,7 +699,7 @@ func TestZeroScannerIntegrations(t *testing.T) {
 
 	fsr := newFakeRegistryScanner(opts{})
 	registrySet := registryMocks.NewMockSet(ctrl)
-	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr}).AnyTimes()
+	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{fsr}).AnyTimes()
 	registrySet.EXPECT().IsEmpty().Return(false).AnyTimes()
 
 	scannerSet := scannerMocks.NewMockSet(ctrl)
@@ -887,7 +887,7 @@ func TestEnrichWithSignature_Success(t *testing.T) {
 	fsr := newFakeRegistryScanner(opts{})
 	registrySetMock := registryMocks.NewMockSet(ctrl)
 	registrySetMock.EXPECT().IsEmpty().Return(false).AnyTimes()
-	registrySetMock.EXPECT().GetAll().Return([]types.ImageRegistry{fsr}).AnyTimes()
+	registrySetMock.EXPECT().GetAllUnique().Return([]types.ImageRegistry{fsr}).AnyTimes()
 
 	integrationsSetMock := mocks.NewMockSet(ctrl)
 	integrationsSetMock.EXPECT().RegistrySet().AnyTimes().Return(registrySetMock)
@@ -912,11 +912,11 @@ func TestEnrichWithSignature_Failures(t *testing.T) {
 
 	emptyRegistrySetMock := registryMocks.NewMockSet(ctrl)
 	emptyRegistrySetMock.EXPECT().IsEmpty().Return(true).AnyTimes()
-	emptyRegistrySetMock.EXPECT().GetAll().Return(nil).AnyTimes()
+	emptyRegistrySetMock.EXPECT().GetAllUnique().Return(nil).AnyTimes()
 
 	nonMatchingRegistrySetMock := registryMocks.NewMockSet(ctrl)
 	nonMatchingRegistrySetMock.EXPECT().IsEmpty().Return(false).AnyTimes()
-	nonMatchingRegistrySetMock.EXPECT().GetAll().Return([]types.ImageRegistry{
+	nonMatchingRegistrySetMock.EXPECT().GetAllUnique().Return([]types.ImageRegistry{
 		newFakeRegistryScanner(opts{notMatch: true}),
 	}).AnyTimes()
 
