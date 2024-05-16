@@ -109,9 +109,8 @@ func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query, clust
 		ProtoQuery()
 
 	parsedQuery = search.ConjunctionQuery(
-		q,
 		parsedQuery,
-		//q,
+		q,
 	)
 
 	// Build the select and group by on distinct profile name
