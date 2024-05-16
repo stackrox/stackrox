@@ -2,6 +2,7 @@ import React from 'react';
 import { generatePath, Link } from 'react-router-dom';
 import {
     Divider,
+    Pagination,
     Progress,
     ProgressMeasureLocation,
     Toolbar,
@@ -12,6 +13,7 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { ComplianceClusterOverallStats } from 'services/ComplianceCommon';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { TableUIState } from 'utils/getTableUIState';
@@ -27,21 +29,36 @@ import StatusCountIcon from './components/StatusCountIcon';
 
 export type ProfileClustersTableProps = {
     currentDatetime: Date;
+    pagination: UseURLPaginationResult;
+    profileClustersResultsCount: number;
     profileName: string;
     tableState: TableUIState<ComplianceClusterOverallStats>;
 };
 
 function ProfileClustersTable({
     currentDatetime,
+    pagination,
+    profileClustersResultsCount,
     profileName,
     tableState,
 }: ProfileClustersTableProps) {
+    const { page, perPage, setPage, setPerPage } = pagination;
+
     return (
         <>
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem>
                         <ProfilesTableToggleGroup activeToggle="clusters" />
+                    </ToolbarItem>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={profileClustersResultsCount}
+                            page={page}
+                            perPage={perPage}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
+                        />
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
