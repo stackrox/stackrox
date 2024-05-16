@@ -51,6 +51,7 @@ spec:
         - name: password
           mountPath: /run/secrets/stackrox.io/secrets
           readOnly: true
+      serviceAccountName: scannerpriv # FIXME: Use correct one here
       containers:
       - name: db
         image: "{{ (printf "%s/%s:%s" .Values.app.db.image.registry .Values.app.db.image.name .Values.app.db.image.tag ) }}"
