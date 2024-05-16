@@ -155,9 +155,6 @@ func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query, 
 		q,
 	)
 
-	//query.Selects = []*v1.QuerySelect{
-	//	search.NewQuerySelect(search.ComplianceOperatorProfileName).Distinct().Proto(),
-	//}
 	query.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{
 			search.ComplianceOperatorProfileName.String(),
