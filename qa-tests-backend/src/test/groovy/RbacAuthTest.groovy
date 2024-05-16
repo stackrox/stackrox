@@ -6,6 +6,7 @@ import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.storage.NetworkPolicyOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
 
+import common.Constants
 import services.ApiTokenService
 import services.AuthProviderService
 import services.BaseService
@@ -28,7 +29,7 @@ kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
   name: qa-rbac-test-apply
-  namespace: default
+  namespace: ${Constants.ORCHESTRATOR_NAMESPACE}
 spec:
   podSelector:
     matchLabels:
@@ -102,7 +103,6 @@ spec:
 
     @Unroll
     @Tag("BAT")
-    @IgnoreIf({ Env.CI_JOB_NAME.contains("rosa") || Env.CI_JOB_NAME.contains("osd") }) // ROX-21171
     def "Verify RBAC with Role/Token combinations: #resourceAccess"() {
         when:
         "Create a test role"
