@@ -10,6 +10,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +65,7 @@ func (s *AuthMachineToMachineConfigsStoreSuite) TestStore() {
 	foundAuthMachineToMachineConfig, exists, err = store.Get(ctx, authMachineToMachineConfig.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(authMachineToMachineConfig, foundAuthMachineToMachineConfig)
+	s.True(protocompat.Equal(authMachineToMachineConfig, foundAuthMachineToMachineConfig))
 
 	authMachineToMachineConfigCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +83,7 @@ func (s *AuthMachineToMachineConfigsStoreSuite) TestStore() {
 	foundAuthMachineToMachineConfig, exists, err = store.Get(ctx, authMachineToMachineConfig.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(authMachineToMachineConfig, foundAuthMachineToMachineConfig)
+	s.True(protocompat.Equal(authMachineToMachineConfig, foundAuthMachineToMachineConfig))
 
 	s.NoError(store.Delete(ctx, authMachineToMachineConfig.GetId()))
 	foundAuthMachineToMachineConfig, exists, err = store.Get(ctx, authMachineToMachineConfig.GetId())
@@ -102,7 +104,7 @@ func (s *AuthMachineToMachineConfigsStoreSuite) TestStore() {
 	s.NoError(store.UpsertMany(ctx, authMachineToMachineConfigs))
 	allAuthMachineToMachineConfig, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch(authMachineToMachineConfigs, allAuthMachineToMachineConfig)
+	s.True(protoutils.SlicesEqualValues(authMachineToMachineConfigs, allAuthMachineToMachineConfig))
 
 	authMachineToMachineConfigCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

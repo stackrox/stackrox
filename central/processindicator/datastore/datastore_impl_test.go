@@ -5,7 +5,9 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -23,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -135,7 +138,16 @@ func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*sto
 		return nil
 	})
 	suite.NoError(err)
-	suite.ElementsMatch(foundIndicators, indicators)
+	slices.SortStableFunc(foundIndicators, func(a, b *storage.ProcessIndicator) int {
+		return strings.Compare(a.Id, b.Id)
+	})
+	slices.SortStableFunc(indicators, func(a, b *storage.ProcessIndicator) int {
+		return strings.Compare(a.Id, b.Id)
+	})
+	suite.Len(foundIndicators, len(indicators))
+	for i := range indicators {
+		suite.True(protocompat.Equal(foundIndicators[i], indicators[i]))
+	}
 }
 
 func getIndicators() (indicators []*storage.ProcessIndicator, repeatIndicator *storage.ProcessIndicator) {
@@ -407,13 +419,13 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
 	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasReadCtx, uuid.Nil.String())
 	suite.NoError(err, "expected no error trying to read with permissions")
 	suite.True(exists)
-	suite.Equal(testIndicator, indicator)
+	suite.True(protocompat.Equal(testIndicator, indicator))
 
 	mockStore.EXPECT().Get(suite.hasWriteCtx, gomock.Any()).Return(testIndicator, true, nil)
 	indicator, exists, err = suite.datastore.GetProcessIndicator(suite.hasWriteCtx, uuid.NewDummy().String())
 	suite.NoError(err, "expected no error trying to read with permissions")
 	suite.True(exists)
-	suite.Equal(testIndicator, indicator)
+	suite.True(protocompat.Equal(testIndicator, indicator))
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAdd() {

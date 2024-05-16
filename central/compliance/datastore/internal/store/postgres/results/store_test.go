@@ -11,6 +11,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -66,7 +68,7 @@ func (s *ComplianceRunResultsStoreSuite) TestStore() {
 	foundComplianceRunResults, exists, err = store.Get(ctx, complianceRunResults.GetRunMetadata().GetRunId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceRunResults, foundComplianceRunResults)
+	s.True(protocompat.Equal(complianceRunResults, foundComplianceRunResults))
 
 	complianceRunResultsCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -84,7 +86,7 @@ func (s *ComplianceRunResultsStoreSuite) TestStore() {
 	foundComplianceRunResults, exists, err = store.Get(ctx, complianceRunResults.GetRunMetadata().GetRunId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceRunResults, foundComplianceRunResults)
+	s.True(protocompat.Equal(complianceRunResults, foundComplianceRunResults))
 
 	s.NoError(store.Delete(ctx, complianceRunResults.GetRunMetadata().GetRunId()))
 	foundComplianceRunResults, exists, err = store.Get(ctx, complianceRunResults.GetRunMetadata().GetRunId())
@@ -330,7 +332,7 @@ func (s *ComplianceRunResultsStoreSuite) TestSACGet() {
 			expectedFound := len(testCase.expectedObjects) > 0
 			assert.Equal(t, expectedFound, exists)
 			if expectedFound {
-				assert.Equal(t, objA, actual)
+				assert.True(t, protocompat.Equal(objA, actual))
 			} else {
 				assert.Nil(t, actual)
 			}
@@ -402,7 +404,7 @@ func (s *ComplianceRunResultsStoreSuite) TestSACGetMany() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			actual, missingIndices, err := s.store.GetMany(testCase.context, []string{objA.GetRunMetadata().GetRunId(), objB.GetRunMetadata().GetRunId()})
 			assert.NoError(t, err)
-			assert.Equal(t, testCase.expectedObjects, actual)
+			assert.True(t, protoutils.SlicesEqual(testCase.expectedObjects, actual))
 			assert.Equal(t, testCase.expectedMissingIndices, missingIndices)
 		})
 	}

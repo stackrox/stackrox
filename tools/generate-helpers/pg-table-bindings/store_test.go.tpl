@@ -15,11 +15,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -88,7 +90,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
 	s.True(exists)
-	s.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}})
+	s.True(protocompat.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}}))
 
 	{{$name}}Count, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -111,7 +113,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
 	s.True(exists)
-	s.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}})
+	s.True(protocompat.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}}))
 
 	s.NoError(store.Delete(ctx, {{template "paramList" $}}))
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
@@ -142,7 +144,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 {{- if .GetAll }}
 	all{{.TrimmedType|upperCamelCase}}, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch({{$name}}s, all{{.TrimmedType|upperCamelCase}})
+	s.True(protoutils.SlicesEqualValues({{$name}}s, all{{.TrimmedType|upperCamelCase}}))
 {{- end }}
 
 	{{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx, search.EmptyQuery())
@@ -385,7 +387,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGet() {
 			expectedFound := len(testCase.expectedObjects) > 0
 			assert.Equal(t, expectedFound, exists)
 			if expectedFound {
-				assert.Equal(t, objA, actual)
+				assert.True(t, protocompat.Equal(objA, actual))
 			} else {
 				assert.Nil(t, actual)
 			}
@@ -457,7 +459,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetMany() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			actual, missingIndices, err := s.store.GetMany(testCase.context, []string{ {{ "objA" | .Obj.GetID }}, {{ "objB" | .Obj.GetID }} })
 			assert.NoError(t, err)
-			assert.Equal(t, testCase.expectedObjects, actual)
+			assert.True(t, protoutils.SlicesEqual(testCase.expectedObjects, actual))
 			assert.Equal(t, testCase.expectedMissingIndices, missingIndices)
 		})
 	}

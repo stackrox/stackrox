@@ -194,7 +194,7 @@ func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 	s.NoError(err)
 	actual, err := srv.GetDatabaseBackupStatus(ctx, &v1.Empty{})
 	s.NoError(err)
-	s.EqualValues(expected, actual)
+	s.True(protocompat.Equal(expected.GetBackupInfo(), actual.GetBackupInfo()))
 }
 
 func (s *serviceImplTestSuite) TestGetCentralCapabilities() {

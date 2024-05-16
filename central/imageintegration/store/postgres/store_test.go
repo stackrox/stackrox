@@ -10,6 +10,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +65,7 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 	foundImageIntegration, exists, err = store.Get(ctx, imageIntegration.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(imageIntegration, foundImageIntegration)
+	s.True(protocompat.Equal(imageIntegration, foundImageIntegration))
 
 	imageIntegrationCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +83,7 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 	foundImageIntegration, exists, err = store.Get(ctx, imageIntegration.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(imageIntegration, foundImageIntegration)
+	s.True(protocompat.Equal(imageIntegration, foundImageIntegration))
 
 	s.NoError(store.Delete(ctx, imageIntegration.GetId()))
 	foundImageIntegration, exists, err = store.Get(ctx, imageIntegration.GetId())
@@ -102,7 +104,7 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 	s.NoError(store.UpsertMany(ctx, imageIntegrations))
 	allImageIntegration, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch(imageIntegrations, allImageIntegration)
+	s.True(protoutils.SlicesEqualValues(imageIntegrations, allImageIntegration))
 
 	imageIntegrationCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

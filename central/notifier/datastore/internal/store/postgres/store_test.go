@@ -10,6 +10,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +65,7 @@ func (s *NotifiersStoreSuite) TestStore() {
 	foundNotifier, exists, err = store.Get(ctx, notifier.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(notifier, foundNotifier)
+	s.True(protocompat.Equal(notifier, foundNotifier))
 
 	notifierCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +83,7 @@ func (s *NotifiersStoreSuite) TestStore() {
 	foundNotifier, exists, err = store.Get(ctx, notifier.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(notifier, foundNotifier)
+	s.True(protocompat.Equal(notifier, foundNotifier))
 
 	s.NoError(store.Delete(ctx, notifier.GetId()))
 	foundNotifier, exists, err = store.Get(ctx, notifier.GetId())
@@ -102,7 +104,7 @@ func (s *NotifiersStoreSuite) TestStore() {
 	s.NoError(store.UpsertMany(ctx, notifiers))
 	allNotifier, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch(notifiers, allNotifier)
+	s.True(protoutils.SlicesEqualValues(notifiers, allNotifier))
 
 	notifierCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

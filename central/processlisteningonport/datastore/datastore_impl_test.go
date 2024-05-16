@@ -21,7 +21,9 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/id"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -211,7 +213,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
+	suite.True(protocompat.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -227,7 +229,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 			Args:         "test_arguments1",
 			ExecFilePath: "test_path1",
 		},
-	})
+	}))
 
 	// Verify that newly added PLOP object doesn't have Process field set in
 	// the serialized column (because all the info is stored in the referenced
@@ -249,7 +251,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPAddClosed: Happy path for ProcessListeningOnPort closing, one PLOP object is added
@@ -301,7 +303,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPAddOpenTwice: Add the same open PLOP twice
@@ -330,7 +332,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
+	suite.True(protocompat.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -346,7 +348,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 			Args:         "test_arguments1",
 			ExecFilePath: "test_path1",
 		},
-	})
+	}))
 
 	// Verify that newly added PLOP object doesn't have Process field set in
 	// the serialized column (because all the info is stored in the referenced
@@ -368,7 +370,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPAddCloseTwice: Add the same closed PLOP twice
@@ -417,7 +419,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseTwice() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPReopen: One PLOP object is added with a correct process indicator
@@ -453,7 +455,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 
 	// The PLOP is reported since it is in the open state
 	suite.Len(newPlops, 1)
-	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
+	suite.True(protocompat.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -469,7 +471,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 			Args:         "test_arguments1",
 			ExecFilePath: "test_path1",
 		},
-	})
+	}))
 
 	// Verify that PLOP object was updated and no new records were created
 	newPlopsFromDB := suite.getPlopsFromDB()
@@ -489,7 +491,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPCloseSameTimestamp: One PLOP object is added with a correct process
@@ -544,7 +546,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPAddClosedSameBatch: One PLOP object is added with a correct process
@@ -591,7 +593,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPAddClosedWithoutActive: one PLOP object is added with a correct
@@ -641,7 +643,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPAddNoIndicator: A PLOP object with a wrong process indicator
@@ -675,7 +677,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
+	suite.True(protocompat.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -691,7 +693,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 			Args:         "test_arguments1",
 			ExecFilePath: "test_path1",
 		},
-	})
+	}))
 
 	// Verify the state of the table after the test
 	// Process should not be nil as we were not able to find
@@ -713,7 +715,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPAddClosedNoIndicator: A PLOP object with a wrong process indicator
@@ -754,7 +756,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPAddOpenNoIndicatorThenClose Adds an open PLOP object with no matching
@@ -806,7 +808,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenNoIndicatorThenClose() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPAddOpenAndClosedNoIndicator: An open PLOP object with no matching
@@ -852,7 +854,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenAndClosedNoIndicator() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPAddMultipleIndicators: A PLOP object is added with a valid reference
@@ -910,7 +912,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
+	suite.True(protocompat.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -926,7 +928,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 			Args:         "test_arguments1",
 			ExecFilePath: "test_path1",
 		},
-	})
+	}))
 
 	// Verify the state of the table after the test
 	newPlopsFromDB := suite.getPlopsFromDB()
@@ -946,7 +948,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPAddOpenThenCloseAndOpenSameBatch Sends an open PLOP with a matching indicator.
@@ -1001,7 +1003,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() 
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPAddCloseThenCloseAndOpenSameBatch Adds a closed PLOP object with an indicator.
@@ -1055,7 +1057,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPAddCloseBatchOutOfOrderMoreClosed: Excersice batching logic when
@@ -1166,7 +1168,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPAddCloseBatchOutOfOrderMoreOpen: Excersice batching logic when
@@ -1272,7 +1274,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPDeleteAndCreateDeployment: Creates a deployment with PLOP and
@@ -1335,7 +1337,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage1, plopsFromDB1[0])
+	suite.True(protocompat.Equal(expectedPlopStorage1, plopsFromDB1[0]))
 
 	// Delete the indicator
 	suite.NoError(suite.indicatorDataStore.RemoveProcessIndicators(
@@ -1406,7 +1408,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 
 	// It's open and included in the API response for the new deployment
 	suite.Len(newPlops, 1)
-	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
+	suite.True(protocompat.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -1422,7 +1424,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 			Args:         "test_arguments1",
 			ExecFilePath: "test_path1",
 		},
-	})
+	}))
 
 	// Fetch inserted PLOP back from the old deployment
 	oldPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -1450,7 +1452,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPNoProcessInformation: PLOP should not appear in the API if there is no process information
@@ -1490,7 +1492,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPNoProcessInformation() {
 	newPlopsFromDB := suite.getPlopsFromDB()
 	suite.Len(newPlopsFromDB, 1)
 
-	suite.Equal(plopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(plopStorage, newPlopsFromDB[0]))
 }
 
 // TestRemovePlopsByPod: Create two plops and remove one of them by PodUID
@@ -1577,7 +1579,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 	for key, expectedPlop := range expectedPlopStorageMap {
 		// We cannot know the Id in advance so set it here.
 		expectedPlop.Id = plopMap[key].Id
-		suite.Equal(expectedPlop, plopMap[key])
+		suite.True(protocompat.Equal(expectedPlop, plopMap[key]))
 	}
 
 	// Remove the PLOP for the pod
@@ -1602,7 +1604,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage1, newPlopsFromDB2[0])
+	suite.True(protocompat.Equal(expectedPlopStorage1, newPlopsFromDB2[0]))
 
 }
 
@@ -1660,7 +1662,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
+	suite.True(protocompat.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		DeploymentId:  fixtureconsts.Deployment1,
@@ -1675,7 +1677,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 			Args:         "test_arguments1",
 			ExecFilePath: "test_path1",
 		},
-	})
+	}))
 
 	// Verify the state of the table
 	newPlopsFromDB := suite.getPlopsFromDB()
@@ -1693,7 +1695,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 
 	plopObjects = []*storage.ProcessListeningOnPortFromSensor{&plopWithPodUID}
 
@@ -1707,7 +1709,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
+	suite.True(protocompat.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -1723,7 +1725,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 			Args:         "test_arguments1",
 			ExecFilePath: "test_path1",
 		},
-	})
+	}))
 
 	// Verify the state of the table
 	newPlopsFromDB = suite.getPlopsFromDB()
@@ -1742,7 +1744,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPUpdatePodUidFromBlankClosed Add a closed PLOP without a PodUid and then
@@ -1836,7 +1838,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 		},
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB)
+	suite.True(protoutils.SlicesEqual(expectedPlopStorage, newPlopsFromDB))
 }
 
 // TestPLOPAddOpenThenCloseAndOpenSameBatchWithPodUid Sends an open PLOP with a matching indicator.
@@ -1907,7 +1909,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatchWit
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 // TestPLOPUpdateClusterIdFromBlank Add a PLOP without a ClusterId and then
@@ -1964,7 +1966,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
+	suite.True(protocompat.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -1980,7 +1982,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 			Args:         "test_arguments1",
 			ExecFilePath: "test_path1",
 		},
-	})
+	}))
 
 	// Verify the state of the table
 	newPlopsFromDB := suite.getPlopsFromDB()
@@ -1998,7 +2000,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 
 	plopObjects = []*storage.ProcessListeningOnPortFromSensor{&plopWithClusterID}
 
@@ -2012,7 +2014,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
-	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
+	suite.True(protocompat.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
@@ -2028,7 +2030,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 			Args:         "test_arguments1",
 			ExecFilePath: "test_path1",
 		},
-	})
+	}))
 
 	// Verify the state of the table
 	newPlopsFromDB = suite.getPlopsFromDB()
@@ -2047,7 +2049,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+	suite.True(protocompat.Equal(expectedPlopStorage, newPlopsFromDB[0]))
 }
 
 func makeRandomString(length int) string {
@@ -2140,7 +2142,7 @@ func (suite *PLOPDataStoreTestSuite) TestAddPodUids() {
 	suite.Len(newPlops, len(plopObjects))
 
 	for _, plop := range newPlops {
-		suite.Equal(plop.PodUid != "", true)
+		suite.NotEmpty(plop.PodUid)
 	}
 
 }

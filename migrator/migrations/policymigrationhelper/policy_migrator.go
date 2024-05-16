@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
@@ -142,7 +143,7 @@ type FieldComparator func(first, second *storage.Policy) bool
 
 // PolicySectionComparator compares the policySections of both policies and returns true if they are equal
 func PolicySectionComparator(first, second *storage.Policy) bool {
-	return reflect.DeepEqual(first.GetPolicySections(), second.GetPolicySections())
+	return protoutils.SlicesEqual(first.GetPolicySections(), second.GetPolicySections())
 }
 
 // ExclusionComparator compares the Exclusions of both policies and returns true if they are equal

@@ -10,6 +10,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +65,7 @@ func (s *ServiceIdentitiesStoreSuite) TestStore() {
 	foundServiceIdentity, exists, err = store.Get(ctx, serviceIdentity.GetSerialStr())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(serviceIdentity, foundServiceIdentity)
+	s.True(protocompat.Equal(serviceIdentity, foundServiceIdentity))
 
 	serviceIdentityCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +83,7 @@ func (s *ServiceIdentitiesStoreSuite) TestStore() {
 	foundServiceIdentity, exists, err = store.Get(ctx, serviceIdentity.GetSerialStr())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(serviceIdentity, foundServiceIdentity)
+	s.True(protocompat.Equal(serviceIdentity, foundServiceIdentity))
 
 	s.NoError(store.Delete(ctx, serviceIdentity.GetSerialStr()))
 	foundServiceIdentity, exists, err = store.Get(ctx, serviceIdentity.GetSerialStr())
@@ -102,7 +104,7 @@ func (s *ServiceIdentitiesStoreSuite) TestStore() {
 	s.NoError(store.UpsertMany(ctx, serviceIdentitys))
 	allServiceIdentity, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch(serviceIdentitys, allServiceIdentity)
+	s.True(protoutils.SlicesEqualValues(serviceIdentitys, allServiceIdentity))
 
 	serviceIdentityCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

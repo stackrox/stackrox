@@ -10,6 +10,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +65,7 @@ func (s *TestSingleUUIDKeyStructsStoreSuite) TestStore() {
 	foundTestSingleUUIDKeyStruct, exists, err = store.Get(ctx, testSingleUUIDKeyStruct.GetKey())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(testSingleUUIDKeyStruct, foundTestSingleUUIDKeyStruct)
+	s.True(protocompat.Equal(testSingleUUIDKeyStruct, foundTestSingleUUIDKeyStruct))
 
 	testSingleUUIDKeyStructCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +83,7 @@ func (s *TestSingleUUIDKeyStructsStoreSuite) TestStore() {
 	foundTestSingleUUIDKeyStruct, exists, err = store.Get(ctx, testSingleUUIDKeyStruct.GetKey())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(testSingleUUIDKeyStruct, foundTestSingleUUIDKeyStruct)
+	s.True(protocompat.Equal(testSingleUUIDKeyStruct, foundTestSingleUUIDKeyStruct))
 
 	s.NoError(store.Delete(ctx, testSingleUUIDKeyStruct.GetKey()))
 	foundTestSingleUUIDKeyStruct, exists, err = store.Get(ctx, testSingleUUIDKeyStruct.GetKey())
@@ -102,7 +104,7 @@ func (s *TestSingleUUIDKeyStructsStoreSuite) TestStore() {
 	s.NoError(store.UpsertMany(ctx, testSingleUUIDKeyStructs))
 	allTestSingleUUIDKeyStruct, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch(testSingleUUIDKeyStructs, allTestSingleUUIDKeyStruct)
+	s.True(protoutils.SlicesEqualValues(testSingleUUIDKeyStructs, allTestSingleUUIDKeyStruct))
 
 	testSingleUUIDKeyStructCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

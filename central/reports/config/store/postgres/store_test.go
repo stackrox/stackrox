@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *ReportConfigurationsStoreSuite) TestStore() {
 	foundReportConfiguration, exists, err = store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(reportConfiguration, foundReportConfiguration)
+	s.True(protocompat.Equal(reportConfiguration, foundReportConfiguration))
 
 	reportConfigurationCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *ReportConfigurationsStoreSuite) TestStore() {
 	foundReportConfiguration, exists, err = store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(reportConfiguration, foundReportConfiguration)
+	s.True(protocompat.Equal(reportConfiguration, foundReportConfiguration))
 
 	s.NoError(store.Delete(ctx, reportConfiguration.GetId()))
 	foundReportConfiguration, exists, err = store.Get(ctx, reportConfiguration.GetId())

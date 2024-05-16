@@ -10,6 +10,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +65,7 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	foundPolicyCategory, exists, err = store.Get(ctx, policyCategory.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(policyCategory, foundPolicyCategory)
+	s.True(protocompat.Equal(policyCategory, foundPolicyCategory))
 
 	policyCategoryCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +83,7 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	foundPolicyCategory, exists, err = store.Get(ctx, policyCategory.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(policyCategory, foundPolicyCategory)
+	s.True(protocompat.Equal(policyCategory, foundPolicyCategory))
 
 	s.NoError(store.Delete(ctx, policyCategory.GetId()))
 	foundPolicyCategory, exists, err = store.Get(ctx, policyCategory.GetId())
@@ -102,7 +104,7 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	s.NoError(store.UpsertMany(ctx, policyCategorys))
 	allPolicyCategory, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch(policyCategorys, allPolicyCategory)
+	s.True(protoutils.SlicesEqualValues(policyCategorys, allPolicyCategory))
 
 	policyCategoryCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

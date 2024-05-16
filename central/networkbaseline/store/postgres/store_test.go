@@ -11,6 +11,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -66,7 +68,7 @@ func (s *NetworkBaselinesStoreSuite) TestStore() {
 	foundNetworkBaseline, exists, err = store.Get(ctx, networkBaseline.GetDeploymentId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(networkBaseline, foundNetworkBaseline)
+	s.True(protocompat.Equal(networkBaseline, foundNetworkBaseline))
 
 	networkBaselineCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -84,7 +86,7 @@ func (s *NetworkBaselinesStoreSuite) TestStore() {
 	foundNetworkBaseline, exists, err = store.Get(ctx, networkBaseline.GetDeploymentId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(networkBaseline, foundNetworkBaseline)
+	s.True(protocompat.Equal(networkBaseline, foundNetworkBaseline))
 
 	s.NoError(store.Delete(ctx, networkBaseline.GetDeploymentId()))
 	foundNetworkBaseline, exists, err = store.Get(ctx, networkBaseline.GetDeploymentId())
@@ -331,7 +333,7 @@ func (s *NetworkBaselinesStoreSuite) TestSACGet() {
 			expectedFound := len(testCase.expectedObjects) > 0
 			assert.Equal(t, expectedFound, exists)
 			if expectedFound {
-				assert.Equal(t, objA, actual)
+				assert.True(t, protocompat.Equal(objA, actual))
 			} else {
 				assert.Nil(t, actual)
 			}
@@ -403,7 +405,7 @@ func (s *NetworkBaselinesStoreSuite) TestSACGetMany() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			actual, missingIndices, err := s.store.GetMany(testCase.context, []string{objA.GetDeploymentId(), objB.GetDeploymentId()})
 			assert.NoError(t, err)
-			assert.Equal(t, testCase.expectedObjects, actual)
+			assert.True(t, protoutils.SlicesEqual(testCase.expectedObjects, actual))
 			assert.Equal(t, testCase.expectedMissingIndices, missingIndices)
 		})
 	}
