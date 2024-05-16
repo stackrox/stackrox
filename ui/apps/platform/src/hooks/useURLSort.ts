@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
-import useURLParameter, { Action } from 'hooks/useURLParameter';
+import useURLParameter, { HistoryAction } from 'hooks/useURLParameter';
 import { SortAggregate, SortDirection, SortOption, ThProps } from 'types/table';
 import { ApiSortOption } from 'types/search';
 import { isParsedQs } from 'utils/queryStringUtils';
@@ -19,7 +19,7 @@ export type UseURLSortProps = {
 
 export type UseURLSortResult = {
     sortOption: ApiSortOption;
-    setSortOption: (newSortOption: SortOption, historyAction?: Action | undefined) => void;
+    setSortOption: (newSortOption: SortOption, historyAction?: HistoryAction | undefined) => void;
     getSortParams: GetSortParams;
 };
 
