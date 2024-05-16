@@ -62,6 +62,8 @@ func WithTraits(traits map[string]any) Option {
 	}
 }
 
+// WithMessageIDSalt enables generation of custom message ID, which is a hash
+// of the event data and provided salt.
 func WithMessageIDSalt(salt string) Option {
 	return func(o *CallOptions) {
 		o.MessageIDSalt = salt
