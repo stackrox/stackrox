@@ -2,9 +2,9 @@
 
 ## Download all artifacts
 
-1. Visit the jobs page
-2. Click on the `Aritfacts` link
-3. Append `artifacts/merge-gke-nongroovy-e2e-tests/stackrox-stackrox-e2e-test/artifacts/howto-locate-other-artifacts-summary.html` to the URL openend in your browser.
+1. Visit the openshift-ci jobs page, visible in the github build details or the corresponding JIRA ticket.
+2. Click on the `Artifacts` link in the top right corner.
+3. Navigate to `artifacts/` > `<job name>` `stackrox-stackrox-e2e-test/artifacts/howto-locate-other-artifacts-summary.html` and open the HTML file.
 4. Copy the `gsutil` command and run it locally to copy the job artifacts. Alternatively you can browse them in GCP.
 
 ### Working with the artifacts
