@@ -92,11 +92,11 @@ func generateFileName(obj k8sutil.Object, suffix string) string {
 	if groupDirectory == "" {
 		groupDirectory = obj.GetLabels()["app.kubernetes.io/name"]
 	}
-
-	// Group compliance CRDs into a single directory
 	if groupDirectory == "" && obj.GetObjectKind().GroupVersionKind().Group == compv1alpha1.SchemeGroupVersion.Group {
+		// Group compliance CRDs into a single directory
 		groupDirectory = obj.GetObjectKind().GroupVersionKind().Kind
-	} else {
+	}
+	if groupDirectory == "" {
 		groupDirectory = "_ungrouped"
 	}
 
