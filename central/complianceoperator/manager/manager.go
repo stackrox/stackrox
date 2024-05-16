@@ -81,6 +81,9 @@ func NewManager(registry *standards.Registry, profiles profileDatastore.DataStor
 		rules:               rules,
 		results:             results,
 	}
+	if !features.ClassicCompliance.Enabled() {
+		return mgr, nil
+	}
 	// Postgres retries in addProfileNoLock(...)
 	err := profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
 		return mgr.addProfileNoLock(profile)
@@ -321,9 +324,6 @@ func (m *managerImpl) DeleteScan(scan *storage.ComplianceOperatorScan) error {
 }
 
 func (m *managerImpl) IsStandardActive(standardID string) bool {
-	if !features.ClassicCompliance.Enabled() {
-		return false
-	}
 	standard, ok, err := m.registry.Standard(standardID)
 	if err != nil {
 		log.Errorf("error getting standard ID %s: %v", standardID, err)
@@ -357,9 +357,6 @@ func (m *managerImpl) IsStandardActive(standardID string) bool {
 }
 
 func (m *managerImpl) IsStandardHidden(ctx context.Context, standardID string) bool {
-	if !features.ClassicCompliance.Enabled() {
-		return true
-	}
 	standard, exists, _ := m.compliance.GetConfig(ctx, standardID)
 	if exists {
 		return standard.GetHideScanResults()
@@ -368,9 +365,6 @@ func (m *managerImpl) IsStandardHidden(ctx context.Context, standardID string) b
 }
 
 func (m *managerImpl) IsStandardActiveForCluster(standardID, clusterID string) bool {
-	if !features.ClassicCompliance.Enabled() {
-		return false
-	}
 	standard, ok, err := m.registry.Standard(standardID)
 	if err != nil {
 		log.Errorf("error getting standard ID %s: %v", standardID, err)
