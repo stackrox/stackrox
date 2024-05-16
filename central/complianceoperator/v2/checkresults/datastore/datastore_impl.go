@@ -93,17 +93,17 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 
 	if cloned.Pagination == nil {
 		cloned.Pagination = &v1.QueryPagination{}
-	}
-	cloned.Pagination.SortOptions = []*v1.QuerySortOption{
-		{
-			Field: search.ComplianceOperatorScanConfigName.String(),
-		},
-		{
-			Field: search.ClusterID.String(),
-		},
-		{
-			Field: search.Cluster.String(),
-		},
+		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.ComplianceOperatorScanConfigName.String(),
+			},
+			{
+				Field: search.ClusterID.String(),
+			},
+			{
+				Field: search.Cluster.String(),
+			},
+		}
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
@@ -137,11 +137,11 @@ func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query 
 
 	if cloned.Pagination == nil {
 		cloned.Pagination = &v1.QueryPagination{}
-	}
-	cloned.Pagination.SortOptions = []*v1.QuerySortOption{
-		{
-			Field: search.ComplianceOperatorProfileName.String(),
-		},
+		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.ComplianceOperatorProfileName.String(),
+			},
+		}
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
@@ -181,20 +181,20 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 
 	if cloned.Pagination == nil {
 		cloned.Pagination = &v1.QueryPagination{}
-	}
-	cloned.Pagination.SortOptions = []*v1.QuerySortOption{
-		{
-			Field: search.ComplianceOperatorProfileName.String(),
-		},
-		{
-			Field: search.ComplianceOperatorCheckName.String(),
-		},
-		{
-			Field: search.ComplianceOperatorCheckRationale.String(),
-		},
-		{
-			Field: search.ComplianceOperatorRuleName.String(),
-		},
+		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.ComplianceOperatorProfileName.String(),
+			},
+			{
+				Field: search.ComplianceOperatorCheckName.String(),
+			},
+			{
+				Field: search.ComplianceOperatorCheckRationale.String(),
+			},
+			{
+				Field: search.ComplianceOperatorRuleName.String(),
+			},
+		}
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
