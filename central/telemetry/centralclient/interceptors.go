@@ -28,6 +28,9 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 	if index := phonehome.GetFirst(rp.Headers, clientconn.RoxctlCommandIndexHeader); index != "" {
 		props["roxctl Command Index"] = index
 	}
+	if execEnv := phonehome.GetFirst(rp.Headers, clientconn.ExecutionEnvironment); execEnv != "" {
+		props["Execution Environment"] = execEnv
+	}
 	return true
 }
 
