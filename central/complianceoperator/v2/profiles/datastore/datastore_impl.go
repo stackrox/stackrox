@@ -3,14 +3,20 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	profileSearch "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/search"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -80,4 +86,118 @@ func (d *datastoreImpl) GetProfilesByClusters(ctx context.Context, clusterIDs []
 // CountProfiles returns count of profiles matching query
 func (d *datastoreImpl) CountProfiles(ctx context.Context, q *v1.Query) (int, error) {
 	return d.searcher.Count(ctx, q)
+}
+
+type distinctProfileName struct {
+	ProfileName string `db:"compliance_profile_name"`
+}
+
+// GetProfilesNames gets the list of distinct profile names for the query
+func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query, clusterIDs []string) ([]string, error) {
+	// Build the matching query to restrict profiles to the incoming clusters
+	readableClusterIDs := bestEffortClusters(ctx, clusterIDs)
+
+	var err error
+	q, err = withSACFilter(ctx, resources.Compliance, q)
+	if err != nil {
+		return nil, err
+	}
+
+	parsedQuery := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, readableClusterIDs...).
+		AddNumericField(search.ProfileCount, storage.Comparator_EQUALS, float32(len(readableClusterIDs))).
+		ProtoQuery()
+
+	parsedQuery = search.ConjunctionQuery(
+		q,
+		parsedQuery,
+		//q,
+	)
+
+	// Build the select and group by on distinct profile name
+	parsedQuery.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ComplianceOperatorProfileName).Distinct().Proto(),
+	}
+	parsedQuery.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorProfileName.String(),
+		},
+	}
+	parsedQuery.Pagination = q.GetPagination()
+
+	var results []*distinctProfileName
+	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, d.db, schema.ComplianceOperatorProfileV2Schema, parsedQuery)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, nil
+	}
+	profileNames := make([]string, 0, len(results))
+	for _, result := range results {
+		profileNames = append(profileNames, result.ProfileName)
+	}
+
+	return profileNames, err
+}
+
+type distinctProfileCount struct {
+	TotalCount int `db:"compliance_profile_name_count"`
+}
+
+// CountDistinctProfiles returns count of distinct profiles matching query
+func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query, clusterIDs []string) (int, error) {
+	// Build the matching query to restrict profiles to the incoming clusters
+	readableClusterIDs := bestEffortClusters(ctx, clusterIDs)
+
+	query := search.ConjunctionQuery(
+		search.NewQueryBuilder().
+			AddExactMatches(search.ClusterID, readableClusterIDs...).
+			AddNumericField(search.ProfileCount, storage.Comparator_EQUALS, float32(len(readableClusterIDs))).ProtoQuery(),
+		q,
+	)
+
+	var results []*distinctProfileCount
+	results, err := pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, d.db, schema.ComplianceOperatorProfileV2Schema, withCountQuery(query, search.ComplianceOperatorProfileName))
+	if err != nil {
+		return 0, err
+	}
+	if len(results) == 0 {
+		return 0, nil
+	}
+	if len(results) > 1 {
+		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
+		utils.Should(err)
+		return 0, err
+	}
+	return results[0].TotalCount, nil
+}
+
+func withCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
+	cloned := q.Clone()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+	}
+	return cloned
+}
+
+func bestEffortClusters(ctx context.Context, clusterIDs []string) []string {
+	// Best effort SAC.  We only want to return profiles from the cluster list that the user has access to
+	// view.  So we do the access check to build a narrowed list vs embedding in the query as the logic is far simpler.
+	var bestEffortClusters []string
+	for _, clusterID := range clusterIDs {
+		if complianceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).IsAllowed(sac.ClusterScopeKey(clusterID)) {
+			bestEffortClusters = append(bestEffortClusters, clusterID)
+		}
+	}
+
+	return bestEffortClusters
+}
+
+func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetadata, query *v1.Query) (*v1.Query, error) {
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, err
+	}
+	return search.FilterQueryByQuery(query, sacQueryFilter), nil
 }
