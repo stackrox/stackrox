@@ -111,9 +111,22 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 	return resp, nil
 }
 
+func sanitizeHeaderValue(value string) string {
+	return strings.Map(func(r rune) rune {
+		// Allowed characters for a header value are all visible ASCII, which
+		// are the runes in the range [33, 126].
+		// They include field separators like brackets and such. See RFC7230.
+		if r >= 33 && r <= 126 {
+			return r
+		}
+		return ' '
+	}, value)
+}
+
 func setCustomHeaders(headers func(string, ...string)) {
 	headers(clientconn.RoxctlCommandHeader, RoxctlCommand)
 	headers(clientconn.RoxctlCommandIndexHeader, fmt.Sprint(RoxctlCommandIndex.Add(1)))
+	headers(clientconn.ExecutionEnvironment, sanitizeHeaderValue(env.ExecutionEnvironment.Setting()))
 }
 
 // Do executes a http.Request
