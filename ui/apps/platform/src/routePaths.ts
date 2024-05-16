@@ -202,7 +202,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     // Discovered clusters must precede generic Clusters in Body and so here for consistency.
     'clusters/discovered-clusters': {
-        featureFlagRequirements: allEnabled(['ROX_CLOUD_SOURCES']),
         resourceAccessRequirements: everyResource(['Administration']),
     },
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
