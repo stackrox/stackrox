@@ -43,7 +43,7 @@ spec:
         {{- toYaml ._rox.scannerV4.db.affinity | nindent 8 }}
       {{- if ._rox.scannerV4.db.hostAliases }}
       hostAliases: {{ toYaml ._rox.scannerV4.db.hostAliases | nindent 8 }}
-      {{ - end }}
+      {{- end }}
       serviceAccountName: scanner-v4
       terminationGracePeriodSeconds: 120
       initContainers:

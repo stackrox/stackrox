@@ -46,7 +46,7 @@ spec:
       {{- end }}
       {{- if ._rox.admissionControl.hostAliases }}
       hostAliases: {{ toYaml ._rox.admissionControl.hostAliases | nindent 8 }}
-      {{ - end }}
+      {{- end }}
       {{- if not ._rox.env.openshift }}
       securityContext:
         runAsUser: 4000
