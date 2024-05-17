@@ -34,13 +34,9 @@ func (s *gathererTestSuite) TestGatherer() {
 	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
 	g := newGatherer("Test", t, 24*time.Hour)
 
-	gomock.InOrder(
-		t.EXPECT().Track("Updated Test Identity", nil,
-			matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).
-			Times(1).Do(func(any, any, ...any) { g.Stop() }),
-		t.EXPECT().Track("Test Heartbeat", nil,
-			matchOptions(telemeter.WithTraits(nil))).
-			Times(1).Do(func(any, any, ...any) { g.Stop() }))
+	t.EXPECT().Track("Updated Test Identity", nil,
+		matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).
+		Times(2).Do(func(any, any, ...any) { g.Stop() })
 
 	props := make(map[string]any)
 	var i atomic.Int64
@@ -65,14 +61,12 @@ func (s *gathererTestSuite) TestGathererTicker() {
 
 	lastTrack := concurrency.NewSignal()
 	defer lastTrack.Wait()
+	withTraits := matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))
+	const event = "Updated Test Identity"
 	gomock.InOrder(
-		t.EXPECT().Track("Updated Test Identity", nil,
-			matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).Times(1),
-		t.EXPECT().Track("Test Heartbeat", nil,
-			matchOptions(telemeter.WithTraits(nil))).Times(2),
+		t.EXPECT().Track(event, nil, withTraits).Times(3),
 		// Stop gathering after 3rd heartbeat:
-		t.EXPECT().Track("Test Heartbeat", nil,
-			matchOptions(telemeter.WithTraits(nil))).Times(1).
+		t.EXPECT().Track(event, nil, withTraits).Times(1).
 			Do(func(any, any, ...any) {
 				lastTrack.Signal()
 			}))
