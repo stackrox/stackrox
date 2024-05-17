@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -53,7 +54,7 @@ func TestRegistryMatch(t *testing.T) {
 				cfg:                  &Config{DisableRepoList: tc.disableRepoList},
 			}
 
-			// Prevent lazy load from attempt to change repo list.
+			// Prevent lazy load from attempting to change repo list under test.
 			r.repoListOnce.Do(func() {})
 
 			match := r.Match(img)
@@ -67,6 +68,7 @@ func TestLazyLoadRepoList(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v2/_catalog" {
 			numRepoListCalls++
+			w.Write([]byte(`{"repositories":["repo/path"]}`))
 			return
 		}
 	}))
@@ -76,19 +78,21 @@ func TestLazyLoadRepoList(t *testing.T) {
 		DisableRepoList: false,
 	}
 
+	hostOnly := urlfmt.TrimHTTPPrefixes(s.URL)
+
 	r, err := NewDockerRegistryWithConfig(c, &storage.ImageIntegration{})
 	require.NoError(t, err)
+	assert.Zero(t, numRepoListCalls) // No repo list calls should have been made during construction.
 
-	// No calls should have been made to repo during construction.
-	assert.Zero(t, numRepoListCalls)
+	imgStr := fmt.Sprintf("%s/repo/path:latest", hostOnly)
+	imgName, _, err := utils.GenerateImageNameFromString(imgStr)
+	require.NoError(t, err)
+	assert.True(t, r.Match(imgName))
+	assert.Equal(t, 1, numRepoListCalls) // Lazy load should have executed once.
 
-	r.Match(&storage.ImageName{})
-
-	// A call should now have been made to lazy load repo list.
-	assert.Equal(t, 1, numRepoListCalls)
-
-	r.Match(&storage.ImageName{})
-
-	// Ensure only a single attempt was made to load initial repo list.
-	assert.Equal(t, 1, numRepoListCalls)
+	imgStr = fmt.Sprintf("%s/no/match:latest", hostOnly)
+	imgName, _, err = utils.GenerateImageNameFromString(imgStr)
+	require.NoError(t, err)
+	assert.False(t, r.Match(imgName))
+	assert.Equal(t, 1, numRepoListCalls) // Lazy load should NOT have executed again.
 }

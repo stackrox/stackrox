@@ -94,7 +94,7 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 	client.Client.Timeout = env.RegistryClientTimeout.DurationSetting()
 
 	repoListState := "enabled"
-	if !cfg.DisableRepoList {
+	if cfg.DisableRepoList {
 		repoListState = "disabled"
 	}
 	log.Debugf("created integration %q with repo list %s", integration.GetName(), repoListState)
