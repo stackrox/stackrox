@@ -118,7 +118,7 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 			telemeter.WithGroups(cfg.GroupType, cfg.GroupID),
 			telemeter.WithTraits(props),
 			// Segment drops events with the same properties from the same day.
-			telemeter.WithMessageIDSalt(time.Now().Format(time.DateOnly)),
+			telemeter.WithMessageIDPrefix(time.Now().Format(time.DateOnly)),
 		}
 		cfg.Telemeter().Track("Updated Secured Cluster Identity", nil, opts...)
 	}

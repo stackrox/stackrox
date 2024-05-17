@@ -119,18 +119,18 @@ func (t *segmentTelemeter) getAnonymousID(o *telemeter.CallOptions) string {
 // makeMessageID generates and ID based on the provided event data.
 // This may allow Segment to deduplicate events.
 func (t *segmentTelemeter) makeMessageID(event string, props map[string]any, o *telemeter.CallOptions) string {
-	if o == nil || len(o.MessageIDSalt) == 0 {
+	if o == nil || len(o.MessageIDPrefix) == 0 {
 		return ""
 	}
 	h, err := hashstructure.Hash([]any{
-		props, o.Traits, event, t.getUserID(o), t.getAnonymousID(o), o.MessageIDSalt},
+		props, o.Traits, event, t.getUserID(o), t.getAnonymousID(o)},
 		hashstructure.FormatV2, nil)
 	if err != nil {
 		log.Error("Failed to generate Segment message ID: ", err)
 		// Let Segment generate the id.
 		return ""
 	}
-	return fmt.Sprintf("%x", h)
+	return fmt.Sprintf("%s-%x", o.MessageIDPrefix, h)
 }
 
 func (t *segmentTelemeter) makeContext(o *telemeter.CallOptions) *segment.Context {

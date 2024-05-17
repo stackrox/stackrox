@@ -149,7 +149,7 @@ func Test_makeMessageID(t *testing.T) {
 		"bool": true,
 	}
 	salty := func(options ...telemeter.Option) *telemeter.CallOptions {
-		opts := &telemeter.CallOptions{MessageIDSalt: "salt"}
+		opts := &telemeter.CallOptions{MessageIDPrefix: "test"}
 		for _, o := range options {
 			o(opts)
 		}
@@ -159,7 +159,7 @@ func Test_makeMessageID(t *testing.T) {
 	t.Run("Same ID with same input", func(t *testing.T) {
 		id1 := tt.makeMessageID("test event", props, salty())
 		id2 := tt.makeMessageID("test event", props, salty())
-		assert.Len(t, id1, 16)
+		assert.Len(t, id1, 21)
 		assert.Equal(t, id1, id2)
 	})
 	t.Run("Different ID with different props", func(t *testing.T) {
@@ -175,7 +175,7 @@ func Test_makeMessageID(t *testing.T) {
 	})
 	t.Run("Different ID with different salt", func(t *testing.T) {
 		id1 := tt.makeMessageID("test event", props, salty())
-		id2 := tt.makeMessageID("test event", props, salty(telemeter.WithMessageIDSalt("different")))
+		id2 := tt.makeMessageID("test event", props, salty(telemeter.WithMessageIDPrefix("different")))
 		assert.NotEqual(t, id1, id2)
 	})
 	t.Run("Different ID with different event", func(t *testing.T) {
