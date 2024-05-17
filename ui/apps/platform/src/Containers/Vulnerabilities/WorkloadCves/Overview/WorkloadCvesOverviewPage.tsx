@@ -35,6 +35,7 @@ import {
     COMPONENT_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
 } from 'Containers/Vulnerabilities/searchOptions';
+import { getHasSearchApplied } from 'utils/searchUtils';
 import {
     DefaultFilters,
     WorkloadEntityTab,
@@ -121,13 +122,19 @@ function WorkloadCvesOverviewPage() {
     const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
     const [activeEntityTabKey] = useURLStringUnion('entityTab', workloadEntityTabValues);
 
+    const workloadCvesScopedQueryString = getVulnStateScopedQueryString(
+        querySearchFilter,
+        currentVulnerabilityState
+    );
+    const isFiltered = getHasSearchApplied(querySearchFilter);
+
     const { data } = useQuery<{
         imageCount: number;
         imageCVECount: number;
         deploymentCount: number;
     }>(entityTypeCountsQuery, {
         variables: {
-            query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
+            query: workloadCvesScopedQueryString,
         },
     });
     const entityCounts = {
@@ -288,6 +295,8 @@ function WorkloadCvesOverviewPage() {
                                     rowCount={entityCounts.CVE}
                                     pagination={pagination}
                                     sort={sort}
+                                    workloadCvesScopedQueryString={workloadCvesScopedQueryString}
+                                    isFiltered={isFiltered}
                                     vulnerabilityState={currentVulnerabilityState}
                                     isUnifiedDeferralsEnabled={isUnifiedDeferralsEnabled}
                                 />
@@ -298,9 +307,10 @@ function WorkloadCvesOverviewPage() {
                                     entityToggleGroup={entityToggleGroup}
                                     rowCount={entityCounts.Image}
                                     sort={sort}
+                                    workloadCvesScopedQueryString={workloadCvesScopedQueryString}
+                                    isFiltered={isFiltered}
                                     pagination={pagination}
                                     hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
-                                    vulnerabilityState={currentVulnerabilityState}
                                     onWatchImage={(imageName) => {
                                         setDefaultWatchedImageName(imageName);
                                         watchedImagesModalToggle.openSelect();
@@ -319,7 +329,8 @@ function WorkloadCvesOverviewPage() {
                                     rowCount={entityCounts.Deployment}
                                     pagination={pagination}
                                     sort={sort}
-                                    vulnerabilityState={currentVulnerabilityState}
+                                    workloadCvesScopedQueryString={workloadCvesScopedQueryString}
+                                    isFiltered={isFiltered}
                                 />
                             )}
                         </CardBody>
