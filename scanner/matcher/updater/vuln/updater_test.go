@@ -1,6 +1,7 @@
 package vuln
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"io"
@@ -46,19 +47,22 @@ func (t *testLocker) Lock(ctx context.Context, s string) (context.Context, conte
 	return t.locker.Lock(ctx, s)
 }
 
-func testHTTPServer(t *testing.T) (*httptest.Server, time.Time) {
+func testHTTPServer(t *testing.T, content func(r *http.Request) io.ReadSeeker) (*httptest.Server, time.Time) {
 	now, err := http.ParseTime(time.Now().UTC().Format(http.TimeFormat))
 	require.NoError(t, err)
-	buf := strings.NewReader("test")
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.ServeContent(w, r, "test-file", now, buf)
+		http.ServeContent(w, r, "test-file", now, content(r))
 	}))
 	t.Cleanup(srv.Close)
 	return srv, now
 }
 
 func TestSingleBundleUpdate(t *testing.T) {
-	srv, now := testHTTPServer(t)
+	t.Setenv("ROX_SCANNER_V4_MULTI_BUNDLE", "false")
+
+	srv, now := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
+		return strings.NewReader("test")
+	})
 
 	locker := &testLocker{
 		locker: updates.NewLocalLockSource(),
@@ -104,8 +108,67 @@ func TestSingleBundleUpdate(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestMultiBundleUpdate(t *testing.T) {
+	t.Setenv("ROX_SCANNER_V4_MULTI_BUNDLE", "true")
+
+	srv, now := testHTTPServer(t, func(r *http.Request) io.ReadSeeker {
+		accept := r.Header.Get("X-Scanner-V4-Accept")
+		if accept != "application/vnd.stackrox.scanner-v4.multi-bundle+zip" {
+			return strings.NewReader("test")
+		}
+		var buf bytes.Buffer
+		zipWriter := zip.NewWriter(&buf)
+		err := zipWriter.Close()
+		if err != nil {
+			t.Fatalf("Failed to close zip writer: %v", err)
+		}
+		return bytes.NewReader(buf.Bytes())
+	})
+
+	locker := &testLocker{
+		locker: updates.NewLocalLockSource(),
+	}
+	metadataStore := mocks.NewMockMatcherMetadataStore(gomock.NewController(t))
+	u := &Updater{
+		locker:        locker,
+		pool:          nil,
+		metadataStore: metadataStore,
+		client:        srv.Client(),
+		url:           srv.URL,
+		root:          t.TempDir(),
+		skipGC:        true,
+		importVulns: func(_ context.Context, _ io.Reader) error {
+			return nil
+		},
+		retryDelay: 1 * time.Second,
+		retryMax:   1,
+	}
+
+	// Successful update.
+	metadataStore.EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(now.Add(-time.Minute), nil)
+	metadataStore.EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(now, nil)
+	metadataStore.EXPECT().
+		GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).
+		Return(nil)
+	err := u.Update(context.Background())
+	assert.NoError(t, err)
+
+	// No update.
+	metadataStore.EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(now.Add(time.Minute), nil)
+	err = u.Update(context.Background())
+	assert.NoError(t, err)
+}
+
 func TestFetch(t *testing.T) {
-	srv, now := testHTTPServer(t)
+	srv, now := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
+		return strings.NewReader("test")
+	})
 
 	u := &Updater{
 		client:     srv.Client(),
