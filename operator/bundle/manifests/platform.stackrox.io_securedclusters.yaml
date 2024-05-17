@@ -649,8 +649,8 @@ spec:
                         type: object
                     type: object
                   hostAliases:
-                    description: HostAliases is a list of hostnames and IPs to add
-                      to the collector pod's /etc/hosts file.
+                    description: HostAliases allows configuring additional hostnames
+                      to resolve in the pod's hosts file.
                     items:
                       description: |-
                         HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the
