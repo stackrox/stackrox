@@ -215,7 +215,7 @@ type PerNodeSpec struct {
 	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
 
 	// HostAliases allows configuring additional hostnames to resolve in the pod's hosts file.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=101
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,displayName="Host Aliases"
 	HostAliases []corev1.HostAlias `json:"hostAliases,omitempty"`
 }
 

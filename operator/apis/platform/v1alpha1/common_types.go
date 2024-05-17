@@ -47,7 +47,7 @@ type DeploymentSpec struct {
 	Tolerations []*corev1.Toleration `json:"tolerations,omitempty"`
 
 	// HostAliases allows configuring additional hostnames to resolve in the pod's hosts file.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=103
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=103,displayName="Host Aliases"
 	HostAliases []corev1.HostAlias `json:"hostAliases,omitempty"`
 }
 
