@@ -1315,6 +1315,7 @@ class Kubernetes implements OrchestratorMain {
                                 mapToResourceKind(getStaticPodCount(it.metadata.name), "Pod") +
                                 mapToResourceKind(getStatefulSetCount(it.metadata.name), "StatefulSets") +
                                 mapToResourceKind(getJobCount(it.metadata.name), "Job"),
+                        secretsCount: getSecretCount(it.metadata.name),
                         networkPolicyCount: getNetworkPolicyCount(it.metadata.name)
                 )
             }
