@@ -81,7 +81,3 @@ tests:
     .deployments["scanner-v4-db"].spec.template.spec.hostAliases[0].hostnames | assertThat(length == 2)
     .deployments["scanner-v4-db"].spec.template.spec.hostAliases[0].hostnames[0] | assertThat(. == "foo.local")
     .deployments["scanner-v4-db"].spec.template.spec.hostAliases[0].hostnames[1] | assertThat(. == "bar.local")
-
-
-
-
