@@ -145,7 +145,7 @@ function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCrit
 
     const toolbar = (
         <>
-            <Toolbar style={{ padding: 0 }}>
+            <Toolbar className="pf-v5-u-px-sm pf-v5-py-0">
                 <ToolbarContent style={{ padding: 0 }}>
                     <ToolbarItem widths={{ default: '100%' }}>
                         <TreeViewSearch
@@ -167,7 +167,9 @@ function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCrit
             direction={{ default: 'column' }}
             spaceItems={{ default: 'spaceItemsNone' }}
         >
-            <Title headingLevel="h3">Add policy criteria to (here)</Title>
+            <Title headingLevel="h3" className="pf-v5-u-px-md pf-v5-u-pt-md">
+                Add policy criteria to (here)
+            </Title>
             <FlexItem>
                 <Button variant="link" onClick={() => setAllExpanded(!allExpanded)}>
                     {allExpanded && 'Collapse all'}
