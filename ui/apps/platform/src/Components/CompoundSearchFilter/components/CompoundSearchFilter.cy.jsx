@@ -177,8 +177,13 @@ describe(Cypress.spec.relative, () => {
         const nodeComponenSourceSelectItems =
             'div[aria-label="Filter by source select menu"] ul li';
 
-        cy.get(nodeComponenSourceSelectItems).should('have.length', 2);
-        cy.get(nodeComponenSourceSelectItems).eq(0).should('have.text', 'GO');
-        cy.get(nodeComponenSourceSelectItems).eq(1).should('have.text', 'OS');
+        cy.get(nodeComponenSourceSelectItems).should('have.length', 7);
+        cy.get(nodeComponenSourceSelectItems).eq(0).should('have.text', 'OS');
+        cy.get(nodeComponenSourceSelectItems).eq(1).should('have.text', 'Python');
+        cy.get(nodeComponenSourceSelectItems).eq(2).should('have.text', 'Java');
+        cy.get(nodeComponenSourceSelectItems).eq(3).should('have.text', 'Ruby');
+        cy.get(nodeComponenSourceSelectItems).eq(4).should('have.text', 'Node js');
+        cy.get(nodeComponenSourceSelectItems).eq(5).should('have.text', 'Dotnet Core Runtime');
+        cy.get(nodeComponenSourceSelectItems).eq(6).should('have.text', 'Infrastructure');
     });
 });
