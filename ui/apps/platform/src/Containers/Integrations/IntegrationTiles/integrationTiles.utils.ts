@@ -4,10 +4,13 @@ import { BaseIntegrationDescriptor } from '../utils/integrationsList';
 
 export function featureFlagDependencyFilterer(isFeatureFlagEnabled: IsFeatureFlagEnabled) {
     return (descriptor: BaseIntegrationDescriptor) => {
-        if (typeof descriptor.featureFlagDependency === 'string') {
-            if (!isFeatureFlagEnabled(descriptor.featureFlagDependency)) {
-                return false;
-            }
+        const { featureFlagDependency } = descriptor;
+        if (featureFlagDependency && featureFlagDependency.length > 0) {
+            featureFlagDependency.forEach((featureFlag) => {
+                if (!isFeatureFlagEnabled(featureFlag)) {
+                    return false;
+                }
+            });
         }
         return true;
     };

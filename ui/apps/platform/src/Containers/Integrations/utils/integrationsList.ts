@@ -29,7 +29,7 @@ import { integrationsPath } from 'routePaths';
  * To add an integration tile behind a feature flag:
  * 1. Add to string union type in types/featureFlag.ts file.
  * 2. Add the following property to the integration descriptor:
- *    featureFlagDependency: 'ROX_WHATEVER',
+ *    featureFlagDependency: ['ROX_WHATEVER_1', 'ROX_WHATEVER_2'],
  */
 
 import { FeatureFlagEnvVar } from 'types/featureFlag';
@@ -78,7 +78,7 @@ export type BaseIntegrationDescriptor = {
     type: string;
     label: string;
     image: string;
-    featureFlagDependency?: FeatureFlagEnvVar;
+    featureFlagDependency?: FeatureFlagEnvVar[];
 };
 
 export const imageIntegrationsSource: IntegrationSource = 'imageIntegrations';
@@ -95,7 +95,7 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
         image: logo,
         label: 'Scanner V4',
         type: 'scannerv4',
-        featureFlagDependency: 'ROX_SCANNER_V4',
+        featureFlagDependency: ['ROX_SCANNER_V4'],
     },
     {
         categories: 'Registry',
@@ -208,7 +208,7 @@ export const notifierIntegrationsDescriptors: NotifierIntegrationDescriptor[] = 
         image: email,
         label: 'ACSCS Email',
         type: 'acscsEmail',
-        featureFlagDependency: 'ROX_ACSCS_EMAIL_NOTIFIER',
+        featureFlagDependency: ['ROX_ACSCS_EMAIL_NOTIFIER', 'ROX_MANAGED_CENTRAL'],
     },
     {
         image: google,

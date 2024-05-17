@@ -43,14 +43,14 @@ export type AccessorFunction<Integration> = (integration: Integration) => string
 export type IntegrationTableColumnDescriptor<Integration> = {
     Header: string;
     accessor: string | AccessorFunction<Integration>;
-    featureFlagDependency?: FeatureFlagEnvVar;
+    featureFlagDependency?: FeatureFlagEnvVar[];
 };
 
 /*
  * To add a table column behind a feature flag:
  * 1. Add to string union type in types/featureFlag.ts file.
  * 2. Add the following property to the table column descriptor:
- *    featureFlagDependency: 'ROX_WHATEVER',
+ *    featureFlagDependency: ['ROX_WHATEVER_1', 'ROX_WHATEVER_2'],
  */
 
 type IntegrationTableColumnDescriptorMap = {

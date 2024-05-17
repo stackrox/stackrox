@@ -718,8 +718,13 @@ export function getPolicyDescriptors(
         eventSource === 'AUDIT_LOG_EVENT' ? auditLogDescriptor : policyConfigurationDescriptor;
 
     const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
-        if (typeof unfilteredDescriptor.featureFlagDependency === 'string') {
-            return isFeatureFlagEnabled(unfilteredDescriptor.featureFlagDependency);
+        const { featureFlagDependency } = unfilteredDescriptor;
+        if (featureFlagDependency && featureFlagDependency.length > 0) {
+            featureFlagDependency.forEach((featureFlag) => {
+                if (!isFeatureFlagEnabled(featureFlag)) {
+                    return false;
+                }
+            });
         }
         return true;
     });

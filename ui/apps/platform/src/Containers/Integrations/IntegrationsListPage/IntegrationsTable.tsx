@@ -68,8 +68,13 @@ function IntegrationsTable({
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const columns = tableColumnDescriptor[source][type].filter((integration) => {
-        if (typeof integration.featureFlagDependency === 'string') {
-            return isFeatureFlagEnabled(integration.featureFlagDependency);
+        const { featureFlagDependency } = integration;
+        if (featureFlagDependency && featureFlagDependency.length > 0) {
+            featureFlagDependency.forEach((featureFlag) => {
+                if (!isFeatureFlagEnabled(featureFlag)) {
+                    return false;
+                }
+            });
         }
         return true;
     });
