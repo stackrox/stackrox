@@ -7,7 +7,6 @@ type CallOptions struct {
 	ClientID        string
 	ClientType      string
 	MessageIDPrefix string
-	DropDuplicates  bool
 
 	// [group type: [group id]]
 	Groups map[string][]string
@@ -63,23 +62,17 @@ func WithTraits(traits map[string]any) Option {
 	}
 }
 
-// WithMessageIDPrefix enables generation of custom message ID, which is
-// computed as the <provided prefix>-<message data hash>.
-func WithMessageIDPrefix(prefix string) Option {
-	return func(o *CallOptions) {
-		o.MessageIDPrefix = prefix
-	}
-}
-
 // WithNoDuplicates enables the use of the expiring cache to check for
 // previously sent messages.
 // The message ID is cached since the first use of WithNoDuplicates, meaning if
-// some message was sent without this option, it won't be considered in the
+// some message has been sent without this option, it won't be considered in the
 // consequent call with the option.
-func WithNoDuplicates(prefix string) Option {
+// If messageIDPrefix is empty, the option is ignored.
+// Check the cache implementation for details for how long the ID is stored.
+// Note: on the Segment server side a similar cache is used for deduplication.
+func WithNoDuplicates(messageIDPrefix string) Option {
 	return func(o *CallOptions) {
-		o.MessageIDPrefix = prefix
-		o.DropDuplicates = true
+		o.MessageIDPrefix = messageIDPrefix
 	}
 }
 

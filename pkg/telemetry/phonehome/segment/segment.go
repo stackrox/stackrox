@@ -17,7 +17,7 @@ var (
 	_   telemeter.Telemeter = (*segmentTelemeter)(nil)
 	// expiringIDCache stores the computed message IDs to drop duplicates if
 	// requested.
-	expiringIDCache = expiringcache.NewExpiringCache(24 * time.Hour)
+	expiringIDCache = expiringcache.NewExpiringCache(24*time.Hour, expiringcache.UpdateExpirationOnGets)
 )
 
 type segmentTelemeter struct {
@@ -198,7 +198,7 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 	options := telemeter.ApplyOptions(opts)
 
 	id := t.makeMessageID("identify", props, options)
-	if options.DropDuplicates && isDuplicate(id) {
+	if isDuplicate(id) {
 		return
 	}
 
@@ -226,7 +226,7 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 	}
 	options := telemeter.ApplyOptions(opts)
 	id := t.makeMessageID("group", props, options)
-	if options.DropDuplicates && isDuplicate(id) {
+	if isDuplicate(id) {
 		return
 	}
 	t.group(id, props, options)
@@ -299,7 +299,7 @@ func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...tel
 	options := telemeter.ApplyOptions(opts)
 
 	id := t.makeMessageID(event, props, options)
-	if options.DropDuplicates && isDuplicate(id) {
+	if isDuplicate(id) {
 		return
 	}
 
