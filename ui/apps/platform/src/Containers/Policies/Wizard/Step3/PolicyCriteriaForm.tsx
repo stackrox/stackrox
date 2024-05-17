@@ -37,7 +37,11 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
         }
     }
 
-    const filteredDescriptors = getPolicyDescriptors(values.eventSource, values.lifecycleStages);
+    const filteredDescriptors = getPolicyDescriptors(
+        isFeatureFlagEnabled,
+        values.eventSource,
+        values.lifecycleStages
+    );
 
     const headingElements = (
         <>

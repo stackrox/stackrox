@@ -711,6 +711,7 @@ export function getLifeCyclesUpdates(
 }
 
 export function getPolicyDescriptors(
+    isFeatureFlagEnabled: (string) => boolean,
     eventSource: PolicyEventSource,
     lifecycleStages: LifecycleStage[]
 ) {
@@ -720,7 +721,7 @@ export function getPolicyDescriptors(
     const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
         const { featureFlagDependency } = unfilteredDescriptor;
         if (featureFlagDependency && featureFlagDependency.length > 0) {
-            return allEnabled(featureFlagDependency);
+            return allEnabled(featureFlagDependency)(isFeatureFlagEnabled);
         }
         return true;
     });

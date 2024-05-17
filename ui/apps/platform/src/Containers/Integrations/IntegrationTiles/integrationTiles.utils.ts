@@ -1,11 +1,13 @@
+import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { allEnabled } from 'utils/featureFlagUtils';
+
 import { BaseIntegrationDescriptor } from '../utils/integrationsList';
 
-export function featureFlagDependencyFilter() {
+export function featureFlagDependencyFilterer(isFeatureFlagEnabled: IsFeatureFlagEnabled) {
     return (descriptor: BaseIntegrationDescriptor) => {
         const { featureFlagDependency } = descriptor;
         if (featureFlagDependency && featureFlagDependency.length > 0) {
-            return allEnabled(featureFlagDependency);
+            return allEnabled(featureFlagDependency)(isFeatureFlagEnabled);
         }
         return true;
     };
