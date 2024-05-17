@@ -131,9 +131,9 @@ func GetHostAliases(key string, hostAliases []corev1.HostAlias) *ValuesBuilder {
 	v := NewValuesBuilder()
 
 	var convertedList []interface{}
-	for _, hostAlias := range hostAliases {
-		hostAliasPointer := &hostAlias
-		m, err := runtime.DefaultUnstructuredConverter.ToUnstructured(hostAliasPointer)
+	for i := range hostAliases {
+		hostAlias := hostAliases[i]
+		m, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&hostAlias)
 		if err != nil {
 			v.SetError(errors.Wrapf(err, "failed converting %q to unstructured", key))
 			break
