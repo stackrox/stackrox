@@ -41,7 +41,7 @@ spec:
       {{- end }}
       affinity:
         {{- toYaml ._rox.scannerV4.indexer.affinity | nindent 8 }}
-      {{ - if ._rox.scannerV4.indexer.hostAliases }}
+      {{- if ._rox.scannerV4.indexer.hostAliases }}
       hostAliases: {{ toYaml ._rox.scannerV4.indexer.hostAliases | nindent 8 }}
       {{- end }}
       containers:
