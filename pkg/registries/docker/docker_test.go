@@ -68,7 +68,7 @@ func TestLazyLoadRepoList(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v2/_catalog" {
 			numRepoListCalls++
-			w.Write([]byte(`{"repositories":["repo/path"]}`))
+			_, _ = w.Write([]byte(`{"repositories":["repo/path"]}`))
 			return
 		}
 	}))
