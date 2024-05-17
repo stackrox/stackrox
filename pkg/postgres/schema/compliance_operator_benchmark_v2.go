@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -19,7 +20,12 @@ var (
 	// CreateTableComplianceOperatorBenchmarkV2Stmt holds the create statement for table `compliance_operator_benchmark_v2`.
 	CreateTableComplianceOperatorBenchmarkV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ComplianceOperatorBenchmarkV2)(nil),
-		Children:  []*postgres.CreateStmts{},
+		Children: []*postgres.CreateStmts{
+			&postgres.CreateStmts{
+				GormModel: (*ComplianceOperatorBenchmarkV2Profiles)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
+		},
 	}
 
 	// ComplianceOperatorBenchmarkV2Schema is the go schema for table `compliance_operator_benchmark_v2`.
@@ -29,10 +35,17 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorBenchmarkV2)(nil)), "compliance_operator_benchmark_v2")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_BENCHMARK, "complianceoperatorbenchmarkv2", (*storage.ComplianceOperatorBenchmarkV2)(nil)))
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.ComplianceOperatorProfileV2": ComplianceOperatorProfileV2Schema,
+		}
+
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_BENCHMARKS, "complianceoperatorbenchmarkv2", (*storage.ComplianceOperatorBenchmarkV2)(nil)))
 		schema.ScopingResource = resources.ComplianceOperator
 		RegisterTable(schema, CreateTableComplianceOperatorBenchmarkV2Stmt, features.ComplianceEnhancements.Enabled)
-		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_BENCHMARK, schema)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_BENCHMARKS, schema)
 		return schema
 	}()
 )
@@ -40,6 +53,8 @@ var (
 const (
 	// ComplianceOperatorBenchmarkV2TableName specifies the name of the table in postgres.
 	ComplianceOperatorBenchmarkV2TableName = "compliance_operator_benchmark_v2"
+	// ComplianceOperatorBenchmarkV2ProfilesTableName specifies the name of the table in postgres.
+	ComplianceOperatorBenchmarkV2ProfilesTableName = "compliance_operator_benchmark_v2_profiles"
 )
 
 // ComplianceOperatorBenchmarkV2 holds the Gorm model for Postgres table `compliance_operator_benchmark_v2`.
@@ -47,4 +62,13 @@ type ComplianceOperatorBenchmarkV2 struct {
 	ID         string `gorm:"column:id;type:uuid;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+// ComplianceOperatorBenchmarkV2Profiles holds the Gorm model for Postgres table `compliance_operator_benchmark_v2_profiles`.
+type ComplianceOperatorBenchmarkV2Profiles struct {
+	ComplianceOperatorBenchmarkV2ID  string                        `gorm:"column:compliance_operator_benchmark_v2_id;type:uuid;primaryKey"`
+	Idx                              int                           `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorbenchmarkv2profiles_idx,type:btree"`
+	ProfileName                      string                        `gorm:"column:profilename;type:varchar"`
+	ProfileVersion                   string                        `gorm:"column:profileversion;type:varchar"`
+	ComplianceOperatorBenchmarkV2Ref ComplianceOperatorBenchmarkV2 `gorm:"foreignKey:compliance_operator_benchmark_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

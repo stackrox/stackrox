@@ -101,6 +101,32 @@ func insertIntoComplianceOperatorBenchmarkV2(batch *pgx.Batch, obj *storage.Comp
 	finalStr := "INSERT INTO compliance_operator_benchmark_v2 (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
+	var query string
+
+	for childIndex, child := range obj.GetProfiles() {
+		if err := insertIntoComplianceOperatorBenchmarkV2Profiles(batch, child, obj.GetId(), childIndex); err != nil {
+			return err
+		}
+	}
+
+	query = "delete from compliance_operator_benchmark_v2_profiles where compliance_operator_benchmark_v2_Id = $1 AND idx >= $2"
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetProfiles()))
+	return nil
+}
+
+func insertIntoComplianceOperatorBenchmarkV2Profiles(batch *pgx.Batch, obj *storage.ComplianceOperatorBenchmarkV2_Profile, complianceOperatorBenchmarkV2ID string, idx int) error {
+
+	values := []interface{}{
+		// parent primary keys start
+		pgutils.NilOrUUID(complianceOperatorBenchmarkV2ID),
+		idx,
+		obj.GetProfileName(),
+		obj.GetProfileVersion(),
+	}
+
+	finalStr := "INSERT INTO compliance_operator_benchmark_v2_profiles (compliance_operator_benchmark_v2_Id, idx, ProfileName, ProfileVersion) VALUES($1, $2, $3, $4) ON CONFLICT(compliance_operator_benchmark_v2_Id, idx) DO UPDATE SET compliance_operator_benchmark_v2_Id = EXCLUDED.compliance_operator_benchmark_v2_Id, idx = EXCLUDED.idx, ProfileName = EXCLUDED.ProfileName, ProfileVersion = EXCLUDED.ProfileVersion"
+	batch.Queue(finalStr, values...)
+
 	return nil
 }
 
@@ -160,6 +186,57 @@ func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Delet
 		}
 	}
 
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
+
+		if err := copyFromComplianceOperatorBenchmarkV2Profiles(ctx, s, tx, obj.GetId(), obj.GetProfiles()...); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func copyFromComplianceOperatorBenchmarkV2Profiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorBenchmarkV2ID string, objs ...*storage.ComplianceOperatorBenchmarkV2_Profile) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
+	inputRows := make([][]interface{}, 0, batchSize)
+
+	copyCols := []string{
+		"compliance_operator_benchmark_v2_id",
+		"idx",
+		"profilename",
+		"profileversion",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+			"to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+			pgutils.NilOrUUID(complianceOperatorBenchmarkV2ID),
+			idx,
+			obj.GetProfileName(),
+			obj.GetProfileVersion(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_benchmark_v2_profiles"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+				return err
+			}
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
 	return nil
 }
 
@@ -180,6 +257,12 @@ func Destroy(ctx context.Context, db postgres.DB) {
 
 func dropTableComplianceOperatorBenchmarkV2(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_benchmark_v2 CASCADE")
+	dropTableComplianceOperatorBenchmarkV2Profiles(ctx, db)
+
+}
+
+func dropTableComplianceOperatorBenchmarkV2Profiles(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_benchmark_v2_profiles CASCADE")
 
 }
 

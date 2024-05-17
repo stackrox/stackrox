@@ -144,7 +144,13 @@ message ComplianceOperatorBenchmarkV2 {
   // Example: https://control.compliance.openshift.io/CIS-OCP
   repeated string profile_annotation = 5;
   string provider = 6;
-  repeated string profile_names = 7;
+
+  message Profile {
+    string profile_name = 1; // @gotags: search:"Compliance Profile Name" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
+    string profile_version = 2; // @gotags: search:"Compliance Profile Version" sql:"fk(ComplianceOperatorProfileV2:profile_version),no-fk-constraint"
+  }
+
+  repeated Profile profiles = 7;
 }
 
 // Next Tag: 18
