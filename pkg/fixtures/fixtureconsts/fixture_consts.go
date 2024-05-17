@@ -61,4 +61,7 @@ const (
 
 	PodName1 = "nginx-7db9fccd9b-92hfs"
 	PodName2 = "visa-processor"
+
+	ClusterName1 = "Cluster1"
+	ClusterName2 = "Cluster2"
 )

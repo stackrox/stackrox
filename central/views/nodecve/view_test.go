@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package nodecve
 
 import (
@@ -7,23 +9,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/central/cve/converter/v2"
-	converterV2 "github.com/stackrox/rox/central/cve/converter/v2"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -37,9 +39,9 @@ type testCase struct {
 }
 
 type sacTestCase struct {
-	desc            string
-	ctx             context.Context
-	visibleClusters set.StringSet
+	desc         string
+	ctx          context.Context
+	visibleNodes set.StringSet
 }
 
 type paginationTestCase struct {
@@ -53,8 +55,9 @@ type paginationTestCase struct {
 type lessFunc func(records []CveCore) func(i, j int) bool
 
 type filterImpl struct {
-	matchCluster  func(cluster *storage.Cluster) bool
-	matchCVEParts func(cvePart converter.ClusterCVEParts) bool
+	matchNode    func(node *storage.Node) bool
+	matchCluster func(cluster *storage.Cluster) bool
+	matchVuln    func(vuln *storage.NodeVulnerability) bool
 }
 
 func matchAllFilter() *filterImpl {
@@ -62,7 +65,10 @@ func matchAllFilter() *filterImpl {
 		matchCluster: func(_ *storage.Cluster) bool {
 			return true
 		},
-		matchCVEParts: func(_ converter.ClusterCVEParts) bool {
+		matchNode: func(_ *storage.Node) bool {
+			return true
+		},
+		matchVuln: func(_ *storage.NodeVulnerability) bool {
 			return true
 		},
 	}
@@ -73,10 +79,18 @@ func matchNoneFilter() *filterImpl {
 		matchCluster: func(_ *storage.Cluster) bool {
 			return false
 		},
-		matchCVEParts: func(_ converter.ClusterCVEParts) bool {
+		matchNode: func(_ *storage.Node) bool {
+			return false
+		},
+		matchVuln: func(_ *storage.NodeVulnerability) bool {
 			return false
 		},
 	}
+}
+
+func (f *filterImpl) withNodeFilter(fn func(node *storage.Node) bool) *filterImpl {
+	f.matchNode = fn
+	return f
 }
 
 func (f *filterImpl) withClusterFilter(fn func(cluster *storage.Cluster) bool) *filterImpl {
@@ -84,8 +98,8 @@ func (f *filterImpl) withClusterFilter(fn func(cluster *storage.Cluster) bool) *
 	return f
 }
 
-func (f *filterImpl) withCVEPartsFilter(fn func(cveParts converter.ClusterCVEParts) bool) *filterImpl {
-	f.matchCVEParts = fn
+func (f *filterImpl) withVulnFilter(fn func(vuln *storage.NodeVulnerability) bool) *filterImpl {
+	f.matchVuln = fn
 	return f
 }
 
@@ -96,50 +110,49 @@ func TestNodeCVEView(t *testing.T) {
 type NodeCVEViewTestSuite struct {
 	suite.Suite
 
-	testDB  *pgtest.TestPostgres
-	cveView CveView
-	// ClusterID -> *storage.Cluster
-	clusterMap map[string]*storage.Cluster
-	// ClusterName -> ClusterID
-	clusterNameToIDMap map[string]string
-	cvePartsList       []converter.ClusterCVEParts
+	ctx    context.Context
+	testDB *pgtest.TestPostgres
+
+	nameToClusters map[string]*storage.Cluster
+
+	nodeMap      map[string]*storage.Node
+	cveView      CveView
+	cveCreateMap map[string]*storage.NodeCVE
+}
+
+func (s *NodeCVEViewTestSuite) createTestClusters() {
+	clusterDatastore, err := clusterDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(err)
+	cluster1 := fixtures.GetCluster(fixtureconsts.ClusterName1)
+	cluster1.Id = fixtureconsts.Cluster1
+	cluster2 := fixtures.GetCluster(fixtureconsts.ClusterName2)
+	cluster2.Id = fixtureconsts.Cluster2
+	s.Require().NoError(clusterDatastore.UpdateCluster(s.ctx, cluster1))
+	s.Require().NoError(clusterDatastore.UpdateCluster(s.ctx, cluster2))
+	s.nameToClusters = map[string]*storage.Cluster{cluster1.GetName(): cluster1, cluster2.GetName(): cluster2}
 }
 
 func (s *NodeCVEViewTestSuite) SetupSuite() {
-	ctx := sac.WithAllAccess(context.Background())
+	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 
 	// Initialize the datastore.
+	s.createTestClusters()
+
 	nodeDatastore := nodeDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	nodeCVEDatastore, err := nodeCVEDataStore.GetTestPostgresDataStore(s.T(), s.testDB)
+	s.nodeMap = getTestNodes()
+	for _, node := range s.nodeMap {
+		s.Require().NoError(nodeDatastore.UpsertNode(s.ctx, node))
+	}
+
+	cveStore, err := nodeCVEDataStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Require().NoError(err)
-
-	clusterNameToIDMap := make(map[string]string)
-	// Upsert test data
-	clusterMap, cvePartsByType := getTestData()
-	for _, c := range clusterMap {
-		err = clusterDatastore.UpdateCluster(ctx, c)
-		s.Require().NoError(err)
-		clusterNameToIDMap[c.GetName()] = c.GetId()
+	storedCves, err := cveStore.SearchRawCVEs(s.ctx, nil)
+	s.Require().NoError(err)
+	s.cveCreateMap = make(map[string]*storage.NodeCVE)
+	for _, c := range storedCves {
+		s.cveCreateMap[c.GetId()] = c
 	}
-
-	var allCvePartsList []converter.ClusterCVEParts
-	for cveType, cvePartsList := range cvePartsByType {
-		err = clusterCVEDatastore.UpsertClusterCVEsInternal(ctx, cveType, cvePartsList...)
-		s.Require().NoError(err)
-		allCvePartsList = append(allCvePartsList, cvePartsList...)
-	}
-
-	for i, cveParts := range allCvePartsList {
-		stored, exists, err := clusterCVEDatastore.Get(ctx, cveParts.CVE.GetId())
-		s.Require().NoError(err)
-		s.Require().True(exists)
-		allCvePartsList[i].CVE = stored
-	}
-
-	s.clusterMap = clusterMap
-	s.clusterNameToIDMap = clusterNameToIDMap
-	s.cvePartsList = allCvePartsList
 	s.cveView = NewCVEView(s.testDB.DB)
 }
 
@@ -160,17 +173,6 @@ func (s *NodeCVEViewTestSuite) TestGetNodeCVECore() {
 			expected := s.compileExpectedCVECores(tc.matchFilter)
 			assert.Equal(t, len(expected), len(actual))
 			assert.ElementsMatch(t, expected, actual)
-
-			for _, record := range actual {
-				// The total cluster count should be equal to aggregation of the all platform type counts.
-				assert.Equal(t,
-					record.GetClusterCountByPlatformType().GetGenericClusterCount()+
-						record.GetClusterCountByPlatformType().GetKubernetesClusterCount()+
-						record.GetClusterCountByPlatformType().GetOpenshiftClusterCount()+
-						record.GetClusterCountByPlatformType().GetOpenshift4ClusterCount(),
-					record.GetClusterCount(),
-				)
-			}
 		})
 	}
 }
@@ -188,10 +190,10 @@ func (s *NodeCVEViewTestSuite) TestGetNodeCVECoreSAC() {
 
 				// Wrap cluster filter with sac filter.
 				matchFilter := tc.matchFilter
-				baseClusterMatchFilter := matchFilter.matchCluster
-				matchFilter.withClusterFilter(func(cluster *storage.Cluster) bool {
-					if sacTC.visibleClusters.Contains(cluster.GetId()) {
-						return baseClusterMatchFilter(cluster)
+				baseNodeMatchFilter := matchFilter.matchNode
+				matchFilter.withNodeFilter(func(node *storage.Node) bool {
+					if sacTC.visibleNodes.Contains(node.GetId()) {
+						return baseNodeMatchFilter(node)
 					}
 					return false
 				})
@@ -222,13 +224,13 @@ func (s *NodeCVEViewTestSuite) TestGetNodeCVECoreWithPagination() {
 				assert.EqualValues(t, expected, actual)
 
 				for _, record := range actual {
-					// The total cluster count should be equal to aggregation of the all platform type counts.
+					// The total cve count should be equal to aggregation of the all severity cve counts.
 					assert.Equal(t,
-						record.GetClusterCountByPlatformType().GetGenericClusterCount()+
-							record.GetClusterCountByPlatformType().GetKubernetesClusterCount()+
-							record.GetClusterCountByPlatformType().GetOpenshiftClusterCount()+
-							record.GetClusterCountByPlatformType().GetOpenshift4ClusterCount(),
-						record.GetClusterCount(),
+						record.GetNodeCount(),
+						record.GetNodeCountBySeverity().GetCriticalSeverityCount()+
+							record.GetNodeCountBySeverity().GetImportantSeverityCount()+
+							record.GetNodeCountBySeverity().GetModerateSeverityCount()+
+							record.GetNodeCountBySeverity().GetLowSeverityCount(),
 					)
 				}
 			})
@@ -265,16 +267,106 @@ func (s *NodeCVEViewTestSuite) TestCountNodeCVECoreSAC() {
 
 				// Wrap cluster filter with sac filter.
 				matchFilter := tc.matchFilter
-				baseClusterMatchFilter := matchFilter.matchCluster
-				matchFilter.withClusterFilter(func(cluster *storage.Cluster) bool {
-					if sacTC.visibleClusters.Contains(cluster.GetId()) {
-						return baseClusterMatchFilter(cluster)
+				baseClusterMatchFilter := matchFilter.matchNode
+				matchFilter.withNodeFilter(func(node *storage.Node) bool {
+					if sacTC.visibleNodes.Contains(node.GetId()) {
+						return baseClusterMatchFilter(node)
 					}
 					return false
 				})
 
 				expected := s.compileExpectedCVECores(tc.matchFilter)
 				assert.Equal(t, len(expected), actual)
+			})
+		}
+	}
+}
+
+func (s *NodeCVEViewTestSuite) TestGetNodeIDs() {
+	for _, tc := range s.testCases() {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			// Such testcases are meant only for Get().
+			if tc.expectedErr != "" {
+				return
+			}
+
+			actualAffectedNodeIDs, err := s.cveView.GetNodeIDs(sac.WithAllAccess(tc.ctx), tc.q)
+			assert.NoError(t, err)
+			expectedAffectedNodeIDs := s.compileExpectedAffectedNodeIDs(tc.matchFilter)
+			assert.ElementsMatch(t, expectedAffectedNodeIDs, actualAffectedNodeIDs)
+		})
+	}
+}
+
+func (s *NodeCVEViewTestSuite) TestGetNodeIDsSAC() {
+	for _, tc := range s.testCases() {
+		for _, sacTC := range s.sacTestCases(tc.ctx) {
+			s.T().Run(fmt.Sprintf("SAC desc: %s; test desc: %s ", sacTC.desc, tc.desc), func(t *testing.T) {
+				// Such testcases are meant only for Get().
+				if tc.expectedErr != "" {
+					return
+				}
+				actualAffectedNodeIDs, err := s.cveView.GetNodeIDs(sacTC.ctx, tc.q)
+				assert.NoError(t, err)
+
+				// Wrap cluster filter with sac filter.
+				filterWithSAC := matchAllFilter().
+					withNodeFilter(func(node *storage.Node) bool {
+						if sacTC.visibleNodes.Contains(node.GetId()) {
+							return tc.matchFilter.matchNode(node)
+						}
+						return false
+					}).
+					withVulnFilter(tc.matchFilter.matchVuln).
+					withClusterFilter(tc.matchFilter.matchCluster)
+
+				expectedAffectedClusterIDs := s.compileExpectedAffectedNodeIDs(filterWithSAC)
+				assert.ElementsMatch(t, expectedAffectedClusterIDs, actualAffectedNodeIDs)
+			})
+		}
+	}
+}
+
+func (s *NodeCVEViewTestSuite) TestCountBySeverity() {
+	for _, tc := range s.testCases() {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			// Such testcases are meant only for Get().
+			if tc.expectedErr != "" {
+				return
+			}
+
+			actualCountBySeverity, err := s.cveView.CountBySeverity(sac.WithAllAccess(tc.ctx), tc.q)
+			assert.NoError(t, err)
+			expectedCountBySeverity := s.compileExpectedCountBySeverity(tc.matchFilter)
+			assert.Equal(t, expectedCountBySeverity, actualCountBySeverity)
+		})
+	}
+}
+
+func (s *NodeCVEViewTestSuite) TestCountBySeveritySAC() {
+	for _, tc := range s.testCases() {
+		for _, sacTC := range s.sacTestCases(tc.ctx) {
+			s.T().Run(fmt.Sprintf("SAC desc: %s; test desc: %s ", sacTC.desc, tc.desc), func(t *testing.T) {
+				// Such testcases are meant only for Get().
+				if tc.expectedErr != "" {
+					return
+				}
+				actualCountBySeverity, err := s.cveView.CountBySeverity(sacTC.ctx, tc.q)
+				assert.NoError(t, err)
+
+				// Wrap cluster filter with sac filter.
+				filterWithSAC := matchAllFilter().
+					withNodeFilter(func(node *storage.Node) bool {
+						if sacTC.visibleNodes.Contains(node.GetId()) {
+							return tc.matchFilter.matchNode(node)
+						}
+						return false
+					}).
+					withVulnFilter(tc.matchFilter.matchVuln).
+					withClusterFilter(tc.matchFilter.matchCluster)
+				expectedCountBySeverity := s.compileExpectedCountBySeverity(filterWithSAC)
+				assert.Equal(t, expectedCountBySeverity, actualCountBySeverity)
+
 			})
 		}
 	}
@@ -291,33 +383,44 @@ func (s *NodeCVEViewTestSuite) testCases() []testCase {
 		{
 			desc: "search one cve",
 			ctx:  context.Background(),
-			q:    search.NewQueryBuilder().AddExactMatches(search.CVE, "cve-1").ProtoQuery(),
-			matchFilter: matchAllFilter().withCVEPartsFilter(func(cveParts converterV2.ClusterCVEParts) bool {
-				return cveParts.CVE.GetCveBaseInfo().GetCve() == "cve-1"
+			q:    search.NewQueryBuilder().AddExactMatches(search.CVE, "CVE-2014-6200").ProtoQuery(),
+			matchFilter: matchAllFilter().withVulnFilter(func(vuln *storage.NodeVulnerability) bool {
+				return vuln.GetCveBaseInfo().GetCve() == "CVE-2014-6200"
 			}),
 		},
 		{
 			desc: "search one cluster",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.Cluster, "openshift-1").ProtoQuery(),
+				AddExactMatches(search.Cluster, fixtureconsts.ClusterName2).ProtoQuery(),
 			matchFilter: matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
-				return cluster.GetName() == "openshift-1"
+				return cluster.GetName() == fixtureconsts.ClusterName2
 			}),
 		},
 		{
-			desc: "search one cve + one cluster",
+			desc: "search one node",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.CVE, "cve-2").
-				AddExactMatches(search.Cluster, "openshift-2").
+				AddExactMatches(search.Node, "Node-1").
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
-				withClusterFilter(func(cluster *storage.Cluster) bool {
-					return cluster.GetName() == "openshift-2"
+				withNodeFilter(func(node *storage.Node) bool {
+					return node.GetName() == "Node-1"
+				}),
+		},
+		{
+			desc: "search one cve + one node",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.CVE, "CVE-2014-6200").
+				AddExactMatches(search.Node, "Node-1").
+				ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withNodeFilter(func(node *storage.Node) bool {
+					return node.GetName() == "Node-1"
 				}).
-				withCVEPartsFilter(func(cveParts converterV2.ClusterCVEParts) bool {
-					return cveParts.CVE.GetCveBaseInfo().GetCve() == "cve-2"
+				withVulnFilter(func(vuln *storage.NodeVulnerability) bool {
+					return vuln.GetCveBaseInfo().GetCve() == "CVE-2014-6200"
 				}),
 		},
 		{
@@ -325,90 +428,70 @@ func (s *NodeCVEViewTestSuite) testCases() []testCase {
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
 				AddStrings(search.CVSS, ">7.0").ProtoQuery(),
-			matchFilter: matchAllFilter().withCVEPartsFilter(func(cveParts converterV2.ClusterCVEParts) bool {
-				return cveParts.CVE.Cvss > 7.0
-			}),
-		},
-		{
-			desc: "search fixable",
-			ctx:  context.Background(),
-			q: search.NewQueryBuilder().
-				AddBools(search.ClusterCVEFixable, true).ProtoQuery(),
-			matchFilter: matchAllFilter().withCVEPartsFilter(func(cveParts converterV2.ClusterCVEParts) bool {
-				for _, child := range cveParts.Children {
-					if child.Edge.GetIsFixable() {
-						return true
-					}
-				}
-				return false
-			}),
-		},
-		{
-			desc: "search fixable + cluster type OCP",
-			ctx:  context.Background(),
-			q: search.NewQueryBuilder().
-				AddBools(search.ClusterCVEFixable, true).
-				AddExactMatches(search.ClusterType, storage.ClusterMetadata_OCP.String()).
-				ProtoQuery(),
 			matchFilter: matchAllFilter().
-				withClusterFilter(func(cluster *storage.Cluster) bool {
-					return cluster.GetStatus().GetProviderMetadata().GetCluster().GetType() == storage.ClusterMetadata_OCP
-				}).
-				withCVEPartsFilter(func(cveParts converterV2.ClusterCVEParts) bool {
-					for _, child := range cveParts.Children {
-						if child.Edge.GetIsFixable() {
-							return true
-						}
-					}
-					return false
+				withVulnFilter(func(vuln *storage.NodeVulnerability) bool {
+					return vuln.GetCvss() > 7.0
 				}),
 		},
 		{
-			desc: "search openshift4 platform type",
+			desc: "search one operating system",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.ClusterPlatformType, storage.ClusterType_OPENSHIFT4_CLUSTER.String()).ProtoQuery(),
-			matchFilter: matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
-				return cluster.GetType() == storage.ClusterType_OPENSHIFT4_CLUSTER
-			}),
-		},
-		{
-			desc: "search multiple platform types",
-			ctx:  context.Background(),
-			q: search.NewQueryBuilder().
-				AddExactMatches(search.ClusterPlatformType,
-					storage.ClusterType_KUBERNETES_CLUSTER.String(),
-					storage.ClusterType_OPENSHIFT_CLUSTER.String(),
-				).
+				AddExactMatches(search.OperatingSystem, "os1").
 				ProtoQuery(),
-			matchFilter: matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
-				return cluster.GetType() == storage.ClusterType_KUBERNETES_CLUSTER ||
-					cluster.GetType() == storage.ClusterType_OPENSHIFT_CLUSTER
-			}),
+			matchFilter: matchAllFilter().
+				withNodeFilter(func(node *storage.Node) bool {
+					return node.GetOperatingSystem() == "os1"
+				}),
 		},
 		{
-			desc: "search by kubernetes version",
+			desc: "search critical severity",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.ClusterKubernetesVersion, "9.0").ProtoQuery(),
-			matchFilter: matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
-				return cluster.GetStatus().GetOrchestratorMetadata().GetVersion() == "9.0"
-			}),
+				AddExactMatches(search.Severity, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String()).ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withVulnFilter(func(vuln *storage.NodeVulnerability) bool {
+					return vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
+				}),
 		},
 		{
-			desc: "search by cluster label",
+			desc: "search low severity",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
-				AddMapQuery(search.ClusterLabel, "platform-type", "openshift").
+				AddExactMatches(search.Severity, storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String()).ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withVulnFilter(func(vuln *storage.NodeVulnerability) bool {
+					return vuln.GetSeverity() == storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
+				}),
+		},
+		{
+			desc: "search multiple severities",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.Severity,
+					storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String(),
+					storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String(),
+				).ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withVulnFilter(func(vuln *storage.NodeVulnerability) bool {
+					return vuln.GetSeverity() == storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY ||
+						vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
+				}),
+		},
+		{
+			desc: "search by node label",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddMapQuery(search.NodeLabel, "searchLabel", "something").
 				ProtoQuery(),
-			matchFilter: matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
-				return cluster.GetLabels()["platform-type"] == "openshift"
+			matchFilter: matchAllFilter().withNodeFilter(func(node *storage.Node) bool {
+				return node.GetLabels()["searchLabel"] == "something"
 			}),
 		},
 		{
 			desc:        "no match",
 			ctx:         context.Background(),
-			q:           search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_IMAGE_CVE.String()).ProtoQuery(),
+			q:           search.NewQueryBuilder().AddExactMatches(search.OperatingSystem, "os3").ProtoQuery(),
 			matchFilter: matchNoneFilter(),
 		},
 		{
@@ -416,60 +499,50 @@ func (s *NodeCVEViewTestSuite) testCases() []testCase {
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.CVE)).
-				AddExactMatches(search.CVEType, storage.CVE_K8S_CVE.String()).ProtoQuery(),
+				AddExactMatches(search.OperatingSystem, "os1").
+				ProtoQuery(),
 			expectedErr: "Unexpected select clause in query",
 		},
 		{
 			desc: "with group by",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.CVEType, storage.CVE_K8S_CVE.String()).
+				AddExactMatches(search.OperatingSystem, "os1").
 				AddGroupBy(search.CVE).ProtoQuery(),
 			expectedErr: "Unexpected group by clause in query",
 		},
 		{
 			desc: "search one cve w/ cluster scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    s.clusterNameToIDMap["kubernetes-1"],
+				ID:    s.nodeMap[fixtureconsts.Node1].ClusterId,
 				Level: v1.SearchCategory_CLUSTERS,
 			}),
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.CVE, "cve-4").
+				AddExactMatches(search.CVE, "CVE-2014-6210").
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
 				withClusterFilter(func(cluster *storage.Cluster) bool {
-					return cluster.GetId() == s.clusterNameToIDMap["kubernetes-1"]
+					return cluster.GetName() == s.nodeMap[fixtureconsts.Node1].ClusterName
 				}).
-				withCVEPartsFilter(func(cveParts converterV2.ClusterCVEParts) bool {
-					return cveParts.CVE.GetCveBaseInfo().GetCve() == "cve-4"
+				withVulnFilter(func(vuln *storage.NodeVulnerability) bool {
+					return vuln.GetCveBaseInfo().GetCve() == "CVE-2014-6210"
 				}),
 		},
 		{
-			desc: "search fixable w/ cve & cluster scope",
+			desc: "search one cve w/ node scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    s.clusterNameToIDMap["openshift4-2"],
-				Level: v1.SearchCategory_CLUSTERS,
-				Parent: &scoped.Scope{
-					ID:    pkgCVE.ID("cve-2", storage.CVE_OPENSHIFT_CVE.String()),
-					Level: v1.SearchCategory_CLUSTER_VULNERABILITIES,
-				},
+				ID:    s.nodeMap[fixtureconsts.Node2].Id,
+				Level: v1.SearchCategory_NODES,
 			}),
 			q: search.NewQueryBuilder().
-				AddBools(search.ClusterCVEFixable, true).ProtoQuery(),
+				AddExactMatches(search.CVE, "CVE-2014-6210").
+				ProtoQuery(),
 			matchFilter: matchAllFilter().
-				withClusterFilter(func(cluster *storage.Cluster) bool {
-					return cluster.GetId() == s.clusterNameToIDMap["openshift4-2"]
+				withNodeFilter(func(node *storage.Node) bool {
+					return node.GetName() == s.nodeMap[fixtureconsts.Node2].Name
 				}).
-				withCVEPartsFilter(func(cveParts converterV2.ClusterCVEParts) bool {
-					if cveParts.CVE.GetId() != pkgCVE.ID("cve-2", storage.CVE_OPENSHIFT_CVE.String()) {
-						return false
-					}
-					for _, child := range cveParts.Children {
-						if child.Edge.GetIsFixable() {
-							return true
-						}
-					}
-					return false
+				withVulnFilter(func(vuln *storage.NodeVulnerability) bool {
+					return vuln.GetCveBaseInfo().GetCve() == "CVE-2014-6210"
 				}),
 		},
 	}
@@ -478,59 +551,76 @@ func (s *NodeCVEViewTestSuite) testCases() []testCase {
 func (s *NodeCVEViewTestSuite) sacTestCases(ctx context.Context) []sacTestCase {
 	return []sacTestCase{
 		{
-			desc: "All clusters visible",
+			desc: "All nodeMap visible",
 			ctx: sac.WithGlobalAccessScopeChecker(ctx,
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster))),
-			visibleClusters: set.NewStringSet(
-				s.clusterNameToIDMap["generic-1"], s.clusterNameToIDMap["generic-2"],
-				s.clusterNameToIDMap["kubernetes-1"], s.clusterNameToIDMap["kubernetes-2"],
-				s.clusterNameToIDMap["openshift-1"], s.clusterNameToIDMap["openshift-2"],
-				s.clusterNameToIDMap["openshift4-1"], s.clusterNameToIDMap["openshift4-2"],
+					sac.ResourceScopeKeys(resources.Node))),
+			visibleNodes: set.NewStringSet(
+				fixtureconsts.Node1, fixtureconsts.Node2, fixtureconsts.Node3,
 			),
 		},
 		{
-			desc: "generic-1, kubernetes-1, openshift-1 and openshift4-1 clusters visible",
-			ctx: sac.WithGlobalAccessScopeChecker(ctx,
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
-					sac.ClusterScopeKeys(
-						s.clusterNameToIDMap["generic-1"], s.clusterNameToIDMap["kubernetes-1"],
-						s.clusterNameToIDMap["openshift-1"], s.clusterNameToIDMap["openshift4-1"]))),
-			visibleClusters: set.NewStringSet(
-				s.clusterNameToIDMap["generic-1"],
-				s.clusterNameToIDMap["kubernetes-1"],
-				s.clusterNameToIDMap["openshift-1"],
-				s.clusterNameToIDMap["openshift4-1"],
-			),
-		},
-		{
-			desc: "generic-2, kubernetes-2, openshift-2, openshift4-2 clusters visible",
+			desc: "Nodes in cluster 1 visible",
 			ctx: sac.WithGlobalAccessScopeChecker(ctx,
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
-					sac.ClusterScopeKeys(
-						s.clusterNameToIDMap["generic-2"], s.clusterNameToIDMap["kubernetes-2"],
-						s.clusterNameToIDMap["openshift-2"], s.clusterNameToIDMap["openshift4-2"]))),
-			visibleClusters: set.NewStringSet(
-				s.clusterNameToIDMap["generic-2"],
-				s.clusterNameToIDMap["kubernetes-2"],
-				s.clusterNameToIDMap["openshift-2"],
-				s.clusterNameToIDMap["openshift4-2"],
+					sac.ResourceScopeKeys(resources.Node),
+					sac.ClusterScopeKeys(s.nameToClusters[fixtureconsts.ClusterName1].GetId())),
+			),
+			visibleNodes: set.NewStringSet(
+				fixtureconsts.Node1, fixtureconsts.Node2,
 			),
 		},
 		{
-			desc: "NamespaceA in openshift4-2 cluster visible",
+			desc: "Nodes in cluster 2 visible",
 			ctx: sac.WithGlobalAccessScopeChecker(ctx,
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
-					sac.ClusterScopeKeys(s.clusterNameToIDMap["openshift4-2"]),
-					sac.NamespaceScopeKeys(testconsts.NamespaceA))),
-			visibleClusters: set.NewStringSet(s.clusterNameToIDMap["openshift4-2"]),
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.Node),
+					sac.ClusterScopeKeys(s.nameToClusters[fixtureconsts.ClusterName2].GetId())),
+			),
+			visibleNodes: set.NewStringSet(
+				fixtureconsts.Node3,
+			),
+		},
+		{
+			desc: "Nodes in all clusters visible",
+			ctx: sac.WithGlobalAccessScopeChecker(ctx,
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.Node),
+					sac.ClusterScopeKeys(
+						s.nameToClusters[fixtureconsts.ClusterName1].GetId(),
+						s.nameToClusters[fixtureconsts.ClusterName2].GetId()),
+				),
+			),
+			visibleNodes: set.NewStringSet(
+				fixtureconsts.Node1, fixtureconsts.Node2, fixtureconsts.Node3,
+			),
+		},
+		{
+			desc: "No node visible",
+			ctx: sac.WithGlobalAccessScopeChecker(ctx,
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.Node),
+					sac.ClusterScopeKeys(fixtureconsts.Cluster3)),
+			),
+			visibleNodes: set.NewStringSet(),
+		},
+		{
+			desc: "Namespace scope has no impact",
+			ctx: sac.WithGlobalAccessScopeChecker(ctx,
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.Node),
+					sac.ClusterScopeKeys(s.nameToClusters[fixtureconsts.ClusterName2].GetId()),
+					sac.NamespaceScopeKeys(fixtureconsts.Namespace1)),
+			),
+			visibleNodes: set.NewStringSet(
+				fixtureconsts.Node3,
+			),
 		},
 	}
 }
@@ -538,120 +628,204 @@ func (s *NodeCVEViewTestSuite) sacTestCases(ctx context.Context) []sacTestCase {
 func (s *NodeCVEViewTestSuite) paginationTestCases() []paginationTestCase {
 	return []paginationTestCase{
 		{
-			desc: "Offset: 0, Limit: 6, Order By: CVSS descending",
+			desc: "Offset: 0, Limit: 6, Order By: Top CVSS descending",
 			q: search.NewQueryBuilder().WithPagination(
-				search.NewPagination().Limit(6).AddSortOption(
-					search.NewSortOption(search.CVSS).Reversed(true),
-				).AddSortOption(search.NewSortOption(search.CVEID)),
+				search.NewPagination().
+					Limit(6).
+					AddSortOption(search.NewSortOption(search.CVSS).
+						AggregateBy(aggregatefunc.Max, false).
+						Reversed(true)).
+					AddSortOption(search.NewSortOption(search.CVE)),
 			).ProtoQuery(),
 			offset: 0,
 			limit:  6,
 			less: func(records []CveCore) func(i int, j int) bool {
 				return func(i, j int) bool {
-					if records[i].GetCVSS() == records[j].GetCVSS() {
-						return records[i].GetCVEID() < records[j].GetCVEID()
+					if records[i].GetTopCVSS() == records[j].GetTopCVSS() {
+						return records[i].GetCVE() < records[j].GetCVE()
 					}
-					return records[i].GetCVSS() > records[j].GetCVSS()
+					return records[i].GetTopCVSS() > records[j].GetTopCVSS()
 				}
 			},
 		},
 		{
-			desc: "Offset: 6, Limit: 6, Order By: CVEType",
+			desc: "Offset: 6, Limit: 6, Order By: CVE",
 			q: search.NewQueryBuilder().WithPagination(
 				search.NewPagination().Offset(6).Limit(6).AddSortOption(
-					search.NewSortOption(search.CVEType),
-				).AddSortOption(search.NewSortOption(search.CVEID)),
+					search.NewSortOption(search.CVE),
+				),
 			).ProtoQuery(),
 			offset: 6,
 			limit:  6,
 			less: func(records []CveCore) func(i int, j int) bool {
 				return func(i int, j int) bool {
-					if records[i].GetCVEType() == records[j].GetCVEType() {
-						return records[i].GetCVEID() < records[j].GetCVEID()
-					}
-					return records[i].GetCVEType() < records[j].GetCVEType()
+					return records[i].GetCVE() < records[j].GetCVE()
 				}
 			},
 		},
 		{
-			desc: "Order By number of affected clusters",
+			desc: "Order By the number of affected nodeMap",
 			q: search.NewQueryBuilder().WithPagination(
 				search.NewPagination().AddSortOption(
-					search.NewSortOption(search.ClusterID).AggregateBy(aggregatefunc.Count, true).Reversed(true),
-				).AddSortOption(search.NewSortOption(search.CVEID)),
+					search.NewSortOption(search.NodeID).AggregateBy(aggregatefunc.Count, true).Reversed(true),
+				).AddSortOption(search.NewSortOption(search.CVE)),
 			).ProtoQuery(),
 			offset: 0,
 			limit:  0,
 			less: func(records []CveCore) func(i int, j int) bool {
 				return func(i int, j int) bool {
-					if records[i].GetClusterCount() == records[j].GetClusterCount() {
-						return records[i].GetCVEID() < records[j].GetCVEID()
+					if records[i].GetNodeCount() == records[j].GetNodeCount() {
+						return records[i].GetCVE() < records[j].GetCVE()
 					}
-					return records[i].GetClusterCount() > records[j].GetClusterCount()
+					return records[i].GetNodeCount() > records[j].GetNodeCount()
+				}
+			},
+		},
+		{
+			desc: "sort by first discovered time",
+			q: search.NewQueryBuilder().WithPagination(
+				search.NewPagination().AddSortOption(
+					search.NewSortOption(search.CVECreatedTime).AggregateBy(aggregatefunc.Min, false),
+				).AddSortOption(search.NewSortOption(search.CVE)),
+			).ProtoQuery(),
+			offset: 0,
+			limit:  0,
+			less: func(records []CveCore) func(i, j int) bool {
+				return func(i, j int) bool {
+					recordI, recordJ := records[i], records[j]
+					if recordJ == nil {
+						recordJ = &nodeCVECoreResponse{}
+					}
+					if recordI.GetFirstDiscoveredInSystem().Equal(*recordJ.GetFirstDiscoveredInSystem()) {
+						return records[i].GetCVE() < records[j].GetCVE()
+					}
+					return recordI.GetFirstDiscoveredInSystem().Before(*recordJ.GetFirstDiscoveredInSystem())
 				}
 			},
 		},
 	}
 }
 
+type coreWithStats struct {
+	response *nodeCVECoreResponse
+
+	operatingSystems set.StringSet
+
+	severityToNodes map[storage.VulnerabilitySeverity]set.StringSet
+}
+
 func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []CveCore {
-	var expected []CveCore
-	for _, cveParts := range s.cvePartsList {
-		if !filter.matchCVEParts(cveParts) {
+	cveMap := make(map[string]*coreWithStats)
+	for _, n := range s.nodeMap {
+		if !filter.matchNode(n) {
 			continue
 		}
-		clusterCount := 0
-		genericClusterCount := 0
-		kubernetesClusterCount := 0
-		openshiftClusterCount := 0
-		openshift4ClusterCount := 0
-		fixableCount := 0
-
-		for _, child := range cveParts.Children {
-			cluster, exists := s.clusterMap[child.ClusterID]
-			if !exists || !filter.matchCluster(cluster) {
-				continue
-			}
-			clusterCount++
-			switch cluster.GetType() {
-			case storage.ClusterType_GENERIC_CLUSTER:
-				genericClusterCount++
-			case storage.ClusterType_KUBERNETES_CLUSTER:
-				kubernetesClusterCount++
-			case storage.ClusterType_OPENSHIFT_CLUSTER:
-				openshiftClusterCount++
-			case storage.ClusterType_OPENSHIFT4_CLUSTER:
-				openshift4ClusterCount++
-			}
-
-			if child.Edge.GetIsFixable() {
-				fixableCount++
-			}
-		}
-		if clusterCount == 0 {
-			// if no clusters matched, then cve is not included in results
+		if !filter.matchCluster(s.nameToClusters[n.ClusterName]) {
 			continue
 		}
-
-		cveCreatedTime, err := protocompat.ConvertTimestampToTimeOrError(cveParts.CVE.GetCveBaseInfo().GetCreatedAt())
-		s.Require().NoError(err)
-		cveCreatedTime = cveCreatedTime.Round(time.Microsecond)
-		expected = append(expected, &platformCVECoreResponse{
-			CVE:                 cveParts.CVE.GetCveBaseInfo().GetCve(),
-			CVEID:               cveParts.CVE.GetId(),
-			CVEType:             cveParts.CVE.GetType(),
-			CVSS:                cveParts.CVE.GetCvss(),
-			ClusterCount:        clusterCount,
-			GenericClusters:     genericClusterCount,
-			KubernetesClusters:  kubernetesClusterCount,
-			OpenshiftClusters:   openshiftClusterCount,
-			Openshift4Clusters:  openshift4ClusterCount,
-			FirstDiscoveredTime: &cveCreatedTime,
-			FixableCount:        fixableCount,
-		})
+		for _, c := range n.GetScan().GetComponents() {
+			for _, v := range c.GetVulnerabilities() {
+				if !filter.matchVuln(v) {
+					continue
+				}
+				cve := v.GetCveBaseInfo().GetCve()
+				id := pkgCVE.ID(cve, n.GetScan().GetOperatingSystem())
+				if _, ok := s.cveCreateMap[id]; !ok {
+					s.Require().Contains(s.cveCreateMap, id)
+				}
+				cveCreatedTime, err := protocompat.ConvertTimestampToTimeOrError(s.cveCreateMap[id].GetCveBaseInfo().CreatedAt)
+				s.Require().NoError(err)
+				cveCreatedTime = cveCreatedTime.Round(time.Microsecond)
+				withStats, ok := cveMap[cve]
+				if !ok {
+					withStats = &coreWithStats{
+						response: &nodeCVECoreResponse{
+							CVE:                     cve,
+							FirstDiscoveredInSystem: &cveCreatedTime,
+						},
+						severityToNodes: make(map[storage.VulnerabilitySeverity]set.StringSet),
+					}
+					cveMap[v.GetCveBaseInfo().GetCve()] = withStats
+				}
+				core := withStats.response
+				core.CVEIDs = append(core.CVEIDs, id)
+				if core.GetTopCVSS() < v.Cvss {
+					core.TopCVSS = v.Cvss
+				}
+				core.NodeIDs = append(core.NodeIDs, n.GetId())
+				if core.GetFirstDiscoveredInSystem().Compare(cveCreatedTime) > 0 {
+					core.FirstDiscoveredInSystem = &cveCreatedTime
+				}
+				withStats.operatingSystems.Add(n.GetOperatingSystem())
+				nSet, ok := withStats.severityToNodes[v.GetSeverity()]
+				nSet.Add(n.Id)
+				if !ok {
+					withStats.severityToNodes[v.GetSeverity()] = nSet
+				}
+			}
+		}
 	}
-
+	var expected []CveCore
+	for _, withStats := range cveMap {
+		core := withStats.response
+		core.CVEIDs = set.NewStringSet(core.CVEIDs...).AsSlice()
+		sort.SliceStable(core.CVEIDs, func(i, j int) bool {
+			return core.CVEIDs[i] < core.CVEIDs[j]
+		})
+		core.NodeIDs = set.NewStringSet(core.NodeIDs...).AsSlice()
+		sort.SliceStable(core.NodeIDs, func(i, j int) bool {
+			return core.NodeIDs[i] < core.NodeIDs[j]
+		})
+		core.NodeCount = len(core.GetNodeIDs())
+		core.OperatingSystemCount = withStats.operatingSystems.Cardinality()
+		core.NodesWithLowSeverity = withStats.severityToNodes[storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY].Cardinality()
+		core.NodesWithModerateSeverity = withStats.severityToNodes[storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY].Cardinality()
+		core.NodesWithImportantSeverity = withStats.severityToNodes[storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY].Cardinality()
+		core.NodesWithCriticalSeverity = withStats.severityToNodes[storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY].Cardinality()
+		expected = append(expected, core)
+	}
 	return expected
+}
+
+func (s *NodeCVEViewTestSuite) compileExpectedCountBySeverity(filter *filterImpl) ResourceCountByCVESeverity {
+	var expected countByNodeCVESeverity
+	cveMap := make(map[string]set.Set[storage.VulnerabilitySeverity])
+	for _, n := range s.nodeMap {
+		if !filter.matchNode(n) {
+			continue
+		}
+		if !filter.matchCluster(s.nameToClusters[n.ClusterName]) {
+			continue
+		}
+		for _, c := range n.GetScan().GetComponents() {
+			for _, v := range c.GetVulnerabilities() {
+				if !filter.matchVuln(v) {
+					continue
+				}
+				cve := v.GetCveBaseInfo().GetCve()
+				severities := cveMap[cve]
+				severities.Add(v.GetSeverity())
+				cveMap[cve] = severities
+			}
+		}
+	}
+	for _, severities := range cveMap {
+		for severity := range severities {
+			switch severity {
+			case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
+				expected.LowSeverityCount++
+			case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
+				expected.ModerateSeverityCount++
+			case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
+				expected.ImportantSeverityCount++
+			case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
+				expected.CriticalSeverityCount++
+			default:
+
+			}
+		}
+	}
+	return &expected
 }
 
 func (s *NodeCVEViewTestSuite) compileExpectedCVECoresWithPagination(filter *filterImpl, less lessFunc, offset, limit int) []CveCore {
@@ -672,151 +846,30 @@ func (s *NodeCVEViewTestSuite) compileExpectedCVECoresWithPagination(filter *fil
 	return expected[offset:end]
 }
 
+func (s *NodeCVEViewTestSuite) compileExpectedAffectedNodeIDs(filter *filterImpl) []string {
+	affectedNodeIDs := set.NewStringSet()
+	for _, n := range s.nodeMap {
+		if !filter.matchNode(n) {
+			continue
+		}
+		if !filter.matchCluster(s.nameToClusters[n.ClusterName]) {
+			continue
+		}
+		for _, c := range n.GetScan().GetComponents() {
+			for _, v := range c.GetVulnerabilities() {
+				if !filter.matchVuln(v) {
+					continue
+				}
+				affectedNodeIDs.Add(n.GetId())
+			}
+		}
+	}
+	return affectedNodeIDs.AsSlice()
+}
+
 func applyPaginationProps(baseTc *testCase, paginationTc paginationTestCase) {
 	baseTc.desc = fmt.Sprintf("%s %s", baseTc.desc, paginationTc.desc)
 	baseTc.q.Pagination = paginationTc.q.GetPagination()
-}
-
-func getTestData() (map[string]*storage.Cluster, map[storage.CVE_CVEType][]converter.ClusterCVEParts) {
-	// Clusters
-	clusterMap := make(map[string]*storage.Cluster)
-	generic1 := generateTestCluster(&testClusterFields{
-		Name:         "generic-1",
-		PlatformType: storage.ClusterType_GENERIC_CLUSTER,
-		ProviderType: storage.ClusterMetadata_AKS,
-		Labels:       map[string]string{},
-		K8sVersion:   "9.0",
-		IsOpenshift:  false,
-	})
-	clusterMap[generic1.GetId()] = generic1
-
-	generic2 := generateTestCluster(&testClusterFields{
-		Name:         "generic-2",
-		PlatformType: storage.ClusterType_GENERIC_CLUSTER,
-		ProviderType: storage.ClusterMetadata_ARO,
-		Labels:       map[string]string{},
-		K8sVersion:   "9.0",
-		IsOpenshift:  false,
-	})
-	clusterMap[generic2.GetId()] = generic2
-
-	kubernetes1 := generateTestCluster(&testClusterFields{
-		Name:         "kubernetes-1",
-		PlatformType: storage.ClusterType_KUBERNETES_CLUSTER,
-		ProviderType: storage.ClusterMetadata_EKS,
-		Labels:       map[string]string{},
-		K8sVersion:   "9.0",
-		IsOpenshift:  false,
-	})
-	clusterMap[kubernetes1.GetId()] = kubernetes1
-
-	kubernetes2 := generateTestCluster(&testClusterFields{
-		Name:         "kubernetes-2",
-		PlatformType: storage.ClusterType_KUBERNETES_CLUSTER,
-		ProviderType: storage.ClusterMetadata_GKE,
-		Labels:       map[string]string{},
-		K8sVersion:   "9.0",
-		IsOpenshift:  false,
-	})
-	clusterMap[kubernetes2.GetId()] = kubernetes2
-
-	openshift1 := generateTestCluster(&testClusterFields{
-		Name:         "openshift-1",
-		PlatformType: storage.ClusterType_OPENSHIFT_CLUSTER,
-		ProviderType: storage.ClusterMetadata_OCP,
-		Labels:       map[string]string{"platform-type": "openshift"},
-		K8sVersion:   "8.0",
-		IsOpenshift:  true,
-	})
-	clusterMap[openshift1.GetId()] = openshift1
-
-	openshift2 := generateTestCluster(&testClusterFields{
-		Name:         "openshift-2",
-		PlatformType: storage.ClusterType_OPENSHIFT_CLUSTER,
-		ProviderType: storage.ClusterMetadata_OSD,
-		Labels:       map[string]string{"platform-type": "openshift"},
-		K8sVersion:   "8.0",
-		IsOpenshift:  true,
-	})
-	clusterMap[openshift2.GetId()] = openshift2
-
-	openshift41 := generateTestCluster(&testClusterFields{
-		Name:         "openshift4-1",
-		PlatformType: storage.ClusterType_OPENSHIFT4_CLUSTER,
-		ProviderType: storage.ClusterMetadata_OCP,
-		Labels:       map[string]string{"platform-type": "openshift"},
-		K8sVersion:   "8.0",
-		IsOpenshift:  true,
-	})
-	clusterMap[openshift41.GetId()] = openshift41
-
-	openshift42 := generateTestCluster(&testClusterFields{
-		Name:         "openshift4-2",
-		PlatformType: storage.ClusterType_OPENSHIFT4_CLUSTER,
-		ProviderType: storage.ClusterMetadata_OCP,
-		Labels:       map[string]string{"platform-type": "openshift"},
-		K8sVersion:   "8.0",
-		IsOpenshift:  true,
-	})
-	clusterMap[openshift42.GetId()] = openshift42
-
-	// CVEs and CVEParts
-	cve1K8 := generateTestCVE("cve-1", storage.CVE_K8S_CVE, 9.8)
-	cve2K8 := generateTestCVE("cve-2", storage.CVE_K8S_CVE, 8.5)
-	cve3Openshift := generateTestCVE("cve-3", storage.CVE_OPENSHIFT_CVE, 7.3)
-	cve4K8 := generateTestCVE("cve-4", storage.CVE_K8S_CVE, 3.4)
-	cve5K8 := generateTestCVE("cve-5", storage.CVE_K8S_CVE, 9.5)
-	cve1Openshift := generateTestCVE("cve-1", storage.CVE_OPENSHIFT_CVE, 8.7)
-	cve2Openshift := generateTestCVE("cve-2", storage.CVE_OPENSHIFT_CVE, 6.3)
-	cve4Openshift := generateTestCVE("cve-4", storage.CVE_OPENSHIFT_CVE, 4.9)
-	cve5Openshift := generateTestCVE("cve-5", storage.CVE_OPENSHIFT_CVE, 7.0)
-
-	// CVEParts
-	cvePartsByType := make(map[storage.CVE_CVEType][]converter.ClusterCVEParts)
-	for _, cveParts := range []converter.ClusterCVEParts{
-		converterV2.NewClusterCVEParts(cve1K8, []*storage.Cluster{generic1}, "9.2"),
-		converterV2.NewClusterCVEParts(cve2K8, []*storage.Cluster{generic1, generic2}, "9.3"),
-		converterV2.NewClusterCVEParts(cve3Openshift, []*storage.Cluster{generic2}, ""),
-		converterV2.NewClusterCVEParts(cve4K8, []*storage.Cluster{kubernetes1, kubernetes2}, "9.3"),
-		converterV2.NewClusterCVEParts(cve5K8, []*storage.Cluster{kubernetes1, kubernetes2}, "9.2"),
-		converterV2.NewClusterCVEParts(cve1Openshift, []*storage.Cluster{openshift1, openshift41, openshift42}, ""),
-		converterV2.NewClusterCVEParts(cve2Openshift, []*storage.Cluster{openshift1, openshift2, openshift42}, "4.15"),
-		converterV2.NewClusterCVEParts(cve4Openshift, []*storage.Cluster{openshift2, openshift42}, "4.13"),
-		converterV2.NewClusterCVEParts(cve5Openshift, []*storage.Cluster{openshift41, openshift42}, "4.15"),
-	} {
-		cvePartsByType[cveParts.CVE.GetType()] = append(cvePartsByType[cveParts.CVE.GetType()], cveParts)
-	}
-
-	return clusterMap, cvePartsByType
-}
-
-type testClusterFields struct {
-	Name         string
-	PlatformType storage.ClusterType
-	ProviderType storage.ClusterMetadata_Type
-	Labels       map[string]string
-	K8sVersion   string
-	IsOpenshift  bool
-}
-
-func generateTestCluster(tcf *testClusterFields) *storage.Cluster {
-	return &storage.Cluster{
-		Id:        uuid.NewV4().String(),
-		Name:      tcf.Name,
-		Type:      tcf.PlatformType,
-		Labels:    tcf.Labels,
-		MainImage: "quay.io/stackrox-io/main",
-		Status: &storage.ClusterStatus{
-			OrchestratorMetadata: &storage.OrchestratorMetadata{
-				Version: tcf.K8sVersion,
-			},
-			ProviderMetadata: &storage.ProviderMetadata{
-				Cluster: &storage.ClusterMetadata{
-					Type: tcf.ProviderType,
-				},
-			},
-		},
-	}
 }
 
 func generateTestCVE(cve string, os string, cvss float32) *storage.NodeCVE {
@@ -828,4 +881,102 @@ func generateTestCVE(cve string, os string, cvss float32) *storage.NodeCVE {
 		Cvss:            cvss,
 		OperatingSystem: os,
 	}
+
+}
+
+func getTestNodeForPostgres(id, name string) *storage.Node {
+	return &storage.Node{
+		Id:        id,
+		Name:      name,
+		ClusterId: id,
+		Scan: &storage.NodeScan{
+			ScanTime:        protocompat.TimestampNow(),
+			OperatingSystem: "ubuntu",
+			Components: []*storage.EmbeddedNodeScanComponent{
+				{
+					Name:            "comp1",
+					Version:         "ver1",
+					Vulnerabilities: []*storage.NodeVulnerability{},
+				},
+				{
+					Name:    "comp1",
+					Version: "ver2",
+					Vulnerabilities: []*storage.NodeVulnerability{
+						{
+							CveBaseInfo: &storage.CVEInfo{
+								Cve: "cve1",
+							},
+						},
+						{
+							CveBaseInfo: &storage.CVEInfo{
+								Cve: "cve2",
+							},
+							SetFixedBy: &storage.NodeVulnerability_FixedBy{
+								FixedBy: "ver3",
+							},
+						},
+					},
+				},
+				{
+					Name:    "comp2",
+					Version: "ver1",
+					Vulnerabilities: []*storage.NodeVulnerability{
+						{
+							CveBaseInfo: &storage.CVEInfo{
+								Cve: "cve1",
+							},
+							SetFixedBy: &storage.NodeVulnerability_FixedBy{
+								FixedBy: "ver2",
+							},
+						},
+						{
+							CveBaseInfo: &storage.CVEInfo{
+								Cve: "cve2",
+							},
+						},
+					},
+				},
+			},
+		},
+		RiskScore: 30,
+	}
+}
+
+func getTestNodes() map[string]*storage.Node {
+	os1NodeTemplate := fixtures.GetNodeWithUniqueComponents(20, 20)
+	nodeConverter.MoveNodeVulnsToNewField(os1NodeTemplate)
+	os1NodeTemplate.OperatingSystem = "os1"
+	os1NodeTemplate.Scan.Components[0].Vulnerabilities[0].Cvss = 9.8
+	os1NodeTemplate.Scan.Components[0].Vulnerabilities[0].Severity = storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
+	os1NodeTemplate.ClusterId = fixtureconsts.Cluster1
+	os1NodeTemplate.ClusterName = fixtureconsts.ClusterName1
+	os2NodeTemplate := fixtures.GetNodeWithUniqueComponents(5, 3)
+	nodeConverter.MoveNodeVulnsToNewField(os2NodeTemplate)
+	os2NodeTemplate.OperatingSystem = "os2"
+	os2NodeTemplate.Scan.Components[3].Vulnerabilities[2].Cvss = 2.0
+	os2NodeTemplate.ClusterId = fixtureconsts.Cluster2
+	os2NodeTemplate.ClusterName = fixtureconsts.ClusterName2
+
+	n1 := os1NodeTemplate.Clone()
+	n1.Id = fixtureconsts.Node1
+	n2 := os1NodeTemplate.Clone()
+	n2.Id = fixtureconsts.Node2
+	n3 := os2NodeTemplate.Clone()
+	n3.Id = fixtureconsts.Node3
+	n3.Labels = map[string]string{"searchLabel": "something"}
+	nodes := []*storage.Node{n1, n2, n3}
+
+	for i, n := range nodes {
+		n.Name = fmt.Sprintf("Node-%d", i+1)
+		n.Scan.OperatingSystem = n.OperatingSystem
+		if n.OperatingSystem == os2NodeTemplate.OperatingSystem {
+			for _, c := range n.GetScan().GetComponents() {
+				for _, v := range c.GetVulnerabilities() {
+					v.Severity = storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
+				}
+			}
+
+		}
+	}
+	return map[string]*storage.Node{n1.GetId(): n1, n2.GetId(): n2, n3.GetId(): n3}
 }

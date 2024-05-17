@@ -1,6 +1,6 @@
 package nodecve
 
-// NewEmptyResourceCountByCVESeverity creates a empty instance of type ResourceCountByCVESeverity.
+// NewEmptyResourceCountByCVESeverity creates an empty instance of type ResourceCountByCVESeverity.
 func NewEmptyResourceCountByCVESeverity() ResourceCountByCVESeverity {
 	return &emptyCountByNodeCVESeverity{}
 }

@@ -14,8 +14,8 @@ type nodeCVECoreResponse struct {
 	NodesWithModerateSeverity  int        `db:"moderate_severity_count"`
 	NodesWithLowSeverity       int        `db:"low_severity_count"`
 	NodeIDs                    []string   `db:"node_id"`
-	FirstDiscoveredTime        *time.Time `db:"cve_created_time"`
-	OperatingSystemCount       int        `db:"operating_system"`
+	OperatingSystemCount       int        `db:"operating_system_count"`
+	FirstDiscoveredInSystem    *time.Time `db:"cve_created_time_min"`
 }
 
 // GetCVE returns the CVE identifier
@@ -23,12 +23,12 @@ func (c *nodeCVECoreResponse) GetCVE() string {
 	return c.CVE
 }
 
-// GetCVEID returns the unique primary key ID associated with the node CVE
+// GetCVEIDs returns the unique primary key IDs associated with the node CVE
 func (c *nodeCVECoreResponse) GetCVEIDs() []string {
 	return c.CVEIDs
 }
 
-// GetCVSS returns the CVSS score of the node CVE
+// GetTopCVSS returns the maximum CVSS score of the node CVE
 func (c *nodeCVECoreResponse) GetTopCVSS() float32 {
 	return c.TopCVSS
 }
@@ -38,7 +38,7 @@ func (c *nodeCVECoreResponse) GetNodeCount() int {
 	return c.NodeCount
 }
 
-// GetNodeCountBySeverity returns the number of nodes of each severity level
+// GetNodeCountBySeverity returns the number of nodeMap of each severity level
 func (n *nodeCVECoreResponse) GetNodeCountBySeverity() ResourceCountByCVESeverity {
 	return &countByNodeCVESeverity{
 		CriticalSeverityCount:  n.NodesWithCriticalSeverity,
@@ -53,18 +53,18 @@ func (n *nodeCVECoreResponse) GetNodeIDs() []string {
 	return n.NodeIDs
 }
 
-// GetFirstDiscoveredTime returns the first time the node CVE was discovered in the system
-func (n *nodeCVECoreResponse) GetFirstDiscoveredTime() *time.Time {
-	return n.FirstDiscoveredTime
+// GetFirstDiscoveredInSystem returns the first time the node CVE was discovered in the system
+func (n *nodeCVECoreResponse) GetFirstDiscoveredInSystem() *time.Time {
+	return n.FirstDiscoveredInSystem
 }
 
-// GetOperatingSystemCount returns the number of operating systems of nodes affected by the node CVE
+// GetOperatingSystemCount returns the number of operating systems of nodeMap affected by the node CVE
 func (n *nodeCVECoreResponse) GetOperatingSystemCount() int {
 	return n.OperatingSystemCount
 }
 
 type nodeCVECoreCount struct {
-	CVECount int `db:"cve_id_count"`
+	CVECount int `db:"cve_count"`
 }
 
 type countByNodeCVESeverity struct {
@@ -94,5 +94,13 @@ type nodeResponse struct {
 	NodeID string `db:"node_id"`
 
 	// Following are supported sort options.
-	// TBD
+	NodeName        string     `db:"node_name"`
+	ClusterName     string     `db:"cluster"`
+	OperatingSystem string     `db:"operating_system"`
+	ScanTime        *time.Time `db:"node_scan_time"`
+	// CVEBySeverity are with another jira <link>
+}
+
+func (r nodeResponse) GetNodeID() string {
+	return r.NodeID
 }

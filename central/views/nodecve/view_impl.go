@@ -71,6 +71,9 @@ func (n *nodeCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCore, 
 		sort.SliceStable(r.CVEIDs, func(i, j int) bool {
 			return r.CVEIDs[i] < r.CVEIDs[j]
 		})
+		sort.SliceStable(r.NodeIDs, func(i, j int) bool {
+			return r.NodeIDs[i] < r.NodeIDs[j]
+		})
 		ret = append(ret, r)
 	}
 	return ret, nil
@@ -128,7 +131,7 @@ func (n *nodeCVECoreViewImpl) GetNodeIDs(ctx context.Context, q *v1.Query) ([]st
 
 	ret := make([]string, 0, len(results))
 	for _, r := range results {
-		ret = append(ret, r.NodeID)
+		ret = append(ret, r.GetNodeID())
 	}
 	return ret, nil
 }
@@ -140,8 +143,9 @@ func withSelectQuery(q *v1.Query) *v1.Query {
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
 		search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto(),
 		search.NewQuerySelect(search.NodeID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
-		search.NewQuerySelect(search.CVECreatedTime).Proto(),
+		search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto(),
 		search.NewQuerySelect(search.OperatingSystem).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+		search.NewQuerySelect(search.NodeID).Distinct().Proto(),
 	}
 	cloned.Selects = append(cloned.Selects, withCountBySeveritySelectQuery(q, search.NodeID).Selects...)
 
@@ -201,7 +205,7 @@ func withCountBySeveritySelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.
 func withCountQuery(q *v1.Query) *v1.Query {
 	cloned := q.Clone()
 	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.CVEID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+		search.NewQuerySelect(search.CVE).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 	}
 	return cloned
 }

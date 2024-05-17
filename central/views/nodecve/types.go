@@ -17,7 +17,7 @@ type CveCore interface {
 	GetNodeCount() int
 	GetNodeCountBySeverity() ResourceCountByCVESeverity
 	GetNodeIDs() []string
-	GetFirstDiscoveredTime() *time.Time
+	GetFirstDiscoveredInSystem() *time.Time
 	GetOperatingSystemCount() int
 }
 
@@ -35,7 +35,7 @@ type CveView interface {
 }
 
 // ResourceCountByCVESeverity provides ability to retrieve number of resources by severity
-// TODO(cdu): unify this interface with common.ResourceCountByCVESeverity maybe after platform merge.
+// TODO(cdu): unify this interface with common.ResourceCountByCVESeverity
 type ResourceCountByCVESeverity interface {
 	GetCriticalSeverityCount() int
 	GetImportantSeverityCount() int
