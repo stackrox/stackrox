@@ -29,6 +29,7 @@ import {
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 import { checkArrayContainsArray } from 'utils/arrayUtils';
+import { allEnabled } from 'utils/featureFlagUtils';
 
 function isValidAction(action: unknown): action is ExtendedPageAction {
     return action === 'clone' || action === 'create' || action === 'edit' || action === 'generate';
@@ -710,7 +711,6 @@ export function getLifeCyclesUpdates(
 }
 
 export function getPolicyDescriptors(
-    isFeatureFlagEnabled: (string) => boolean,
     eventSource: PolicyEventSource,
     lifecycleStages: LifecycleStage[]
 ) {
@@ -720,11 +720,7 @@ export function getPolicyDescriptors(
     const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
         const { featureFlagDependency } = unfilteredDescriptor;
         if (featureFlagDependency && featureFlagDependency.length > 0) {
-            featureFlagDependency.forEach((featureFlag) => {
-                if (!isFeatureFlagEnabled(featureFlag)) {
-                    return false;
-                }
-            });
+            return allEnabled(featureFlagDependency);
         }
         return true;
     });

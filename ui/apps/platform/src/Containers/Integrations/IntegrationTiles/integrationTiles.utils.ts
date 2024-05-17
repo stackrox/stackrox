@@ -6,11 +6,7 @@ export function featureFlagDependencyFilterer(isFeatureFlagEnabled: IsFeatureFla
     return (descriptor: BaseIntegrationDescriptor) => {
         const { featureFlagDependency } = descriptor;
         if (featureFlagDependency && featureFlagDependency.length > 0) {
-            featureFlagDependency.forEach((featureFlag) => {
-                if (!isFeatureFlagEnabled(featureFlag)) {
-                    return false;
-                }
-            });
+            return featureFlagDependency.every(isFeatureFlagEnabled);
         }
         return true;
     };

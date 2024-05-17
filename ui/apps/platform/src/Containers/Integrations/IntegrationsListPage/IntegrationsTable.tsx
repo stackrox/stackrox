@@ -15,8 +15,8 @@ import pluralize from 'pluralize';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import LinkShim from 'Components/PatternFly/LinkShim';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
+import { allEnabled } from 'utils/featureFlagUtils';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
 import { isUserResource } from 'Containers/AccessControl/traits';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
@@ -65,16 +65,11 @@ function IntegrationsTable({
         onSelectAll,
         getSelectedIds,
     } = useTableSelection<Integration>(integrations);
-    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const columns = tableColumnDescriptor[source][type].filter((integration) => {
         const { featureFlagDependency } = integration;
         if (featureFlagDependency && featureFlagDependency.length > 0) {
-            featureFlagDependency.forEach((featureFlag) => {
-                if (!isFeatureFlagEnabled(featureFlag)) {
-                    return false;
-                }
-            });
+            return allEnabled(featureFlagDependency);
         }
         return true;
     });
