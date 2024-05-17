@@ -11,14 +11,13 @@ import {
 } from '../utils/integrationsList';
 import IntegrationsSection from './IntegrationsSection';
 import IntegrationTile from './IntegrationTile';
-import { featureFlagDependencyFilterer, integrationTypeCounter } from './integrationTiles.utils';
+import { featureFlagDependencyFilter, integrationTypeCounter } from './integrationTiles.utils';
 
 function ImageIntegrationsSection(): ReactElement {
     const integrations = useSelector(selectors.getImageIntegrations);
     const countIntegrations = integrationTypeCounter(integrations);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const featureFlagDependencyFilter = featureFlagDependencyFilterer(isFeatureFlagEnabled);
 
     return (
         <IntegrationsSection headerName="Image Integrations" id="image-integrations">
