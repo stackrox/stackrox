@@ -70,7 +70,7 @@ func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
 	}
 	iConn, mConn := conn, conn
 	connList = append(connList, conn)
-	if !o.comboMode {
+	if !o.indexerOnly && !o.comboMode {
 		mConn, err = createGRPCConn(ctx, o.matcherOpts)
 		if err != nil {
 			utils.IgnoreError(conn.Close)

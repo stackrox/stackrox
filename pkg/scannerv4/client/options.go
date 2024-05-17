@@ -22,7 +22,8 @@ var (
 			serverName:    fmt.Sprintf("scanner-v4-matcher.%s.svc", env.Namespace.Setting()),
 			skipTLSVerify: false,
 		},
-		comboMode: false,
+		comboMode:   false,
+		indexerOnly: false,
 	}
 )
 
@@ -40,6 +41,7 @@ type options struct {
 	indexerOpts connOptions
 	matcherOpts connOptions
 	comboMode   bool
+	indexerOnly bool
 }
 
 type ImageRegistryOpt struct {
@@ -74,6 +76,15 @@ func WithAddress(address string) Option {
 	return func(o *options) {
 		WithIndexerAddress(address)(o)
 		WithMatcherAddress(address)(o)
+	}
+}
+
+// IndexerOnly specifies the client should only create a connection with the Indexer.
+// Setting this is effectively equivalent to setting exactly matching Indexer and Matcher options,
+// but this offers users a simpler alternative.
+func IndexerOnly() Option {
+	return func(o *options) {
+		o.indexerOnly = true
 	}
 }
 
@@ -146,6 +157,9 @@ func validateOptions(o options) error {
 	// If this check is removed, make sure we still properly use the DNS name resolver.
 	if _, _, err := net.SplitHostPort(o.indexerOpts.address); err != nil {
 		return fmt.Errorf("invalid indexer address (want [host]:port): %w", err)
+	}
+	if o.indexerOnly {
+		return nil
 	}
 	// If this check is removed, make sure we still properly use the DNS name resolver.
 	if _, _, err := net.SplitHostPort(o.matcherOpts.address); err != nil {
