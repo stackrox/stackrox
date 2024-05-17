@@ -214,8 +214,12 @@ func Enable() *phonehome.Config {
 	}
 	cfg.Gatherer().Start(
 		telemeter.WithGroups(cfg.GroupType, cfg.GroupID),
-		// Issue a possible duplicate only once a day as a heartbeat:
-		telemeter.WithNoDuplicates(time.Now().Format(time.DateOnly)),
+		// Don't capture the time, but call WithNoDuplicates on every gathering
+		// iteration, so that the time is updated.
+		func(co *telemeter.CallOptions) {
+			// Issue a possible duplicate only once a day as a heartbeat.
+			telemeter.WithNoDuplicates(time.Now().Format(time.DateOnly))(co)
+		},
 	)
 	enabled = true
 	log.Info("Telemetry collection has been enabled.")
