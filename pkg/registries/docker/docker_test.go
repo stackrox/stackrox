@@ -2,9 +2,12 @@ package docker
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
@@ -50,8 +53,42 @@ func TestRegistryMatch(t *testing.T) {
 				cfg:                  &Config{DisableRepoList: tc.disableRepoList},
 			}
 
+			// Prevent lazy load from attempt to change repo list.
+			r.repoListOnce.Do(func() {})
+
 			match := r.Match(img)
 			assert.Equal(t, tc.expected, match)
 		})
 	}
+}
+
+func TestLazyLoadRepoList(t *testing.T) {
+	numRepoListCalls := 0
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v2/_catalog" {
+			numRepoListCalls++
+			return
+		}
+	}))
+
+	c := &Config{
+		Endpoint:        s.URL,
+		DisableRepoList: false,
+	}
+
+	r, err := NewDockerRegistryWithConfig(c, &storage.ImageIntegration{})
+	require.NoError(t, err)
+
+	// No calls should have been made to repo during construction.
+	assert.Zero(t, numRepoListCalls)
+
+	r.Match(&storage.ImageName{})
+
+	// A call should now have been made to lazy load repo list.
+	assert.Equal(t, 1, numRepoListCalls)
+
+	r.Match(&storage.ImageName{})
+
+	// Ensure only a single attempt was made to load initial repo list.
+	assert.Equal(t, 1, numRepoListCalls)
 }
