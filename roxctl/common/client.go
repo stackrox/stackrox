@@ -126,7 +126,9 @@ func sanitizeHeaderValue(value string) string {
 func setCustomHeaders(headers func(string, ...string)) {
 	headers(clientconn.RoxctlCommandHeader, RoxctlCommand)
 	headers(clientconn.RoxctlCommandIndexHeader, fmt.Sprint(RoxctlCommandIndex.Add(1)))
-	headers(clientconn.ExecutionEnvironment, sanitizeHeaderValue(env.ExecutionEnvironment.Setting()))
+	if e := env.ExecutionEnvironment.Setting(); e != "" {
+		headers(clientconn.ExecutionEnvironment, sanitizeHeaderValue(e))
+	}
 }
 
 // Do executes a http.Request
