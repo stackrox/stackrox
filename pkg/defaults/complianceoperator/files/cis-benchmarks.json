@@ -5,5 +5,14 @@
   "description": "",
   "profileAnnotation": ["control.compliance.openshift.io/CIS-OCP"],
   "provider": "cis",
-  "profileNames": ["ocp4-cis-node-1-5", "ocp4-cis-1-5"]
+  "profiles": [
+    {
+      "profileName": "ocp4-cis-node-1-5",
+      "profileVersion": "1.5"
+    },
+    {
+      "profileName": "ocp4-cis-1-5",
+      "profileVersion": "1.5"
+    }
+  ]
 }
