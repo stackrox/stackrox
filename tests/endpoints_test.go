@@ -30,7 +30,8 @@ import (
 type authMode int
 
 const (
-	timeout = 30 * time.Second
+	dialRetires = 3
+	timeout     = 30 * time.Second
 
 	userPKIProviderName = "test-userpki"
 )
@@ -168,13 +169,13 @@ func (c *endpointsTestCase) runConnectionTest(t *testing.T, testCtx *endpointsTe
 	defaultServerName := c.validServerNames[0]
 
 	tlsConf := testCtx.tlsConfig(c.clientCert, defaultServerName, false)
-	conn, err := tls.DialWithDialer(&dialer, "tcp", c.endpoint(), tlsConf)
+	conn, err := c.tlsDialWithRetry(tlsConf)
 	c.verifyDialResult(t, conn, err)
 
 	// Test connecting with all valid server names
 	for _, serverName := range c.validServerNames {
 		tlsConf := testCtx.tlsConfig(c.clientCert, serverName, true)
-		conn, err := tls.DialWithDialer(&dialer, "tcp", c.endpoint(), tlsConf)
+		conn, err := c.tlsDialWithRetry(tlsConf)
 		c.verifyDialResult(t, conn, err)
 	}
 
@@ -191,6 +192,19 @@ func (c *endpointsTestCase) runConnectionTest(t *testing.T, testCtx *endpointsTe
 		require.Error(t, err)
 		assert.ErrorAs(t, err, nameErr, "expected error to be of type x509.HostnameError, was: %T (%v)", err, err)
 	}
+}
+
+func (c *endpointsTestCase) tlsDialWithRetry(tlsConf *tls.Config) (conn *tls.Conn, err error) {
+	for i := 0; i < dialRetires; i++ {
+		conn, err = tls.DialWithDialer(&dialer, "tcp", c.endpoint(), tlsConf)
+		if err == nil {
+			return
+		}
+		if c.expectConnectFailure {
+			return
+		}
+	}
+	return
 }
 
 func (c *endpointsTestCase) verifyAuthStatus(t *testing.T, _ *endpointsTestContext, authStatus *v1.AuthStatus) {
