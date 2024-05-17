@@ -66,6 +66,24 @@ spec:
                     - ScanIfMissing
                     - DoNotScanInline
                     type: string
+                  hostAliases:
+                    description: HostAliases allows configuring additional hostnames
+                      to resolve in the pod's hosts file.
+                    items:
+                      description: |-
+                        HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the
+                        pod's hosts file.
+                      properties:
+                        hostnames:
+                          description: Hostnames for the above IP address.
+                          items:
+                            type: string
+                          type: array
+                        ip:
+                          description: IP address of the host file entry.
+                          type: string
+                      type: object
+                    type: array
                   listenOnCreates:
                     default: true
                     description: Set this to 'true' to enable preventive policy enforcement
@@ -630,6 +648,24 @@ spec:
                             type: object
                         type: object
                     type: object
+                  hostAliases:
+                    description: HostAliases is a list of hostnames and IPs to add
+                      to the collector pod's /etc/hosts file.
+                    items:
+                      description: |-
+                        HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the
+                        pod's hosts file.
+                      properties:
+                        hostnames:
+                          description: Hostnames for the above IP address.
+                          items:
+                            type: string
+                          type: array
+                        ip:
+                          description: IP address of the host file entry.
+                          type: string
+                      type: object
+                    type: array
                   nodeInventory:
                     description: Settings for the Node-Inventory container, which
                       is responsible for scanning the Nodes' filesystem.
@@ -716,6 +752,24 @@ spec:
                     description: Settings pertaining to the analyzer deployment, such
                       as for autoscaling.
                     properties:
+                      hostAliases:
+                        description: HostAliases allows configuring additional hostnames
+                          to resolve in the pod's hosts file.
+                        items:
+                          description: |-
+                            HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the
+                            pod's hosts file.
+                          properties:
+                            hostnames:
+                              description: Hostnames for the above IP address.
+                              items:
+                                type: string
+                              type: array
+                            ip:
+                              description: IP address of the host file entry.
+                              type: string
+                          type: object
+                        type: array
                       nodeSelector:
                         additionalProperties:
                           type: string
@@ -856,6 +910,24 @@ spec:
                     description: Settings pertaining to the database used by the Red
                       Hat Advanced Cluster Security Scanner.
                     properties:
+                      hostAliases:
+                        description: HostAliases allows configuring additional hostnames
+                          to resolve in the pod's hosts file.
+                        items:
+                          description: |-
+                            HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the
+                            pod's hosts file.
+                          properties:
+                            hostnames:
+                              description: Hostnames for the above IP address.
+                              items:
+                                type: string
+                              type: array
+                            ip:
+                              description: IP address of the host file entry.
+                              type: string
+                          type: object
+                        type: array
                       nodeSelector:
                         additionalProperties:
                           type: string
@@ -980,6 +1052,24 @@ spec:
                   db:
                     description: Settings pertaining to the DB deployment.
                     properties:
+                      hostAliases:
+                        description: HostAliases allows configuring additional hostnames
+                          to resolve in the pod's hosts file.
+                        items:
+                          description: |-
+                            HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the
+                            pod's hosts file.
+                          properties:
+                            hostnames:
+                              description: Hostnames for the above IP address.
+                              items:
+                                type: string
+                              type: array
+                            ip:
+                              description: IP address of the host file entry.
+                              type: string
+                          type: object
+                        type: array
                       nodeSelector:
                         additionalProperties:
                           type: string
@@ -1127,6 +1217,24 @@ spec:
                   indexer:
                     description: Settings pertaining to the indexer deployment.
                     properties:
+                      hostAliases:
+                        description: HostAliases allows configuring additional hostnames
+                          to resolve in the pod's hosts file.
+                        items:
+                          description: |-
+                            HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the
+                            pod's hosts file.
+                          properties:
+                            hostnames:
+                              description: Hostnames for the above IP address.
+                              items:
+                                type: string
+                              type: array
+                            ip:
+                              description: IP address of the host file entry.
+                              type: string
+                          type: object
+                        type: array
                       nodeSelector:
                         additionalProperties:
                           type: string
@@ -1292,6 +1400,24 @@ spec:
               sensor:
                 description: Settings for the Sensor component.
                 properties:
+                  hostAliases:
+                    description: HostAliases allows configuring additional hostnames
+                      to resolve in the pod's hosts file.
+                    items:
+                      description: |-
+                        HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the
+                        pod's hosts file.
+                      properties:
+                        hostnames:
+                          description: Hostnames for the above IP address.
+                          items:
+                            type: string
+                          type: array
+                        ip:
+                          description: IP address of the host file entry.
+                          type: string
+                      type: object
+                    type: array
                   nodeSelector:
                     additionalProperties:
                       type: string
