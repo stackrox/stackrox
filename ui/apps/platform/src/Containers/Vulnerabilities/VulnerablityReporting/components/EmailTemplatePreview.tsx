@@ -119,7 +119,7 @@ function EmailTemplatePreview({
                             </div>
                             <div style={{ padding: '0 0 10px 0' }}>
                                 <span style={{ fontWeight: 'bold', marginRight: '10px' }}>
-                                    Report scope:
+                                    Collection included:
                                 </span>
                                 <span>{reportParameters.reportScope?.name || '-'}</span>
                             </div>
