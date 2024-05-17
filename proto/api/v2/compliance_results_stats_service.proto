@@ -49,6 +49,22 @@ message ListComplianceClusterScanStatsResponse {
   int32 total_count = 2;
 }
 
+// /v2/compliance/scan/stats/benchmark/
+message ComplianceBenchmarkStatsRequest {
+  string benchmark_name = 1;
+}
+
+message ListComplianceBenchmarkScanStatsResponse {
+  string benchmark_name = 1;
+  repeated ComplianceBenchmarkControlScanStats scan_stats = 2;
+  int32 total_count = 3;
+}
+
+message ComplianceBenchmarkControlScanStats {
+  string control = 1;
+  repeated ComplianceCheckStatusCount check_stats = 2;
+}
+
 service ComplianceResultsStatsService {
   // GetComplianceProfileStats lists current scan stats grouped by profile
   // Optional RawQuery query fields can be combined.
@@ -87,5 +103,10 @@ service ComplianceResultsStatsService {
 
   rpc GetComplianceClusterStats(ComplianceProfileResultsRequest) returns (ListComplianceClusterOverallStatsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles/{profile_name}/clusters"};
+  }
+
+  // TODO: add filtering and sorting
+  rpc GetComplianceBenchmarkScanStats(ComplianceBenchmarkStatsRequest) returns (ListComplianceBenchmarkScanStatsResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/stats/benchmarks/{benchmark_name}/controls"};
   }
 }

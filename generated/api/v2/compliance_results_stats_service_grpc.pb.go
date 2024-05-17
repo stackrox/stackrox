@@ -25,6 +25,7 @@ const (
 	ComplianceResultsStatsService_GetComplianceClusterScanStats_FullMethodName    = "/v2.ComplianceResultsStatsService/GetComplianceClusterScanStats"
 	ComplianceResultsStatsService_GetComplianceOverallClusterStats_FullMethodName = "/v2.ComplianceResultsStatsService/GetComplianceOverallClusterStats"
 	ComplianceResultsStatsService_GetComplianceClusterStats_FullMethodName        = "/v2.ComplianceResultsStatsService/GetComplianceClusterStats"
+	ComplianceResultsStatsService_GetComplianceBenchmarkScanStats_FullMethodName  = "/v2.ComplianceResultsStatsService/GetComplianceBenchmarkScanStats"
 )
 
 // ComplianceResultsStatsServiceClient is the client API for ComplianceResultsStatsService service.
@@ -52,6 +53,8 @@ type ComplianceResultsStatsServiceClient interface {
 	// Deprecated in favor of GetComplianceClusterStats
 	GetComplianceOverallClusterStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceClusterOverallStatsResponse, error)
 	GetComplianceClusterStats(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ListComplianceClusterOverallStatsResponse, error)
+	// TODO: add filtering and sorting
+	GetComplianceBenchmarkScanStats(ctx context.Context, in *ComplianceBenchmarkStatsRequest, opts ...grpc.CallOption) (*ListComplianceBenchmarkScanStatsResponse, error)
 }
 
 type complianceResultsStatsServiceClient struct {
@@ -116,6 +119,15 @@ func (c *complianceResultsStatsServiceClient) GetComplianceClusterStats(ctx cont
 	return out, nil
 }
 
+func (c *complianceResultsStatsServiceClient) GetComplianceBenchmarkScanStats(ctx context.Context, in *ComplianceBenchmarkStatsRequest, opts ...grpc.CallOption) (*ListComplianceBenchmarkScanStatsResponse, error) {
+	out := new(ListComplianceBenchmarkScanStatsResponse)
+	err := c.cc.Invoke(ctx, ComplianceResultsStatsService_GetComplianceBenchmarkScanStats_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ComplianceResultsStatsServiceServer is the server API for ComplianceResultsStatsService service.
 // All implementations should embed UnimplementedComplianceResultsStatsServiceServer
 // for forward compatibility
@@ -141,6 +153,8 @@ type ComplianceResultsStatsServiceServer interface {
 	// Deprecated in favor of GetComplianceClusterStats
 	GetComplianceOverallClusterStats(context.Context, *RawQuery) (*ListComplianceClusterOverallStatsResponse, error)
 	GetComplianceClusterStats(context.Context, *ComplianceProfileResultsRequest) (*ListComplianceClusterOverallStatsResponse, error)
+	// TODO: add filtering and sorting
+	GetComplianceBenchmarkScanStats(context.Context, *ComplianceBenchmarkStatsRequest) (*ListComplianceBenchmarkScanStatsResponse, error)
 }
 
 // UnimplementedComplianceResultsStatsServiceServer should be embedded to have forward compatible implementations.
@@ -164,6 +178,9 @@ func (UnimplementedComplianceResultsStatsServiceServer) GetComplianceOverallClus
 }
 func (UnimplementedComplianceResultsStatsServiceServer) GetComplianceClusterStats(context.Context, *ComplianceProfileResultsRequest) (*ListComplianceClusterOverallStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceClusterStats not implemented")
+}
+func (UnimplementedComplianceResultsStatsServiceServer) GetComplianceBenchmarkScanStats(context.Context, *ComplianceBenchmarkStatsRequest) (*ListComplianceBenchmarkScanStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceBenchmarkScanStats not implemented")
 }
 
 // UnsafeComplianceResultsStatsServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -285,6 +302,24 @@ func _ComplianceResultsStatsService_GetComplianceClusterStats_Handler(srv interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ComplianceResultsStatsService_GetComplianceBenchmarkScanStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ComplianceBenchmarkStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComplianceResultsStatsServiceServer).GetComplianceBenchmarkScanStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComplianceResultsStatsService_GetComplianceBenchmarkScanStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComplianceResultsStatsServiceServer).GetComplianceBenchmarkScanStats(ctx, req.(*ComplianceBenchmarkStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ComplianceResultsStatsService_ServiceDesc is the grpc.ServiceDesc for ComplianceResultsStatsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -315,6 +350,10 @@ var ComplianceResultsStatsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetComplianceClusterStats",
 			Handler:    _ComplianceResultsStatsService_GetComplianceClusterStats_Handler,
+		},
+		{
+			MethodName: "GetComplianceBenchmarkScanStats",
+			Handler:    _ComplianceResultsStatsService_GetComplianceBenchmarkScanStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

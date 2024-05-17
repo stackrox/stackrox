@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	benchmarkDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
@@ -65,6 +67,55 @@ type serviceImpl struct {
 	integrationDS       complianceIntegrationDS.DataStore
 	profileDS           profileDatastore.DataStore
 	scanDS              complianceScanDS.DataStore
+	benchmarkDS         benchmarkDS.DataStore
+}
+
+func (s *serviceImpl) GetComplianceBenchmarkScanStats(ctx context.Context, request *v2.ComplianceBenchmarkStatsRequest) (*v2.ListComplianceBenchmarkScanStatsResponse, error) {
+	//TODO: Implement get benchmark by name
+	benchmark, found, err := s.benchmarkDS.GetBenchmark(ctx, "4d0d96f7-3782-41ba-b3b7-c040686a421c")
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve benchmark")
+	}
+	if !found {
+		// TODO: not found error??
+		return nil, errors.Wrapf(errox.NotFound, "Benchmark not found")
+	}
+
+	// Get Benchmark standard name
+	// Example annotation: control.compliance.openshift.io/CIS-OCP
+	standard := strings.Split(benchmark.GetProfileAnnotation()[0], ":")
+
+	checkResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, &v1.Query{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve compliance check results")
+	}
+
+	for _, result := range checkResults {
+		result.ScanName
+	}
+
+	// Get all rules
+	// Filter rules by standard
+	// for each control, get all checkresults
+	// control to checkresult mapping
+
+	// for each standard get all rules
+	// for each rule get all checks
+
+	// Get all Controls & Profile Rule IDs by Standard
+
+	/**
+	Get all controls
+	Iterate over all controls and receive the stats
+	*/
+
+	benchmark.GetProfileAnnotation()
+
+	// Get implemented Profile names
+	// Get all controls by profile
+	// Get all results by profile
+
+	return nil, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
