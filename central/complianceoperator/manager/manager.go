@@ -174,6 +174,10 @@ func (m *managerImpl) AddProfile(profile *storage.ComplianceOperatorProfile) err
 }
 
 func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfile) error {
+	if !features.ClassicCompliance.Enabled() {
+		return nil
+	}
+
 	var existingProfiles []*storage.ComplianceOperatorProfile
 	walkFn := func() error {
 		existingProfiles = []*storage.ComplianceOperatorProfile{
@@ -377,6 +381,10 @@ func (m *managerImpl) IsStandardActiveForCluster(standardID, clusterID string) b
 		return true
 	}
 
+	if !features.ClassicCompliance.Enabled() {
+		return false
+	}
+
 	var found bool
 	walkFn := func() error {
 		found = false
@@ -411,6 +419,10 @@ func (m *managerImpl) getRule(name string) (*storage.ComplianceOperatorRule, err
 }
 
 func (m *managerImpl) GetMachineConfigs(clusterID string) (map[string][]string, error) {
+	if !features.ClassicCompliance.Enabled() {
+		return nil, nil
+	}
+
 	profileIDsToNames := make(map[string]string)
 	walkFn := func() error {
 		profileIDsToNames = make(map[string]string)
