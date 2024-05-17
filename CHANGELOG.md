@@ -36,8 +36,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-20224: Added a new default policy category called "Supply Chain Security", and the following default policies have been tagged with the category: "Images with no scans", "30-day Scan Age", "90-day Image Age", "Required Annotation: Email",
   "Required Annotation: Owner/Team", "Required Label: Owner/Team" and "Latest tag"
 - ROX-21207: All usage of RocksDB has been removed.
-  - As mentioned in previous deprecation notice, users running ACS version 3.74.x or earlier must stop at version 4.4.x before upgrading to 4.5 or later. In version 4.0.0, ACS switched the underlying datastore to PostgreSQL. On an upgrade, data would be automatically migrated to PostgresSQL from the previous datastore.
-  This previous datastore is no longer be available, thus any existing data cannot be migrated over if users jump from 3.74.x directly to 4.5.0. By stopping at any version from 4.0.0 to 4.4.x, users can ensure that the data will be properly migrated.
+  - Support to directly upgrade from any ACS version 3.74.x or earlier to version 4.5 has been deprecated. ACS version 3.74.x or earlier MUST be upgraded to version 4.4.x before proceeding to version 4.5 or later.
+
 
 ## [4.4.0]
 
