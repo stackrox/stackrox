@@ -274,7 +274,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                     </FormLabelGroup>
                 )}
                 <FormLabelGroup
-                    label="Configure report scope"
+                    label="Configure collection included"
                     isRequired
                     fieldId="reportParameters.reportScope"
                     errors={formik.errors}

@@ -104,7 +104,7 @@ function CreateVulnReportPage() {
                         <Title headingLevel="h1">Create report</Title>
                     </FlexItem>
                     <FlexItem>
-                        Configure reports, define report scopes, and assign delivery destinations to
+                        Configure reports, define collections, and assign delivery destinations to
                         report on vulnerabilities across the organization.
                     </FlexItem>
                 </Flex>
