@@ -10,13 +10,13 @@ import (
 	"bufio"
 	"encoding/json"
 	"io"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type iter2[X, Y any] func(yield func(X, Y) bool)
@@ -85,7 +85,7 @@ type CommonEntry struct {
 	Date        time.Time
 }
 
-// DiskEntry is a single vulnerability or enrichment. It's made from unpacking an
+// diskEntry is a single vulnerability or enrichment. It's made from unpacking an
 // Entry's slice and adding an uuid for grouping back into an Entry upon read.
 //
 // "Vuln" and "Enrichment" are populated from the backing disk immediately
@@ -117,7 +117,7 @@ func (de *diskEntry) Unmarshal() (v *claircore.Vulnerability, e *driver.Enrichme
 	return
 }
 
-// BufShim treats every call to [bufShim.MarshalJSON] as a [bufio.Scanner.Scan]
+// bufShim treats every call to [bufShim.MarshalJSON] as a [bufio.Scanner.Scan]
 // call.
 //
 // Note this type is very weird, in that it can only be used for _either_ an

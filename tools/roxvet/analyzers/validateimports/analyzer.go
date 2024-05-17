@@ -100,7 +100,11 @@ var (
 		"github.com/google/uuid": {
 			replacement: "github.com/stackrox/rox/pkg/uuid",
 			allowlist: set.NewStringSet(
-				"github.com/stackrox/rox/scanner/datastore/postgres/mocks", // Used by ClairCore.
+				// Used by ClairCore as return types.
+				"github.com/stackrox/rox/scanner/datastore/postgres/mocks",
+				"github.com/stackrox/rox/scanner/matcher/updater/vuln",
+				// TODO(ROX-24333): Remove this once ClairCore supports it.
+				"github.com/stackrox/rox/scanner/updater/jsonblob",
 			),
 		},
 	}
