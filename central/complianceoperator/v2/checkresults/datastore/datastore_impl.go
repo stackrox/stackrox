@@ -91,19 +91,21 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 		},
 	}
 
-	if cloned.Pagination == nil {
+	if cloned.GetPagination() == nil {
 		cloned.Pagination = &v1.QueryPagination{}
 	}
-	cloned.Pagination.SortOptions = []*v1.QuerySortOption{
-		{
-			Field: search.ComplianceOperatorScanConfigName.String(),
-		},
-		{
-			Field: search.ClusterID.String(),
-		},
-		{
-			Field: search.Cluster.String(),
-		},
+	if cloned.GetPagination().GetSortOptions() == nil {
+		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.ComplianceOperatorScanConfigName.String(),
+			},
+			{
+				Field: search.ClusterID.String(),
+			},
+			{
+				Field: search.Cluster.String(),
+			},
+		}
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
@@ -135,13 +137,15 @@ func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query 
 		},
 	}
 
-	if cloned.Pagination == nil {
+	if cloned.GetPagination() == nil {
 		cloned.Pagination = &v1.QueryPagination{}
 	}
-	cloned.Pagination.SortOptions = []*v1.QuerySortOption{
-		{
-			Field: search.ComplianceOperatorProfileName.String(),
-		},
+	if cloned.GetPagination().GetSortOptions() == nil {
+		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.ComplianceOperatorProfileName.String(),
+			},
+		}
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
@@ -179,22 +183,24 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 		},
 	}
 
-	if cloned.Pagination == nil {
+	if cloned.GetPagination() == nil {
 		cloned.Pagination = &v1.QueryPagination{}
 	}
-	cloned.Pagination.SortOptions = []*v1.QuerySortOption{
-		{
-			Field: search.ComplianceOperatorProfileName.String(),
-		},
-		{
-			Field: search.ComplianceOperatorCheckName.String(),
-		},
-		{
-			Field: search.ComplianceOperatorCheckRationale.String(),
-		},
-		{
-			Field: search.ComplianceOperatorRuleName.String(),
-		},
+	if cloned.GetPagination().GetSortOptions() == nil {
+		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.ComplianceOperatorProfileName.String(),
+			},
+			{
+				Field: search.ComplianceOperatorCheckName.String(),
+			},
+			{
+				Field: search.ComplianceOperatorCheckRationale.String(),
+			},
+			{
+				Field: search.ComplianceOperatorRuleName.String(),
+			},
+		}
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
@@ -228,8 +234,10 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 		},
 	}
 
-	if cloned.Pagination == nil {
+	if cloned.GetPagination() == nil {
 		cloned.Pagination = &v1.QueryPagination{}
+	}
+	if cloned.GetPagination().GetSortOptions() == nil {
 		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
 			{
 				Field: search.ClusterID.String(),
