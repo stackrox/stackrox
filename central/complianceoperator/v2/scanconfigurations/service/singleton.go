@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
+	reportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	scanSettingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanSettingBindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
@@ -18,6 +19,10 @@ var (
 func Singleton() Service {
 	if !features.ComplianceEnhancements.Enabled() {
 		return nil
+	}
+
+	if features.ComplianceReporting.Enabled() {
+		go reportManager.Singleton().Start()
 	}
 
 	serviceInstanceInit.Do(func() {
