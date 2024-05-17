@@ -25,17 +25,20 @@ function EntitySelector({ selectedEntity, onChange, config }: EntitySelectorProp
         return null;
     }
 
+    const displayName = selectedEntity ? config[selectedEntity]?.displayName : undefined;
+
     return (
         <SimpleSelect
-            value={selectedEntity}
+            value={displayName}
             onChange={onChange}
             ariaLabelMenu="compound search filter entity selector menu"
             ariaLabelToggle="compound search filter entity selector toggle"
         >
             {entities.map((entity) => {
+                const displayName = config[entity]?.displayName;
                 return (
                     <SelectOption key={entity} value={entity}>
-                        {entity}
+                        {displayName}
                     </SelectOption>
                 );
             })}

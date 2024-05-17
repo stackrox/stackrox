@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
 import sortBy from 'lodash/sortBy';
 import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
+import { SourceType } from 'types/image.proto';
 import { ApiSortOption } from 'types/search';
 
 export type ImageMetadataContext = {
@@ -38,17 +39,6 @@ export const imageMetadataContextFragment = gql`
         }
     }
 `;
-
-// This is a general type that isn't specific to this component, so should be moved elsewhere if
-// there is a more appropriate location. (top level ./types/ directory?)
-export type SourceType =
-    | 'OS'
-    | 'PYTHON'
-    | 'JAVA'
-    | 'RUBY'
-    | 'NODEJS'
-    | 'DOTNETCORERUNTIME'
-    | 'INFRASTRUCTURE';
 
 // TODO Enforce a non-empty imageVulnerabilities array at a higher level?
 export type ComponentVulnerabilityBase = {
