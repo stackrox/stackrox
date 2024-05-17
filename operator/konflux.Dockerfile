@@ -9,8 +9,10 @@ COPY . .
 RUN scripts/konflux/fail-build-if-git-is-dirty.sh
 
 # Build the operator binary.
+# TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
-ENV CI=1 GOFLAGS="" GOTAGS="release" CGO_ENABLED=1
+# GOTAGS="release"
+ENV CI=1 GOFLAGS="" CGO_ENABLED=1
 
 # TODO(ROX-19958): figure out if setting BUILD_TAG is actually needed.
 RUN GOOS=linux GOARCH=$(go env GOARCH) BUILD_TAG=$(make tag) scripts/go-build.sh operator && \
