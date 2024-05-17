@@ -53,23 +53,18 @@ jobs:
         name: updater
         path: /usr/local/bin
 
-    - name: Run updater
-      if: >
-        github.event_name == 'schedule' ||
-        (github.event_name == 'pull_request' &&
-         !contains(github.event.pull_request.labels.*.name, 'scanner-split-vulns'))
+    - name: Set updater
       run: |
         chmod +x /usr/local/bin/updater
+        mkdir vulns
+
+    - name: Run updater (single bundle)
+      run: |
         updater export vulns
 
-    - name: Run updater with split vulns
-      if: >
-        github.event_name == 'pull_request' &&
-        contains(github.event.pull_request.labels.*.name, 'scanner-split-vulns')
+    - name: Run updater (multi bundle)
       run: |
-        chmod +x /usr/local/bin/updater
         updater export --split bundles
-        mkdir vulns
         zip vulns/vulnerabilities.zip bundles/*.json.zst
 
     - uses: actions/upload-artifact@v4
