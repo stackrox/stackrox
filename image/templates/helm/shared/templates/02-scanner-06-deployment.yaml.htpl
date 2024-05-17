@@ -199,7 +199,7 @@ spec:
         {{- ._rox.scanner._dbNodeSelector | nindent 8 }}
       {{- end }}
       {{- if ._rox.scanner.dbHostAliases }}
-        hostAliases: {{ toYaml ._rox.scanner.dbHostAliases | nindent 8 }}
+      hostAliases: {{ toYaml ._rox.scanner.dbHostAliases | nindent 8 }}
       {{- end }}
       {{- if ._rox.scanner.dbTolerations }}
       tolerations:
