@@ -186,4 +186,35 @@ describe(Cypress.spec.relative, () => {
         cy.get(nodeComponenSourceSelectItems).eq(5).should('have.text', 'Dotnet Core Runtime');
         cy.get(nodeComponenSourceSelectItems).eq(6).should('have.text', 'Infrastructure');
     });
+
+    it('should display the date-picker input for the image create time search filter', () => {
+        const config = {
+            Image: imageSearchFilterConfig,
+        };
+
+        setup(config);
+
+        cy.get(selectors.attributeSelectToggle).click();
+        cy.get(selectors.attributeSelectItem('Created Time')).click();
+
+        // The date-picker input should be present
+        cy.get('input[aria-label="Filter by date"]').should('exist');
+
+        // Click on the date-picker toggle
+        cy.get('button[aria-label="Filter by date toggle"]').click();
+
+        // Select a month
+        cy.get('div.pf-v5-c-calendar-month__header-month button').click();
+        cy.get('button.pf-v5-c-menu__item:contains("January")').click();
+
+        // Select a year
+        cy.get('input[aria-label="Select year"]').clear();
+        cy.get('input[aria-label="Select year"]').type('2034');
+
+        // Select a day
+        cy.get('button.pf-v5-c-calendar-month__date:contains("15")').click();
+
+        // Check updated date value
+        cy.get('input[aria-label="Filter by date"]').should('have.value', '2034-01-15');
+    });
 });
