@@ -213,6 +213,10 @@ type PerNodeSpec struct {
 	//+kubebuilder:default=TolerateTaints
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
+
+	// HostAliases is a list of hostnames and IPs to add to the collector pod's /etc/hosts file.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=101
+	HostAliases []corev1.HostAlias `json:"hostAliases,omitempty"`
 }
 
 // CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF', 'None', or 'KernelModule'. Note that the collection method will be switched to EBPF if KernelModule is used.

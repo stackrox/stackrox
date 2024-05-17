@@ -195,6 +195,9 @@ func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scanne
 		sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
 		sv.SetStringMap("nodeSelector", sensor.NodeSelector)
 		sv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, sensor.Tolerations))
+		if len(sensor.HostAliases) > 0 {
+			sv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, sensor.HostAliases))
+		}
 	}
 
 	if scannerAutosense.EnableLocalImageScanning || scannerV4Autosense.EnableLocalImageScanning {
@@ -242,6 +245,9 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	acv.AddChild("dynamic", &dynamic)
 	acv.SetStringMap("nodeSelector", admissionControl.NodeSelector)
 	acv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, admissionControl.Tolerations))
+	if len(admissionControl.HostAliases) > 0 {
+		acv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, admissionControl.HostAliases))
+	}
 	acv.SetInt32("replicas", admissionControl.Replicas)
 
 	return &acv
@@ -276,6 +282,9 @@ func (t Translator) getCollectorValues(perNode *platform.PerNodeSpec) *translati
 		default:
 			return cv.SetError(fmt.Errorf("invalid spec.perNode.taintToleration %q", *perNode.TaintToleration))
 		}
+	}
+	if len(perNode.HostAliases) > 0 {
+		cv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, perNode.HostAliases))
 	}
 
 	cv.AddAllFrom(t.getCollectorContainerValues(perNode.Collector))

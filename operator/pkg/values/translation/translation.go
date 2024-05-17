@@ -21,6 +21,8 @@ const (
 	ResourcesKey = "resources"
 	// TolerationsKey is the default tolerations key used in the charts.
 	TolerationsKey = "tolerations"
+	// HostAliasesKey is the default host aliases key used in the charts.
+	HostAliasesKey = "hostAliases"
 	// DefaultStorageClassAnnotationKey is the annotation used to identify a default storage class
 	DefaultStorageClassAnnotationKey = "storageclass.kubernetes.io/is-default-class"
 	defaultScannerV4PVCName          = "scanner-v4-db"
@@ -123,6 +125,25 @@ func GetTolerations(key string, tolerations []*corev1.Toleration) *ValuesBuilder
 	return &v
 }
 
+// GetHostAliases converts a slice of host aliases to a *ValuesBuilder object and sets the field name
+// based on the key parameter.
+func GetHostAliases(key string, hostAliases []corev1.HostAlias) *ValuesBuilder {
+	v := NewValuesBuilder()
+
+	var convertedList []interface{}
+	for _, hostAlias := range hostAliases {
+		m, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&hostAlias)
+		if err != nil {
+			v.SetError(errors.Wrapf(err, "failed converting %q to unstructured", key))
+			break
+		}
+		convertedList = append(convertedList, m)
+	}
+	v.SetSlice(key, convertedList)
+
+	return &v
+}
+
 // GetGlobalMonitoring converts *platform.GlobalMonitoring into *ValuesBuilder
 func GetGlobalMonitoring(m *platform.GlobalMonitoring) *ValuesBuilder {
 	openshiftMonitoring := NewValuesBuilder()
@@ -176,6 +197,9 @@ func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnaly
 	sv.SetStringMap("nodeSelector", analyzer.NodeSelector)
 	sv.AddChild(ResourcesKey, GetResources(analyzer.Resources))
 	sv.AddAllFrom(GetTolerations(TolerationsKey, analyzer.DeploymentSpec.Tolerations))
+	if len(analyzer.HostAliases) > 0 {
+		sv.AddAllFrom(GetHostAliases(HostAliasesKey, analyzer.HostAliases))
+	}
 }
 
 // SetScannerDBValues sets values in "sv" based on "db".
@@ -184,6 +208,9 @@ func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
 		sv.SetStringMap("dbNodeSelector", db.NodeSelector)
 		sv.AddChild("dbResources", GetResources(db.Resources))
 		sv.AddAllFrom(GetTolerations("dbTolerations", db.Tolerations))
+		if len(db.HostAliases) > 0 {
+			sv.AddAllFrom(GetHostAliases("dbHostAliases", db.HostAliases))
+		}
 	}
 }
 
@@ -217,6 +244,9 @@ func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.S
 		dbVB.SetStringMap("nodeSelector", db.NodeSelector)
 		dbVB.AddChild(ResourcesKey, GetResources(db.Resources))
 		dbVB.AddAllFrom(GetTolerations(TolerationsKey, db.Tolerations))
+		if len(db.HostAliases) > 0 {
+			dbVB.AddAllFrom(GetHostAliases(HostAliasesKey, db.HostAliases))
+		}
 	}
 
 	setScannerV4DBPersistence(&dbVB, objKind, db.GetPersistence())
@@ -341,6 +371,9 @@ func SetScannerV4ComponentValues(sv *ValuesBuilder, componentKey string, compone
 	componentVB.SetStringMap("nodeSelector", component.NodeSelector)
 	componentVB.AddChild(ResourcesKey, GetResources(component.Resources))
 	componentVB.AddAllFrom(GetTolerations(TolerationsKey, component.Tolerations))
+	if len(component.HostAliases) > 0 {
+		componentVB.AddAllFrom(GetHostAliases(HostAliasesKey, component.HostAliases))
+	}
 	sv.AddChild(componentKey, &componentVB)
 }
 
