@@ -91,7 +91,7 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 		},
 	}
 
-	if cloned.Pagination == nil {
+	if cloned.GetPagination() == nil && cloned.GetPagination().GetSortOptions() == nil {
 		cloned.Pagination = &v1.QueryPagination{}
 		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
 			{
@@ -135,7 +135,7 @@ func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query 
 		},
 	}
 
-	if cloned.Pagination == nil {
+	if cloned.GetPagination() == nil && cloned.GetPagination().GetSortOptions() == nil {
 		cloned.Pagination = &v1.QueryPagination{}
 		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
 			{
@@ -179,7 +179,7 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 		},
 	}
 
-	if cloned.Pagination == nil {
+	if cloned.GetPagination() == nil && cloned.GetPagination().GetSortOptions() == nil {
 		cloned.Pagination = &v1.QueryPagination{}
 		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
 			{
@@ -228,7 +228,7 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 		},
 	}
 
-	if cloned.Pagination == nil {
+	if cloned.GetPagination() == nil && cloned.GetPagination().GetSortOptions() == nil {
 		cloned.Pagination = &v1.QueryPagination{}
 		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
 			{
