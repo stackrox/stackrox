@@ -92,6 +92,7 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 	defer toClose(onlineFile)
 	offlineFile, err := h.openOfflineBlob(ctx, offlineScannerDefinitionBlobName)
 	if err != nil {
+		log.Debugf("Failed to open offline definition blob, using online file: %v", err)
 		return
 	}
 	defer toClose(offlineFile)

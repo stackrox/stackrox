@@ -13,10 +13,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
-	"google.golang.org/grpc/codes"
 )
 
 // v4OpenOpts are options to open most recent V4 definition files.
@@ -68,13 +66,13 @@ func (h *httpHandler) getV4(w http.ResponseWriter, r *http.Request) {
 
 	f, err := h.openMostRecentV4File(ctx, uType, opts)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not read: %s", err)
-		log.Error(errMsg)
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
+		// Just using generic file name for this log...
+		writeErrorForFile(w, err, "file")
 		return
 	}
 
 	if uType == vulnerabilityUpdaterType {
+		// http.ServeContent does not automatically detect zst files.
 		w.Header().Set("Content-Type", "application/zstd")
 	}
 
@@ -82,10 +80,10 @@ func (h *httpHandler) getV4(w http.ResponseWriter, r *http.Request) {
 	serveContent(w, r, f.Name(), f.modTime, f)
 }
 
-func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, opts v4OpenOpts) (*vulDefFile, error) {
+func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, opts v4OpenOpts) (file *vulDefFile, err error) {
 	log.Debugf("Fetching scanner V4 (online: %t): type %s: options: %#v", h.online, t, opts)
 
-	file, err := h.openMostRecentV4OfflineFile(ctx, t, opts)
+	file, err = h.openMostRecentV4OfflineFile(ctx, t, opts)
 	if !h.online {
 		return file, err
 	}
@@ -121,7 +119,10 @@ func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, o
 func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updaterType, opts v4OpenOpts) (*vulDefFile, error) {
 	log.Debugf("Getting v4 offline data for updater: type %s: options: %#v", t, opts)
 	openedFile, err := h.openOfflineBlob(ctx, offlineScannerV4DefinitionBlobName)
-	if err == nil && openedFile == nil {
+	if err != nil {
+		return nil, err
+	}
+	if openedFile == nil {
 		log.Warnf("Blob %s does not exist", offlineScannerV4DefinitionBlobName)
 		return nil, errors.New("No valid scanner V4 file in offline mode")
 	}
@@ -202,8 +203,9 @@ func (h *httpHandler) openMostRecentV4OnlineFile(_ context.Context, t updaterTyp
 		return &vulDefFile{File: targetFile, modTime: onlineTime}, nil
 	case vulnerabilityUpdaterType:
 		return &vulDefFile{File: openedFile, modTime: onlineTime}, nil
+	default:
+		return nil, fmt.Errorf("unknown Scanner V4 updater type: %s", t)
 	}
-	return nil, fmt.Errorf("unknown Scanner V4 updater type: %s", t)
 }
 
 func validateV4DefsVersion(zipPath string) error {
