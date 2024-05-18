@@ -45,7 +45,12 @@ endif
 #
 # TODO(ROX-23969): remove this assignment so that CGO_ENABLED is set to 1 (see env.mk) in order to minimize testing
 # difference with FIPS builds.
-CGO_ENABLED := 0
+CGO_ENABLED = 0
+RACE_FLAG =
+ifeq ($(RACE),1)
+	CGO_ENABLED = 1
+	RACE_FLAG = -race
+endif
 
 HOST_OS := linux
 ifeq ($(shell uname -s),Darwin)
@@ -57,7 +62,8 @@ GO_BUILD_FLAGS = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH)
 GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
                    -trimpath \
                    -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG)" \
-                   -tags=$(GOTAGS)
+                   -tags=$(GOTAGS) \
+                   $(RACE_FLAG)
 GO_TEST_CMD    = $(GO_BUILD_FLAGS) go test
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
