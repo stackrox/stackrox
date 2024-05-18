@@ -44,6 +44,9 @@ spec:
       {{- if ._rox.admissionControl.priorityClassName }}
       priorityClassName: {{ ._rox.admissionControl.priorityClassName }}
       {{- end }}
+      {{- if ._rox.admissionControl.hostAliases }}
+      hostAliases: {{ toYaml ._rox.admissionControl.hostAliases | nindent 8 }}
+      {{- end }}
       {{- if not ._rox.env.openshift }}
       securityContext:
         runAsUser: 4000

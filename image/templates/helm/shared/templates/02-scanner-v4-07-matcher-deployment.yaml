@@ -41,6 +41,9 @@ spec:
       {{- end }}
       affinity:
         {{- toYaml ._rox.scannerV4.matcher.affinity | nindent 8 }}
+      {{- if ._rox.scannerV4.matcher.hostAliases }}
+      hostAliases: {{ toYaml ._rox.scannerV4.matcher.hostAliases | nindent 8 }}
+      {{- end }}
       containers:
       - name: matcher
         image: {{ ._rox.scannerV4.matcher.image.fullRef | quote }}
