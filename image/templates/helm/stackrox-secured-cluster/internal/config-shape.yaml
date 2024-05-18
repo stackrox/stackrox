@@ -83,6 +83,7 @@ sensor:
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
+  hostAliases: null # [dict]
   priorityClassName: null # string
   localImageScanning:
     # Enables the local image scanning feature in Sensor. This disabled if local image scanning should not be used to prevent
@@ -109,6 +110,7 @@ admissionControl:
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
+  hostAliases: null # [dict]
   priorityClassName: null # string
 collector:
   forceCollectionMethod: null # bool
@@ -127,6 +129,7 @@ collector:
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   priorityClassName: null # string
+  hostAliases: null # [dict]
   disableSELinuxOptions: null # bool
   seLinuxOptionsType: null # string
 auditLogs:

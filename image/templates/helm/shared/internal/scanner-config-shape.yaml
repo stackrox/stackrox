@@ -7,6 +7,8 @@ scanner:
   dbNodeSelector: null # string | dict
   tolerations: null # [dict]
   dbTolerations: null # [dict]
+  hostAliases: null # [dict]
+  dbHostAliases: null # [dict]
   autoscaling:
     disable: null # bool
     minReplicas: null # int

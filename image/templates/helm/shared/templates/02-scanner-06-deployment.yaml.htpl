@@ -41,6 +41,9 @@ spec:
       tolerations:
         {{- toYaml ._rox.scanner.tolerations | nindent 8 }}
       {{- end }}
+      {{- if ._rox.scanner.hostAliases }}
+      hostAliases: {{ toYaml ._rox.scanner.hostAliases | nindent 8 }}
+      {{- end }}
       affinity:
         {{- toYaml ._rox.scanner.affinity | nindent 8 }}
       {{- if ._rox.scanner.priorityClassName }}
@@ -194,6 +197,9 @@ spec:
       {{- if ._rox.scanner._dbNodeSelector }}
       nodeSelector:
         {{- ._rox.scanner._dbNodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if ._rox.scanner.dbHostAliases }}
+      hostAliases: {{ toYaml ._rox.scanner.dbHostAliases | nindent 8 }}
       {{- end }}
       {{- if ._rox.scanner.dbTolerations }}
       tolerations:
