@@ -106,7 +106,6 @@ function ReviewConfig({ clusters, profiles, errorMessage }: ProfileSelectionProp
                 </StackItem>
                 {isComplianceReportingEnabled && (
                     <StackItem>
-                        <Title headingLevel="h3">Report configuration</Title>
                         <NotifierConfigurationView
                             customBodyDefault={customBodyDefault}
                             customSubjectDefault={getSubjectDefault(formikValues.parameters.name)}
