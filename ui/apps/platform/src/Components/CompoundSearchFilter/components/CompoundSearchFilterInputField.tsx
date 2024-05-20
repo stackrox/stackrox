@@ -8,8 +8,10 @@ import {
     SearchFilterAttribute,
     SelectSearchFilterAttribute,
 } from '../types';
+import { ensureString, ensureStringArray } from '../utils/utils';
 
 import CheckboxSelect from './CheckboxSelect';
+import ConditionNumber from './ConditionNumber';
 
 export type InputFieldValue = string | number | undefined | string[];
 export type InputFieldOnChange = (value: InputFieldValue) => void;
@@ -27,20 +29,6 @@ function isSelectType(
     attributeObject: SearchFilterAttribute
 ): attributeObject is SelectSearchFilterAttribute {
     return attributeObject.inputType === 'select';
-}
-
-function ensureStringArray(value: InputFieldValue): string[] {
-    if (Array.isArray(value) && value.every((element) => typeof element === 'string')) {
-        return value;
-    }
-    return [];
-}
-
-function ensureString(value: InputFieldValue): string {
-    if (typeof value === 'string') {
-        return value;
-    }
-    return '';
 }
 
 function CompoundSearchFilterInputField({
@@ -82,6 +70,17 @@ function CompoundSearchFilterInputField({
                 buttonAriaLabel="Filter by date toggle"
                 value={ensureString(value)}
                 onChange={(_event, value) => {
+                    onChange(value);
+                    onSearch(value);
+                }}
+            />
+        );
+    }
+    if (attributeObject.inputType === 'condition-number') {
+        return (
+            <ConditionNumber
+                value={ensureString(value)}
+                onSearch={(value) => {
                     onChange(value);
                     onSearch(value);
                 }}

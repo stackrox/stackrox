@@ -45,3 +45,17 @@ export function getDefaultAttribute(
     }
     return undefined;
 }
+
+export function ensureStringArray(value: unknown): string[] {
+    if (Array.isArray(value) && value.every((element) => typeof element === 'string')) {
+        return value as string[];
+    }
+    return [];
+}
+
+export function ensureString(value: unknown): string {
+    if (typeof value === 'string') {
+        return value;
+    }
+    return '';
+}
