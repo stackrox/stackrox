@@ -103,20 +103,25 @@ create_cluster() {
         die "Support is missing for this CI environment"
     fi
 
+    # Refresher on bash shell parameter expansion:
+    # https://www.gnu.org/software/bash/manual/bash.html#Shell-Parameter-Expansion
+    # ${VAR//./-} : Replaces all "." with a "-"
+    # ${VAR/%-/}  : Deletes the last "-"
+    # ${VAR,,}    : Converts all alphabetic to their lowercase form
     tags="${tags},stackrox-ci-${job_name:0:50}"
-    tags="${tags/%-/x}"
+    tags="${tags//./-}"
+    tags="${tags/%-/}"
     labels="${labels},stackrox-ci-job=${job_name:0:63}"
-    labels="${labels/%-/x}"
+    labels="${labels//./-}"
+    labels="${labels/%-/}"
     labels="${labels},stackrox-ci-build-id=${build_num:0:63}"
-    labels="${labels/%-/x}"
+    labels="${labels//./-}"
+    labels="${labels/%-/}"
 
     if is_in_PR_context; then
         labels="${labels},pr=$(get_PR_number)"
     fi
 
-    # remove . from branch names
-    tags="${tags//./-}"
-    labels="${labels//./-}"
     # lowercase
     tags="${tags,,}"
     labels="${labels,,}"
