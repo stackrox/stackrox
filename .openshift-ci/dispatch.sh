@@ -64,7 +64,10 @@ else
     die "ERROR: There is no job script for $ci_job"
 fi
 
-oc create clusterrolebinding system:openshift:scc:restricted --clusterrole=system:openshift:scc:restricted --group=system:authenticated || true
+if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
+    info "Allow restricted SCC for all users and namespaces."
+    oc create clusterrolebinding system:openshift:scc:restricted --clusterrole=system:openshift:scc:restricted --group=system:authenticated || true
+fi
 
 "${job_script}" "$@" &
 job_pid="$!"
