@@ -4,6 +4,7 @@ import { Divider, PageSection, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
 import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
 import { getComplianceClusterStats } from 'services/ComplianceResultsStatsService';
 import { getTableUIState } from 'utils/getTableUIState';
 
@@ -14,10 +15,13 @@ import ProfileClustersTable from './ProfileClustersTable';
 function ProfileClustersPage() {
     const { profileName } = useParams();
     const [currentDatetime, setCurrentDatetime] = useState<Date>(new Date());
+    const pagination = useURLPagination(10);
+
+    const { page, perPage } = pagination;
 
     const fetchProfileClusters = useCallback(
-        () => getComplianceClusterStats(profileName),
-        [profileName]
+        () => getComplianceClusterStats(profileName, page, perPage),
+        [page, perPage, profileName]
     );
     const { data: profileClusters, loading: isLoading, error } = useRestQuery(fetchProfileClusters);
 
@@ -47,6 +51,8 @@ function ProfileClustersPage() {
                     <Divider />
                     <ProfileClustersTable
                         currentDatetime={currentDatetime}
+                        pagination={pagination}
+                        profileClustersResultsCount={profileClusters?.totalCount ?? 0}
                         profileName={profileName}
                         tableState={tableState}
                     />
