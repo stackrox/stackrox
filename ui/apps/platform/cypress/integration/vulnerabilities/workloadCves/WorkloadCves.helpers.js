@@ -21,21 +21,24 @@ export function getFutureDateByDays(days) {
     return addDays(new Date(), days);
 }
 
-export function visitWorkloadCveOverview() {
+export function visitWorkloadCveOverview({ clearFiltersOnVisit = true } = {}) {
     visit(basePath);
 
     cy.get('h1:contains("Workload CVEs")');
     cy.location('pathname').should('eq', basePath);
 
+    // Wait for the initial table load to begin and complete
+    cy.get(selectors.loadingSpinner).should('exist');
+    cy.get(selectors.loadingSpinner).should('not.exist');
+
     // Clear the default filters that will be applied to increase the likelihood of finding entities with
     // CVEs. The default filters of Severity: Critical and Severity: Important make it very likely that
     // there will be no results across entity tabs on the overview page.
-    if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
+    if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS') && clearFiltersOnVisit) {
         cy.get(vulnSelectors.clearFiltersButton).click();
+        // Ensure the data in the table has settled before continuing with the test
+        cy.get(selectors.isUpdatingTable).should('not.exist');
     }
-
-    // Ensure the data in the table has settled before continuing with the test
-    cy.get(selectors.isUpdatingTable).should('not.exist');
 }
 
 /**
@@ -363,4 +366,13 @@ export function unwatchImageFromModal(imageFullName, imageNameAndTag) {
 
     // Verify that the image no longer has a watched image label in the workload cve table
     cy.get(selectors.watchedImageCellWithName(imageNameAndTag)).should('not.exist');
+}
+
+/**
+ *
+ * @param {'Image vulnerabilities'|'Images without vulnerabilities'} modeText
+ */
+export function changeObservedCveViewingMode(modeText) {
+    cy.get(selectors.observedCveModeSelect).click();
+    cy.get(`button:contains("${modeText}")`).click();
 }
