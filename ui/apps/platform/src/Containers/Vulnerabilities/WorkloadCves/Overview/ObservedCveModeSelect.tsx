@@ -12,12 +12,7 @@ import { SecurityIcon, UnknownIcon } from '@patternfly/react-icons';
 
 import { CRITICAL_SEVERITY_COLOR } from 'constants/severityColors';
 import { ObservedCveMode, isObservedCveMode, observedCveModeValues } from '../../types';
-
-export const WITH_CVE_OPTION_TITLE = 'Image vulnerabilities';
-export const WITHOUT_CVE_OPTION_TITLE = 'Images without vulnerabilities';
-export const WITH_CVE_OPTION_DESCRIPTION = 'Images and deployments observed with CVEs';
-export const WITHOUT_CVE_OPTION_DESCRIPTION =
-    'Images and deployments observed without CVEs (results may be inaccurate due to scanner errors)';
+import { getViewStateDescription, getViewStateTitle } from './string.utils';
 
 export type ObservedCveModeSelectProps = {
     observedCveMode: ObservedCveMode;
@@ -73,15 +68,15 @@ function ObservedCveModeSelect({
             <SelectList style={{ maxWidth: '300px' }}>
                 <SelectOption
                     value={observedCveModeValues[0]}
-                    description={WITH_CVE_OPTION_DESCRIPTION}
+                    description={getViewStateDescription('OBSERVED', 'WITH_CVES')}
                 >
-                    {WITH_CVE_OPTION_TITLE}
+                    {getViewStateTitle('OBSERVED', 'WITH_CVES')}
                 </SelectOption>
                 <SelectOption
                     value={observedCveModeValues[1]}
-                    description={WITHOUT_CVE_OPTION_DESCRIPTION}
+                    description={getViewStateDescription('OBSERVED', 'WITHOUT_CVES')}
                 >
-                    {WITHOUT_CVE_OPTION_TITLE}
+                    {getViewStateTitle('OBSERVED', 'WITHOUT_CVES')}
                 </SelectOption>
             </SelectList>
         </Select>

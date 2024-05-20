@@ -72,12 +72,8 @@ import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import DefaultFilterModal from '../components/DefaultFilterModal';
 import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
-import ObservedCveModeSelect, {
-    WITHOUT_CVE_OPTION_DESCRIPTION,
-    WITHOUT_CVE_OPTION_TITLE,
-    WITH_CVE_OPTION_DESCRIPTION,
-    WITH_CVE_OPTION_TITLE,
-} from './ObservedCveModeSelect';
+import ObservedCveModeSelect from './ObservedCveModeSelect';
+import { getViewStateDescription, getViewStateTitle } from './string.utils';
 
 const searchOptions: SearchOption[] = [
     IMAGE_SEARCH_OPTION,
@@ -362,41 +358,46 @@ function WorkloadCvesOverviewPage() {
                             >
                                 <FlexItem>
                                     <Title headingLevel="h2">
-                                        {isViewingWithCves
-                                            ? WITH_CVE_OPTION_TITLE
-                                            : WITHOUT_CVE_OPTION_TITLE}
+                                        {getViewStateTitle(
+                                            currentVulnerabilityState ?? 'OBSERVED',
+                                            observedCveMode
+                                        )}
                                     </Title>
                                     <Text className="pf-v5-u-font-size-sm">
-                                        {isViewingWithCves
-                                            ? WITH_CVE_OPTION_DESCRIPTION
-                                            : WITHOUT_CVE_OPTION_DESCRIPTION}
+                                        {getViewStateDescription(
+                                            currentVulnerabilityState ?? 'OBSERVED',
+                                            observedCveMode
+                                        )}
                                     </Text>
                                 </FlexItem>
-                                {isViewingWithCves && (
-                                    <FlexItem>
-                                        <Flex
-                                            direction={{ default: 'row' }}
-                                            alignItems={{ default: 'alignItemsCenter' }}
-                                            spaceItems={{ default: 'spaceItemsSm' }}
-                                        >
-                                            {hasReadAccessForNamespaces && (
-                                                <Link to={vulnerabilityNamespaceViewPath}>
-                                                    <Button variant="secondary">
-                                                        Prioritize by namespace view
-                                                    </Button>
-                                                </Link>
-                                            )}
-                                            {isFixabilityFiltersEnabled && (
-                                                <DefaultFilterModal
-                                                    defaultFilters={
-                                                        localStorageValue.preferences.defaultFilters
-                                                    }
-                                                    setLocalStorage={updateDefaultFilters}
-                                                />
-                                            )}
-                                        </Flex>
-                                    </FlexItem>
-                                )}
+                                {isViewingWithCves &&
+                                    (currentVulnerabilityState === 'OBSERVED' ||
+                                        currentVulnerabilityState === undefined) && (
+                                        <FlexItem>
+                                            <Flex
+                                                direction={{ default: 'row' }}
+                                                alignItems={{ default: 'alignItemsCenter' }}
+                                                spaceItems={{ default: 'spaceItemsSm' }}
+                                            >
+                                                {hasReadAccessForNamespaces && (
+                                                    <Link to={vulnerabilityNamespaceViewPath}>
+                                                        <Button variant="secondary">
+                                                            Prioritize by namespace view
+                                                        </Button>
+                                                    </Link>
+                                                )}
+                                                {isFixabilityFiltersEnabled && (
+                                                    <DefaultFilterModal
+                                                        defaultFilters={
+                                                            localStorageValue.preferences
+                                                                .defaultFilters
+                                                        }
+                                                        setLocalStorage={updateDefaultFilters}
+                                                    />
+                                                )}
+                                            </Flex>
+                                        </FlexItem>
+                                    )}
                             </Flex>
                             {activeEntityTabKey === 'CVE' && (
                                 <CVEsTableContainer
