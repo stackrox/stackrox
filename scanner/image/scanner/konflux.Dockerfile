@@ -8,7 +8,9 @@ ARG BASE_TAG=latest
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.21 as builder
 
 ENV GOFLAGS=""
-ENV GOTAGS="release"
+# TODO(ROX-24276): re-enable release builds for fast stream.
+# TODO(ROX-20240): enable non-release development builds.
+# ENV GOTAGS="release"
 # TODO(ROX-23335): Properly set the build tag
 ENV BUILD_TAG="dev"
 ENV CI=1

@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
@@ -90,10 +89,6 @@ describe('Integrations Dashboard', () => {
 
         clickIntegrationTileOnDashboard(integrationSource, integrationType);
 
-        if (hasFeatureFlag('ROX_MOVE_INIT_BUNDLES_UI')) {
-            cy.location('pathname').should('eq', '/main/clusters/init-bundles');
-        } else {
-            assertIntegrationsTable(integrationSource, integrationType);
-        }
+        cy.location('pathname').should('eq', '/main/clusters/init-bundles');
     });
 });

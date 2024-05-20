@@ -50,6 +50,10 @@ var (
 
 	policyDiffs = []policymigrationhelper.PolicyDiff{
 		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "access_central_secret.json",
+		},
+		{
 			FieldsToCompare: nftablesFieldsToCompare,
 			PolicyFileName:  "exec-iptables-root.json",
 		},

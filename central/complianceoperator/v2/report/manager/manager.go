@@ -10,7 +10,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type Manager interface {
-	// SubmitReportRequest queues an on demand report generation request for execution
+	// SubmitReportRequest queues an on demand compliance report generation request for execution
 	SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error
 
 	// Start Scheduler

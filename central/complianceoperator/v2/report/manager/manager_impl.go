@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -29,6 +30,11 @@ type managerImpl struct {
 	// channel for report job requests
 	reportRequests chan *reportRequest
 	stopper        concurrency.Stopper
+	// isStarted will make sure only one start routine runs for an instance of manager
+	isStarted atomic.Bool
+
+	// isStopped will prevent manager from being re-started once it is stopped
+	isStopped atomic.Bool
 
 	// Mutex to synchronize access to runningReportConfigs map
 	mu sync.Mutex
@@ -55,7 +61,7 @@ func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *stora
 		return errors.New(fmt.Sprintf("Report request for scan configuration %q already in process", scanConfig.GetScanConfigName()))
 	}
 
-	log.Infof("Submitting report for scan config %s at %v for execution", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822))
+	log.Infof("Submitting report for scan config %s at %v for execution.", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822))
 	req := &reportRequest{
 		scanConfig,
 	}
@@ -66,10 +72,30 @@ func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *stora
 }
 
 func (m *managerImpl) Start() {
+	if m.isStopped.Load() {
+		log.Error("Compliance report manager already stopped. It cannot be re-started once stopped.")
+		return
+	}
+	swapped := m.isStarted.CompareAndSwap(false, true)
+	if !swapped {
+		log.Error("Compliance report manager already running")
+		return
+	}
+	log.Info("Starting compliance report manager")
 	go m.runReports()
 }
 
 func (m *managerImpl) Stop() {
+	if m.isStarted.Load() {
+		log.Error("Compliance report manager not started")
+		return
+	}
+	swapped := m.isStopped.CompareAndSwap(false, true)
+	if !swapped {
+		log.Error("Compliance report manager already stopped")
+		return
+	}
+	logging.Info("Stopping compliance report manager")
 	m.stopper.Client().Stop()
 	err := m.stopper.Client().Stopped().Wait()
 	if err != nil {
@@ -91,6 +117,7 @@ func (m *managerImpl) runReports() {
 	for {
 		select {
 		case <-m.stopper.Flow().StopRequested():
+			logging.Info("Signal received to stop compliance report manager")
 			return
 		case req := <-m.reportRequests:
 			logging.Infof("Executing report %q at %v", req.scanConfig.GetId(), time.Now().Format(time.RFC822))

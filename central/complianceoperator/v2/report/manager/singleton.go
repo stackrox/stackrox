@@ -10,7 +10,7 @@ var (
 	instance Manager
 )
 
-// Singleton provides the instance of Manager to use.
+// Singleton provides the instance of compliance report Manager to use.
 func Singleton() Manager {
 	once.Do(initialize)
 	return instance

@@ -298,6 +298,12 @@ func (s *TranslationTestSuite) TestTranslate() {
 									{Key: "node.stackrox.io", Value: "false", Operator: v1.TolerationOpEqual},
 									{Key: "node-role.kubernetes.io/infra", Value: "", Operator: v1.TolerationOpExists},
 								},
+								HostAliases: []v1.HostAlias{
+									{
+										IP:        "127.0.0.1",
+										Hostnames: []string{"sensor.com"},
+									},
+								},
 							},
 						},
 						AdmissionControl: &platform.AdmissionControlComponentSpec{
@@ -325,6 +331,12 @@ func (s *TranslationTestSuite) TestTranslate() {
 								Tolerations: []*v1.Toleration{
 									{Key: "node.stackrox.io", Value: "false", Operator: v1.TolerationOpEqual},
 									{Key: "node-role.kubernetes.io/infra", Value: "", Operator: v1.TolerationOpExists},
+								},
+								HostAliases: []v1.HostAlias{
+									{
+										IP:        "127.0.0.1",
+										Hostnames: []string{"admission-control.com"},
+									},
 								},
 							},
 						},
@@ -363,6 +375,12 @@ func (s *TranslationTestSuite) TestTranslate() {
 									},
 								},
 							},
+							HostAliases: []v1.HostAlias{
+								{
+									IP:        "127.0.0.1",
+									Hostnames: []string{"collector.com"},
+								},
+							},
 						},
 						Monitoring: &platform.GlobalMonitoring{
 							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
@@ -397,6 +415,12 @@ func (s *TranslationTestSuite) TestTranslate() {
 											v1.ResourceMemory: resource.MustParse("80"),
 										},
 									},
+									HostAliases: []v1.HostAlias{
+										{
+											IP:        "127.0.0.1",
+											Hostnames: []string{"scanner.com"},
+										},
+									},
 								},
 							},
 							DB: &platform.DeploymentSpec{
@@ -416,6 +440,12 @@ func (s *TranslationTestSuite) TestTranslate() {
 									Requests: v1.ResourceList{
 										v1.ResourceCPU:    resource.MustParse("110"),
 										v1.ResourceMemory: resource.MustParse("120"),
+									},
+								},
+								HostAliases: []v1.HostAlias{
+									{
+										IP:        "127.0.0.1",
+										Hostnames: []string{"scanner-db.com"},
 									},
 								},
 							},
@@ -448,6 +478,12 @@ func (s *TranslationTestSuite) TestTranslate() {
 											v1.ResourceMemory: resource.MustParse("110"),
 										},
 									},
+									HostAliases: []v1.HostAlias{
+										{
+											IP:        "127.0.0.1",
+											Hostnames: []string{"scanner-v4-indexer.com"},
+										},
+									},
 								},
 							},
 							DB: &platform.ScannerV4DB{
@@ -474,6 +510,12 @@ func (s *TranslationTestSuite) TestTranslate() {
 										Requests: v1.ResourceList{
 											v1.ResourceCPU:    resource.MustParse("100"),
 											v1.ResourceMemory: resource.MustParse("110"),
+										},
+									},
+									HostAliases: []v1.HostAlias{
+										{
+											IP:        "127.0.0.1",
+											Hostnames: []string{"scanner-v4-db.com"},
 										},
 									},
 								},
@@ -537,6 +579,12 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"localImageScanning": map[string]string{
 						"enabled": "true",
 					},
+					"hostAliases": []map[string]interface{}{
+						{
+							"ip":        "127.0.0.1",
+							"hostnames": []string{"sensor.com"},
+						},
+					},
 				},
 				"admissionControl": map[string]interface{}{
 					"dynamic": map[string]interface{}{
@@ -572,6 +620,12 @@ func (s *TranslationTestSuite) TestTranslate() {
 							"operator": "Exists",
 						},
 					},
+					"hostAliases": []map[string]interface{}{
+						{
+							"ip":        "127.0.0.1",
+							"hostnames": []string{"admission-control.com"},
+						},
+					},
 				},
 				"auditLogs": map[string]interface{}{
 					"disableCollection": false,
@@ -598,6 +652,12 @@ func (s *TranslationTestSuite) TestTranslate() {
 							"operator": "Exists",
 						},
 					},
+					"hostAliases": []map[string]interface{}{
+						{
+							"ip":        "127.0.0.1",
+							"hostnames": []string{"scanner.com"},
+						},
+					},
 					"dbNodeSelector": map[string]string{
 						"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
 						"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
@@ -610,6 +670,12 @@ func (s *TranslationTestSuite) TestTranslate() {
 						}, {
 							"key":      "node-role.kubernetes.io/infra",
 							"operator": "Exists",
+						},
+					},
+					"dbHostAliases": []map[string]interface{}{
+						{
+							"ip":        "127.0.0.1",
+							"hostnames": []string{"scanner-db.com"},
 						},
 					},
 					"resources": map[string]interface{}{
@@ -666,6 +732,12 @@ func (s *TranslationTestSuite) TestTranslate() {
 								"operator": "Exists",
 							},
 						},
+						"hostAliases": []map[string]interface{}{
+							{
+								"ip":        "127.0.0.1",
+								"hostnames": []string{"scanner-v4-indexer.com"},
+							},
+						},
 					},
 					"db": map[string]interface{}{
 						"resources": map[string]interface{}{
@@ -697,6 +769,12 @@ func (s *TranslationTestSuite) TestTranslate() {
 								"claimName":    "scanner-v4-db-pvc",
 								"createClaim":  true,
 								"storageClass": "test-sc1",
+							},
+						},
+						"hostAliases": []map[string]interface{}{
+							{
+								"ip":        "127.0.0.1",
+								"hostnames": []string{"scanner-v4-db.com"},
 							},
 						},
 					},
@@ -734,6 +812,12 @@ func (s *TranslationTestSuite) TestTranslate() {
 						}, "requests": map[string]interface{}{
 							"cpu":    "1503m",
 							"memory": "1003Mi",
+						},
+					},
+					"hostAliases": []map[string]interface{}{
+						{
+							"ip":        "127.0.0.1",
+							"hostnames": []string{"collector.com"},
 						},
 					},
 				},

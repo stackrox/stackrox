@@ -12,18 +12,11 @@ import {
     getHelperElementByLabel,
     getInputByLabel,
 } from '../../helpers/formHelpers';
-import { hasFeatureFlag } from '../../helpers/features';
 
 const integrationSource = 'cloudSources';
 
 describe('Cloud Source Integrations', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_CLOUD_SOURCES')) {
-            this.skip();
-        }
-    });
 
     it('should create a new Paladin Cloud integration and then view and delete', () => {
         const integrationName = generateNameWithDate('Paladin Cloud Integration');

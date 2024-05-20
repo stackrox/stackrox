@@ -1,7 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from '@patternfly/react-core';
-import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import {
+    ActionsColumn,
+    ExpandableRowContent,
+    IAction,
+    Table,
+    Tbody,
+    Td,
+    Th,
+    Thead,
+    Tr,
+} from '@patternfly/react-table';
 
 import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
@@ -12,8 +22,11 @@ import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import useMap from 'hooks/useMap';
 
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
+import CVESelectionTd from '../../components/CVESelectionTd';
+import CVESelectionTh from '../../components/CVESelectionTh';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import { getScoreVersionsForTopCVSS, sortCveDistroList } from '../../utils/sortUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
@@ -25,9 +38,19 @@ export type CVEsTableProps = {
     querySearchFilter: QuerySearchFilter;
     isFiltered: boolean;
     pagination: ReturnType<typeof useURLPagination>;
+    selectedCves: ReturnType<typeof useMap<string, { cve: string }>>;
+    createRowActions: (cve: { cve: string }) => IAction[];
+    canSelectRows?: boolean;
 };
 
-function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps) {
+function CVEsTable({
+    querySearchFilter,
+    isFiltered,
+    pagination,
+    selectedCves,
+    createRowActions,
+    canSelectRows,
+}: CVEsTableProps) {
     const { page, perPage } = pagination;
 
     const { data, previousData, loading, error } = useNodeCves(querySearchFilter, page, perPage);
@@ -42,7 +65,7 @@ function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps
     });
 
     const expandedRowSet = useSet<string>();
-    const colSpan = 6;
+    const colSpan = canSelectRows ? 8 : 6;
 
     return (
         <Table
@@ -55,6 +78,7 @@ function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps
             <Thead noWrap>
                 <Tr>
                     <Th aria-label="Expand row" />
+                    {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th>CVE</Th>
                     <TooltipTh tooltip="The number of nodes affected by this CVE, grouped by the severity of the CVE on each node">
                         Nodes by severity
@@ -66,6 +90,7 @@ function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
                     <Th>First discovered</Th>
+                    {canSelectRows && <Th aria-label="CVE actions" />}
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -101,6 +126,13 @@ function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps
                                             onToggle: () => expandedRowSet.toggle(cve),
                                         }}
                                     />
+                                    {canSelectRows && (
+                                        <CVESelectionTd
+                                            selectedCves={selectedCves}
+                                            rowIndex={rowIndex}
+                                            item={{ cve }}
+                                        />
+                                    )}
                                     <Td dataLabel="CVE" modifier="nowrap">
                                         <Link to={getNodeEntityPagePath('CVE', cve)}>{cve}</Link>
                                     </Td>
@@ -129,6 +161,11 @@ function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps
                                     <Td dataLabel="First discovered">
                                         <DateDistance date={firstDiscoveredInSystem} />
                                     </Td>
+                                    {canSelectRows && (
+                                        <Td className="pf-v5-u-px-0">
+                                            <ActionsColumn items={createRowActions({ cve })} />
+                                        </Td>
+                                    )}
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
                                     <Td />

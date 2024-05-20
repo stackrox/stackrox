@@ -20,14 +20,14 @@ var (
 	// pagination with SearchAfter.
 	DocID = newFieldLabel("_id")
 
-	Cluster               = newFieldLabel("Cluster")
-	ClusterID             = newFieldLabel("Cluster ID")
-	ClusterLabel          = newFieldLabel("Cluster Label")
-	ClusterScope          = newFieldLabel("Cluster Scope")
-	ClusterType           = newFieldLabel("Cluster Type")
-	ClusterDiscoveredTime = newFieldLabel("Cluster Discovered Time")
-	PlatformType          = newFieldLabel("Cluster Platform Type")
-	KubernetesVersion     = newFieldLabel("Cluster Kubernetes Version")
+	Cluster                  = newFieldLabel("Cluster")
+	ClusterID                = newFieldLabel("Cluster ID")
+	ClusterLabel             = newFieldLabel("Cluster Label")
+	ClusterScope             = newFieldLabel("Cluster Scope")
+	ClusterType              = newFieldLabel("Cluster Type")
+	ClusterDiscoveredTime    = newFieldLabel("Cluster Discovered Time")
+	ClusterPlatformType      = newFieldLabel("Cluster Platform Type")
+	ClusterKubernetesVersion = newFieldLabel("Cluster Kubernetes Version")
 
 	// cluster health search fields
 	ClusterStatus          = newFieldLabel("Cluster Status")

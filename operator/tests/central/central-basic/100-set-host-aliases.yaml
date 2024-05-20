@@ -1,0 +1,69 @@
+# Make kuttl ignore this file unless running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "true"
+---
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+spec:
+  central:
+    hostAliases:
+      - ip: "127.0.0.1"
+        hostnames: ["central.com"]
+    db:
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames: ["central-db.com"]
+  scanner:
+    scannerComponent: Enabled
+    analyzer:
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames: ["scanner.com"]
+    db:
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames: [ "scanner-db.com" ]
+  scannerV4:
+    # Explicitly enable, scannerV4 is currenlty opt-in
+    scannerComponent: Enabled
+    indexer:
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames: [ "scanner-v4-indexer.com" ]
+      resources:
+        requests:
+          cpu: 400m
+          memory: 1Gi
+        limits:
+          cpu: 1
+          memory: 2Gi
+    matcher:
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames: [ "scanner-v4-matcher.com" ]
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+      resources:
+        requests:
+          cpu: 400m
+          memory: 1Gi
+        limits:
+          cpu: 1
+          memory: 5Gi
+    db:
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames: [ "scanner-v4-db.com" ]
+      resources:
+        requests:
+          cpu: 300m
+          memory: 500Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi

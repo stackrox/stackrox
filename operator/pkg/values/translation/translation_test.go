@@ -391,6 +391,26 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 				},
 			},
 		},
+		"set hostAliases": {
+			component: &platform.ScannerV4Component{
+				DeploymentSpec: platform.DeploymentSpec{
+					HostAliases: []corev1.HostAlias{
+						{IP: "127.0.0.1", Hostnames: []string{"localhost"}},
+					},
+				},
+			},
+			componentKey: "indexer",
+			want: chartutil.Values{
+				"indexer": map[string]interface{}{
+					"hostAliases": []interface{}{
+						map[string]interface{}{
+							"ip":        "127.0.0.1",
+							"hostnames": []string{"localhost"},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, tt := range tests {
@@ -542,6 +562,25 @@ func TestSetScannerV4DBValues(t *testing.T) {
 				"db": map[string]interface{}{
 					"nodeSelector": map[string]interface{}{
 						"masternode": "true",
+					},
+				},
+			},
+		},
+		"set hostAliases": {
+			db: &platform.ScannerV4DB{
+				DeploymentSpec: platform.DeploymentSpec{
+					HostAliases: []corev1.HostAlias{
+						{IP: "127.0.0.1", Hostnames: []string{"localhost"}},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"db": map[string]interface{}{
+					"hostAliases": []interface{}{
+						map[string]interface{}{
+							"ip":        "127.0.0.1",
+							"hostnames": []string{"localhost"},
+						},
 					},
 				},
 			},

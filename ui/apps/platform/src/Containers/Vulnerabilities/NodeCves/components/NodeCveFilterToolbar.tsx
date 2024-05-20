@@ -65,6 +65,10 @@ function NodeCveFilterToolbar({
             searchFilterName: 'CVE',
         },
         {
+            displayName: 'CVE Snoozed',
+            searchFilterName: 'CVE Snoozed',
+        },
+        {
             displayName: 'Severity',
             searchFilterName: 'SEVERITY',
         },

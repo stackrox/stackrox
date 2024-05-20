@@ -40,7 +40,7 @@ func TestComplianceProfileService(t *testing.T) {
 func (m *ManagerTestSuite) TestSubmitReportRequest() {
 	manager := New(m.datastore)
 	reportRequest := &storage.ComplianceOperatorScanConfigurationV2{
-		ScanConfigName: "test_scan",
+		ScanConfigName: "test_scan_config",
 		Id:             "test_scan_config",
 	}
 	err := manager.SubmitReportRequest(m.ctx, reportRequest)
