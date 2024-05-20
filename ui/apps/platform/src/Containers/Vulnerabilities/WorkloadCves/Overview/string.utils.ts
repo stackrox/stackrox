@@ -1,5 +1,4 @@
 import { ObservedCveMode } from 'Containers/Vulnerabilities/types';
-import _ from 'lodash';
 import { VulnerabilityState } from 'types/cve.proto';
 import { ensureExhaustive } from 'utils/type.utils';
 

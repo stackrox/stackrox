@@ -46,6 +46,7 @@ import {
     COMPONENT_SOURCE_SEARCH_OPTION,
 } from 'Containers/Vulnerabilities/searchOptions';
 import { getHasSearchApplied } from 'utils/searchUtils';
+import { VulnerabilityState } from 'types/cve.proto';
 import {
     DefaultFilters,
     WorkloadEntityTab,
@@ -243,6 +244,20 @@ function WorkloadCvesOverviewPage() {
         }
     }
 
+    function onVulnerabilityStateChange(vulnerabilityState: VulnerabilityState) {
+        // Reset all filters, sorting, and pagination and apply to the current history entry
+        setActiveEntityTabKey('CVE');
+        setSearchFilter({}, 'replace');
+        sort.setSortOption(getDefaultWorkloadSortOption('CVE'), 'replace');
+        pagination.setPage(1, 'replace');
+        setObservedCveMode('WITH_CVES', 'replace');
+
+        // Re-apply the default filters when changing to the "OBSERVED" state
+        if (vulnerabilityState === 'OBSERVED') {
+            applyDefaultFilters();
+        }
+    }
+
     function applyDefaultFilters() {
         if (isFixabilityFiltersEnabled) {
             setSearchFilter(localStorageValue.preferences.defaultFilters, 'replace');
@@ -332,12 +347,7 @@ function WorkloadCvesOverviewPage() {
                     component="div"
                     className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
                 >
-                    <VulnerabilityStateTabs
-                        onChange={() => {
-                            setObservedCveMode('WITH_CVES');
-                            pagination.setPage(1, 'replace');
-                        }}
-                    />
+                    <VulnerabilityStateTabs onChange={onVulnerabilityStateChange} />
                 </PageSection>
                 {isNoCvesViewEnabled && currentVulnerabilityState === 'OBSERVED' && (
                     <PageSection className="pf-v5-u-py-md" component="div" variant="light">
