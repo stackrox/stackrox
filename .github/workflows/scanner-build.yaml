@@ -39,7 +39,7 @@ jobs:
             matrix="$(jq '.push_manifests.name += ["prerelease"]' <<< "$matrix")"
           fi
         fi
-        
+
         # Conditionally add a -race debug build (binaries built with -race)
         if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
           matrix="$(jq '.build_and_push.name += ["race-condition-debug"]' <<< "$matrix")"
