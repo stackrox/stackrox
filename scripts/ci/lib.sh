@@ -156,6 +156,12 @@ get_central_debug_dump() {
     ls -l "${output_dir}"
 }
 
+get_prometheus_metrics_parser() {
+    make prometheus-metric-parser -C "$ROOT"
+    export PATH="$ROOT/.gotools/bin":$PATH
+    prometheus-metric-parser help
+}
+
 get_central_diagnostics() {
     info "Getting central diagnostics"
 
