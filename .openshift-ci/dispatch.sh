@@ -64,6 +64,8 @@ else
     die "ERROR: There is no job script for $ci_job"
 fi
 
+oc create clusterrolebinding system:openshift:scc:restricted --clusterrole=system:openshift:scc:restricted --group=system:authenticated || true
+
 "${job_script}" "$@" &
 job_pid="$!"
 
