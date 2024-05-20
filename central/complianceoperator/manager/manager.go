@@ -17,6 +17,7 @@ import (
 	scanSettingBindingDatastore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -79,6 +80,9 @@ func NewManager(registry *standards.Registry, profiles profileDatastore.DataStor
 		scanSettingBindings: scanSettingBindings,
 		rules:               rules,
 		results:             results,
+	}
+	if !features.ClassicCompliance.Enabled() {
+		return mgr, nil
 	}
 	// Postgres retries in addProfileNoLock(...)
 	err := profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
@@ -170,6 +174,10 @@ func (m *managerImpl) AddProfile(profile *storage.ComplianceOperatorProfile) err
 }
 
 func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfile) error {
+	if !features.ClassicCompliance.Enabled() {
+		return nil
+	}
+
 	var existingProfiles []*storage.ComplianceOperatorProfile
 	walkFn := func() error {
 		existingProfiles = []*storage.ComplianceOperatorProfile{
@@ -373,6 +381,10 @@ func (m *managerImpl) IsStandardActiveForCluster(standardID, clusterID string) b
 		return true
 	}
 
+	if !features.ClassicCompliance.Enabled() {
+		return false
+	}
+
 	var found bool
 	walkFn := func() error {
 		found = false
@@ -407,6 +419,10 @@ func (m *managerImpl) getRule(name string) (*storage.ComplianceOperatorRule, err
 }
 
 func (m *managerImpl) GetMachineConfigs(clusterID string) (map[string][]string, error) {
+	if !features.ClassicCompliance.Enabled() {
+		return nil, nil
+	}
+
 	profileIDsToNames := make(map[string]string)
 	walkFn := func() error {
 		profileIDsToNames = make(map[string]string)
