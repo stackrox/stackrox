@@ -29,6 +29,8 @@ if [[ "${JOB_NAME:-}" =~ -ocp-(4|stable)- ]]; then
     set_ci_shared_export WORKER_NODE_TYPE e2-standard-16
     set_ci_shared_export MASTER_NODE_COUNT 3
     set_ci_shared_export MASTER_NODE_TYPE e2-standard-16
+    # Allow restricted SCC for all users and namespaces.
+    oc create clusterrolebinding system:openshift:scc:restricted --clusterrole=system:openshift:scc:restricted --group=system:authenticated
 fi
 set_ci_shared_export WORKER_NODE_COUNT 3
 set_ci_shared_export WORKER_NODE_TYPE e2-standard-16
