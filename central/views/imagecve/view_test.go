@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package imagecve
 
 import (
@@ -961,7 +963,7 @@ func standardizeImages(images ...*storage.Image) {
 	}
 }
 
-func TestImageCVEEdgeSearch(t *testing.T) {
+func TestImageCVEEdgeIsJoinedLast(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)
 
@@ -978,11 +980,11 @@ func TestImageCVEEdgeSearch(t *testing.T) {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.CVE, "cve-2018-1").
 		AddBools(search.Fixable, false).
-		AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+		AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).
 		ProtoQuery()
 	imageIDs, err := cveView.GetImageIDs(ctx, query)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(imageIDs))
+	assert.ElementsMatch(t, []string{"sha2"}, imageIDs)
 }
 
 func testImages() []*storage.Image {

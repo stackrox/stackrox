@@ -6,8 +6,8 @@ import (
 	"context"
 	"testing"
 
-	cveDS "github.com/stackrox/rox/central/cve/image/datastore"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
+	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -27,17 +27,17 @@ type FixableSearchTestSuite struct {
 	ctx    context.Context
 	testDB *pgtest.TestPostgres
 
-	imageDataStore DataStore
-	cveDataStore   imageCVEDS.DataStore
+	imageDataStore     DataStore
+	cveDataStore       imageCVEDS.DataStore
+	componentDataStore imageComponentDS.DataStore
 }
 
 func (s *FixableSearchTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
-	imageDataStore := GetTestPostgresDataStore(s.T(), s.testDB)
-	s.imageDataStore = imageDataStore
-	cveDataStore := cveDS.GetTestPostgresDataStore(s.T(), s.testDB)
-	s.cveDataStore = cveDataStore
+	s.imageDataStore = GetTestPostgresDataStore(s.T(), s.testDB)
+	s.cveDataStore = imageCVEDS.GetTestPostgresDataStore(s.T(), s.testDB)
+	s.componentDataStore = imageComponentDS.GetTestPostgresDataStore(s.T(), s.testDB)
 
 	s.ctx = sac.WithAllAccess(context.Background())
 	for _, image := range fixableSearchTestImages() {
@@ -69,7 +69,7 @@ func (s *FixableSearchTestSuite) TestImageSearch() {
 				AddExactMatches(search.CVE, "cve-1").
 				ProtoQuery(),
 			expected: []string{"image-1", "image-4"},
-			skip:     true, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
+			skip:     false, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
 		},
 		{
 			desc: "Search all images with at least some non-fixable vulnerabilities",
@@ -83,7 +83,7 @@ func (s *FixableSearchTestSuite) TestImageSearch() {
 				AddBools(search.Fixable, false).
 				AddExactMatches(search.CVE, "cve-2").ProtoQuery(),
 			expected: []string{"image-3", "image-4"},
-			skip:     true, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
+			skip:     false, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
 		},
 		{
 			desc: "Search all images with at least some fixable vulnerabilities that are deferred",
@@ -107,7 +107,7 @@ func (s *FixableSearchTestSuite) TestImageSearch() {
 				AddExactMatches(search.Component, "comp-1").
 				AddExactMatches(search.CVE, "cve-1").ProtoQuery(),
 			expected: []string{"image-1", "image-4"},
-			skip:     true, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
+			skip:     false, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
 		},
 		{
 			desc: "Search all images where 'cve-1' is deferred and fixable in component 'comp-1'",
@@ -125,7 +125,7 @@ func (s *FixableSearchTestSuite) TestImageSearch() {
 				AddExactMatches(search.CVE, "cve-1").
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).ProtoQuery(),
 			expected: []string{"image-1"},
-			skip:     true, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
+			skip:     false, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
 		},
 		{
 			desc: "Search all images",
@@ -173,7 +173,7 @@ func (s *FixableSearchTestSuite) TestCVESearch() {
 				AddExactMatches(search.ImageSHA, "image-2").
 				ProtoQuery(),
 			expected: []string{"cve-2#"},
-			skip:     true, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
+			skip:     false, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
 		},
 		{
 			desc: "Search CVE 'cve-1' which is not fixable in 'image-2' but fixable elsewhere",
@@ -182,7 +182,7 @@ func (s *FixableSearchTestSuite) TestCVESearch() {
 				AddExactMatches(search.CVE, "cve-1").
 				AddExactMatches(search.ImageSHA, "image-2").ProtoQuery(),
 			expected: []string{},
-			skip:     true, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
+			skip:     false, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
 		},
 		{
 			desc: "Search all CVEs in 'image-4' that are fixable",
@@ -257,6 +257,110 @@ func (s *FixableSearchTestSuite) TestCVESearch() {
 				t.SkipNow()
 			}
 			results, err := s.cveDataStore.Search(s.ctx, tc.q)
+			s.NoError(err)
+			actual := search.ResultsToIDs(results)
+			assert.ElementsMatch(t, tc.expected, actual)
+		})
+	}
+}
+
+func (s *FixableSearchTestSuite) TestImageComponentSearch() {
+	for _, tc := range []struct {
+		desc     string
+		q        *v1.Query
+		expected []string
+		skip     bool
+	}{
+		{
+			desc: "Search all components with at least some fixable vulnerabilities",
+			q: search.NewQueryBuilder().
+				AddBools(search.Fixable, true).ProtoQuery(),
+			expected: []string{"comp-1#ver-1#", "comp-1#ver-3#"},
+		},
+		{
+			desc: "Search all components where 'cve-1' is fixable",
+			q: search.NewQueryBuilder().
+				AddBools(search.Fixable, true).
+				AddExactMatches(search.CVE, "cve-1").
+				ProtoQuery(),
+			expected: []string{"comp-1#ver-1#"},
+			skip:     false, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
+		},
+		{
+			desc: "Search all components with at least some non-fixable vulnerabilities",
+			q: search.NewQueryBuilder().
+				AddBools(search.Fixable, false).ProtoQuery(),
+			expected: []string{"comp-1#ver-3#", "comp-2#ver-1#"},
+		},
+		{
+			desc: "Search all components where 'cve-2' is not fixable",
+			q: search.NewQueryBuilder().
+				AddBools(search.Fixable, false).
+				AddExactMatches(search.CVE, "cve-2").ProtoQuery(),
+			expected: []string{"comp-2#ver-1#"},
+			skip:     false, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
+		},
+		{
+			desc: "Search all components with at least some fixable vulnerabilities that are deferred",
+			q: search.NewQueryBuilder().
+				AddBools(search.Fixable, true).
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery(),
+			expected: []string{"comp-1#ver-1#", "comp-1#ver-3#"},
+		},
+		{
+			desc: "Search all components where 'cve-1' is fixable and deferred",
+			q: search.NewQueryBuilder().
+				AddBools(search.Fixable, true).
+				AddExactMatches(search.CVE, "cve-1").
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery(),
+			expected: []string{"comp-1#ver-1#"},
+		},
+		{
+			desc: "Search all components where 'cve-1' is fixable in 'image-4'",
+			q: search.NewQueryBuilder().
+				AddBools(search.Fixable, true).
+				AddExactMatches(search.ImageSHA, "image-4").
+				AddExactMatches(search.CVE, "cve-1").ProtoQuery(),
+			expected: []string{"comp-1#ver-1#"},
+			skip:     false, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
+		},
+		{
+			desc: "Search all components where 'cve-1' is deferred and fixable in component 'image-4'",
+			q: search.NewQueryBuilder().
+				AddBools(search.Fixable, true).
+				AddExactMatches(search.ImageSHA, "image-4").
+				AddExactMatches(search.CVE, "cve-1").
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery(),
+			expected: []string{"comp-1#ver-1#"},
+		},
+		{
+			desc: "Search all components where 'cve-1' is fixable and observed",
+			q: search.NewQueryBuilder().
+				AddBools(search.Fixable, true).
+				AddExactMatches(search.CVE, "cve-1").
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).ProtoQuery(),
+			expected: []string{"comp-1#ver-1#"},
+			skip:     false, // TODO: Enable once https://issues.redhat.com/browse/ROX-17252 is addressed.
+		},
+		{
+			desc: "Search all components where cve-1 is fixable and deferred OR cve-2 is fixable and observed",
+			q: search.DisjunctionQuery(search.NewQueryBuilder().
+				AddBools(search.Fixable, true).
+				AddExactMatches(search.CVE, "cve-1").
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery(),
+				search.NewQueryBuilder().
+					AddBools(search.Fixable, true).
+					AddExactMatches(search.CVE, "cve-2").
+					AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).ProtoQuery(),
+			),
+			expected: []string{"comp-1#ver-1#"},
+		},
+	} {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			if tc.skip {
+				t.SkipNow()
+			}
+			results, err := s.componentDataStore.Search(s.ctx, tc.q)
 			s.NoError(err)
 			actual := search.ResultsToIDs(results)
 			assert.ElementsMatch(t, tc.expected, actual)

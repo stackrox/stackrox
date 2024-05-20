@@ -278,7 +278,7 @@ func (q *query) AsSQL() string {
 		querySB.WriteString(innerJoin.rightTable)
 		querySB.WriteString(" on")
 		if (i == len(q.InnerJoins)-1) && (innerJoin.rightTable == pkgSchema.ImageCveEdgesTableName) {
-			// Step 3: Join image_cve_edges table such that both its ImageID and ImageCveId columns are matched with the joins so far
+			// Step 4: Join image_cve_edges table such that both its ImageID and ImageCveId columns are matched with the joins so far
 			imageIDTable := findImageIDTableAndField(q.InnerJoins)
 			imageCVEIDTable := findImageCVEIDTableAndField(q.InnerJoins)
 			if imageIDTable != "" && imageCVEIDTable != "" {
@@ -473,7 +473,7 @@ func handleImageCveEdgesTableInJoins(schema *walker.Schema, innerJoins []innerJo
 		}
 	}
 
-	// Step 2: If image_cve_edges table is the right table of any inner join, move that join to the end of the list.
+	// Step 3: If image_cve_edges table is the right table of any inner join, move that join to the end of the list.
 	// When building SQL query, this will ensure that we have already joined tables needed to match both CVEId and
 	// ImageId columns from image_cve_edges table.
 	idx, isRightTable := findTableInJoins(innerJoins, func(join innerJoin) bool {
