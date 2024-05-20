@@ -332,6 +332,9 @@ endif
 
 .PHONY: olm-install
 olm-install: operator-sdk ## Install OLM on Kubernetes cluster
+	echo "bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla" >> /tmp/bla
+	echo "bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla;bla" >> /tmp/bla
+	source scripts/ci/lib.sh; save_image_prefetches_metrics /tmp/bla
 	$(OPERATOR_SDK) olm install --version=$(OLM_VERSION)
 
 .PHONY: olm-uninstall
