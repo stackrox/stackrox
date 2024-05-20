@@ -80,7 +80,7 @@ describe('Workload CVE overview page tests', () => {
         });
     });
 
-    describe.only('Images without CVEs view tests', () => {
+    describe('Images without CVEs view tests', () => {
         const cveListRouteMatcherMap = {
             getImageCVEList: {
                 method: 'POST',
