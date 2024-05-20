@@ -89,7 +89,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 	testCases := []struct {
 		desc         string
 		query        *apiV2.RawQuery
-		expectedResp []*apiV2.ComplianceScanResult
+		expectedResp []*apiV2.ComplianceCheckData
 		expectedErr  error
 		found        bool
 		setMocks     func()
@@ -98,14 +98,15 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 			desc:         "Empty query",
 			query:        &apiV2.RawQuery{Query: ""},
 			expectedErr:  nil,
-			expectedResp: convertUtils.GetConvertedComplianceResults(s.T()),
+			expectedResp: convertUtils.GetConvertedComplianceData(s.T()),
 			found:        true,
 			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				expectedQ := search.EmptyQuery()
+				countQuery := expectedQ.Clone()
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(convertUtils.GetComplianceStorageResults(s.T()), nil).Times(1)
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig2").Return(getTestRec("scanConfig2"), nil).Times(1)
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig3").Return(getTestRec("scanConfig3"), nil).Times(1)
+				s.ruleDS.EXPECT().SearchRules(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorRuleV2{{Name: "test-rule-name"}}, nil).AnyTimes()
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), countQuery).Return(7, nil).Times(1)
 			},
 		},
 		{
@@ -114,13 +115,12 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 			expectedErr: nil,
 			found:       true,
 			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).
-					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
-
+				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery()
+				countQuery := expectedQ.Clone()
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(convertUtils.GetOneClusterComplianceStorageResults(s.T(), fixtureconsts.Cluster1), nil).Times(1)
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig2").Return(getTestRec("scanConfig2"), nil).Times(1)
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig3").Return(getTestRec("scanConfig3"), nil).Times(1)
+				s.ruleDS.EXPECT().SearchRules(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorRuleV2{{Name: "test-rule-name"}}, nil).AnyTimes()
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), countQuery).Return(7, nil).Times(1)
 			},
 		},
 		{
@@ -132,13 +132,16 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 			expectedErr: nil,
 			found:       true,
 			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery()
+				expectedQ := search.EmptyQuery()
+				countQuery := expectedQ.Clone()
+				expectedQ.Pagination = &v1.QueryPagination{Limit: 1}
 				returnResults := []*storage.ComplianceOperatorCheckResultV2{
 					convertUtils.GetComplianceStorageResults(s.T())[0],
 				}
 
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(returnResults, nil).Times(1)
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
+				s.ruleDS.EXPECT().SearchRules(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorRuleV2{{Name: "test-rule-name"}}, nil).AnyTimes()
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), countQuery).Return(7, nil).Times(1)
 			},
 		},
 		{
@@ -147,10 +150,13 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 			expectedErr: errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
 			found:       false,
 			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
-					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery()
+				countQuery := expectedQ.Clone()
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(nil, nil).Times(1)
+				s.ruleDS.EXPECT().SearchRules(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorRuleV2{{Name: "test-rule-name"}}, nil).AnyTimes()
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), countQuery).Return(7, nil).Times(1)
 			},
 		},
 	}
@@ -167,7 +173,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(convertUtils.GetConvertedComplianceResults(s.T()), results.GetScanResults())
+				s.Require().Equal(convertUtils.GetConvertedComplianceData(s.T()), results.GetScanResults())
 			}
 		})
 	}
@@ -229,7 +235,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 	testCases := []struct {
 		desc         string
 		query        *apiV2.ComplianceScanResultsRequest
-		expectedResp []*apiV2.ComplianceScanResult
+		expectedResp []*apiV2.ComplianceCheckData
 		expectedErr  error
 		found        bool
 		setMocks     func()
@@ -241,19 +247,19 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 				Query:          &apiV2.RawQuery{Query: ""},
 			},
 			expectedErr:  nil,
-			expectedResp: convertUtils.GetConvertedComplianceResults(s.T()),
+			expectedResp: convertUtils.GetConvertedComplianceData(s.T()),
 			found:        true,
 			setMocks: func() {
 				expectedQ := search.ConjunctionQuery(
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, "scanConfig1").ProtoQuery(),
 					search.EmptyQuery(),
 				)
+				countQuery := expectedQ.Clone()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(convertUtils.GetComplianceStorageResults(s.T()), nil).Times(1)
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig2").Return(getTestRec("scanConfig2"), nil).Times(1)
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig3").Return(getTestRec("scanConfig3"), nil).Times(1)
+				s.ruleDS.EXPECT().SearchRules(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorRuleV2{{Name: "test-rule-name"}}, nil).AnyTimes()
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), countQuery).Return(7, nil).Times(1)
 			},
 		},
 		{
@@ -270,12 +276,13 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, "scanConfig1").ProtoQuery(),
 					expectedQ,
 				)
+
+				countQuery := expectedQ.Clone()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(convertUtils.GetOneClusterComplianceStorageResults(s.T(), fixtureconsts.Cluster1), nil).Times(1)
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig2").Return(getTestRec("scanConfig2"), nil).Times(1)
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig3").Return(getTestRec("scanConfig3"), nil).Times(1)
+				s.ruleDS.EXPECT().SearchRules(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorRuleV2{{Name: "test-rule-name"}}, nil).AnyTimes()
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), countQuery).Return(7, nil).Times(1)
 			},
 		},
 		{
@@ -292,13 +299,15 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, "scanConfig1").ProtoQuery(),
 					search.EmptyQuery(),
 				)
+				countQuery := expectedQ.Clone()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: 1}
 				returnResults := []*storage.ComplianceOperatorCheckResultV2{
 					convertUtils.GetComplianceStorageResults(s.T())[0],
 				}
 
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(returnResults, nil).Times(1)
-				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
+				s.ruleDS.EXPECT().SearchRules(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorRuleV2{{Name: "test-rule-name"}}, nil).AnyTimes()
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), countQuery).Return(7, nil).Times(1)
 			},
 		},
 		{
@@ -324,7 +333,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(convertUtils.GetConvertedComplianceResults(s.T()), results.GetScanResults())
+				s.Require().ElementsMatch(tc.expectedResp, results.GetScanResults())
 			}
 		})
 	}
