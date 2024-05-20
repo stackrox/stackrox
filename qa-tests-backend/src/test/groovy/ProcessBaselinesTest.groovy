@@ -61,7 +61,6 @@ class ProcessBaselinesTest extends BaseSpecification {
                 .addAnnotation("test", "annotation")
                 .setEnv(["CLUSTER_NAME": "main"])
                 .addLabel("app", "test")
-                .setCapabilities([], [])
             }
 
     @Shared

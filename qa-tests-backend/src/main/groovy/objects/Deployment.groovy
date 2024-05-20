@@ -35,7 +35,7 @@ class Deployment {
     Map<String , String> request = [:]
     Boolean hostNetwork = false
     List<String> addCapabilities = []
-    List<String> dropCapabilities = ['ALL']
+    List<String> dropCapabilities = []
 
     // Misc
     String loadBalancerIP = null

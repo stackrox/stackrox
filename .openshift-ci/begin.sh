@@ -25,15 +25,9 @@ fi
 if [[ "${JOB_NAME:-}" =~ -ocp-(4|stable)- ]]; then
     info "Setting worker node type and count for OCP 4 jobs"
     # https://github.com/stackrox/automation-flavors/blob/e6daf10b7df49fc003584790e25def036b2a3b0b/openshift-4/entrypoint.sh#L76
-    set_ci_shared_export WORKER_NODE_COUNT 3
-    set_ci_shared_export WORKER_NODE_TYPE e2-standard-16
-    set_ci_shared_export MASTER_NODE_COUNT 3
-    set_ci_shared_export MASTER_NODE_TYPE e2-standard-16
+    set_ci_shared_export WORKER_NODE_COUNT 2
+    set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
 fi
-set_ci_shared_export WORKER_NODE_COUNT 3
-set_ci_shared_export WORKER_NODE_TYPE e2-standard-16
-set_ci_shared_export MASTER_NODE_COUNT 3
-set_ci_shared_export MASTER_NODE_TYPE e2-standard-16
 
 if [[ "${JOB_NAME:-}" =~ -gke-perf-scale- ]]; then
     info "Setting node type and count for GKE perf scale jobs"
