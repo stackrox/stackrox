@@ -1,13 +1,15 @@
+import qs from 'qs';
 import { generatePath } from 'react-router-dom';
 
 import axios from 'services/instance';
+import { getPaginationParams } from 'utils/searchUtils';
 
 import {
     ComplianceCheckResultStatusCount,
     ComplianceCheckStatusCount,
+    complianceV2Url,
     ListComplianceClusterOverallStatsResponse,
     ListComplianceProfileResults,
-    complianceV2Url,
 } from './ComplianceCommon';
 
 const complianceResultsStatsBaseUrl = `${complianceV2Url}/scan/stats`;
@@ -37,11 +39,19 @@ export function getComplianceProfilesStats(): Promise<ListComplianceProfileScanS
  * Fetches the profile cluster results.
  */
 export function getComplianceClusterStats(
-    profileName: string
+    profileName: string,
+    page: number,
+    perPage: number
 ): Promise<ListComplianceClusterOverallStatsResponse> {
+    const queryParameters = {
+        query: {
+            pagination: getPaginationParams(page, perPage),
+        },
+    };
+    const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
     return axios
         .get<ListComplianceClusterOverallStatsResponse>(
-            `${complianceResultsStatsBaseUrl}/profiles/${profileName}/clusters`
+            `${complianceResultsStatsBaseUrl}/profiles/${profileName}/clusters?${params}`
         )
         .then((response) => response.data);
 }
