@@ -59,3 +59,23 @@ export function ensureString(value: unknown): string {
     }
     return '';
 }
+
+export function ensureConditionNumber(value: unknown): { condition: string; number: number } {
+    if (
+        typeof value === 'object' &&
+        value !== null &&
+        'condition' in value &&
+        'number' in value &&
+        typeof value.condition === 'string' &&
+        typeof value.number === 'number'
+    ) {
+        return {
+            condition: value.condition,
+            number: value.number,
+        };
+    }
+    return {
+        condition: '',
+        number: 0,
+    };
+}

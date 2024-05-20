@@ -8,12 +8,17 @@ import {
     SearchFilterAttribute,
     SelectSearchFilterAttribute,
 } from '../types';
-import { ensureString, ensureStringArray } from '../utils/utils';
+import { ensureConditionNumber, ensureString, ensureStringArray } from '../utils/utils';
 
 import CheckboxSelect from './CheckboxSelect';
 import ConditionNumber from './ConditionNumber';
 
-export type InputFieldValue = string | number | undefined | string[];
+export type InputFieldValue =
+    | string
+    | number
+    | undefined
+    | string[]
+    | { condition: string; number: number };
 export type InputFieldOnChange = (value: InputFieldValue) => void;
 
 export type CompoundSearchFilterInputFieldProps = {
@@ -79,10 +84,13 @@ function CompoundSearchFilterInputField({
     if (attributeObject.inputType === 'condition-number') {
         return (
             <ConditionNumber
-                value={ensureString(value)}
-                onSearch={(value) => {
-                    onChange(value);
-                    onSearch(value);
+                value={ensureConditionNumber(value)}
+                onChange={(newValue) => {
+                    onChange(newValue);
+                }}
+                onSearch={(newValue) => {
+                    onChange(newValue);
+                    onSearch(newValue);
                 }}
             />
         );

@@ -1,14 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Button, NumberInput, SelectOption } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
+import clamp from 'lodash/clamp';
 
 import { ensureString } from '../utils/utils';
 
 import SimpleSelect from './SimpleSelect';
 
 export type ConditionNumberProps = {
-    value: string;
-    onSearch: (value: string) => void;
+    value: {
+        condition: string;
+        number: number;
+    };
+    onChange: (value: { condition: string; number: number }) => void;
+    onSearch: (value: { condition: string; number: number }) => void;
 };
 
 const conditionMap = {
@@ -29,74 +34,36 @@ function roundToOneDecimalPlace(value: number) {
     return parseFloat(value.toFixed(1));
 }
 
-const normalizeBetween = (value: number, min: number, max: number) => {
-    if (min !== undefined && max !== undefined) {
-        return Math.max(Math.min(value, max), min);
-    }
-    if (value <= min) {
-        return min;
-    }
-    if (value >= max) {
-        return max;
-    }
-    return value;
-};
-
-function getDefaultCondition() {
-    return conditions[0];
-}
-
-function getDefaultNumber() {
-    return minValue;
-}
-
-function valueToConditionNumber(value: string) {
-    const [newConditionValue, newNumber] = value.split(' ');
-    const newCondition =
-        conditions.find((condition) => {
-            return conditionMap[condition] === newConditionValue;
-        }) || conditions[0];
-    return {
-        newCondition,
-        newNumber: Number(newNumber) || minValue,
-    };
-}
-
-function conditionNumberToValue(conditionLabel: string, number: number): string {
-    const conditionValue = conditionMap[conditionLabel];
-    const newValue = `${conditionValue} ${number}`;
-    return newValue;
-}
-
-function ConditionNumber({ value, onSearch }: ConditionNumberProps) {
-    const [selectedCondition, setSelectedCondition] = useState(() => getDefaultCondition());
-    const [number, setNumber] = useState(() => getDefaultNumber());
-
-    useEffect(() => {
-        const { newCondition, newNumber } = valueToConditionNumber(value);
-        setSelectedCondition(newCondition);
-        setNumber(newNumber);
-    }, [value]);
-
-    const onMinus = () => {
-        const incrementedNumber = (number || 0) - incrementValue;
+function ConditionNumber({ value, onChange, onSearch }: ConditionNumberProps) {
+    const updateNumber = (operation: 'minus' | 'plus') => {
+        let incrementedNumber = value.number || 0;
+        if (operation === 'minus') {
+            incrementedNumber -= incrementValue;
+        } else if (operation === 'plus') {
+            incrementedNumber += incrementValue;
+        }
         const roundedNumber = roundToOneDecimalPlace(incrementedNumber);
-        const normalizedNumber = normalizeBetween(roundedNumber, minValue, maxValue);
-        setNumber(normalizedNumber);
+        const normalizedNumber = clamp(roundedNumber, minValue, maxValue);
+        onChange({
+            ...value,
+            number: normalizedNumber,
+        });
     };
 
-    const onPlus = () => {
-        const incrementedNumber = (number || 0) + incrementValue;
-        const roundedNumber = roundToOneDecimalPlace(incrementedNumber);
-        const normalizedNumber = normalizeBetween(roundedNumber, minValue, maxValue);
-        setNumber(normalizedNumber);
-    };
+    const onMinus = () => updateNumber('minus');
+
+    const onPlus = () => updateNumber('plus');
 
     return (
         <>
             <SimpleSelect
-                value={selectedCondition}
-                onChange={(val) => setSelectedCondition(ensureString(val))}
+                value={value.condition || conditions[0]}
+                onChange={(val) =>
+                    onChange({
+                        ...value,
+                        condition: ensureString(val),
+                    })
+                }
                 ariaLabelMenu="Condition selector menu"
                 ariaLabelToggle="Condition selector toggle"
             >
@@ -110,23 +77,29 @@ function ConditionNumber({ value, onSearch }: ConditionNumberProps) {
             </SimpleSelect>
             <NumberInput
                 inputAriaLabel="Condition value input"
-                value={number}
+                value={value.number || minValue}
                 min={0}
                 max={10}
                 onChange={(event: React.FormEvent<HTMLInputElement>) => {
                     const { value: newNumber } = event.target as HTMLInputElement;
-                    setNumber(Number(newNumber));
+                    onChange({
+                        ...value,
+                        number: Number(newNumber),
+                    });
                 }}
                 onBlur={(event: React.FormEvent<HTMLInputElement>) => {
                     const target = event.target as HTMLInputElement;
-                    const normalizedNumber = normalizeBetween(
+                    const normalizedNumber = clamp(
                         Number.isNaN(+target.value)
                             ? 0
                             : roundToOneDecimalPlace(Number(target.value)),
                         minValue,
                         maxValue
                     );
-                    setNumber(normalizedNumber);
+                    onChange({
+                        ...value,
+                        number: normalizedNumber,
+                    });
                 }}
                 onMinus={onMinus}
                 onPlus={onPlus}
@@ -137,8 +110,7 @@ function ConditionNumber({ value, onSearch }: ConditionNumberProps) {
                 variant="control"
                 aria-label="Apply condition and number input to search"
                 onClick={() => {
-                    const newValue = conditionNumberToValue(selectedCondition, number);
-                    onSearch(newValue);
+                    onSearch(value);
                 }}
             >
                 <ArrowRightIcon />
