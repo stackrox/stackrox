@@ -343,14 +343,12 @@ function WorkloadCvesOverviewPage() {
                         }}
                     />
                 </PageSection>
-                {isNoCvesViewEnabled && (
+                {isNoCvesViewEnabled && currentVulnerabilityState === 'OBSERVED' && (
                     <PageSection className="pf-v5-u-py-md" component="div" variant="light">
-                        {currentVulnerabilityState === 'OBSERVED' && (
-                            <ObservedCveModeSelect
-                                observedCveMode={observedCveMode}
-                                setObservedCveMode={onChangeObservedCveMode}
-                            />
-                        )}
+                        <ObservedCveModeSelect
+                            observedCveMode={observedCveMode}
+                            setObservedCveMode={onChangeObservedCveMode}
+                        />
                     </PageSection>
                 )}
                 <PageSection isCenterAligned>
