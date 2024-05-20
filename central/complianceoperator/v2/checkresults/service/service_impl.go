@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -344,21 +343,6 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 		TotalCount:   int32(resultCount),
 		LastScanTime: lastExecutedTime,
 	}, nil
-}
-
-func (s *serviceImpl) mapScanConfigToID(ctx context.Context, scanResults []*storage.ComplianceOperatorCheckResultV2) (map[string]string, error) {
-	scanConfigToIDs := make(map[string]string, len(scanResults))
-	for _, result := range scanResults {
-		if _, found := scanConfigToIDs[result.ScanConfigName]; !found {
-			config, err := s.scanConfigDS.GetScanConfigurationByName(ctx, result.ScanConfigName)
-			if err != nil {
-				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration %q", result.ScanConfigName)
-			}
-			scanConfigToIDs[result.ScanConfigName] = config.GetId()
-		}
-	}
-
-	return scanConfigToIDs, nil
 }
 
 func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQuery *v1.Query, countQuery *v1.Query) (*v2.ListComplianceResultsResponse, error) {

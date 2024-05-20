@@ -651,28 +651,3 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 		})
 	}
 }
-
-func getTestRec(scanName string) *storage.ComplianceOperatorScanConfigurationV2 {
-	return &storage.ComplianceOperatorScanConfigurationV2{
-		Id:                     scanName,
-		ScanConfigName:         scanName,
-		AutoApplyRemediations:  false,
-		AutoUpdateRemediations: false,
-		OneTimeScan:            false,
-		Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
-			{
-				ProfileName: "ocp4-cis",
-			},
-		},
-		StrictNodeScan: false,
-		Description:    "test-description",
-		Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
-			{
-				ClusterId: fixtureconsts.Cluster1,
-			},
-			{
-				ClusterId: fixtureconsts.Cluster2,
-			},
-		},
-	}
-}
