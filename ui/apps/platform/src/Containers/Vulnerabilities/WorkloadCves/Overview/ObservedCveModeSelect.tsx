@@ -10,9 +10,10 @@ import {
 } from '@patternfly/react-core';
 import { SecurityIcon, UnknownIcon } from '@patternfly/react-icons';
 
-import { CRITICAL_SEVERITY_COLOR } from 'constants/severityColors';
 import { ObservedCveMode, isObservedCveMode, observedCveModeValues } from '../../types';
 import { getViewStateDescription, getViewStateTitle } from './string.utils';
+
+const width = '330px';
 
 export type ObservedCveModeSelectProps = {
     observedCveMode: ObservedCveMode;
@@ -26,11 +27,7 @@ function ObservedCveModeSelect({
     const [isCveModeSelectOpen, setIsCveModeSelectOpen] = useState(false);
     const isViewingWithCves = observedCveMode === 'WITH_CVES';
 
-    const menuToggleIcon = isViewingWithCves ? (
-        <SecurityIcon color={CRITICAL_SEVERITY_COLOR} />
-    ) : (
-        <UnknownIcon />
-    );
+    const menuToggleIcon = isViewingWithCves ? <SecurityIcon /> : <UnknownIcon />;
 
     const menuToggleText = isViewingWithCves
         ? 'View image vulnerabilities'
@@ -49,6 +46,7 @@ function ObservedCveModeSelect({
             onOpenChange={(isOpen) => setIsCveModeSelectOpen(isOpen)}
             toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
                 <MenuToggle
+                    style={{ width }}
                     aria-label="Observed CVE mode select"
                     ref={toggleRef}
                     onClick={() => setIsCveModeSelectOpen(!isCveModeSelectOpen)}
@@ -65,7 +63,7 @@ function ObservedCveModeSelect({
             )}
             shouldFocusToggleOnSelect
         >
-            <SelectList style={{ maxWidth: '300px' }}>
+            <SelectList style={{ width }}>
                 <SelectOption
                     value={observedCveModeValues[0]}
                     description={getViewStateDescription('OBSERVED', 'WITH_CVES')}
