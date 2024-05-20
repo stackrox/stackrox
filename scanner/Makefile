@@ -48,6 +48,7 @@ endif
 CGO_ENABLED = 0
 RACE_FLAG =
 ifeq ($(RACE),1)
+	# cgo is required for data race detection.
 	CGO_ENABLED = 1
 	RACE_FLAG = -race
 endif
