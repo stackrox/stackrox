@@ -42,28 +42,16 @@ class ProcessBaselinesTest extends BaseSpecification {
 
     static final private Integer RISK_WAIT_TIME = 240
 
-    private static Deployment deployment(String name) {
-        return new Deployment()
-                .setName(name)
-                .setNamespace(TEST_NAMESPACE)
-                .setImage(TEST_IMAGE)
-                .addPort(22, "TCP")
-                .addAnnotation("test", "annotation")
-                .setEnv(["CLUSTER_NAME": "main"])
-                .addLabel("app", "test")
-                .setCapabilities([], [])
-    }
-
     static final private List<Deployment> DEPLOYMENTS =
             [
-                deployment(DEPLOYMENTNGINX),
-                deployment(DEPLOYMENTNGINX_RESOLVE_VIOLATION),
-                deployment(DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION),
-                deployment(DEPLOYMENTNGINX_LOCK),
-                deployment(DEPLOYMENTNGINX_DELETE),
-                deployment(DEPLOYMENTNGINX_DELETE_API),
-                deployment(DEPLOYMENTNGINX_POST_DELETE_API),
-                deployment(DEPLOYMENTNGINX_REMOVEPROCESS),
+                DEPLOYMENTNGINX,
+                DEPLOYMENTNGINX_RESOLVE_VIOLATION,
+                DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION,
+                DEPLOYMENTNGINX_LOCK,
+                DEPLOYMENTNGINX_DELETE,
+                DEPLOYMENTNGINX_DELETE_API,
+                DEPLOYMENTNGINX_POST_DELETE_API,
+                DEPLOYMENTNGINX_REMOVEPROCESS,
             ]
             .collect { String name -> new Deployment()
                 .setName(name)
@@ -73,6 +61,7 @@ class ProcessBaselinesTest extends BaseSpecification {
                 .addAnnotation("test", "annotation")
                 .setEnv(["CLUSTER_NAME": "main"])
                 .addLabel("app", "test")
+                .setCapabilities([], [])
             }
 
     @Shared
