@@ -60,13 +60,13 @@ export const imageSearchFilterConfig = {
             searchTerm: 'Image Label',
             inputType: 'autocomplete',
         },
-        CreatedTime: {
+        'Created Time': {
             displayName: 'Created Time',
             filterChipLabel: 'Image Created Time',
             searchTerm: 'Image Created Time',
             inputType: 'date-picker',
         },
-        ScanTime: {
+        'Scan Time': {
             displayName: 'Scan Time',
             filterChipLabel: 'Image Scan Time',
             searchTerm: 'Image Scan Time',
@@ -220,13 +220,13 @@ export const nodeSearchFilterConfig = {
             searchTerm: 'Node',
             inputType: 'autocomplete',
         },
-        OperatingSystem: {
+        'Operating System': {
             displayName: 'Operating System',
             filterChipLabel: 'Node Operating System',
             searchTerm: 'Operating System',
             inputType: 'text',
         },
-        TopCVSS: {
+        'Top CVSS': {
             displayName: 'Top CVSS',
             filterChipLabel: 'Node Top CVSS',
             searchTerm: 'Node Top CVSS',
@@ -244,13 +244,13 @@ export const nodeSearchFilterConfig = {
             searchTerm: 'Node Annotation',
             inputType: 'autocomplete',
         },
-        JoinTime: {
+        'Join Time': {
             displayName: 'Join Time',
             filterChipLabel: 'Node Join Time',
             searchTerm: 'Node Join Time',
             inputType: 'date-picker',
         },
-        ScanTime: {
+        'Scan Time': {
             displayName: 'Scan Time',
             filterChipLabel: 'Node Scan Time',
             searchTerm: 'Node Scan Time',
@@ -281,7 +281,7 @@ export const imageCVESearchFilterConfig = {
             searchTerm: 'CVE ID',
             inputType: 'autocomplete',
         },
-        DiscoveredTime: {
+        'Discovered Time': {
             displayName: 'Discovered Time',
             filterChipLabel: 'Image CVE Discovered Time',
             searchTerm: 'CVE Created Time',
@@ -329,7 +329,7 @@ export const nodeCVESearchFilterConfig = {
             searchTerm: 'CVE ID',
             inputType: 'autocomplete',
         },
-        DiscoveredTime: {
+        'Discovered Time': {
             displayName: 'Discovered Time',
             filterChipLabel: 'Node CVE Discovered Time',
             searchTerm: 'CVE Created Time',
@@ -381,7 +381,7 @@ export const platformCVESearchFilterConfig = {
             searchTerm: 'CVE ID',
             inputType: 'autocomplete',
         },
-        DiscoveredTime: {
+        'Discovered Time': {
             displayName: 'Discovered Time',
             filterChipLabel: 'Platform CVE Discovered Time',
             searchTerm: 'CVE Created Time',

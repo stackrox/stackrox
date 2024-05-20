@@ -1,6 +1,6 @@
 import React from 'react';
+import { DatePicker, SearchInput, SelectOption } from '@patternfly/react-core';
 
-import { SearchInput, SelectOption } from '@patternfly/react-core';
 import { SelectedEntity } from './EntitySelector';
 import { SelectedAttribute } from './AttributeSelector';
 import {
@@ -30,10 +30,17 @@ function isSelectType(
 }
 
 function ensureStringArray(value: InputFieldValue): string[] {
-    if (value === undefined || typeof value === 'number' || typeof value === 'string') {
-        return [];
+    if (Array.isArray(value) && value.every((element) => typeof element === 'string')) {
+        return value;
     }
-    return value;
+    return [];
+}
+
+function ensureString(value: InputFieldValue): string {
+    if (typeof value === 'string') {
+        return value;
+    }
+    return '';
 }
 
 function CompoundSearchFilterInputField({
@@ -61,10 +68,23 @@ function CompoundSearchFilterInputField({
             <SearchInput
                 aria-label={textLabel}
                 placeholder={textLabel}
-                value={value as string}
+                value={ensureString(value)}
                 onChange={(_event, _value) => onChange(_value)}
                 onSearch={(_event, _value) => onSearch(_value)}
                 onClear={() => onChange('')}
+            />
+        );
+    }
+    if (attributeObject.inputType === 'date-picker') {
+        return (
+            <DatePicker
+                aria-label="Filter by date"
+                buttonAriaLabel="Filter by date toggle"
+                value={ensureString(value)}
+                onChange={(_event, value) => {
+                    onChange(value);
+                    onSearch(value);
+                }}
             />
         );
     }
