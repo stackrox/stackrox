@@ -52,7 +52,7 @@ export const imageSearchFilterConfig = {
             displayName: 'CVSS',
             filterChipLabel: 'Image CVSS',
             searchTerm: 'Image Top CVSS',
-            inputType: 'dropdown-slider',
+            inputType: 'condition-number',
         },
         Label: {
             displayName: 'Label',
@@ -230,7 +230,7 @@ export const nodeSearchFilterConfig = {
             displayName: 'Top CVSS',
             filterChipLabel: 'Node Top CVSS',
             searchTerm: 'Node Top CVSS',
-            inputType: 'dropdown-slider',
+            inputType: 'condition-number',
         },
         Label: {
             displayName: 'Label',
@@ -291,7 +291,7 @@ export const imageCVESearchFilterConfig = {
             displayName: 'CVSS',
             filterChipLabel: 'Image CVE CVSS',
             searchTerm: 'CVSS',
-            inputType: 'dropdown-slider',
+            inputType: 'condition-number',
         },
         Type: {
             displayName: 'Type',
@@ -339,7 +339,7 @@ export const nodeCVESearchFilterConfig = {
             displayName: 'CVSS',
             filterChipLabel: 'Node CVE CVSS',
             searchTerm: 'CVSS',
-            inputType: 'dropdown-slider',
+            inputType: 'condition-number',
         },
         // TODO: Add Top CVSS
         Snoozed: {
@@ -391,7 +391,7 @@ export const platformCVESearchFilterConfig = {
             displayName: 'CVSS',
             filterChipLabel: 'Platform CVE CVSS',
             searchTerm: 'CVSS',
-            inputType: 'dropdown-slider',
+            inputType: 'condition-number',
         },
         Snoozed: {
             displayName: 'Snoozed',
