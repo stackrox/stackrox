@@ -416,9 +416,6 @@
         },
         "profileVersion": {
           "type": "string"
-        },
-        "standard": {
-          "type": "string"
         }
       },
       "title": "Next Tag: 7"
