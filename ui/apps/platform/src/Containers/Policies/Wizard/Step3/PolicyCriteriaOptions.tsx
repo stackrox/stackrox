@@ -75,6 +75,8 @@ function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCrit
     const { values, setFieldValue } = useFormikContext<Policy>();
     const { policyGroups } = values.policySections[selectedSectionIndex];
 
+    const selectedSection = values.policySections[selectedSectionIndex];
+
     const treeDataItems = useMemo(() => getPolicyFieldsAsTree([], descriptors), [descriptors]);
 
     useEffect(() => {
@@ -132,17 +134,6 @@ function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCrit
         ]);
     }
 
-    // function addField() {
-    //     const itemKey = activeItems[0].title;
-    //     const itemToAdd = descriptors.find(
-    //         (descriptor) => descriptor.shortName === itemKey || descriptor.name === itemKey
-    //     );
-    //     const newPolicyFieldCard = getEmptyPolicyFieldCard(itemToAdd);
-
-    //     addPolicyFieldCardHandler(newPolicyFieldCard);
-    //     close();
-    // }
-
     const toolbar = (
         <>
             <Toolbar className="pf-v5-u-px-sm pf-v5-py-0">
@@ -168,7 +159,8 @@ function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCrit
             spaceItems={{ default: 'spaceItemsNone' }}
         >
             <Title headingLevel="h3" className="pf-v5-u-px-md pf-v5-u-pt-md">
-                Add policy criteria to (here)
+                Add policy criteria to{' '}
+                {selectedSection.sectionName || `Condition ${selectedSectionIndex + 1}`}
             </Title>
             <FlexItem>
                 <Button variant="link" onClick={() => setAllExpanded(!allExpanded)}>

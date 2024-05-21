@@ -1,7 +1,3 @@
-.pf-v5-c-wizard__main .pf-v5-c-divider.pf-m-vertical.acs-no-trailing-margin {
-    margin-inline-end: 0 !important;
-}
-
 #policy-criteria-options-container .pf-v5-c-title {
     margin-left: var(--pf-v5-global--spacer--md) !important;
 }
@@ -16,14 +12,6 @@
 
 .pf-v5-c-tree-view__content {
     outline-color: 0 0 #000 !important;
-}
-
-.f-v5-c-tree-view .acs-tree-view-toolbar-no-trailing-border .pf-v5-c-toolbar {
-    padding: 0 !important;
-}
-
-.f-v5-c-tree-view .acs-tree-view-toolbar-no-trailing-border .pf-v5-c-divider {
-    height: 0 !important;
 }
 
 .pf-v5-c-tree-view__list-item .pf-v5-c-tree-view__list-item .pf-v5-c-tree-view__node-container:hover {
