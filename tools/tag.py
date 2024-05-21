@@ -10,11 +10,11 @@ orig = sys.argv[1]
 
 class Version:
 
-    def __init__(self, major, minor, patch, release, commit):
+    def __init__(self, major, minor, patch, build, commit):
         self.major = major
         self.minor = minor
         self.patch = patch
-        self.release = release
+        self.build = build
         self.commit = commit
 
     @staticmethod
@@ -24,7 +24,7 @@ class Version:
         return Version(major, minor, patch, build, commit)
 
     def __str__(self):
-        return f"{self.major}.{self.minor}.{self.patch}-{self.release}-{self.commit}"
+        return f"{self.major}.{self.minor}.{self.patch}-{self.build}-{self.commit}"
 
 
 if __name__ == "__main__":
