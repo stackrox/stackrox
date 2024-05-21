@@ -1,6 +1,7 @@
 import qs from 'qs';
 
 import axios from 'services/instance';
+import { ApiSortOption } from 'types/search';
 import { getPaginationParams } from 'utils/searchUtils';
 
 import {
@@ -37,12 +38,13 @@ export type ComplianceCheckResult = {
  */
 export function getComplianceProfileResults(
     profileName: string,
+    sortOption: ApiSortOption,
     page: number,
     perPage: number
 ): Promise<ListComplianceProfileResults> {
     const queryParameters = {
         query: {
-            pagination: getPaginationParams(page, perPage),
+            pagination: { ...getPaginationParams(page, perPage), sortOption },
         },
     };
     const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
