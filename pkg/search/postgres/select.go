@@ -46,6 +46,7 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schem
 	if query == nil {
 		return nil, nil
 	}
+	fmt.Println("SQL:", query.AsSQL())
 	return pgutils.Retry2(func() ([]*T, error) {
 		return retryableRunSelectRequestForSchema[T](ctx, db, query)
 	})

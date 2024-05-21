@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -71,6 +70,13 @@ type serviceImpl struct {
 }
 
 func (s *serviceImpl) GetComplianceBenchmarkScanStats(ctx context.Context, request *v2.ComplianceBenchmarkStatsRequest) (*v2.ListComplianceBenchmarkScanStatsResponse, error) {
+	/**
+	Requirements:
+	- List each control of a benchmark
+	- List all associated ProfileChecks
+	- List all Fail & Pass Statuses
+	*/
+
 	//TODO: Implement get benchmark by name
 	benchmark, found, err := s.benchmarkDS.GetBenchmark(ctx, "4d0d96f7-3782-41ba-b3b7-c040686a421c")
 	if err != nil {
@@ -82,17 +88,17 @@ func (s *serviceImpl) GetComplianceBenchmarkScanStats(ctx context.Context, reque
 	}
 
 	// Get Benchmark standard name
-	// Example annotation: control.compliance.openshift.io/CIS-OCP
-	standard := strings.Split(benchmark.GetProfileAnnotation()[0], ":")
-
-	checkResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, &v1.Query{})
-	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to retrieve compliance check results")
-	}
-
-	for _, result := range checkResults {
-		result.ScanName
-	}
+	//// Example annotation: control.compliance.openshift.io/CIS-OCP
+	//standard := strings.Split(benchmark.GetProfileAnnotation()[0], ":")
+	//``
+	//checkResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, &v1.Query{})
+	//if err != nil {
+	//	return nil, errors.Wrapf(err, "Unable to retrieve compliance check results")
+	//}
+	//
+	//for _, result := range checkResults {
+	//	result.ScanName
+	//}
 
 	// Get all rules
 	// Filter rules by standard

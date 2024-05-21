@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -425,6 +426,13 @@ func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResult() {
 	s.Require().NoError(err)
 	s.Require().False(found)
 	s.Require().Nil(retrieveRec1)
+}
+
+func TestComplianceProfile(t *testing.T) {
+	ds := datastoreImpl{}
+	ctx := sac.WithAllAccess(context.TODO())
+	_, err := ds.ComplianceProfileResultStats(ctx, &apiV1.Query{})
+	require.NoError(t, err)
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) TestSearchResultsSac() {
