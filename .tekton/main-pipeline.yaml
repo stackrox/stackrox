@@ -391,6 +391,30 @@ spec:
       operator: in
       values: [ "false" ]
 
+  - name: roxctl-image-scan
+    params:
+    - name: image
+      value: $(tasks.build-container.results.IMAGE_URL)@$(tasks.build-container.results.IMAGE_DIGEST)
+    - name: output_format
+      value: table
+    - name: rox_image
+      value: quay.io/stackrox-io/roxctl:4.4.2
+    runAfter:
+    - build-container
+    taskRef:
+      params:
+      - name: name
+        value: rhacs-image-scan
+      - name: bundle
+        value: gcr.io/tekton-releases/catalog/upstream/rhacs-image-scan@sha256:6be52f9e623e3fecbf2d2b542ac59cc9c6993311306e78651aba98f4e520aa6c
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
   - name: sbom-json-check
     params:
     - name: IMAGE_URL
