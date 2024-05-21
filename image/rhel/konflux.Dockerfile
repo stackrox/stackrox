@@ -50,7 +50,7 @@ ENV CGO_ENABLED=1
 ENV CI=1
 
 RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
-    make main-build-nodeps cli-build && \
+    BUILD_TAG=$(make tag)-fast make main-build-nodeps cli-build && \
     mkdir -p image/rhel/docs/api/v1 && \
     ./scripts/mergeswag.sh generated/api/v1 1 >image/rhel/docs/api/v1/swagger.json && \
     mkdir -p image/rhel/docs/api/v2 && \
