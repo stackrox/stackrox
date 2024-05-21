@@ -141,12 +141,12 @@ func retrieveRepositoryList(client *registry.Registry) (set.StringSet, error) {
 
 // Match decides if the image is contained within this registry
 func (r *Registry) Match(image *storage.ImageName) bool {
-	r.lazyLoadRepoList()
-
 	match := urlfmt.TrimHTTPPrefixes(r.registry) == image.GetRegistry()
 	if !match || r.cfg.DisableRepoList {
 		return match
 	}
+
+	r.lazyLoadRepoList()
 
 	list := concurrency.WithRLock1(&r.repositoryListLock, func() set.StringSet {
 		return r.repositoryList
@@ -176,7 +176,7 @@ func (r *Registry) Match(image *storage.ImageName) bool {
 }
 
 // lazyLoadRepoList will perform the initial repo list load if neccessary.
-// This is safe to call multiple times, the load will only be performed once.
+// This is safe to call multiple times.
 func (r *Registry) lazyLoadRepoList() {
 	r.repoListOnce.Do(func() {
 		if r.cfg.DisableRepoList {
