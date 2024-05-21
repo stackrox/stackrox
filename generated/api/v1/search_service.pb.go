@@ -95,7 +95,6 @@ const (
 	SearchCategory_CLOUD_SOURCES                    SearchCategory = 68
 	SearchCategory_DISCOVERED_CLUSTERS              SearchCategory = 69
 	SearchCategory_COMPLIANCE_REMEDIATIONS          SearchCategory = 70
-	SearchCategory_COMPLIANCE_BENCHMARKS          	SearchCategory = 71
 )
 
 var SearchCategory_name = map[int32]string{
