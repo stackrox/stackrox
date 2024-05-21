@@ -312,6 +312,8 @@ var (
 	ImagePriority      = newDerivedFieldLabel("Image Risk Priority", ImageRiskScore, SimpleReverseSortDerivationType)
 	ComponentPriority  = newDerivedFieldLabel("Component Risk Priority", ComponentRiskScore, SimpleReverseSortDerivationType)
 
+	ComplianceLastScanMax = newDerivedFieldLabel("Compliance Scan Last Executed Time Max", ComplianceOperatorScanLastExecutedTime, MaxDerivationType)
+
 	// External network sources fields
 	DefaultExternalSource = newFieldLabel("Default External Source")
 
@@ -535,4 +537,5 @@ type DerivationType int
 const (
 	CountDerivationType DerivationType = iota
 	SimpleReverseSortDerivationType
+	MaxDerivationType
 )

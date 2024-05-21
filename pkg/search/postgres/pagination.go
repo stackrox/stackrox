@@ -59,6 +59,9 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 			case searchPkg.SimpleReverseSortDerivationType:
 				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Unset, "")
 				descending = !so.GetReversed()
+			case searchPkg.MaxDerivationType:
+				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Max, "")
+				descending = so.GetReversed()
 			default:
 				log.Errorf("Unsupported derived field %s found in query", so.GetField())
 				continue
