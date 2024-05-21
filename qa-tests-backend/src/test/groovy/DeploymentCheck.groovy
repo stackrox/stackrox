@@ -197,7 +197,8 @@ class DeploymentCheck extends BaseSpecification {
         assert !res.getRemarksList().findAll { it.getName() == secondDeployment }.isEmpty()
     }
 
-    static String createDeploymentYaml(String deploymentName, String namespace, String image = "nginx:latest") {
+    static String createDeploymentYaml(String deploymentName, String namespace,
+        String image = "quay.io/rhacs-eng/qa-multi-arch-nginx:latest") {
         """
 apiVersion: apps/v1
 kind: Deployment
