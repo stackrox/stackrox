@@ -7,11 +7,15 @@ import {
     CardBody,
     Button,
     Divider,
+    EmptyState,
+    EmptyStateBody,
+    EmptyStateHeader,
+    EmptyStateIcon,
     Flex,
     FlexItem,
     TextInput,
 } from '@patternfly/react-core';
-import { PencilAltIcon, TrashIcon, CheckIcon } from '@patternfly/react-icons';
+import { PencilAltIcon, TrashIcon, CheckIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useModal from 'hooks/useModal';
@@ -43,6 +47,9 @@ function PolicySection({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const showPolicyCriteriaModal = isFeatureFlagEnabled('ROX_POLICY_CRITERIA_MODAL');
+    const showAccessiblePolicyCriteria = isFeatureFlagEnabled(
+        'ROX_ACCESSIBLE_POLICY_CRITERIA_EDITING'
+    );
 
     function onEditSectionName(_, e) {
         handleChange(e);
@@ -153,6 +160,17 @@ function PolicySection({
                             )
                         );
                     })}
+                    {showAccessiblePolicyCriteria && !readOnly && (
+                        <EmptyState>
+                            <EmptyStateHeader
+                                titleText=""
+                                icon={<EmptyStateIcon icon={PlusCircleIcon} />}
+                            />
+                            <EmptyStateBody>
+                                Add a policy criterion from the panel to the right
+                            </EmptyStateBody>
+                        </EmptyState>
+                    )}
                     {!showPolicyCriteriaModal && !readOnly && (
                         <PolicySectionDropTarget
                             sectionIndex={sectionIndex}

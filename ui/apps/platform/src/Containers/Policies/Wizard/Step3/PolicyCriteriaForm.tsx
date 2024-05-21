@@ -1,14 +1,5 @@
-import React, { useState } from 'react';
-import {
-    Alert,
-    Button,
-    Divider,
-    Flex,
-    FlexItem,
-    Grid,
-    GridItem,
-    Title,
-} from '@patternfly/react-core';
+import React, { useState, CSSProperties } from 'react';
+import { Alert, Button, Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useFormikContext } from 'formik';
@@ -21,6 +12,11 @@ import PolicyCriteriaOptions from './PolicyCriteriaOptions';
 import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
 
 import './PolicyCriteriaForm.css';
+
+const policyCriteriaOptionsStyleConstant = {
+    '--pf-v5-u-min-width--MinWidth': '35ch',
+    '--pf-v5-u-max-width--MaxWidth': '35ch',
+} as CSSProperties;
 
 const MAX_POLICY_SECTIONS = 16;
 
@@ -103,8 +99,14 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     }
 
     return showAccessiblePolicyCriteria ? (
-        <Grid>
-            <GridItem span={12}>
+        <Flex
+            direction={{ default: 'column' }}
+            className="pf-v5-u-h-100"
+            spaceItems={{ default: 'spaceItemsNone' }}
+            fullWidth={{ default: 'fullWidth' }}
+            flexWrap={{ default: 'nowrap' }}
+        >
+            <FlexItem span={12}>
                 <Flex direction={{ default: 'row' }} className="pf-v5-u-p-lg">
                     <FlexItem flex={{ default: 'flex_1' }}>{headingElements}</FlexItem>
                     <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
@@ -117,85 +119,41 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         </Button>
                     </FlexItem>
                 </Flex>
-            </GridItem>
-            <GridItem>
-                <Divider component="div" className="acs-no-trailing-margin" />
-            </GridItem>
-            <GridItem span={12}>
-                <Flex direction={{ default: 'row' }} className="">
-                    <FlexItem flex={{ default: 'flex_1' }}>
+            </FlexItem>
+            <FlexItem>
+                <Divider component="div" />
+            </FlexItem>
+            <FlexItem span={12}>
+                <Flex flexWrap={{ default: 'nowrap' }} direction={{ default: 'row' }} className="">
+                    <FlexItem
+                        flex={{ default: 'flex_1' }}
+                        className="pf-v5-u-pr-0 pf-v5-u-mr-0"
+                        style={{ overflow: 'auto' }}
+                    >
                         <Flex
                             direction={{ default: 'column', lg: 'row' }}
                             flexWrap={{ default: 'nowrap' }}
                             id="policy-sections"
-                            className="pf-v5-u-p-lg pf-v5-u-h-100"
+                            className="pf-v5-u-p-lg pf-v5-u-h-100 pf-v5-u-align-items-stretch"
                         >
                             <BooleanPolicyLogicSection selectedSection={selectedSection} />
                         </Flex>
                     </FlexItem>
-                    <Divider
-                        component="div"
-                        orientation={{ default: 'vertical' }}
-                        className="acs-no-trailing-margin"
-                    />
-                    <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                    <Divider component="div" orientation={{ default: 'vertical' }} />
+                    <FlexItem
+                        alignSelf={{ default: 'alignSelfCenter' }}
+                        className="pf-v5-u-h-100 pf-v5-u-pt-lg pf-v5-u-min-width pf-v5-u-max-width"
+                        style={policyCriteriaOptionsStyleConstant}
+                    >
                         <PolicyCriteriaOptions
                             descriptors={filteredDescriptors}
                             selectedSectionIndex={selectedSection}
                         />
                     </FlexItem>
                 </Flex>
-            </GridItem>
-        </Grid>
+            </FlexItem>
+        </Flex>
     ) : (
-        // <Flex fullWidth={{ default: 'fullWidth' }} className="pf-v5-u-h-100">
-        //     <Flex
-        //         flex={{ default: 'flex_2' }}
-        //         direction={{ default: 'column' }}
-        //         className="pf-v5-u-h-100"
-        //         spaceItems={{ default: 'spaceItemsNone' }}
-        //         fullWidth={{ default: 'fullWidth' }}
-        //         flexWrap={{ default: 'nowrap' }}
-        //         id="policy-sections-container"
-        //     >
-        //         <Flex direction={{ default: 'row' }} className="pf-v5-u-p-lg">
-        //             <FlexItem flex={{ default: 'flex_1' }}>{headingElements}</FlexItem>
-        //             <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-        //                 <Button
-        //                     variant="secondary"
-        //                     onClick={addNewPolicySection}
-        //                     data-testid="add-section-btn"
-        //                 >
-        //                     Add condition
-        //                 </Button>
-        //             </FlexItem>
-        //         </Flex>
-        //         <Divider component="div" />
-        //         <Flex
-        //             direction={{ default: 'column', lg: 'row' }}
-        //             flexWrap={{ default: 'nowrap' }}
-        //             id="policy-sections"
-        //             className="pf-v5-u-p-lg pf-v5-u-h-100"
-        //         >
-        //             <BooleanPolicyLogicSection selectedSection={selectedSection} />
-        //         </Flex>
-        //     </Flex>
-        //     <Divider
-        //         component="div"
-        //         orientation={{ default: 'vertical' }}
-        //         className="acs-no-trailing-margin"
-        //     />
-        //     <Flex
-        //         flex={{ default: 'flex_1' }}
-        //         className="pf-v5-u-h-100 pf-v5-u-pt-lg pf-v5-u-w-100"
-        //         id="policy-criteria-options-container"
-        //     >
-        //         <PolicyCriteriaOptions
-        //             descriptors={filteredDescriptors}
-        //             selectedSectionIndex={selectedSection}
-        //         />
-        //     </Flex>
-        // </Flex>
         /*
         (dv 2024-05-01) Upgrading to React types 18 causes a type error below
 
@@ -233,11 +191,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         <BooleanPolicyLogicSection />
                     </Flex>
                 </Flex>
-                <Divider
-                    component="div"
-                    orientation={{ default: 'vertical' }}
-                    className="acs-no-trailing-margin"
-                />
+                <Divider component="div" orientation={{ default: 'vertical' }} />
                 <Flex className="pf-v5-u-h-100 pf-v5-u-pt-lg" id="policy-criteria-keys-container">
                     <PolicyCriteriaKeys keys={filteredDescriptors} />
                 </Flex>
