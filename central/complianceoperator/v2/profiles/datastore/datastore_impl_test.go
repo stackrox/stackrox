@@ -12,7 +12,6 @@ import (
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -32,8 +31,6 @@ var (
 	profileUID1 = uuid.NewV4().String()
 	profileUID2 = uuid.NewV4().String()
 	profileUID3 = uuid.NewV4().String()
-
-	log = logging.LoggerForModule()
 )
 
 func TestComplianceProfileDataStore(t *testing.T) {
