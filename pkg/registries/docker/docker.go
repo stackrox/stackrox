@@ -94,7 +94,11 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 	client.Client.Timeout = env.RegistryClientTimeout.DurationSetting()
 
 	repoListState := "enabled"
+<<<<<<< HEAD
 	if cfg.DisableRepoList {
+=======
+	if !cfg.DisableRepoList {
+>>>>>>> cd172da095 (initial)
 		repoListState = "disabled"
 	}
 	log.Debugf("created integration %q with repo list %s", integration.GetName(), repoListState)
@@ -141,6 +145,8 @@ func retrieveRepositoryList(client *registry.Registry) (set.StringSet, error) {
 
 // Match decides if the image is contained within this registry
 func (r *Registry) Match(image *storage.ImageName) bool {
+	r.lazyLoadRepoList()
+
 	match := urlfmt.TrimHTTPPrefixes(r.registry) == image.GetRegistry()
 	if !match || r.cfg.DisableRepoList {
 		return match
