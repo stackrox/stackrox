@@ -117,29 +117,3 @@ jobs:
           mv bin/linux_amd64/roxctl "${HOME}/.local/bin/roxctl"
           scripts/ci/lib.sh \
             push_helm_charts "${STACKROX_TAG}"
-
-  publish-roxctl:
-    needs: [build, check-scanner-version, check-collector-version, check-is-release]
-    if: needs.check-is-release.outputs.is_release == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.ref_name }}
-      - uses: 'google-github-actions/auth@v2'
-        with:
-          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}'
-      - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v2'
-      - uses: actions/download-artifact@v4
-        with:
-          name: cli-build
-      - name: Publish roxctl to Google Cloud storage
-        env:
-          STACKROX_TAG: ${{ github.ref_name }}
-        run: |
-          tar xzf cli-build.tgz
-          scripts/ci/lib.sh \
-            publish_roxctl "${STACKROX_TAG}"

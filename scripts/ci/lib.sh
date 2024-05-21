@@ -674,22 +674,6 @@ check_collector_version() {
     fi
 }
 
-publish_roxctl() {
- if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: publish_roxctl <tag>"
-    fi
-
-    local tag="$1"
-
-    echo "Push roxctl to gs://sr-roxc & gs://rhacs-openshift-mirror-src/assets" >> "${GITHUB_STEP_SUMMARY}"
-
-    local temp_dir
-    temp_dir="$(mktemp -d)"
-    "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/prepare.sh" . "${temp_dir}"
-    "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/publish.sh" "${temp_dir}" "${tag}" "gs://sr-roxc"
-    "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/publish.sh" "${temp_dir}" "${tag}" "gs://rhacs-openshift-mirror-src/assets"
-}
-
 push_helm_charts() {
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: push_helm_charts <tag>"
