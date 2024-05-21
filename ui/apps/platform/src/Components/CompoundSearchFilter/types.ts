@@ -36,7 +36,7 @@ export const imageSearchFilterConfig = {
             searchTerm: 'Image',
             inputType: 'autocomplete',
         },
-        OperatingSystem: {
+        'Operating System': {
             displayName: 'Operating System',
             filterChipLabel: 'Image Operating System',
             searchTerm: 'Image OS',
