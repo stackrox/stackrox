@@ -14,6 +14,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseURLSortResult } from 'hooks/useURLSort';
 import { ComplianceClusterOverallStats } from 'services/ComplianceCommon';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { TableUIState } from 'utils/getTableUIState';
@@ -33,6 +34,7 @@ export type ProfileClustersTableProps = {
     profileClustersResultsCount: number;
     profileName: string;
     tableState: TableUIState<ComplianceClusterOverallStats>;
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
 function ProfileClustersTable({
@@ -41,6 +43,7 @@ function ProfileClustersTable({
     profileClustersResultsCount,
     profileName,
     tableState,
+    getSortParams,
 }: ProfileClustersTableProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
 
@@ -66,7 +69,7 @@ function ProfileClustersTable({
             <Table>
                 <Thead>
                     <Tr>
-                        <Th>Cluster</Th>
+                        <Th sort={getSortParams('Cluster ID')}>Cluster</Th>
                         <Th>Last scanned</Th>
                         <Th>Fail status</Th>
                         <Th>Pass status</Th>
