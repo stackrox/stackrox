@@ -30,7 +30,7 @@ import (
 type authMode int
 
 const (
-	dialRetires = 3
+	dialRetries = 3
 	timeout     = 30 * time.Second
 
 	userPKIProviderName = "test-userpki"
@@ -195,7 +195,7 @@ func (c *endpointsTestCase) runConnectionTest(t *testing.T, testCtx *endpointsTe
 }
 
 func (c *endpointsTestCase) tlsDialWithRetry(tlsConf *tls.Config) (conn *tls.Conn, err error) {
-	for i := 0; i < dialRetires; i++ {
+	for i := 0; i < dialRetries; i++ {
 		conn, err = tls.DialWithDialer(&dialer, "tcp", c.endpoint(), tlsConf)
 		if err == nil {
 			return
