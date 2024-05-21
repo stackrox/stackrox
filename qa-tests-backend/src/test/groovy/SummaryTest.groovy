@@ -9,6 +9,7 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.NodeOuterClass.Node
 
 import common.Constants
+import objects.Deployment
 import objects.Namespace
 import services.ClusterService
 import services.NamespaceService
@@ -98,6 +99,79 @@ class SummaryTest extends BaseSpecification {
             assert stackroxNode.kubeProxyVersion == orchestratorNode.kubeProxyVersion
         }
     }
+
+    @Tag("BAT")
+    def "Verify namespace resource counts"() {
+        given:
+        "Stackrox and Orchestrator have the same Namespace information"
+
+        List<String> orchestratorNamespaces = new ArrayList<>();
+        HashMap<String, String> stackroxNamespaceNameToID
+
+        withRetry(3, 5) {
+            // Identify all current namespaces in cluster
+            orchestratorNamespaces = orchestrator.getNamespaces();
+
+            // Identify all current namespaces in stackrox API
+            stackroxNamespaceNameToID = new HashMap<>();
+            def stackRoxNamespaces = NamespaceService.getNamespaces().collect {
+                stackroxNamespaceNameToID.put(it.metadata.name, it.metadata.id);
+            }
+
+            assert stackroxNamespaceNameToID.keySet().sort() == orchestratorNamespaces.sort()
+        }
+
+        assert !orchestratorNamespaces.isEmpty()
+
+        then:
+        "API results should match resources in orchestrator"
+        for (String namespace : orchestratorNamespaces) {
+            withRetry(5, 5) {
+                // Get orchestrator and stackrox API details
+                def orchestratorNamespaceDetails = orchestrator.getNamespaceByName(namespace)
+                def apiNamespaceDetails = NamespaceService.getNamespace(stackroxNamespaceNameToID.get(namespace))
+
+                Set<String> stackroxDeploymentNames = new HashSet<String>();
+                stackroxDeploymentNames.addAll(Services.getDeployments(
+                        SearchServiceOuterClass.RawQuery.newBuilder().setQuery(
+                                "Namespace:${namespace}").build()
+                ).collect {
+                    it.getName()
+                })
+
+                Set<String> orchestratorDeploymentNames = new HashSet<String>();
+                orchestratorDeploymentNames.addAll(orchestratorNamespaceDetails.deploymentCount.collect
+                        { t -> t.get(1) } as List<String>)
+
+                // For debug reasons only log the difference between stackrox and orchestrator deployments
+                debugPrintOrchestratorAndDeploymentNames(stackroxDeploymentNames, orchestratorDeploymentNames, orchestratorNamespaceDetails.deploymentCount)
+
+                assert stackroxDeploymentNames == orchestratorDeploymentNames
+                assert apiNamespaceDetails.numDeployments == orchestratorNamespaceDetails.deploymentCount.size()
+                assert apiNamespaceDetails.metadata.clusterId == ClusterService.getClusterId()
+                assert apiNamespaceDetails.metadata.name == orchestratorNamespaceDetails.name
+                assert apiNamespaceDetails.metadata.labelsMap == orchestratorNamespaceDetails.labels
+                assert apiNamespaceDetails.numSecrets == orchestratorNamespaceDetails.secretsCount
+                assert apiNamespaceDetails.numNetworkPolicies == orchestratorNamespaceDetails.networkPolicyCount
+
+            }
+        }
+    }
+
+    def debugPrintOrchestratorAndDeploymentNames(Set<String> stackroxDeploymentNames, Set<String> orchestratorDeploymentNames, List<Tuple> deploymentDetails) {
+        Set<String> intersect = stackroxDeploymentNames.intersect(orchestratorDeploymentNames);
+        for (Tuple t : deploymentDetails) {
+            if (intersect.remove(t.get(1))) {
+                log.info "(${t.get(0)}) ${t.get(1)} (only in orchestrator)"
+            } else {
+                log.info "(${t.get(0)}) ${t.get(1)} (ok)"
+            }
+        }
+        for (def left: intersect) {
+            log.info "(unkown) ${left} (only in stackrox)"
+        }
+    }
+
 
     @Tag("BAT")
     @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })

@@ -1303,6 +1303,24 @@ class Kubernetes implements OrchestratorMain {
         Namespace Methods
      */
 
+    objects.Namespace getNamespaceByName(String name) {
+        return evaluateWithRetry(2, 3) {
+            client.namespaces().list().items.find {it.getMetadata().getName() == name}.collect {
+                new objects.Namespace(
+                        uid: it.metadata.uid,
+                        name: it.metadata.name,
+                        labels: it.metadata.labels,
+                        deploymentCount: mapToResourceKind(getDeploymentCount(it.metadata.name), "Deployment") +
+                                mapToResourceKind(getDaemonSetCount(it.metadata.name), "DaemonSet") +
+                                mapToResourceKind(getStaticPodCount(it.metadata.name), "Pod") +
+                                mapToResourceKind(getStatefulSetCount(it.metadata.name), "StatefulSets") +
+                                mapToResourceKind(getJobCount(it.metadata.name), "Job"),
+                        secretsCount: getSecretCount(it.metadata.name),
+                        networkPolicyCount: getNetworkPolicyCount(it.metadata.name))
+            } as objects.Namespace
+        }
+    }
+
     List<objects.Namespace> getNamespaceDetails() {
         return evaluateWithRetry(2, 3) {
             return client.namespaces().list().items.collect {
