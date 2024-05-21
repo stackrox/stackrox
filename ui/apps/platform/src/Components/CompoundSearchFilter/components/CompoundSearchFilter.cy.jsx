@@ -217,4 +217,54 @@ describe(Cypress.spec.relative, () => {
         // Check updated date value
         cy.get('input[aria-label="Filter by date"]').should('have.value', '2034-01-15');
     });
+
+    it('should display the condition-number input for the image cvss filter', () => {
+        const config = {
+            Image: imageSearchFilterConfig,
+        };
+
+        setup(config);
+
+        cy.get(selectors.attributeSelectToggle).click();
+        cy.get(selectors.attributeSelectItem('CVSS')).click();
+
+        // should have default values
+        cy.get('button[aria-label="Condition selector toggle"]').should(
+            'have.text',
+            'Is greater than'
+        );
+        cy.get('input[aria-label="Condition value input"]').should('have.value', '0');
+
+        // change condition and number value
+        cy.get('button[aria-label="Condition selector toggle"]').click();
+        cy.get('div[aria-label="Condition selector menu"] li button:contains("Is less than")')
+            .filter((_, element) => {
+                // Get exact value
+                // @TODO: Could be a custom command
+                return Cypress.$(element).text().trim() === 'Is less than';
+            })
+            .click();
+        cy.get('input[aria-label="Condition value input"]').clear();
+        cy.get('input[aria-label="Condition value input"]').type(9.9);
+        cy.get('input[aria-label="Condition value input"]').blur();
+
+        // should have new values
+        cy.get('button[aria-label="Condition selector toggle"]').should(
+            'have.text',
+            'Is less than'
+        );
+        cy.get('input[aria-label="Condition value input"]').should('have.value', '9.9');
+
+        // should increment
+        cy.get('button[aria-label="Condition value plus button"]').click();
+        cy.get('button[aria-label="Condition value plus button"]').should('be.disabled');
+        cy.get('input[aria-label="Condition value input"]').should('have.value', '10');
+
+        // should decrement
+        cy.get('input[aria-label="Condition value input"]').clear();
+        cy.get('input[aria-label="Condition value input"]').type(0.1);
+        cy.get('button[aria-label="Condition value minus button"]').click();
+        cy.get('button[aria-label="Condition value minus button"]').should('be.disabled');
+        cy.get('input[aria-label="Condition value input"]').should('have.value', '0');
+    });
 });
