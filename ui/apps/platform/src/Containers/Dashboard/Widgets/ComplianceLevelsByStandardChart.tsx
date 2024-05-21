@@ -12,21 +12,23 @@ import {
     patternflySeverityTheme,
 } from 'utils/chartUtils';
 
-const labelLinkCallback = ({ datum }: ChartLabelProps, data: ComplianceData) => {
+const labelLinkCallback = ({ datum }: ChartLabelProps, data: ComplianceLevelByStandard[]) => {
     return typeof datum === 'number' ? data[datum - 1]?.link ?? '' : '';
 };
 
-export type ComplianceData = {
+export type ComplianceLevelByStandard = {
     name: string;
     passing: number;
     link: string;
-}[];
-
-type ComplianceLevelsByStandardChartProps = {
-    complianceData: ComplianceData;
 };
 
-function ComplianceLevelsByStandardChart({ complianceData }: ComplianceLevelsByStandardChartProps) {
+type ComplianceLevelsByStandardChartProps = {
+    complianceLevelsByStandard: ComplianceLevelByStandard[];
+};
+
+function ComplianceLevelsByStandardChart({
+    complianceLevelsByStandard,
+}: ComplianceLevelsByStandardChartProps) {
     const history = useHistory();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
@@ -50,7 +52,9 @@ function ComplianceLevelsByStandardChart({ complianceData }: ComplianceLevelsByS
                 <ChartAxis
                     tickLabelComponent={
                         <LinkableChartLabel
-                            linkWith={(props) => labelLinkCallback(props, complianceData)}
+                            linkWith={(props) =>
+                                labelLinkCallback(props, complianceLevelsByStandard)
+                            }
                         />
                     }
                 />
@@ -61,7 +65,7 @@ function ComplianceLevelsByStandardChart({ complianceData }: ComplianceLevelsByS
                     dependentAxis
                 />
                 <ChartGroup horizontal>
-                    {complianceData.map(({ name, passing, link }) => (
+                    {complianceLevelsByStandard.map(({ name, passing, link }) => (
                         <ChartBar
                             key={name}
                             style={{ data: { fill: solidBlueChartColor } }}
