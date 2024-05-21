@@ -64,6 +64,8 @@ type Registry struct {
 	repositoryList       set.StringSet
 	repositoryListTicker *time.Ticker
 	repositoryListLock   sync.RWMutex
+
+	repoListOnce sync.Once
 }
 
 // NewDockerRegistryWithConfig creates a new instantiation of the docker registry
@@ -91,19 +93,11 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 
 	client.Client.Timeout = env.RegistryClientTimeout.DurationSetting()
 
-	var repoSet set.Set[string]
-	var ticker *time.Ticker
-	if !cfg.DisableRepoList {
-		repoSet, err = retrieveRepositoryList(client)
-		if err != nil {
-			// This is not a critical error so it is purposefully not returned
-			log.Debugf("could not update repo list for integration %s: %v", integration.GetName(), err)
-		}
-		ticker = time.NewTicker(repoListInterval)
-		log.Debugf("created integration %q with repo list enabled", integration.GetName())
-	} else {
-		log.Debugf("created integration %q with repo list disabled", integration.GetName())
+	repoListState := "enabled"
+	if cfg.DisableRepoList {
+		repoListState = "disabled"
 	}
+	log.Debugf("created integration %q with repo list %s", integration.GetName(), repoListState)
 
 	return &Registry{
 		url:                   url,
@@ -111,9 +105,6 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 		Client:                client,
 		cfg:                   cfg,
 		protoImageIntegration: integration,
-
-		repositoryList:       repoSet,
-		repositoryListTicker: ticker,
 	}, nil
 }
 
@@ -155,6 +146,8 @@ func (r *Registry) Match(image *storage.ImageName) bool {
 		return match
 	}
 
+	r.lazyLoadRepoList()
+
 	list := concurrency.WithRLock1(&r.repositoryListLock, func() set.StringSet {
 		return r.repositoryList
 	})
@@ -180,6 +173,27 @@ func (r *Registry) Match(image *storage.ImageName) bool {
 	defer r.repositoryListLock.RUnlock()
 
 	return r.repositoryList.Contains(image.GetRemote())
+}
+
+// lazyLoadRepoList will perform the initial repo list load if neccessary.
+// This is safe to call multiple times.
+func (r *Registry) lazyLoadRepoList() {
+	r.repoListOnce.Do(func() {
+		if r.cfg.DisableRepoList {
+			return
+		}
+
+		repoSet, err := retrieveRepositoryList(r.Client)
+		if err != nil {
+			// This is not a critical error, matching will instead be performed solely
+			// based on the registry endpoint (instead of endpoint AND repo list).
+			log.Debugf("could not update repo list for integration %s: %v", r.protoImageIntegration.GetName(), err)
+			return
+		}
+
+		r.repositoryList = repoSet
+		r.repositoryListTicker = time.NewTicker(repoListInterval)
+	})
 }
 
 func handleManifests(r *Registry, manifestType, remote, digest string) (*storage.ImageMetadata, error) {
