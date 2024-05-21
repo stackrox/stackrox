@@ -15,6 +15,8 @@ import (
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stretchr/testify/assert"
@@ -58,7 +60,7 @@ func testHTTPServer(t *testing.T, content func(r *http.Request) io.ReadSeeker) (
 }
 
 func TestSingleBundleUpdate(t *testing.T) {
-	t.Setenv("ROX_SCANNER_V4_MULTI_BUNDLE", "false")
+	testutils.MustUpdateFeature(t, features.ScannerV4MultiBundle, false)
 
 	srv, now := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
 		return strings.NewReader("test")
@@ -109,7 +111,7 @@ func TestSingleBundleUpdate(t *testing.T) {
 }
 
 func TestMultiBundleUpdate(t *testing.T) {
-	t.Setenv("ROX_SCANNER_V4_MULTI_BUNDLE", "true")
+	testutils.MustUpdateFeature(t, features.ScannerV4MultiBundle, true)
 
 	srv, now := testHTTPServer(t, func(r *http.Request) io.ReadSeeker {
 		accept := r.Header.Get("X-Scanner-V4-Accept")
