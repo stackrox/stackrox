@@ -380,6 +380,7 @@ spec:
     runAfter:
     - build-container
     taskRef:
+      # See https://github.com/tektoncd/catalog/tree/main/task/rhacs-image-scan.
       params:
       - name: name
         value: rhacs-image-scan
