@@ -190,43 +190,40 @@ func (t *segmentTelemeter) makeContext(o *telemeter.CallOptions) *segment.Contex
 	return ctx
 }
 
-func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Option) {
+func (t *segmentTelemeter) prepare(event string, props map[string]any, opts []telemeter.Option) (*telemeter.CallOptions, string) {
 	if t == nil {
-		return
+		return nil, ""
 	}
-
 	options := telemeter.ApplyOptions(opts)
-
-	id := t.makeMessageID("identify", props, options)
+	id := t.makeMessageID(event, props, options)
 	if isDuplicate(id) {
+		return nil, ""
+	}
+	return options, id
+}
+
+func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Option) {
+	options, id := t.prepare("identify", props, opts)
+	if options == nil {
 		return
 	}
-
-	traits := segment.NewTraits()
 
 	identity := segment.Identify{
 		MessageId:   id,
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
-		Traits:      traits,
+		Traits:      props,
 		Context:     t.makeContext(options),
 	}
 
-	for k, v := range props {
-		traits.Set(k, v)
-	}
 	if err := t.client.Enqueue(identity); err != nil {
 		log.Error("Cannot enqueue Segment identity event: ", err)
 	}
 }
 
 func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option) {
-	if t == nil {
-		return
-	}
-	options := telemeter.ApplyOptions(opts)
-	id := t.makeMessageID("group", props, options)
-	if isDuplicate(id) {
+	options, id := t.prepare("group", props, opts)
+	if options == nil {
 		return
 	}
 	t.group(id, props, options)
@@ -292,14 +289,8 @@ func (t *segmentTelemeter) groupFix(options *telemeter.CallOptions, ti *time.Tic
 }
 
 func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...telemeter.Option) {
-	if t == nil {
-		return
-	}
-
-	options := telemeter.ApplyOptions(opts)
-
-	id := t.makeMessageID(event, props, options)
-	if isDuplicate(id) {
+	options, id := t.prepare(event, props, opts)
+	if options == nil {
 		return
 	}
 

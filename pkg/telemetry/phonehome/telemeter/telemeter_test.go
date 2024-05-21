@@ -26,4 +26,5 @@ func Test_With(t *testing.T) {
 		"groupB": {"groupB_id"},
 	}
 	assert.Equal(t, props, opts.Groups)
+	assert.NotNil(t, ApplyOptions(nil))
 }
