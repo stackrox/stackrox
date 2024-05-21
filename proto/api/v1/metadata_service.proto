@@ -99,6 +99,9 @@ message CentralServicesCapabilities {
 
   // Ability to trigger generation of new certificates
   CapabilityStatus central_can_update_cert = 4;
+
+  // Ability to use integration of type acscsEmail
+  CapabilityStatus central_can_use_acscs_email_integration = 5;
 }
 
 service MetadataService {

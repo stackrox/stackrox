@@ -13,7 +13,16 @@ func GetCentralCapabilities() *v1.CentralServicesCapabilities {
 		CentralCanUseCloudBackupIntegrations:        disabledIfExternalDatabase(),
 		CentralCanDisplayDeclarativeConfigHealth:    disabledIfManagedCentral(),
 		CentralCanUpdateCert:                        disabledIfManagedCentral(),
+		CentralCanUseAcscsEmailIntegration:          enabledIfManagedCentral(),
 	}
+}
+
+func enabledIfManagedCentral() v1.CentralServicesCapabilities_CapabilityStatus {
+	if env.ManagedCentral.BooleanSetting() {
+		return v1.CentralServicesCapabilities_CapabilityAvailable
+	}
+
+	return v1.CentralServicesCapabilities_CapabilityDisabled
 }
 
 func disabledIfManagedCentral() v1.CentralServicesCapabilities_CapabilityStatus {
