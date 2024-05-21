@@ -3,32 +3,37 @@
   "name": "CIS Benchmarks",
   "version": "v1.5.0",
   "description": "",
-  "profileAnnotation": ["control.compliance.openshift.io/CIS-OCP"],
   "provider": "cis",
   "profiles": [
     {
       "profileName": "ocp4-cis",
-      "profileVersion": "1.5.0"
+      "profileVersion": "1.5.0",
+      "profileAnnotation": "control.compliance.openshift.io/CIS-OCP"
     },
     {
       "profileName": "ocp4-cis-node",
-      "profileVersion": "1.5.0"
+      "profileVersion": "1.5.0",
+      "profileAnnotation": "control.compliance.openshift.io/CIS-OCP"
     },
     {
       "profileName": "ocp4-cis-1-5",
-      "profileVersion": "1.5.0"
+      "profileVersion": "1.5.0",
+      "profileAnnotation": "control.compliance.openshift.io/CIS-OCP"
     },
     {
       "profileName": "ocp4-cis-node-1-5",
-      "profileVersion": "1.5.0"
+      "profileVersion": "1.5.0",
+      "profileAnnotation": "control.compliance.openshift.io/CIS-OCP"
     },
     {
       "profileName": "ocp4-cis-1-4",
-      "profileVersion": "1.4.0"
+      "profileVersion": "1.4.0",
+      "profileAnnotation": "control.compliance.openshift.io/CIS-OCP"
     },
     {
       "profileName": "ocp4-cis-node-1-4",
-      "profileVersion": "1.4.0"
+      "profileVersion": "1.4.0",
+      "profileAnnotation": "control.compliance.openshift.io/CIS-OCP"
     }
   ]
 }

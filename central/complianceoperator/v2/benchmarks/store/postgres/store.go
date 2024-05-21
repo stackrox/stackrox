@@ -122,9 +122,10 @@ func insertIntoComplianceOperatorBenchmarkV2Profiles(batch *pgx.Batch, obj *stor
 		idx,
 		obj.GetProfileName(),
 		obj.GetProfileVersion(),
+		obj.GetProfileAnnotation(),
 	}
 
-	finalStr := "INSERT INTO compliance_operator_benchmark_v2_profiles (compliance_operator_benchmark_v2_Id, idx, ProfileName, ProfileVersion) VALUES($1, $2, $3, $4) ON CONFLICT(compliance_operator_benchmark_v2_Id, idx) DO UPDATE SET compliance_operator_benchmark_v2_Id = EXCLUDED.compliance_operator_benchmark_v2_Id, idx = EXCLUDED.idx, ProfileName = EXCLUDED.ProfileName, ProfileVersion = EXCLUDED.ProfileVersion"
+	finalStr := "INSERT INTO compliance_operator_benchmark_v2_profiles (compliance_operator_benchmark_v2_Id, idx, ProfileName, ProfileVersion, ProfileAnnotation) VALUES($1, $2, $3, $4, $5) ON CONFLICT(compliance_operator_benchmark_v2_Id, idx) DO UPDATE SET compliance_operator_benchmark_v2_Id = EXCLUDED.compliance_operator_benchmark_v2_Id, idx = EXCLUDED.idx, ProfileName = EXCLUDED.ProfileName, ProfileVersion = EXCLUDED.ProfileVersion, ProfileAnnotation = EXCLUDED.ProfileAnnotation"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -209,6 +210,7 @@ func copyFromComplianceOperatorBenchmarkV2Profiles(ctx context.Context, s pgSear
 		"idx",
 		"profilename",
 		"profileversion",
+		"profileannotation",
 	}
 
 	for idx, obj := range objs {
@@ -222,6 +224,7 @@ func copyFromComplianceOperatorBenchmarkV2Profiles(ctx context.Context, s pgSear
 			idx,
 			obj.GetProfileName(),
 			obj.GetProfileVersion(),
+			obj.GetProfileAnnotation(),
 		})
 
 		// if we hit our batch size we need to push the data
