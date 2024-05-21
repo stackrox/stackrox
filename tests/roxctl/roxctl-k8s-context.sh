@@ -22,7 +22,7 @@ test_roxctl_cmd() {
   kubectl get ep central
 
   # Verify central whoami using current k8s context.
-  if OUTPUT=$(roxctl --insecure-skip-tls-verify -p "$ROX_PASSWORD" central whoami --use-current-k8s-context \
+  if OUTPUT=$(roxctl -p "$ROX_PASSWORD" central whoami --use-current-k8s-context \
     2>&1); then
       echo "[OK] roxctl central whoami using current k8s context works"
   else
