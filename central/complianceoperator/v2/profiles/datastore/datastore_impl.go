@@ -101,6 +101,10 @@ func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query, clust
 		return nil, err
 	}
 
+	// We only want to return profiles that exist in EACH cluster requested.  This covers instances where a
+	// profile may not exist on every cluster and thus we do not want to return it here.  So the
+	// `AddNumericField` select is to ensure we get profiles that exist in each cluster passed in.  What
+	// this results in is a having clause to ensure the count matches the number of clusters passed in.
 	parsedQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, readableClusterIDs...).
 		AddNumericField(search.ProfileCount, storage.Comparator_EQUALS, float32(len(readableClusterIDs))).
@@ -169,8 +173,8 @@ func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query, 
 	return len(results), nil
 }
 
-func withCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
-	cloned := q.Clone()
+func withCountQuery(query *v1.Query, field search.FieldLabel) *v1.Query {
+	cloned := query.Clone()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Proto(),
 	}
@@ -179,7 +183,8 @@ func withCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
 
 func bestEffortClusters(ctx context.Context, clusterIDs []string) []string {
 	// Best effort SAC.  We only want to return profiles from the cluster list that the user has access to
-	// view.  So we do the access check to build a narrowed list vs embedding in the query as the logic is far simpler.
+	// view.  So we perform an access check to create a narrowed list instead of embedding it in the query,
+	// as the logic is much simpler.
 	var bestEffortClusters []string
 	for _, clusterID := range clusterIDs {
 		if complianceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).IsAllowed(sac.ClusterScopeKey(clusterID)) {

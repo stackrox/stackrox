@@ -406,7 +406,7 @@ func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgse
 	newQE := &pgsearch.QueryEntry{}
 	for _, entry := range entries {
 		// It is possible to have a Having clause and an empty Where.  In that case
-		// we need to not add the where strings.  Otherwise, it will add and empty one
+		// we need to not add the where strings.  Otherwise, it will add an empty one
 		// at the end and a dangling separator.
 		if entry.Where.Query != "" {
 			whereQueryStrings = append(whereQueryStrings, entry.Where.Query)

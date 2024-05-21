@@ -396,7 +396,6 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfilesNames() {
 	}
 
 	for _, tc := range testCases {
-		log.Info(tc.desc)
 		profiles, err := s.dataStore.GetProfilesNames(tc.testContext, tc.query, tc.clusterIDs)
 		s.Require().NoError(err)
 		if tc.expectedRecord == nil {
