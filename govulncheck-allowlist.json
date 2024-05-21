@@ -6,6 +6,9 @@
     "GO-2023-2186": {
       "reason": "False positive as this path is not exercised in the codebase"
     },
+    "GO-2024-2842": {
+      "reason": "Requires version bump"
+    },
     "GO-2023-2382": {
       "reason": "Requires version bump"
     },
