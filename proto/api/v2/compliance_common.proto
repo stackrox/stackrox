@@ -58,6 +58,11 @@ message ComplianceCheckResultStatusCount {
   string rationale = 2;
   string rule_name = 3;
   repeated ComplianceCheckStatusCount check_stats = 4;
+  repeated BenchmarkControl benchmark_control = 5;
+}
+
+message BenchmarkControl {
+  string control = 1;
 }
 
 // ListComplianceProfileResults provides scan stats overview based on profile

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	checkResultSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	"github.com/stackrox/rox/central/metrics"
@@ -26,9 +27,10 @@ var (
 )
 
 type datastoreImpl struct {
-	store    store.Store
-	db       postgres.DB
-	searcher checkResultSearch.Searcher
+	store          store.Store
+	db             postgres.DB
+	searcher       checkResultSearch.Searcher
+	benchmarkStore datastore.DataStore
 }
 
 // UpsertResult adds the result to the database  If enabling the use of this
@@ -207,6 +209,10 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 	results, err := pgSearch.RunSelectRequestForSchema[ResourceResultsByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, v := range results {
+		d.benchmarkStore.GetControlByRuleId(ctx, v.RuleName)
 	}
 
 	return results, nil

@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package datastore
 
 import (
@@ -57,14 +55,25 @@ func (s *complianceBenchmarkDataStoreSuite) SetupTest() {
 	s.noAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 
 	s.mockCtrl = gomock.NewController(s.T())
+	s.T().Setenv("POSTGRES_PORT", "5432")
+	s.T().Setenv("POSTGRES_PASSWORD", "password")
+	s.T().Setenv("USER", "postgres")
 
 	s.db = pgtest.ForT(s.T())
 	s.storage = benchmarkStorage.New(s.db)
-	s.datastore = New(s.storage)
+	//s.datastore = New(s.storage)
+	s.datastore = &datastoreImpl{
+		store: s.storage,
+		db:    s.db,
+	}
 }
 
 func (s *complianceBenchmarkDataStoreSuite) TearDownTest() {
 	s.db.Teardown(s.T())
+}
+
+func (s *complianceBenchmarkDataStoreSuite) TestGetControl() {
+	s.datastore.GetControlByRuleId(s.hasReadCtx, "ocp4-api-server-anonymous-auth")
 }
 
 func (s *complianceBenchmarkDataStoreSuite) TestUpsertBenchmark() {

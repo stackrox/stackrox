@@ -670,6 +670,14 @@
       ],
       "default": "UNSET"
     },
+    "v2BenchmarkControl": {
+      "type": "object",
+      "properties": {
+        "control": {
+          "type": "string"
+        }
+      }
+    },
     "v2ClusterCheckStatus": {
       "type": "object",
       "properties": {
@@ -760,6 +768,12 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/v2ComplianceCheckStatusCount"
+          }
+        },
+        "benchmarkControl": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2BenchmarkControl"
           }
         }
       },

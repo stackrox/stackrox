@@ -39,6 +39,7 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schem
 	}()
 
 	query, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT)
+	fmt.Println(query.AsSQL())
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +112,6 @@ func retryableRunSelectRequestForSchema[T any](ctx context.Context, db postgres.
 	}
 
 	queryStr := query.AsSQL()
-
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error executing query %s", queryStr)

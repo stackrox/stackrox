@@ -112,9 +112,10 @@ func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfi
 
 	for _, resultCount := range resultCounts {
 		profileResults = append(profileResults, &v2.ComplianceCheckResultStatusCount{
-			CheckName: resultCount.CheckName,
-			Rationale: resultCount.CheckRationale,
-			RuleName:  resultCount.RuleName,
+			CheckName:        resultCount.CheckName,
+			Rationale:        resultCount.CheckRationale,
+			RuleName:         resultCount.RuleName,
+			BenchmarkControl: []*v2.BenchmarkControl{},
 			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  int32(resultCount.FailCount),

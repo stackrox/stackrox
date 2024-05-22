@@ -21,6 +21,7 @@ type DataStore interface {
 
 	// DeleteBenchmark removes a benchmark object from the database
 	DeleteBenchmark(ctx context.Context, id string) error
+	GetControlByRuleId(ctx context.Context, ruleName string)
 }
 
 // New returns an instance of DataStore.

@@ -31,6 +31,7 @@ func CreateADatabaseForT(t testing.TB) string {
 	database := strings.ToLower(strings.ReplaceAll(t.Name(), "/", "_") + suffix)
 	database = strings.ToLower(strings.ReplaceAll(database, "-", "_"))
 
+	database = "central"
 	CreateDatabase(t, database)
 
 	return database
@@ -39,7 +40,7 @@ func CreateADatabaseForT(t testing.TB) string {
 // CreateDatabase - creates a database for testing
 func CreateDatabase(t testing.TB, database string) {
 	// Bootstrap the test database by connecting to the default postgres database and running create
-	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, "postgres")
+	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, database)
 
 	db, err := sql.Open(driverName, sourceWithPostgresDatabase)
 	require.NoError(t, err)
