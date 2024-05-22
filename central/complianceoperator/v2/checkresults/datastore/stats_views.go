@@ -70,4 +70,5 @@ type ResourceResultsByProfile struct {
 	RuleName           string `db:"compliance_rule_name"`
 	RuleId             string `db:"compliance_rule_id"`
 	CheckRationale     string `db:"compliance_check_rationale"`
+	Control            string `db:"compliance_control"`
 }

@@ -24,7 +24,7 @@ type ControlResult struct {
 	Standard string `db:"compliance_standard"`
 }
 
-func (d datastoreImpl) GetControlByRuleId(ctx context.Context, ruleNames []string) ([]*ControlResult, error) {
+func (d datastoreImpl) GetControlByRuleName(ctx context.Context, ruleNames []string) ([]*ControlResult, error) {
 	builder := search.NewQueryBuilder()
 	builder.AddSelectFields(
 		search.NewQuerySelect(search.ComplianceOperatorControl),
