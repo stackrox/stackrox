@@ -2,10 +2,11 @@ package telemeter
 
 // CallOptions defines optional features for a Telemeter call.
 type CallOptions struct {
-	UserID      string
-	AnonymousID string
-	ClientID    string
-	ClientType  string
+	UserID          string
+	AnonymousID     string
+	ClientID        string
+	ClientType      string
+	MessageIDPrefix string
 
 	// [group type: [group id]]
 	Groups map[string][]string
@@ -58,6 +59,14 @@ func WithGroups(groupType string, groupID string) Option {
 func WithTraits(traits map[string]any) Option {
 	return func(o *CallOptions) {
 		o.Traits = traits
+	}
+}
+
+// WithMessageIDPrefix enables generation of custom message ID, which is
+// computed as the <provided prefix>-<message data hash>.
+func WithMessageIDPrefix(prefix string) Option {
+	return func(o *CallOptions) {
+		o.MessageIDPrefix = prefix
 	}
 }
 
