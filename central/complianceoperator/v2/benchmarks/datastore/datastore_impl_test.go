@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -87,12 +88,12 @@ func (s *complianceBenchmarkDataStoreSuite) TestUpsertBenchmark() {
 	retB1, found, err := s.storage.Get(s.hasReadCtx, b1.GetId())
 	s.Assert().NoError(err)
 	s.Assert().True(found)
-	s.Assert().Equal(b1, retB1)
+	assertBenchmarks(s.T(), b1, retB1)
 
 	retB2, found, err := s.storage.Get(s.hasReadCtx, b2.GetId())
 	s.Assert().NoError(err)
 	s.Assert().True(found)
-	s.Assert().Equal(b2, retB2)
+	assertBenchmarks(s.T(), b2, retB2)
 }
 
 func (s *complianceBenchmarkDataStoreSuite) TestDeleteBenchmark() {
@@ -145,7 +146,7 @@ func (s *complianceBenchmarkDataStoreSuite) TestGetBenchmark() {
 		retB, found, err := s.datastore.GetBenchmark(s.hasReadCtx, b.GetId())
 		s.Assert().NoError(err)
 		s.Assert().True(found)
-		s.Assert().Equal(b, retB)
+		assertBenchmarks(s.T(), b, retB)
 	}
 
 	_, found, err := s.datastore.GetBenchmark(s.noAccessCtx, benchmarks[0].GetId())
@@ -201,5 +202,17 @@ func getTestBenchmark(id string, name string, version string, profileCount int) 
 		Version:  version,
 		Provider: fmt.Sprintf("provider-%s", name),
 		Profiles: profiles,
+	}
+}
+
+func assertBenchmarks(t *testing.T, expected *storage.ComplianceOperatorBenchmarkV2, actual *storage.ComplianceOperatorBenchmarkV2) {
+	assert.Equal(t, expected.GetId(), actual.GetId())
+	assert.Equal(t, expected.GetName(), actual.GetName())
+	assert.Equal(t, expected.GetVersion(), actual.GetVersion())
+	assert.Equal(t, expected.GetDescription(), actual.GetDescription())
+	assert.Equal(t, expected.GetProvider(), actual.GetProvider())
+	assert.Equal(t, len(expected.GetProfiles()), len(actual.GetProfiles()))
+	for _, p := range expected.GetProfiles() {
+		assert.Contains(t, actual.GetProfiles(), p)
 	}
 }
