@@ -197,7 +197,9 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	cloned := q.Clone()
 	if len(cveIDsToFilter) > 0 {
 		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
-		cloned.Pagination = &v1.QueryPagination{SortOptions: q.GetPagination().GetSortOptions()}
+		if q.GetPagination() != nil && q.GetPagination().GetSortOptions() != nil {
+			cloned.Pagination = &v1.QueryPagination{SortOptions: q.GetPagination().GetSortOptions()}
+		}
 	}
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
