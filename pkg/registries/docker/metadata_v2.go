@@ -67,7 +67,7 @@ func HandleV2Manifest(r *Registry, remote, ref string) (*storage.ImageMetadata, 
 	return &storage.ImageMetadata{
 		V1: v1Metadata,
 		V2: &storage.V2Metadata{
-			Digest: imageReference(ref, dig),
+			Digest: digestOrRef(ref, dig),
 		},
 		LayerShas: layers,
 	}, nil
@@ -103,19 +103,22 @@ func HandleOCIManifest(r *Registry, remote, ref string) (*storage.ImageMetadata,
 	return &storage.ImageMetadata{
 		V1: v1Metadata,
 		V2: &storage.V2Metadata{
-			Digest: imageReference(ref, dig),
+			Digest: digestOrRef(ref, dig),
 		},
 		LayerShas: layers,
 	}, nil
 }
 
-// imageReference will return digest if it is populated and ref is not a digest.
-// Otherwise returns ref.
-func imageReference(ref string, digest godigest.Digest) string {
-	if digest != "" {
-		if _, err := godigest.Parse(ref); err != nil {
-			return string(digest)
-		}
+// digestOrRef returns digest if populated and ref is NOT a valid digest, otherwise returns ref.
+func digestOrRef(ref string, digest godigest.Digest) string {
+	if digest == "" {
+		// If no digest, return the ref as is.
+		return ref
+	}
+
+	if _, err := godigest.Parse(ref); err != nil {
+		// If ref itself is not a digest, then return digest instead.
+		return string(digest)
 	}
 
 	return ref

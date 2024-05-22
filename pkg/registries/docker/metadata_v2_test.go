@@ -25,6 +25,7 @@ func TestImageReference(t *testing.T) {
 	}{
 		// expect ref if digest is empty
 		{"latest", "", "latest"},
+		{"", "", ""},
 
 		// expect digest if ref is not a digest
 		{"latest", dig0, fakeDigestStr0},
@@ -34,7 +35,7 @@ func TestImageReference(t *testing.T) {
 	}
 	for i, tc := range tcs {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {
-			got := imageReference(tc.ref, tc.dig)
+			got := digestOrRef(tc.ref, tc.dig)
 			assert.Equal(t, tc.want, got)
 		})
 	}
