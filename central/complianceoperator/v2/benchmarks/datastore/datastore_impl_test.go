@@ -73,7 +73,9 @@ func (s *complianceBenchmarkDataStoreSuite) TearDownTest() {
 }
 
 func (s *complianceBenchmarkDataStoreSuite) TestGetControl() {
-	s.datastore.GetControlByRuleId(s.hasReadCtx, "ocp4-api-server-anonymous-auth")
+	result, err := s.datastore.GetControlByRuleId(s.hasReadCtx, []string{"ocp4-api-server-anonymous-auth", "ocp4-api-server-admission-control-plugin-namespacelifecycle"})
+	s.Require().NoError(err)
+	s.Len(result, -1)
 }
 
 func (s *complianceBenchmarkDataStoreSuite) TestUpsertBenchmark() {

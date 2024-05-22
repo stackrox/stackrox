@@ -2,8 +2,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
-	"log"
 
 	benchmarkPostgres "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,30 +19,30 @@ type datastoreImpl struct {
 }
 
 type ControlResult struct {
-	ComplianceControl string `db:"compliance_control"`
+	Control  string `db:"compliance_control"`
+	RuleId   string `db:"compliance_rule_id"`
+	Standard string `db:"compliance_standard"`
 }
 
-func (d datastoreImpl) GetControlByRuleId(ctx context.Context, ruleName string) {
+func (d datastoreImpl) GetControlByRuleId(ctx context.Context, ruleNames []string) ([]*ControlResult, error) {
 	builder := search.NewQueryBuilder()
-	builder.AddSelectFields().
-		AddExactMatches(search.ComplianceOperatorRuleName, ruleName)
-	builder.AddSelectFields(search.NewQuerySelect(search.ComplianceOperatorControl))
-	query := builder.ProtoQuery()
+	builder.AddSelectFields(
+		search.NewQuerySelect(search.ComplianceOperatorControl),
+		search.NewQuerySelect(search.ComplianceOperatorStandard),
+		// TODO: throws error to select ID
+		// field name:"compliance rule id"  in select portion of query does not exist in table compliance_operator_rule_v2 or connected tables
+		//search.NewQuerySelect(search.ComplianceOperatorRuleId),
+	)
 
+	builder.AddExactMatches(search.ComplianceOperatorRuleName, ruleNames...)
+
+	query := builder.ProtoQuery()
 	results, err := pgSearch.RunSelectRequestForSchema[ControlResult](ctx, d.db, postgresSchema.ComplianceOperatorRuleV2Schema, query)
 	if err != nil {
-		log.Fatal(err)
-		return
+		return nil, err
 	}
 
-	fmt.Printf("length %d", len(results))
-	for _, result := range results {
-		fmt.Printf("RESULT: %+v", result)
-	}
-	//AddExactMatches()
-
-	//builder.AddSelectFields(search.ComplianceOperatorControl, search.ComplianceOperatorStandard)
-
+	return results, nil
 }
 
 func (d datastoreImpl) GetBenchmark(ctx context.Context, id string) (*storage.ComplianceOperatorBenchmarkV2, bool, error) {
