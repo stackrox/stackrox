@@ -36,6 +36,12 @@ message ComplianceCheckResult {
   string rule_name = 12;
 }
 
+message ComplianceCheckData {
+  string cluster_id = 1;
+  string scan_name = 2;
+  ComplianceCheckResult result = 3;
+}
+
 // ComplianceClusterCheckStatus provides the status of a compliance check result across clusters
 message ComplianceClusterCheckStatus {
   string check_id = 1;
@@ -62,6 +68,12 @@ message ComplianceScanResult {
 // ListComplianceScanResultsResponse provides the complete scan results
 message ListComplianceScanResultsResponse {
   repeated ComplianceScanResult scan_results = 1;
+}
+
+// ListComplianceResultsResponse provides the complete scan results
+message ListComplianceResultsResponse {
+  repeated ComplianceCheckData scan_results = 1;
+  int32 total_count = 2;
 }
 
 // ListComplianceCheckClusterResponse provides stats per cluster
@@ -108,13 +120,13 @@ service ComplianceResultsService {
   // - scan: id(s) of the compliance scan
   // - cluster: id(s) of the cluster
   // - profile: id(s) of the profile
-  rpc GetComplianceScanResults(RawQuery) returns (ListComplianceScanResultsResponse) {
+  rpc GetComplianceScanResults(RawQuery) returns (ListComplianceResultsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/results"};
   }
 
   // GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
   // Optional RawQuery query fields can be combined.
-  rpc GetComplianceScanConfigurationResults(ComplianceScanResultsRequest) returns (ListComplianceScanResultsResponse) {
+  rpc GetComplianceScanConfigurationResults(ComplianceScanResultsRequest) returns (ListComplianceResultsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/results/{scan_config_name}"};
   }
 
@@ -132,13 +144,5 @@ service ComplianceResultsService {
   // GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
   rpc GetComplianceProfileClusterResults(ComplianceProfileClusterRequest) returns (ListComplianceCheckResultResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/clusters/{cluster_id}"};
-  }
-
-  rpc GetComplianceScanResultsCount(RawQuery) returns (CountComplianceScanResults) {
-    option (google.api.http) = {get: "/v2/compliance/scan/count/results"};
-  }
-
-  rpc GetComplianceScanConfigurationResultsCount(ComplianceScanResultsRequest) returns (CountComplianceScanResults) {
-    option (google.api.http) = {get: "/v2/compliance/scan/count/results/{scan_config_name}"};
   }
 }
