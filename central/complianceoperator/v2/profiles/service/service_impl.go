@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov2"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
@@ -15,7 +16,12 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
+)
+
+const (
+	maxPaginationLimit = 1000
 )
 
 var (
@@ -80,13 +86,37 @@ func (s *serviceImpl) ListComplianceProfiles(ctx context.Context, request *v2.Pr
 		return nil, errors.Wrap(errox.InvalidArgs, "cluster is required")
 	}
 
-	profiles, err := s.complianceProfilesDS.GetProfilesByClusters(ctx, []string{request.GetClusterId()})
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	// Add the cluster ids as an exact match
+	parsedQuery = search.ConjunctionQuery(
+		search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ClusterID, request.GetClusterId()).ProtoQuery(),
+		parsedQuery,
+	)
+
+	// To get total count, need the parsed query without the paging.
+	countQuery := parsedQuery.Clone()
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
+
+	profiles, err := s.complianceProfilesDS.SearchProfiles(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for cluster %v", request.GetClusterId())
 	}
 
+	totalCount, err := s.complianceProfilesDS.CountProfiles(ctx, countQuery)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles counts for %v", request)
+	}
+
 	return &v2.ListComplianceProfilesResponse{
-		Profiles: storagetov2.ComplianceV2Profiles(profiles),
+		Profiles:   storagetov2.ComplianceV2Profiles(profiles),
+		TotalCount: int32(totalCount),
 	}, nil
 }
 
@@ -96,13 +126,50 @@ func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.Clus
 		return nil, errors.Wrap(errox.InvalidArgs, "cluster is required")
 	}
 
-	profiles, err := s.complianceProfilesDS.GetProfilesByClusters(ctx, request.GetClusterIds())
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for clusters %v", request.GetClusterIds())
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	// To get total count, need the parsed query without the paging.
+	countQuery := parsedQuery.Clone()
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
+	// make sure we sort by profile name at a minimum
+	if parsedQuery.GetPagination().GetSortOptions() == nil {
+		parsedQuery.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.ComplianceOperatorProfileName.String(),
+			},
+		}
+	}
+
+	profileNames, err := s.complianceProfilesDS.GetProfilesNames(ctx, parsedQuery, request.GetClusterIds())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for %v", request)
+	}
+
+	// Build query to get the filtered list by profile names
+	profileQuery := search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ComplianceOperatorProfileName, profileNames...).ProtoQuery()
+	// Bring the sort options only, paging is handled in step one when we get the distinct profiles.
+	profileQuery.Pagination = &v1.QueryPagination{}
+	profileQuery.Pagination.SortOptions = parsedQuery.GetPagination().GetSortOptions()
+
+	profiles, err := s.complianceProfilesDS.SearchProfiles(ctx, profileQuery)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for %v", request)
+	}
+
+	totalCount, err := s.complianceProfilesDS.CountDistinctProfiles(ctx, countQuery, request.GetClusterIds())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles counts for %v", request)
 	}
 
 	return &v2.ListComplianceProfileSummaryResponse{
-		Profiles: storagetov2.ComplianceProfileSummary(profiles, request.GetClusterIds()),
+		Profiles:   storagetov2.ComplianceProfileSummary(profiles, request.GetClusterIds()),
+		TotalCount: int32(totalCount),
 	}, nil
 }
 

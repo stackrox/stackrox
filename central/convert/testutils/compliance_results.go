@@ -281,6 +281,103 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 	}
 }
 
+// GetConvertedComplianceData retrieves results that match GetComplianceStorageResults
+func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
+	return []*v2.ComplianceCheckData{
+		{
+			ScanName:  scanConfigName1,
+			ClusterId: fixtureconsts.Cluster1,
+			Result: &v2.ComplianceCheckResult{
+				CheckId:      complianceCheckID1,
+				CheckName:    complianceCheckName1,
+				CheckUid:     complianceCheckUID1,
+				Description:  "description 1",
+				Instructions: "instructions 1",
+				Status:       v2.ComplianceCheckStatus_INFO,
+				RuleName:     "test-rule-name",
+			},
+		},
+		{
+			ScanName:  scanConfigName1,
+			ClusterId: fixtureconsts.Cluster2,
+			Result: &v2.ComplianceCheckResult{
+				CheckId:      complianceCheckID1,
+				CheckName:    complianceCheckName1,
+				CheckUid:     complianceCheckUID2,
+				Description:  "description 1",
+				Instructions: "instructions 1",
+				Status:       v2.ComplianceCheckStatus_PASS,
+				RuleName:     "test-rule-name",
+			},
+		},
+		{
+			ScanName:  scanConfigName1,
+			ClusterId: fixtureconsts.Cluster2,
+			Result: &v2.ComplianceCheckResult{
+				CheckId:      complianceCheckID2,
+				CheckName:    complianceCheckName2,
+				CheckUid:     complianceCheckUID3,
+				Description:  "description 2",
+				Instructions: "instructions 2",
+				Status:       v2.ComplianceCheckStatus_PASS,
+				RuleName:     "test-rule-name",
+			},
+		},
+		{
+			ScanName:  scanConfigName2,
+			ClusterId: fixtureconsts.Cluster1,
+			Result: &v2.ComplianceCheckResult{
+				CheckId:      complianceCheckID2,
+				CheckName:    complianceCheckName2,
+				CheckUid:     complianceCheckUID4,
+				Description:  "description 2",
+				Instructions: "instructions 2",
+				Status:       v2.ComplianceCheckStatus_INFO,
+				RuleName:     "test-rule-name",
+			},
+		},
+		{
+			ScanName:  scanConfigName3,
+			ClusterId: fixtureconsts.Cluster1,
+			Result: &v2.ComplianceCheckResult{
+				CheckId:      complianceCheckID3,
+				CheckName:    complianceCheckName3,
+				CheckUid:     complianceCheckUID5,
+				Description:  "description 3",
+				Instructions: "instructions 3",
+				Status:       v2.ComplianceCheckStatus_INFO,
+				RuleName:     "test-rule-name",
+			},
+		},
+		{
+			ScanName:  scanConfigName3,
+			ClusterId: fixtureconsts.Cluster2,
+			Result: &v2.ComplianceCheckResult{
+				CheckId:      complianceCheckID3,
+				CheckName:    complianceCheckName3,
+				CheckUid:     complianceCheckUID6,
+				Description:  "description 3",
+				Instructions: "instructions 3",
+				Status:       v2.ComplianceCheckStatus_FAIL,
+				RuleName:     "test-rule-name",
+			},
+		},
+		{
+			ScanName:  scanConfigName3,
+			ClusterId: fixtureconsts.Cluster3,
+			Result: &v2.ComplianceCheckResult{
+				CheckId:      complianceCheckID3,
+				CheckName:    complianceCheckName3,
+				CheckUid:     complianceCheckUID7,
+				Description:  "description 3",
+				Instructions: "instructions 3",
+				Status:       v2.ComplianceCheckStatus_INFO,
+				RuleName:     "test-rule-name",
+			},
+		},
+	}
+}
+
 // GetComplianceStorageProfileScanCount returns mock data shaped like count query would return
 func GetComplianceStorageProfileScanCount(_ *testing.T, profileName string) *datastore.ResourceResultCountByProfile {
 	return &datastore.ResourceResultCountByProfile{

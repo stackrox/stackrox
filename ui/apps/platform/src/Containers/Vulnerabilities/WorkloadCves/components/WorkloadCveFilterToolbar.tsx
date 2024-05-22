@@ -49,6 +49,7 @@ type WorkloadCveFilterToolbarProps = {
     searchOptions: SearchOption[];
     autocompleteSearchContext?: FilterAutocompleteSelectProps['autocompleteSearchContext'];
     onFilterChange?: (searchFilter: SearchFilter) => void;
+    showCveFilterDropdowns?: boolean;
 };
 
 function WorkloadCveFilterToolbar({
@@ -56,6 +57,7 @@ function WorkloadCveFilterToolbar({
     searchOptions,
     autocompleteSearchContext,
     onFilterChange = noop,
+    showCveFilterDropdowns = true,
 }: WorkloadCveFilterToolbarProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
@@ -170,12 +172,14 @@ function WorkloadCveFilterToolbar({
                     searchOptions={searchOptions}
                     autocompleteSearchContext={autocompleteSearchContext}
                 />
-                <ToolbarGroup>
-                    <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
-                    {isFixabilityFiltersEnabled && (
-                        <CVEStatusDropdown searchFilter={searchFilter} onSelect={onSelect} />
-                    )}
-                </ToolbarGroup>
+                {showCveFilterDropdowns && (
+                    <ToolbarGroup>
+                        <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
+                        {isFixabilityFiltersEnabled && (
+                            <CVEStatusDropdown searchFilter={searchFilter} onSelect={onSelect} />
+                        )}
+                    </ToolbarGroup>
+                )}
                 <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                     <SearchFilterChips
                         onFilterChange={onFilterChange}

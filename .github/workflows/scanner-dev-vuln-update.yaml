@@ -34,7 +34,7 @@ jobs:
         make tag
         make -C scanner bin/updater
 
-    - uses: actions/upload-artifact@v4
+    - uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: updater
         path: scanner/bin/updater
@@ -48,7 +48,13 @@ jobs:
       STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       STACKROX_NVD_API_CALL_INTERVAL: 6s
     steps:
-    - uses: actions/download-artifact@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: updater
         path: /usr/local/bin
@@ -67,7 +73,7 @@ jobs:
         updater export --split bundles
         zip vulns/vulnerabilities.zip bundles/*.json.zst
 
-    - uses: actions/upload-artifact@v4
+    - uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: vulns
         path: vulns
@@ -78,7 +84,7 @@ jobs:
     needs:
       - run-updater
     steps:
-    - uses: actions/download-artifact@v4
+    - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: vulns
         path: vulns

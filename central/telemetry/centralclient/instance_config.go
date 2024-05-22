@@ -3,6 +3,7 @@ package centralclient
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/installation/store"
@@ -211,7 +212,15 @@ func Enable() *phonehome.Config {
 			cfg.AddInterceptorFunc(event, f)
 		}
 	}
-	cfg.Gatherer().Start(telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
+	cfg.Gatherer().Start(
+		telemeter.WithGroups(cfg.GroupType, cfg.GroupID),
+		// Don't capture the time, but call WithNoDuplicates on every gathering
+		// iteration, so that the time is updated.
+		func(co *telemeter.CallOptions) {
+			// Issue a possible duplicate only once a day as a heartbeat.
+			telemeter.WithNoDuplicates(time.Now().Format(time.DateOnly))(co)
+		},
+	)
 	enabled = true
 	log.Info("Telemetry collection has been enabled.")
 	cfg.Telemeter().Track("Telemetry Enabled", nil)

@@ -26,9 +26,12 @@ policy/v1beta1 PodSecurityPolicy is deprecated in v1.21., unavailable in v1.25.
 apps\.openshift\.io\/v1 DeploymentConfig is deprecated in v4\.14\+, unavailable in v4\.10000\+
 # Image enrichment errors are expected in some test (i.e. testing for non-existing images).
 # Skip those specifically.
-Error: error enriching image
+Error: Error enriching image
 # Network flakiness can lead to this error occurring in Sensor k8s libraries. All tests pass and it is not
 # an indication of a Sensor issue
 request.go:1116] Unexpected error when reading response body: context deadline exceeded
 # Collector downloading a probe while Sensor is Offline (http.StatusServiceUnavailable -- ROX-19018)
 Unexpected HTTP request failure (HTTP 503)
+# 502 errors should be ignored (this is especially happening in image enrichment
+http: non-successful response (status=502
+unexpected status code 502 Bad Gateway

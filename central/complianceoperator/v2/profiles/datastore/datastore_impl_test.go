@@ -9,6 +9,7 @@ import (
 
 	profileSearch "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/search"
 	profileStorage "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
+	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -22,9 +23,14 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+const (
+	maxPaginationLimit = 1000
+)
+
 var (
 	profileUID1 = uuid.NewV4().String()
 	profileUID2 = uuid.NewV4().String()
+	profileUID3 = uuid.NewV4().String()
 )
 
 func TestComplianceProfileDataStore(t *testing.T) {
@@ -298,6 +304,106 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfileCount() {
 	count, err = s.dataStore.CountProfiles(s.hasReadCtx, search.NewQueryBuilder().ProtoQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(2, count)
+}
+
+func (s *complianceProfileDataStoreTestSuite) TestGetProfilesNames() {
+	// make sure we have nothing
+	profileIDs, err := s.storage.GetIDs(s.hasReadCtx)
+	s.Require().NoError(err)
+	s.Require().Empty(profileIDs)
+
+	rec1 := getTestProfile(profileUID1, "ocp4", "1.2", testconsts.Cluster1, 0)
+	rec2 := getTestProfile(profileUID2, "rhcos-moderate", "7.6", testconsts.Cluster1, 0)
+	rec3 := getTestProfile(profileUID3, "a-rhcos-moderate", "7.6", testconsts.Cluster1, 0)
+	rec4 := getTestProfile(uuid.NewV4().String(), "ocp4", "1.2", testconsts.Cluster2, 0)
+	rec6 := getTestProfile(uuid.NewV4().String(), "a-rhcos-moderate", "7.6", testconsts.Cluster2, 0)
+
+	s.Require().NoError(s.dataStore.UpsertProfile(s.hasWriteCtx, rec1))
+	s.Require().NoError(s.dataStore.UpsertProfile(s.hasWriteCtx, rec2))
+	s.Require().NoError(s.dataStore.UpsertProfile(s.hasWriteCtx, rec3))
+	s.Require().NoError(s.dataStore.UpsertProfile(s.hasWriteCtx, rec4))
+	s.Require().NoError(s.dataStore.UpsertProfile(s.hasWriteCtx, rec6))
+
+	clusterIDs := []string{testconsts.Cluster1, testconsts.Cluster2}
+
+	testCases := []struct {
+		desc           string
+		query          *apiV1.Query
+		clusterIDs     []string
+		testContext    context.Context
+		expectedRecord []string
+		expectedCount  int
+	}{
+		{
+			desc:           "Cluster 1 - Full access",
+			query:          nil,
+			clusterIDs:     []string{testconsts.Cluster1},
+			testContext:    s.testContexts[testutils.UnrestrictedReadCtx],
+			expectedRecord: []string{"a-rhcos-moderate", "ocp4", "rhcos-moderate"},
+			expectedCount:  3,
+		},
+		{
+			desc:           "Cluster 1, 2 - Full access",
+			query:          search.EmptyQuery(),
+			clusterIDs:     clusterIDs,
+			testContext:    s.testContexts[testutils.UnrestrictedReadCtx],
+			expectedRecord: []string{"a-rhcos-moderate", "ocp4"},
+			expectedCount:  2,
+		},
+		{
+			desc:           "Cluster 1, 2 - Full access paging for record 2",
+			query:          search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1).Offset(1)).ProtoQuery(),
+			clusterIDs:     clusterIDs,
+			testContext:    s.testContexts[testutils.UnrestrictedReadCtx],
+			expectedRecord: []string{"ocp4"},
+			expectedCount:  2, // because of paging, total count will be 2
+		},
+		{
+			desc:           "Cluster 1 - Only cluster 2 access",
+			query:          search.NewQueryBuilder().AddExactMatches(search.ClusterID, testconsts.Cluster1).WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			clusterIDs:     []string{testconsts.Cluster1},
+			testContext:    s.testContexts[testutils.Cluster2ReadWriteCtx],
+			expectedRecord: nil,
+			expectedCount:  0,
+		},
+		{
+			desc:           "Cluster 2 query - Only cluster 2 access",
+			query:          search.NewQueryBuilder().AddExactMatches(search.ClusterID, testconsts.Cluster2).WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			clusterIDs:     []string{testconsts.Cluster2},
+			testContext:    s.testContexts[testutils.Cluster2ReadWriteCtx],
+			expectedRecord: []string{"a-rhcos-moderate", "ocp4"},
+			expectedCount:  2,
+		},
+		{
+			desc:           "Cluster 1 and 2 query - Only cluster 2 access",
+			query:          search.NewQueryBuilder().AddExactMatches(search.ClusterID, testconsts.Cluster2).WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			clusterIDs:     []string{testconsts.Cluster1, testconsts.Cluster2},
+			testContext:    s.testContexts[testutils.Cluster2ReadWriteCtx],
+			expectedRecord: []string{"a-rhcos-moderate", "ocp4"},
+			expectedCount:  2,
+		},
+		{
+			desc:           "Cluster 3 query - Cluster 1 and 2 access",
+			query:          search.NewQueryBuilder().AddExactMatches(search.ClusterID, testconsts.Cluster3).WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			clusterIDs:     []string{testconsts.Cluster3},
+			testContext:    s.testContexts[testutils.UnrestrictedReadWriteCtx],
+			expectedRecord: nil,
+			expectedCount:  0,
+		},
+	}
+
+	for _, tc := range testCases {
+		profiles, err := s.dataStore.GetProfilesNames(tc.testContext, tc.query, tc.clusterIDs)
+		s.Require().NoError(err)
+		if tc.expectedRecord == nil {
+			s.Require().Equal(0, len(profiles))
+		} else {
+			s.Require().ElementsMatch(profiles, tc.expectedRecord)
+		}
+		count, err := s.dataStore.CountDistinctProfiles(tc.testContext, tc.query, tc.clusterIDs)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedCount, count)
+	}
 }
 
 func getTestProfile(profileUID string, profileName string, version string, clusterID string, ruleCount int) *storage.ComplianceOperatorProfileV2 {

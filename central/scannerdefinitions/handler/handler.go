@@ -644,6 +644,7 @@ func (h *httpHandler) getV4(w http.ResponseWriter, r *http.Request) {
 
 	var uType updaterType
 	var opts v4OpenOpts
+	var contentType string
 
 	switch {
 	case fileName != "" && v == "":
@@ -663,6 +664,11 @@ func (h *httpHandler) getV4(w http.ResponseWriter, r *http.Request) {
 		}
 		uType = vulnerabilityUpdaterType
 		bundle := "vulns.json.zst"
+		contentType = "application/zstd"
+		if r.Header.Get("X-Scanner-V4-Accept") == "application/vnd.stackrox.scanner-v4.multi-bundle+zip" {
+			bundle = "vulnerabilities.zip"
+			contentType = "application/zip"
+		}
 		opts.urlPath = path.Join(v, bundle)
 		opts.vulnVersion = v
 		opts.vulnBundle = bundle
@@ -679,8 +685,8 @@ func (h *httpHandler) getV4(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if uType == vulnerabilityUpdaterType {
-		w.Header().Set("Content-Type", "application/zstd")
+	if contentType != "" {
+		w.Header().Set("Content-Type", contentType)
 	}
 
 	defer utils.IgnoreError(f.Close)

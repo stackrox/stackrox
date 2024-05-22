@@ -47,7 +47,7 @@ endif
 # difference with FIPS builds.
 CGO_ENABLED = 0
 RACE_FLAG =
-ifeq ($(RACE),1)
+ifeq ($(RACE),true)
 	# cgo is required for data race detection.
 	CGO_ENABLED = 1
 	RACE_FLAG = -race

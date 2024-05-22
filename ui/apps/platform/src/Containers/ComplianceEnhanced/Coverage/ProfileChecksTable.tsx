@@ -16,6 +16,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseURLSortResult } from 'hooks/useURLSort';
 import { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';
 import { getTableUIState } from 'utils/getTableUIState';
 
@@ -37,6 +38,7 @@ export type ProfileChecksTableProps = {
     profileChecksResultsCount: number;
     profileName: string;
     pagination: UseURLPaginationResult;
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
 function ProfileChecksTable({
@@ -46,6 +48,7 @@ function ProfileChecksTable({
     profileChecksResultsCount,
     profileName,
     pagination,
+    getSortParams,
 }: ProfileChecksTableProps) {
     const tableState = getTableUIState({
         isLoading,
@@ -78,7 +81,9 @@ function ProfileChecksTable({
             <Table>
                 <Thead>
                     <Tr>
-                        <Th width={60}>Check</Th>
+                        <Th sort={getSortParams('Compliance Check Name')} width={60}>
+                            Check
+                        </Th>
                         <Th modifier="fitContent">Controls</Th>
                         <Th modifier="fitContent">Fail status</Th>
                         <Th modifier="fitContent">Pass status</Th>

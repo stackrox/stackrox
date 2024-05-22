@@ -5,6 +5,7 @@ import { Divider, PageSection, Title } from '@patternfly/react-core';
 import PageTitle from 'Components/PageTitle';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
+import useURLSort from 'hooks/useURLSort';
 import { getComplianceClusterStats } from 'services/ComplianceResultsStatsService';
 import { getTableUIState } from 'utils/getTableUIState';
 
@@ -17,11 +18,16 @@ function ProfileClustersPage() {
     const [currentDatetime, setCurrentDatetime] = useState<Date>(new Date());
     const pagination = useURLPagination(10);
 
-    const { page, perPage } = pagination;
+    const { page, perPage, setPage } = pagination;
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields: ['Cluster ID'],
+        defaultSortOption: { field: 'Cluster ID', direction: 'asc' },
+        onSort: () => setPage(1),
+    });
 
     const fetchProfileClusters = useCallback(
-        () => getComplianceClusterStats(profileName, page, perPage),
-        [page, perPage, profileName]
+        () => getComplianceClusterStats(profileName, sortOption, page, perPage),
+        [page, perPage, profileName, sortOption]
     );
     const { data: profileClusters, loading: isLoading, error } = useRestQuery(fetchProfileClusters);
 
@@ -55,6 +61,7 @@ function ProfileClustersPage() {
                         profileClustersResultsCount={profileClusters?.totalCount ?? 0}
                         profileName={profileName}
                         tableState={tableState}
+                        getSortParams={getSortParams}
                     />
                 </PageSection>
             </PageSection>

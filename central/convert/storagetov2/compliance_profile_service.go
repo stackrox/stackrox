@@ -73,11 +73,6 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, c
 
 	summaries := make([]*v2.ComplianceProfileSummary, 0, len(profileSummaryMap))
 	for _, profileName := range orderedProfiles {
-		// Verify the profile is in all clusters
-		if len(profileClusterMap[profileName]) != len(clusterIDs) {
-			continue
-		}
-
 		summaries = append(summaries, profileSummaryMap[profileName])
 	}
 

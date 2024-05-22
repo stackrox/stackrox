@@ -34,7 +34,7 @@ export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
 export const complianceBasePath = `${mainPath}/compliance`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
-export const complianceEnhancedBasePath = `${mainPath}/compliance-enhanced`;
+export const complianceEnhancedBasePath = `${mainPath}/compliance`;
 export const complianceEnhancedCoveragePath = `${complianceEnhancedBasePath}/coverage`;
 export const complianceEnhancedSchedulesPath = `${complianceEnhancedBasePath}/schedules`;
 export const configManagementPath = `${mainPath}/configmanagement`;
@@ -336,12 +336,14 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
     'vulnerability-management/risk-acceptance': {
+        featureFlagRequirements: allDisabled(['ROX_VULN_MGMT_2_GA']),
         resourceAccessRequirements: everyResource([
             'VulnerabilityManagementApprovals',
             'VulnerabilityManagementRequests',
         ]),
     },
     'vulnerability-management': {
+        featureFlagRequirements: allDisabled(['ROX_VULN_MGMT_2_GA']),
         resourceAccessRequirements: everyResource([
             // 'Alert', // for Cluster and Deployment and Namespace
             // 'Cluster', // on Dashboard for with most widget
@@ -446,7 +448,7 @@ export const basePathToLabelMap: Record<string, string> = {
     [listeningEndpointsBasePath]: 'Listening Endpoints',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
-    [complianceEnhancedBasePath]: 'Compliance (2.0)',
+    // [complianceEnhancedBasePath]: 'Compliance (2.0)',
     ...vulnerabilitiesPathToLabelMap,
     ...vulnManagementPathToLabelMap,
     [configManagementPath]: 'Configuration Management',
