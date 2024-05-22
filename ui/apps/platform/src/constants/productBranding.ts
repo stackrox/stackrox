@@ -14,6 +14,8 @@ export interface BrandingAssets {
     logoAltText: string;
     /** Value to use as the base in the <title> element */
     basePageTitle: string;
+    /** Value for default subject of report e-mail */
+    shortName: string;
     /** Absolute path to the page favicon */
     favicon: string;
 }
@@ -23,6 +25,7 @@ const rhacsBranding: BrandingAssets = {
     logoSvg: rhacsLogoSvg,
     logoAltText: 'Red Hat Advanced Cluster Security Logo',
     basePageTitle: 'Red Hat Advanced Cluster Security',
+    shortName: 'RHACS',
     favicon: rhacsFavicon,
 };
 
@@ -31,6 +34,7 @@ const stackroxBranding: BrandingAssets = {
     logoSvg: stackroxLogoSvg,
     logoAltText: 'StackRox Logo',
     basePageTitle: 'StackRox',
+    shortName: 'StackRox',
     favicon: stackroxFavicon,
 };
 
