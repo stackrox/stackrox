@@ -37,11 +37,13 @@ message ComplianceProfileSummary {
 // ListComplianceProfilesResponse provides a list of profiles
 message ListComplianceProfilesResponse {
   repeated ComplianceProfile profiles = 1;
+  int32 total_count = 3;
 }
 
 // ListComplianceProfileSummaryResponse provides a list of profiles summaries
 message ListComplianceProfileSummaryResponse {
   repeated ComplianceProfileSummary profiles = 1;
+  int32 total_count = 2;
 }
 
 // CountComplianceProfilesResponse gives count of compliance profiles
@@ -51,10 +53,12 @@ message CountComplianceProfilesResponse {
 
 message ProfilesForClusterRequest {
   string cluster_id = 1;
+  RawQuery query = 2;
 }
 
 message ClustersProfileSummaryRequest {
   repeated string cluster_ids = 1;
+  RawQuery query = 2;
 }
 
 service ComplianceProfileService {

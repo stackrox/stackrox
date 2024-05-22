@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -103,7 +104,15 @@ func (s *ComplianceProfilesServiceTestSuite) TestListComplianceProfiles() {
 			expectedResp: convertUtils.GetProfilesV2Api(s.T()),
 			found:        true,
 			setMocks: func() {
-				s.profileDatastore.EXPECT().GetProfilesByClusters(gomock.Any(), []string{fixtureconsts.Cluster1}).Return(convertUtils.GetProfilesV2Storage(s.T()), nil).Times(1)
+				profileQuery := search.ConjunctionQuery(
+					search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
+					search.EmptyQuery(),
+				)
+				countQuery := profileQuery.Clone()
+				paginated.FillPaginationV2(profileQuery, nil, maxPaginationLimit)
+
+				s.profileDatastore.EXPECT().SearchProfiles(gomock.Any(), profileQuery).Return(convertUtils.GetProfilesV2Storage(s.T()), nil).Times(1)
+				s.profileDatastore.EXPECT().CountProfiles(gomock.Any(), countQuery).Return(1, nil).Times(1)
 			},
 		},
 	}
@@ -160,7 +169,22 @@ func (s *ComplianceProfilesServiceTestSuite) TestListProfileSummaries() {
 			},
 			found: true,
 			setMocks: func() {
-				s.profileDatastore.EXPECT().GetProfilesByClusters(gomock.Any(), []string{fixtureconsts.Cluster1}).Return([]*storage.ComplianceOperatorProfileV2{
+				profileQuery := search.EmptyQuery()
+				paginated.FillPaginationV2(profileQuery, nil, maxPaginationLimit)
+				profileQuery.Pagination.SortOptions = []*apiV1.QuerySortOption{
+					{
+						Field: search.ComplianceOperatorProfileName.String(),
+					},
+				}
+
+				s.profileDatastore.EXPECT().GetProfilesNames(gomock.Any(), profileQuery, []string{fixtureconsts.Cluster1}).Return([]string{"ocp4"}, nil).Times(1)
+				s.profileDatastore.EXPECT().CountDistinctProfiles(gomock.Any(), search.EmptyQuery(), []string{fixtureconsts.Cluster1}).Return(1, nil).Times(1)
+
+				searchQuery := search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery()
+				searchQuery.Pagination = &apiV1.QueryPagination{}
+				searchQuery.Pagination.SortOptions = profileQuery.GetPagination().GetSortOptions()
+
+				s.profileDatastore.EXPECT().SearchProfiles(gomock.Any(), searchQuery).Return([]*storage.ComplianceOperatorProfileV2{
 					{
 						Name:           "ocp4",
 						ProductType:    "platform",

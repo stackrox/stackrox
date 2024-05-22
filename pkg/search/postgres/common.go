@@ -405,8 +405,13 @@ func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgse
 	seenSelectFields := set.NewStringSet()
 	newQE := &pgsearch.QueryEntry{}
 	for _, entry := range entries {
-		whereQueryStrings = append(whereQueryStrings, entry.Where.Query)
-		newQE.Where.Values = append(newQE.Where.Values, entry.Where.Values...)
+		// It is possible to have a Having clause and an empty Where.  In that case
+		// we need to not add the where strings.  Otherwise, it will add an empty one
+		// at the end and a dangling separator.
+		if entry.Where.Query != "" {
+			whereQueryStrings = append(whereQueryStrings, entry.Where.Query)
+			newQE.Where.Values = append(newQE.Where.Values, entry.Where.Values...)
+		}
 		for _, selectedField := range entry.SelectedFields {
 			if seenSelectFields.Add(selectedField.SelectPath) {
 				newQE.SelectedFields = append(newQE.SelectedFields, selectedField)
@@ -423,6 +428,7 @@ func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgse
 			havingQueryStrings = append(havingQueryStrings, entry.Having.Query)
 		}
 	}
+
 	newQE.Where.Query = fmt.Sprintf("(%s)", strings.Join(whereQueryStrings, separator))
 	if newQE.Having != nil {
 		newQE.Having.Query = fmt.Sprintf("(%s)", strings.Join(havingQueryStrings, separator))
