@@ -22,6 +22,7 @@ import { SearchFilter } from 'types/search';
 import { vulnerabilityNamespaceViewPath } from 'routePaths';
 import {
     getDefaultWorkloadSortOption,
+    getDefaultZeroCveSortOption,
     getWorkloadSortFields,
 } from 'Containers/Vulnerabilities/utils/sortUtils';
 import useURLSort from 'hooks/useURLSort';
@@ -43,10 +44,12 @@ import {
     workloadEntityTabValues,
     isVulnMgmtLocalStorage,
     observedCveModeValues,
+    ObservedCveMode,
 } from '../../types';
 import {
     parseWorkloadQuerySearchFilter,
     getVulnStateScopedQueryString,
+    getZeroCveScopedQueryString,
 } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
@@ -123,16 +126,27 @@ function WorkloadCvesOverviewPage() {
 
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
-    const [activeEntityTabKey] = useURLStringUnion('entityTab', workloadEntityTabValues);
+    const [activeEntityTabKey, setActiveEntityTabKey] = useURLStringUnion(
+        'entityTab',
+        workloadEntityTabValues
+    );
     const [observedCveMode, setObservedCveMode] = useURLStringUnion(
         'observedCveMode',
         observedCveModeValues
     );
+    const isViewingWithCves = observedCveMode === 'WITH_CVES';
 
-    const workloadCvesScopedQueryString = getVulnStateScopedQueryString(
-        querySearchFilter,
-        currentVulnerabilityState
-    );
+    // If the user is viewing observed CVEs, we need to scope the query based on
+    // the selected vulnerability state. If the user is viewing _without_ CVEs, we
+    // need to scope the query to only show images/deployments with 0 CVEs.
+    const workloadCvesScopedQueryString = isViewingWithCves
+        ? getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState)
+        : getZeroCveScopedQueryString(querySearchFilter);
+
+    const getDefaultSortOption = isViewingWithCves
+        ? getDefaultWorkloadSortOption
+        : getDefaultZeroCveSortOption;
+
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const { data } = useQuery<{
@@ -172,8 +186,8 @@ function WorkloadCvesOverviewPage() {
 
     const sort = useURLSort({
         sortFields: getWorkloadSortFields(activeEntityTabKey),
-        defaultSortOption: getDefaultWorkloadSortOption(activeEntityTabKey),
-        onSort: () => pagination.setPage(1),
+        defaultSortOption: getDefaultSortOption(activeEntityTabKey),
+        onSort: () => pagination.setPage(1, 'replace'),
     });
 
     function updateDefaultFilters(values: DefaultFilters) {
@@ -184,13 +198,14 @@ function WorkloadCvesOverviewPage() {
                 localStorageValue.preferences.defaultFilters,
                 values,
                 searchFilter
-            )
+            ),
+            'replace'
         );
     }
 
     function onEntityTabChange(entityTab: WorkloadEntityTab) {
         pagination.setPage(1);
-        sort.setSortOption(getDefaultWorkloadSortOption(entityTab));
+        sort.setSortOption(getDefaultSortOption(entityTab), 'replace');
 
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
@@ -199,6 +214,18 @@ function WorkloadCvesOverviewPage() {
                 page: 'Overview',
             },
         });
+    }
+
+    function onChangeObservedCveMode(mode: ObservedCveMode) {
+        // Set the observed CVE mode, pushing a new history entry to the stack
+        setObservedCveMode(mode);
+        // Reset all filters, sorting, and pagination and apply to the current history entry
+        pagination.setPage(1, 'replace');
+        setSearchFilter({}, 'replace');
+        if (activeEntityTabKey === 'CVE') {
+            setActiveEntityTabKey('Image', 'replace');
+            sort.setSortOption(getDefaultSortOption('Image'), 'replace');
+        }
     }
 
     // Track the current entity tab when the page is initially visited.
@@ -230,14 +257,21 @@ function WorkloadCvesOverviewPage() {
     const filterToolbar = (
         <WorkloadCveFilterToolbar
             defaultFilters={localStorageValue.preferences.defaultFilters}
-            onFilterChange={() => pagination.setPage(1)}
-            searchOptions={searchOptions}
+            onFilterChange={() => pagination.setPage(1, 'replace')}
+            searchOptions={
+                isViewingWithCves
+                    ? searchOptions
+                    : searchOptions.filter((option) => option !== IMAGE_CVE_SEARCH_OPTION)
+            }
+            showCveFilterDropdowns={isViewingWithCves}
         />
     );
 
     const entityToggleGroup = (
         <EntityTypeToggleGroup
-            entityTabs={['CVE', 'Image', 'Deployment']}
+            entityTabs={
+                isViewingWithCves ? ['CVE', 'Image', 'Deployment'] : ['Image', 'Deployment']
+            }
             entityCounts={entityCounts}
             onChange={onEntityTabChange}
         />
@@ -290,14 +324,19 @@ function WorkloadCvesOverviewPage() {
                     component="div"
                     className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
                 >
-                    <VulnerabilityStateTabs onChange={() => pagination.setPage(1)} />
+                    <VulnerabilityStateTabs
+                        onChange={() => {
+                            setObservedCveMode('WITH_CVES');
+                            pagination.setPage(1, 'replace');
+                        }}
+                    />
                 </PageSection>
                 {isNoCvesViewEnabled && (
                     <PageSection className="pf-v5-u-py-md" component="div" variant="light">
                         {currentVulnerabilityState === 'OBSERVED' && (
                             <ObservedCveModeSelect
                                 observedCveMode={observedCveMode}
-                                setObservedCveMode={setObservedCveMode}
+                                setObservedCveMode={onChangeObservedCveMode}
                             />
                         )}
                     </PageSection>
@@ -337,6 +376,7 @@ function WorkloadCvesOverviewPage() {
                                         setUnwatchImageName(imageName);
                                         unwatchImageModalToggle.openSelect();
                                     }}
+                                    showCveDetailFields={isViewingWithCves}
                                 />
                             )}
                             {activeEntityTabKey === 'Deployment' && (
@@ -348,6 +388,7 @@ function WorkloadCvesOverviewPage() {
                                     sort={sort}
                                     workloadCvesScopedQueryString={workloadCvesScopedQueryString}
                                     isFiltered={isFiltered}
+                                    showCveDetailFields={isViewingWithCves}
                                 />
                             )}
                         </CardBody>
