@@ -663,8 +663,7 @@ jobs:
             "collector",
             "collector-slim",
             "main",
-            # TODO(ROX-23940): re-enable roxctl scanning after #10928 has been released.
-            # "roxctl",
+            "roxctl",
             "scanner",
             "scanner-db",
             "scanner-db-slim",
