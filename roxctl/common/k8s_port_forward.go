@@ -257,7 +257,7 @@ func getForwardingDialContext() ([]byte, func(ctx context.Context, addr string) 
 		if addr == svcEndpoint {
 			addr = localEndpoint
 		}
-		return (&net.Dialer{}).DialContext(ctx, "tcp", addr) //nolint:wrapcheck
+		return (&net.Dialer{}).DialContext(ctx, "tcp", addr)
 	}
 	return ca, dialContext, nil
 }
