@@ -1,5 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasOrchestratorFlavor } from '../../helpers/features';
+import { hasOrchestratorFlavor, hasFeatureFlag } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -17,6 +17,11 @@ const entitiesKey = 'cluster-cves';
 
 describe('Vulnerability Management Cluster (Platform) CVEs', () => {
     withAuth();
+    before(function () {
+        if (hasFeatureFlag('ROX_VULN_MGMT_2_GA')) {
+            this.skip();
+        }
+    });
 
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
