@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { PageSection, Title, Flex, FlexItem, Card, CardBody, Button } from '@patternfly/react-core';
+import { Button, Card, CardBody, Flex, FlexItem, PageSection, Title } from '@patternfly/react-core';
 import { gql, useApolloClient, useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import difference from 'lodash/difference';
@@ -42,6 +42,7 @@ import {
     VulnMgmtLocalStorage,
     workloadEntityTabValues,
     isVulnMgmtLocalStorage,
+    observedCveModeValues,
 } from '../../types';
 import {
     parseWorkloadQuerySearchFilter,
@@ -59,6 +60,7 @@ import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import DefaultFilterModal from '../components/DefaultFilterModal';
 import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
+import ObservedCveModeSelect from './ObservedCveModeSelect';
 
 const searchOptions: SearchOption[] = [
     IMAGE_SEARCH_OPTION,
@@ -113,6 +115,7 @@ function WorkloadCvesOverviewPage() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
     const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
+    const isNoCvesViewEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_NO_CVES_VIEW');
 
     const { analyticsTrack } = useAnalytics();
 
@@ -121,6 +124,10 @@ function WorkloadCvesOverviewPage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
     const [activeEntityTabKey] = useURLStringUnion('entityTab', workloadEntityTabValues);
+    const [observedCveMode, setObservedCveMode] = useURLStringUnion(
+        'observedCveMode',
+        observedCveModeValues
+    );
 
     const workloadCvesScopedQueryString = getVulnStateScopedQueryString(
         querySearchFilter,
@@ -285,6 +292,16 @@ function WorkloadCvesOverviewPage() {
                 >
                     <VulnerabilityStateTabs onChange={() => pagination.setPage(1)} />
                 </PageSection>
+                {isNoCvesViewEnabled && (
+                    <PageSection className="pf-v5-u-py-md" component="div" variant="light">
+                        {currentVulnerabilityState === 'OBSERVED' && (
+                            <ObservedCveModeSelect
+                                observedCveMode={observedCveMode}
+                                setObservedCveMode={setObservedCveMode}
+                            />
+                        )}
+                    </PageSection>
+                )}
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>
