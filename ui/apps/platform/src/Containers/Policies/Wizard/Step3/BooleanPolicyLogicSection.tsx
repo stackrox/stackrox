@@ -10,11 +10,13 @@ import PolicySection from './PolicySection';
 import './BooleanPolicyLogicSection.css';
 
 type BooleanPolicyLogicSectionProps = {
+    onChangeSelected?: (sectionIndex: number) => void;
     readOnly?: boolean;
     selectedSection?: number;
 };
 
 function BooleanPolicyLogicSection({
+    onChangeSelected = () => {},
     selectedSection = -1,
     readOnly = false,
 }: BooleanPolicyLogicSectionProps) {
@@ -27,6 +29,8 @@ function BooleanPolicyLogicSection({
         values.lifecycleStages
     );
 
+    console.log({ selectedSection });
+
     return (
         <>
             {values.policySections?.map((_, sectionIndex) =>
@@ -37,9 +41,9 @@ function BooleanPolicyLogicSection({
                         <GridItem>
                             <PolicySection
                                 sectionIndex={sectionIndex}
+                                onChangeSelected={onChangeSelected}
                                 descriptors={filteredDescriptors}
                                 readOnly={readOnly}
-                                isSelected={sectionIndex === selectedSection}
                             />
                         </GridItem>
                         {/* this grid item takes up 1 column specified here so that two policy sections & OR dividers can fit in one row */}
@@ -64,9 +68,11 @@ function BooleanPolicyLogicSection({
                     // eslint-disable-next-line react/no-array-index-key
                     <React.Fragment key={sectionIndex}>
                         <PolicySection
+                            onChangeSelected={onChangeSelected}
                             sectionIndex={sectionIndex}
                             descriptors={filteredDescriptors}
                             readOnly={readOnly}
+                            isSelected={sectionIndex === selectedSection}
                         />
                         {sectionIndex !== values.policySections.length - 1 && (
                             <Flex

@@ -29,6 +29,7 @@ import './PolicySection.css';
 
 type PolicySectionProps = {
     sectionIndex: number;
+    onChangeSelected: (sectionIndex: number) => void;
     descriptors: Descriptor[];
     readOnly?: boolean;
     isSelected?: boolean;
@@ -36,6 +37,7 @@ type PolicySectionProps = {
 
 function PolicySection({
     sectionIndex,
+    onChangeSelected,
     descriptors,
     readOnly = false,
     isSelected = false,
@@ -110,6 +112,16 @@ function PolicySection({
                             ),
                             hasNoOffset: true,
                             className: undefined,
+                        },
+                        selectableActions: {
+                            selectableActionId: `policy-section-${sectionIndex}`,
+                            selectableActionAriaLabelledby: `Policy section ${sectionIndex + 1}: ${sectionName}`,
+                            name: 'single-selectable-card-example',
+                            variant: 'single',
+                            onChange: () => {
+                                onChangeSelected(sectionIndex);
+                            },
+                            isChecked: isSelected,
                         },
                     })}
                     className="policy-section-card-header pf-v5-u-p-0"
