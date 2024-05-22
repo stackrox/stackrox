@@ -574,7 +574,7 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          make -C operator/ docker-push docker-push-bundle | cat
+          make -C operator/ docker-push-bundle | cat
 
       # Index image can only be built once bundle was pushed
       - name: Build index
