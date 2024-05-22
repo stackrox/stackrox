@@ -34,7 +34,7 @@ export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
 export const complianceBasePath = `${mainPath}/compliance`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
-export const complianceEnhancedBasePath = `${mainPath}/compliance-enhanced`;
+export const complianceEnhancedBasePath = `${mainPath}/compliance`;
 export const complianceEnhancedCoveragePath = `${complianceEnhancedBasePath}/coverage`;
 export const complianceEnhancedSchedulesPath = `${complianceEnhancedBasePath}/schedules`;
 export const configManagementPath = `${mainPath}/configmanagement`;
@@ -446,7 +446,7 @@ export const basePathToLabelMap: Record<string, string> = {
     [listeningEndpointsBasePath]: 'Listening Endpoints',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
-    [complianceEnhancedBasePath]: 'Compliance (2.0)',
+    // [complianceEnhancedBasePath]: 'Compliance (2.0)',
     ...vulnerabilitiesPathToLabelMap,
     ...vulnManagementPathToLabelMap,
     [configManagementPath]: 'Configuration Management',

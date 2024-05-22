@@ -3,8 +3,7 @@ import { visit } from '../../helpers/visit';
 
 // path
 
-export const basePath = '/main/compliance-enhanced';
-export const statusDashboardPath = `${basePath}/status`;
+export const basePath = '/main/compliance';
 export const complianceEnhancedCoveragePath = `${basePath}/coverage`;
 export const complianceEnhancedScanConfigsPath = `${basePath}/schedules`;
 
