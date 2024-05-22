@@ -1,6 +1,9 @@
 import { addDays, format } from 'date-fns';
 import { getDescriptionListGroup } from '../../../helpers/formHelpers';
-import { interactAndWaitForResponses } from '../../../helpers/request';
+import {
+    interactAndWaitForResponses,
+    getRouteMatcherMapForGraphQL,
+} from '../../../helpers/request';
 import { visit } from '../../../helpers/visit';
 import { hasFeatureFlag } from '../../../helpers/features';
 import { selectors } from './WorkloadCves.selectors';
@@ -375,4 +378,40 @@ export function unwatchImageFromModal(imageFullName, imageNameAndTag) {
 export function changeObservedCveViewingMode(modeText) {
     cy.get(selectors.observedCveModeSelect).click();
     cy.get(`button:contains("${modeText}")`).click();
+}
+
+/**
+ * Perform a set of actions and wait for the list of CVEs to be fetched
+ * @param {*} callback The actions to perform
+ * @returns {Cypress.Chainable}
+ */
+export function interactAndWaitForCveList(callback) {
+    const cveListOpname = 'getImageCVEList';
+    const cveListRouteMatcherMap = getRouteMatcherMapForGraphQL([cveListOpname]);
+    cveListRouteMatcherMap[cveListOpname].times = 1;
+    return interactAndWaitForResponses(callback, cveListRouteMatcherMap);
+}
+
+/**
+ * Perform a set of actions and wait for the list of images to be fetched
+ * @param {*} callback The actions to perform
+ * @returns {Cypress.Chainable}
+ */
+export function interactAndWaitForImageList(callback) {
+    const imageListOpname = 'getImageList';
+    const imageListRouteMatcherMap = getRouteMatcherMapForGraphQL([imageListOpname]);
+    imageListRouteMatcherMap[imageListOpname].times = 1;
+    return interactAndWaitForResponses(callback, imageListRouteMatcherMap);
+}
+
+/**
+ * Perform a set of actions and wait for the list of deployments to be fetched
+ * @param {*} callback The actions to perform
+ * @returns {Cypress.Chainable}
+ */
+export function interactAndWaitForDeploymentList(callback) {
+    const deploymentListOpname = 'getDeploymentList';
+    const deploymentListRouteMatcherMap = getRouteMatcherMapForGraphQL([deploymentListOpname]);
+    deploymentListRouteMatcherMap[deploymentListOpname].times = 1;
+    return interactAndWaitForResponses(callback, deploymentListRouteMatcherMap);
 }
