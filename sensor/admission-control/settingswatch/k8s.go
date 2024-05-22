@@ -140,7 +140,7 @@ func (w *k8sSettingsWatch) sendSettings(settings *sensor.AdmissionControlSetting
 	case w.outC <- settings:
 	}
 
-	log.Infof("Detected and propagated updated admission controller settings via Kubernetes config map watch, timestamp: %v", settings.GetTimestamp().String())
+	log.Infof("Detected and propagated updated admission controller settings via Kubernetes config map watch, timestamp: %v", settings.GetTimestamp().AsTime().Format(time.RFC3339Nano))
 }
 
 func (w *k8sSettingsWatch) start() error {

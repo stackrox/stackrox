@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	pd "github.com/PagerDuty/go-pagerduty"
 	"github.com/golang/protobuf/jsonpb"
@@ -171,7 +172,7 @@ func (p *pagerDuty) createPagerDutyEvent(alert *storage.Alert, eventType string)
 	payload := &pd.V2Payload{
 		Summary:   notifiers.SummaryForAlert(alert),
 		Severity:  severityMap[alert.GetPolicy().GetSeverity()],
-		Timestamp: alert.GetTime().String(),
+		Timestamp: alert.GetTime().AsTime().Format(time.RFC3339Nano),
 		Class:     strings.Join(alert.GetPolicy().GetCategories(), " "),
 		Details:   (*marshalableAlert)(alert),
 	}
