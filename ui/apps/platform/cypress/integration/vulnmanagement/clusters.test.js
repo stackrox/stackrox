@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -16,6 +17,11 @@ const entitiesKey = 'clusters';
 
 describe('Vulnerability Management Clusters', () => {
     withAuth();
+    before(function () {
+        if (hasFeatureFlag('ROX_VULN_MGMT_2_GA')) {
+            this.skip();
+        }
+    });
 
     it('should display all the columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
