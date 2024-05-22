@@ -24,6 +24,7 @@ type ImagesTableContainerProps = {
     hasWriteAccessForWatchedImage: boolean;
     onWatchImage: ImagesTableProps['onWatchImage'];
     onUnwatchImage: ImagesTableProps['onUnwatchImage'];
+    showCveDetailFields: boolean;
 };
 
 function ImagesTableContainer({
@@ -37,6 +38,7 @@ function ImagesTableContainer({
     hasWriteAccessForWatchedImage,
     onWatchImage,
     onUnwatchImage,
+    showCveDetailFields,
 }: ImagesTableContainerProps) {
     const { searchFilter } = useURLSearch();
     const { page, perPage } = pagination;
@@ -87,6 +89,7 @@ function ImagesTableContainer({
                         hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
                         onWatchImage={onWatchImage}
                         onUnwatchImage={onUnwatchImage}
+                        showCveDetailFields={showCveDetailFields}
                     />
                 </div>
             )}

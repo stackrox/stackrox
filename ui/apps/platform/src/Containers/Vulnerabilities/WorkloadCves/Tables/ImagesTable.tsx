@@ -89,6 +89,7 @@ export type ImagesTableProps = {
     hasWriteAccessForWatchedImage: boolean;
     onWatchImage: (imageName: string) => void;
     onUnwatchImage: (imageName: string) => void;
+    showCveDetailFields: boolean;
 };
 
 function ImagesTable({
@@ -99,8 +100,9 @@ function ImagesTable({
     hasWriteAccessForWatchedImage,
     onWatchImage,
     onUnwatchImage,
+    showCveDetailFields,
 }: ImagesTableProps) {
-    const colSpan = hasWriteAccessForWatchedImage ? 8 : 7;
+    const colSpan = 5 + (hasWriteAccessForWatchedImage ? 1 : 0) + (showCveDetailFields ? 2 : 0);
 
     return (
         <Table borders={false} variant="compact">
@@ -108,11 +110,15 @@ function ImagesTable({
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Image')}>Image</Th>
-                    <Th sort={getSortParams('Image Risk Priority')}>Risk priority</Th>
-                    <TooltipTh tooltip="CVEs by severity across this image">
-                        CVEs by severity
-                        {isFiltered && <DynamicColumnIcon />}
-                    </TooltipTh>
+                    {showCveDetailFields && (
+                        <Th sort={getSortParams('Image Risk Priority')}>Risk priority</Th>
+                    )}
+                    {showCveDetailFields && (
+                        <TooltipTh tooltip="CVEs by severity across this image">
+                            CVEs by severity
+                            {isFiltered && <DynamicColumnIcon />}
+                        </TooltipTh>
+                    )}
                     <Th sort={getSortParams('Image OS')}>Operating system</Th>
                     <Th>
                         Deployments
@@ -180,22 +186,26 @@ function ImagesTable({
                                         'Image name not available'
                                     )}
                                 </Td>
-                                <Td
-                                    dataLabel="Risk priority"
-                                    className="pf-v5-u-pr-2xl pf-v5-u-text-align-center-on-md"
-                                >
-                                    {priority}
-                                </Td>
-                                <Td dataLabel="CVEs by severity">
-                                    <SeverityCountLabels
-                                        criticalCount={criticalCount}
-                                        importantCount={importantCount}
-                                        moderateCount={moderateCount}
-                                        lowCount={lowCount}
-                                        entity="image"
-                                        filteredSeverities={filteredSeverities}
-                                    />
-                                </Td>
+                                {showCveDetailFields && (
+                                    <Td
+                                        dataLabel="Risk priority"
+                                        className="pf-v5-u-pr-2xl pf-v5-u-text-align-center-on-md"
+                                    >
+                                        {priority}
+                                    </Td>
+                                )}
+                                {showCveDetailFields && (
+                                    <Td dataLabel="CVEs by severity">
+                                        <SeverityCountLabels
+                                            criticalCount={criticalCount}
+                                            importantCount={importantCount}
+                                            moderateCount={moderateCount}
+                                            lowCount={lowCount}
+                                            entity="image"
+                                            filteredSeverities={filteredSeverities}
+                                        />
+                                    </Td>
+                                )}
                                 <Td>{operatingSystem}</Td>
                                 <Td modifier="nowrap">
                                     {deploymentCount > 0 ? (

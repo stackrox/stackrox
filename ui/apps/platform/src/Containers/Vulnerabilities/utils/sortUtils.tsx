@@ -42,6 +42,7 @@ export function getWorkloadSortFields(entityTab: WorkloadEntityTab): string[] {
 
 /**
  *  Get the default table sort option for a given Workload CVE entity
+ *
  * @param entityTab The chosen entity
  * @returns The default sort option
  */
@@ -53,6 +54,26 @@ export function getDefaultWorkloadSortOption(entityTab: WorkloadEntityTab): Sort
             return { field: 'Deployment Risk Priority', direction: 'asc' };
         case 'Image':
             return { field: 'Image Risk Priority', direction: 'asc' };
+        default:
+            return ensureExhaustive(entityTab);
+    }
+}
+
+/**
+ * Gets the default sort option for a given Workload CVE entity when the user is viewing
+ * the images and deployments that are observed to have zero CVEs.
+ *
+ * @param entityTab The chosen entity
+ * @returns The default sort option
+ */
+export function getDefaultZeroCveSortOption(entityTab: WorkloadEntityTab): SortOption {
+    switch (entityTab) {
+        case 'CVE':
+            return { field: 'CVE', direction: 'asc' };
+        case 'Deployment':
+            return { field: 'Deployment', direction: 'asc' };
+        case 'Image':
+            return { field: 'Image', direction: 'asc' };
         default:
             return ensureExhaustive(entityTab);
     }
