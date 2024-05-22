@@ -18,6 +18,8 @@ import sum from 'lodash/sum';
 import useURLPagination from 'hooks/useURLPagination';
 import useMap from 'hooks/useMap';
 import useSet from 'hooks/useSet';
+import { UseURLSortResult } from 'hooks/useURLSort';
+import { ApiSortOption } from 'types/search';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import { getTableUIState } from 'utils/getTableUIState';
 
@@ -26,6 +28,12 @@ import CvssFormatted from 'Components/CvssFormatted';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 
+import {
+    CLUSTER_CVE_STATUS_SORT_FIELD,
+    CVE_SORT_FIELD,
+    CVE_TYPE_SORT_FIELD,
+    CVSS_SORT_FIELD,
+} from '../../utils/sortFields';
 import CVESelectionTh from '../../components/CVESelectionTh';
 import CVESelectionTd from '../../components/CVESelectionTd';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
@@ -40,6 +48,17 @@ const totalClusterCountQuery = gql`
     }
 `;
 
+export const sortFields = [
+    CVE_SORT_FIELD,
+    CLUSTER_CVE_STATUS_SORT_FIELD,
+    CVE_TYPE_SORT_FIELD,
+    CVSS_SORT_FIELD,
+    // TODO - Needs a BE field implementation
+    // AffectedClusters: '',
+];
+
+export const defaultSortOption = { field: CVSS_SORT_FIELD, direction: 'desc' } as const;
+
 export type CVEsTableProps = {
     querySearchFilter: QuerySearchFilter;
     isFiltered: boolean;
@@ -47,6 +66,8 @@ export type CVEsTableProps = {
     selectedCves: ReturnType<typeof useMap<string, { cve: string }>>;
     createRowActions: (cve: { cve: string }) => IAction[];
     canSelectRows?: boolean;
+    sortOption: ApiSortOption;
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
 function CVEsTable({
@@ -56,13 +77,16 @@ function CVEsTable({
     selectedCves,
     canSelectRows,
     createRowActions,
+    sortOption,
+    getSortParams,
 }: CVEsTableProps) {
     const { page, perPage } = pagination;
 
     const { data, previousData, error, loading } = usePlatformCves(
         querySearchFilter,
         page,
-        perPage
+        perPage,
+        sortOption
     );
     const totalClusterCountRequest = useQuery(totalClusterCountQuery);
     const totalClusterCount = totalClusterCountRequest.data?.clusterCount ?? 0;
@@ -91,11 +115,18 @@ function CVEsTable({
                 <Tr>
                     <Th aria-label="Expand row" />
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
-                    <Th>CVE</Th>
-                    <Th>CVE status</Th>
-                    <Th>CVE type</Th>
-                    <Th>CVSS</Th>
-                    <TooltipTh tooltip="Ratio of the number of clusters affected by this CVE to the total number of secured clusters">
+                    <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
+                    <Th sort={getSortParams(CLUSTER_CVE_STATUS_SORT_FIELD)}>CVE status</Th>
+                    <Th sort={getSortParams(CVE_TYPE_SORT_FIELD)}>CVE type</Th>
+                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
+                    <TooltipTh
+                        tooltip="Ratio of the number of clusters affected by this CVE to the total number of secured clusters"
+                        sort={
+                            // TODO - Needs a BE field implementation
+                            // getSortParams(sortFields.AffectedClusters)
+                            undefined
+                        }
+                    >
                         Affected clusters
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
