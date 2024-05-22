@@ -1,6 +1,11 @@
 import { FormikProps, useFormik } from 'formik';
 import * as yup from 'yup';
 
+import {
+    customBodyValidation,
+    customSubjectValidation,
+} from 'Components/EmailTemplate/EmailTemplate.utils';
+
 import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 export const defaultScanConfigFormValues: ScanConfigFormValues = {
@@ -14,6 +19,9 @@ export const defaultScanConfigFormValues: ScanConfigFormValues = {
     },
     clusters: [],
     profiles: [],
+    report: {
+        notifierConfigurations: [],
+    },
 };
 
 const validationSchema = yup.object().shape({
@@ -46,6 +54,25 @@ const validationSchema = yup.object().shape({
     }),
     clusters: yup.array().min(1),
     profiles: yup.array().min(1),
+    report: yup.object().shape({
+        notifierConfigurations: yup
+            .array()
+            .of(
+                yup.object().shape({
+                    emailConfig: yup.object().shape({
+                        notifierId: yup.string().required('A notifier is required'),
+                        mailingLists: yup
+                            .array()
+                            .of(yup.string())
+                            .min(1, 'At least 1 delivery destination is required'),
+                        customSubject: customSubjectValidation,
+                        customBody: customBodyValidation,
+                    }),
+                    notifierName: yup.string(),
+                })
+            )
+            .strict(),
+    }),
 });
 
 function useFormikScanConfig(initialFormValues): FormikProps<ScanConfigFormValues> {
