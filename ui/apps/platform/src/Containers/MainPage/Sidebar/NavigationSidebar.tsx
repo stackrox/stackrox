@@ -122,6 +122,8 @@ const navDescriptions: NavDescription[] = [
         path: violationsBasePath,
         routeKey: 'violations',
     },
+    // Compliance with divided navigation.
+    // /*
     {
         type: 'parent',
         title: (navDescriptionsFiltered) =>
@@ -158,7 +160,55 @@ const navDescriptions: NavDescription[] = [
                 : 'Compliance',
         path: complianceBasePath,
         routeKey: 'compliance',
+        isActive: (pathname) =>
+            Boolean(matchPath(pathname, complianceBasePath)) &&
+            !matchPath(pathname, [complianceEnhancedCoveragePath, complianceEnhancedSchedulesPath]),
     },
+    // */
+    // Compliance with unified navigation.
+    /*
+    {
+        type: 'parent',
+        title: (navDescriptionsFiltered) =>
+            navDescriptionsFiltered.some(
+                (navDescription) =>
+                    navDescription.type === 'link' && navDescription.routeKey === 'compliance'
+            )
+                ? 'Compliance (2.0)'
+                : 'Compliance',
+        key: keyForCompliance2,
+        children: [
+            {
+                type: 'link',
+                content: 'Coverage',
+                path: complianceEnhancedCoveragePath,
+                routeKey: 'compliance-enhanced',
+            },
+            {
+                type: 'link',
+                content: 'Schedules',
+                path: complianceEnhancedSchedulesPath,
+                routeKey: 'compliance-enhanced',
+            },
+            {
+                type: 'separator',
+                key: 'preceding-classic-compliance',
+            },
+            {
+                type: 'link',
+                content: 'Workload Compliance',
+                path: complianceBasePath,
+                routeKey: 'compliance',
+                isActive: (pathname) =>
+                    Boolean(matchPath(pathname, complianceBasePath)) &&
+                    !matchPath(pathname, [
+                        complianceEnhancedCoveragePath,
+                        complianceEnhancedSchedulesPath,
+                    ]),
+            },
+        ],
+    },
+    */
     {
         type: 'parent',
         title: (navDescriptionsFiltered) =>
