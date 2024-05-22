@@ -50,7 +50,7 @@ import './NavigationSidebar.css';
 
 // Child example; Compliance (1.0) if Compliance (2.0) is rendered and Compliance otherwise.
 // Parent example: Vulnerability Management (1.0) if Vulnerability Management (2.0) is rendered and so on.
-type TitleCallback = (navDescriptionFiltered: NavDescription[]) => string;
+type TitleCallback = (navDescriptionFiltered: NavDescription[]) => string | ReactElement;
 
 // Child conditional title finds path to decide presence or absence of counterpart child.
 // Parent conditional title finds key to decide presence or absence of counterpart parent.
@@ -72,6 +72,22 @@ type LinkDescription = {
 // Encapsulate whether path match for child is specific or generic.
 function isActiveLink(pathname: string, { isActive, path }: LinkDescription) {
     return typeof isActive === 'function' ? isActive(pathname) : Boolean(matchPath(pathname, path));
+}
+
+// Predicate function that encapsulates the logic for rendering content based on whether or not Vulnerability
+// Management 2.0 is declared as GA.
+function vulnMgmt2GaContentPredicate(
+    techPreviewContent: string | ReactElement,
+    gaContent: string | ReactElement
+) {
+    return (navDescriptionsFiltered: NavDescription[]) =>
+        navDescriptionsFiltered.some(
+            (navDescription) =>
+                navDescription.type === 'parent' &&
+                navDescription.key === keyForVulnerabilityManagement1
+        )
+            ? techPreviewContent
+            : gaContent;
 }
 
 type SeparatorDescription = {
@@ -211,31 +227,36 @@ const navDescriptions: NavDescription[] = [
     */
     {
         type: 'parent',
-        title: (navDescriptionsFiltered) =>
-            navDescriptionsFiltered.some(
-                (navDescription) =>
-                    navDescription.type === 'parent' &&
-                    navDescription.key === keyForVulnerabilityManagement1
-            )
-                ? 'Vulnerability Management (2.0)'
-                : 'Vulnerability Management',
+        title: vulnMgmt2GaContentPredicate(
+            'Vulnerability Management (2.0)',
+            'Vulnerability Management'
+        ),
         key: keyForVulnerabilityManagement2,
         children: [
             {
                 type: 'link',
-                content: <NavigationContent variant="TechPreview">Workload CVEs</NavigationContent>,
+                content: vulnMgmt2GaContentPredicate(
+                    <NavigationContent variant="TechPreview">Workload CVEs</NavigationContent>,
+                    'Workload CVEs'
+                ),
                 path: vulnerabilitiesWorkloadCvesPath,
                 routeKey: 'workload-cves',
             },
             {
                 type: 'link',
-                content: 'Platform CVEs',
+                content: vulnMgmt2GaContentPredicate(
+                    <NavigationContent variant="TechPreview">Platform CVEs</NavigationContent>,
+                    'Platform CVEs'
+                ),
                 path: vulnerabilitiesPlatformCvesPath,
                 routeKey: 'platform-cves',
             },
             {
                 type: 'link',
-                content: 'Node CVEs',
+                content: vulnMgmt2GaContentPredicate(
+                    <NavigationContent variant="TechPreview">Node CVEs</NavigationContent>,
+                    'Node CVEs'
+                ),
                 path: vulnerabilitiesNodeCvesPath,
                 routeKey: 'node-cves',
             },
