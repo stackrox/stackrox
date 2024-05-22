@@ -13,41 +13,41 @@ import (
 	context "context"
 	reflect "reflect"
 
-	reportgenerator "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/reportgenerator"
+	complianceReportgenerator "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/reportgenerator"
 	gomock "go.uber.org/mock/gomock"
 )
 
-// MockReportGenerator is a mock of ReportGenerator interface.
-type MockReportGenerator struct {
+// MockComplianceReportGenerator is a mock of ComplianceReportGenerator interface.
+type MockComplianceReportGenerator struct {
 	ctrl     *gomock.Controller
-	recorder *MockReportGeneratorMockRecorder
+	recorder *MockComplianceReportGeneratorMockRecorder
 }
 
-// MockReportGeneratorMockRecorder is the mock recorder for MockReportGenerator.
-type MockReportGeneratorMockRecorder struct {
-	mock *MockReportGenerator
+// MockComplianceReportGeneratorMockRecorder is the mock recorder for MockComplianceReportGenerator.
+type MockComplianceReportGeneratorMockRecorder struct {
+	mock *MockComplianceReportGenerator
 }
 
-// NewMockReportGenerator creates a new mock instance.
-func NewMockReportGenerator(ctrl *gomock.Controller) *MockReportGenerator {
-	mock := &MockReportGenerator{ctrl: ctrl}
-	mock.recorder = &MockReportGeneratorMockRecorder{mock}
+// NewMockComplianceReportGenerator creates a new mock instance.
+func NewMockComplianceReportGenerator(ctrl *gomock.Controller) *MockComplianceReportGenerator {
+	mock := &MockComplianceReportGenerator{ctrl: ctrl}
+	mock.recorder = &MockComplianceReportGeneratorMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockReportGenerator) EXPECT() *MockReportGeneratorMockRecorder {
+func (m *MockComplianceReportGenerator) EXPECT() *MockComplianceReportGeneratorMockRecorder {
 	return m.recorder
 }
 
 // ProcessReportRequest mocks base method.
-func (m *MockReportGenerator) ProcessReportRequest(ctx context.Context, req *reportgenerator.ComplianceReportRequest) {
+func (m *MockComplianceReportGenerator) ProcessReportRequest(ctx context.Context, req *complianceReportgenerator.ComplianceReportRequest) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "ProcessReportRequest", ctx, req)
 }
 
 // ProcessReportRequest indicates an expected call of ProcessReportRequest.
-func (mr *MockReportGeneratorMockRecorder) ProcessReportRequest(ctx, req any) *gomock.Call {
+func (mr *MockComplianceReportGeneratorMockRecorder) ProcessReportRequest(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReportRequest", reflect.TypeOf((*MockReportGenerator)(nil).ProcessReportRequest), ctx, req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReportRequest", reflect.TypeOf((*MockComplianceReportGenerator)(nil).ProcessReportRequest), ctx, req)
 }

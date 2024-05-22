@@ -1,4 +1,4 @@
-package reportgenerator
+package complianceReportgenerator
 
 import (
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
@@ -8,11 +8,11 @@ import (
 
 var (
 	once     sync.Once
-	instance ReportGenerator
+	instance ComplianceReportGenerator
 )
 
 // Singleton provides the instance of Manager to use.
-func Singleton() ReportGenerator {
+func Singleton() ComplianceReportGenerator {
 	once.Do(initialize)
 	return instance
 }

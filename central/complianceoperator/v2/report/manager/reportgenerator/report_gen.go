@@ -1,4 +1,4 @@
-package reportgenerator
+package complianceReportgenerator
 
 import (
 	"context"
@@ -10,18 +10,18 @@ import (
 // ReportGenerator interface is used to generate compliance report and send email notification.
 //
 //go:generate mockgen-wrapper
-type ReportGenerator interface {
+type ComplianceReportGenerator interface {
 	// ProcessReportRequest will generate a csv report and send notification via email to attached scan config notifiers.
 	ProcessReportRequest(ctx context.Context, req *ComplianceReportRequest)
 }
 
 // New will create a new instance of the ReportGenerator
-func New(checkResultDS checkResults.DataStore, notifierProcessor notifier.Processor) ReportGenerator {
-	return newReportGeneratorImpl(checkResultDS, notifierProcessor)
+func New(checkResultDS checkResults.DataStore, notifierProcessor notifier.Processor) ComplianceReportGenerator {
+	return newComplianceReportGeneratorImpl(checkResultDS, notifierProcessor)
 }
 
-func newReportGeneratorImpl(checkResultDS checkResults.DataStore, notifierProcessor notifier.Processor) *reportGeneratorImpl {
-	return &reportGeneratorImpl{
+func newComplianceReportGeneratorImpl(checkResultDS checkResults.DataStore, notifierProcessor notifier.Processor) *complianceReportGeneratorImpl {
+	return &complianceReportGeneratorImpl{
 		checkResultsDS:        checkResultDS,
 		notificationProcessor: notifierProcessor,
 	}

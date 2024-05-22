@@ -1,4 +1,4 @@
-package reportgenerator
+package complianceReportgenerator
 
 import (
 	"github.com/stackrox/rox/generated/storage"
