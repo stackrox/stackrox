@@ -2,7 +2,6 @@ package phonehome
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/pkg/errors"
@@ -36,7 +35,6 @@ type gatherer struct {
 	mu          sync.Mutex
 	gathering   sync.Mutex
 	gatherFuncs []GatherFunc
-	lastData    map[string]any
 	opts        []telemeter.Option
 
 	// tickerFactory allows for setting a custom ticker for ad-hoc gathering.
@@ -80,14 +78,11 @@ func (g *gatherer) identify() {
 	g.gathering.Lock()
 	defer g.gathering.Unlock()
 	data := g.gather()
-	if !reflect.DeepEqual(g.lastData, data) {
-		// Issue an event so that the new data become visible on analytics:
-		g.telemeter.Track("Updated "+g.clientType+" Identity", nil, append(g.opts, telemeter.WithTraits(data))...)
-	} else {
-		// No changes in properties, just send a heartbeat event:
-		g.telemeter.Track(g.clientType+" Heartbeat", nil, g.opts...)
-	}
-	g.lastData = data
+	// Track event makes the properties effective for the user on analytics.
+	// Duplicates are dropped during a day. The daily potential duplicate event
+	// serves as a heartbeat.
+	g.telemeter.Track("Updated "+g.clientType+" Identity", nil, append(g.opts,
+		telemeter.WithTraits(data))...)
 }
 
 func (g *gatherer) loop() {
