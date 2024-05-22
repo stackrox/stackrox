@@ -13,6 +13,7 @@ import {
 import TechPreviewBanner from 'Components/TechPreviewBanner';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import usePermissions from 'hooks/usePermissions';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import DeploymentPage from './Deployment/DeploymentPage';
 import ImagePage from './Image/ImagePage';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
@@ -26,6 +27,7 @@ const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesWorkloadCves
 const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesWorkloadCvesPath}/deployments/:deploymentId`;
 
 function WorkloadCvesPage() {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasReadAccessForIntegration = hasReadAccess('Integration');
     const hasReadAccessForNamespaces = hasReadWriteAccess('Namespace');
@@ -33,11 +35,13 @@ function WorkloadCvesPage() {
     return (
         <>
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
-            <TechPreviewBanner
-                featureURL={vulnManagementPath}
-                featureName="Vulnerability Management (1.0)"
-                routeKey="vulnerability-management"
-            />
+            {!isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA') && (
+                <TechPreviewBanner
+                    featureURL={vulnManagementPath}
+                    featureName="Vulnerability Management (1.0)"
+                    routeKey="vulnerability-management"
+                />
+            )}
             <Switch>
                 {hasReadAccessForNamespaces && (
                     <Route path={vulnerabilityNamespaceViewPath} component={NamespaceViewPage} />
