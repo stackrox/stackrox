@@ -8,6 +8,7 @@ import (
 	"time"
 
 	segment "github.com/segmentio/analytics-go/v3"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -133,7 +134,7 @@ func Test_GroupWithProps(t *testing.T) {
 	options := telemeter.ApplyOptions(
 		[]telemeter.Option{telemeter.WithGroups("Test", "test-group-id")},
 	)
-	tt.group(map[string]any{"key": "value"}, options)
+	tt.group("id", map[string]any{"key": "value"}, options)
 	tt.groupFix(options, ti)
 	tt.Stop()
 	s.Close()
@@ -148,7 +149,7 @@ func Test_makeMessageID(t *testing.T) {
 		"int":  42,
 		"bool": true,
 	}
-	salty := func(options ...telemeter.Option) *telemeter.CallOptions {
+	prefixed := func(options ...telemeter.Option) *telemeter.CallOptions {
 		opts := &telemeter.CallOptions{MessageIDPrefix: "test"}
 		for _, o := range options {
 			o(opts)
@@ -157,46 +158,129 @@ func Test_makeMessageID(t *testing.T) {
 	}
 
 	t.Run("Same ID with same input", func(t *testing.T) {
-		id1 := tt.makeMessageID("test event", props, salty())
-		id2 := tt.makeMessageID("test event", props, salty())
-		assert.Len(t, id1, 21)
+		id1 := tt.makeMessageID("test event", props, prefixed())
+		id2 := tt.makeMessageID("test event", props, prefixed())
+		assert.Equal(t, "test-490495b839acbeda", id1)
 		assert.Equal(t, id1, id2)
 	})
 	t.Run("Different ID with different props", func(t *testing.T) {
-		id1 := tt.makeMessageID("test event", props, salty())
+		id1 := tt.makeMessageID("test event", props, prefixed())
 		props["bool"] = false
-		id2 := tt.makeMessageID("test event", props, salty())
+		id2 := tt.makeMessageID("test event", props, prefixed())
 		assert.NotEqual(t, id1, id2)
 	})
 	t.Run("Different ID with different user props", func(t *testing.T) {
-		id1 := tt.makeMessageID("test event", props, salty(telemeter.WithTraits(map[string]any{"key": "same"})))
-		id2 := tt.makeMessageID("test event", props, salty(telemeter.WithTraits(map[string]any{"key": "different"})))
+		id1 := tt.makeMessageID("test event", props, prefixed(telemeter.WithTraits(map[string]any{"key": "same"})))
+		id2 := tt.makeMessageID("test event", props, prefixed(telemeter.WithTraits(map[string]any{"key": "different"})))
 		assert.NotEqual(t, id1, id2)
 	})
-	t.Run("Different ID with different salt", func(t *testing.T) {
-		id1 := tt.makeMessageID("test event", props, salty())
-		id2 := tt.makeMessageID("test event", props, salty(telemeter.WithMessageIDPrefix("different")))
+	t.Run("Different ID with different prefix", func(t *testing.T) {
+		id1 := tt.makeMessageID("test event", props, prefixed())
+		id2 := tt.makeMessageID("test event", props, prefixed(telemeter.WithNoDuplicates("different")))
 		assert.NotEqual(t, id1, id2)
 	})
 	t.Run("Different ID with different event", func(t *testing.T) {
-		id1 := tt.makeMessageID("test event 1", props, salty())
-		id2 := tt.makeMessageID("test event 2", props, salty())
+		id1 := tt.makeMessageID("test event 1", props, prefixed())
+		id2 := tt.makeMessageID("test event 2", props, prefixed())
 		assert.NotEqual(t, id1, id2)
 	})
 	t.Run("Different ID with different user", func(t *testing.T) {
-		id1 := tt.makeMessageID("test event", props, salty(telemeter.WithUserID("same")))
-		id2 := tt.makeMessageID("test event", props, salty(telemeter.WithUserID("different")))
+		id1 := tt.makeMessageID("test event", props, prefixed(telemeter.WithUserID("same")))
+		id2 := tt.makeMessageID("test event", props, prefixed(telemeter.WithUserID("different")))
 		assert.NotEqual(t, id1, id2)
 	})
 	t.Run("Different ID with different client and user", func(t *testing.T) {
-		id1 := tt.makeMessageID("test event", props, salty(telemeter.WithClient("same", "same")))
-		id2 := tt.makeMessageID("test event", props, salty(telemeter.WithUserID("same")))
+		id1 := tt.makeMessageID("test event", props, prefixed(telemeter.WithClient("same", "same")))
+		id2 := tt.makeMessageID("test event", props, prefixed(telemeter.WithUserID("same")))
 		assert.NotEqual(t, id1, id2)
 	})
-	t.Run("Empty ID with no salt added", func(t *testing.T) {
+	t.Run("Empty ID with no prefix added", func(t *testing.T) {
 		id1 := tt.makeMessageID("test event", props, &telemeter.CallOptions{})
 		assert.Empty(t, id1)
 		id1 = tt.makeMessageID("test event", nil, nil)
 		assert.Empty(t, id1)
+	})
+}
+
+type testClock struct {
+	t time.Time
+}
+
+func (tc *testClock) Now() time.Time {
+	return tc.t
+}
+
+func (tc *testClock) add(d time.Duration) {
+	tc.t = tc.t.Add(d)
+}
+
+func initTestCache() *testClock {
+	var tc testClock = testClock{time.Now()}
+	// Override the global cache with custom clock for testing purposes:
+	expiringIDCache = expiringcache.NewExpiringCacheWithClock(&tc, 1*time.Hour, expiringcache.UpdateExpirationOnGets)
+	return &tc
+}
+
+func Test_isDuplicate(t *testing.T) {
+	tc := initTestCache()
+
+	assert.False(t, isDuplicate("id1"))
+	assert.False(t, isDuplicate("id2"))
+	assert.True(t, isDuplicate("id1"))
+	assert.True(t, isDuplicate("id2"))
+
+	tc.add(2 * time.Hour)
+	assert.False(t, isDuplicate("id1"), "Should forget id1 after 1 hour")
+	assert.False(t, isDuplicate("id2"), "Should forget id2 after 1 hour")
+
+	tc.add(30 * time.Minute)
+	assert.True(t, isDuplicate("id1"), "Should remember id1 after 30 minutes")
+	tc.add(40 * time.Minute)
+	assert.True(t, isDuplicate("id1"), "Previous call should refresh the record")
+}
+
+func TestTrackWithNoDuplicates(t *testing.T) {
+	tc := initTestCache()
+
+	var i int32
+
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&i, 1)
+	}))
+	defer s.Close()
+
+	t.Run("only one message", func(t *testing.T) {
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+		for i := 0; i < 5; i++ {
+			tt.Track("test event", nil, telemeter.WithNoDuplicates("today"))
+		}
+		tt.Stop()
+		assert.Equal(t, int32(1), i, "Track calls had to issue 1 message")
+	})
+	t.Run("one message after cache expiry", func(t *testing.T) {
+		tc.add(time.Hour)
+		tc.add(time.Second)
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+		for i := 0; i < 5; i++ {
+			tt.Track("test event", nil, telemeter.WithNoDuplicates("today"))
+		}
+		tt.Stop()
+		assert.Equal(t, int32(2), i, "Track calls had to issue one more message")
+	})
+	t.Run("different prefix", func(t *testing.T) {
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+		for i := 0; i < 5; i++ {
+			tt.Track("test event", nil, telemeter.WithNoDuplicates("tomorrow"))
+		}
+		tt.Stop()
+		assert.Equal(t, int32(3), i, "Track calls had to issue one more message")
+	})
+	t.Run("different event", func(t *testing.T) {
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+		for i := 0; i < 5; i++ {
+			tt.Identify(nil, telemeter.WithNoDuplicates("tomorrow"))
+		}
+		tt.Stop()
+		assert.Equal(t, int32(4), i, "Identify calls had to issue one more message")
 	})
 }
