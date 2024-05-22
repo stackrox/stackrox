@@ -77,16 +77,17 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
     return (
         <>
             <Button
-                variant="tertiary"
+                variant="secondary"
+                className="pf-v5-u-display-inline-flex pf-v5-u-align-items-center"
                 onClick={handleModalToggle}
-                icon={<Globe className="pf-v5-u-mr-sm" />}
                 countOptions={{
                     isRead: true,
                     count: totalFilters,
                     className: 'custom-badge-unread',
                 }}
             >
-                Default filters
+                <Globe height="20px" width="20px" className="pf-v5-u-mr-sm" />
+                <span>Default filters</span>
             </Button>
             <Modal
                 title="Default filters"
