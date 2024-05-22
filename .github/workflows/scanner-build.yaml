@@ -110,7 +110,7 @@ jobs:
             ||
           matrix.name == 'race-condition-debug'
         )
-      run: echo "RACE=1" >> "$GITHUB_ENV"
+      run: echo "RACE=true" >> "$GITHUB_ENV"
 
     - name: Set build tag for race condition images
       if: matrix.name == 'race-condition-debug'
