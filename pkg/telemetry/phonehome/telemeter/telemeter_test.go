@@ -13,7 +13,7 @@ func Test_With(t *testing.T) {
 		WithGroups("groupA", "groupA_id1"),
 		WithGroups("groupA", "groupA_id2"),
 		WithGroups("groupB", "groupB_id"),
-		WithMessageIDPrefix("test"),
+		WithNoDuplicates("test"),
 	},
 	)
 	assert.Equal(t, "userID", opts.UserID)
@@ -26,4 +26,5 @@ func Test_With(t *testing.T) {
 		"groupB": {"groupB_id"},
 	}
 	assert.Equal(t, props, opts.Groups)
+	assert.NotNil(t, ApplyOptions(nil))
 }
