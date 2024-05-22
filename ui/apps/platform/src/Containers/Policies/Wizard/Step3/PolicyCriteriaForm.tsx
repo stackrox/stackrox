@@ -136,7 +136,10 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                             id="policy-sections"
                             className="pf-v5-u-p-lg pf-v5-u-h-100 pf-v5-u-align-items-stretch"
                         >
-                            <BooleanPolicyLogicSection selectedSection={selectedSection} />
+                            <BooleanPolicyLogicSection
+                                selectedSection={selectedSection}
+                                onChangeSelected={setSelectedSection}
+                            />
                         </Flex>
                     </FlexItem>
                     <Divider component="div" orientation={{ default: 'vertical' }} />
