@@ -139,3 +139,64 @@ func Test_GroupWithProps(t *testing.T) {
 	s.Close()
 	assert.Equal(t, int32(4), i, "Group call had to issue 4 messages")
 }
+
+func Test_makeMessageID(t *testing.T) {
+	tt := NewTelemeter("test-key", "url", "client-id", "client-type", 0, 1)
+
+	props := map[string]any{
+		"key":  "value",
+		"int":  42,
+		"bool": true,
+	}
+	salty := func(options ...telemeter.Option) *telemeter.CallOptions {
+		opts := &telemeter.CallOptions{MessageIDPrefix: "test"}
+		for _, o := range options {
+			o(opts)
+		}
+		return opts
+	}
+
+	t.Run("Same ID with same input", func(t *testing.T) {
+		id1 := tt.makeMessageID("test event", props, salty())
+		id2 := tt.makeMessageID("test event", props, salty())
+		assert.Len(t, id1, 21)
+		assert.Equal(t, id1, id2)
+	})
+	t.Run("Different ID with different props", func(t *testing.T) {
+		id1 := tt.makeMessageID("test event", props, salty())
+		props["bool"] = false
+		id2 := tt.makeMessageID("test event", props, salty())
+		assert.NotEqual(t, id1, id2)
+	})
+	t.Run("Different ID with different user props", func(t *testing.T) {
+		id1 := tt.makeMessageID("test event", props, salty(telemeter.WithTraits(map[string]any{"key": "same"})))
+		id2 := tt.makeMessageID("test event", props, salty(telemeter.WithTraits(map[string]any{"key": "different"})))
+		assert.NotEqual(t, id1, id2)
+	})
+	t.Run("Different ID with different salt", func(t *testing.T) {
+		id1 := tt.makeMessageID("test event", props, salty())
+		id2 := tt.makeMessageID("test event", props, salty(telemeter.WithMessageIDPrefix("different")))
+		assert.NotEqual(t, id1, id2)
+	})
+	t.Run("Different ID with different event", func(t *testing.T) {
+		id1 := tt.makeMessageID("test event 1", props, salty())
+		id2 := tt.makeMessageID("test event 2", props, salty())
+		assert.NotEqual(t, id1, id2)
+	})
+	t.Run("Different ID with different user", func(t *testing.T) {
+		id1 := tt.makeMessageID("test event", props, salty(telemeter.WithUserID("same")))
+		id2 := tt.makeMessageID("test event", props, salty(telemeter.WithUserID("different")))
+		assert.NotEqual(t, id1, id2)
+	})
+	t.Run("Different ID with different client and user", func(t *testing.T) {
+		id1 := tt.makeMessageID("test event", props, salty(telemeter.WithClient("same", "same")))
+		id2 := tt.makeMessageID("test event", props, salty(telemeter.WithUserID("same")))
+		assert.NotEqual(t, id1, id2)
+	})
+	t.Run("Empty ID with no salt added", func(t *testing.T) {
+		id1 := tt.makeMessageID("test event", props, &telemeter.CallOptions{})
+		assert.Empty(t, id1)
+		id1 = tt.makeMessageID("test event", nil, nil)
+		assert.Empty(t, id1)
+	})
+}
