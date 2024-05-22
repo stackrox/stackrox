@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Card, CardBody, Flex, FlexItem, PageSection, Title } from '@patternfly/react-core';
+import {
+    Button,
+    Card,
+    CardBody,
+    Flex,
+    FlexItem,
+    PageSection,
+    Text,
+    Title,
+} from '@patternfly/react-core';
 import { gql, useApolloClient, useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import difference from 'lodash/difference';
@@ -63,7 +72,12 @@ import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import DefaultFilterModal from '../components/DefaultFilterModal';
 import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
-import ObservedCveModeSelect from './ObservedCveModeSelect';
+import ObservedCveModeSelect, {
+    WITHOUT_CVE_OPTION_DESCRIPTION,
+    WITHOUT_CVE_OPTION_TITLE,
+    WITH_CVE_OPTION_DESCRIPTION,
+    WITH_CVE_OPTION_TITLE,
+} from './ObservedCveModeSelect';
 
 const searchOptions: SearchOption[] = [
     IMAGE_SEARCH_OPTION,
@@ -226,6 +240,17 @@ function WorkloadCvesOverviewPage() {
             setActiveEntityTabKey('Image', 'replace');
             sort.setSortOption(getDefaultSortOption('Image'), 'replace');
         }
+
+        // Re-apply the default filters when changing modes to the "WITH_CVES" mode
+        if (mode === 'WITH_CVES') {
+            applyDefaultFilters();
+        }
+    }
+
+    function applyDefaultFilters() {
+        if (isFixabilityFiltersEnabled) {
+            setSearchFilter(localStorageValue.preferences.defaultFilters, 'replace');
+        }
     }
 
     // Track the current entity tab when the page is initially visited.
@@ -239,8 +264,8 @@ function WorkloadCvesOverviewPage() {
     // is already on the page. This is because we do not distinguish between navigation via the
     // sidebar and e.g. clearing the page filters.
     useEffect(() => {
-        if (isFixabilityFiltersEnabled && isEmpty(searchFilter)) {
-            setSearchFilter(localStorageValue.preferences.defaultFilters, 'replace');
+        if (isEmpty(searchFilter) && isViewingWithCves) {
+            applyDefaultFilters();
         }
     }, []);
 
@@ -291,13 +316,6 @@ function WorkloadCvesOverviewPage() {
                     </FlexItem>
                 </Flex>
                 <Flex>
-                    {hasReadAccessForNamespaces && (
-                        <Link to={vulnerabilityNamespaceViewPath}>
-                            <Button variant="secondary" onClick={() => {}}>
-                                Namespace view
-                            </Button>
-                        </Link>
-                    )}
                     {hasWriteAccessForWatchedImage && (
                         <Button
                             variant="secondary"
@@ -309,12 +327,6 @@ function WorkloadCvesOverviewPage() {
                         >
                             Manage watched images
                         </Button>
-                    )}
-                    {isFixabilityFiltersEnabled && (
-                        <DefaultFilterModal
-                            defaultFilters={localStorageValue.preferences.defaultFilters}
-                            setLocalStorage={updateDefaultFilters}
-                        />
                     )}
                 </Flex>
             </PageSection>
@@ -344,6 +356,50 @@ function WorkloadCvesOverviewPage() {
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>
+                            <Flex
+                                direction={{ default: 'row' }}
+                                alignItems={{ default: 'alignItemsCenter' }}
+                                justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                                className="pf-v5-u-px-md pf-v5-u-pb-sm"
+                            >
+                                <FlexItem>
+                                    <Title headingLevel="h2">
+                                        {isViewingWithCves
+                                            ? WITH_CVE_OPTION_TITLE
+                                            : WITHOUT_CVE_OPTION_TITLE}
+                                    </Title>
+                                    <Text className="pf-v5-u-font-size-sm">
+                                        {isViewingWithCves
+                                            ? WITH_CVE_OPTION_DESCRIPTION
+                                            : WITHOUT_CVE_OPTION_DESCRIPTION}
+                                    </Text>
+                                </FlexItem>
+                                {isViewingWithCves && (
+                                    <FlexItem>
+                                        <Flex
+                                            direction={{ default: 'row' }}
+                                            alignItems={{ default: 'alignItemsCenter' }}
+                                            spaceItems={{ default: 'spaceItemsSm' }}
+                                        >
+                                            {hasReadAccessForNamespaces && (
+                                                <Link to={vulnerabilityNamespaceViewPath}>
+                                                    <Button variant="secondary">
+                                                        Prioritize by namespace view
+                                                    </Button>
+                                                </Link>
+                                            )}
+                                            {isFixabilityFiltersEnabled && (
+                                                <DefaultFilterModal
+                                                    defaultFilters={
+                                                        localStorageValue.preferences.defaultFilters
+                                                    }
+                                                    setLocalStorage={updateDefaultFilters}
+                                                />
+                                            )}
+                                        </Flex>
+                                    </FlexItem>
+                                )}
+                            </Flex>
                             {activeEntityTabKey === 'CVE' && (
                                 <CVEsTableContainer
                                     filterToolbar={filterToolbar}
