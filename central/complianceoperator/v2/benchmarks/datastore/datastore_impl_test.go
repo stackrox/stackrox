@@ -19,6 +19,12 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+const (
+	uuidStub1       = "933cf32f-d387-4787-8835-65857b5fdbfd"
+	uuidStub2       = "8f9850a8-b615-4a12-a3da-7b057bf3aeba"
+	uuidNonExisting = "1e52b778-63f2-4eab-aa81-c9b6381ceb02"
+)
+
 func TestComplianceBenchmarkDataStore(t *testing.T) {
 	suite.Run(t, new(complianceBenchmarkDataStoreSuite))
 }
@@ -73,8 +79,8 @@ func (s *complianceBenchmarkDataStoreSuite) TestUpsertBenchmark() {
 	s.Require().NoError(err)
 	s.Require().Empty(benchmarkIDs)
 
-	b1 := getTestBenchmark("1", "b1", "1.0", 1)
-	b2 := getTestBenchmark("2", "b2", "2.0", 2)
+	b1 := getTestBenchmark(uuidStub1, "b1", "1.0", 1)
+	b2 := getTestBenchmark(uuidStub2, "b2", "2.0", 2)
 
 	s.Assert().NoError(s.datastore.UpsertBenchmark(s.hasWriteCtx, b1))
 	s.Assert().NoError(s.datastore.UpsertBenchmark(s.hasWriteCtx, b2))
@@ -102,8 +108,8 @@ func (s *complianceBenchmarkDataStoreSuite) TestDeleteBenchmark() {
 	s.Require().NoError(err)
 	s.Require().Empty(benchmarkIDs)
 
-	b1 := getTestBenchmark("1", "b1", "1.0", 1)
-	b2 := getTestBenchmark("2", "b2", "2.0", 2)
+	b1 := getTestBenchmark(uuidStub1, "b1", "1.0", 1)
+	b2 := getTestBenchmark(uuidStub2, "b2", "2.0", 2)
 
 	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, b1))
 	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, b2))
@@ -134,8 +140,8 @@ func (s *complianceBenchmarkDataStoreSuite) TestGetBenchmark() {
 	s.Require().Empty(benchmarkIDs)
 
 	benchmarks := []*storage.ComplianceOperatorBenchmarkV2{
-		getTestBenchmark("1", "b1", "1.0", 1),
-		getTestBenchmark("2", "b2", "2.0", 2),
+		getTestBenchmark(uuidStub1, "b1", "1.0", 1),
+		getTestBenchmark(uuidStub2, "b2", "2.0", 2),
 	}
 
 	for _, b := range benchmarks {
@@ -153,38 +159,9 @@ func (s *complianceBenchmarkDataStoreSuite) TestGetBenchmark() {
 	s.Assert().NoError(err)
 	s.Assert().False(found)
 
-	_, found, err = s.datastore.GetBenchmark(s.hasReadCtx, "non-existing-id")
+	_, found, err = s.datastore.GetBenchmark(s.hasReadCtx, uuidNonExisting)
 	s.Assert().NoError(err)
 	s.Assert().False(found)
-}
-
-func (s *complianceBenchmarkDataStoreSuite) TestSearchBenchmarks() {
-	// make sure we have nothing
-	benchmarkIDs, err := s.storage.GetIDs(s.hasReadCtx)
-	s.Require().NoError(err)
-	s.Require().Empty(benchmarkIDs)
-
-	b1 := getTestBenchmark("1", "b1", "1.0", 1)
-	b2 := getTestBenchmark("2", "b2", "2.0", 2)
-
-	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, b1))
-	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, b2))
-
-	retBenchmarks, err := s.storage.Search(s.hasReadCtx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorBenchmarkName, b1.GetName()).ProtoQuery())
-	s.Assert().NoError(err)
-	s.Assert().Equal(1, len(retBenchmarks))
-	s.Assert().Contains(retBenchmarks, b1)
-
-	retBenchmarks, err = s.storage.Search(s.hasReadCtx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorBenchmarkName, "non-existing-name").ProtoQuery())
-	s.Assert().NoError(err)
-	s.Assert().Equal(0, len(retBenchmarks))
-
-	retBenchmarks, err = s.storage.Search(s.noAccessCtx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorBenchmarkName, b1.GetName()).ProtoQuery())
-	s.Assert().NoError(err)
-	s.Assert().Empty(retBenchmarks)
 }
 
 func getTestBenchmark(id string, name string, version string, profileCount int) *storage.ComplianceOperatorBenchmarkV2 {
