@@ -13,11 +13,13 @@ func Test_With(t *testing.T) {
 		WithGroups("groupA", "groupA_id1"),
 		WithGroups("groupA", "groupA_id2"),
 		WithGroups("groupB", "groupB_id"),
+		WithMessageIDPrefix("test"),
 	},
 	)
 	assert.Equal(t, "userID", opts.UserID)
 	assert.Equal(t, "clientID", opts.ClientID)
 	assert.Equal(t, "clientType", opts.ClientType)
+	assert.Equal(t, "test", opts.MessageIDPrefix)
 
 	props := map[string][]string{
 		"groupA": {"groupA_id1", "groupA_id2"},
