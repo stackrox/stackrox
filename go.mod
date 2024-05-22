@@ -500,5 +500,5 @@ replace (
 // @stackrox/scanner
 replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e
-	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.1.0
+	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.2.0
 )
