@@ -190,16 +190,16 @@ func getTestBenchmark(id string, name string, version string, profileCount int) 
 	var profiles []*storage.ComplianceOperatorBenchmarkV2_Profile
 	for i := 0; i < profileCount; i++ {
 		profiles = append(profiles, &storage.ComplianceOperatorBenchmarkV2_Profile{
-			ProfileName:    fmt.Sprintf("%s-%d", name, i),
-			ProfileVersion: fmt.Sprintf("%s-%d", version, i),
+			ProfileName:       fmt.Sprintf("%s-%d", name, i),
+			ProfileVersion:    fmt.Sprintf("%s-%d", version, i),
+			ProfileAnnotation: fmt.Sprintf("annotation-%s", name),
 		})
 	}
 	return &storage.ComplianceOperatorBenchmarkV2{
-		Id:                id,
-		Name:              name,
-		Version:           version,
-		ProfileAnnotation: []string{fmt.Sprintf("annotation-%s", name)},
-		Provider:          fmt.Sprintf("provider-%s", name),
-		Profiles:          profiles,
+		Id:       id,
+		Name:     name,
+		Version:  version,
+		Provider: fmt.Sprintf("provider-%s", name),
+		Profiles: profiles,
 	}
 }
