@@ -3,7 +3,6 @@ import { useDispatch } from 'react-redux';
 import { actions as integrationsActions } from 'reducers/integrations';
 import { actions as authActions } from 'reducers/auth';
 import { actions as apitokensActions } from 'reducers/apitokens';
-import { actions as clusterInitBundleActions } from 'reducers/clusterInitBundles';
 import { actions as machineAccessConfigsActions } from 'reducers/machineAccessConfigs';
 import { actions as cloudSourcesActions } from 'reducers/cloudSources';
 import { IntegrationSource } from '../utils/integrationUtils';
@@ -24,7 +23,6 @@ const useFetchIntegrations = (source: IntegrationSource): UseFetchIntegrationsRe
 
     function fetchIntegrations() {
         if (source === 'authProviders') {
-            dispatch(clusterInitBundleActions.fetchClusterInitBundles.request());
             dispatch(apitokensActions.fetchAPITokens.request());
             dispatch(machineAccessConfigsActions.fetchMachineAccessConfigs.request());
         } else {

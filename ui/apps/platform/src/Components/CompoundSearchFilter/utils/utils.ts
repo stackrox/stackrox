@@ -45,3 +45,37 @@ export function getDefaultAttribute(
     }
     return undefined;
 }
+
+export function ensureStringArray(value: unknown): string[] {
+    if (Array.isArray(value) && value.every((element) => typeof element === 'string')) {
+        return value as string[];
+    }
+    return [];
+}
+
+export function ensureString(value: unknown): string {
+    if (typeof value === 'string') {
+        return value;
+    }
+    return '';
+}
+
+export function ensureConditionNumber(value: unknown): { condition: string; number: number } {
+    if (
+        typeof value === 'object' &&
+        value !== null &&
+        'condition' in value &&
+        'number' in value &&
+        typeof value.condition === 'string' &&
+        typeof value.number === 'number'
+    ) {
+        return {
+            condition: value.condition,
+            number: value.number,
+        };
+    }
+    return {
+        condition: '',
+        number: 0,
+    };
+}

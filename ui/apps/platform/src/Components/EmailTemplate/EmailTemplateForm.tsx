@@ -25,12 +25,14 @@ export type EmailTemplateFormProps = {
     customBodyDefault: string;
     customSubjectDefault: string;
     formik: FormikContextType<EmailTemplateFormData>;
+    isReadOnly: boolean;
 };
 
 function EmailTemplateForm({
     customBodyDefault,
     customSubjectDefault,
     formik,
+    isReadOnly,
 }: EmailTemplateFormProps): ReactElement {
     const {
         errors,
@@ -58,6 +60,7 @@ function EmailTemplateForm({
                     onBlur={handleBlur}
                     isDisabled={isSubmitting}
                     placeholder={customSubjectDefault}
+                    readOnlyVariant={isReadOnly ? 'plain' : undefined}
                 />
                 <FormHelperText>
                     <HelperText>
@@ -74,18 +77,20 @@ function EmailTemplateForm({
                             </Text>
                         </TextContent>
                     </FlexItem>
-                    <FlexItem>
-                        <Button
-                            className="pf-v5-u-mt-sm"
-                            variant="link"
-                            isInline
-                            size="sm"
-                            onClick={() => setFieldValue('customSubject', '')}
-                            isDisabled={values.customSubject.length === 0}
-                        >
-                            Reset to default
-                        </Button>
-                    </FlexItem>
+                    {!isReadOnly && (
+                        <FlexItem>
+                            <Button
+                                className="pf-v5-u-mt-sm"
+                                variant="link"
+                                isInline
+                                size="sm"
+                                onClick={() => setFieldValue('customSubject', '')}
+                                isDisabled={values.customSubject.length === 0}
+                            >
+                                Reset to default
+                            </Button>
+                        </FlexItem>
+                    )}
                 </Flex>
             </FormGroup>
             <FormGroup label="Email body" fieldId="customBody">
@@ -99,6 +104,7 @@ function EmailTemplateForm({
                     isDisabled={isSubmitting}
                     style={{ minHeight: '250px' }}
                     placeholder={customBodyDefault}
+                    readOnlyVariant={isReadOnly ? 'plain' : undefined}
                 />
                 <FormHelperText>
                     <HelperText>
@@ -115,18 +121,20 @@ function EmailTemplateForm({
                             </Text>
                         </TextContent>
                     </FlexItem>
-                    <FlexItem>
-                        <Button
-                            className="pf-v5-u-mt-sm"
-                            variant="link"
-                            isInline
-                            size="sm"
-                            onClick={() => setFieldValue('customBody', '')}
-                            isDisabled={values.customBody.length === 0}
-                        >
-                            Reset to default
-                        </Button>
-                    </FlexItem>
+                    {!isReadOnly && (
+                        <FlexItem>
+                            <Button
+                                className="pf-v5-u-mt-sm"
+                                variant="link"
+                                isInline
+                                size="sm"
+                                onClick={() => setFieldValue('customBody', '')}
+                                isDisabled={values.customBody.length === 0}
+                            >
+                                Reset to default
+                            </Button>
+                        </FlexItem>
+                    )}
                 </Flex>
             </FormGroup>
         </Form>

@@ -13,6 +13,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-18689: ACS will qualify the registry (and path) of images from the container runtime when env var `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is set to `true` on both Central and Sensor.
   - This enables support for CRI-O's unqualified search registries and short name aliases ([more info](https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md)).
 - ROX-23852: `roxctl image scan` now has the option to filter by vulnerability severities using the `--severity` flag.
+- ROX-22376: Add a new notifier integration to enable notification via email for ACS Cloud Service managed centrals
 
 ### Removed Features
 
@@ -34,6 +35,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-20223: Added a new default policy category called "Zero Trust", and the following default policies have been tagged with the category: "Deployments should have at least one ingress Network Policy" and "Unauthorized Network Flow"
 - ROX-20224: Added a new default policy category called "Supply Chain Security", and the following default policies have been tagged with the category: "Images with no scans", "30-day Scan Age", "90-day Image Age", "Required Annotation: Email",
   "Required Annotation: Owner/Team", "Required Label: Owner/Team" and "Latest tag"
+- ROX-21207: All usage of RocksDB has been removed.
+  - Support to directly upgrade from any ACS version 3.74.x or earlier to version 4.5 has been deprecated. ACS version 3.74.x or earlier MUST be upgraded to version 4.4.x before proceeding to version 4.5 or later.
+
 
 ## [4.4.0]
 

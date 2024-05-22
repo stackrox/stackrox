@@ -26,7 +26,7 @@ module.exports = {
             framework: 'create-react-app',
             bundler: 'webpack',
         },
-        viewportHeight: 400,
+        viewportHeight: 600,
         viewportWidth: 800,
     },
 };

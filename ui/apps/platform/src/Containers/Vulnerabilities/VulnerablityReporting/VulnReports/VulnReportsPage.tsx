@@ -194,7 +194,7 @@ function VulnReportsPage() {
                                 </Flex>
                             </FlexItem>
                             <FlexItem>
-                                Configure reports, define report scopes, and assign delivery
+                                Configure reports, define collections, and assign delivery
                                 destinations to report on vulnerabilities across the organization.
                             </FlexItem>
                         </Flex>
@@ -301,7 +301,7 @@ function VulnReportsPage() {
                                                 popoverContent={
                                                     <div>
                                                         A set of user-configured rules for selecting
-                                                        deployments as part of the report scope
+                                                        deployments as part of the collection
                                                     </div>
                                                 }
                                             >

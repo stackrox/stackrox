@@ -258,13 +258,13 @@ _save_metrics() {
 
 batch_load_test_metrics() {
     while _load_one_batch "${_TESTS_STORAGE_DIR}" "${_TESTS_TABLE_NAME}"; do
-        info "one tests batch loaded"
+        info "one tests batch processed"
     done
     while _load_one_batch "${_CENTRAL_STORAGE_DIR}" "${_CENTRAL_TABLE_NAME}"; do
-        info "one central batch loaded"
+        info "one central batch processed"
     done
     while _load_one_batch "${_IMAGE_PREFETCHES_STORAGE_DIR}" "${_IMAGE_PREFETCHES_TABLE_NAME}"; do
-        info "one image prefetches batch loaded"
+        info "one image prefetches batch processed"
     done
     info "done loading"
 }
@@ -296,13 +296,16 @@ _load_one_batch() {
     gsutil ls -l "${process_location}"
 
     info "Loading into BQ"
-    bq load \
+    if bq load \
         --skip_leading_rows=1 \
         --allow_quoted_newlines \
         "$table_name" "${process_location}/*"
-
-    info "Moving the processed batch to ${storage_done}"
-    gsutil -m mv "${process_location}" "${storage_done}/"
+    then
+        info "Moving the processed batch to ${storage_done}"
+        gsutil -m mv "${process_location}" "${storage_done}/"
+    else
+        info "ERROR processing the batch, leaving in ${process_location}"
+    fi
 
     return 0
 }

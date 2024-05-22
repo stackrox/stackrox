@@ -2,10 +2,11 @@ package telemeter
 
 // CallOptions defines optional features for a Telemeter call.
 type CallOptions struct {
-	UserID      string
-	AnonymousID string
-	ClientID    string
-	ClientType  string
+	UserID          string
+	AnonymousID     string
+	ClientID        string
+	ClientType      string
+	MessageIDPrefix string
 
 	// [group type: [group id]]
 	Groups map[string][]string
@@ -58,6 +59,20 @@ func WithGroups(groupType string, groupID string) Option {
 func WithTraits(traits map[string]any) Option {
 	return func(o *CallOptions) {
 		o.Traits = traits
+	}
+}
+
+// WithNoDuplicates enables the use of the expiring cache to check for
+// previously sent messages.
+// The message ID is cached since the first use of WithNoDuplicates, meaning if
+// some message has been sent without this option, it won't be considered in the
+// consequent call with the option.
+// If messageIDPrefix is empty, the option is ignored.
+// Check the cache implementation for details for how long the ID is stored.
+// Note: on the Segment server side a similar cache is used for deduplication.
+func WithNoDuplicates(messageIDPrefix string) Option {
+	return func(o *CallOptions) {
+		o.MessageIDPrefix = messageIDPrefix
 	}
 }
 

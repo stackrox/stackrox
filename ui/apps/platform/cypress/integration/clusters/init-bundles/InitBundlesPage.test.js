@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 
 import { interactAndVisitClusters, visitClusters } from '../Clusters.helpers';
 
@@ -11,12 +10,6 @@ import {
 
 describe('Cluster init bundles InitBundlesPage', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_MOVE_INIT_BUNDLES_UI')) {
-            this.skip();
-        }
-    });
 
     it('visits from clusters page', () => {
         visitClusters();

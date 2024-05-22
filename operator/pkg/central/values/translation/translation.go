@@ -248,6 +248,10 @@ func getCentralComponentValues(c *platform.CentralComponentSpec, checker *pvcSta
 		cv.AddChild("exposure", &exposure)
 	}
 
+	if len(c.HostAliases) > 0 {
+		cv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, c.HostAliases))
+	}
+
 	cv.AddChild("db", getCentralDBComponentValues(c.DB))
 	cv.AddChild("telemetry", getTelemetryValues(c.Telemetry))
 
@@ -296,6 +300,9 @@ func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesB
 	cv.SetStringMap("nodeSelector", c.NodeSelector)
 	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, c.Tolerations))
 	cv.AddChild("persistence", getCentralDBPersistenceValues(c.GetPersistence()))
+	if len(c.HostAliases) > 0 {
+		cv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, c.HostAliases))
+	}
 	return &cv
 }
 

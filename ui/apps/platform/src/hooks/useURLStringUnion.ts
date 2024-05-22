@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 
-import useURLParameter, { Action } from 'hooks/useURLParameter';
+import useURLParameter, { HistoryAction } from 'hooks/useURLParameter';
 import { NonEmptyArray } from 'utils/type.utils';
 
 export type UseURLStringUnionReturn<Value> = [
     Value,
-    (nextValue: unknown, historyAction?: Action) => void,
+    (nextValue: unknown, historyAction?: HistoryAction) => void,
 ];
 
 function isValidValue<Values extends Readonly<NonEmptyArray<unknown>>>(
@@ -41,7 +41,7 @@ export default function useURLStringUnion<Values extends Readonly<NonEmptyArray<
         setParamValue(currentValue, 'replace');
     }, [currentValue, setParamValue]);
 
-    function safeSetValue(nextValue: unknown, historyAction?: Action) {
+    function safeSetValue(nextValue: unknown, historyAction?: HistoryAction) {
         // Ensures the value cannot be set incorrectly by calling code
         if (isValidValue(values, nextValue)) {
             setParamValue(nextValue, historyAction);

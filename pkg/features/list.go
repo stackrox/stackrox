@@ -16,9 +16,6 @@ var (
 	// PreventSensorRestartOnDisconnect enables a new behavior in Sensor where it avoids restarting when the gRPC connection with Central ends.
 	PreventSensorRestartOnDisconnect = registerUnchangeableFeature("Prevent Sensor restart on disconnect", "ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", true)
 
-	// MoveInitBundlesUI is front-end only move from integrations to clusters route.
-	MoveInitBundlesUI = registerUnchangeableFeature("Move init-bundles UI", "ROX_MOVE_INIT_BUNDLES_UI", true)
-
 	// ComplianceEnhancements enables APIs and UI pages for Compliance 2.0
 	ComplianceEnhancements = registerFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", true)
 
@@ -77,7 +74,7 @@ var (
 	ScannerV4 = registerFeature("Enables Scanner V4 runtime functionality", "ROX_SCANNER_V4", false)
 
 	// ScannerV4MultiBundle enables Scanner V4 to consume vulnerabilities using multi-bundle archives.
-	ScannerV4MultiBundle = registerFeature("Enables Scanner V4 to consume vulnerabilities using multi-bundle archives", "ROX_SCANNER_V4_MULTI_BUNDLE", false)
+	ScannerV4MultiBundle = registerFeature("Enables Scanner V4 to consume vulnerabilities using multi-bundle archives", "ROX_SCANNER_V4_MULTI_BUNDLE", true)
 
 	// CloudCredentials enables support for short-lived cloud credentials.
 	CloudCredentials = registerFeature("Enable support for short-lived cloud credentials", "ROX_CLOUD_CREDENTIALS", true)
@@ -104,7 +101,7 @@ var (
 	ComplianceRemediationV2 = registerFeature("Enable Compliance Remediation feature", "ROX_COMPLIANCE_REMEDIATION", false)
 
 	// SensorAggregateDeploymentReferenceOptimization enables a performance improvement by aggregating deployment references when the same reference is queued for processing
-	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION", true)
+	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION", false)
 
 	// ACSCSEmailNotifier enables support for the ACSCS email notifier integratioon
 	ACSCSEmailNotifier = registerFeature("Enable support for ACSCS Email notifier type", "ROX_ACSCS_EMAIL_NOTIFIER", false)
@@ -118,4 +115,7 @@ var (
 
 	// VulnMgmtAdvancedFilters enables support for advanced filters for VM 2.0 GA
 	VulnMgmtAdvancedFilters = registerFeature("Enables support for advanced filters for VM 2.0 GA", "ROX_VULN_MGMT_ADVANCED_FILTERS", false)
+
+	// VulnMgmtNoCvesView enables the "Images/Deployments" without CVEs view in VM 2.0
+	VulnMgmtNoCvesView = registerFeature("Enables support for entities without CVEs for VM 2.0", "ROX_VULN_MGMT_NO_CVES_VIEW", false)
 )

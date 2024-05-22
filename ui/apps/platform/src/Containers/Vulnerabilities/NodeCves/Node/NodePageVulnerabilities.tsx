@@ -19,11 +19,7 @@ import { getUrlQueryStringForSearchFilter, getHasSearchApplied } from 'utils/sea
 
 import BySeveritySummaryCard from 'Containers/Vulnerabilities/components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from 'Containers/Vulnerabilities/WorkloadCves/SummaryCards/CvesByStatusSummaryCard';
-import {
-    getHiddenSeverities,
-    getHiddenStatuses,
-    parseWorkloadQuerySearchFilter,
-} from '../../utils/searchUtils';
+import { getHiddenSeverities, getHiddenStatuses } from '../../utils/searchUtils';
 
 import CVEsTable from './CVEsTable';
 import useNodeVulnerabilities from './useNodeVulnerabilities';
@@ -37,7 +33,9 @@ export type NodePageVulnerabilitiesProps = {
 
 function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
     const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
+
+    // TODO - Need an equivalent function implementation for filter sanitization for Node CVEs
+    const querySearchFilter = searchFilter;
     const query = getUrlQueryStringForSearchFilter(querySearchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);

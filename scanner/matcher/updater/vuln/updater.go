@@ -479,7 +479,10 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 			return nil, time.Time{}, err
 		}
 		req.Header.Set(ifModifiedSince, prevTimestamp.Format(http.TimeFormat))
-
+		// Request multi-bundle if multi-bundle is enabled.
+		if features.ScannerV4MultiBundle.Enabled() {
+			req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
+		}
 		resp, err = u.client.Do(req)
 		if err != nil {
 			var opErr *net.OpError

@@ -4,6 +4,7 @@ import { Divider, PageSection, Title } from '@patternfly/react-core';
 
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
+import useURLSort from 'hooks/useURLSort';
 import { getComplianceProfileResults } from 'services/ComplianceResultsService';
 
 import PageTitle from 'Components/PageTitle';
@@ -14,12 +15,16 @@ import ProfileChecksTable from './ProfileChecksTable';
 function ProfileChecksPage() {
     const { profileName } = useParams();
     const pagination = useURLPagination(10);
-
-    const { page, perPage } = pagination;
+    const { page, perPage, setPage } = pagination;
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields: ['Compliance Check Name'],
+        defaultSortOption: { field: 'Compliance Check Name', direction: 'asc' },
+        onSort: () => setPage(1),
+    });
 
     const fetchProfileChecks = useCallback(
-        () => getComplianceProfileResults(profileName, page, perPage),
-        [page, perPage, profileName]
+        () => getComplianceProfileResults(profileName, sortOption, page, perPage),
+        [page, perPage, profileName, sortOption]
     );
     const { data: profileChecks, loading: isLoading, error } = useRestQuery(fetchProfileChecks);
 
@@ -41,6 +46,7 @@ function ProfileChecksPage() {
                         profileChecksResultsCount={profileChecks?.totalCount ?? 0}
                         profileName={profileName}
                         pagination={pagination}
+                        getSortParams={getSortParams}
                     />
                 </PageSection>
             </PageSection>

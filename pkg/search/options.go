@@ -20,14 +20,14 @@ var (
 	// pagination with SearchAfter.
 	DocID = newFieldLabel("_id")
 
-	Cluster               = newFieldLabel("Cluster")
-	ClusterID             = newFieldLabel("Cluster ID")
-	ClusterLabel          = newFieldLabel("Cluster Label")
-	ClusterScope          = newFieldLabel("Cluster Scope")
-	ClusterType           = newFieldLabel("Cluster Type")
-	ClusterDiscoveredTime = newFieldLabel("Cluster Discovered Time")
-	PlatformType          = newFieldLabel("Cluster Platform Type")
-	KubernetesVersion     = newFieldLabel("Cluster Kubernetes Version")
+	Cluster                  = newFieldLabel("Cluster")
+	ClusterID                = newFieldLabel("Cluster ID")
+	ClusterLabel             = newFieldLabel("Cluster Label")
+	ClusterScope             = newFieldLabel("Cluster Scope")
+	ClusterType              = newFieldLabel("Cluster Type")
+	ClusterDiscoveredTime    = newFieldLabel("Cluster Discovered Time")
+	ClusterPlatformType      = newFieldLabel("Cluster Platform Type")
+	ClusterKubernetesVersion = newFieldLabel("Cluster Kubernetes Version")
 
 	// cluster health search fields
 	ClusterStatus          = newFieldLabel("Cluster Status")
@@ -304,6 +304,7 @@ var (
 	NodeCount       = newDerivedFieldLabel("Node Count", NodeID, CountDerivationType)
 	ComponentCount  = newDerivedFieldLabel("Component Count", ComponentID, CountDerivationType)
 	CVECount        = newDerivedFieldLabel("CVE Count", CVEID, CountDerivationType)
+	ProfileCount    = newDerivedFieldLabel("Compliance Profile Name Count", ComplianceOperatorProfileName, CountDerivationType)
 	// Translative derived fields with reversed sorting. These fields are supported only in pagination.
 	NodePriority       = newDerivedFieldLabel("Node Risk Priority", NodeRiskScore, SimpleReverseSortDerivationType)
 	DeploymentPriority = newDerivedFieldLabel("Deployment Risk Priority", DeploymentRiskScore, SimpleReverseSortDerivationType)

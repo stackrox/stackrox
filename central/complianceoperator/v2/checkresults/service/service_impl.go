@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
@@ -14,7 +15,6 @@ import (
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -35,7 +35,6 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Compliance)): {
 			"/v2.ComplianceResultsService/GetComplianceScanResults",
-			"/v2.ComplianceResultsService/GetComplianceScanResultsCount",
 			"/v2.ComplianceResultsService/GetComplianceOverallClusterCount",
 			"/v2.ComplianceResultsService/GetComplianceScanCheckResult",
 			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResults",
@@ -88,33 +87,19 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
 // TODO(ROX-20333):  the most recent portion will come when this ticket is worked once everything is wired up so we can tell
 // what the latest scan is.
-func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanResultsResponse, error) {
+func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceResultsResponse, error) {
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
+	countQuery := parsedQuery.Clone()
+
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
-	return s.searchComplianceCheckResults(ctx, parsedQuery)
-}
-
-// GetComplianceScanResultsCount returns scan results count
-func (s *serviceImpl) GetComplianceScanResultsCount(ctx context.Context, query *v2.RawQuery) (*v2.CountComplianceScanResults, error) {
-	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
-	}
-
-	count, err := s.complianceResultsDS.CountCheckResults(ctx, parsedQuery)
-	if err != nil {
-		return nil, errors.Errorf("Unable to retrieve compliance scan results count for query %v", query)
-	}
-	return &v2.CountComplianceScanResults{
-		Count: int32(count),
-	}, nil
+	return s.searchComplianceCheckResults(ctx, parsedQuery, countQuery)
 }
 
 // GetComplianceOverallClusterCount returns scan results count
@@ -154,18 +139,24 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to retrieve scan data for result %q", req.GetId())
 	}
-	// There should only be a single object for a scan ref id
-	if len(scans) != 1 {
+	if len(scans) == 0 {
 		return nil, errors.Errorf("Unable to retrieve scan data for result %q", req.GetId())
 	}
 
-	return storagetov2.ComplianceV2CheckResult(scanResult, scans[0].LastExecutedTime), nil
+	var lastScanTime *types.Timestamp
+	for _, scan := range scans {
+		if types.CompareTimestamps(scan.LastExecutedTime, lastScanTime) > 0 {
+			lastScanTime = scan.LastExecutedTime
+		}
+	}
+
+	return storagetov2.ComplianceV2CheckResult(scanResult, lastScanTime), nil
 }
 
 // GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
 // TODO(ROX-20333):  the most recent portion will come when this ticket is worked once everything is wired up so we can tell
 // what the latest scan is.
-func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context, request *v2.ComplianceScanResultsRequest) (*v2.ListComplianceScanResultsResponse, error) {
+func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context, request *v2.ComplianceScanResultsRequest) (*v2.ListComplianceResultsResponse, error) {
 	if request.GetScanConfigName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
 	}
@@ -182,36 +173,12 @@ func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context,
 		parsedQuery,
 	)
 
+	countQuery := parsedQuery.Clone()
+
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
 
-	return s.searchComplianceCheckResults(ctx, parsedQuery)
-}
-
-// GetComplianceScanConfigurationResultsCount returns scan results count
-func (s *serviceImpl) GetComplianceScanConfigurationResultsCount(ctx context.Context, request *v2.ComplianceScanResultsRequest) (*v2.CountComplianceScanResults, error) {
-	if request.GetScanConfigName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
-	}
-
-	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
-	}
-
-	// Add the scan config name as an exact match
-	parsedQuery = search.ConjunctionQuery(
-		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, request.GetScanConfigName()).ProtoQuery(),
-		parsedQuery,
-	)
-
-	count, err := s.complianceResultsDS.CountCheckResults(ctx, parsedQuery)
-	if err != nil {
-		return nil, errors.Errorf("Unable to retrieve compliance scan results count for request %v", request)
-	}
-	return &v2.CountComplianceScanResults{
-		Count: int32(count),
-	}, nil
+	return s.searchComplianceCheckResults(ctx, parsedQuery, countQuery)
 }
 
 func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *v2.ComplianceProfileResultsRequest) (*v2.ListComplianceProfileResults, error) {
@@ -292,7 +259,7 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 	// Lookup the scans to get the last scan time
 	clusterLastScan := make(map[string]*types.Timestamp, len(scanResults))
 	for _, result := range scanResults { // Check the Compliance Scan object to get the scan time.
-		lastExecutedTime, err := s.getLastScanTime(ctx, result.ClusterId, request.GetProfileName())
+		lastExecutedTime, err := utils.GetLastScanTime(ctx, result.ClusterId, request.GetProfileName(), s.scanDS)
 		if err != nil {
 			return nil, err
 		}
@@ -364,7 +331,7 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 	}
 
 	// Check the Compliance Scan object to get the scan time.
-	lastExecutedTime, err := s.getLastScanTime(ctx, request.GetClusterId(), request.GetProfileName())
+	lastExecutedTime, err := utils.GetLastScanTime(ctx, request.GetClusterId(), request.GetProfileName(), s.scanDS)
 	if err != nil {
 		return nil, err
 	}
@@ -378,51 +345,31 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 	}, nil
 }
 
-func (s *serviceImpl) mapScanConfigToID(ctx context.Context, scanResults []*storage.ComplianceOperatorCheckResultV2) (map[string]string, error) {
-	scanConfigToIDs := make(map[string]string, len(scanResults))
-	for _, result := range scanResults {
-		if _, found := scanConfigToIDs[result.ScanConfigName]; !found {
-			config, err := s.scanConfigDS.GetScanConfigurationByName(ctx, result.ScanConfigName)
-			if err != nil {
-				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration %q", result.ScanConfigName)
-			}
-			scanConfigToIDs[result.ScanConfigName] = config.GetId()
-		}
-	}
-
-	return scanConfigToIDs, nil
-}
-
-func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQuery *v1.Query) (*v2.ListComplianceScanResultsResponse, error) {
+func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQuery *v1.Query, countQuery *v1.Query) (*v2.ListComplianceResultsResponse, error) {
 	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
 	}
 
-	// Need to look up the scan config IDs to return with the results.
-	scanConfigToIDs, err := s.mapScanConfigToID(ctx, scanResults)
-	if err != nil {
-		return nil, err
+	checkToRule := make(map[string]string, len(scanResults))
+	for _, result := range scanResults {
+		rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, result.GetRuleRefId()).ProtoQuery())
+		if err != nil {
+			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for query %v", parsedQuery)
+		}
+		if len(rules) != 1 {
+			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
+		}
+		checkToRule[result.GetRuleRefId()] = rules[0].GetName()
 	}
 
-	return &v2.ListComplianceScanResultsResponse{
-		ScanResults: storagetov2.ComplianceV2ScanResults(scanResults, scanConfigToIDs),
+	count, err := s.complianceResultsDS.CountCheckResults(ctx, countQuery)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve count of compliance scan results for query %v", parsedQuery)
+	}
+
+	return &v2.ListComplianceResultsResponse{
+		ScanResults: storagetov2.ComplianceV2CheckData(scanResults, checkToRule),
+		TotalCount:  int32(count),
 	}, nil
-}
-
-func (s *serviceImpl) getLastScanTime(ctx context.Context, clusterID string, profileName string) (*types.Timestamp, error) {
-	// Check the Compliance Scan object to get the scan time.
-	scanQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, profileName).
-		AddExactMatches(search.ClusterID, clusterID).
-		ProtoQuery()
-	scans, err := s.scanDS.SearchScans(ctx, scanQuery)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to retrieve scan data for cluster %q and profile %q", clusterID, profileName)
-	}
-	// There should only be a single object for a profile/cluster pair
-	if len(scans) != 1 {
-		return nil, errors.Errorf("Unable to retrieve scan data for cluster %q and profile %q", clusterID, profileName)
-	}
-
-	return scans[0].LastExecutedTime, nil
 }

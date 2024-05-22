@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -194,17 +195,22 @@ func (i *imageCheckCommand) Validate() error {
 
 // CheckImage will execute the image check with retry functionality
 func (i *imageCheckCommand) CheckImage() error {
+	var failedAttempts int
 	err := retry.WithRetry(func() error {
 		return i.checkImage()
 	},
 		retry.Tries(i.retryCount+1),
 		retry.OnlyRetryableErrors(),
 		retry.OnFailedAttempts(func(err error) {
+			failedAttempts++
 			i.env.Logger().ErrfLn("Checking image failed: %v. Retrying after %v seconds...", err, i.retryDelay)
 			time.Sleep(time.Duration(i.retryDelay) * time.Second)
 		}))
 	if err != nil {
-		return errors.Wrapf(err, "checking image failed after %d retries", i.retryCount)
+		if failedAttempts > 0 {
+			return errors.Wrapf(err, "checking image failed after %d retries", failedAttempts)
+		}
+		return errors.Wrap(err, "checking image failed")
 	}
 	return nil
 }
@@ -217,7 +223,7 @@ func (i *imageCheckCommand) checkImage() error {
 	}
 	alerts, err := i.getAlerts(req)
 	if err != nil {
-		return retry.MakeRetryable(err)
+		return errors.Wrap(common.MakeRetryable(err), "retrieving alerts")
 	}
 	return i.printResults(alerts)
 }

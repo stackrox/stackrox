@@ -444,7 +444,7 @@ func (r *v2Restorer) resumeAfterError(ctx context.Context) (*http.Request, error
 		// Unavailable and DeadlineExceeded indicate transport failures & timeouts. All other errors (permissions etc.)
 		// are likely permanent.
 		if code := status.Convert(err).Code(); code == codes.Unavailable || code == codes.DeadlineExceeded {
-			err = retry.MakeRetryable(err)
+			err = common.MakeRetryable(err)
 		}
 		return nil, err
 	}

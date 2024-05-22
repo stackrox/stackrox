@@ -264,7 +264,7 @@ func (i *imageScanCommand) Scan() error {
 func (i *imageScanCommand) scanImage() error {
 	imageResult, err := i.getImageResultFromService()
 	if err != nil {
-		return retry.MakeRetryable(err)
+		return errors.Wrap(common.MakeRetryable(err), "retrieving image scan result")
 	}
 
 	return i.printImageResult(imageResult)

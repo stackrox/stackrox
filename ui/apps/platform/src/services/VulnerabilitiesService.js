@@ -35,11 +35,12 @@ function getBaseCveUrl(cveType) {
 /**
  * Send request to suppress CVEs with a given IDs.
  *
- * @param {!string} CVE unique identifier
- * @param {!string} CVE suppress duration, if 0 then CVEs are suppressed indefinitely
+ * @param {string} cveType The type of CVEs to suppress
+ * @param {string[]} cveNames CVE names to suppress
+ * @param {string} duration CVE suppress duration, in hours, if "0" then CVEs are suppressed indefinitely
  * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
  */
-export function suppressVulns(cveType, cveNames, duration = 0) {
+export function suppressVulns(cveType, cveNames, duration = '0') {
     const baseUrl = getBaseCveUrl(cveType);
     return axios.patch(`${baseUrl}/suppress`, { cves: cveNames, duration });
 }
@@ -47,7 +48,8 @@ export function suppressVulns(cveType, cveNames, duration = 0) {
 /**
  * Send request to unsuppress CVEs with a given IDs.
  *
- * @param {!string} CVE unique identifier
+ * @param {string} cveType The type of CVEs to suppress
+ * @param {string[]} cveNames CVE names to suppress
  * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
  */
 export function unsuppressVulns(cveType, cveNames) {

@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	complianceConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -304,7 +305,7 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 		}
 
 		// Check the Compliance Scan object to get the scan time.
-		lastExecutedTime, err := s.getLastScanTime(ctx, result.ClusterID, request.GetProfileName())
+		lastExecutedTime, err := utils.GetLastScanTime(ctx, result.ClusterID, request.GetProfileName(), s.scanDS)
 		if err != nil {
 			return nil, err
 		}
@@ -354,21 +355,4 @@ func (s *serviceImpl) GetComplianceProfileCheckStats(ctx context.Context, reques
 		ProfileName:    request.GetProfileName(),
 		TotalCount:     int32(1),
 	}, nil
-}
-
-func (s *serviceImpl) getLastScanTime(ctx context.Context, clusterID string, profileName string) (*types.Timestamp, error) {
-	// Check the Compliance Scan object to get the scan time.
-	scanQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, profileName).
-		AddExactMatches(search.ClusterID, clusterID).
-		ProtoQuery()
-	scans, err := s.scanDS.SearchScans(ctx, scanQuery)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to retrieve scan data for cluster %q and profile %q", clusterID, profileName)
-	}
-	// There should only be a single object for a profile/cluster pair
-	if len(scans) != 1 {
-		return nil, errors.Errorf("Unable to retrieve scan data for cluster %q and profile %q", clusterID, profileName)
-	}
-
-	return scans[0].LastExecutedTime, nil
 }

@@ -1,4 +1,6 @@
 import { gql, useQuery } from '@apollo/client';
+import { ApiSortOption } from 'types/search';
+import { Pagination } from 'services/types';
 import { AffectedCluster, affectedClusterFragment } from './AffectedClustersTable';
 
 const affectedClustersQuery = gql`
@@ -11,7 +13,12 @@ const affectedClustersQuery = gql`
     }
 `;
 
-export default function useAffectedClusters(query: string, page: number, perPage: number) {
+export default function useAffectedClusters(
+    query: string,
+    page: number,
+    perPage: number,
+    sortOption: ApiSortOption
+) {
     const affectedClustersRequest = useQuery<
         {
             clusterCount: number;
@@ -19,7 +26,7 @@ export default function useAffectedClusters(query: string, page: number, perPage
         },
         {
             query: string;
-            pagination: { limit: number; offset: number };
+            pagination: Pagination;
         }
     >(affectedClustersQuery, {
         variables: {
@@ -27,6 +34,7 @@ export default function useAffectedClusters(query: string, page: number, perPage
             pagination: {
                 limit: perPage,
                 offset: (page - 1) * perPage,
+                sortOption,
             },
         },
     });

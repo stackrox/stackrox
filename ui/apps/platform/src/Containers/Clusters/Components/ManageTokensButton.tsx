@@ -1,24 +1,16 @@
 import React, { ReactElement } from 'react';
 import { HashLink } from 'react-router-hash-link';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import { clustersInitBundlesPath, integrationsPath } from 'routePaths';
+import { clustersInitBundlesPath } from 'routePaths';
 
 function ManageTokensButton(): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isMoveInitBundlesEnabled = isFeatureFlagEnabled('ROX_MOVE_INIT_BUNDLES_UI');
-
     return (
         <HashLink
-            to={
-                isMoveInitBundlesEnabled
-                    ? clustersInitBundlesPath
-                    : `${integrationsPath}#token-integrations`
-            }
+            to={clustersInitBundlesPath}
             className="no-underline flex-shrink-0"
             data-testid="manageTokens"
         >
-            {isMoveInitBundlesEnabled ? 'Init bundles' : 'Manage tokens'}
+            Init bundles
         </HashLink>
     );
 }

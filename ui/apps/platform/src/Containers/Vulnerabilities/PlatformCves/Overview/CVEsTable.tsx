@@ -1,11 +1,22 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from '@patternfly/react-core';
-import { Table, Thead, Tr, Th, Tbody, Td, ExpandableRowContent } from '@patternfly/react-table';
+import {
+    ActionsColumn,
+    ExpandableRowContent,
+    IAction,
+    Table,
+    Thead,
+    Tr,
+    Th,
+    Tbody,
+    Td,
+} from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
 import sum from 'lodash/sum';
 
 import useURLPagination from 'hooks/useURLPagination';
+import useMap from 'hooks/useMap';
 import useSet from 'hooks/useSet';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import { getTableUIState } from 'utils/getTableUIState';
@@ -14,6 +25,9 @@ import TooltipTh from 'Components/TooltipTh';
 import CvssFormatted from 'Components/CvssFormatted';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+
+import CVESelectionTh from '../../components/CVESelectionTh';
+import CVESelectionTd from '../../components/CVESelectionTd';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import { sortCveDistroList } from '../../utils/sortUtils';
 import { getPlatformEntityPagePath } from '../../utils/searchUtils';
@@ -30,9 +44,19 @@ export type CVEsTableProps = {
     querySearchFilter: QuerySearchFilter;
     isFiltered: boolean;
     pagination: ReturnType<typeof useURLPagination>;
+    selectedCves: ReturnType<typeof useMap<string, { cve: string }>>;
+    createRowActions: (cve: { cve: string }) => IAction[];
+    canSelectRows?: boolean;
 };
 
-function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps) {
+function CVEsTable({
+    querySearchFilter,
+    isFiltered,
+    pagination,
+    selectedCves,
+    canSelectRows,
+    createRowActions,
+}: CVEsTableProps) {
     const { page, perPage } = pagination;
 
     const { data, previousData, error, loading } = usePlatformCves(
@@ -53,7 +77,7 @@ function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps
     });
 
     const expandedRowSet = useSet<string>();
-    const colSpan = 6;
+    const colSpan = canSelectRows ? 8 : 6;
 
     return (
         <Table
@@ -66,6 +90,7 @@ function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps
             <Thead noWrap>
                 <Tr>
                     <Th aria-label="Expand row" />
+                    {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th>CVE</Th>
                     <Th>CVE status</Th>
                     <Th>CVE type</Th>
@@ -74,6 +99,7 @@ function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps
                         Affected clusters
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
+                    {canSelectRows && <Th aria-label="CVE actions" />}
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -110,6 +136,13 @@ function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps
                                             onToggle: () => expandedRowSet.toggle(cve),
                                         }}
                                     />
+                                    {canSelectRows && (
+                                        <CVESelectionTd
+                                            selectedCves={selectedCves}
+                                            rowIndex={rowIndex}
+                                            item={{ cve }}
+                                        />
+                                    )}
                                     <Td dataLabel="CVE" modifier="nowrap">
                                         <Link to={getPlatformEntityPagePath('CVE', cve)}>
                                             {cve}
@@ -126,6 +159,11 @@ function CVEsTable({ querySearchFilter, isFiltered, pagination }: CVEsTableProps
                                         {affectedClusterCount} / {totalClusterCount} affected
                                         clusters
                                     </Td>
+                                    {canSelectRows && (
+                                        <Td className="pf-v5-u-px-0">
+                                            <ActionsColumn items={createRowActions({ cve })} />
+                                        </Td>
+                                    )}
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
                                     <Td />
