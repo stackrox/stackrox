@@ -54,6 +54,7 @@ function ObservedCveModeSelect({
             onOpenChange={(isOpen) => setIsCveModeSelectOpen(isOpen)}
             toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
                 <MenuToggle
+                    aria-label="Observed CVE mode select"
                     ref={toggleRef}
                     onClick={() => setIsCveModeSelectOpen(!isCveModeSelectOpen)}
                     isExpanded={isCveModeSelectOpen}
