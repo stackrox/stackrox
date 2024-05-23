@@ -70,12 +70,14 @@ func CreateDatabase(t testing.TB, database string) {
 // DropDatabase - drops the database specified from the testing scope
 func DropDatabase(t testing.TB, database string) {
 	// Connect to the admin postgres database to drop the test database.
-	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, defaultDatabaseName)
-	db, err := sql.Open(driverName, sourceWithPostgresDatabase)
-	require.NoError(t, err)
+	if database != defaultDatabaseName {
+		sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, defaultDatabaseName)
+		db, err := sql.Open(driverName, sourceWithPostgresDatabase)
+		require.NoError(t, err)
 
-	_, _ = db.Exec("DROP DATABASE " + database)
-	require.NoError(t, db.Close())
+		_, _ = db.Exec("DROP DATABASE " + database)
+		require.NoError(t, db.Close())
+	}
 }
 
 // ForT creates and returns a Postgres for the test
