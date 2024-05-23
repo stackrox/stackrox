@@ -56,7 +56,7 @@ function PlatformCvePage() {
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
-        sortFields: Object.values(sortFields),
+        sortFields,
         defaultSortOption,
         onSort: () => setPage(1),
     });
