@@ -11,6 +11,12 @@ import { TableUIState } from 'utils/getTableUIState';
 import useSet from 'hooks/useSet';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
+import {
+    CLUSTER_CVE_STATUS_SORT_FIELD,
+    CVE_SORT_FIELD,
+    CVE_TYPE_SORT_FIELD,
+    CVSS_SORT_FIELD,
+} from '../../utils/sortFields';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import { getPlatformEntityPagePath } from '../../utils/searchUtils';
 
@@ -27,14 +33,14 @@ function displayCveType(cveType: string): string {
     }
 }
 
-export const sortFields = {
-    CVE: 'CVE',
-    CVEStatus: 'Cluster CVE Fixable',
-    CVEType: 'CVE Type',
-    CVSSScore: 'CVSS',
-};
+export const sortFields = [
+    CVE_SORT_FIELD,
+    CLUSTER_CVE_STATUS_SORT_FIELD,
+    CVE_TYPE_SORT_FIELD,
+    CVSS_SORT_FIELD,
+];
 
-export const defaultSortOption = { field: 'CVSS', direction: 'desc' } as const;
+export const defaultSortOption = { field: CVSS_SORT_FIELD, direction: 'desc' } as const;
 
 export const clusterVulnerabilityFragment = gql`
     fragment ClusterVulnerabilityFragment on ClusterVulnerability {
@@ -76,10 +82,10 @@ function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
             <Thead noWrap>
                 <Tr>
                     <Th aria-label="Expand row" />
-                    <Th sort={getSortParams(sortFields.CVE)}>CVE</Th>
-                    <Th sort={getSortParams(sortFields.CVEStatus)}>CVE status</Th>
-                    <Th sort={getSortParams(sortFields.CVEType)}>CVE type</Th>
-                    <Th sort={getSortParams(sortFields.CVSSScore)}>CVSS score</Th>
+                    <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
+                    <Th sort={getSortParams(CLUSTER_CVE_STATUS_SORT_FIELD)}>CVE status</Th>
+                    <Th sort={getSortParams(CVE_TYPE_SORT_FIELD)}>CVE type</Th>
+                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS score</Th>
                 </Tr>
             </Thead>
             <TbodyUnified
