@@ -242,9 +242,6 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 	if cloned.GetPagination().GetSortOptions() == nil {
 		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
 			{
-				Field: search.ComplianceLastScanMax.String(),
-			},
-			{
 				Field: search.ClusterID.String(),
 			},
 			{

@@ -6,7 +6,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
-	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	complianceConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -21,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
-	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -243,7 +241,7 @@ func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, quer
 	}
 
 	return &v2.ListComplianceClusterOverallStatsResponse{
-		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors, nil),
+		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
 		TotalCount: int32(count),
 	}, nil
 }
@@ -257,7 +255,6 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		log.Error(err)
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
@@ -277,18 +274,15 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 
 	scanResults, err := s.complianceResultsDS.ComplianceClusterStats(ctx, parsedQuery)
 	if err != nil {
-		log.Error(err)
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for request %v", request)
 	}
 
 	count, err := s.complianceResultsDS.CountByField(ctx, countQuery, search.ClusterID)
 	if err != nil {
-		log.Error(err)
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", request)
 	}
 
 	// Lookup the integrations to get the status
-	clusterLastScan := make(map[string]*types.Timestamp, len(scanResults))
 	clusterErrors := make(map[string][]string, len(scanResults))
 	for _, result := range scanResults {
 		// Get the integrations if we can.  If we cannot, it could be an externally configured
@@ -306,17 +300,10 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 			log.Warnf("Detected multiple compliance operator integrations for cluster %q", result.ClusterID)
 			clusterErrors[result.ClusterID] = []string{"Detected multiple compliance operator integrations"}
 		}
-
-		// Check the Compliance Scan object to get the scan time.
-		lastExecutedTime, err := utils.GetLastScanTime(ctx, result.ClusterID, request.GetProfileName(), s.scanDS)
-		if err != nil {
-			return nil, err
-		}
-		clusterLastScan[result.ClusterID] = lastExecutedTime
 	}
 
 	return &v2.ListComplianceClusterOverallStatsResponse{
-		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors, clusterLastScan),
+		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
 		TotalCount: int32(count),
 	}, nil
 }

@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
-	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
@@ -58,15 +57,10 @@ func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClu
 }
 
 // ComplianceV2ClusterOverallStats converts the counts to the v2 stats
-func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCountByCluster, clusterErrors map[string][]string, clusterLastScan map[string]*types.Timestamp) []*v2.ComplianceClusterOverallStats {
+func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCountByCluster, clusterErrors map[string][]string) []*v2.ComplianceClusterOverallStats {
 	var convertedResults []*v2.ComplianceClusterOverallStats
 
 	for _, resultCount := range resultCounts {
-		//var lastScanTime *types.Timestamp
-		//if clusterLastScan != nil {
-		//	lastScanTime = clusterLastScan[resultCount.ClusterID]
-		//}
-
 		convertedResults = append(convertedResults, &v2.ComplianceClusterOverallStats{
 			Cluster: &v2.ComplianceScanCluster{
 				ClusterId:   resultCount.ClusterID,
