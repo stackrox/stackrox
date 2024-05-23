@@ -19,6 +19,10 @@ import (
 storage type to apiV2 type conversions
 */
 
+const (
+	suiteComplete = "DONE"
+)
+
 var (
 	v2IntervalTypeToStorage = map[v2.Schedule_IntervalType]storage.Schedule_IntervalType{
 		v2.Schedule_UNSET:   storage.Schedule_UNSET,
@@ -204,7 +208,8 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 			}
 		}
 
-		if lastScanTime == nil || protoutils.After(suiteStatus.LastTransitionTime, lastScanTime) {
+		// If the suite is complete, set the last scan time
+		if suite.GetStatus().GetPhase() == suiteComplete && (lastScanTime == nil || protoutils.After(suiteStatus.LastTransitionTime, lastScanTime)) {
 			lastScanTime = suiteStatus.LastTransitionTime
 		}
 
