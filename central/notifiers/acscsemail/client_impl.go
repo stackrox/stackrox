@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-const sendMsgPath = "/api/v1/email/sendMessage"
+const sendMsgPath = "/api/v1/acscsemail"
 
 type clientImpl struct {
 	loadToken  func() (string, error)
