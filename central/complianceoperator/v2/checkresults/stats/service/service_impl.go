@@ -257,6 +257,7 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
+		log.Error(err)
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
@@ -276,11 +277,13 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 
 	scanResults, err := s.complianceResultsDS.ComplianceClusterStats(ctx, parsedQuery)
 	if err != nil {
+		log.Error(err)
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for request %v", request)
 	}
 
 	count, err := s.complianceResultsDS.CountByField(ctx, countQuery, search.ClusterID)
 	if err != nil {
+		log.Error(err)
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", request)
 	}
 

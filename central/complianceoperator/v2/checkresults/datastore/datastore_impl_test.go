@@ -610,7 +610,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceClusterStats() {
 	}{
 		{
 			desc:            "Empty query - Full access",
-			query:           search.NewQueryBuilder().ProtoQuery(),
+			query:           search.NewQueryBuilder().WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.ComplianceLastScanMax))).ProtoQuery(),
 			scopeKey:        testutils.UnrestrictedReadCtx,
 			expectedResults: expectedClusterCounts,
 		},
