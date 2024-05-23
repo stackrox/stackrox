@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	datastore "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -68,6 +69,21 @@ func (m *MockDataStore) GetBenchmark(ctx context.Context, id string) (*storage.C
 func (mr *MockDataStoreMockRecorder) GetBenchmark(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBenchmark", reflect.TypeOf((*MockDataStore)(nil).GetBenchmark), ctx, id)
+}
+
+// GetControlByRuleName mocks base method.
+func (m *MockDataStore) GetControlByRuleName(ctx context.Context, ruleNames []string) ([]*datastore.ControlResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetControlByRuleName", ctx, ruleNames)
+	ret0, _ := ret[0].([]*datastore.ControlResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetControlByRuleName indicates an expected call of GetControlByRuleName.
+func (mr *MockDataStoreMockRecorder) GetControlByRuleName(ctx, ruleNames any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetControlByRuleName", reflect.TypeOf((*MockDataStore)(nil).GetControlByRuleName), ctx, ruleNames)
 }
 
 // UpsertBenchmark mocks base method.

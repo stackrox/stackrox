@@ -147,6 +147,9 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string
 		numReachableFieldsBefore := len(reachableFields)
 		for _, f := range currElem.schema.Fields {
 			field := f
+			if currElem.schema.Table == "compliance_operator_rule_v2_controls" {
+				fmt.Println("break")
+			}
 			if !f.Derived {
 				lowerCaseName := strings.ToLower(f.Search.FieldName)
 				if unreachedFields.Remove(lowerCaseName) {

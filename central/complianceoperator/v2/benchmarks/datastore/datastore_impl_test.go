@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	benchmarkStorage "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/store/postgres"
+	ruleDataStore "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -32,6 +33,7 @@ type complianceBenchmarkDataStoreSuite struct {
 
 	datastore DataStore
 	storage   benchmarkStorage.Store
+	ruleDS    ruleDataStore.DataStore
 	db        *pgtest.TestPostgres
 }
 
@@ -56,16 +58,17 @@ func (s *complianceBenchmarkDataStoreSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.T().Setenv("POSTGRES_PORT", "5432")
+	s.T().Setenv("ROX_POSTGRES_TEST_DATABASE", "central")
 	s.T().Setenv("POSTGRES_PASSWORD", "password")
 	s.T().Setenv("USER", "postgres")
 
 	s.db = pgtest.ForT(s.T())
 	s.storage = benchmarkStorage.New(s.db)
-	//s.datastore = New(s.storage)
 	s.datastore = &datastoreImpl{
 		store: s.storage,
 		db:    s.db,
 	}
+
 }
 
 func (s *complianceBenchmarkDataStoreSuite) TearDownTest() {
@@ -73,6 +76,32 @@ func (s *complianceBenchmarkDataStoreSuite) TearDownTest() {
 }
 
 func (s *complianceBenchmarkDataStoreSuite) TestGetControl() {
+	// TODO: Should be moved to rule datastore? Test does not work, nil pointer in Database and missing permission in SAC?
+	//ctx := sac.WithAllAccess(context.TODO())
+	//err := s.ruleDS.UpsertRule(ctx, &storage.ComplianceOperatorRuleV2{
+	//	Id:   uuid.NewV4().String(),
+	//	Name: "ocp4-api-server-anonymous-auth",
+	//	Controls: []*storage.RuleControls{
+	//		{Standard: "CIS-OCP", Control: "1.1.1"},
+	//		{Standard: "NERC-CIP", Control: "CIP-003-8 R5.1.1"},
+	//	},
+	//})
+	//s.Require().NoError(err)
+	//
+	//err = s.ruleDS.UpsertRule(ctx, &storage.ComplianceOperatorRuleV2{
+	//	Id:   uuid.NewV4().String(),
+	//	Name: "ocp4-api-server-admission-control-plugin-namespacelifecycle",
+	//	Controls: []*storage.RuleControls{
+	//		{Standard: "CIS-OCP", Control: "1.1.1"},
+	//		{Standard: "CIS-OCP", Control: "2.2.2"},
+	//		{Standard: "CIS-OCP", Control: "3.3.3"},
+	//		{Standard: "CIS-OCP", Control: "3.3.3"},
+	//		{Standard: "NERC-CIP", Control: "CIP-003-8 R5.1.1"},
+	//		{Standard: "NERC-CIP", Control: "CIP-555-9 R5.5.5"},
+	//	},
+	//})
+	//s.Require().NoError(err)
+
 	result, err := s.datastore.GetControlByRuleName(s.hasReadCtx, []string{"ocp4-api-server-anonymous-auth", "ocp4-api-server-admission-control-plugin-namespacelifecycle"})
 	s.Require().NoError(err)
 	s.Len(result, -1)

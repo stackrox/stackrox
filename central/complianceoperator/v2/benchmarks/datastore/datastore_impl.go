@@ -22,16 +22,18 @@ type ControlResult struct {
 	Control  string `db:"compliance_control"`
 	RuleId   string `db:"compliance_rule_id"`
 	Standard string `db:"compliance_standard"`
+	RuleName string `db:"compliance_rule_name"`
 }
 
 func (d datastoreImpl) GetControlByRuleName(ctx context.Context, ruleNames []string) ([]*ControlResult, error) {
 	builder := search.NewQueryBuilder()
 	builder.AddSelectFields(
-		search.NewQuerySelect(search.ComplianceOperatorControl),
-		search.NewQuerySelect(search.ComplianceOperatorStandard),
 		// TODO: throws error to select ID
 		// field name:"compliance rule id"  in select portion of query does not exist in table compliance_operator_rule_v2 or connected tables
 		//search.NewQuerySelect(search.ComplianceOperatorRuleId),
+		search.NewQuerySelect(search.ComplianceOperatorControl),
+		search.NewQuerySelect(search.ComplianceOperatorStandard),
+		search.NewQuerySelect(search.ComplianceOperatorRuleName),
 	)
 
 	builder.AddExactMatches(search.ComplianceOperatorRuleName, ruleNames...)
