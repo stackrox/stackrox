@@ -20,6 +20,7 @@ class PreSystemTests:
         self.run_poll_for_system_test_images = run_poll_for_system_test_images
 
     VERSIONS_TIMEOUT = 10 * 60
+    START_PREFETCH_TIMEOUT = 5 * 60
     POLL_TIMEOUT = 60 * 60
 
     def run(self):
@@ -31,6 +32,13 @@ class PreSystemTests:
             check=False,
             timeout=PreSystemTests.VERSIONS_TIMEOUT,
         )
+        subprocess.run(
+            [
+                "scripts/ci/lib.sh", "image_prefetcher_prebuilt_start"
+            ],
+            check=True,
+            timeout=PreSystemTests.START_PREFETCH_TIMEOUT,
+        )
         if self.run_poll_for_system_test_images:
             subprocess.run(
                 [
@@ -41,3 +49,10 @@ class PreSystemTests:
                 check=True,
                 timeout=PreSystemTests.POLL_TIMEOUT * 1.2,
             )
+        subprocess.run(
+            [
+                "scripts/ci/lib.sh", "image_prefetcher_system_start"
+            ],
+            check=True,
+            timeout=PreSystemTests.START_PREFETCH_TIMEOUT,
+        )
