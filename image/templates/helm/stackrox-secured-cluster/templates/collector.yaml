@@ -172,6 +172,8 @@ spec:
             name: grpc
         resources:
           {{- ._rox.collector._nodeScanningResources | nindent 10 }}
+        securityContext:
+          privileged: true
         env:
         - name: ROX_NODE_NAME
           valueFrom:
