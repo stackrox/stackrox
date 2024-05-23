@@ -32,7 +32,8 @@ type datastoreImpl struct {
 }
 
 var (
-	plopSAC = sac.ForResource(resources.DeploymentExtension)
+	//plopSAC = sac.ForResource(resources.Namespace)
+	adminSAC = sac.ForResource(resources.Administration)
 	log     = logging.LoggerForModule()
 )
 
@@ -121,11 +122,13 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		"ProcessListeningOnPort",
 		"AddProcessListeningOnPort",
 	)
-	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
+	//if ok, err := adminSAC.WriteAllowed(ctx); err != nil {
+	//	log.Info("WriteAllowed error")
+	//	return err
+	//} else if !ok {
+	//	log.Info("Not ok")
+	//	return sac.ErrResourceAccessDenied
+	//}
 
 	normalizedPLOPs, completedInBatch := normalizePLOPs(portProcesses)
 	allPLOPs := append(normalizedPLOPs, completedInBatch...)
@@ -134,6 +137,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	// Errors are not handled, because we can still report information on the plop without a
 	// matching process in the process_indicator table.
 	indicators, nonempty, err := ds.indicatorDataStore.GetProcessIndicators(ctx, indicatorIds)
+	log.Info("Got indicators")
 	indicatorsMap := make(map[string]bool)
 
 	// Used to do best efforts of identifying orphaned PLOP. Note, that as
@@ -146,6 +150,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	}
 
 	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
+	log.Info("Got existing plops")
 	if err != nil {
 		return err
 	}
@@ -252,6 +257,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		}
 	}
 
+	log.Info("Before UpsertMany 1")
 	// Save new PLOP objects
 	err = ds.storage.UpsertMany(ctx, newPlopObjects)
 	if err != nil {
@@ -262,6 +268,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	defer ds.mutex.Unlock()
 
 	// Update existing PLOP objects while using a lock
+	log.Info("Before UpsertMany 2")
 	return ds.storage.UpsertMany(ctx, updatePlopObjects)
 }
 
@@ -271,11 +278,11 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 ) (
 	processesListeningOnPorts []*storage.ProcessListeningOnPort, err error,
 ) {
-	if ok, err := plopSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
-	}
+	//if ok, err := plopSAC.ReadAllowed(ctx); err != nil {
+	//	return nil, err
+	//} else if !ok {
+	//	return nil, sac.ErrResourceAccessDenied
+	//}
 
 	processesListeningOnPorts, err = ds.storage.GetProcessListeningOnPort(ctx, deploymentID)
 
@@ -292,7 +299,7 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 }
 
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn WalkFn) error {
-	if ok, err := plopSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := adminSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -302,7 +309,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn WalkFn) error {
 }
 
 func (ds *datastoreImpl) RemoveProcessListeningOnPort(ctx context.Context, ids []string) error {
-	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := adminSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -537,7 +544,7 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 }
 
 func (ds *datastoreImpl) RemovePlopsByPod(ctx context.Context, id string) error {
-	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := adminSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied

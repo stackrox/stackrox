@@ -40,7 +40,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, "processlisteningonportstorage", (*storage.ProcessListeningOnPortStorage)(nil)))
-		schema.ScopingResource = resources.DeploymentExtension
+		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableListeningEndpointsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, schema)
 		return schema

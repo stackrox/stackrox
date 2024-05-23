@@ -33,7 +33,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ListeningEndpointsSchema
-	targetResource = resources.DeploymentExtension
+	targetResource = resources.Namespace
 )
 
 type storeType = storage.ProcessListeningOnPortStorage
