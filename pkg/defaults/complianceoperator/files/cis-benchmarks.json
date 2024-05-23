@@ -7,12 +7,12 @@
   "profiles": [
     {
       "profileName": "ocp4-cis",
-      "profileVersion": "1.5.0",
+      "profileVersion": "latest",
       "profileAnnotation": "control.compliance.openshift.io/CIS-OCP"
     },
     {
       "profileName": "ocp4-cis-node",
-      "profileVersion": "1.5.0",
+      "profileVersion": "latest",
       "profileAnnotation": "control.compliance.openshift.io/CIS-OCP"
     },
     {
