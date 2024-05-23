@@ -1,6 +1,6 @@
 module github.com/stackrox/rox
 
-go 1.21.8
+go 1.21
 
 toolchain go1.21.9
 
