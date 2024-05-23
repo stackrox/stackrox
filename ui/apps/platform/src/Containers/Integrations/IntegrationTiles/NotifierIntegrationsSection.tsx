@@ -12,6 +12,7 @@ import {
 import IntegrationsSection from './IntegrationsSection';
 import IntegrationTile from './IntegrationTile';
 import { featureFlagDependencyFilterer, integrationTypeCounter } from './integrationTiles.utils';
+import useCentralCapabilities from 'hooks/useCentralCapabilities';
 
 function NotifierIntegrationsSection(): ReactElement {
     const integrations = useSelector(selectors.getNotifiers);
@@ -20,11 +21,18 @@ function NotifierIntegrationsSection(): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const featureFlagDependencyFilter = featureFlagDependencyFilterer(isFeatureFlagEnabled);
 
+    const { isCentralCapabilityAvailable } = useCentralCapabilities();
+    const canUseAcscsEmailIntegration = isCentralCapabilityAvailable(
+        'centralCanUseAcscsEmailIntegration'
+    );
+
     return (
         <IntegrationsSection headerName="Notifier Integrations" id="notifier-integrations">
             {descriptors.filter(featureFlagDependencyFilter).map((descriptor) => {
                 const { image, label, type } = descriptor;
-
+                if (!canUseAcscsEmailIntegration && type === 'acscsEmail') {
+                    return;
+                }
                 return (
                     <IntegrationTile
                         key={type}

@@ -46,6 +46,9 @@ export type CentralServicesCapabilities = {
 
     // Ability to trigger generation of new certificates
     centralCanUpdateCert: CentralServicesCapabilityStatus;
+
+    // Ability to use integration of type acscsEmail
+    centralCanUseAcscsEmailIntegration: CentralServicesCapabilityStatus;
 };
 
 export type CentralCapabilitiesFlags = keyof CentralServicesCapabilities;
