@@ -3,6 +3,7 @@ import { Split } from '@patternfly/react-core';
 
 import {
     CompoundSearchFilterConfig,
+    SearchFilterAttribute,
     SearchFilterAttributeName,
     SearchFilterEntityName,
 } from '../types';
@@ -11,17 +12,20 @@ import { getDefaultAttribute, getDefaultEntity } from '../utils/utils';
 import EntitySelector, { SelectedEntity } from './EntitySelector';
 import AttributeSelector, { SelectedAttribute } from './AttributeSelector';
 import CompoundSearchFilterInputField, { InputFieldValue } from './CompoundSearchFilterInputField';
+import { ConditionNumberProps, conditionMap } from './ConditionNumber';
 
 export type CompoundSearchFilterProps = {
     config: Partial<CompoundSearchFilterConfig>;
     defaultEntity?: SearchFilterEntityName;
     defaultAttribute?: SearchFilterAttributeName;
+    onSearch: (value: string) => void;
 };
 
 function CompoundSearchFilter({
     config,
     defaultEntity,
     defaultAttribute,
+    onSearch,
 }: CompoundSearchFilterProps) {
     const [selectedEntity, setSelectedEntity] = useState<SelectedEntity>(() => {
         if (defaultEntity) {
@@ -88,8 +92,32 @@ function CompoundSearchFilter({
                 }}
                 onSearch={(value) => {
                     // @TODO: Add search filter value to URL search
-                    // eslint-disable-next-line no-alert
-                    alert(value);
+                    if (selectedEntity && selectedAttribute) {
+                        const entityObject = config[selectedEntity];
+                        const attributeObject: SearchFilterAttribute =
+                            entityObject?.attributes[selectedAttribute];
+                        const { inputType } = attributeObject;
+                        let result = '';
+                        if (inputType === 'text') {
+                            result = value as string;
+                        } else if (inputType === 'condition-number') {
+                            const { condition, number } = value as ConditionNumberProps['value'];
+                            result = `${conditionMap[condition]}${number}`;
+                        } else if (inputType === 'autocomplete') {
+                            result = value as string;
+                        } else if (inputType === 'date-picker') {
+                            result = value as string;
+                        } else if (inputType === 'select') {
+                            const selection = value as string[];
+                            result = selection.join(',');
+                        }
+                        if (result !== '') {
+                            // eslint-disable-next-line no-alert
+                            onSearch(
+                                `[${entityObject?.searchCategory}] ${attributeObject.searchTerm}: ${result}`
+                            );
+                        }
+                    }
                 }}
                 config={config}
             />

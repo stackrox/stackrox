@@ -42,6 +42,7 @@ import {
     exceptionManagementPath,
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
+    demoPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -142,6 +143,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     dashboard: {
         component: asyncComponent(() => import('Containers/Dashboard/DashboardPage')),
         path: dashboardPath,
+    },
+    demo: {
+        component: asyncComponent(() => import('Containers/Demo/DemoPage')),
+        path: demoPath,
     },
     'exception-configuration': {
         component: asyncComponent(

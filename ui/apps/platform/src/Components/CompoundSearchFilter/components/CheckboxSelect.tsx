@@ -52,7 +52,11 @@ function CheckboxSelect({
             isDisabled={isDisabled}
         >
             {toggleLabel}
-            {selection && selection.length > 0 && <Badge isRead>{selection.length}</Badge>}
+            {selection && selection.length > 0 && (
+                <Badge className="pf-v5-u-ml-sm" isRead>
+                    {selection.length}
+                </Badge>
+            )}
         </MenuToggle>
     );
 

@@ -39,6 +39,7 @@ export const complianceEnhancedCoveragePath = `${complianceEnhancedBasePath}/cov
 export const complianceEnhancedSchedulesPath = `${complianceEnhancedBasePath}/schedules`;
 export const configManagementPath = `${mainPath}/configmanagement`;
 export const dashboardPath = `${mainPath}/dashboard`;
+export const demoPath = `${mainPath}/demo`;
 export const dataRetentionPath = `${mainPath}/retention`;
 export const exceptionConfigurationPath = `${mainPath}/exception-configuration`;
 export const exceptionManagementPath = `${vulnerabilitiesBasePath}/exception-management`;
@@ -160,6 +161,7 @@ export type RouteKey =
     | 'compliance-enhanced'
     | 'configmanagement'
     | 'dashboard'
+    | 'demo'
     | 'exception-configuration'
     | 'exception-management'
     | 'integrations'
@@ -259,6 +261,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     dashboard: {
+        resourceAccessRequirements: everyResource([]),
+    },
+    demo: {
         resourceAccessRequirements: everyResource([]),
     },
     'exception-configuration': {
