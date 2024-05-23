@@ -78,6 +78,8 @@ func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 			return
 		}
 		u.updateTicker.Stop()
+	case common.SensorComponentEventOfflineMode:
+		u.isReady.Reset()
 	}
 }
 
@@ -119,6 +121,8 @@ func (u *updaterImpl) collectInfoAndSendResponse() bool {
 	u.complianceOperatorNS = info.GetNamespace()
 	if info.GetIsInstalled() {
 		u.isReady.Signal()
+	} else {
+		u.isReady.Reset()
 	}
 
 	msg := &central.MsgFromSensor{

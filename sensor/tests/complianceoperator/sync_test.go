@@ -3,7 +3,6 @@ package complianceoperator
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -88,10 +87,6 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 	require.NoError(t, err)
 
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, tc *helper.TestContext, _ map[string]k8s.Object) {
-		// Wait for the sync
-		tc.WaitForSyncEvent(t, 30*time.Second)
-		tc.GetFakeCentral().ClearReceivedBuffer()
-
 		ctx := context.Background()
 		// Create the Compliance Operator CRDs
 		deleteCRDsFn, err := tc.ApplyWithManifestDir(context.Background(), "../../../tests/complianceoperator/crds", "*")
@@ -122,9 +117,6 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 
 		// Restart connection
 		tc.RestartFakeCentralConnection(centralCaps...)
-		// Wait for the sync
-		tc.WaitForSyncEvent(t, 30*time.Second)
-		tc.GetFakeCentral().ClearReceivedBuffer()
 
 		// Send a SyncScanConfigs Message
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage(updatedTestScanConfig, testScanConfig2))
@@ -143,9 +135,6 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 
 		// Restart connection
 		tc.RestartFakeCentralConnection(centralCaps...)
-		// Wait for the sync
-		tc.WaitForSyncEvent(t, 30*time.Second)
-		tc.GetFakeCentral().ClearReceivedBuffer()
 
 		// Send a SyncScanConfigs Message
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage())
@@ -154,7 +143,6 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 		tc.AssertResourceDoesNotExist(ctx, t, testScanConfig.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSettingBinding.APIResource)
 		tc.AssertResourceDoesNotExist(ctx, t, testScanConfig2.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSetting.APIResource)
 		tc.AssertResourceDoesNotExist(ctx, t, testScanConfig2.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSettingBinding.APIResource)
-		t.Log("Test_ComplianceOperatorScanConfigSync assertions finished")
 	}))
 }
 

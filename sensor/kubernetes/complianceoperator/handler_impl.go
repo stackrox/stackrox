@@ -82,11 +82,12 @@ func (m *handlerImpl) Stop(_ error) {
 func (m *handlerImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
-	case common.SensorComponentEventCentralReachable:
+	case common.SensorComponentEventSyncFinished:
 		m.restartSignal.Reset()
 		go m.isComplianceReady()
 	case common.SensorComponentEventOfflineMode:
 		m.restartSignal.Signal()
+		m.complianceIsReady.Reset()
 	}
 }
 
