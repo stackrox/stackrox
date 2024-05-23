@@ -118,7 +118,7 @@ func TestReprocessWatchedImageDelegation(t *testing.T) {
 	t.Run("delegation enabled", func(t *testing.T) {
 		testutils.MustUpdateFeature(t, features.DelegateWatchedImageReprocessing, true)
 
-		ctxCond := gomock.Cond(func(ctxRaw any) bool {
+		ctx := gomock.Cond(func(ctxRaw any) bool {
 			// Delegation will fail if context does not have image read access.
 			ctx := ctxRaw.(context.Context)
 			scopeChecker := sac.GlobalAccessScopeChecker(ctx).
@@ -135,7 +135,7 @@ func TestReprocessWatchedImageDelegation(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
 		enricher := mocks.NewMockImageEnricher(ctrl)
-		enricher.EXPECT().EnrichImage(ctxCond, enrichmentCtx, gomock.Any())
+		enricher.EXPECT().EnrichImage(ctx, enrichmentCtx, gomock.Any())
 
 		loop := &loopImpl{imageEnricher: enricher}
 		loop.reprocessWatchedImage("example.com/repo/path:tag")
