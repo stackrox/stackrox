@@ -70,7 +70,7 @@ function CheckDetails() {
             .sort(sortCheckStats)
             .reduce((acc, checkStat) => {
                 const statusObject = getClusterResultsStatusObject(checkStat.status);
-                if (statusObject) {
+                if (statusObject && checkStat.count > 0) {
                     const label: PageHeaderLabel = {
                         text: `${statusObject.statusText}: ${checkStat.count}`,
                         icon: statusObject.icon,
