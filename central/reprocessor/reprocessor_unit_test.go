@@ -101,9 +101,9 @@ func TestReprocessWatchedImageDelegation(t *testing.T) {
 	t.Run("delegation disabled", func(t *testing.T) {
 		testutils.MustUpdateFeature(t, features.DelegateWatchedImageReprocessing, false)
 
-		enrichmentCtx := gomock.Cond(func(ctx any) bool {
+		enrichmentCtx := gomock.Cond(func(ctxRaw any) bool {
 			// Ensure that the enrichment isn't delegable.
-			ectx := ctx.(imageEnricher.EnrichmentContext)
+			ectx := ctxRaw.(imageEnricher.EnrichmentContext)
 			return !ectx.Delegable
 		})
 
@@ -127,9 +127,9 @@ func TestReprocessWatchedImageDelegation(t *testing.T) {
 
 			return scopeChecker.IsAllowed()
 		})
-		enrichmentCtx := gomock.Cond(func(ctx any) bool {
+		enrichmentCtx := gomock.Cond(func(ctxRaw any) bool {
 			// The enrichment must be delegable.
-			ectx := ctx.(imageEnricher.EnrichmentContext)
+			ectx := ctxRaw.(imageEnricher.EnrichmentContext)
 			return ectx.Delegable
 		})
 
