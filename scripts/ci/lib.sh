@@ -524,7 +524,7 @@ image_prefetcher_start() {
     manifest=$(mktemp)
     # TODO(porridge): retrieve from go.mod file once there is an official registry with image tags matching git tags.
     local image_prefetcher_version="v0.0.11"
-    case "${ORCHESTRATOR}" in
+    case "${ORCHESTRATOR_FLAVOR}" in
     k8s)
         flavor=vanilla
         ;;
@@ -532,7 +532,7 @@ image_prefetcher_start() {
         flavor=ocp
         ;;
     *)
-        die "unsupported ORCHESTRATOR: ${ORCHESTRATOR}"
+        die "unsupported ORCHESTRATOR: ${ORCHESTRATOR_FLAVOR}"
         ;;
     esac
 
