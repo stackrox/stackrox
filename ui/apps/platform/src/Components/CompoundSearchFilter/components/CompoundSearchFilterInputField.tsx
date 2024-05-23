@@ -8,10 +8,17 @@ import {
     SearchFilterAttribute,
     SelectSearchFilterAttribute,
 } from '../types';
+import { ensureConditionNumber, ensureString, ensureStringArray } from '../utils/utils';
 
 import CheckboxSelect from './CheckboxSelect';
+import ConditionNumber from './ConditionNumber';
 
-export type InputFieldValue = string | number | undefined | string[];
+export type InputFieldValue =
+    | string
+    | number
+    | undefined
+    | string[]
+    | { condition: string; number: number };
 export type InputFieldOnChange = (value: InputFieldValue) => void;
 
 export type CompoundSearchFilterInputFieldProps = {
@@ -27,20 +34,6 @@ function isSelectType(
     attributeObject: SearchFilterAttribute
 ): attributeObject is SelectSearchFilterAttribute {
     return attributeObject.inputType === 'select';
-}
-
-function ensureStringArray(value: InputFieldValue): string[] {
-    if (Array.isArray(value) && value.every((element) => typeof element === 'string')) {
-        return value;
-    }
-    return [];
-}
-
-function ensureString(value: InputFieldValue): string {
-    if (typeof value === 'string') {
-        return value;
-    }
-    return '';
 }
 
 function CompoundSearchFilterInputField({
@@ -84,6 +77,20 @@ function CompoundSearchFilterInputField({
                 onChange={(_event, value) => {
                     onChange(value);
                     onSearch(value);
+                }}
+            />
+        );
+    }
+    if (attributeObject.inputType === 'condition-number') {
+        return (
+            <ConditionNumber
+                value={ensureConditionNumber(value)}
+                onChange={(newValue) => {
+                    onChange(newValue);
+                }}
+                onSearch={(newValue) => {
+                    onChange(newValue);
+                    onSearch(newValue);
                 }}
             />
         );

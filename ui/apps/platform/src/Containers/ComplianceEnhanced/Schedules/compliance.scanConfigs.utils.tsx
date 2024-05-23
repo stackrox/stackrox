@@ -1,5 +1,7 @@
 import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
+import { getProductBranding } from 'constants/productBranding';
 import {
+    ComplianceScanConfiguration,
     ComplianceScanConfigurationStatus,
     DailySchedule,
     MonthlySchedule,
@@ -8,6 +10,7 @@ import {
     UnsetSchedule,
     WeeklySchedule,
 } from 'services/ComplianceScanConfigurationService';
+import { NotifierConfiguration } from 'services/ReportsService.types';
 import { getDayOfMonthWithOrdinal, getTimeHoursMinutes } from 'utils/dateUtils';
 
 export type ScanConfigParameters = {
@@ -19,11 +22,16 @@ export type ScanConfigParameters = {
     daysOfMonth: DayOfMonth[];
 };
 
+export type ScanReportConfiguration = {
+    notifierConfigurations: NotifierConfiguration[];
+};
+
 export type ScanConfigFormValues = {
     id?: string;
     parameters: ScanConfigParameters;
     clusters: string[];
     profiles: string[];
+    report: ScanReportConfiguration;
 };
 
 export type PageActions = 'create' | 'edit' | 'clone';
@@ -128,9 +136,12 @@ export function convertScheduleToFormikParameters(
     };
 }
 
-export function convertFormikToScanConfig(formikValues: ScanConfigFormValues) {
-    const { id, parameters, clusters, profiles } = formikValues;
+export function convertFormikToScanConfig(
+    formikValues: ScanConfigFormValues
+): ComplianceScanConfiguration {
+    const { id, parameters, clusters, profiles, report } = formikValues;
     const { name, description } = parameters;
+    const { notifierConfigurations } = report;
 
     const scanSchedule = convertFormikParametersToSchedule(parameters);
 
@@ -142,6 +153,7 @@ export function convertFormikToScanConfig(formikValues: ScanConfigFormValues) {
             oneTimeScan: false,
             profiles,
             scanSchedule,
+            notifiers: notifierConfigurations,
         },
         clusters,
     };
@@ -151,7 +163,7 @@ export function convertScanConfigToFormik(
     existingConfig: ComplianceScanConfigurationStatus
 ): ScanConfigFormValues {
     const { id, scanName, scanConfig, clusterStatus } = existingConfig;
-    const { description = '', profiles, scanSchedule } = scanConfig;
+    const { description = '', notifiers, profiles, scanSchedule } = scanConfig;
 
     const { intervalType, time, daysOfWeek, daysOfMonth } =
         convertScheduleToFormikParameters(scanSchedule);
@@ -168,6 +180,9 @@ export function convertScanConfigToFormik(
         },
         clusters: clusterStatus.map((clusterStatus) => clusterStatus.clusterId),
         profiles,
+        report: {
+            notifierConfigurations: notifiers,
+        },
     };
 }
 
@@ -202,4 +217,14 @@ export function formatScanSchedule(schedule: Schedule) {
         default:
             return 'Invalid Schedule';
     }
+}
+
+// report
+
+const { basePageTitle, shortName } = getProductBranding();
+
+export const customBodyDefault = `${basePageTitle} for Kubernetes has identified non-compliant profile checks for the clusters scanned by your schedule configuration parameters. The attached report lists those checks and associated details to help with remediation.`;
+
+export function getSubjectDefault(scanName: string) {
+    return `${shortName} Compliance Report for ${scanName}`;
 }

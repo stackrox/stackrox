@@ -38,9 +38,6 @@ combined_coverage.dat
 # Yet, include per-project code style settings in the root of the repo.
 # `codeStyles/` directory must be included explicitly because otherwise files will not be seen by `git`. See why in the
 # link above.
-!/.idea/codeStyles/
-!/.idea/codeStyles/codeStyleConfig.xml
-!/.idea/codeStyles/Project.xml
 !/qa-tests-backend/.idea/codeStyles/
 !/qa-tests-backend/.idea/codeStyles/codeStyleConfig.xml
 !/qa-tests-backend/.idea/codeStyles/Project.xml

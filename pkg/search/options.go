@@ -86,6 +86,7 @@ var (
 	ImageTag                       = newFieldLabel("Image Tag")
 	ImageUser                      = newFieldLabel("Image User")
 	ImageCommand                   = newFieldLabel("Image Command")
+	ImageCVECount                  = newFieldLabel("Image CVE Count")
 	ImageEntrypoint                = newFieldLabel("Image Entrypoint")
 	ImageLabel                     = newFieldLabel("Image Label")
 	ImageVolumes                   = newFieldLabel("Image Volumes")
@@ -304,6 +305,7 @@ var (
 	NodeCount       = newDerivedFieldLabel("Node Count", NodeID, CountDerivationType)
 	ComponentCount  = newDerivedFieldLabel("Component Count", ComponentID, CountDerivationType)
 	CVECount        = newDerivedFieldLabel("CVE Count", CVEID, CountDerivationType)
+	ProfileCount    = newDerivedFieldLabel("Compliance Profile Name Count", ComplianceOperatorProfileName, CountDerivationType)
 	// Translative derived fields with reversed sorting. These fields are supported only in pagination.
 	NodePriority       = newDerivedFieldLabel("Node Risk Priority", NodeRiskScore, SimpleReverseSortDerivationType)
 	DeploymentPriority = newDerivedFieldLabel("Deployment Risk Priority", DeploymentRiskScore, SimpleReverseSortDerivationType)

@@ -69,6 +69,20 @@ message ListComplianceScanConfigurationsResponse {
   int32 total_count = 2;
 }
 
+message ComplianceRunReportRequest {
+  string scan_config_id = 1;
+}
+
+message ComplianceRunReportResponse {
+  enum RunState {
+    SUBMITTED = 0;
+    ERROR = 1;
+  }
+  RunState run_state = 1;
+  google.protobuf.Timestamp submitted_at = 2;
+  string error_msg = 3;
+}
+
 service ComplianceScanConfigurationService {
   // ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
   rpc ListComplianceScanConfigurations(RawQuery) returns (ListComplianceScanConfigurationsResponse) {
@@ -110,5 +124,13 @@ service ComplianceScanConfigurationService {
 
   rpc GetComplianceScanConfigurationsCount(RawQuery) returns (ComplianceScanConfigurationsCount) {
     option (google.api.http) = {get: "/v2/compliance/scan/count/configurations"};
+  }
+
+  // RunReport runs an on demand compliance report for the scan configuration
+  rpc RunReport(ComplianceRunReportRequest) returns (ComplianceRunReportResponse) {
+    option (google.api.http) = {
+      put: "/v2/compliance/scan/configurations/reports/run"
+      body: "*"
+    };
   }
 }

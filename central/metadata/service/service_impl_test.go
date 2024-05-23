@@ -210,6 +210,7 @@ func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
 		s.Equal(v1.CentralServicesCapabilities_CapabilityDisabled, caps.GetCentralCanUseCloudBackupIntegrations())
 		s.Equal(v1.CentralServicesCapabilities_CapabilityDisabled, caps.GetCentralCanDisplayDeclarativeConfigHealth())
 		s.Equal(v1.CentralServicesCapabilities_CapabilityDisabled, caps.GetCentralCanUpdateCert())
+		s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.GetCentralCanUseAcscsEmailIntegration())
 	})
 
 	cases := map[string]string{"false": "false", "<empty>": ""}

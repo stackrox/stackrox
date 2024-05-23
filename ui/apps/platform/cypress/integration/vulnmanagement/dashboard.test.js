@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import {
     interactAndWaitForVulnerabilityManagementEntities,
@@ -34,6 +35,11 @@ function selectTopRiskyOption(optionText) {
 
 describe('Vulnerability Management Dashboard', () => {
     withAuth();
+    before(function () {
+        if (hasFeatureFlag('ROX_VULN_MGMT_2_GA')) {
+            this.skip();
+        }
+    });
 
     it('should visit using the left nav', () => {
         visitVulnerabilityManagementDashboardFromLeftNav();

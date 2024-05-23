@@ -40,6 +40,12 @@ jobs:
           fi
         fi
 
+        # Conditionally add a -race debug build (binaries built with -race)
+        if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
+          matrix="$(jq '.build_and_push.name += ["race-condition-debug"]' <<< "$matrix")"
+          matrix="$(jq '.push_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
+        fi
+
         echo "Job matrix after conditionals:"
         jq <<< "$matrix"
 
@@ -51,9 +57,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      # Supports two go binary builds:
-      # default    - built with environment defaults (see handle-tagged-build & env.mk)
-      # prerelease - built with GOTAGS=release
+      # Supports three go binary and image builds:
+      # default              - built with environment defaults (see handle-tagged-build & env.mk)
+      # prerelease           - built with GOTAGS=release
+      # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push }}
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.69
@@ -94,6 +101,21 @@ jobs:
       if: matrix.name == 'prerelease'
       run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
 
+    - name: Setup Go build environment for -race
+      if: |
+        matrix.goarch == 'amd64'
+          &&
+        (
+          contains(github.event.pull_request.labels.*.name, 'ci-race-tests')
+            ||
+          matrix.name == 'race-condition-debug'
+        )
+      run: echo "RACE=true" >> "$GITHUB_ENV"
+
+    - name: Set build tag for race condition images
+      if: matrix.name == 'race-condition-debug'
+      run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
+
     - name: Build Scanner and ScannerDB images
       run: make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} images
 
@@ -112,9 +134,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      # Supports two image builds:
+      # Supports three image builds:
       # default
       # prerelease
+      # race-condition-debug
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).push_manifests }}
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.69
@@ -141,6 +164,10 @@ jobs:
       if: matrix.name == 'prerelease'
       run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
 
+    - name: Set build tag for race condition images
+      if: matrix.name == 'race-condition-debug'
+      run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
+
     - name: Push Scanner and ScannerDB image manifests
       # Skip for external contributions.
       if: |
@@ -150,6 +177,9 @@ jobs:
 
         # If this is updated, be sure to update goarch in define-scanner-job-matrix above.
         architectures="amd64,arm64,ppc64le,s390x"
+        if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
+          architectures="amd64"
+        fi
 
         push_scanner_image_manifest_lists "$architectures"
 
