@@ -42,7 +42,7 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
-        onSort: () => setPage(1),
+        onSort: () => setPage(1, 'replace'),
     });
 
     const { data, loading, error } = useClusterVulnerabilities(
