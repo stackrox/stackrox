@@ -9,6 +9,11 @@ set -euo pipefail
 REPORTS_DIR=$(mktemp -d)
 FAILED=0
 
+echo "Worker node types for Scanner V4 tests:"
+kubectl get nodes -o json | \
+    jq -jr '.items[] | .metadata.name, ": ", .metadata.labels."beta.kubernetes.io/instance-type", "\n"'
+echo
+
 bats \
     --print-output-on-failure \
     --verbose-run \
