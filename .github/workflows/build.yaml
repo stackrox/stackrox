@@ -378,16 +378,10 @@ jobs:
 
       # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
       - name: Docker login
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
 
       - name: Push images
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
             source ./scripts/ci/lib.sh
             echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
@@ -398,9 +392,6 @@ jobs:
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
       - name: Push matching collector and scanner images
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
             # Need to free up some space before push_matching_collector_scanner_images() does its pull.
             docker system prune --all --force
@@ -481,9 +472,6 @@ jobs:
       run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
     - name: Build and push manifest lists
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       run: |
         source ./scripts/ci/lib.sh
         echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
@@ -498,9 +486,6 @@ jobs:
         push_image_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "$architectures"
 
     - name: Comment on the PR
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       env:
         GITHUB_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
       run: |
@@ -546,9 +531,6 @@ jobs:
         run: echo "GOTAGS=release" >> "$GITHUB_ENV"
 
       - name: Docker login
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           ./scripts/ci/lib.sh registry_rw_login "quay.io/rhacs-eng"
 
@@ -564,24 +546,15 @@ jobs:
         run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
 
       - name: Push images
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           make -C operator/ docker-push docker-push-bundle | cat
 
       # Index image can only be built once bundle was pushed
       - name: Build index
-        # Skip for external contributions as the build relies on the previous image to be pushed.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           make -C operator/ index-build
 
       - name: Push index image
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           make -C operator/ docker-push-index | cat
 
