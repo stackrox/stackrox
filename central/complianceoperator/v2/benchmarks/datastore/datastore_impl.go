@@ -30,7 +30,7 @@ func (d datastoreImpl) GetControlByRuleName(ctx context.Context, ruleNames []str
 	builder.AddSelectFields(
 		// TODO: throws error to select ID
 		// field name:"compliance rule id"  in select portion of query does not exist in table compliance_operator_rule_v2 or connected tables
-		//search.NewQuerySelect(search.ComplianceOperatorRuleId),
+		search.NewQuerySelect(search.ComplianceOperatorRuleId),
 		search.NewQuerySelect(search.ComplianceOperatorControl),
 		search.NewQuerySelect(search.ComplianceOperatorStandard),
 		search.NewQuerySelect(search.ComplianceOperatorRuleName),

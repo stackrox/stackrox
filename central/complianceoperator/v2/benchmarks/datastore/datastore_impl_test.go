@@ -101,9 +101,16 @@ func (s *complianceBenchmarkDataStoreSuite) TestGetControl() {
 	//})
 	//s.Require().NoError(err)
 
+	// TODO: use real assertions with deterministic fixture data
 	result, err := s.datastore.GetControlByRuleName(s.hasReadCtx, []string{"ocp4-api-server-anonymous-auth", "ocp4-api-server-admission-control-plugin-namespacelifecycle"})
 	s.Require().NoError(err)
-	s.Len(result, -1)
+	s.Len(result, 14)
+	s.Equal(result[0], &ControlResult{
+		Standard: "NERC-CIP",
+		RuleId:   "829c8f7a-d388-41af-a169-764d6d0b57b0",
+		Control:  "CIP-003-8 R6",
+		RuleName: "ocp4-api-server-admission-control-plugin-namespacelifecycle",
+	})
 }
 
 func (s *complianceBenchmarkDataStoreSuite) TestUpsertBenchmark() {
