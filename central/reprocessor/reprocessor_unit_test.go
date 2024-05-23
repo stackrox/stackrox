@@ -1,14 +1,21 @@
 package reprocessor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pkg/errors"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/images/enricher/mocks"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/testutils"
 	"go.uber.org/mock/gomock"
 )
 
@@ -87,4 +94,50 @@ func Test_loopImpl_reprocessNode(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestReprocessWatchedImageDelegation(t *testing.T) {
+
+	t.Run("delegation disabled", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.DelegateWatchedImageReprocessing, false)
+
+		enrichmentCtx := gomock.Cond(func(ctx any) bool {
+			// Ensure that the enrichment isn't delegable.
+			ectx := ctx.(imageEnricher.EnrichmentContext)
+			return !ectx.Delegable
+		})
+
+		ctrl := gomock.NewController(t)
+		enricher := mocks.NewMockImageEnricher(ctrl)
+		enricher.EXPECT().EnrichImage(emptyCtx, enrichmentCtx, gomock.Any())
+
+		loop := &loopImpl{imageEnricher: enricher}
+		loop.reprocessWatchedImage("example.com/repo/path:tag")
+	})
+
+	t.Run("delegation enabled", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.DelegateWatchedImageReprocessing, true)
+
+		ctxCond := gomock.Cond(func(ctxRaw any) bool {
+			// Delegation will fail if context does not have image read access.
+			ctx := ctxRaw.(context.Context)
+			scopeChecker := sac.GlobalAccessScopeChecker(ctx).
+				AccessMode(storage.Access_READ_ACCESS).
+				Resource(resources.Image)
+
+			return scopeChecker.IsAllowed()
+		})
+		enrichmentCtx := gomock.Cond(func(ctx any) bool {
+			// The enrichment must be delegable.
+			ectx := ctx.(imageEnricher.EnrichmentContext)
+			return ectx.Delegable
+		})
+
+		ctrl := gomock.NewController(t)
+		enricher := mocks.NewMockImageEnricher(ctrl)
+		enricher.EXPECT().EnrichImage(ctxCond, enrichmentCtx, gomock.Any())
+
+		loop := &loopImpl{imageEnricher: enricher}
+		loop.reprocessWatchedImage("example.com/repo/path:tag")
+	})
 }
