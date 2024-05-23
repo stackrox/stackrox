@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/rules/store/postgres"
+	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -28,12 +29,15 @@ type DataStore interface {
 
 	// DeleteRulesByCluster removes rule by cluster id
 	DeleteRulesByCluster(ctx context.Context, clusterID string) error
+
+	GetControlsByRuleName(ctx context.Context, ruleNames []string) ([]*ControlResult, error)
 }
 
 // New returns an instance of DataStore.
 func New(complianceRuleStorage pgStore.Store) DataStore {
 	return &datastoreImpl{
 		store: complianceRuleStorage,
+		db:    globaldb.GetPostgres(),
 	}
 }
 

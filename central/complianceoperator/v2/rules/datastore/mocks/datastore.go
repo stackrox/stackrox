@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	datastore "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
@@ -67,6 +68,21 @@ func (m *MockDataStore) DeleteRulesByCluster(ctx context.Context, clusterID stri
 func (mr *MockDataStoreMockRecorder) DeleteRulesByCluster(ctx, clusterID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRulesByCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteRulesByCluster), ctx, clusterID)
+}
+
+// GetControlsByRuleName mocks base method.
+func (m *MockDataStore) GetControlsByRuleName(ctx context.Context, ruleNames []string) ([]*datastore.ControlResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetControlsByRuleName", ctx, ruleNames)
+	ret0, _ := ret[0].([]*datastore.ControlResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetControlsByRuleName indicates an expected call of GetControlsByRuleName.
+func (mr *MockDataStoreMockRecorder) GetControlsByRuleName(ctx, ruleNames any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetControlsByRuleName", reflect.TypeOf((*MockDataStore)(nil).GetControlsByRuleName), ctx, ruleNames)
 }
 
 // GetRulesByCluster mocks base method.

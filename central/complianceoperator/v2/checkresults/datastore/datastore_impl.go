@@ -216,15 +216,15 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 		ruleNames = append(ruleNames, v.RuleName)
 	}
 
-	controls, err := d.benchmarkStore.GetControlByRuleName(ctx, ruleNames)
-	//TODO: Add the control and standard to the results
-	for _, v := range results {
-		for _, control := range controls {
-			if v.RuleId == control.RuleId {
-				v.Control = control.Control
-			}
-		}
-	}
+	//controls, err := d.benchmarkStore.GetControlByRuleName(ctx, ruleNames)
+	////TODO: Add the control and standard to the results
+	//for _, v := range results {
+	//	for _, control := range controls {
+	//		if v.RuleId == control.RuleId {
+	//			v.Control = control.Control
+	//		}
+	//	}
+	//}
 
 	return results, nil
 }

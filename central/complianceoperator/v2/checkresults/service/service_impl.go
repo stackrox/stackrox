@@ -249,6 +249,24 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile scan stats for %+v", request)
 	}
 
+	var ruleNames []string
+	for _, scanResult := range scanResults {
+		ruleNames = append(ruleNames, scanResult.RuleName)
+	}
+
+	controls, err := s.ruleDS.GetControlsByRuleName(ctx, ruleNames)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve compliance controls for rules %v", ruleNames)
+	}
+
+	for _, scanResult := range scanResults {
+		for _, control := range controls {
+			if scanResult.RuleId == control.RuleId {
+				scanResult.Controls = append(scanResult.Controls, control)
+			}
+		}
+	}
+
 	count, err := s.complianceResultsDS.CountByField(ctx, countQuery, search.ComplianceOperatorCheckName)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", request)
