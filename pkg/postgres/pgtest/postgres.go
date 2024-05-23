@@ -15,7 +15,12 @@ import (
 	"k8s.io/utils/env"
 )
 
-const driverName = "pgx"
+const (
+	driverName = "pgx"
+
+	// adminDatabase is needed to create and drop databases.
+	adminDatabase = "postgres"
+)
 
 // TestPostgres is a Postgres instance used in tests
 type TestPostgres struct {
@@ -39,7 +44,7 @@ func CreateADatabaseForT(t testing.TB) string {
 // CreateDatabase - creates a database for testing
 func CreateDatabase(t testing.TB, database string) {
 	// Bootstrap the test database by connecting to the default postgres database and running create
-	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, "postgres")
+	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, adminDatabase)
 
 	db, err := sql.Open(driverName, sourceWithPostgresDatabase)
 	require.NoError(t, err)
@@ -64,14 +69,12 @@ func CreateDatabase(t testing.TB, database string) {
 // DropDatabase - drops the database specified from the testing scope
 func DropDatabase(t testing.TB, database string) {
 	// Connect to the admin postgres database to drop the test database.
-	if database != "postgres" {
-		sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, "postgres")
-		db, err := sql.Open(driverName, sourceWithPostgresDatabase)
-		require.NoError(t, err)
+	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, adminDatabase)
+	db, err := sql.Open(driverName, sourceWithPostgresDatabase)
+	require.NoError(t, err)
 
-		_, _ = db.Exec("DROP DATABASE " + database)
-		require.NoError(t, db.Close())
-	}
+	_, _ = db.Exec("DROP DATABASE " + database)
+	require.NoError(t, db.Close())
 }
 
 // ForT creates and returns a Postgres for the test
@@ -144,7 +147,7 @@ func (tp *TestPostgres) Teardown(t testing.TB) {
 
 // GetConnectionString returns a connection string for integration testing with Postgres
 func GetConnectionString(t testing.TB) string {
-	return conn.GetConnectionStringWithDatabaseName(t, env.GetString("POSTGRES_DB", "postgres"))
+	return conn.GetConnectionStringWithDatabaseName(t, env.GetString("POSTGRES_DB", adminDatabase))
 }
 
 // GetConnectionStringWithDatabaseName returns a connection string for integration testing with Postgres

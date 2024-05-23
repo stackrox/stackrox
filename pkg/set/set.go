@@ -9,7 +9,7 @@ import (
 // Set is a generic set type.
 type Set[KeyType comparable] map[KeyType]struct{}
 
-// Add adds an element of type KeyType.
+// Add adds an element of type KeyType, returns true if type was added, false if it already existed.
 func (k *Set[KeyType]) Add(i KeyType) bool {
 	if *k == nil {
 		*k = make(map[KeyType]struct{})
@@ -52,7 +52,7 @@ func (k *Set[KeyType]) AddAll(is ...KeyType) bool {
 	return len(*k) > oldLen
 }
 
-// Remove removes an element of type KeyType.
+// Remove removes an element of type KeyType. Returns true if the element was removed, false if it was not present.
 func (k *Set[KeyType]) Remove(i KeyType) bool {
 	if len(*k) == 0 {
 		return false

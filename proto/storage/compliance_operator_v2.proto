@@ -63,7 +63,7 @@ message ComplianceOperatorProfileV2 {
 }
 
 message ComplianceOperatorRuleV2 {
-  string id = 1; // @gotags: sql:"pk"
+  string id = 1; // @gotags: search:"Compliance Rule ID,hidden" sql:"pk"
   string rule_id = 2;
   string name = 3; // @gotags: search:"Compliance Rule Name,hidden"
   string rule_type = 4; // @gotags: search:"Compliance Rule Type,hidden"
