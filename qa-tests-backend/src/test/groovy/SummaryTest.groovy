@@ -59,6 +59,8 @@ class SummaryTest extends BaseSpecification {
             }
 
             assert Math.abs(stackroxSummaryCounts.numDeployments - orchestratorResourceNames.size()) <= 2
+            List<String> stackroxSecretNames = Services.getSecrets()*.name
+            log.debug "Stackrox secrets: " + stackroxSecretNames.join(",")
             assert Math.abs(stackroxSummaryCounts.numSecrets - orchestrator.getSecretCount()) <= 2
             assert Math.abs(stackroxSummaryCounts.numNodes - orchestrator.getNodeCount()) <= 2
         }
