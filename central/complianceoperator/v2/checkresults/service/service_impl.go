@@ -254,7 +254,7 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 		ruleNames = append(ruleNames, scanResult.RuleName)
 	}
 
-	controls, err := s.ruleDS.GetControlsByRuleName(ctx, ruleNames)
+	controls, err := s.ruleDS.GetControlsByRuleNames(ctx, ruleNames)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to retrieve compliance controls for rules %v", ruleNames)
 	}

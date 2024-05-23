@@ -56,11 +56,9 @@ type ControlResult struct {
 }
 
 // GetControlsByRuleName ...
-func (d *datastoreImpl) GetControlsByRuleName(ctx context.Context, ruleNames []string) ([]*ControlResult, error) {
+func (d *datastoreImpl) GetControlsByRuleNames(ctx context.Context, ruleNames []string) ([]*ControlResult, error) {
 	builder := search.NewQueryBuilder()
 	builder.AddSelectFields(
-		// TODO: throws error to select ID
-		// field name:"compliance rule id"  in select portion of query does not exist in table compliance_operator_rule_v2 or connected tables
 		search.NewQuerySelect(search.ComplianceOperatorRuleId),
 		search.NewQuerySelect(search.ComplianceOperatorControl),
 		search.NewQuerySelect(search.ComplianceOperatorStandard),

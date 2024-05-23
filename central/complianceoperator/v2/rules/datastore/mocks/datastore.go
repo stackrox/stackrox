@@ -71,9 +71,9 @@ func (mr *MockDataStoreMockRecorder) DeleteRulesByCluster(ctx, clusterID any) *g
 }
 
 // GetControlsByRuleName mocks base method.
-func (m *MockDataStore) GetControlsByRuleName(ctx context.Context, ruleNames []string) ([]*datastore.ControlResult, error) {
+func (m *MockDataStore) GetControlsByRuleNames(ctx context.Context, ruleNames []string) ([]*datastore.ControlResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetControlsByRuleName", ctx, ruleNames)
+	ret := m.ctrl.Call(m, "GetControlsByRuleNames", ctx, ruleNames)
 	ret0, _ := ret[0].([]*datastore.ControlResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -82,7 +82,7 @@ func (m *MockDataStore) GetControlsByRuleName(ctx context.Context, ruleNames []s
 // GetControlsByRuleName indicates an expected call of GetControlsByRuleName.
 func (mr *MockDataStoreMockRecorder) GetControlsByRuleName(ctx, ruleNames any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetControlsByRuleName", reflect.TypeOf((*MockDataStore)(nil).GetControlsByRuleName), ctx, ruleNames)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetControlsByRuleNames", reflect.TypeOf((*MockDataStore)(nil).GetControlsByRuleNames), ctx, ruleNames)
 }
 
 // GetRulesByCluster mocks base method.

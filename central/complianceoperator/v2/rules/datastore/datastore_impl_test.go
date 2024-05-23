@@ -46,6 +46,12 @@ func (s *complianceRuleDataStoreTestSuite) SetupSuite() {
 		s.T().Skip("Skip tests when ComplianceEnhancements disabled")
 		s.T().SkipNow()
 	}
+
+	//s.storage = benchmarkStorage.New(s.db)
+	//s.datastore = &datastoreImpl{
+	//	store: s.storage,
+	//	db:    s.db,
+	//}
 }
 
 func (s *complianceRuleDataStoreTestSuite) SetupTest() {
@@ -61,7 +67,13 @@ func (s *complianceRuleDataStoreTestSuite) SetupTest() {
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Compliance)
 	s.nonComplianceContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Deployment)
 
-	s.db = pgtest.ForT(s.T())
+	s.T().Setenv("POSTGRES_PORT", "5432")
+	s.T().Setenv("POSTGRES_PASSWORD", "password")
+	s.T().Setenv("USER", "postgres")
+
+	//TODO(do-not-merge): uncomment normal testing db
+	s.db = pgtest.ForTCustomDB(s.T(), "central")
+	//s.db = pgtest.ForT(s.T())
 
 	s.storage = ruleStorage.New(s.db)
 	s.dataStore = GetTestPostgresDataStore(s.T(), s.db)
@@ -69,6 +81,45 @@ func (s *complianceRuleDataStoreTestSuite) SetupTest() {
 
 func (s *complianceRuleDataStoreTestSuite) TearDownTest() {
 	s.db.Teardown(s.T())
+}
+
+func (s *complianceRuleDataStoreTestSuite) TestGetControl() {
+	// TODO: Should be moved to rule datastore? Test does not work, nil pointer in Database and missing permission in SAC?
+	//ctx := sac.WithAllAccess(context.TODO())
+	//err := s.ruleDS.UpsertRule(ctx, &storage.ComplianceOperatorRuleV2{
+	//	Id:   uuid.NewV4().String(),
+	//	Name: "ocp4-api-server-anonymous-auth",
+	//	Controls: []*storage.RuleControls{
+	//		{Standard: "CIS-OCP", Control: "1.1.1"},
+	//		{Standard: "NERC-CIP", Control: "CIP-003-8 R5.1.1"},
+	//	},
+	//})
+	//s.Require().NoError(err)
+	//
+	//err = s.ruleDS.UpsertRule(ctx, &storage.ComplianceOperatorRuleV2{
+	//	Id:   uuid.NewV4().String(),
+	//	Name: "ocp4-api-server-admission-control-plugin-namespacelifecycle",
+	//	Controls: []*storage.RuleControls{
+	//		{Standard: "CIS-OCP", Control: "1.1.1"},
+	//		{Standard: "CIS-OCP", Control: "2.2.2"},
+	//		{Standard: "CIS-OCP", Control: "3.3.3"},
+	//		{Standard: "CIS-OCP", Control: "3.3.3"},
+	//		{Standard: "NERC-CIP", Control: "CIP-003-8 R5.1.1"},
+	//		{Standard: "NERC-CIP", Control: "CIP-555-9 R5.5.5"},
+	//	},
+	//})
+	//s.Require().NoError(err)
+
+	// TODO: use real assertions with deterministic fixture data
+	result, err := s.dataStore.GetControlsByRuleNames(s.hasReadCtx, []string{"ocp4-api-server-anonymous-auth", "ocp4-api-server-admission-control-plugin-namespacelifecycle"})
+	s.Require().NoError(err)
+	s.Len(result, 14)
+	s.Equal(result[0], &ControlResult{
+		Standard: "NERC-CIP",
+		RuleId:   "829c8f7a-d388-41af-a169-764d6d0b57b0",
+		Control:  "CIP-003-8 R6",
+		RuleName: "ocp4-api-server-admission-control-plugin-namespacelifecycle",
+	})
 }
 
 func (s *complianceRuleDataStoreTestSuite) TestUpsertRule() {

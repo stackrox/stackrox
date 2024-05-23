@@ -30,7 +30,7 @@ type DataStore interface {
 	// DeleteRulesByCluster removes rule by cluster id
 	DeleteRulesByCluster(ctx context.Context, clusterID string) error
 
-	GetControlsByRuleName(ctx context.Context, ruleNames []string) ([]*ControlResult, error)
+	GetControlsByRuleNames(ctx context.Context, ruleNames []string) ([]*ControlResult, error)
 }
 
 // New returns an instance of DataStore.
