@@ -17,13 +17,14 @@ import { getHasSearchApplied, getUrlQueryStringForSearchFilter } from 'utils/sea
 import { getTableUIState } from 'utils/getTableUIState';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
+import useURLSort from 'hooks/useURLSort';
 import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
 import { getHiddenStatuses } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import useClusterVulnerabilities from './useClusterVulnerabilities';
 import useClusterSummaryData from './useClusterSummaryData';
-import CVEsTable from './CVEsTable';
+import CVEsTable, { defaultSortOption, sortFields } from './CVEsTable';
 import PlatformCvesByStatusSummaryCard from './PlatformCvesByStatusSummaryCard';
 import PlatformCvesByTypeSummaryCard from './PlatformCvesByTypeSummaryCard';
 
@@ -38,8 +39,19 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
     const query = getUrlQueryStringForSearchFilter(querySearchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+        onSort: () => setPage(1, 'replace'),
+    });
 
-    const { data, loading, error } = useClusterVulnerabilities(clusterId, query, page, perPage);
+    const { data, loading, error } = useClusterVulnerabilities(
+        clusterId,
+        query,
+        page,
+        perPage,
+        sortOption
+    );
     const summaryRequest = useClusterSummaryData(clusterId, query);
 
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
@@ -108,7 +120,7 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                             />
                         </SplitItem>
                     </Split>
-                    <CVEsTable tableState={tableState} />
+                    <CVEsTable tableState={tableState} getSortParams={getSortParams} />
                 </div>
             </PageSection>
         </>
