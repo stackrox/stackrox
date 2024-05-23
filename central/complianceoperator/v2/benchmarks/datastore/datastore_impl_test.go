@@ -58,11 +58,10 @@ func (s *complianceBenchmarkDataStoreSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.T().Setenv("POSTGRES_PORT", "5432")
-	s.T().Setenv("ROX_POSTGRES_TEST_DATABASE", "central")
 	s.T().Setenv("POSTGRES_PASSWORD", "password")
 	s.T().Setenv("USER", "postgres")
 
-	s.db = pgtest.ForT(s.T())
+	s.db = pgtest.ForTCustomDB(s.T(), "central")
 	s.storage = benchmarkStorage.New(s.db)
 	s.datastore = &datastoreImpl{
 		store: s.storage,
