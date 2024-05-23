@@ -3,7 +3,6 @@ package pgtest
 import (
 	"context"
 	"database/sql"
-	"os"
 	"strings"
 	"testing"
 
@@ -81,14 +80,8 @@ func DropDatabase(t testing.TB, database string) {
 
 // ForT creates and returns a Postgres for the test
 func ForT(t testing.TB) *TestPostgres {
-	// set a custom database to run tests against, useful in local setups.
-	database := os.Getenv("ROX_POSTGRES_TEST_DATABASE")
-
-	// if no custom database is provided automatically setup one
-	if database == "" {
-		// Bootstrap a test database
-		database = CreateADatabaseForT(t)
-	}
+	// Bootstrap a test database
+	database := CreateADatabaseForT(t)
 
 	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(t, database)
 
