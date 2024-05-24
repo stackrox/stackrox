@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     CodeBlock,
     CodeBlockCode,
@@ -7,17 +7,22 @@ import {
     FlexItem,
     PageSection,
     Title,
+    Toolbar,
+    ToolbarContent,
+    ToolbarGroup,
+    ToolbarItem,
 } from '@patternfly/react-core';
+
+import useURLSearch from 'hooks/useURLSearch';
+import { compoundSearchFilter } from 'Components/CompoundSearchFilter/types';
 
 import PageTitle from 'Components/PageTitle';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import { compoundSearchFilter } from 'Components/CompoundSearchFilter/types';
+import SearchFilterChips from 'Components/CompoundSearchFilter/components/SearchFilterChips';
 
 function DemoPage() {
-    const [history, setHistory] = useState<string[]>([]);
-    const historyHeader = '//// Search History ////';
-    const historyText = `\n\n${history.join('\n')}`;
-    const content = `${historyHeader}${history.length !== 0 ? historyText : ''}`;
+    const { searchFilter, setSearchFilter } = useURLSearch();
+
     return (
         <>
             <PageTitle title="Demo - Advanced Filters" />
@@ -35,22 +40,27 @@ function DemoPage() {
             <Divider component="div" />
             <PageSection>
                 <PageSection variant="light">
-                    <Flex
-                        direction={{ default: 'column' }}
-                        spaceItems={{ default: 'spaceItemsLg' }}
-                    >
-                        <CompoundSearchFilter
-                            config={compoundSearchFilter}
-                            onSearch={(value) => {
-                                setHistory((prevState: string[]) => {
-                                    return [...prevState, value];
-                                });
-                            }}
-                        />
-                        <CodeBlock>
-                            <CodeBlockCode id="code-content">{content}</CodeBlockCode>{' '}
-                        </CodeBlock>
-                    </Flex>
+                    <Toolbar>
+                        <ToolbarContent>
+                            <ToolbarItem widths={{ default: '100%' }}>
+                                <CompoundSearchFilter
+                                    config={compoundSearchFilter}
+                                    onSearch={(searchKey, searchValue) => {
+                                        setSearchFilter({
+                                            ...searchFilter,
+                                            [searchKey]: searchValue,
+                                        });
+                                    }}
+                                />
+                            </ToolbarItem>
+                            <ToolbarItem>
+                                <SearchFilterChips
+                                    searchFilter={searchFilter}
+                                    setSearchFilter={setSearchFilter}
+                                />
+                            </ToolbarItem>
+                        </ToolbarContent>
+                    </Toolbar>
                 </PageSection>
             </PageSection>
         </>

@@ -18,7 +18,7 @@ export type CompoundSearchFilterProps = {
     config: Partial<CompoundSearchFilterConfig>;
     defaultEntity?: SearchFilterEntityName;
     defaultAttribute?: SearchFilterAttributeName;
-    onSearch: (value: string) => void;
+    onSearch: (searchKey: string, searchValue: string) => void;
 };
 
 function CompoundSearchFilter({
@@ -60,7 +60,7 @@ function CompoundSearchFilter({
     }, [defaultAttribute]);
 
     return (
-        <Split>
+        <Split className="pf-v5-u-flex-grow-1">
             <EntitySelector
                 selectedEntity={selectedEntity}
                 onChange={(value) => {
@@ -113,9 +113,7 @@ function CompoundSearchFilter({
                         }
                         if (result !== '') {
                             // eslint-disable-next-line no-alert
-                            onSearch(
-                                `[${entityObject?.searchCategory}] ${attributeObject.searchTerm}: ${result}`
-                            );
+                            onSearch(attributeObject.searchTerm, result);
                         }
                     }
                 }}

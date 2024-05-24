@@ -5,7 +5,7 @@ import { SearchFilter } from 'types/search';
 import { isParsedQs } from 'utils/queryStringUtils';
 import useURLParameter, { HistoryAction, QueryValue } from './useURLParameter';
 
-type UseUrlSearchReturn = {
+export type UseUrlSearchReturn = {
     searchFilter: SearchFilter;
     setSearchFilter: (newFilter: SearchFilter, historyAction?: HistoryAction) => void;
 };
