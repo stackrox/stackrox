@@ -59,13 +59,17 @@ func ClientSingleton() Client {
 }
 
 func transportWithServiceCA() http.RoundTripper {
+	return transportWithAdditonalCA(serviceOperatorCAPath)
+}
+
+func transportWithAdditonalCA(caFile string) *http.Transport {
 	rootCAs, err := x509.SystemCertPool()
 	if err != nil {
 		rootCAs = x509.NewCertPool()
 	}
 
 	// Trust local cluster services.
-	if serviceCA, err := os.ReadFile(serviceOperatorCAPath); err == nil {
+	if serviceCA, err := os.ReadFile(caFile); err == nil {
 		rootCAs.AppendCertsFromPEM(serviceCA)
 	}
 
