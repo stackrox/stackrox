@@ -12,6 +12,12 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
+        "github.com/stackrox/rox/pkg/sac/resources"
+)
+
+var (
+	plopSAC = sac.ForResource(resources.Namespace)
 )
 
 // NewFullStore augments the generated store with GetProcessListeningOnPort functions.
@@ -73,7 +79,7 @@ func (s *fullStoreImpl) retryableGetPLOP(
 	}
 	defer rows.Close()
 
-	results, err := s.readRows(rows)
+	results, err := s.readRows(ctx, rows)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +90,7 @@ func (s *fullStoreImpl) retryableGetPLOP(
 // Manual converting of raw data from SQL query to ProcessListeningOnPort (not
 // ProcessListeningOnPortStorage) object enriched with ProcessIndicator info.
 func (s *fullStoreImpl) readRows(
+	ctx context.Context,
 	rows pgx.Rows,
 ) ([]*storage.ProcessListeningOnPort, error) {
 	var plops []*storage.ProcessListeningOnPort
@@ -179,6 +186,15 @@ func (s *fullStoreImpl) readRows(
 			ContainerStartTime: procMsg.GetContainerStartTime(),
 			ImageId:            procMsg.GetImageId(),
 		}
+
+		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(plop.ClusterId), sac.NamespaceScopeKey(plop.Namespace)); err != nil {
+			log.Info("Read not allowed for cluster and namespaces")
+		        return nil, err
+		} else if !ok {
+			log.Info("Not ok to read for cluster and namespace")
+		        return nil, sac.ErrResourceAccessDenied
+		}
+
 
 		plops = append(plops, plop)
 	}
