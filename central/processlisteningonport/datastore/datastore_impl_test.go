@@ -4,7 +4,7 @@ package datastore
 
 import (
 	"context"
-	//"fmt"
+	"fmt"
 	//"math/rand"
 	//"sync"
 	"testing"
@@ -267,210 +267,82 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasAllCtx, fixtureconsts.Cluster1, plopObjects...))
 
-        //cases := map[string]struct {
-        //        checker       sac.ScopeCheckerCore
-        //        expectAllowed bool
-        //}{
-        //        "all access": {
-        //                checker:       sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-        //                expectAllowed: true,
-	//	},
-	//}
-
-	//for name, c := range cases {
-        //        c := c
-        //        t.Run(name, func(t *testing.T) {
-        //                t.Parallel()
-        //                ctx := sac.WithGlobalAccessScopeChecker(context.Background(), c.checker)
-        //                err := checkAllNamespacesWriteAllowed(ctx, clusterID, namespaces...)
-        //                if c.expectAllowed {
-        //                        assert.NoError(t, err)
-        //                } else {
-        //                        assert.ErrorIs(t, err, sac.ErrResourceAccessDenied)
-        //                }
-        //        })
-        //}
-
-
-
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-                sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-                sac.ResourceScopeKeys(resources.Namespace),
-                sac.ClusterScopeKeys(fixtureconsts.Cluster1),
-                sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
-        ))
-
-	// Fetch inserted PLOP back
-	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		ctx, fixtureconsts.Deployment1)
-	suite.NoError(err)
-
-	suite.Len(newPlops, 1)
-	suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
-		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodName1,
-		PodUid:        fixtureconsts.PodUID1,
-		DeploymentId:  fixtureconsts.Deployment1,
-		ClusterId:     fixtureconsts.Cluster1,
-		Namespace:     fixtureconsts.Namespace1,
-		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
-			Port:     1234,
-			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+        cases := map[string]struct {
+                ctx       context.Context
+                expectAllowed bool
+        }{
+                "all access": {
+                        ctx:       sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker()),
+                        expectAllowed: true,
 		},
-		Signal: &storage.ProcessSignal{
-			Name:         "test_process1",
-			Args:         "test_arguments1",
-			ExecFilePath: "test_path1",
+		"access to cluster and namespace": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+        		        sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+        		        sac.ResourceScopeKeys(resources.Namespace),
+        		        sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+        		        sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
+        		)),
+			expectAllowed: true,
 		},
-	})
-
-	// Verify that newly added PLOP object doesn't have Process field set in
-	// the serialized column (because all the info is stored in the referenced
-	// process indicator record)
-	newPlopsFromDB := suite.getPlopsFromDB()
-	suite.Len(newPlopsFromDB, 1)
-
-	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
-		Id:                 newPlopsFromDB[0].GetId(),
-		Port:               plopObjects[0].GetPort(),
-		Protocol:           plopObjects[0].GetProtocol(),
-		CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
-		ProcessIndicatorId: indicators[0].GetId(),
-		Closed:             false,
-		Process:            nil,
-		DeploymentId:       plopObjects[0].GetDeploymentId(),
-		PodUid:             plopObjects[0].GetPodUid(),
-		ClusterId:          fixtureconsts.Cluster1,
-		Namespace:          fixtureconsts.Namespace1,
+		"access to wrong namespace": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+        		        sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+        		        sac.ResourceScopeKeys(resources.Namespace),
+        		        sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+        		        sac.NamespaceScopeKeys(fixtureconsts.Namespace2),
+        		)),
+			expectAllowed: false,
+		},
+		"access to wrong cluster": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+        		        sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+        		        sac.ResourceScopeKeys(resources.Namespace),
+        		        sac.ClusterScopeKeys(fixtureconsts.Cluster2),
+        		        sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
+        		)),
+			expectAllowed: false,
+		},
+		"cluster level access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+        		        sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+        		        sac.ResourceScopeKeys(resources.Namespace),
+        		        sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+        		)),
+			expectAllowed: true,
+		},
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
-}
-
-// TestPLOPAddSACFail: Happy path for ProcessListeningOnPort, where the user does not have access to
-// the specified namespace
-func (suite *PLOPDataStoreTestSuite) TestPLOPAddSACFail() {
-	indicators := getIndicators()
-
-	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
-
-	// Prepare indicators for FK
-	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
-		suite.hasWriteCtx, indicators...))
-
-	// Add PLOP referencing those indicators
-	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasAllCtx, fixtureconsts.Cluster1, plopObjects...))
-
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-                sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-                sac.ResourceScopeKeys(resources.Namespace),
-                sac.ClusterScopeKeys(fixtureconsts.Cluster1),
-                sac.NamespaceScopeKeys(fixtureconsts.Namespace2),
-        ))
-
-	// Fetch inserted PLOP back
-	_, err := suite.datastore.GetProcessListeningOnPort(
-		ctx, fixtureconsts.Deployment1)
-	suite.Error(err)
-
-	// Verify that newly added PLOP object doesn't have Process field set in
-	// the serialized column (because all the info is stored in the referenced
-	// process indicator record)
-	newPlopsFromDB := suite.getPlopsFromDB()
-	suite.Len(newPlopsFromDB, 1)
-
-	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
-		Id:                 newPlopsFromDB[0].GetId(),
-		Port:               plopObjects[0].GetPort(),
-		Protocol:           plopObjects[0].GetProtocol(),
-		CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
-		ProcessIndicatorId: indicators[0].GetId(),
-		Closed:             false,
-		Process:            nil,
-		DeploymentId:       plopObjects[0].GetDeploymentId(),
-		PodUid:             plopObjects[0].GetPodUid(),
-		ClusterId:          fixtureconsts.Cluster1,
-		Namespace:          fixtureconsts.Namespace1,
-	}
-
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
-}
-
-// TestPLOPAddSACClusterFail: Happy path for ProcessListeningOnPort, where the user does not have access to
-// the specified cluster
-func (suite *PLOPDataStoreTestSuite) TestPLOPAddSACClusterFail() {
-	indicators := getIndicators()
-
-	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
-
-	// Prepare indicators for FK
-	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
-		suite.hasWriteCtx, indicators...))
-
-	// Add PLOP referencing those indicators
-	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasAllCtx, fixtureconsts.Cluster1, plopObjects...))
-
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-                sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-                sac.ResourceScopeKeys(resources.Namespace),
-                sac.ClusterScopeKeys(fixtureconsts.Cluster2),
-                sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
-        ))
-
-	// Fetch inserted PLOP back
-	_, err := suite.datastore.GetProcessListeningOnPort(
-		ctx, fixtureconsts.Deployment1)
-	suite.Error(err)
-
-	// Verify that newly added PLOP object doesn't have Process field set in
-	// the serialized column (because all the info is stored in the referenced
-	// process indicator record)
-	newPlopsFromDB := suite.getPlopsFromDB()
-	suite.Len(newPlopsFromDB, 1)
-
-	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
-		Id:                 newPlopsFromDB[0].GetId(),
-		Port:               plopObjects[0].GetPort(),
-		Protocol:           plopObjects[0].GetProtocol(),
-		CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
-		ProcessIndicatorId: indicators[0].GetId(),
-		Closed:             false,
-		Process:            nil,
-		DeploymentId:       plopObjects[0].GetDeploymentId(),
-		PodUid:             plopObjects[0].GetPodUid(),
-		ClusterId:          fixtureconsts.Cluster1,
-		Namespace:          fixtureconsts.Namespace1,
-	}
-
-	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
-}
-
-// TestPLOPAddSACCluster: Happy path for ProcessListeningOnPort, where the user has cluster level access
-func (suite *PLOPDataStoreTestSuite) TestPLOPAddSACCluster() {
-	indicators := getIndicators()
-
-	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
-
-	// Prepare indicators for FK
-	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
-		suite.hasWriteCtx, indicators...))
-
-	// Add PLOP referencing those indicators
-	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasAllCtx, fixtureconsts.Cluster1, plopObjects...))
-
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-                sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-                sac.ResourceScopeKeys(resources.Namespace),
-                sac.ClusterScopeKeys(fixtureconsts.Cluster1),
-        ))
-
-	// Fetch inserted PLOP back
-	_, err := suite.datastore.GetProcessListeningOnPort(
-		ctx, fixtureconsts.Deployment1)
-	suite.NoError(err)
+	for name, c := range cases {
+		suite.Run(name, func() {
+			fmt.Printf("c= %+v", c)
+			newPlops, err := suite.datastore.GetProcessListeningOnPort(
+				c.ctx, fixtureconsts.Deployment1)
+			fmt.Printf("processListeningOnPortsResponse= %+v \n", newPlops)
+			if c.expectAllowed {
+			        suite.NoError(err)
+				suite.Len(newPlops, 1)
+				suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
+					ContainerName: "test_container1",
+					PodId:         fixtureconsts.PodName1,
+					PodUid:        fixtureconsts.PodUID1,
+					DeploymentId:  fixtureconsts.Deployment1,
+					ClusterId:     fixtureconsts.Cluster1,
+					Namespace:     fixtureconsts.Namespace1,
+					Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+						Port:     1234,
+						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					},
+					Signal: &storage.ProcessSignal{
+						Name:         "test_process1",
+						Args:         "test_arguments1",
+						ExecFilePath: "test_path1",
+					},
+				})
+			} else {
+			        suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+			}
+		})
+        }
 
 	// Verify that newly added PLOP object doesn't have Process field set in
 	// the serialized column (because all the info is stored in the referenced
