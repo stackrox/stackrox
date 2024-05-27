@@ -7,6 +7,9 @@ metadata:
 spec:
   description: Determines the tag for the output image using the StackRox convention from 'make tag' output.
   params:
+  - name: tag-suffix
+    description: Suffix to append to generated image tag.
+    type: string
   results:
   - name: image-tag
     description: Image Tag determined by custom logic.
@@ -20,7 +23,7 @@ spec:
       dnf -y install git make
       cd "$(workspaces.source.path)/source"
       scripts/konflux/fail-build-if-git-is-dirty.sh
-      echo -n "$(make --quiet --no-print-directory tag)-fast" | tee "$(results.image-tag.path)"
+      echo -n "$(make --quiet --no-print-directory tag)$(params.tag-suffix)" | tee "$(results.image-tag.path)"
   workspaces:
   - name: source
     description: The workspace where source code is included.

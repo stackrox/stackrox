@@ -52,6 +52,10 @@ spec:
   - description: Output Image Repository
     name: output-image-repo
     type: string
+  - default: "-fast"
+    description: Suffix that will be appended to the output image tag.
+    name: output-image-tag-suffix
+    type: string
   - default: .
     description: Path to the source code of an application's component from where
       to build image.
@@ -178,6 +182,9 @@ spec:
       workspace: git-auth
 
   - name: determine-image-tag
+    params:
+    - name: tag-suffix
+      value: $(params.output-image-tag-suffix)
     runAfter:
     # This task must run on a freshly cloned repository to prevent seeing any changes from other tasks.
     - clone-repository
