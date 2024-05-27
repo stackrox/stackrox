@@ -29,12 +29,14 @@ func LoadComplianceOperatorBenchmarks() ([]*storage.ComplianceOperatorBenchmarkV
 		return nil, nil
 	}
 	files, err := benchmarksFS.ReadDir(benchmarkDir)
-	utils.CrashOnError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	var benchmarks []*storage.ComplianceOperatorBenchmarkV2
 	errList := errorhelpers.NewErrorList("Load Compliance Operator Benchmarks")
 	for _, f := range files {
-		b, err := ReadBenchmarksFile(filepath.Join(benchmarkDir, f.Name()))
+		b, err := readBenchmarksFile(filepath.Join(benchmarkDir, f.Name()))
 		if err != nil {
 			errList.AddError(err)
 			continue
@@ -44,7 +46,7 @@ func LoadComplianceOperatorBenchmarks() ([]*storage.ComplianceOperatorBenchmarkV
 	return benchmarks, errList.ToError()
 }
 
-func ReadBenchmarksFile(path string) (*storage.ComplianceOperatorBenchmarkV2, error) {
+func readBenchmarksFile(path string) (*storage.ComplianceOperatorBenchmarkV2, error) {
 	contents, err := benchmarksFS.ReadFile(path)
 	utils.CrashOnError(err)
 

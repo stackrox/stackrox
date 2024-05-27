@@ -82,23 +82,23 @@ func (s *complianceBenchmarkDataStoreSuite) TestUpsertBenchmark() {
 	b1 := getTestBenchmark(uuidStub1, "b1", "1.0", 1)
 	b2 := getTestBenchmark(uuidStub2, "b2", "2.0", 2)
 
-	s.Assert().NoError(s.datastore.UpsertBenchmark(s.hasWriteCtx, b1))
-	s.Assert().NoError(s.datastore.UpsertBenchmark(s.hasWriteCtx, b2))
+	s.Require().NoError(s.datastore.UpsertBenchmark(s.hasWriteCtx, b1))
+	s.Require().NoError(s.datastore.UpsertBenchmark(s.hasWriteCtx, b2))
 
 	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
-	s.Assert().NoError(err)
-	s.Assert().Equal(2, count)
+	s.Require().NoError(err)
+	s.Require().Equal(2, count)
 
-	s.Assert().Error(s.datastore.UpsertBenchmark(s.hasReadCtx, b1))
+	s.Require().Error(s.datastore.UpsertBenchmark(s.hasReadCtx, b1))
 
 	retB1, found, err := s.storage.Get(s.hasReadCtx, b1.GetId())
-	s.Assert().NoError(err)
-	s.Assert().True(found)
+	s.Require().NoError(err)
+	s.Require().True(found)
 	assertBenchmarks(s.T(), b1, retB1)
 
 	retB2, found, err := s.storage.Get(s.hasReadCtx, b2.GetId())
-	s.Assert().NoError(err)
-	s.Assert().True(found)
+	s.Require().NoError(err)
+	s.Require().True(found)
 	assertBenchmarks(s.T(), b2, retB2)
 }
 
@@ -118,19 +118,19 @@ func (s *complianceBenchmarkDataStoreSuite) TestDeleteBenchmark() {
 	s.Require().NoError(err)
 	s.Require().Equal(2, count)
 
-	s.Assert().NoError(s.datastore.DeleteBenchmark(s.hasWriteCtx, b1.GetId()))
+	s.Require().NoError(s.datastore.DeleteBenchmark(s.hasWriteCtx, b1.GetId()))
 
 	count, err = s.storage.Count(s.hasReadCtx, search.EmptyQuery())
-	s.Assert().NoError(err)
-	s.Assert().Equal(1, count)
+	s.Require().NoError(err)
+	s.Require().Equal(1, count)
 
-	s.Assert().Error(s.datastore.DeleteBenchmark(s.hasReadCtx, b2.GetId()))
+	s.Require().Error(s.datastore.DeleteBenchmark(s.hasReadCtx, b2.GetId()))
 
-	s.Assert().NoError(s.datastore.DeleteBenchmark(s.hasWriteCtx, b2.GetId()))
+	s.Require().NoError(s.datastore.DeleteBenchmark(s.hasWriteCtx, b2.GetId()))
 
 	count, err = s.storage.Count(s.hasReadCtx, search.EmptyQuery())
-	s.Assert().NoError(err)
-	s.Assert().Equal(0, count)
+	s.Require().NoError(err)
+	s.Require().Equal(0, count)
 }
 
 func (s *complianceBenchmarkDataStoreSuite) TestGetBenchmark() {
@@ -150,18 +150,18 @@ func (s *complianceBenchmarkDataStoreSuite) TestGetBenchmark() {
 
 	for _, b := range benchmarks {
 		retB, found, err := s.datastore.GetBenchmark(s.hasReadCtx, b.GetId())
-		s.Assert().NoError(err)
-		s.Assert().True(found)
+		s.Require().NoError(err)
+		s.Require().True(found)
 		assertBenchmarks(s.T(), b, retB)
 	}
 
 	_, found, err := s.datastore.GetBenchmark(s.noAccessCtx, benchmarks[0].GetId())
-	s.Assert().NoError(err)
-	s.Assert().False(found)
+	s.Require().NoError(err)
+	s.Require().False(found)
 
 	_, found, err = s.datastore.GetBenchmark(s.hasReadCtx, uuidNonExisting)
-	s.Assert().NoError(err)
-	s.Assert().False(found)
+	s.Require().NoError(err)
+	s.Require().False(found)
 }
 
 func getTestBenchmark(id string, name string, version string, profileCount int) *storage.ComplianceOperatorBenchmarkV2 {

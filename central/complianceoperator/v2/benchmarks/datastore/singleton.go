@@ -8,13 +8,15 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/defaults/complianceoperator"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	once sync.Once
 
 	dataStore DataStore
@@ -43,11 +45,13 @@ func Singleton() DataStore {
 
 func setupBenchmarks(s postgres.Store) {
 	benchmarks, err := complianceoperator.LoadComplianceOperatorBenchmarks()
-	utils.CrashOnError(err)
+	if err != nil {
+		log.Errorf("Unable to load the compliance operator benchmarks: %v", err)
+	}
 
 	for _, b := range benchmarks {
 		if err := s.Upsert(complianceOperatorBenchmarkAdministrationCtx, b); err != nil {
-			utils.Must(err)
+			log.Errorf("Unable to upsert the compliance operator benchmark %s: %v", b.GetName(), err)
 		}
 	}
 }
