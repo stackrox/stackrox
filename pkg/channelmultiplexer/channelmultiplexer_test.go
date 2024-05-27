@@ -63,7 +63,7 @@ func TestMultiplexingChannels(t *testing.T) {
 func TestCancelContext(t *testing.T) {
 	numChannels := 2
 	ctx, cancelFn := context.WithCancel(context.Background())
-	cm := NewMultiplexer[int](WithChannel[int](ctx))
+	cm := NewMultiplexer[int](WithContext[int](ctx))
 	channels := make([]chan int, numChannels)
 	for i := range channels {
 		channels[i] = make(chan int)

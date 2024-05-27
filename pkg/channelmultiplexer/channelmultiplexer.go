@@ -10,9 +10,9 @@ import (
 // OptionFunc provides options for the ChannelMultiplexer.
 type OptionFunc[K any] func(*ChannelMultiplexer[K])
 
-// WithChannel provides a context to the ChannelMultiplexer,
+// WithContext provides a context to the ChannelMultiplexer,
 // If it's not provided context.Background will be used.
-func WithChannel[K any](ctx context.Context) OptionFunc[K] {
+func WithContext[K any](ctx context.Context) OptionFunc[K] {
 	return func(cm *ChannelMultiplexer[K]) {
 		cm.ctx = ctx
 	}
