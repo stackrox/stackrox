@@ -45,8 +45,6 @@ ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" S
 
 ENV GOFLAGS=""
 ENV CGO_ENABLED=1
-# TODO(ROX-19958): figure out if we need BUILD_TAG
-# ENV BUILD_TAG="${CI_VERSION}"
 # TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
 # ENV GOTAGS="release"

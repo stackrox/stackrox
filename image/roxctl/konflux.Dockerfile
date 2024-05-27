@@ -24,8 +24,7 @@ ENV CI=1 GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
 # ENV GOTAGS="release"
 
-# TODO(ROX-19958): figure out if setting BUILD_TAG is actually needed.
-RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) BUILD_TAG=$(make tag) scripts/go-build.sh ./roxctl && \
+RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh ./roxctl && \
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
 
 # TODO(ROX-20312): pin image tags when there's a process that updates them automatically.
