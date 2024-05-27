@@ -228,6 +228,9 @@ spec:
       value: $(params.image-expires-after)
     - name: COMMIT_SHA
       value: $(tasks.clone-repository.results.commit)
+    - name: BUILD_ARGS
+      value:
+      - VERSIONS_SUFFIX=$(params.output-image-tag-suffix)
     runAfter:
     - prefetch-dependencies
     taskRef:

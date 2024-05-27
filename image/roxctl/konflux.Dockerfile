@@ -16,6 +16,9 @@ RUN scripts/konflux/fail-build-if-git-is-dirty.sh
 
 RUN mkdir -p image/bin
 
+ARG VERSIONS_SUFFIX
+ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
+
 ENV CI=1 GOFLAGS=""
 # TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.

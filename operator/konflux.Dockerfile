@@ -8,6 +8,9 @@ COPY . .
 
 RUN scripts/konflux/fail-build-if-git-is-dirty.sh
 
+ARG VERSIONS_SUFFIX
+ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
+
 # Build the operator binary.
 # TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.

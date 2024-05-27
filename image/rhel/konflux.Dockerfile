@@ -40,6 +40,9 @@ COPY . .
 RUN git restore scripts/konflux/bootstrap-yarn/package-lock.json && \
     scripts/konflux/fail-build-if-git-is-dirty.sh
 
+ARG VERSIONS_SUFFIX
+ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
+
 ENV GOFLAGS=""
 ENV CGO_ENABLED=1
 # TODO(ROX-19958): figure out if we need BUILD_TAG
