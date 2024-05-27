@@ -243,6 +243,7 @@ var (
 	ComplianceOperatorRemediationName        = newFieldLabel("Compliance Remediation Name")
 	ComplianceOperatorBenchmarkName          = newFieldLabel("Compliance Benchmark Name")
 	ComplianceOperatorProfileAnnotation      = newFieldLabel("Compliance Profile Annotation")
+	ComplianceOperatorBenchmarkShortName     = newFieldLabel("Compliance Benchmark Short Name")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")
