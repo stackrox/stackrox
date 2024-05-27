@@ -47,8 +47,8 @@ RUN microdnf upgrade -y --nobest && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
 
-# TODO(ROX-22245): set proper image flavor for Fast Stream images.
-ENV ROX_IMAGE_FLAVOR="rhacs"
+# TODO(ROX-22245): set proper image flavor for user-facing GA Fast Stream images.
+ENV ROX_IMAGE_FLAVOR="development_build"
 
 # The following are numeric uid and gid of `nobody` user in UBI.
 # We can't use symbolic names because otherwise k8s will fail to start the pod with an error like this:

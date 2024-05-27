@@ -124,11 +124,11 @@ LABEL \
 
 EXPOSE 8443
 
-# TODO(ROX-22245): set proper image flavor for Fast Stream images.
+# TODO(ROX-22245): set proper image flavor for user-facing GA Fast Stream images.
 # TODO(ROX-22338): switch branding to RHACS_BRANDING when intermediate Konflux repos aren't public.
 ENV PATH="/stackrox:$PATH" \
     ROX_ROXCTL_IN_MAIN_IMAGE="true" \
-    ROX_IMAGE_FLAVOR="rhacs" \
+    ROX_IMAGE_FLAVOR="development_build" \
     ROX_PRODUCT_BRANDING="STACKROX_BRANDING"
 
 COPY .konflux/stackrox-data/external-networks/external-networks.zip /stackrox/static-data/external-networks/external-networks.zip
