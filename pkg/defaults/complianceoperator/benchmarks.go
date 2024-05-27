@@ -3,6 +3,7 @@ package complianceoperator
 import (
 	"embed"
 	"path/filepath"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -52,6 +53,9 @@ func ReadBenchmarksFile(path string) (*storage.ComplianceOperatorBenchmarkV2, er
 	if err != nil {
 		log.Errorf("Unable to unmarshal benchmark (%s) json: %v", path, err)
 		return nil, err
+	}
+	if len(benchmark.GetProfileAnnotation()) > 0 {
+		benchmark.ShortName = benchmark.ProfileAnnotation[strings.LastIndex(benchmark.GetProfileAnnotation(), "/")+1:]
 	}
 	return &benchmark, nil
 }
