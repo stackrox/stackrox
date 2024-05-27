@@ -1,7 +1,10 @@
 package protocompat
 
 import (
+	"bytes"
+
 	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
 )
 
 // Message is implemented by generated protocol buffer messages.
@@ -40,6 +43,48 @@ func Marshal(msg proto.Message) ([]byte, error) {
 // returning the string directly..
 func MarshalTextString(msg proto.Message) string {
 	return proto.MarshalTextString(msg)
+}
+
+// MarshalToProtoJSONBytes writes a given protocol buffer in JSON format,
+// returning the data as byte array.
+func MarshalToProtoJSONBytes(msg proto.Message) ([]byte, error) {
+	var data bytes.Buffer
+	m := jsonpb.Marshaler{}
+	err := m.Marshal(&data, msg)
+	if err != nil {
+		return nil, err
+	}
+	return data.Bytes(), nil
+}
+
+// MarshalToIndentedProtoJSONBytes writes a given protocol buffer in JSON format,
+// returning the data as byte array.
+func MarshalToIndentedProtoJSONBytes(msg proto.Message) ([]byte, error) {
+	var data bytes.Buffer
+	m := jsonpb.Marshaler{
+		Indent: "  ",
+	}
+	err := m.Marshal(&data, msg)
+	if err != nil {
+		return nil, err
+	}
+	return data.Bytes(), nil
+}
+
+// MarshalToProtoJSONString writes a given protocol buffer in JSON format,
+// returning the data as a string.
+func MarshalToProtoJSONString(msg proto.Message) (string, error) {
+	m := jsonpb.Marshaler{}
+	return m.MarshalToString(msg)
+}
+
+// MarshalToIndentedProtoJSONString writes a given protocol buffer in JSON format,
+// returning the data as a string.
+func MarshalToIndentedProtoJSONString(msg proto.Message) (string, error) {
+	m := jsonpb.Marshaler{
+		Indent: "  ",
+	}
+	return m.MarshalToString(msg)
 }
 
 // Unmarshal parses the protocol buffer representation in buf and places

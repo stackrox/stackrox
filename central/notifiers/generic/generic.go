@@ -12,7 +12,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -179,7 +178,7 @@ func (g *generic) Test(ctx context.Context) *notifiers.NotifierError {
 }
 
 func (g *generic) constructJSON(message protocompat.Message, msgKey string) (io.Reader, error) {
-	msgStr, err := new(jsonpb.Marshaler).MarshalToString(message)
+	msgStr, err := protocompat.MarshalToProtoJSONString(message)
 	if err != nil {
 		return nil, err
 	}

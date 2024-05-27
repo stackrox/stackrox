@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	metricsPkg "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -167,9 +167,8 @@ func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 	}
 
 	var eventsOutput []string
-	marshaler := jsonpb.Marshaler{}
 	for _, e := range events.ForwardMessages {
-		ev, err := marshaler.MarshalToString(e)
+		ev, err := protocompat.MarshalToProtoJSONString(e)
 		if err != nil {
 			log.Warnf("Error marshaling msg: %s\n", err.Error())
 			return events

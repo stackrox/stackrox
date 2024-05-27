@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/generated/api/integrations"
@@ -93,7 +92,12 @@ func newViolationsHandler(alertDS datastore.DataStore, pagination paginationSett
 			httputil.WriteError(w, err)
 			return
 		}
-		err = (&jsonpb.Marshaler{}).Marshal(w, res)
+		jsonBytes, err := protocompat.MarshalToProtoJSONBytes(res)
+		if err != nil {
+			log.Warn("Error marshaling violations response: ", err)
+			panic(http.ErrAbortHandler)
+		}
+		_, err = w.Write(jsonBytes)
 		if err != nil {
 			log.Warn("Error writing violations response: ", err)
 			panic(http.ErrAbortHandler)

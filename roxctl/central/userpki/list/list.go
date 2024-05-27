@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
+	"github.com/stackrox/rox/pkg/protocompat"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
@@ -71,8 +71,11 @@ func (cmd *centralUserPkiListCommand) listProviders() error {
 		return err
 	}
 	if cmd.json {
-		m := jsonpb.Marshaler{Indent: "  "}
-		err = m.Marshal(cmd.env.InputOutput().Out(), providers)
+		jsonBytes, err := protocompat.MarshalToIndentedProtoJSONBytes(providers)
+		if err != nil {
+			cmd.env.Logger().PrintfLn("")
+		}
+		_, err = cmd.env.InputOutput().Out().Write(jsonBytes)
 		if err == nil {
 			cmd.env.Logger().PrintfLn("")
 		}

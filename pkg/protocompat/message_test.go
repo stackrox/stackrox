@@ -5,6 +5,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stretchr/testify/assert"
 )
@@ -105,6 +106,107 @@ func TestMarshalTextString(t *testing.T) {
 ` + `cluster_name: "Cluster 1"
 `
 	assert.Equal(t, expectedString, asString)
+}
+
+var (
+	testAlert = &storage.Alert{
+		Id: fixtureconsts.Alert1,
+		Violations: []*storage.Alert_Violation{
+			{
+				Message: "Deployment is affected by 'CVE-2017-15670'",
+			},
+			{
+				Message: "This is a kube event violation",
+				MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+					KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+						Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+							{Key: "pod", Value: "nginx"},
+							{Key: "container", Value: "nginx"},
+						},
+					},
+				},
+			},
+		},
+		ProcessViolation: &storage.Alert_ProcessViolation{
+			Message: "This is a process violation",
+		},
+		ClusterId:   fixtureconsts.Cluster1,
+		ClusterName: "prod cluster",
+		Namespace:   "stackrox",
+	}
+
+	expectedMarshaledAlert = `{
+	"id": "aeaaaaaa-bbbb-4011-0000-111111111111",
+	"clusterId": "caaaaaaa-bbbb-4011-0000-111111111111",
+	"clusterName": "prod cluster",
+	"namespace": "stackrox",
+	"processViolation": {
+		"message": "This is a process violation"
+	},
+	"violations": [
+		{
+			"message": "Deployment is affected by 'CVE-2017-15670'"
+		},
+		{
+			"message": "This is a kube event violation",
+			"keyValueAttrs": {
+				"attrs": [
+					{"key": "pod", "value": "nginx"},
+					{"key": "container", "value": "nginx"}
+				]
+			}
+		}
+	]
+}`
+)
+
+func TestMarshalToJSONBytes(t *testing.T) {
+	marshaledAlert, err := MarshalToProtoJSONBytes(testAlert)
+	assert.NoError(t, err)
+	assert.JSONEq(t, expectedMarshaledAlert, string(marshaledAlert))
+}
+
+func TestMarshalToIndentedJSONBytes(t *testing.T) {
+	marshaledAlert, err := MarshalToIndentedProtoJSONBytes(testAlert)
+	assert.NoError(t, err)
+	marshaledAlertString := string(marshaledAlert)
+	assert.JSONEq(t, expectedMarshaledAlert, marshaledAlertString)
+	assert.Contains(t, marshaledAlertString, "\n  \"id\"")
+	assert.Contains(t, marshaledAlertString, "\n  \"clusterId\"")
+	assert.Contains(t, marshaledAlertString, "\n  \"clusterName\"")
+	assert.Contains(t, marshaledAlertString, "\n  \"namespace\"")
+	assert.Contains(t, marshaledAlertString, "\n  \"processViolation\"")
+	assert.Contains(t, marshaledAlertString, "\n  \"violations\"")
+	assert.Contains(t, marshaledAlertString, "\n    \"message\"")
+	assert.Contains(t, marshaledAlertString, "\n      \"message\"")
+	assert.Contains(t, marshaledAlertString, "\n      \"keyValueAttrs\"")
+	assert.Contains(t, marshaledAlertString, "\n        \"attrs\"")
+	assert.Contains(t, marshaledAlertString, "\n            \"key\"")
+	assert.Contains(t, marshaledAlertString, "\n            \"value\"")
+}
+
+func TestMarshalToJSONString(t *testing.T) {
+	marshaledAlert, err := MarshalToProtoJSONString(testAlert)
+	assert.NoError(t, err)
+	assert.JSONEq(t, expectedMarshaledAlert, marshaledAlert)
+}
+
+func TestMarshalToIndentedJSONString(t *testing.T) {
+	marshaledAlert, err := MarshalToIndentedProtoJSONString(testAlert)
+	assert.NoError(t, err)
+	assert.JSONEq(t, expectedMarshaledAlert, marshaledAlert)
+	assert.Contains(t, marshaledAlert, "\n  \"id\"")
+	assert.Contains(t, marshaledAlert, "\n  \"clusterId\"")
+	assert.Contains(t, marshaledAlert, "\n  \"clusterName\"")
+	assert.Contains(t, marshaledAlert, "\n  \"namespace\"")
+	assert.Contains(t, marshaledAlert, "\n  \"processViolation\"")
+	assert.Contains(t, marshaledAlert, "\n  \"violations\"")
+	assert.Contains(t, marshaledAlert, "\n    \"message\"")
+	assert.Contains(t, marshaledAlert, "\n      \"message\"")
+	assert.Contains(t, marshaledAlert, "\n      \"keyValueAttrs\"")
+	assert.Contains(t, marshaledAlert, "\n        \"attrs\"")
+	assert.Contains(t, marshaledAlert, "\n            \"key\"")
+	assert.Contains(t, marshaledAlert, "\n            \"value\"")
 }
 
 func TestUnmarshal(t *testing.T) {

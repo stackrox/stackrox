@@ -5,10 +5,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )
@@ -27,12 +27,13 @@ func (f *fetcher) FetchBundle() (Contents, error) {
 	resByID := &v1.ResourceByID{
 		Id: f.ctx.ClusterID(),
 	}
-	var buf bytes.Buffer
-	if err := new(jsonpb.Marshaler).Marshal(&buf, resByID); err != nil {
+	jsonBytes, err := protocompat.MarshalToProtoJSONBytes(resByID)
+	if err != nil {
 		return nil, utils.ShouldErr(err)
 	}
+	buf := bytes.NewBuffer(jsonBytes)
 
-	req, err := http.NewRequest(http.MethodPost, "/api/extensions/clusters/zip", &buf)
+	req, err := http.NewRequest(http.MethodPost, "/api/extensions/clusters/zip", buf)
 	if err != nil {
 		return nil, utils.ShouldErr(err)
 	}

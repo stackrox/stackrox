@@ -89,7 +89,21 @@ var (
 			replacement: "a logger",
 		},
 		"github.com/gogo/protobuf/jsonpb": {
-			replacement: "github.com/golang/protobuf/jsonpb",
+			replacement: "github.com/stackrox/rox/pkg/protocompat",
+		},
+		"github.com/golang/protobuf/jsonpb": {
+			replacement: "github.com/stackrox/rox/pkg/protocompat",
+			allowlist: set.NewStringSet(
+				"github.com/stackrox/rox/pkg/jsonutil",
+				"github.com/stackrox/rox/pkg/protocompat",
+				// The list below should be cleaned as the exceptions
+				// get integrated in protocompat
+				"github.com/stackrox/rox/pkg/protoutils",
+				"github.com/stackrox/rox/roxctl/central/login",
+				"github.com/stackrox/rox/roxctl/central/m2m/exchange",
+				"github.com/stackrox/rox/roxctl/scanner/downloaddb",
+				"github.com/stackrox/rox/tests",
+			),
 		},
 		"k8s.io/helm/...": {
 			replacement: "package from helm.sh/v3",

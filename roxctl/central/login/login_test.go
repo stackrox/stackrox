@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/basic"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
@@ -76,10 +76,13 @@ func TestVerifyLoginAuthProviders_Failure(t *testing.T) {
 
 func loginAuthProvidersHandle(t *testing.T, providers []*v1.GetLoginAuthProvidersResponse_LoginAuthProvider) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		marshal := jsonpb.Marshaler{Indent: "    "}
-		assert.NoError(t, marshal.Marshal(writer, &v1.GetLoginAuthProvidersResponse{
+		rsp := &v1.GetLoginAuthProvidersResponse{
 			AuthProviders: providers,
-		}))
+		}
+		jsonBytes, err := protocompat.MarshalToIndentedProtoJSONBytes(rsp)
+		assert.NoError(t, err)
+		_, err = writer.Write(jsonBytes)
+		assert.NoError(t, err)
 	}
 }
 
