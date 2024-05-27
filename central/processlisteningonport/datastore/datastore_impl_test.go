@@ -4,29 +4,29 @@ package datastore
 
 import (
 	"context"
-	"fmt"
-	//"math/rand"
-	//"sync"
+	// "fmt"
+	// "math/rand"
+	// "sync"
 	"testing"
-	"time"
+	// "time"
 
-	//deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
+	// deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
 	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	//"github.com/stackrox/rox/pkg/fixtures"
+	// "github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/id"
-	"github.com/stackrox/rox/pkg/protoconv"
+	// "github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	//"github.com/stackrox/rox/pkg/search"
-	//"github.com/stackrox/rox/pkg/set"
-	//"github.com/stackrox/rox/pkg/uuid"
+	// "github.com/stackrox/rox/pkg/search"
+	// "github.com/stackrox/rox/pkg/set"
+	// "github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -91,28 +91,28 @@ func (suite *PLOPDataStoreTestSuite) getPlopsFromDB() []*storage.ProcessListenin
 	return plopsFromDB
 }
 
-func (suite *PLOPDataStoreTestSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndicator {
-	indicatorsFromDB := []*storage.ProcessIndicator{}
-	err := suite.indicatorDataStore.WalkAll(suite.hasWriteCtx,
-		func(processIndicator *storage.ProcessIndicator) error {
-			indicatorsFromDB = append(indicatorsFromDB, processIndicator)
-			return nil
-		})
+// func (suite *PLOPDataStoreTestSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndicator {
+//	indicatorsFromDB := []*storage.ProcessIndicator{}
+//	err := suite.indicatorDataStore.WalkAll(suite.hasWriteCtx,
+//		func(processIndicator *storage.ProcessIndicator) error {
+//			indicatorsFromDB = append(indicatorsFromDB, processIndicator)
+//			return nil
+//		})
+//
+//	suite.NoError(err)
+//
+//	return indicatorsFromDB
+//}
 
-	suite.NoError(err)
-
-	return indicatorsFromDB
-}
-
-func getPlopMap(plops []*storage.ProcessListeningOnPortStorage) map[string]*storage.ProcessListeningOnPortStorage {
-	plopMap := make(map[string]*storage.ProcessListeningOnPortStorage)
-
-	for _, plop := range plops {
-		plopMap[getPlopKey(plop)] = plop
-	}
-
-	return plopMap
-}
+// func getPlopMap(plops []*storage.ProcessListeningOnPortStorage) map[string]*storage.ProcessListeningOnPortStorage {
+//	plopMap := make(map[string]*storage.ProcessListeningOnPortStorage)
+//
+//	for _, plop := range plops {
+//		plopMap[getPlopKey(plop)] = plop
+//	}
+//
+//	return plopMap
+//}
 
 func getIndicators() []*storage.ProcessIndicator {
 	indicators := []*storage.ProcessIndicator{
@@ -172,22 +172,22 @@ var (
 		Namespace:    fixtureconsts.Namespace1,
 	}
 
-	closedPlopObject = storage.ProcessListeningOnPortFromSensor{
-		Port:           1234,
-		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
-		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
-		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodName1,
-			ContainerName:       "test_container1",
-			ProcessName:         "test_process1",
-			ProcessArgs:         "test_arguments1",
-			ProcessExecFilePath: "test_path1",
-		},
-		DeploymentId: fixtureconsts.Deployment1,
-		PodUid:       fixtureconsts.PodUID1,
-		ClusterId:    fixtureconsts.Cluster1,
-		Namespace:    fixtureconsts.Namespace1,
-	}
+	// closedPlopObject = storage.ProcessListeningOnPortFromSensor{
+	//	Port:           1234,
+	//	Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+	//	CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
+	//	Process: &storage.ProcessIndicatorUniqueKey{
+	//		PodId:               fixtureconsts.PodName1,
+	//		ContainerName:       "test_container1",
+	//		ProcessName:         "test_process1",
+	//		ProcessArgs:         "test_arguments1",
+	//		ProcessExecFilePath: "test_path1",
+	//	},
+	//	DeploymentId: fixtureconsts.Deployment1,
+	//	PodUid:       fixtureconsts.PodUID1,
+	//	ClusterId:    fixtureconsts.Cluster1,
+	//	Namespace:    fixtureconsts.Namespace1,
+	//}
 )
 
 // TestPLOPAdd: Happy path for ProcessListeningOnPort, one PLOP object is added
@@ -267,59 +267,57 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasAllCtx, fixtureconsts.Cluster1, plopObjects...))
 
-        cases := map[string]struct {
-                ctx       context.Context
-                expectAllowed bool
-        }{
-                "all access": {
-                        ctx:       sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker()),
-                        expectAllowed: true,
+	cases := map[string]struct {
+		ctx           context.Context
+		expectAllowed bool
+	}{
+		"all access": {
+			ctx:           sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker()),
+			expectAllowed: true,
 		},
 		"access to cluster and namespace": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-        		        sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-        		        sac.ResourceScopeKeys(resources.Namespace),
-        		        sac.ClusterScopeKeys(fixtureconsts.Cluster1),
-        		        sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
-        		)),
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Namespace),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
+			)),
 			expectAllowed: true,
 		},
 		"access to wrong namespace": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-        		        sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-        		        sac.ResourceScopeKeys(resources.Namespace),
-        		        sac.ClusterScopeKeys(fixtureconsts.Cluster1),
-        		        sac.NamespaceScopeKeys(fixtureconsts.Namespace2),
-        		)),
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Namespace),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+				sac.NamespaceScopeKeys(fixtureconsts.Namespace2),
+			)),
 			expectAllowed: false,
 		},
 		"access to wrong cluster": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-        		        sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-        		        sac.ResourceScopeKeys(resources.Namespace),
-        		        sac.ClusterScopeKeys(fixtureconsts.Cluster2),
-        		        sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
-        		)),
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Namespace),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster2),
+				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
+			)),
 			expectAllowed: false,
 		},
 		"cluster level access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-        		        sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-        		        sac.ResourceScopeKeys(resources.Namespace),
-        		        sac.ClusterScopeKeys(fixtureconsts.Cluster1),
-        		)),
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Namespace),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+			)),
 			expectAllowed: true,
 		},
 	}
 
 	for name, c := range cases {
 		suite.Run(name, func() {
-			fmt.Printf("c= %+v", c)
 			newPlops, err := suite.datastore.GetProcessListeningOnPort(
 				c.ctx, fixtureconsts.Deployment1)
-			fmt.Printf("processListeningOnPortsResponse= %+v \n", newPlops)
 			if c.expectAllowed {
-			        suite.NoError(err)
+				suite.NoError(err)
 				suite.Len(newPlops, 1)
 				suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
 					ContainerName: "test_container1",
@@ -339,10 +337,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 					},
 				})
 			} else {
-			        suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+				suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 			}
 		})
-        }
+	}
 
 	// Verify that newly added PLOP object doesn't have Process field set in
 	// the serialized column (because all the info is stored in the referenced
@@ -370,7 +368,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 //// TestPLOPAddClosed: Happy path for ProcessListeningOnPort closing, one PLOP object is added
 //// with a correct process indicator reference and CloseTimestamp set. It will
 //// be exluded from the API result.
-//func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
+// func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 //
 //	indicators := getIndicators()
 //
@@ -422,7 +420,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 //// TestPLOPAddOpenTwice: Add the same open PLOP twice
 //// There should only be one PLOP in the storage and one
 //// PLOP returned by the API.
-//func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
+// func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 //	indicators := getIndicators()
 //
 //	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
@@ -488,7 +486,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 //
 //// TestPLOPAddCloseTwice: Add the same closed PLOP twice
 //// There should only be one PLOP in the storage
-//func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseTwice() {
+// func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseTwice() {
 //	indicators := getIndicators()
 //
 //	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}

@@ -32,9 +32,9 @@ type datastoreImpl struct {
 }
 
 var (
-	//plopSAC = sac.ForResource(resources.Namespace)
+	// plopSAC = sac.ForResource(resources.Namespace)
 	adminSAC = sac.ForResource(resources.Administration)
-	log     = logging.LoggerForModule()
+	log      = logging.LoggerForModule()
 )
 
 func newDatastoreImpl(
@@ -122,11 +122,9 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		"ProcessListeningOnPort",
 		"AddProcessListeningOnPort",
 	)
-	//if ok, err := adminSAC.WriteAllowed(ctx); err != nil {
-	//	log.Info("WriteAllowed error")
+	// if ok, err := adminSAC.WriteAllowed(ctx); err != nil {
 	//	return err
-	//} else if !ok {
-	//	log.Info("Not ok")
+	// } else if !ok {
 	//	return sac.ErrResourceAccessDenied
 	//}
 
@@ -137,7 +135,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	// Errors are not handled, because we can still report information on the plop without a
 	// matching process in the process_indicator table.
 	indicators, nonempty, err := ds.indicatorDataStore.GetProcessIndicators(ctx, indicatorIds)
-	log.Info("Got indicators")
 	indicatorsMap := make(map[string]bool)
 
 	// Used to do best efforts of identifying orphaned PLOP. Note, that as
@@ -150,7 +147,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	}
 
 	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
-	log.Info("Got existing plops")
 	if err != nil {
 		return err
 	}
@@ -257,7 +253,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		}
 	}
 
-	log.Info("Before UpsertMany 1")
 	// Save new PLOP objects
 	err = ds.storage.UpsertMany(ctx, newPlopObjects)
 	if err != nil {
@@ -268,7 +263,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	defer ds.mutex.Unlock()
 
 	// Update existing PLOP objects while using a lock
-	log.Info("Before UpsertMany 2")
 	return ds.storage.UpsertMany(ctx, updatePlopObjects)
 }
 
@@ -278,9 +272,9 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 ) (
 	processesListeningOnPorts []*storage.ProcessListeningOnPort, err error,
 ) {
-	//if ok, err := plopSAC.ReadAllowed(ctx); err != nil {
+	// if ok, err := plopSAC.ReadAllowed(ctx); err != nil {
 	//	return nil, err
-	//} else if !ok {
+	// } else if !ok {
 	//	return nil, sac.ErrResourceAccessDenied
 	//}
 
