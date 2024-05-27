@@ -71,6 +71,99 @@ func (s *complianceRuleDataStoreTestSuite) TearDownTest() {
 	s.db.Teardown(s.T())
 }
 
+func (s *complianceRuleDataStoreTestSuite) TestGetControl() {
+	ctx := sac.WithAllAccess(context.Background())
+	exampleRule2 := &storage.ComplianceOperatorRuleV2{
+		Id:   uuid.NewV4().String(),
+		Name: "ocp4-api-server-anonymous-auth",
+		Controls: []*storage.RuleControls{
+			{Standard: "CIS-OCP", Control: "1.1.1"},
+			{Standard: "NERC-CIP", Control: "CIP-003-8 R5.1.1"},
+		},
+	}
+
+	exampleRule1 := &storage.ComplianceOperatorRuleV2{
+		Id:   uuid.NewV4().String(),
+		Name: "ocp4-api-server-admission-control-plugin-namespacelifecycle",
+		Controls: []*storage.RuleControls{
+			{Standard: "CIS-OCP", Control: "1.1.1"},
+			{Standard: "CIS-OCP", Control: "2.2.2"},
+			{Standard: "CIS-OCP", Control: "3.3.3"},
+			{Standard: "NERC-CIP", Control: "CIP-003-8 R5.1.1"},
+			{Standard: "NERC-CIP", Control: "CIP-555-9 R5.5.5"},
+		},
+	}
+
+	testCases := map[string]struct {
+		inputRuleNames []string
+		exampleRules   []*storage.ComplianceOperatorRuleV2
+		ctx            context.Context
+		// By default assumes length of all given example rules.
+		expectedLength int
+	}{
+		"should return all controls": {
+			inputRuleNames: []string{"ocp4-api-server-anonymous-auth", "ocp4-api-server-admission-control-plugin-namespacelifecycle"},
+			exampleRules:   []*storage.ComplianceOperatorRuleV2{exampleRule1, exampleRule2},
+			ctx:            s.hasReadCtx,
+		},
+		"should return only controls for a single rule": {
+			inputRuleNames: []string{"ocp4-api-server-admission-control-plugin-namespacelifecycle"},
+			exampleRules:   []*storage.ComplianceOperatorRuleV2{exampleRule1},
+			ctx:            s.hasReadCtx,
+			expectedLength: 0,
+		},
+		"should return an empty result": {
+			inputRuleNames: []string{"rule-does-not-exist"},
+			exampleRules:   []*storage.ComplianceOperatorRuleV2{},
+			ctx:            s.hasReadCtx,
+		},
+		"should group results by name, control and standard": {
+			inputRuleNames: []string{"ocp4-api-server-anonymous-auth"},
+			exampleRules:   []*storage.ComplianceOperatorRuleV2{exampleRule2, exampleRule2},
+			ctx:            s.hasReadCtx,
+			expectedLength: 2,
+		},
+	}
+
+	for testName, testCase := range testCases {
+		s.T().Run(testName, func(t *testing.T) {
+			// setup test rules
+			for _, inputRule := range testCase.exampleRules {
+				err := s.dataStore.UpsertRule(ctx, inputRule)
+				s.Require().NoError(err)
+			}
+
+			controlQueryResults, err := s.dataStore.GetControlsByRuleNames(testCase.ctx, testCase.inputRuleNames)
+			s.Require().NoError(err)
+
+			for _, expectedRule := range s.getAllControls(testCase.exampleRules) {
+				// Lookup all control results, if a control result was found continue
+				found := false
+				for _, controlResult := range controlQueryResults {
+					if controlResult.Control == expectedRule.Control {
+						found = true
+					}
+				}
+				s.Require().True(found, "expected rule %s not found", expectedRule.Control)
+			}
+
+			if testCase.expectedLength == 0 {
+				s.Len(controlQueryResults, len(s.getAllControls(testCase.exampleRules)), "list of expected controls must be equal to the returned list.")
+			} else {
+				s.Len(controlQueryResults, testCase.expectedLength)
+			}
+		})
+	}
+}
+
+func (s *complianceRuleDataStoreTestSuite) getAllControls(rules []*storage.ComplianceOperatorRuleV2) []*storage.RuleControls {
+	var controls []*storage.RuleControls
+	for _, rule := range rules {
+		controls = append(controls, rule.Controls...)
+	}
+	return controls
+}
+
 func (s *complianceRuleDataStoreTestSuite) TestUpsertRule() {
 	// make sure we have nothing
 	ruleIDs, err := s.storage.GetIDs(s.hasReadCtx)
