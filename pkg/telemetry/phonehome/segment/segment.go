@@ -1,8 +1,10 @@
 package segment
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/mitchellh/hashstructure/v2"
 	segment "github.com/segmentio/analytics-go/v3"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -114,6 +116,23 @@ func (t *segmentTelemeter) getAnonymousID(o *telemeter.CallOptions) string {
 	return t.clientID
 }
 
+// makeMessageID generates and ID based on the provided event data.
+// This may allow Segment to deduplicate events.
+func (t *segmentTelemeter) makeMessageID(event string, props map[string]any, o *telemeter.CallOptions) string {
+	if o == nil || len(o.MessageIDPrefix) == 0 {
+		return ""
+	}
+	h, err := hashstructure.Hash([]any{
+		props, o.Traits, event, t.getUserID(o), t.getAnonymousID(o)},
+		hashstructure.FormatV2, nil)
+	if err != nil {
+		log.Error("Failed to generate Segment message ID: ", err)
+		// Let Segment generate the id.
+		return ""
+	}
+	return fmt.Sprintf("%s-%x", o.MessageIDPrefix, h)
+}
+
 func (t *segmentTelemeter) makeContext(o *telemeter.CallOptions) *segment.Context {
 	var ctx *segment.Context
 
@@ -165,6 +184,7 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 	traits := segment.NewTraits()
 
 	identity := segment.Identify{
+		MessageId:   t.makeMessageID("identify", props, options),
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Traits:      traits,
@@ -197,6 +217,7 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 
 func (t *segmentTelemeter) group(props map[string]any, options *telemeter.CallOptions) {
 	group := segment.Group{
+		MessageId:   t.makeMessageID("group", props, options),
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Traits:      props,
@@ -253,6 +274,7 @@ func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...tel
 	options := telemeter.ApplyOptions(opts)
 
 	track := segment.Track{
+		MessageId:   t.makeMessageID(event, props, options),
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
 		Event:       event,
