@@ -215,7 +215,7 @@ func (tc *testClock) add(d time.Duration) {
 }
 
 func initTestCache() *testClock {
-	var tc testClock = testClock{time.Now()}
+	tc := testClock{time.Now()}
 	// Override the global cache with custom clock for testing purposes:
 	expiringIDCache = expiringcache.NewExpiringCacheWithClock(&tc, 1*time.Hour, expiringcache.UpdateExpirationOnGets)
 	return &tc
