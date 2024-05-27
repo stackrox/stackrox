@@ -98,7 +98,7 @@ func (s *fullStoreImpl) GetProcessListeningOnPort(
 // func (s *fullStoreImpl) checkPermissionsForRows(
 //	ctx context.Context,
 //	rows pgx.Rows,
-//) error {
+// ) error {
 //	for rows.Next() {
 //		var namespace string
 //		var clusterID string

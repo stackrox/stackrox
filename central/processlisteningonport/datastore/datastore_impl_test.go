@@ -536,7 +536,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 //// TestPLOPReopen: One PLOP object is added with a correct process indicator
 //// reference and CloseTimestamp set to nil. It will reopen an existing PLOP and
 //// present in the API result.
-//func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
+// func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 //	indicators := getIndicators()
 //
 //	plopObjectsActive := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
