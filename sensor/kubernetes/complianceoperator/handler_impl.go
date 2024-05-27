@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
@@ -39,7 +40,9 @@ type handlerImpl struct {
 	started           *atomic.Bool
 	complianceIsReady concurrency.Signal
 	signalsToWait     []*concurrency.Signal
-	restartSignal     concurrency.Signal
+	contextLock       sync.Mutex
+	isStartedCtx      context.Context
+	cancelContext     func()
 }
 
 type scanScheduleConfiguration struct {
@@ -59,12 +62,11 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		request:  make(chan *central.ComplianceRequest),
 		response: make(chan *message.ExpiringMessage),
 
+		started:           &atomic.Bool{},
 		disabled:          concurrency.NewSignal(),
 		stopSignal:        concurrency.NewSignal(),
-		started:           &atomic.Bool{},
 		complianceIsReady: concurrency.NewSignal(),
 		signalsToWait:     signalsToWait,
-		restartSignal:     concurrency.NewSignal(),
 	}
 }
 
@@ -79,14 +81,28 @@ func (m *handlerImpl) Stop(_ error) {
 	m.stopSignal.Signal()
 }
 
+func (m *handlerImpl) stopCurrentContext() {
+	m.contextLock.Lock()
+	defer m.contextLock.Unlock()
+	if m.cancelContext != nil {
+		m.cancelContext()
+	}
+}
+
+func (m *handlerImpl) createNewContext() {
+	m.contextLock.Lock()
+	defer m.contextLock.Unlock()
+	m.isStartedCtx, m.cancelContext = context.WithCancel(context.Background())
+}
+
 func (m *handlerImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventSyncFinished:
-		m.restartSignal.Reset()
+		m.createNewContext()
 		go m.isComplianceReady()
 	case common.SensorComponentEventOfflineMode:
-		m.restartSignal.Signal()
+		m.stopCurrentContext()
 		m.complianceIsReady.Reset()
 	}
 }
@@ -479,7 +495,7 @@ func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplia
 }
 
 func (m *handlerImpl) isComplianceReady() {
-	cm := channelmultiplexer.NewMultiplexer[struct{}]()
+	cm := channelmultiplexer.NewMultiplexer[struct{}](channelmultiplexer.WithContext[struct{}](m.isStartedCtx))
 	for _, signal := range m.signalsToWait {
 		cm.AddChannel(signal.Done())
 	}
@@ -489,7 +505,7 @@ func (m *handlerImpl) isComplianceReady() {
 		select {
 		case <-m.stopSignal.Done():
 			return
-		case <-m.restartSignal.Done():
+		case <-m.isStartedCtx.Done():
 			return
 		case <-cm.GetOutput():
 			numOfSignalsTriggered++
