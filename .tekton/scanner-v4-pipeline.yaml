@@ -53,8 +53,8 @@ spec:
     name: output-image-repo
     type: string
   - default: "-fast"
-    description: Suffix that will be appended to the output image tag.
-    name: output-image-tag-suffix
+    description: Suffix that will be appended to the output image tag and embedded version strings.
+    name: output-tag-suffix
     type: string
   - default: .
     description: Path to the source code of an application's component from where
@@ -183,7 +183,7 @@ spec:
   - name: determine-image-tag
     params:
     - name: tag-suffix
-      value: $(params.output-image-tag-suffix)
+      value: $(params.output-tag-suffix)
     runAfter:
     # This task must run on a freshly cloned repository to prevent seeing any changes from other tasks.
     - clone-repository
@@ -242,7 +242,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
-      - VERSIONS_SUFFIX=$(params.output-image-tag-suffix)
+      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
     runAfter:
     - prefetch-dependencies
     - fetch-vuln-mappings
