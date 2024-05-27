@@ -95,10 +95,12 @@ func insertIntoComplianceOperatorBenchmarkV2(batch *pgx.Batch, obj *storage.Comp
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
+		obj.GetProfileAnnotation(),
+		obj.GetShortName(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_benchmark_v2 (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_benchmark_v2 (Id, Name, ProfileAnnotation, ShortName, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ProfileAnnotation = EXCLUDED.ProfileAnnotation, ShortName = EXCLUDED.ShortName, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -122,10 +124,9 @@ func insertIntoComplianceOperatorBenchmarkV2Profiles(batch *pgx.Batch, obj *stor
 		idx,
 		obj.GetProfileName(),
 		obj.GetProfileVersion(),
-		obj.GetProfileAnnotation(),
 	}
 
-	finalStr := "INSERT INTO compliance_operator_benchmark_v2_profiles (compliance_operator_benchmark_v2_Id, idx, ProfileName, ProfileVersion, ProfileAnnotation) VALUES($1, $2, $3, $4, $5) ON CONFLICT(compliance_operator_benchmark_v2_Id, idx) DO UPDATE SET compliance_operator_benchmark_v2_Id = EXCLUDED.compliance_operator_benchmark_v2_Id, idx = EXCLUDED.idx, ProfileName = EXCLUDED.ProfileName, ProfileVersion = EXCLUDED.ProfileVersion, ProfileAnnotation = EXCLUDED.ProfileAnnotation"
+	finalStr := "INSERT INTO compliance_operator_benchmark_v2_profiles (compliance_operator_benchmark_v2_Id, idx, ProfileName, ProfileVersion) VALUES($1, $2, $3, $4) ON CONFLICT(compliance_operator_benchmark_v2_Id, idx) DO UPDATE SET compliance_operator_benchmark_v2_Id = EXCLUDED.compliance_operator_benchmark_v2_Id, idx = EXCLUDED.idx, ProfileName = EXCLUDED.ProfileName, ProfileVersion = EXCLUDED.ProfileVersion"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -145,6 +146,8 @@ func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Delet
 	copyCols := []string{
 		"id",
 		"name",
+		"profileannotation",
+		"shortname",
 		"serialized",
 	}
 
@@ -162,6 +165,8 @@ func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Delet
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetName(),
+			obj.GetProfileAnnotation(),
+			obj.GetShortName(),
 			serialized,
 		})
 
@@ -210,7 +215,6 @@ func copyFromComplianceOperatorBenchmarkV2Profiles(ctx context.Context, s pgSear
 		"idx",
 		"profilename",
 		"profileversion",
-		"profileannotation",
 	}
 
 	for idx, obj := range objs {
@@ -224,7 +228,6 @@ func copyFromComplianceOperatorBenchmarkV2Profiles(ctx context.Context, s pgSear
 			idx,
 			obj.GetProfileName(),
 			obj.GetProfileVersion(),
-			obj.GetProfileAnnotation(),
 		})
 
 		// if we hit our batch size we need to push the data
