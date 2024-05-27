@@ -33,7 +33,7 @@ type datastoreImpl struct {
 
 var (
 	// plopSAC = sac.ForResource(resources.Namespace)
-	adminSAC = sac.ForResource(resources.Administration)
+	adminSAC = sac.ForResource(resources.Access)
 	log      = logging.LoggerForModule()
 )
 
@@ -122,11 +122,11 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		"ProcessListeningOnPort",
 		"AddProcessListeningOnPort",
 	)
-	// if ok, err := adminSAC.WriteAllowed(ctx); err != nil {
-	//	return err
-	// } else if !ok {
-	//	return sac.ErrResourceAccessDenied
-	//}
+	if ok, err := adminSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
 
 	normalizedPLOPs, completedInBatch := normalizePLOPs(portProcesses)
 	allPLOPs := append(normalizedPLOPs, completedInBatch...)
