@@ -202,7 +202,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	s.allFinished.Add(2)
 	s.receiver.Start(stream, s.Stop, s.sender.Stop)
 	s.sender.Start(stream, s.clientReconcile, s.initialDeduperState, s.Stop, s.receiver.Stop)
-	log.Info("Communication with central started.")
+	log.Info("Communication with central started.") // Do not change this line, it is checked by TLSChallengeTest.
 
 	// Wait for stop.
 	/////////////////

@@ -87,18 +87,18 @@ class TLSChallengeTest extends BaseSpecification {
 
         log.info("Setting sensor ROX_CENTRAL_ENDPOINT to ${CENTRAL_PROXY_ENDPOINT}")
         orchestrator.updateDeploymentEnv("stackrox", "sensor", "ROX_CENTRAL_ENDPOINT", CENTRAL_PROXY_ENDPOINT)
-        log.info("Wait for sensor to be restarted")
+        log.info("Waiting for sensor to be restarted")
         orchestrator.waitForPodsReady("stackrox", [app: "sensor"], 1, 10, 5)
 
         then:
-        "Central connection to Sensor becomes unhealthy because root CAs are missing"
-        log.info("Wait until Sensor connection is marked as UNHEALTHY or DEGRADED in Centrals clusters health")
+        "Sensor connection to Central becomes unhealthy because root CAs are missing"
+        log.info("Waiting until Sensor connection is marked as UNHEALTHY or DEGRADED in Centrals clusters health")
         assert waitUntilCentralSensorConnectionIs(HealthStatusLabel.UNHEALTHY, HealthStatusLabel.DEGRADED)
 
         when:
         "Central receives additional CA configurations after restart"
 
-        log.info("Create additional-ca secret")
+        log.info("Creating additional-ca secret")
         Secret additionalCASecret = new Secret(
                 name: "additional-ca",
                 namespace: "stackrox",
@@ -107,22 +107,23 @@ class TLSChallengeTest extends BaseSpecification {
         )
         orchestrator.createSecret(additionalCASecret)
 
+        log.info("Restarting central to pick up the optional additional-ca secret")
         // restart with "kill 1" to prevent deletion of PVs on local machines
         assert orchestrator.restartPodByLabelWithExecKill("stackrox", [app: "central"])
-        log.info("Wait for central pod being ready again")
+        log.info("Waiting for central pod being ready again")
         orchestrator.waitForPodsReady("stackrox", [app: "central"], 1, 50, 3)
 
-        // restart nginx load balancer
+        log.info("Restarting central proxy")
         orchestrator.restartPodByLabels(PROXY_NAMESPACE, [app: "nginx"], 30, 5)
 
         then:
         "Sensor receives root CAs from central after restart and is connected to central"
 
         // delete sensor to force reconnect
-        log.info("Restart Sensor, should connect to ${CENTRAL_PROXY_ENDPOINT}")
+        log.info("Restarting Sensor, should connect to ${CENTRAL_PROXY_ENDPOINT}")
         orchestrator.restartPodByLabels("stackrox", [app: "sensor"], 30, 5)
 
-        log.info("Wait until Sensor is ready again")
+        log.info("Waiting until Sensor is ready again")
         assert Services.waitForDeployment(new Deployment(name: "sensor", namespace: "stackrox"))
 
         // Check connection details Sensor <> Central
@@ -137,7 +138,7 @@ class TLSChallengeTest extends BaseSpecification {
             def pod = orchestrator.getPods("stackrox", "sensor").get(0)
             logs = orchestrator.getPodLog("stackrox", pod.metadata.name)
 
-            // Check if sensor logs contain connection information
+            // Check if sensor logs contain expected connection information
             if (logs.contains("Connecting to Central server ${CENTRAL_PROXY_ENDPOINT}")
                 && logs.contains("Communication with central started")) {
                 log.info("Found successful connection logs in sensor pod")
@@ -145,7 +146,7 @@ class TLSChallengeTest extends BaseSpecification {
             }
         }
 
-        log.error("Could not establish connection to central ${CENTRAL_PROXY_ENDPOINT}")
+        log.error("Sensor did not establish connection to central via ${CENTRAL_PROXY_ENDPOINT}")
         log.info logs
         return false
     }
@@ -155,15 +156,16 @@ class TLSChallengeTest extends BaseSpecification {
         while (t.IsValid()) {
             List<ClusterOuterClass.Cluster> list = Services.getClusterClient().getClusters().getClustersList()
             if (list.empty) {
-                throw new OrchestratorManagerException(
-                        "Did not found any cluster, maybe redeploy StackRox or register a new cluster.")
+                throw new OrchestratorManagerException("Central dos not know about any secured clusters.")
+            }
+            if (list.size() > 1) {
+                throw new OrchestratorManagerException("Central knows about more than one secured cluster.")
             }
 
             log.info("Receiving cluster status from central, checking sensor connection")
             HealthStatusLabel healthStatusLabel = list.get(0).getHealthStatus().getSensorHealthStatus()
-            def found = healthStatusLabels.find { it == healthStatusLabel }
             log.info("Status is: ${healthStatusLabel}")
-            if (found) {
+            if (healthStatusLabels.find { it == healthStatusLabel }) {
                 return true
             }
         }
