@@ -48,7 +48,7 @@ message ComplianceScanConfiguration {
   repeated string clusters = 4;
 }
 
-// Next available tag: 8
+// Next available tag: 9
 message ComplianceScanConfigurationStatus {
   string id = 1;
   string scan_name = 2;
@@ -58,6 +58,7 @@ message ComplianceScanConfigurationStatus {
   google.protobuf.Timestamp last_updated_time = 6;
   // Most recent user to update the scan settings
   SlimUser modified_by = 7;
+  google.protobuf.Timestamp last_executed_time = 8;
 }
 
 message ComplianceScanConfigurationsCount {
