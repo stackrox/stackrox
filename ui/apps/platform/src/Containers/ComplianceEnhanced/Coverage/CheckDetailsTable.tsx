@@ -1,10 +1,19 @@
 import React from 'react';
 import { generatePath, Link } from 'react-router-dom';
-import { Button, ButtonVariant, Tooltip } from '@patternfly/react-core';
+import {
+    Button,
+    ButtonVariant,
+    Pagination,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+    Tooltip,
+} from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { ClusterCheckStatus } from 'services/ComplianceResultsService';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { TableUIState } from 'utils/getTableUIState';
@@ -13,14 +22,37 @@ import { coverageClusterDetailsPath } from './compliance.coverage.routes';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 
 export type CheckDetailsTableProps = {
+    checkResultsCount: number;
     currentDatetime: Date;
+    pagination: UseURLPaginationResult;
     profileName: string;
     tableState: TableUIState<ClusterCheckStatus>;
 };
 
-function CheckDetailsTable({ currentDatetime, profileName, tableState }: CheckDetailsTableProps) {
+function CheckDetailsTable({
+    checkResultsCount,
+    currentDatetime,
+    pagination,
+    profileName,
+    tableState,
+}: CheckDetailsTableProps) {
+    const { page, perPage, setPage, setPerPage } = pagination;
+
     return (
         <>
+            <Toolbar>
+                <ToolbarContent>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={checkResultsCount}
+                            page={page}
+                            perPage={perPage}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
+                        />
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
             <Table>
                 <Thead>
                     <Tr>
