@@ -46,11 +46,19 @@ export type ListComplianceCheckClusterResponse = {
  */
 export function getComplianceProfileCheckResult(
     profileName: string,
-    checkName: string
+    checkName: string,
+    page: number,
+    perPage: number
 ): Promise<ListComplianceCheckClusterResponse> {
+    const queryParameters = {
+        query: {
+            pagination: { ...getPaginationParams(page, perPage) },
+        },
+    };
+    const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
     return axios
         .get<ListComplianceCheckClusterResponse>(
-            `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks/${checkName}`
+            `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks/${checkName}?${params}`
         )
         .then((response) => response.data);
 }
