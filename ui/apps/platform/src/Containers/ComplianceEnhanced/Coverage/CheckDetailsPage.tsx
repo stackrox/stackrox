@@ -7,7 +7,7 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useRestQuery from 'hooks/useRestQuery';
 import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
 import { getComplianceProfileCheckStats } from 'services/ComplianceResultsStatsService';
-import { GetComplianceProfileCheckResult } from 'services/ComplianceResultsService';
+import { getComplianceProfileCheckResult } from 'services/ComplianceResultsService';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import CheckDetailsTable from './CheckDetailsTable';
@@ -43,7 +43,7 @@ function CheckDetails() {
     } = useRestQuery(fetchCheckStats);
 
     const fetchCheckResults = useCallback(
-        () => GetComplianceProfileCheckResult(profileName, checkName),
+        () => getComplianceProfileCheckResult(profileName, checkName),
         [checkName, profileName]
     );
     const {

@@ -44,7 +44,7 @@ export type ListComplianceCheckClusterResponse = {
 /**
  * Fetches statuses per cluster based off a single check.
  */
-export function GetComplianceProfileCheckResult(
+export function getComplianceProfileCheckResult(
     profileName: string,
     checkName: string
 ): Promise<ListComplianceCheckClusterResponse> {
