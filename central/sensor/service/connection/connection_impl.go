@@ -6,6 +6,7 @@ import (
 	"math"
 
 	"github.com/pkg/errors"
+	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	delegatedRegistryConfigConvert "github.com/stackrox/rox/central/delegatedregistryconfig/convert"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/util/imageintegration"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
@@ -33,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -500,6 +502,55 @@ func (c *sensorConnection) getClusterConfigMsg(ctx context.Context) (*central.Ms
 	}, nil
 }
 
+func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*central.MsgToSensor, error) {
+	_, exists, err := c.clusterMgr.GetCluster(ctx, c.clusterID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Errorf("could not pull config for cluster %q because it does not exist", c.clusterID)
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, c.clusterID).ProtoQuery()
+	scanSettingDS := compScanSetting.Singleton()
+	scanConfigs, err := scanSettingDS.GetScanConfigurations(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	var reformatedConfigs []*central.ApplyComplianceScanConfigRequest
+	for _, scanConfig := range scanConfigs {
+		var profiles []string
+		for _, profile := range scanConfig.Profiles {
+			profiles = append(profiles, profile.ProfileName)
+		}
+		scanConfigRequest := central.ApplyComplianceScanConfigRequest{
+			ScanRequest: &central.ApplyComplianceScanConfigRequest_ScheduledScan_{
+				ScheduledScan: &central.ApplyComplianceScanConfigRequest_ScheduledScan{
+					ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
+						ScanName:       scanConfig.ScanConfigName,
+						StrictNodeScan: true,
+						Profiles:       profiles,
+					},
+				},
+			},
+		}
+		reformatedConfigs = append(reformatedConfigs, &scanConfigRequest)
+	}
+
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ComplianceRequest{
+			ComplianceRequest: &central.ComplianceRequest{
+				Request: &central.ComplianceRequest_SyncScanConfigs{
+					SyncScanConfigs: &central.SyncComplianceScanConfigRequest{
+						ScanConfigs: reformatedConfigs,
+					},
+				},
+			},
+		},
+	}, nil
+}
+
 func (c *sensorConnection) getAuditLogSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
 	cluster, exists, err := c.clusterMgr.GetCluster(ctx, c.clusterID)
 	if err != nil {
@@ -696,6 +747,14 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 	}
 
 	metrics.IncrementSensorConnect(c.clusterID, c.sensorHello.GetSensorState().String())
+
+	scanMsg, err := c.getScanConfigurationMsg(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "unable to get scan config for %q", c.clusterID)
+	}
+	if err := server.Send(scanMsg); err != nil {
+		return errors.Wrapf(err, "unable to sync config to cluster %q", c.clusterID)
+	}
 
 	c.runRecv(ctx, server)
 	return c.stopSig.Err()
