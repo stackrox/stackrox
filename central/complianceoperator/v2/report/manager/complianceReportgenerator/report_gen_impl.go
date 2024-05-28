@@ -4,7 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"fmt"
+	"strings"
 	"text/template"
 	"time"
 
@@ -41,13 +41,18 @@ var (
 	}
 )
 
+const (
+	maxNumberProfilesinSubject = 4
+)
+
 type formatBody struct {
-	BrandedPrefix string
-	Profile       string
-	Pass          int
-	Fail          int
-	Mixed         int
-	Cluster       int
+	BrandedPrefix    string
+	Profile          string
+	Pass             int
+	Fail             int
+	Mixed            int
+	Cluster          int
+	ComplianceStatus string
 }
 
 type formatSubject struct {
@@ -61,6 +66,7 @@ type complianceReportGeneratorImpl struct {
 	notificationProcessor notifier.Processor
 }
 
+// struct which hold all columns of a row
 type resultRow struct {
 	ClusterName string
 	CheckName   string
@@ -72,7 +78,7 @@ type resultRow struct {
 }
 
 type resultEmail struct {
-	resultCSVs map[string][]*resultRow
+	resultCSVs map[string][]*resultRow //map of cluster id to slice of *resultRow
 	totalPass  int
 	totalFail  int
 	totalMixed int
@@ -81,8 +87,6 @@ type resultEmail struct {
 }
 
 func (rg *complianceReportGeneratorImpl) ProcessReportRequest(ctx context.Context, req *ComplianceReportRequest) error {
-	//query compliance data
-	// Add the scan config name as an exact match
 
 	data, err := rg.getDataforReport(req, ctx)
 	if err != nil {
@@ -93,14 +97,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(ctx context.Contex
 	if err != nil {
 		return err
 	}
-	var profiles string
-	for index, profile := range req.profiles {
-		if index == len(req.profiles)-1 {
-			profiles += fmt.Sprintf("%s", profile)
-			break
-		}
-		profiles += fmt.Sprintf("%s,", profile)
-	}
+	profiles := strings.Join(req.profiles, ", ")
 	formatEmailBody := &formatBody{
 		BrandedPrefix: branding.GetCombinedProductAndShortName(),
 		Profile:       profiles,
@@ -108,6 +105,15 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(ctx context.Contex
 		Fail:          data.totalFail,
 		Mixed:         data.totalMixed,
 		Cluster:       len(req.clusterIDs),
+	}
+	formatEmailBody.ComplianceStatus = "non compliant"
+	if data.totalFail == 0 {
+		formatEmailBody.ComplianceStatus = "compliant"
+	}
+
+	if len(profiles) > maxNumberProfilesinSubject {
+		profiles = strings.Join(req.profiles[0:maxNumberProfilesinSubject], ", ")
+		profiles += "..."
 	}
 
 	formatEmailSub := &formatSubject{
@@ -119,6 +125,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(ctx context.Contex
 	return rg.sendEmail(zipData, formatEmailBody, formatEmailSub, req.notifiers, ctx)
 }
 
+// getDataforReport returns map of cluster id and
 func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportRequest, ctx context.Context) (*resultEmail, error) {
 	// TODO ROX-24356: Implement query to get checkresults data to generate cvs for compliance reporting
 
@@ -155,7 +162,7 @@ func (rg *complianceReportGeneratorImpl) sendEmail(zipData *bytes.Buffer, emailB
 		if customSubject != "" {
 			emailSubject = customSubject
 		}
-		err = rg.retryableSendReportResults(reportNotifier, notifier.GetEmailConfig().GetMailingLists(),
+		err = retryableSendReportResults(reportNotifier, notifier.GetEmailConfig().GetMailingLists(),
 			zipData, emailSubject, emailBody)
 		if err != nil {
 			errorList.AddError(errors.Errorf("Error sending compliance report email for notifier '%s': %s",
@@ -182,7 +189,7 @@ func formatEmailBodywithDetails(subject string, data *formatBody) (string, error
 	return templates.ExecuteToString(tmpl, data)
 }
 
-func (rg *complianceReportGeneratorImpl) retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailingList []string,
+func retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailingList []string,
 	zippedCSVData *bytes.Buffer, emailSubject, emailBody string) error {
 	return retry.WithRetry(func() error {
 		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, emailSubject, emailBody)
@@ -219,7 +226,6 @@ func createCSVInZip(zipWriter *zip.Writer, filename string, res []*resultRow) er
 		return err
 	}
 
-	//csvWriter := csv.NewWriter(w)
 	csvWriter := csv.NewGenericWriter(csvHeader, true)
 	for _, checkRes := range res {
 		record := []string{

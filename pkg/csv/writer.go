@@ -58,7 +58,7 @@ func (c *GenericWriter) WriteBytes(buf *bytes.Buffer) error {
 	return nil
 }
 
-// WriteBytes writes out csv header and values to the provided buffer
+// WriteCSVwrites out csv header and values to the provided IO writer
 func (c *GenericWriter) WriteCSV(w io.Writer) error {
 	cw := csv.NewWriter(w)
 	cw.UseCRLF = true
