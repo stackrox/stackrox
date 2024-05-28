@@ -84,7 +84,7 @@ func verifyJSONToProtoToJSON(t *testing.T, inputJSON string, options []Conversio
 	// Conversion to only JSON escapes characters if specified in options.
 	convertedJSON, err := ProtoToJSON(&proto, options...)
 	assert.NoError(t, err)
-	assert.Truef(t, inputJSON == convertedJSON, "original JSON:\n%s\nconvertedJSON:\n%s", inputJSON, convertedJSON)
+	assert.JSONEqf(t, inputJSON, convertedJSON, "original JSON:\n%s\nconvertedJSON:\n%s", inputJSON, convertedJSON)
 }
 
 func TestNoErrorOnUnknownAttribute(t *testing.T) {

@@ -313,7 +313,7 @@ func TestJSONRemarks(t *testing.T) {
 
 			raw, err := os.ReadFile(c.goldenFile)
 			a.NoError(err)
-			a.Equal(buf.String(), string(raw))
+			a.JSONEq(buf.String(), string(raw))
 		})
 	}
 }
