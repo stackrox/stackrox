@@ -240,7 +240,6 @@ var (
 	ComplianceOperatorProfileRef             = newFieldLabel("Profile Ref ID")
 	ComplianceOperatorScanRef                = newFieldLabel("Scan Ref ID")
 	ComplianceOperatorRuleRef                = newFieldLabel("Rule Ref ID")
-	ComplianceOperatorRuleId                 = newFieldLabel("Compliance Rule ID")
 	ComplianceOperatorRemediationName        = newFieldLabel("Compliance Remediation Name")
 	ComplianceOperatorBenchmarkName          = newFieldLabel("Compliance Benchmark Name")
 	ComplianceOperatorProfileAnnotation      = newFieldLabel("Compliance Profile Annotation")

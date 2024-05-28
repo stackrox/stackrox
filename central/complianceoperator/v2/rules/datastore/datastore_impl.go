@@ -67,7 +67,11 @@ func (d *datastoreImpl) GetControlsByRuleNames(ctx context.Context, ruleNames []
 	builder.AddExactMatches(search.ComplianceOperatorRuleName, ruleNames...)
 
 	// Add a group by clause to group the rule names by name, control and standard to reduce the result set.
-	builder.AddGroupBy(search.ComplianceOperatorRuleName, search.ComplianceOperatorControl, search.ComplianceOperatorStandard)
+	builder.AddGroupBy(
+		search.ComplianceOperatorRuleName,
+		search.ComplianceOperatorControl,
+		search.ComplianceOperatorStandard,
+	)
 
 	query := builder.ProtoQuery()
 	results, err := pgSearch.RunSelectRequestForSchema[ControlResult](ctx, d.db, postgresSchema.ComplianceOperatorRuleV2Schema, query)
