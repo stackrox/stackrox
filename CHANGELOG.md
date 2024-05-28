@@ -14,6 +14,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - This enables support for CRI-O's unqualified search registries and short name aliases ([more info](https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md)).
 - ROX-23852: `roxctl image scan` now has the option to filter by vulnerability severities using the `--severity` flag.
 - ROX-22376: Add a new notifier integration to enable notification via email for ACS Cloud Service managed centrals
+- ROX-24411: `roxctl image scan --output=csv` and `roxctl image scan --output=table` now include the fixed version by default.
 
 ### Removed Features
 
@@ -49,7 +50,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-22238: `roxctl deployment check` results now contain additional information about the Permission Level and applicable Network Policies for a deployment, if `--cluster` and `--namespace` are provided together with `--verbose`.
 - Export APIs have been added for deployments (`/v1/export/deployments`), nodes (`/v1/export/nodes`), pods
   (`/v1/export/pods`), and images (`/v1/export/images`) as a tech preview. They are much more performant for a full
-  export than their REST counterparts. 
+  export than their REST counterparts.
 - ROX-21950: `roxctl scanner download-db` has been added to help download version specific offline vulnerability bundles introduced with `Scanner V4`.
 - The new vulnerability scanner named "Scanner V4" has been integrated. At the moment it needs to run side-by-side with the current default scanner named "StackRox Scanner". Installation instructions can be found in the official RHACS documentation.
 - ROX-19932: ACS can pull information about available clusters to secure from

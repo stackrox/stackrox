@@ -34,7 +34,7 @@ const (
 
 var (
 	// default headers to use when printing tabular output
-	defaultImageScanHeaders = []string{"COMPONENT", "VERSION", "CVE", "SEVERITY", "LINK"}
+	defaultImageScanHeaders = []string{"COMPONENT", "VERSION", "CVE", "SEVERITY", "FIXED_VERSION", "LINK"}
 	columnsToMerge          = []string{"COMPONENT", "VERSION"}
 	// default JSON path expression representing a row within tabular output
 	defaultImageScanJSONPathExpression = "{" +
@@ -42,6 +42,7 @@ var (
 		"result.vulnerabilities.#.componentVersion," +
 		"result.vulnerabilities.#.cveId," +
 		"result.vulnerabilities.#.cveSeverity," +
+		"result.vulnerabilities.#.componentFixedVersion," +
 		"result.vulnerabilities.#.cveInfo}"
 
 	// JSON Path expressions to use for sarif report generation
