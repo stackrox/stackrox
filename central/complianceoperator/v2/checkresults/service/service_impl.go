@@ -38,7 +38,6 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceOverallClusterCount",
 			"/v2.ComplianceResultsService/GetComplianceScanCheckResult",
 			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResults",
-			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResultsCount",
 			"/v2.ComplianceResultsService/GetComplianceProfileResults",
 			"/v2.ComplianceResultsService/GetComplianceProfileCheckResult",
 			"/v2.ComplianceResultsService/GetComplianceProfileClusterResults",
