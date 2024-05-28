@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/cloudflare/cfssl/csr"
@@ -80,11 +81,11 @@ func (t *ClientTestSuite) SetupSuite() {
 
 	signature, err := testdata.ReadFile("testdata/signature.example")
 	t.Require().NoError(err)
-	t.signatureExample = string(signature)
+	t.signatureExample = strings.TrimRight(string(signature), "\n")
 
 	trustInfo, err := testdata.ReadFile("testdata/trust_info_serialized.example")
 	t.Require().NoError(err)
-	t.trustInfoExample = string(trustInfo)
+	t.trustInfoExample = strings.TrimRight(string(trustInfo), "\n")
 }
 
 func (t *ClientTestSuite) newSelfSignedCertificate(commonName string) *tls.Certificate {
