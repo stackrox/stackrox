@@ -52,7 +52,7 @@ func (s *PodDatastoreSuite) SetupSuite() {
 	s.plopAndPiCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.DeploymentExtension)))
+			sac.ResourceScopeKeys(resources.Namespace)))
 }
 
 func (s *PodDatastoreSuite) SetupTest() {
