@@ -1,6 +1,8 @@
 package command
 
 import (
+	"bytes"
+	rawJSON "encoding/json"
 	"fmt"
 	"os"
 	"path"
@@ -346,7 +348,16 @@ func upgradePolicyJSON(json string) (string, error) {
 		return result, errors.Wrap(err, "upgraded policy can't be serialized to JSON")
 	}
 
-	return result, nil
+	// The encoder used in jsonutil introduces random whitespaces in the JSON payload.
+	// The re-serialized policy is encoded by the JSON encoder in order to restore
+	// payload determinism.
+	var indented bytes.Buffer
+	err = rawJSON.Indent(&indented, []byte(result), "", "  ")
+	if err != nil {
+		return result, errors.Wrap(err, "upgraded policy can't be serialized to indented JSON")
+	}
+
+	return indented.String(), nil
 }
 
 func ensureReadOnlySettings(policy *storage.Policy) {
