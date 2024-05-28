@@ -2,6 +2,7 @@
 export const CVE_SORT_FIELD = 'CVE';
 export const CVSS_SORT_FIELD = 'CVSS';
 export const CVE_TYPE_SORT_FIELD = 'CVE Type';
+export const CVE_COUNT_SORT_FIELD = 'CVE Count';
 
 // Cluster sort fields
 export const CLUSTER_SORT_FIELD = 'Cluster';
