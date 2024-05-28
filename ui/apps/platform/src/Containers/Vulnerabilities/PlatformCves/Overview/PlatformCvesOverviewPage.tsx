@@ -28,7 +28,7 @@ import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
-import { EntityTab, platformEntityTabValues } from '../../types';
+import { platformEntityTabValues } from '../../types';
 import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
 
 import ClustersTable, {
