@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
@@ -61,6 +62,10 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 	var convertedResults []*v2.ComplianceClusterOverallStats
 
 	for _, resultCount := range resultCounts {
+		var lastScanTime *types.Timestamp
+		if resultCount.LastScanTime != nil {
+			lastScanTime = protoconv.ConvertTimeToTimestampOrNil(*resultCount.LastScanTime)
+		}
 		convertedResults = append(convertedResults, &v2.ComplianceClusterOverallStats{
 			Cluster: &v2.ComplianceScanCluster{
 				ClusterId:   resultCount.ClusterID,
@@ -97,7 +102,7 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 					Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
 				},
 			},
-			LastScanTime: protoconv.ConvertTimeToTimestampOrNil(*resultCount.LastScanTime),
+			LastScanTime: lastScanTime,
 		})
 	}
 	return convertedResults
