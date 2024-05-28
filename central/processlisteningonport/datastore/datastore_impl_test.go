@@ -284,6 +284,24 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 			)),
 			expectAllowed: true,
 		},
+		"read and write access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.Namespace),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
+			)),
+			expectAllowed: true,
+		},
+		"read and write access 2": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.Namespace),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
+			)),
+			expectAllowed: true,
+		},
 		"access to wrong namespace": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -607,7 +625,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 //
 //// TestPLOPCloseSameTimestamp: One PLOP object is added with a correct process
 //// indicator reference and CloseTimestamp set to the same as existing one.
-//func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
+//  func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 //
 //	indicators := getIndicators()
 //
