@@ -52,10 +52,10 @@ func GetSeverityMapProtoVal(s string) (storage.CVSSV2_Severity, error) {
 func ParseCVSSV2(vectorStr string) (*storage.CVSSV2, error) {
 	vec, err := cvss2.VectorFromString(vectorStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid CVSSv2 vector %q: %v", vectorStr, err)
+		return nil, fmt.Errorf("invalid CVSSv2 vector %q: %w", vectorStr, err)
 	}
 	if err := vec.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid CVSSv2 vector %q: %v", vectorStr, err)
+		return nil, fmt.Errorf("invalid CVSSv2 vector %q: %w", vectorStr, err)
 	}
 
 	// We only care about base metrics at this time.

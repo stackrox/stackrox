@@ -64,10 +64,10 @@ func GetSeverityMapProtoVal(s string) (storage.CVSSV3_Severity, error) {
 func ParseCVSSV3(vectorStr string) (*storage.CVSSV3, error) {
 	vec, err := cvss3.VectorFromString(vectorStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid CVSSv3 vector %q: %v", vectorStr, err)
+		return nil, fmt.Errorf("invalid CVSSv3 vector %q: %w", vectorStr, err)
 	}
 	if err := vec.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid CVSSv3 vector %q: %v", vectorStr, err)
+		return nil, fmt.Errorf("invalid CVSSv3 vector %q: %w", vectorStr, err)
 	}
 
 	// We only care about base metrics at this time.
