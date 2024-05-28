@@ -39,6 +39,9 @@ spec:
       tolerations:
         {{- toYaml ._rox.sensor.tolerations | nindent 8 }}
       {{- end }}
+      {{- if ._rox.sensor.hostAliases }}
+      hostAliases: {{ toYaml ._rox.sensor.hostAliases | nindent 8 }}
+      {{- end }}
       affinity:
       {{- toYaml ._rox.sensor.affinity | nindent 8 }}
       {{- if ._rox.sensor.priorityClassName }}

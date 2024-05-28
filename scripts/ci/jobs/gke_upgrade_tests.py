@@ -3,6 +3,7 @@
 """
 Run the upgrade test in a GKE cluster
 """
+import os
 from runners import ClusterTestRunner
 from clusters import GKECluster
 from pre_tests import PreSystemTests
@@ -12,6 +13,8 @@ from post_tests import PostClusterTest, FinalPost
 # NOTE:  This test starts with Postgres off so that migrations
 # from RocksDB to Postgres can be executed.  Once RocksDB is
 # out of support those bits can be removed.
+
+os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
 ClusterTestRunner(
     cluster=GKECluster("upgrade-test", machine_type="e2-standard-8"),

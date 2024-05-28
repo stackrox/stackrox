@@ -113,7 +113,7 @@ const validationSchema = yup.object().shape({
             then: (schema) => schema.required('A custom start date is required'),
             otherwise: (schema) => schema,
         }),
-        reportScope: yup.object().required('A report scope is required'),
+        reportScope: yup.object().required('A collection is required'),
     }),
     deliveryDestinations: yup
         .array()

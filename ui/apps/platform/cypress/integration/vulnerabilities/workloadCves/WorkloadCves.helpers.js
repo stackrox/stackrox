@@ -1,6 +1,9 @@
 import { addDays, format } from 'date-fns';
 import { getDescriptionListGroup } from '../../../helpers/formHelpers';
-import { interactAndWaitForResponses } from '../../../helpers/request';
+import {
+    interactAndWaitForResponses,
+    getRouteMatcherMapForGraphQL,
+} from '../../../helpers/request';
 import { visit } from '../../../helpers/visit';
 import { hasFeatureFlag } from '../../../helpers/features';
 import { selectors } from './WorkloadCves.selectors';
@@ -21,21 +24,24 @@ export function getFutureDateByDays(days) {
     return addDays(new Date(), days);
 }
 
-export function visitWorkloadCveOverview() {
+export function visitWorkloadCveOverview({ clearFiltersOnVisit = true } = {}) {
     visit(basePath);
 
     cy.get('h1:contains("Workload CVEs")');
     cy.location('pathname').should('eq', basePath);
 
+    // Wait for the initial table load to begin and complete
+    cy.get(selectors.loadingSpinner).should('exist');
+    cy.get(selectors.loadingSpinner).should('not.exist');
+
     // Clear the default filters that will be applied to increase the likelihood of finding entities with
     // CVEs. The default filters of Severity: Critical and Severity: Important make it very likely that
     // there will be no results across entity tabs on the overview page.
-    if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
+    if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS') && clearFiltersOnVisit) {
         cy.get(vulnSelectors.clearFiltersButton).click();
+        // Ensure the data in the table has settled before continuing with the test
+        cy.get(selectors.isUpdatingTable).should('not.exist');
     }
-
-    // Ensure the data in the table has settled before continuing with the test
-    cy.get(selectors.isUpdatingTable).should('not.exist');
 }
 
 /**
@@ -363,4 +369,49 @@ export function unwatchImageFromModal(imageFullName, imageNameAndTag) {
 
     // Verify that the image no longer has a watched image label in the workload cve table
     cy.get(selectors.watchedImageCellWithName(imageNameAndTag)).should('not.exist');
+}
+
+/**
+ *
+ * @param {'Image vulnerabilities'|'Images without vulnerabilities'} modeText
+ */
+export function changeObservedCveViewingMode(modeText) {
+    cy.get(selectors.observedCveModeSelect).click();
+    cy.get(`button:contains("${modeText}")`).click();
+}
+
+/**
+ * Perform a set of actions and wait for the list of CVEs to be fetched
+ * @param {*} callback The actions to perform
+ * @returns {Cypress.Chainable}
+ */
+export function interactAndWaitForCveList(callback) {
+    const cveListOpname = 'getImageCVEList';
+    const cveListRouteMatcherMap = getRouteMatcherMapForGraphQL([cveListOpname]);
+    cveListRouteMatcherMap[cveListOpname].times = 1;
+    return interactAndWaitForResponses(callback, cveListRouteMatcherMap);
+}
+
+/**
+ * Perform a set of actions and wait for the list of images to be fetched
+ * @param {*} callback The actions to perform
+ * @returns {Cypress.Chainable}
+ */
+export function interactAndWaitForImageList(callback) {
+    const imageListOpname = 'getImageList';
+    const imageListRouteMatcherMap = getRouteMatcherMapForGraphQL([imageListOpname]);
+    imageListRouteMatcherMap[imageListOpname].times = 1;
+    return interactAndWaitForResponses(callback, imageListRouteMatcherMap);
+}
+
+/**
+ * Perform a set of actions and wait for the list of deployments to be fetched
+ * @param {*} callback The actions to perform
+ * @returns {Cypress.Chainable}
+ */
+export function interactAndWaitForDeploymentList(callback) {
+    const deploymentListOpname = 'getDeploymentList';
+    const deploymentListRouteMatcherMap = getRouteMatcherMapForGraphQL([deploymentListOpname]);
+    deploymentListRouteMatcherMap[deploymentListOpname].times = 1;
+    return interactAndWaitForResponses(callback, deploymentListRouteMatcherMap);
 }

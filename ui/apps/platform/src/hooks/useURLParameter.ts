@@ -6,11 +6,11 @@ import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 export type QueryValue = undefined | string | string[] | qs.ParsedQs | qs.ParsedQs[];
 
 // Note that when we upgrade React Router and 'history' we can probably import a more accurate version of this type
-export type Action = 'push' | 'replace';
+export type HistoryAction = 'push' | 'replace';
 
 export type UseURLParameterResult = [
     QueryValue,
-    (newValue: QueryValue, historyAction?: Action) => void,
+    (newValue: QueryValue, historyAction?: HistoryAction) => void,
 ];
 
 /**
@@ -38,7 +38,7 @@ function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLPar
     // memoize the setter function to retain referential equality as long
     // as the URL parameters do not change
     const setValue = useCallback(
-        (newValue: QueryValue, historyAction: Action = 'push') => {
+        (newValue: QueryValue, historyAction: HistoryAction = 'push') => {
             // Note that we use the version of `location` on `history` here, since it is mutable (compared
             // to the immutable `location` when used directly.) In this case, we aren't looking
             // for a reference change to trigger a rerender, we are looking for the current up-to-date

@@ -35,6 +35,7 @@ central:
   endpointsConfig: null # string | dict
   nodeSelector: null # string | dict
   tolerations: null # [dict]
+  hostAliases: null # [dict]
   affinity: null # dict
   priorityClassName: null # string
   exposeMonitoring: null # bool
@@ -88,6 +89,7 @@ central:
   db:
     nodeSelector: null # string | dict
     tolerations: null # [dict]
+    hostAliases: null # [dict]
     priorityClassName: null # string
     source:
       connectionString: null # string

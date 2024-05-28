@@ -9,17 +9,12 @@ import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useMap from 'hooks/useMap';
-import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
 
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import { VulnerabilitySeverityLabel } from '../../types';
-import {
-    getStatusesForExceptionCount,
-    getVulnStateScopedQueryString,
-    parseWorkloadQuerySearchFilter,
-} from '../../utils/searchUtils';
+import { getStatusesForExceptionCount } from '../../utils/searchUtils';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import ExceptionRequestModal, {
     ExceptionRequestModalProps,
@@ -34,6 +29,8 @@ export type CVEsTableContainerProps = {
     vulnerabilityState?: VulnerabilityState; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     pagination: ReturnType<typeof useURLPagination>;
     sort: ReturnType<typeof useURLSort>;
+    workloadCvesScopedQueryString: string;
+    isFiltered: boolean;
     isUnifiedDeferralsEnabled: boolean; // TODO Remove this when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
 };
 
@@ -44,17 +41,17 @@ function CVEsTableContainer({
     vulnerabilityState,
     pagination,
     sort,
+    workloadCvesScopedQueryString,
+    isFiltered,
     isUnifiedDeferralsEnabled,
 }: CVEsTableContainerProps) {
     const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
-    const isFiltered = getHasSearchApplied(querySearchFilter);
     const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
     const { error, loading, data, previousData } = useQuery(cveListQuery, {
         variables: {
-            query: getVulnStateScopedQueryString(querySearchFilter, vulnerabilityState),
+            query: workloadCvesScopedQueryString,
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,

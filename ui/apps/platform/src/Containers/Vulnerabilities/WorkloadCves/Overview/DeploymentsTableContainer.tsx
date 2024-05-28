@@ -5,38 +5,34 @@ import { Bullseye, Spinner, Divider } from '@patternfly/react-core';
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import { getHasSearchApplied } from 'utils/searchUtils';
-import { VulnerabilityState } from 'types/cve.proto';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
 import DeploymentsTable, { Deployment, deploymentListQuery } from '../Tables/DeploymentsTable';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
-import {
-    getVulnStateScopedQueryString,
-    parseWorkloadQuerySearchFilter,
-} from '../../utils/searchUtils';
 import { VulnerabilitySeverityLabel } from '../../types';
 
 type DeploymentsTableContainerProps = {
     filterToolbar: TableEntityToolbarProps['filterToolbar'];
     entityToggleGroup: TableEntityToolbarProps['entityToggleGroup'];
     rowCount: number;
-    vulnerabilityState?: VulnerabilityState; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     pagination: ReturnType<typeof useURLPagination>;
     sort: ReturnType<typeof useURLSort>;
+    workloadCvesScopedQueryString: string;
+    isFiltered: boolean;
+    showCveDetailFields: boolean;
 };
 
 function DeploymentsTableContainer({
     filterToolbar,
     entityToggleGroup,
     rowCount,
-    vulnerabilityState,
     pagination,
     sort,
+    workloadCvesScopedQueryString,
+    isFiltered,
+    showCveDetailFields,
 }: DeploymentsTableContainerProps) {
     const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
-    const isFiltered = getHasSearchApplied(querySearchFilter);
     const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
@@ -44,7 +40,7 @@ function DeploymentsTableContainer({
         deployments: Deployment[];
     }>(deploymentListQuery, {
         variables: {
-            query: getVulnStateScopedQueryString(querySearchFilter, vulnerabilityState),
+            query: workloadCvesScopedQueryString,
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,
@@ -84,6 +80,7 @@ function DeploymentsTableContainer({
                         getSortParams={getSortParams}
                         isFiltered={isFiltered}
                         filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
+                        showCveDetailFields={showCveDetailFields}
                     />
                 </div>
             )}

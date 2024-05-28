@@ -5,6 +5,7 @@ import { FormikProvider } from 'formik';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 import isEqual from 'lodash/isEqual';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useRestQuery from 'hooks/useRestQuery';
 import { saveScanConfig } from 'services/ComplianceScanConfigurationService';
 import { listComplianceIntegrations } from 'services/ComplianceIntegrationService';
@@ -14,6 +15,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import ScanConfigOptions from './ScanConfigOptions';
 import ClusterSelection from './ClusterSelection';
 import ProfileSelection from './ProfileSelection';
+import ReportConfiguration from './ReportConfiguration';
 import ReviewConfig from './ReviewConfig';
 import ScanConfigWizardFooter from './ScanConfigWizardFooter';
 import useFormikScanConfig from './useFormikScanConfig';
@@ -25,6 +27,8 @@ const SELECT_CLUSTERS = 'Select clusters';
 const SELECT_CLUSTERS_ID = 'clusters';
 const SELECT_PROFILES = 'Select profiles';
 const SELECT_PROFILES_ID = 'profiles';
+const CONFIGURE_REPORT = 'Configure report';
+const CONFIGURE_REPORT_ID = 'report';
 const REVIEW_CONFIG = 'Review and create';
 const REVIEW_CONFIG_ID = 'review';
 
@@ -39,6 +43,8 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     const [createScanConfigError, setCreateScanConfigError] = useState('');
     const [clustersUsedForProfileData, setClustersUsedForProfileData] = useState<string[]>([]);
     const alertRef = useRef<HTMLDivElement | null>(null);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
 
     const listClustersQuery = useCallback(() => listComplianceIntegrations(), []);
     const { data: clusters, loading: isFetchingClusters } = useRestQuery(listClustersQuery);
@@ -128,8 +134,12 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         return canJumpToSelectClusters() && Object.keys(formik.errors?.clusters || {}).length === 0;
     }
 
-    function canJumpToReviewConfig() {
+    function canJumpToConfigureReport() {
         return canJumpToSelectProfiles() && Object.keys(formik.errors?.profiles || {}).length === 0;
+    }
+
+    function canJumpToReviewConfig() {
+        return canJumpToConfigureReport() && Object.keys(formik.errors?.report || {}).length === 0;
     }
 
     const wizardSteps: WizardStep[] = [
@@ -163,6 +173,12 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
             canJumpTo: canJumpToSelectProfiles(),
         },
         {
+            name: CONFIGURE_REPORT,
+            id: CONFIGURE_REPORT_ID,
+            component: <ReportConfiguration />,
+            canJumpTo: canJumpToConfigureReport(),
+        },
+        {
             name: REVIEW_CONFIG,
             id: REVIEW_CONFIG_ID,
             component: (
@@ -174,7 +190,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
             ),
             canJumpTo: canJumpToReviewConfig(),
         },
-    ];
+    ].filter(({ id }) => id !== CONFIGURE_REPORT_ID || isComplianceReportingEnabled);
 
     const isEditing = initialFormValues?.id !== undefined;
 

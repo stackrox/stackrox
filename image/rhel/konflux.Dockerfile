@@ -1,37 +1,18 @@
-ARG ROCKSDB_BUILDER_STAGE_PATH="/mnt/rocksdb"
-ARG GO_BUILDER_STAGE_PATH="/mnt/go"
 ARG FINAL_STAGE_PATH="/mnt/final"
-
 
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-base
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.21 AS go-builder-base
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS final-base
+
 
 # TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available. Move dnf commands to respective stages.
 FROM ubi-base AS rpm-installer
-
-ARG ROCKSDB_BUILDER_STAGE_PATH
-COPY --from=ubi-base / "$ROCKSDB_BUILDER_STAGE_PATH"
-
-ARG GO_BUILDER_STAGE_PATH
-COPY --from=go-builder-base / "$GO_BUILDER_STAGE_PATH"
 
 ARG FINAL_STAGE_PATH
 COPY --from=final-base / "$FINAL_STAGE_PATH"
 
 COPY ./scripts/konflux/subscription-manager/* /tmp/.konflux/
-RUN /tmp/.konflux/subscription-manager-bro.sh register "$ROCKSDB_BUILDER_STAGE_PATH" "$GO_BUILDER_STAGE_PATH" "$FINAL_STAGE_PATH"
-
-# gflags and snappy-devel for rocksdb-builder come from codeready-builder-for-rhel-8 repo.
-RUN subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
-
-# Install packages for the rockdsb builder stage.
-RUN dnf -y --installroot="$ROCKSDB_BUILDER_STAGE_PATH" upgrade --nobest && \
-    dnf -y --installroot="$ROCKSDB_BUILDER_STAGE_PATH" install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils gflags snappy-devel zlib-devel bzip2-devel lz4-devel cmake libzstd-devel
-
-# Install packages for the Go builder stage.
-RUN dnf -y --installroot="$GO_BUILDER_STAGE_PATH" install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils gflags snappy-devel zlib-devel bzip2-devel lz4-devel cmake libzstd-devel zstd jq
+RUN /tmp/.konflux/subscription-manager-bro.sh register "$FINAL_STAGE_PATH"
 
 # Install packages for the final stage.
 RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
@@ -47,26 +28,9 @@ RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
 RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
 
 
-FROM scratch AS rocksdb-builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.21 AS go-builder
 
-ARG ROCKSDB_BUILDER_STAGE_PATH
-COPY --from=rpm-installer "$ROCKSDB_BUILDER_STAGE_PATH" /
-
-WORKDIR /staging
-
-COPY .konflux/rocksdb ./
-
-# Set up and build rocksdb
-RUN PORTABLE=1 TRY_SSE_ETC=0 TRY_SSE42="-msse4.2" TRY_PCLMUL="-mpclmul" CXXFLAGS="-fPIC" make --jobs=6 static_lib
-
-
-FROM scratch AS go-builder
-
-ARG GO_BUILDER_STAGE_PATH
-COPY --from=rpm-installer "$GO_BUILDER_STAGE_PATH" /
-
-COPY --from=rocksdb-builder /staging/librocksdb.a /lib/rocksdb/librocksdb.a
-COPY --from=rocksdb-builder /staging/include /lib/rocksdb/include
+RUN dnf -y install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils zlib-devel bzip2-devel lz4-devel cmake jq
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -77,12 +41,12 @@ RUN git restore scripts/konflux/bootstrap-yarn/package-lock.json && \
     scripts/konflux/fail-build-if-git-is-dirty.sh
 
 ENV GOFLAGS=""
-ENV CGO_CFLAGS="-I/lib/rocksdb/include"
-ENV CGO_LDFLAGS="-L/lib/rocksdb -L/usr/lib64"
 ENV CGO_ENABLED=1
 # TODO(ROX-19958): figure out if we need BUILD_TAG
 # ENV BUILD_TAG="${CI_VERSION}"
-ENV GOTAGS="release"
+# TODO(ROX-24276): re-enable release builds for fast stream.
+# TODO(ROX-20240): enable non-release development builds.
+# ENV GOTAGS="release"
 ENV CI=1
 
 RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \

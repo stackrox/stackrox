@@ -6,6 +6,7 @@ import { SlimUser } from 'types/user.proto';
 
 import { complianceV2Url } from './ComplianceCommon';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
+import { NotifierConfiguration } from './ReportsService.types';
 import { Empty } from './types';
 
 const complianceScanConfigBaseUrl = `${complianceV2Url}/scan/configurations`;
@@ -56,6 +57,7 @@ type BaseComplianceScanConfigurationSettings = {
     profiles: string[];
     scanSchedule: Schedule;
     description?: string;
+    notifiers: NotifierConfiguration[];
 };
 
 export type ComplianceScanConfiguration = {

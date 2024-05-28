@@ -5,15 +5,9 @@ import { Bullseye, Spinner, Divider } from '@patternfly/react-core';
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import { getHasSearchApplied } from 'utils/searchUtils';
-import { VulnerabilityState } from 'types/cve.proto';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
 import ImagesTable, { ImagesTableProps, imageListQuery } from '../Tables/ImagesTable';
-import {
-    getVulnStateScopedQueryString,
-    parseWorkloadQuerySearchFilter,
-} from '../../utils/searchUtils';
 import { VulnerabilitySeverityLabel } from '../../types';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 
@@ -23,34 +17,36 @@ type ImagesTableContainerProps = {
     filterToolbar: TableEntityToolbarProps['filterToolbar'];
     entityToggleGroup: TableEntityToolbarProps['entityToggleGroup'];
     rowCount: number;
-    vulnerabilityState?: VulnerabilityState; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     pagination: ReturnType<typeof useURLPagination>;
     sort: ReturnType<typeof useURLSort>;
+    workloadCvesScopedQueryString: string;
+    isFiltered: boolean;
     hasWriteAccessForWatchedImage: boolean;
     onWatchImage: ImagesTableProps['onWatchImage'];
     onUnwatchImage: ImagesTableProps['onUnwatchImage'];
+    showCveDetailFields: boolean;
 };
 
 function ImagesTableContainer({
     filterToolbar,
     entityToggleGroup,
     rowCount,
-    vulnerabilityState,
     pagination,
     sort,
+    workloadCvesScopedQueryString,
+    isFiltered,
     hasWriteAccessForWatchedImage,
     onWatchImage,
     onUnwatchImage,
+    showCveDetailFields,
 }: ImagesTableContainerProps) {
     const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
-    const isFiltered = getHasSearchApplied(querySearchFilter);
     const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
     const { error, loading, data, previousData } = useQuery(imageListQuery, {
         variables: {
-            query: getVulnStateScopedQueryString(querySearchFilter, vulnerabilityState),
+            query: workloadCvesScopedQueryString,
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,
@@ -93,6 +89,7 @@ function ImagesTableContainer({
                         hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
                         onWatchImage={onWatchImage}
                         onUnwatchImage={onUnwatchImage}
+                        showCveDetailFields={showCveDetailFields}
                     />
                 </div>
             )}

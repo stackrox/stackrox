@@ -15,7 +15,8 @@ import {
     clustersPathWithParam,
     clustersSecureClusterPath,
     collectionsPath,
-    complianceEnhancedBasePath,
+    complianceEnhancedCoveragePath,
+    complianceEnhancedSchedulesPath,
     compliancePath,
     configManagementPath,
     dashboardPath,
@@ -65,7 +66,7 @@ function NotFoundPage(): ReactElement {
 
 type RouteComponent = {
     component: ElementType;
-    path: string;
+    path: string | string[];
 };
 
 // routeComponentMap corresponds to routeRequirementsMap in src/routePaths.ts file.
@@ -123,15 +124,16 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Collections/CollectionsPage')),
         path: collectionsPath,
     },
-    compliance: {
-        component: asyncComponent(() => import('Containers/Compliance/Page')),
-        path: compliancePath,
-    },
+    // Compliance enhanced must precede compliance classic.
     'compliance-enhanced': {
         component: asyncComponent(
             () => import('Containers/ComplianceEnhanced/ComplianceEnhancedPage')
         ),
-        path: complianceEnhancedBasePath,
+        path: [complianceEnhancedCoveragePath, complianceEnhancedSchedulesPath],
+    },
+    compliance: {
+        component: asyncComponent(() => import('Containers/Compliance/Page')),
+        path: compliancePath,
     },
     configmanagement: {
         component: asyncComponent(() => import('Containers/ConfigManagement/Page')),

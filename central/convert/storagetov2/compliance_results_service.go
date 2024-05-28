@@ -165,21 +165,23 @@ func ComplianceV2CheckClusterResults(incoming []*storage.ComplianceOperatorCheck
 func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV2, ruleMap map[string]string) []*v2.ComplianceCheckResult {
 	clusterResults := make([]*v2.ComplianceCheckResult, 0, len(incoming))
 	for _, result := range incoming {
-		clusterResults = append(clusterResults, &v2.ComplianceCheckResult{
-			CheckId:      result.GetCheckId(),
-			CheckName:    result.GetCheckName(),
-			Description:  result.GetDescription(),
-			Instructions: result.GetInstructions(),
-			Rationale:    result.GetRationale(),
-			ValuesUsed:   result.GetValuesUsed(),
-			Warnings:     result.GetWarnings(),
-			CheckUid:     result.GetId(),
-			Status:       convertComplianceCheckStatus(result.Status),
-			RuleName:     ruleMap[result.GetRuleRefId()],
-		})
+		clusterResults = append(clusterResults, checkResult(result, ruleMap[result.GetRuleRefId()]))
 	}
 
 	return clusterResults
+}
+
+func ComplianceV2CheckData(incoming []*storage.ComplianceOperatorCheckResultV2, ruleMap map[string]string) []*v2.ComplianceCheckData {
+	results := make([]*v2.ComplianceCheckData, 0, len(incoming))
+	for _, result := range incoming {
+		results = append(results, &v2.ComplianceCheckData{
+			ClusterId: result.GetClusterId(),
+			ScanName:  result.GetScanConfigName(),
+			Result:    checkResult(result, ruleMap[result.GetRuleRefId()]),
+		})
+	}
+
+	return results
 }
 
 func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTime *types.Timestamp) *v2.ClusterCheckStatus {
@@ -192,5 +194,20 @@ func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTi
 		CreatedTime:  incoming.GetCreatedTime(),
 		CheckUid:     incoming.GetId(),
 		LastScanTime: lastScanTime,
+	}
+}
+
+func checkResult(incoming *storage.ComplianceOperatorCheckResultV2, ruleName string) *v2.ComplianceCheckResult {
+	return &v2.ComplianceCheckResult{
+		CheckId:      incoming.GetCheckId(),
+		CheckName:    incoming.GetCheckName(),
+		Description:  incoming.GetDescription(),
+		Instructions: incoming.GetInstructions(),
+		Rationale:    incoming.GetRationale(),
+		ValuesUsed:   incoming.GetValuesUsed(),
+		Warnings:     incoming.GetWarnings(),
+		CheckUid:     incoming.GetId(),
+		Status:       convertComplianceCheckStatus(incoming.Status),
+		RuleName:     ruleName,
 	}
 }

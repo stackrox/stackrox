@@ -1,5 +1,7 @@
 import { gql, useQuery } from '@apollo/client';
 import { getPaginationParams } from 'utils/searchUtils';
+import { ApiSortOption } from 'types/search';
+import { Pagination } from 'services/types';
 import { QuerySearchFilter } from '../../types';
 import { getRegexScopedQueryString } from '../../utils/searchUtils';
 
@@ -49,7 +51,8 @@ const cveListQuery = gql`
 export default function usePlatformCves(
     querySearchFilter: QuerySearchFilter,
     page: number,
-    perPage: number
+    perPage: number,
+    sortOption: ApiSortOption
 ) {
     return useQuery<
         {
@@ -57,15 +60,12 @@ export default function usePlatformCves(
         },
         {
             query: string;
-            pagination: {
-                offset: number;
-                limit: number;
-            };
+            pagination: Pagination;
         }
     >(cveListQuery, {
         variables: {
             query: getRegexScopedQueryString(querySearchFilter),
-            pagination: getPaginationParams(page, perPage),
+            pagination: { ...getPaginationParams(page, perPage), sortOption },
         },
     });
 }

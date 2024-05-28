@@ -20,6 +20,7 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 
 import TableEntityToolbar from 'Containers/Vulnerabilities/components/TableEntityToolbar';
 import useMap from 'hooks/useMap';
+import useURLSort from 'hooks/useURLSort';
 import useSnoozeCveModal from 'Containers/Vulnerabilities/components/SnoozeCvesModal/useSnoozeCveModal';
 import SnoozeCvesModal from 'Containers/Vulnerabilities/components/SnoozeCvesModal/SnoozeCvesModal';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
@@ -30,8 +31,14 @@ import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import { platformEntityTabValues } from '../../types';
 import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
 
-import ClustersTable from './ClustersTable';
-import CVEsTable from './CVEsTable';
+import ClustersTable, {
+    defaultSortOption as clusterDefaultSortOption,
+    sortFields as clusterSortFields,
+} from './ClustersTable';
+import CVEsTable, {
+    defaultSortOption as cveDefaultSortOption,
+    sortFields as cveSortFields,
+} from './CVEsTable';
 import { usePlatformCveEntityCounts } from './usePlatformCveEntityCounts';
 
 function PlatformCvesOverviewPage() {
@@ -40,19 +47,28 @@ function PlatformCvesOverviewPage() {
     const [activeEntityTabKey] = useURLStringUnion('entityTab', platformEntityTabValues);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { sortOption, getSortParams, setSortOption } = useURLSort({
+        sortFields: activeEntityTabKey === 'CVE' ? cveSortFields : clusterSortFields,
+        defaultSortOption:
+            activeEntityTabKey === 'CVE' ? cveDefaultSortOption : clusterDefaultSortOption,
+        onSort: () => pagination.setPage(1, 'replace'),
+    });
 
     // TODO - Need an equivalent function implementation for filter sanitization for Platform CVEs
     const querySearchFilter = searchFilter;
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
-    const isViewingSnoozedCves = querySearchFilter['CVE Snoozed'] === 'true';
+    const isViewingSnoozedCves = querySearchFilter['CVE Snoozed']?.[0] === 'true';
     const hasLegacySnoozeAbility = useHasLegacySnoozeAbility();
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
 
-    function onEntityTabChange() {
+    function onEntityTabChange(entityTab: 'CVE' | 'Cluster') {
         pagination.setPage(1);
-        // TODO - set default sort here
+        setSortOption(
+            entityTab === 'CVE' ? cveDefaultSortOption : clusterDefaultSortOption,
+            'replace'
+        );
     }
 
     const { data } = usePlatformCveEntityCounts(querySearchFilter);
@@ -154,6 +170,8 @@ function PlatformCvesOverviewPage() {
                                     'CLUSTER_CVE',
                                     isViewingSnoozedCves ? 'UNSNOOZE' : 'SNOOZE'
                                 )}
+                                sortOption={sortOption}
+                                getSortParams={getSortParams}
                             />
                         )}
                         {activeEntityTabKey === 'Cluster' && (
@@ -161,6 +179,8 @@ function PlatformCvesOverviewPage() {
                                 querySearchFilter={querySearchFilter}
                                 isFiltered={isFiltered}
                                 pagination={pagination}
+                                sortOption={sortOption}
+                                getSortParams={getSortParams}
                             />
                         )}
                     </CardBody>

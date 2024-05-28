@@ -118,6 +118,39 @@
         ]
       }
     },
+    "/v2/compliance/scan/configurations/reports/run": {
+      "put": {
+        "summary": "RunReport runs an on demand compliance report for the scan configuration",
+        "operationId": "ComplianceScanConfigurationService_RunReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceRunReportResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceRunReportRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
     "/v2/compliance/scan/configurations/{id}": {
       "get": {
         "summary": "GetComplianceScanConfiguration retrieves the specified compliance scan configurations",
@@ -444,6 +477,37 @@
       },
       "title": "ClusterScanStatus holds status based on cluster in the event that a scan configuration\nwas successfully applied to some clusters but not others.\nNext available tag: 5"
     },
+    "v2ComplianceRunReportRequest": {
+      "type": "object",
+      "properties": {
+        "scanConfigId": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ComplianceRunReportResponse": {
+      "type": "object",
+      "properties": {
+        "runState": {
+          "$ref": "#/definitions/v2ComplianceRunReportResponseRunState"
+        },
+        "submittedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "errorMsg": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ComplianceRunReportResponseRunState": {
+      "type": "string",
+      "enum": [
+        "SUBMITTED",
+        "ERROR"
+      ],
+      "default": "SUBMITTED"
+    },
     "v2ComplianceScanConfiguration": {
       "type": "object",
       "properties": {
@@ -494,9 +558,13 @@
         "modifiedBy": {
           "$ref": "#/definitions/v2SlimUser",
           "title": "Most recent user to update the scan settings"
+        },
+        "lastExecutedTime": {
+          "type": "string",
+          "format": "date-time"
         }
       },
-      "title": "Next available tag: 8"
+      "title": "Next available tag: 9"
     },
     "v2ComplianceScanConfigurationsCount": {
       "type": "object",

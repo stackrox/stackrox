@@ -48,7 +48,7 @@ message ComplianceScanConfiguration {
   repeated string clusters = 4;
 }
 
-// Next available tag: 8
+// Next available tag: 9
 message ComplianceScanConfigurationStatus {
   string id = 1;
   string scan_name = 2;
@@ -58,6 +58,7 @@ message ComplianceScanConfigurationStatus {
   google.protobuf.Timestamp last_updated_time = 6;
   // Most recent user to update the scan settings
   SlimUser modified_by = 7;
+  google.protobuf.Timestamp last_executed_time = 8;
 }
 
 message ComplianceScanConfigurationsCount {
@@ -67,6 +68,20 @@ message ComplianceScanConfigurationsCount {
 message ListComplianceScanConfigurationsResponse {
   repeated ComplianceScanConfigurationStatus configurations = 1;
   int32 total_count = 2;
+}
+
+message ComplianceRunReportRequest {
+  string scan_config_id = 1;
+}
+
+message ComplianceRunReportResponse {
+  enum RunState {
+    SUBMITTED = 0;
+    ERROR = 1;
+  }
+  RunState run_state = 1;
+  google.protobuf.Timestamp submitted_at = 2;
+  string error_msg = 3;
 }
 
 service ComplianceScanConfigurationService {
@@ -110,5 +125,13 @@ service ComplianceScanConfigurationService {
 
   rpc GetComplianceScanConfigurationsCount(RawQuery) returns (ComplianceScanConfigurationsCount) {
     option (google.api.http) = {get: "/v2/compliance/scan/count/configurations"};
+  }
+
+  // RunReport runs an on demand compliance report for the scan configuration
+  rpc RunReport(ComplianceRunReportRequest) returns (ComplianceRunReportResponse) {
+    option (google.api.http) = {
+      put: "/v2/compliance/scan/configurations/reports/run"
+      body: "*"
+    };
   }
 }

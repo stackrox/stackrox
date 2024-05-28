@@ -34,7 +34,7 @@ jobs:
         make tag
         make -C scanner bin/updater
 
-    - uses: actions/upload-artifact@v4
+    - uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: updater
         path: scanner/bin/updater
@@ -48,31 +48,32 @@ jobs:
       STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       STACKROX_NVD_API_CALL_INTERVAL: 6s
     steps:
-    - uses: actions/download-artifact@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: updater
         path: /usr/local/bin
 
-    - name: Run updater
-      if: >
-        github.event_name == 'schedule' ||
-        (github.event_name == 'pull_request' &&
-         !contains(github.event.pull_request.labels.*.name, 'scanner-split-vulns'))
+    - name: Set updater
       run: |
         chmod +x /usr/local/bin/updater
+        mkdir vulns
+
+    - name: Run updater (single bundle)
+      run: |
         updater export vulns
 
-    - name: Run updater with split vulns
-      if: >
-        github.event_name == 'pull_request' &&
-        contains(github.event.pull_request.labels.*.name, 'scanner-split-vulns')
+    - name: Run updater (multi bundle)
       run: |
-        chmod +x /usr/local/bin/updater
         updater export --split bundles
-        mkdir vulns
         zip vulns/vulnerabilities.zip bundles/*.json.zst
 
-    - uses: actions/upload-artifact@v4
+    - uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: vulns
         path: vulns
@@ -83,7 +84,7 @@ jobs:
     needs:
       - run-updater
     steps:
-    - uses: actions/download-artifact@v4
+    - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: vulns
         path: vulns

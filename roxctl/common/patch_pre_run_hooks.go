@@ -19,11 +19,15 @@ import (
 // PersistentPreRun(E) hook is also run.
 //
 // This can be removed once Cobra supports this kind of chaining of pre-run hooks out of the box.
-func PatchPersistentPreRunHooks(c *cobra.Command) {
+func PatchPersistentPreRunHooks(c *cobra.Command, onEach func(cmd *cobra.Command, args []string)) {
 	for _, child := range c.Commands() {
 		thisHook := child.PersistentPreRun
 		thisHookE := child.PersistentPreRunE
 		child.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+			// Call on each subcommand starting from the last one.
+			if onEach != nil {
+				onEach(cmd, args)
+			}
 			// Call parent's hook first.
 			if c.PersistentPreRunE != nil {
 				err := c.PersistentPreRunE(c, args)
@@ -47,6 +51,6 @@ func PatchPersistentPreRunHooks(c *cobra.Command) {
 			return nil
 		}
 
-		PatchPersistentPreRunHooks(child)
+		PatchPersistentPreRunHooks(child, onEach)
 	}
 }

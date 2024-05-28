@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	managerMocks "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager/mocks"
+	reportManagerMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scanSettingBindingMocks "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore/mocks"
 	suiteMocks "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore/mocks"
@@ -80,6 +81,7 @@ type ComplianceScanConfigServiceTestSuite struct {
 
 	ctx                         context.Context
 	manager                     *managerMocks.MockManager
+	reportManager               *reportManagerMocks.MockManager
 	scanConfigDatastore         *scanConfigMocks.MockDataStore
 	scanSettingBindingDatastore *scanSettingBindingMocks.MockDataStore
 	suiteDataStore              *suiteMocks.MockDataStore
@@ -99,10 +101,11 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupSuite() {
 func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
+	s.reportManager = reportManagerMocks.NewMockManager(s.mockCtrl)
 	s.scanConfigDatastore = scanConfigMocks.NewMockDataStore(s.mockCtrl)
 	s.scanSettingBindingDatastore = scanSettingBindingMocks.NewMockDataStore(s.mockCtrl)
 	s.suiteDataStore = suiteMocks.NewMockDataStore(s.mockCtrl)
-	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager)
+	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager)
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TearDownTest() {
@@ -547,6 +550,37 @@ func (s *ComplianceScanConfigServiceTestSuite) TestRunComplianceScanConfiguratio
 	s.Require().Error(err)
 }
 
+func (s *ComplianceScanConfigServiceTestSuite) TestRunReport() {
+	s.T().Setenv(features.ComplianceReporting.EnvVar(), "true")
+	if !features.ComplianceReporting.Enabled() {
+		s.T().Skip("Skip test when compliance reporting feature flag is disabled")
+		s.T().SkipNow()
+	}
+
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	invalidID := ""
+	_, err := s.service.RunReport(allAccessContext, &v2.ComplianceRunReportRequest{ScanConfigId: invalidID})
+	s.Require().Error(err)
+
+	nonExistentScanConfigID := "does-not-exist-scan-config-1"
+	s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, nonExistentScanConfigID).Return(nil, false, nil)
+	_, err = s.service.RunReport(allAccessContext, &v2.ComplianceRunReportRequest{ScanConfigId: nonExistentScanConfigID})
+	s.Require().Error(err)
+
+	validScanConfigID := "scan-config-1"
+	validScanConfig := &storage.ComplianceOperatorScanConfigurationV2{
+		Id:             "scan-config-1",
+		ScanConfigName: "scan-config-1",
+	}
+	s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, validScanConfigID).Return(validScanConfig, true, nil)
+	s.reportManager.EXPECT().SubmitReportRequest(allAccessContext, validScanConfig).Return(nil)
+
+	resp, err := s.service.RunReport(allAccessContext, &v2.ComplianceRunReportRequest{ScanConfigId: validScanConfigID})
+	s.Require().NoError(err)
+	s.Equal(v2.ComplianceRunReportResponse_SUBMITTED, resp.RunState, "Failed to submit report")
+}
+
 func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.ComplianceScanConfigurationStatus {
 	return &apiV2.ComplianceScanConfigurationStatus{
 		Id:       uuid.NewDummy().String(),
@@ -569,9 +603,10 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.Complian
 				},
 			},
 		},
-		CreatedTime:     protoconv.ConvertTimeToTimestamp(createdTime),
-		LastUpdatedTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
-		ModifiedBy:      apiRequester,
+		CreatedTime:      protoconv.ConvertTimeToTimestamp(createdTime),
+		LastUpdatedTime:  protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
+		ModifiedBy:       apiRequester,
+		LastExecutedTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
 	}
 }
 

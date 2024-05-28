@@ -48,13 +48,16 @@ describe('utils', () => {
                     displayName: 'CVSS',
                     filterChipLabel: 'Image CVE CVSS',
                     searchTerm: 'CVSS',
-                    inputType: 'dropdown-slider',
+                    inputType: 'condition-number',
                 },
                 {
                     displayName: 'Type',
                     filterChipLabel: 'Image CVE Type',
                     searchTerm: 'CVE Type',
                     inputType: 'select',
+                    inputProps: {
+                        options: [{ label: 'Image CVE', value: 'IMAGE_CVE' }],
+                    },
                 },
             ]);
         });
