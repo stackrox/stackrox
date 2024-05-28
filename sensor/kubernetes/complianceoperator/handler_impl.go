@@ -10,13 +10,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/channelmultiplexer"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
@@ -38,11 +36,7 @@ type handlerImpl struct {
 	disabled          concurrency.Signal
 	stopSignal        concurrency.Signal
 	started           *atomic.Bool
-	complianceIsReady concurrency.Signal
-	signalsToWait     []*concurrency.Signal
-	contextLock       sync.Mutex
-	isStartedCtx      context.Context
-	cancelContext     func()
+	complianceIsReady *concurrency.Signal
 }
 
 type scanScheduleConfiguration struct {
@@ -54,7 +48,7 @@ type scanScheduleConfiguration struct {
 }
 
 // NewRequestHandler returns instance of common.SensorComponent interface which can handle compliance requests from Central.
-func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo, signalsToWait ...*concurrency.Signal) common.SensorComponent {
+func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo, coIsReady *concurrency.Signal) common.SensorComponent {
 	return &handlerImpl{
 		client:                 client,
 		complianceOperatorInfo: complianceOperatorInfo,
@@ -65,8 +59,7 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		started:           &atomic.Bool{},
 		disabled:          concurrency.NewSignal(),
 		stopSignal:        concurrency.NewSignal(),
-		complianceIsReady: concurrency.NewSignal(),
-		signalsToWait:     signalsToWait,
+		complianceIsReady: coIsReady,
 	}
 }
 
@@ -81,31 +74,7 @@ func (m *handlerImpl) Stop(_ error) {
 	m.stopSignal.Signal()
 }
 
-func (m *handlerImpl) stopCurrentContext() {
-	m.contextLock.Lock()
-	defer m.contextLock.Unlock()
-	if m.cancelContext != nil {
-		m.cancelContext()
-	}
-}
-
-func (m *handlerImpl) createNewContext() {
-	m.contextLock.Lock()
-	defer m.contextLock.Unlock()
-	m.isStartedCtx, m.cancelContext = context.WithCancel(context.Background())
-}
-
-func (m *handlerImpl) Notify(e common.SensorComponentEvent) {
-	log.Info(common.LogSensorComponentEvent(e))
-	switch e {
-	case common.SensorComponentEventSyncFinished:
-		m.createNewContext()
-		go m.isComplianceReady()
-	case common.SensorComponentEventOfflineMode:
-		m.stopCurrentContext()
-		m.complianceIsReady.Reset()
-	}
-}
+func (m *handlerImpl) Notify(_ common.SensorComponentEvent) {}
 
 func (m *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
@@ -491,29 +460,6 @@ func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplia
 			return m.composeAndSendDeleteResponse(request.GetId(), fmt.Sprintf("scansettings/%s", request.GetName()), err)
 		}
 		return m.composeAndSendDeleteResponse(request.GetId(), "", nil)
-	}
-}
-
-func (m *handlerImpl) isComplianceReady() {
-	cm := channelmultiplexer.NewMultiplexer[struct{}](channelmultiplexer.WithContext[struct{}](m.isStartedCtx))
-	for _, signal := range m.signalsToWait {
-		cm.AddChannel(signal.Done())
-	}
-	cm.Run()
-	numOfSignalsTriggered := 0
-	for {
-		select {
-		case <-m.stopSignal.Done():
-			return
-		case <-m.isStartedCtx.Done():
-			return
-		case <-cm.GetOutput():
-			numOfSignalsTriggered++
-			if numOfSignalsTriggered == len(m.signalsToWait) {
-				m.complianceIsReady.Signal()
-				return
-			}
-		}
 	}
 }
 

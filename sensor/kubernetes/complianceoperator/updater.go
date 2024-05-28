@@ -39,6 +39,8 @@ func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration, r
 	}
 	updateTicker := time.NewTicker(updateInterval)
 	updateTicker.Stop()
+	// We start the signal untriggered
+	readySignal.Reset()
 	return &updaterImpl{
 		client:               client,
 		updateInterval:       updateInterval,
