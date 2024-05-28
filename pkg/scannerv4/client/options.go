@@ -42,6 +42,7 @@ type options struct {
 	comboMode   bool
 }
 
+// ImageRegistryOpt defines options for reaching out to image registries.
 type ImageRegistryOpt struct {
 	InsecureSkipTLSVerify bool
 }

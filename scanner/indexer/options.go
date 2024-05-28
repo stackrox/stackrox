@@ -27,6 +27,8 @@ func WithAuth(auth authn.Authenticator) Option {
 	}
 }
 
+// InsecureSkipTLSVerify specifies if TLS verification should be skipped
+// when reaching out to the registry.
 func InsecureSkipTLSVerify(insecure bool) Option {
 	return func(o *options) {
 		o.insecureSkipTLSVerify = insecure
