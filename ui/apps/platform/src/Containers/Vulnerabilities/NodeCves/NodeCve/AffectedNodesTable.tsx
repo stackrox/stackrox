@@ -15,7 +15,6 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import {
     CLUSTER_SORT_FIELD,
-    COMPONENT_COUNT_SORT_FIELD,
     CVE_SEVERITY_SORT_FIELD,
     CVE_STATUS_SORT_FIELD,
     CVSS_SORT_FIELD,
@@ -41,7 +40,6 @@ export const sortFields = [
     CVSS_SORT_FIELD,
     CLUSTER_SORT_FIELD,
     OPERATING_SYSTEM_SORT_FIELD,
-    COMPONENT_COUNT_SORT_FIELD,
 ];
 
 export const defaultSortOption = { field: CVE_SEVERITY_SORT_FIELD, direction: 'desc' } as const;
@@ -55,9 +53,9 @@ export const affectedNodeFragment = gql`
         cluster {
             name
         }
-        nodeComponents {
+        nodeComponents(query: $query) {
             ...NodeComponentFragment
-            nodeVulnerabilities {
+            nodeVulnerabilities(query: $query) {
                 vulnerabilityId: id
                 cve
                 severity
@@ -115,7 +113,7 @@ function AffectedNodesTable({ tableState, getSortParams }: AffectedNodesTablePro
                     <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS score</Th>
                     <Th sort={getSortParams(CLUSTER_SORT_FIELD)}>Cluster</Th>
                     <Th sort={getSortParams(OPERATING_SYSTEM_SORT_FIELD)}>Operating system</Th>
-                    <Th sort={getSortParams(COMPONENT_COUNT_SORT_FIELD)}>Affected components</Th>
+                    <Th>Affected components</Th>
                 </Tr>
             </Thead>
             <TbodyUnified
