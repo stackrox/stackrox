@@ -18,6 +18,7 @@ export type ClusterCheckStatus = {
     status: ComplianceCheckStatus;
     createdTime: string; // ISO 8601 date string
     checkUid: string;
+    lastScanTime: string; // ISO 8601 date string
 };
 
 export type ComplianceCheckResult = {
@@ -32,6 +33,27 @@ export type ComplianceCheckResult = {
     valuesUsed: string[];
     warnings: string[];
 };
+
+export type ListComplianceCheckClusterResponse = {
+    checkResults: ClusterCheckStatus[];
+    profileName: string;
+    checkName: string;
+    totalCount: number;
+};
+
+/**
+ * Fetches statuses per cluster based off a single check.
+ */
+export function getComplianceProfileCheckResult(
+    profileName: string,
+    checkName: string
+): Promise<ListComplianceCheckClusterResponse> {
+    return axios
+        .get<ListComplianceCheckClusterResponse>(
+            `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks/${checkName}`
+        )
+        .then((response) => response.data);
+}
 
 /**
  * Fetches the profile check results.
