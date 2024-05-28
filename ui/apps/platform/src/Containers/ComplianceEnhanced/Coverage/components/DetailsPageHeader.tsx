@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    Alert,
     Flex,
     FlexItem,
     Label,
@@ -9,6 +10,8 @@ import {
     Text,
     Title,
 } from '@patternfly/react-core';
+
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type PageHeaderLabel = {
     text: string;
@@ -23,6 +26,8 @@ export type DetailsPageHeaderProps = {
     summary?: string;
     nameScreenReaderText: string;
     metadataScreenReaderText: string;
+    error: Error | undefined;
+    errorAlertTitle: string;
 };
 
 const MAX_NUM_LABELS = 7;
@@ -34,6 +39,8 @@ function DetailsPageHeader({
     summary,
     nameScreenReaderText,
     metadataScreenReaderText,
+    error,
+    errorAlertTitle,
 }: DetailsPageHeaderProps) {
     if (isLoading) {
         return (
@@ -54,11 +61,21 @@ function DetailsPageHeader({
                 <Title headingLevel="h1" className="pf-v5-u-mb-sm">
                     {name}
                 </Title>
+                {error && (
+                    <Alert variant="danger" title={errorAlertTitle} component="div" isInline>
+                        {getAxiosErrorMessage(error)}
+                    </Alert>
+                )}
                 {labels && labels.length !== 0 && (
                     <LabelGroup numLabels={MAX_NUM_LABELS}>
                         {labels.map((label) => {
                             return (
-                                <Label variant="filled" icon={label.icon} color={label.color}>
+                                <Label
+                                    variant="filled"
+                                    icon={label.icon}
+                                    color={label.color}
+                                    key={label.text}
+                                >
                                     {label.text}
                                 </Label>
                             );
