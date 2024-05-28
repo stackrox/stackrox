@@ -5,6 +5,7 @@ import { generatePath, useParams } from 'react-router-dom';
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
 import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
 import { getComplianceProfileCheckStats } from 'services/ComplianceResultsStatsService';
 import { getComplianceProfileCheckResult } from 'services/ComplianceResultsService';
@@ -31,42 +32,45 @@ function sortCheckStats(a: ComplianceCheckStatusCount, b: ComplianceCheckStatusC
 function CheckDetails() {
     const { checkName, profileName } = useParams();
     const [currentDatetime, setCurrentDatetime] = useState(new Date());
+    const pagination = useURLPagination(10);
+
+    const { page, perPage } = pagination;
 
     const fetchCheckStats = useCallback(
         () => getComplianceProfileCheckStats(profileName, checkName),
         [profileName, checkName]
     );
     const {
-        data: checkStats,
+        data: checkStatsResponse,
         loading: isLoadingCheckStats,
         error: checkStatsError,
     } = useRestQuery(fetchCheckStats);
 
     const fetchCheckResults = useCallback(
-        () => getComplianceProfileCheckResult(profileName, checkName),
-        [checkName, profileName]
+        () => getComplianceProfileCheckResult(profileName, checkName, page, perPage),
+        [page, perPage, checkName, profileName]
     );
     const {
-        data: checkResults,
+        data: checkResultsResponse,
         loading: isLoadingCheckResults,
         error: checkResultsError,
     } = useRestQuery(fetchCheckResults);
 
     const tableState = getTableUIState({
         isLoading: isLoadingCheckResults,
-        data: checkResults?.checkResults,
+        data: checkResultsResponse?.checkResults,
         error: checkResultsError,
         searchFilter: {},
     });
 
     useEffect(() => {
-        if (checkResults) {
+        if (checkResultsResponse) {
             setCurrentDatetime(new Date());
         }
-    }, [checkResults]);
+    }, [checkResultsResponse]);
 
     const checkStatsLabels =
-        checkStats?.checkStats
+        checkStatsResponse?.checkStats
             .sort(sortCheckStats)
             .reduce((acc, checkStat) => {
                 const statusObject = getClusterResultsStatusObject(checkStat.status);
@@ -104,7 +108,7 @@ function CheckDetails() {
                     isLoading={isLoadingCheckStats}
                     name={checkName}
                     labels={checkStatsLabels}
-                    summary={checkStats?.rationale}
+                    summary={checkStatsResponse?.rationale}
                     nameScreenReaderText="Loading profile check details"
                     metadataScreenReaderText="Loading profile check details"
                     error={checkStatsError}
@@ -114,9 +118,11 @@ function CheckDetails() {
             <Divider component="div" />
             <PageSection>
                 <CheckDetailsTable
+                    checkResultsCount={checkResultsResponse?.totalCount ?? 0}
                     currentDatetime={currentDatetime}
-                    tableState={tableState}
+                    pagination={pagination}
                     profileName={profileName}
+                    tableState={tableState}
                 />
             </PageSection>
         </>
