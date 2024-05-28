@@ -28,7 +28,7 @@ import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
-import { platformEntityTabValues } from '../../types';
+import { EntityTab, platformEntityTabValues } from '../../types';
 import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
 
 import ClustersTable, {
@@ -63,10 +63,10 @@ function PlatformCvesOverviewPage() {
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
 
-    function onEntityTabChange() {
+    function onEntityTabChange(entityTab: 'CVE' | 'Cluster') {
         pagination.setPage(1);
         setSortOption(
-            activeEntityTabKey === 'CVE' ? cveDefaultSortOption : clusterDefaultSortOption,
+            entityTab === 'CVE' ? cveDefaultSortOption : clusterDefaultSortOption,
             'replace'
         );
     }
