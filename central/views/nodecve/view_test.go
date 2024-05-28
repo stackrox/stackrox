@@ -208,8 +208,9 @@ func (s *NodeCVEViewTestSuite) TestGetNodeCVECoreSAC() {
 
 func (s *NodeCVEViewTestSuite) TestGetNodeCVECoreWithPagination() {
 	for _, paginationTc := range s.paginationTestCases() {
-		for _, baseTc := range s.testCases() {
-			tc := &baseTc
+		testCases := s.testCases()
+		for i := range testCases {
+			tc := &testCases[i]
 			applyPaginationProps(tc, paginationTc)
 			s.T().Run(tc.desc, func(t *testing.T) {
 				actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q)
