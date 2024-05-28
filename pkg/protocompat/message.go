@@ -103,9 +103,7 @@ func UnmarshalProtoJSON(reader io.Reader, msg proto.Message) error {
 	}
 	unmarshaler := protojson.UnmarshalOptions{}
 	msg2 := protoadapt.MessageV2Of(msg)
-	unmarshaler.Unmarshal(x, msg2)
-	msg = protoadapt.MessageV1Of(msg2)
-	return nil
+	return unmarshaler.Unmarshal(x, msg2)
 }
 
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
