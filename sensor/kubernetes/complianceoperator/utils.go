@@ -34,7 +34,7 @@ func validateScanName(req scanNameGetter) error {
 	return nil
 }
 
-func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) runtime.Object { // *v1alpha1.ScanSetting {
+func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) runtime.Object {
 	return &v1alpha1.ScanSetting{
 		TypeMeta: v1.TypeMeta{
 			Kind:       complianceoperator.ScanSetting.Kind,
@@ -63,7 +63,7 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 	}
 }
 
-func convertCentralRequestToScanSettingBinding(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, _ string) runtime.Object { // *v1alpha1.ScanSettingBinding {
+func convertCentralRequestToScanSettingBinding(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, _ string) runtime.Object {
 	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
 	for _, profile := range request.GetProfiles() {
 		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
