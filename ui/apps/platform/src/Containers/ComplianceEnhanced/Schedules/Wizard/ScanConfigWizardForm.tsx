@@ -182,11 +182,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
             name: REVIEW_CONFIG,
             id: REVIEW_CONFIG_ID,
             component: (
-                <ReviewConfig
-                    clusters={clusters || []}
-                    profiles={profiles || []}
-                    errorMessage={createScanConfigError}
-                />
+                <ReviewConfig clusters={clusters || []} errorMessage={createScanConfigError} />
             ),
             canJumpTo: canJumpToReviewConfig(),
         },
