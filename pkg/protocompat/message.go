@@ -1,10 +1,11 @@
 package protocompat
 
 import (
-	"bytes"
+	"io"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/golang/protobuf/jsonpb"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/protoadapt"
 )
 
 // Message is implemented by generated protocol buffer messages.
@@ -48,43 +49,39 @@ func MarshalTextString(msg proto.Message) string {
 // MarshalToProtoJSONBytes writes a given protocol buffer in JSON format,
 // returning the data as byte array.
 func MarshalToProtoJSONBytes(msg proto.Message) ([]byte, error) {
-	var data bytes.Buffer
-	m := jsonpb.Marshaler{}
-	err := m.Marshal(&data, msg)
-	if err != nil {
-		return nil, err
-	}
-	return data.Bytes(), nil
+	msg2 := protoadapt.MessageV2Of(msg)
+	m := protojson.MarshalOptions{}
+	return m.Marshal(msg2)
 }
 
 // MarshalToIndentedProtoJSONBytes writes a given protocol buffer in JSON format,
 // returning the data as byte array.
 func MarshalToIndentedProtoJSONBytes(msg proto.Message) ([]byte, error) {
-	var data bytes.Buffer
-	m := jsonpb.Marshaler{
+	msg2 := protoadapt.MessageV2Of(msg)
+	m := protojson.MarshalOptions{
 		Indent: "  ",
 	}
-	err := m.Marshal(&data, msg)
-	if err != nil {
-		return nil, err
-	}
-	return data.Bytes(), nil
+	return m.Marshal(msg2)
 }
 
 // MarshalToProtoJSONString writes a given protocol buffer in JSON format,
 // returning the data as a string.
 func MarshalToProtoJSONString(msg proto.Message) (string, error) {
-	m := jsonpb.Marshaler{}
-	return m.MarshalToString(msg)
+	jsonBytes, err := MarshalToProtoJSONBytes(msg)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
 }
 
 // MarshalToIndentedProtoJSONString writes a given protocol buffer in JSON format,
 // returning the data as a string.
 func MarshalToIndentedProtoJSONString(msg proto.Message) (string, error) {
-	m := jsonpb.Marshaler{
-		Indent: "  ",
+	jsonBytes, err := MarshalToIndentedProtoJSONBytes(msg)
+	if err != nil {
+		return "", err
 	}
-	return m.MarshalToString(msg)
+	return string(jsonBytes), nil
 }
 
 // Unmarshal parses the protocol buffer representation in buf and places
@@ -95,6 +92,20 @@ func MarshalToIndentedProtoJSONString(msg proto.Message) (string, error) {
 // in pb is always removed.
 func Unmarshal(dAtA []byte, msg proto.Message) error {
 	return proto.Unmarshal(dAtA, msg)
+}
+
+// UnmarshalProtoJSON parses the json representation in reader and places
+// the decoded result in msg.
+func UnmarshalProtoJSON(reader io.Reader, msg proto.Message) error {
+	x, err := io.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+	unmarshaler := protojson.UnmarshalOptions{}
+	msg2 := protoadapt.MessageV2Of(msg)
+	unmarshaler.Unmarshal(x, msg2)
+	msg = protoadapt.MessageV1Of(msg2)
+	return nil
 }
 
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.

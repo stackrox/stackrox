@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/roxctl/common"
@@ -120,7 +119,7 @@ func matchesConfig(roxctlConfig *config.RoxctlConfig, key string) gomock.Matcher
 func exchangeHandle(t *testing.T, expectedToken, responseToken string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		var m2mRequest v1.ExchangeAuthMachineToMachineTokenRequest
-		assert.NoError(t, jsonpb.Unmarshal(request.Body, &m2mRequest))
+		assert.NoError(t, protocompat.UnmarshalProtoJSON(request.Body, &m2mRequest))
 		assert.Equal(t, expectedToken, m2mRequest.GetIdToken())
 
 		rsp := &v1.ExchangeAuthMachineToMachineTokenResponse{

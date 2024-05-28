@@ -1,6 +1,7 @@
 package protocompat
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -8,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestClone(t *testing.T) {
@@ -223,6 +225,14 @@ func TestUnmarshal(t *testing.T) {
 	err = Unmarshal(data, decoded)
 	assert.NoError(t, err)
 	assert.Equal(t, msg, decoded)
+}
+
+func TestUnmarshalProtoJSON(t *testing.T) {
+	buf := bytes.NewBufferString(expectedMarshaledAlert)
+	msg := &storage.Alert{}
+	err := UnmarshalProtoJSON(buf, msg)
+	require.NoError(t, err)
+	assert.True(t, Equal(testAlert, msg))
 }
 
 func TestMerge(t *testing.T) {

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -104,7 +103,7 @@ func (e *exchangeCommand) exchange() error {
 		return errors.Wrap(err, "exchange request failed")
 	}
 	var exchangeResp v1.ExchangeAuthMachineToMachineTokenResponse
-	if err := jsonpb.Unmarshal(resp.Body, &exchangeResp); err != nil {
+	if err := protocompat.UnmarshalProtoJSON(resp.Body, &exchangeResp); err != nil {
 		return errors.Wrap(err, "unmarshalling exchange request response")
 	}
 
