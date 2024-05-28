@@ -71,7 +71,10 @@ jobs:
             # nicer color highlighting than the default language agnostic code block.
             echo '```terraform'
             roxctl image scan --output=table \
-              --image="quay.io/rhacs-eng/${{ matrix.image }}:${{ inputs.version }}"
+              --image="quay.io/rhacs-eng/${{ matrix.image }}:${{ inputs.version }}" \
+              --severity="MODERATE,IMPORTANT,CRITICAL" \
+              --headers="COMPONENT,VERSION,CVE,SEVERITY,FIXED_VERSION,LINK" \
+              --row-jsonpath-expressions="{result.vulnerabilities.#.componentName,result.vulnerabilities.#.componentVersion,result.vulnerabilities.#.cveId,result.vulnerabilities.#.cveSeverity,result.vulnerabilities.#.componentFixedVersion,result.vulnerabilities.#.cveInfo}"
             echo '```'
             echo "</details>"
           } >> "$GITHUB_STEP_SUMMARY"
