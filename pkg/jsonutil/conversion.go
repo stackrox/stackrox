@@ -3,16 +3,11 @@ package jsonutil
 import (
 	"bytes"
 	"io"
-	"regexp"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/protocompat"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/protoadapt"
-)
-
-var (
-	re = regexp.MustCompile(`.?\\u00(26|3c|3e)`)
 )
 
 // ConversionOption identifies an option for Proto -> JSON conversion.
