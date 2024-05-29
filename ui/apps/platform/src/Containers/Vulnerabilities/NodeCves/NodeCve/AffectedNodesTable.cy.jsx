@@ -43,7 +43,7 @@ function mockNode(fields) {
 function setup(tableState) {
     cy.mount(
         <ComponentTestProviders>
-            <AffectedNodesTable tableState={tableState} />
+            <AffectedNodesTable tableState={tableState} getSortParams={() => {}} />
         </ComponentTestProviders>
     );
 }
