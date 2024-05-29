@@ -97,7 +97,6 @@ func Test_loopImpl_reprocessNode(t *testing.T) {
 }
 
 func TestReprocessWatchedImageDelegation(t *testing.T) {
-
 	t.Run("delegation disabled", func(t *testing.T) {
 		testutils.MustUpdateFeature(t, features.DelegateWatchedImageReprocessing, false)
 

@@ -49,6 +49,14 @@ var (
 
 	emptyCtx = context.Background()
 
+	delegateScanCtx = sac.WithGlobalAccessScopeChecker(
+		context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Image),
+		),
+	)
+
 	imageClusterIDFieldPath = imageMapping.ImageDeploymentOptions.MustGet(search.ClusterID.String()).GetFieldPath()
 
 	allImagesQuery = search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).
@@ -468,18 +476,7 @@ func (l *loopImpl) reprocessWatchedImage(name string) bool {
 
 	ctx := emptyCtx
 	if features.DelegateWatchedImageReprocessing.Enabled() {
-		// Delegated scanning performs an access check, an empty context will
-		// trigger a hard panic. If an image watch was successfully created
-		// we can assume at that time the user had access, so we create a
-		// context that has access to delegate the scan.
-		ctx = sac.WithGlobalAccessScopeChecker(
-			ctx,
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.Image),
-			),
-		)
-
+		ctx = delegateScanCtx
 		enrichmentCtx.Delegable = true
 	}
 
