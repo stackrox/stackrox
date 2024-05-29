@@ -10,6 +10,7 @@ import (
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -17,6 +18,10 @@ import (
 /*
 storage type to apiV2 type conversions
 */
+
+const (
+	suiteComplete = "DONE"
+)
 
 var (
 	v2IntervalTypeToStorage = map[v2.Schedule_IntervalType]storage.Schedule_IntervalType{
@@ -183,6 +188,7 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 		profiles = append(profiles, profile.GetProfileName())
 	}
 
+	var lastScanTime *types.Timestamp
 	suiteClusters, err := suiteDS.GetSuites(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorSuiteName, scanConfig.GetScanConfigName()).ProtoQuery())
 	if err != nil {
@@ -201,6 +207,12 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 				suiteStatus.LastTransitionTime = c.LastTransitionTime
 			}
 		}
+
+		// If the suite is complete, set the last scan time
+		if suite.GetStatus().GetPhase() == suiteComplete && (lastScanTime == nil || protoutils.After(suiteStatus.LastTransitionTime, lastScanTime)) {
+			lastScanTime = suiteStatus.LastTransitionTime
+		}
+
 		clusterToSuiteMap[suite.ClusterId] = suiteStatus
 	}
 	return &v2.ComplianceScanConfigurationStatus{
@@ -245,8 +257,9 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 			Id:   scanConfig.GetModifiedBy().GetId(),
 			Name: scanConfig.GetModifiedBy().GetName(),
 		},
-		CreatedTime:     scanConfig.GetCreatedTime(),
-		LastUpdatedTime: scanConfig.GetLastUpdatedTime(),
+		CreatedTime:      scanConfig.GetCreatedTime(),
+		LastUpdatedTime:  scanConfig.GetLastUpdatedTime(),
+		LastExecutedTime: lastScanTime,
 	}, nil
 }
 

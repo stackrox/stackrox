@@ -23,7 +23,14 @@ import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useMap from 'hooks/useMap';
+import { UseURLSortResult } from 'hooks/useURLSort';
+import { ApiSortOption } from 'types/search';
 
+import {
+    CVE_SORT_FIELD,
+    NODE_COUNT_SORT_FIELD,
+    NODE_TOP_CVSS_SORT_FIELD,
+} from '../../utils/sortFields';
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
 import CVESelectionTd from '../../components/CVESelectionTd';
 import CVESelectionTh from '../../components/CVESelectionTh';
@@ -34,6 +41,16 @@ import { QuerySearchFilter } from '../../types';
 import useNodeCves from './useNodeCves';
 import useTotalNodeCount from './useTotalNodeCount';
 
+export const sortFields = [
+    CVE_SORT_FIELD,
+    NODE_TOP_CVSS_SORT_FIELD,
+    NODE_COUNT_SORT_FIELD,
+    // TODO - Needs a BE field implementation
+    // FIRST_DISCOVERED_SORT_FIELD,
+];
+
+export const defaultSortOption = { field: NODE_TOP_CVSS_SORT_FIELD, direction: 'desc' } as const;
+
 export type CVEsTableProps = {
     querySearchFilter: QuerySearchFilter;
     isFiltered: boolean;
@@ -41,6 +58,8 @@ export type CVEsTableProps = {
     selectedCves: ReturnType<typeof useMap<string, { cve: string }>>;
     createRowActions: (cve: { cve: string }) => IAction[];
     canSelectRows?: boolean;
+    sortOption: ApiSortOption;
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
 function CVEsTable({
@@ -50,10 +69,17 @@ function CVEsTable({
     selectedCves,
     createRowActions,
     canSelectRows,
+    sortOption,
+    getSortParams,
 }: CVEsTableProps) {
     const { page, perPage } = pagination;
 
-    const { data, previousData, loading, error } = useNodeCves(querySearchFilter, page, perPage);
+    const { data, previousData, loading, error } = useNodeCves(
+        querySearchFilter,
+        page,
+        perPage,
+        sortOption
+    );
     const totalNodeCount = useTotalNodeCount();
 
     const tableData = data ?? previousData;
@@ -79,13 +105,16 @@ function CVEsTable({
                 <Tr>
                     <Th aria-label="Expand row" />
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
-                    <Th>CVE</Th>
+                    <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
                     <TooltipTh tooltip="The number of nodes affected by this CVE, grouped by the severity of the CVE on each node">
                         Nodes by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    <Th>Top CVSS</Th>
-                    <TooltipTh tooltip="Ratio of the number of nodes affected by this CVE to the total number of nodes">
+                    <Th sort={getSortParams(NODE_TOP_CVSS_SORT_FIELD)}>Top CVSS</Th>
+                    <TooltipTh
+                        tooltip="Ratio of the number of nodes affected by this CVE to the total number of nodes"
+                        sort={getSortParams(NODE_COUNT_SORT_FIELD)}
+                    >
                         Affected nodes
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>

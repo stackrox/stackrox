@@ -7,24 +7,55 @@ import DateDistance from 'Components/DateDistance';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import { getTableUIState } from 'utils/getTableUIState';
 import useURLPagination from 'hooks/useURLPagination';
+import { UseURLSortResult } from 'hooks/useURLSort';
+import { ApiSortOption } from 'types/search';
 
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+
+import {
+    CLUSTER_SORT_FIELD,
+    NODE_SCAN_TIME_SORT_FIELD,
+    NODE_SORT_FIELD,
+    OPERATING_SYSTEM_SORT_FIELD,
+} from '../../utils/sortFields';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
 import { QuerySearchFilter, isVulnerabilitySeverityLabel } from '../../types';
 import useNodes from './useNodes';
 
+export const sortFields = [
+    NODE_SORT_FIELD,
+    CLUSTER_SORT_FIELD,
+    OPERATING_SYSTEM_SORT_FIELD,
+    NODE_SCAN_TIME_SORT_FIELD,
+];
+
+export const defaultSortOption = { field: NODE_SORT_FIELD, direction: 'asc' } as const;
+
 export type NodesTableProps = {
     querySearchFilter: QuerySearchFilter;
     isFiltered: boolean;
     pagination: ReturnType<typeof useURLPagination>;
+    sortOption: ApiSortOption;
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
-function NodesTable({ querySearchFilter, isFiltered, pagination }: NodesTableProps) {
+function NodesTable({
+    querySearchFilter,
+    isFiltered,
+    pagination,
+    sortOption,
+    getSortParams,
+}: NodesTableProps) {
     const { page, perPage } = pagination;
 
-    const { data, previousData, loading, error } = useNodes(querySearchFilter, page, perPage);
+    const { data, previousData, loading, error } = useNodes(
+        querySearchFilter,
+        page,
+        perPage,
+        sortOption
+    );
     const tableData = data ?? previousData;
 
     const tableState = getTableUIState({
@@ -48,14 +79,14 @@ function NodesTable({ querySearchFilter, isFiltered, pagination }: NodesTablePro
         >
             <Thead noWrap>
                 <Tr>
-                    <Th>Node</Th>
+                    <Th sort={getSortParams(NODE_SORT_FIELD)}>Node</Th>
                     <Th>
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th>Cluster</Th>
-                    <Th>Operating system</Th>
-                    <Th>Scan time</Th>
+                    <Th sort={getSortParams(CLUSTER_SORT_FIELD)}>Cluster</Th>
+                    <Th sort={getSortParams(OPERATING_SYSTEM_SORT_FIELD)}>Operating system</Th>
+                    <Th sort={getSortParams(NODE_SCAN_TIME_SORT_FIELD)}>Scan time</Th>
                 </Tr>
             </Thead>
             <TbodyUnified

@@ -603,9 +603,10 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.Complian
 				},
 			},
 		},
-		CreatedTime:     protoconv.ConvertTimeToTimestamp(createdTime),
-		LastUpdatedTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
-		ModifiedBy:      apiRequester,
+		CreatedTime:      protoconv.ConvertTimeToTimestamp(createdTime),
+		LastUpdatedTime:  protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
+		ModifiedBy:       apiRequester,
+		LastExecutedTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
 	}
 }
 

@@ -40,10 +40,11 @@ COPY . .
 RUN git restore scripts/konflux/bootstrap-yarn/package-lock.json && \
     scripts/konflux/fail-build-if-git-is-dirty.sh
 
+ARG VERSIONS_SUFFIX
+ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
+
 ENV GOFLAGS=""
 ENV CGO_ENABLED=1
-# TODO(ROX-19958): figure out if we need BUILD_TAG
-# ENV BUILD_TAG="${CI_VERSION}"
 # TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
 # ENV GOTAGS="release"
@@ -73,8 +74,7 @@ ENV PATH="$PATH:/go/src/github.com/stackrox/rox/app/scripts/konflux/bootstrap-ya
 
 # This sets branding during UI build time. This is to make sure UI is branded as commercial RHACS (not StackRox).
 # ROX_PRODUCT_BRANDING is also set in the resulting image so that Central Go code knows its RHACS.
-# TODO(ROX-22338): switch branding to RHACS_BRANDING when intermediate Konflux repos aren't public.
-ENV ROX_PRODUCT_BRANDING="STACKROX_BRANDING"
+ENV ROX_PRODUCT_BRANDING="RHACS_BRANDING"
 
 # UI build is not hermetic because Cachi2 does not support pulling packages according to V1 of yarn.lock.
 # TODO(ROX-20723): enable yarn package prefetch and make UI builds hermetic.
@@ -123,12 +123,11 @@ LABEL \
 
 EXPOSE 8443
 
-# TODO(ROX-22245): set proper image flavor for Fast Stream images.
-# TODO(ROX-22338): switch branding to RHACS_BRANDING when intermediate Konflux repos aren't public.
+# TODO(ROX-22245): set proper image flavor for user-facing GA Fast Stream images.
 ENV PATH="/stackrox:$PATH" \
     ROX_ROXCTL_IN_MAIN_IMAGE="true" \
-    ROX_IMAGE_FLAVOR="rhacs" \
-    ROX_PRODUCT_BRANDING="STACKROX_BRANDING"
+    ROX_IMAGE_FLAVOR="development_build" \
+    ROX_PRODUCT_BRANDING="RHACS_BRANDING"
 
 COPY .konflux/stackrox-data/external-networks/external-networks.zip /stackrox/static-data/external-networks/external-networks.zip
 
