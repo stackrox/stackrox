@@ -156,7 +156,7 @@ class TLSChallengeTest extends BaseSpecification {
         while (t.IsValid()) {
             List<ClusterOuterClass.Cluster> list = Services.getClusterClient().getClusters().getClustersList()
             if (list.empty) {
-                throw new OrchestratorManagerException("Central dos not know about any secured clusters.")
+                throw new OrchestratorManagerException("Central does not know about any secured clusters.")
             }
             if (list.size() > 1) {
                 throw new OrchestratorManagerException("Central knows about more than one secured cluster.")
