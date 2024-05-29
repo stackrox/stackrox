@@ -32,7 +32,7 @@ type PolicySectionProps = {
     onChangeSelected: (sectionIndex: number) => void;
     descriptors: Descriptor[];
     readOnly?: boolean;
-    isSelected?: boolean;
+    selectedSection?: number;
 };
 
 function PolicySection({
@@ -40,7 +40,7 @@ function PolicySection({
     onChangeSelected,
     descriptors,
     readOnly = false,
-    isSelected = false,
+    selectedSection = -1,
 }: PolicySectionProps) {
     const [isEditingName, setIsEditingName] = React.useState(false);
     const { isModalOpen, openModal, closeModal } = useModal();
@@ -53,11 +53,16 @@ function PolicySection({
         'ROX_ACCESSIBLE_POLICY_CRITERIA_EDITING'
     );
 
+    const isSelected = sectionIndex === selectedSection;
+
     function onEditSectionName(_, e) {
         handleChange(e);
     }
 
     function onDeleteSection() {
+        const newSelectedSection = selectedSection - 1;
+        onChangeSelected(newSelectedSection);
+
         setFieldValue(
             'policySections',
             values.policySections.filter((_, i) => i !== sectionIndex)
@@ -183,7 +188,7 @@ function PolicySection({
                             </EmptyStateBody>
                         </EmptyState>
                     )}
-                    {!showPolicyCriteriaModal && !readOnly && (
+                    {!showPolicyCriteriaModal && !showAccessiblePolicyCriteria && !readOnly && (
                         <PolicySectionDropTarget
                             sectionIndex={sectionIndex}
                             descriptors={descriptors}

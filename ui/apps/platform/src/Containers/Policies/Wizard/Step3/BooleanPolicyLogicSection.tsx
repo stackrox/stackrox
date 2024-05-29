@@ -29,8 +29,6 @@ function BooleanPolicyLogicSection({
         values.lifecycleStages
     );
 
-    console.log({ selectedSection });
-
     return (
         <>
             {values.policySections?.map((_, sectionIndex) =>
@@ -72,7 +70,7 @@ function BooleanPolicyLogicSection({
                             sectionIndex={sectionIndex}
                             descriptors={filteredDescriptors}
                             readOnly={readOnly}
-                            isSelected={sectionIndex === selectedSection}
+                            selectedSection={selectedSection}
                         />
                         {sectionIndex !== values.policySections.length - 1 && (
                             <Flex
