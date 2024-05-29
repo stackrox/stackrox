@@ -86,7 +86,7 @@ func (u *Updater) Start() error {
 			if isInitial {
 				if u.vulnInitializedFunc != nil && !u.vulnInitializedFunc(u.ctx) {
 					d := 15 * time.Minute
-					zlog.Info(ctx).Msgf("vulnerability updater is running, wait %s and try again...", d)
+					zlog.Info(ctx).Msgf("vulnerabilities uninitialized: retrying in %s...", d)
 					t.Reset(d)
 					continue
 				}
