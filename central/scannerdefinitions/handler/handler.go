@@ -203,11 +203,11 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 
 	var uType updaterType
 	var opts openOpts
+	// contentType is set when we have the need to explicitly define the Content-Type header.
 	var contentType string
 
 	switch {
-	case fileName != "" && v == "":
-		// If only file is requested, then this is request for Scanner v4 mapping file.
+	case fileName != "" && v == "": // If only file is requested, then this is request for Scanner V4 mapping file.
 		v4FileName, exists := v4FileMapping[fileName]
 		if !exists {
 			writeErrorNotFound(w)
@@ -217,32 +217,33 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		opts.name = fileName
 		opts.fileName = v4FileName
 		opts.offlineBlobName = offlineScannerV4DefsBlobName
-	case fileName == "" && v != "":
-		// If only version is provided, this is for Scanner V4 vuln file
+	case fileName == "" && v != "": // If only version is provided, this is for Scanner V4 vulnerabilities.
 		if version.GetVersionKind(v) == version.NightlyKind {
-			// get dev for nightly at this moment
+			// Use the development data for nightly builds.
 			v = "dev"
 		}
 		uType = vulnerabilityUpdaterType
-		bundle := "vulns.json.zst"
-		contentType = "application/zstd"
-		if r.Header.Get(scannerV4AcceptHeader) == scannerV4MultiBundleContentType {
-			bundle = "vulnerabilities.zip"
-			contentType = "application/zip"
+		bundle := "vulnerabilities.zip"
+		// If the Scanner V4 does not accept the "multi-bundle" ZIP file, then return the legacy
+		// single .json.zst file.
+		if r.Header.Get(scannerV4AcceptHeader) != scannerV4MultiBundleContentType {
+			// http.ServeContent is unable to automatically identify application/zstd at this time,
+			// so we set it ourselves.
+			contentType = "application/zstd"
+			bundle = "vulns.json.zst"
 		}
 		opts.name = v
 		opts.urlPath = path.Join(v, bundle)
 		opts.vulnVersion = v
 		opts.vulnBundle = bundle
 		opts.offlineBlobName = offlineScannerV4DefsBlobName
-	case uuid != "":
-		// Scanner V2 definitions.
+	case uuid != "": // If the UUID is set, this is for Scanner V2.
 		uType = v2UpdaterType
 		opts.name = uuid
 		opts.urlPath = uuid
 		opts.fileName = fileName
 		opts.offlineBlobName = offlineScannerV2DefsBlobName
-	default:
+	default: // No other parameter configurations are supported.
 		writeErrorBadRequest(w)
 		return
 	}
