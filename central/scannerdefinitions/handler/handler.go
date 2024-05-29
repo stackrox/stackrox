@@ -492,31 +492,43 @@ func (h *httpHandler) validateV4DefsVersion(zipPath string) error {
 	}
 	defer utils.IgnoreError(zipR.Close)
 
-	for _, zipF := range zipR.File {
-		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			defs, err := h.openFromArchive(zipPath, zipF.Name)
-			if err != nil {
-				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
-			}
-			utils.IgnoreError(defs.Close)
-			mf, err := h.openFromArchive(defs.Name(), scannerV4ManifestFile)
-			if err != nil {
-				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
-			}
-			offlineV, err := readV4ManifestVersion(mf)
-			utils.IgnoreError(mf.Close)
-			if err != nil {
-				return errors.Wrap(err, "couldn't get v4 offline defs version")
-			}
-			v := minorVersionPattern.FindString(version.GetMainVersion())
-			if offlineV != "dev" && offlineV != v {
-				msg := fmt.Sprintf("failed to upload offline file bundle, uploaded file is version: %s and system version is: %s; "+
-					"please upload an offline bundle version: %s, consider using command roxctl scanner download-db", offlineV, version.GetMainVersion(), v)
-				log.Errorf(msg)
-				return errors.New(msg)
-			}
+	validate := func(zipF *zip.File) error {
+		// extract the Scanner V4 file out of the ZIP.
+		defs, err := h.openFromArchive(zipPath, zipF.Name)
+		if err != nil {
+			return errors.Wrap(err, "opening Scanner V4 definitions")
 		}
+		defer utils.IgnoreError(defs.Close)
+		// extract the manifest file out of the extracted Scanner V4 defs file.
+		mf, err := h.openFromArchive(defs.Name(), scannerV4ManifestFile)
+		if err != nil {
+			return errors.Wrap(err, "opening Scanner V4 definitions manifest")
+		}
+		offlineV, err := readV4ManifestVersion(mf)
+		defer utils.IgnoreError(mf.Close)
+		if err != nil {
+			return errors.Wrap(err, "reading v4 offline definitions version")
+		}
+		v := minorVersionPattern.FindString(version.GetMainVersion())
+		if offlineV != "dev" && offlineV != v {
+			msg := fmt.Sprintf("failed to upload offline file bundle, uploaded file is version: %s and system version is: %s; "+
+				"please upload an offline bundle version: %s, consider using command roxctl scanner download-db", offlineV, version.GetMainVersion(), v)
+			log.Error(msg)
+			return errors.New(msg)
+		}
+		return nil
 	}
+
+	// Search for the Scanner V4 related file.
+	// It will have a specific prefix, but the full name is unknown.
+	for _, zipF := range zipR.File {
+		if !strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
+			continue
+		}
+		// TODO: Validate there is exactly one of these files?
+		return validate(zipF)
+	}
+
 	return nil
 }
 
