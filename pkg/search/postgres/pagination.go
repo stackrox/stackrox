@@ -52,6 +52,11 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 		} else {
 			var selectField pgsearch.SelectQueryField
 			var descending bool
+			// Derived types map to functions on a field.  For example,
+			// a CountDerivationType will ultimately use
+			// count(field_x) in group bys, having, or order by clauses.
+			// Similarly a MaxDerivationType will result in max(field_x) being
+			// applied to those SQL clauses.
 			switch fieldMetadata.derivedMetadata.DerivationType {
 			case searchPkg.CountDerivationType:
 				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Count, "")

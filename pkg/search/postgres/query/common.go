@@ -117,6 +117,11 @@ func MatchFieldQuery(dbField *walker.Field, derivedMetadata *walker.DerivedSearc
 	if dbField.SQLType == "uuid" {
 		dataType = postgres.UUID
 	}
+	// Derived types map to functions on a field.  For example,
+	// a CountDerivationType will ultimately produce
+	// count(field_x) as field_x_count.  Similarly
+	// max(field_x) as field_x_max will be the resulting select of a
+	// MaxDerivationType
 	if derivedMetadata != nil {
 		switch derivedMetadata.DerivationType {
 		case search.CountDerivationType:

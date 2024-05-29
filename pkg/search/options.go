@@ -312,6 +312,8 @@ var (
 	ImagePriority      = newDerivedFieldLabel("Image Risk Priority", ImageRiskScore, SimpleReverseSortDerivationType)
 	ComponentPriority  = newDerivedFieldLabel("Component Risk Priority", ComponentRiskScore, SimpleReverseSortDerivationType)
 
+	// Max-based derived fields.  These fields are primarily used in pagination.  If used in a select it will correspond
+	// to the type of the reference field and simply provide the max function on that field.
 	ComplianceLastScanMax = newDerivedFieldLabel("Compliance Scan Last Executed Time Max", ComplianceOperatorScanLastExecutedTime, MaxDerivationType)
 
 	// External network sources fields
