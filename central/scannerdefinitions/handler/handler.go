@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -109,12 +110,27 @@ type manifest struct {
 
 // httpHandler handles HTTP GET and POST requests for vulnerability data.
 type httpHandler struct {
-	online        bool
-	interval      time.Duration
-	lock          sync.Mutex
-	updaters      map[string]*requestedUpdater
-	onlineVulnDir string
-	blobStore     blob.Datastore
+	// online indicates if we are in online or offline mode.
+	online bool
+	// updaterInterval specifies the time period between subsequent updates, in online-mode.
+	updaterInterval time.Duration
+	// updatersLock protects updaters.
+	updatersLock sync.Mutex
+	// updaters stores the various updaters which may be required.
+	updaters map[string]*requestedUpdater
+	// dataDir is the root directory into which all data is downloaded.
+	dataDir string
+	// uploadPath is the file path to which "offline data" is uploaded prior to storing in blobStore.
+	// This file will be under the dataDir directory.
+	uploadPath string
+	// blobStore provides access to the blob storage which stores the uploaded "offline data".
+	blobStore blob.Datastore
+
+	// uploadInProgress indicates when there is
+	// a scanner definitions upload (POST) already in progress.
+	// This is meant to protect from concurrent uploads which may overwrite each other.
+	// Concurrent uploads are not expected nor supported.
+	uploadInProgress atomic.Bool
 }
 
 func init() {
@@ -125,28 +141,27 @@ func init() {
 
 // New creates a new http.Handler to handle vulnerability data.
 func New(blobStore blob.Datastore, opts handlerOpts) http.Handler {
-	h := &httpHandler{
-		online:    !env.OfflineModeEnv.BooleanSetting(),
-		interval:  env.ScannerVulnUpdateInterval.DurationSetting(),
-		blobStore: blobStore,
-	}
-
-	if h.online {
-		h.initializeUpdaters(opts.cleanupInterval, opts.cleanupAge)
-	} else {
-		log.Info("In offline mode: scanner definitions will not be updated automatically")
-	}
-
-	return h
-}
-
-func (h *httpHandler) initializeUpdaters(cleanupInterval, cleanupAge *time.Duration) {
-	var err error
-	h.onlineVulnDir, err = os.MkdirTemp("", tmpDirPattern)
+	dataDir, err := os.MkdirTemp("", tmpDirPattern)
 	utils.CrashOnError(err) // Fundamental problem if we cannot create a temp directory.
 
+	h := &httpHandler{
+		online:          !env.OfflineModeEnv.BooleanSetting(),
+		updaterInterval: env.ScannerVulnUpdateInterval.DurationSetting(),
+		dataDir:         dataDir,
+		uploadPath:      filepath.Join(dataDir, offlineDefsFile),
+		blobStore:       blobStore,
+	}
+
+	if !h.online {
+		log.Info("In offline mode: scanner definitions will not be updated automatically")
+		return h
+	}
+
+	log.Info("In online mode: scanner definitions will be updated automatically")
 	h.updaters = make(map[string]*requestedUpdater)
-	go h.cleanUpdatersPeriodic(cleanupInterval, cleanupAge)
+	go h.cleanUpdatersPeriodic(opts.cleanupInterval, opts.cleanupAge)
+
+	return h
 }
 
 func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -304,7 +319,7 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 	case mappingUpdaterType, v2UpdaterType:
 		// search mapping file
 		fileName := filepath.Base(opts.fileName)
-		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), fileName)
+		targetFile, cleanUp, err := h.openFromArchive(openedFile.Name(), fileName)
 		if err != nil {
 			return nil, err
 		}
@@ -312,7 +327,7 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 		offlineFile = &vulDefFile{File: targetFile, modTime: openedFile.modTime}
 	case vulnerabilityUpdaterType:
 		// check version information in manifest
-		mf, cleanUp, err := openFromArchive(openedFile.Name(), scannerV4ManifestFile)
+		mf, cleanUp, err := h.openFromArchive(openedFile.Name(), scannerV4ManifestFile)
 		if err != nil {
 			return nil, err
 		}
@@ -329,7 +344,7 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 			return nil, errors.New(msg)
 		}
 
-		vulns, cleanUp, err := openFromArchive(openedFile.Name(), opts.vulnBundle)
+		vulns, cleanUp, err := h.openFromArchive(openedFile.Name(), opts.vulnBundle)
 		if err != nil {
 			return nil, err
 		}
@@ -375,7 +390,7 @@ func (h *httpHandler) openOnlineDefinitions(_ context.Context, t updaterType, op
 	log.Debugf("Compressed data file is available: %s", openedFile.Name())
 	switch t {
 	case mappingUpdaterType, v2UpdaterType:
-		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), opts.fileName)
+		targetFile, cleanUp, err := h.openFromArchive(openedFile.Name(), opts.fileName)
 		if err != nil {
 			return nil, err
 		}
@@ -391,8 +406,8 @@ func (h *httpHandler) openOnlineDefinitions(_ context.Context, t updaterType, op
 // by the given updater type and a URL path to the definitions file. If the
 // updater was created, it is no started here, callers are expected to start it.
 func (h *httpHandler) getUpdater(t updaterType, urlPath string) *requestedUpdater {
-	h.lock.Lock()
-	defer h.lock.Unlock()
+	h.updatersLock.Lock()
+	defer h.updatersLock.Unlock()
 
 	fileName := strings.ReplaceAll(filepath.Join(t.String(), urlPath), "/", "-")
 	updater, exists := h.updaters[fileName]
@@ -410,13 +425,13 @@ func (h *httpHandler) getUpdater(t updaterType, urlPath string) *requestedUpdate
 			updateURL = scannerUpdateBaseURL.JoinPath(urlPath, scannerV2DefsFile)
 			ext = ".zip"
 		}
-		filePath := filepath.Join(h.onlineVulnDir, fileName)
+		filePath := filepath.Join(h.dataDir, fileName)
 		// Use a default extension if the URL path does not contain one.
 		if filepath.Ext(fileName) == "" {
 			filePath += ext
 		}
 		updater = &requestedUpdater{
-			updater: newUpdater(file.New(filePath), client, updateURL.String(), h.interval),
+			updater: newUpdater(file.New(filePath), client, updateURL.String(), h.updaterInterval),
 		}
 		h.updaters[fileName] = updater
 	}
@@ -426,37 +441,39 @@ func (h *httpHandler) getUpdater(t updaterType, urlPath string) *requestedUpdate
 }
 
 func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
-	tempDir, err := os.MkdirTemp("", "scanner-definitions-handler")
-	if err != nil {
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to create temp dir: %v", err)
+	// Swap will set h.uploadInProgress to true and return the previous value.
+	// If it was previously true, then there is already an upload in progress,
+	// so we should abort the operation.
+	if h.uploadInProgress.Swap(true) {
+		httputil.WriteGRPCStyleError(w, codes.Aborted, errors.New("scanner definitions upload already in progress"))
 		return
 	}
-	defer func() {
-		if err := os.RemoveAll(tempDir); err != nil {
-			log.Warnf("Failed to remove temp dir for scanner defs: %v", err)
-		}
-	}()
+	// There are no other uploads in progress at this point.
+	// Once we exit this function, the upload is no longer in progress.
+	defer h.uploadInProgress.Store(false)
 
-	tempFile := filepath.Join(tempDir, offlineDefsFile)
-	if err := fileutils.CopySrcToFile(tempFile, r.Body); err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrapf(err, "copying HTTP POST body to %s", tempFile))
+	// Copy the request body into the filesystem.
+	// If the file at h.uploadPath doesn't exist yet, it will be created.
+	if err := fileutils.CopySrcToFile(h.uploadPath, r.Body); err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "copying uploaded scanner definitions"))
 		return
 	}
+
 	if features.ScannerV4.Enabled() {
-		if err := validateV4DefsVersion(tempFile); err != nil {
+		if err := h.validateV4DefsVersion(h.uploadPath); err != nil {
 			httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
 			return
 		}
 	}
-	if err := h.handleZipContentsFromVulnDump(r.Context(), tempFile); err != nil {
+	if err := h.handleZipContentsFromVulnDump(r.Context(), h.uploadPath); err != nil {
 		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
 		return
 	}
 
-	_, _ = w.Write([]byte("Successfully stored the offline vulnerability definitions"))
+	_, _ = w.Write([]byte("Successfully stored scanner vulnerability definitions"))
 }
 
-func validateV4DefsVersion(zipPath string) error {
+func (h *httpHandler) validateV4DefsVersion(zipPath string) error {
 	zipR, err := zip.OpenReader(zipPath)
 	if err != nil {
 		return errors.Wrap(err, "couldn't open file as zip")
@@ -465,12 +482,12 @@ func validateV4DefsVersion(zipPath string) error {
 
 	for _, zipF := range zipR.File {
 		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			defs, _, err := openFromArchive(zipPath, zipF.Name)
+			defs, _, err := h.openFromArchive(zipPath, zipF.Name)
 			if err != nil {
 				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
 			}
 			utils.IgnoreError(defs.Close)
-			mf, removeDefs, err := openFromArchive(defs.Name(), scannerV4ManifestFile)
+			mf, removeDefs, err := h.openFromArchive(defs.Name(), scannerV4ManifestFile)
 			if err != nil {
 				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
 			}
@@ -549,11 +566,11 @@ func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File,
 	return nil
 }
 
-// openFromArchive returns a file object for a name within the definitions
-// bundle. The file object has a file descriptor allocated on the filesystem, but
-// its name is removed. Meaning once the file object is closed, the data will be
+// openFromArchive returns the associated file for the given name within the ZIP archiveFile.
+// The returned file struct has a file descriptor allocated on the filesystem outside the ZIP, but
+// its name is removed. Meaning: as soon as the file struct is closed, the data will be
 // freed in filesystem by the OS.
-func openFromArchive(archiveFile string, fileName string) (*os.File, func(), error) {
+func (h *httpHandler) openFromArchive(archiveFile string, fileName string) (*os.File, func(), error) {
 	// Open zip archive and extract the fileName.
 	zipReader, err := zip.OpenReader(archiveFile)
 	if err != nil {
@@ -566,38 +583,30 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, func(), err
 	}
 	defer utils.IgnoreError(fileReader.Close)
 
-	// Create a temporary file and remove it, keeping the file descriptor.
-	tmpDir, err := os.MkdirTemp("", tmpDirPattern)
+	// Create a temporary file and remove it for the OS to clean up once the
+	// struct is closed.
+	tmpFile, err := os.CreateTemp(h.dataDir, fileName)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating temporary directory")
-	}
-	tmpFile, err := os.Create(filepath.Join(tmpDir, path.Base(fileName)))
-	if err != nil {
-		// Best effort to clean.
-		_ = os.RemoveAll(tmpDir)
 		return nil, nil, errors.Wrap(err, "opening temporary file")
 	}
-	defer func() {
-		if err != nil {
-			_ = tmpFile.Close()
-		}
-	}()
+	// TODO: There is no real purpose to this, as we can just remove this upon finishing this function.
+	// Delete in the next commit.
 	cleanup := func() {
-		_ = os.RemoveAll(tmpDir)
+		_ = os.Remove(tmpFile.Name())
 	}
 
 	// Extract the file and copy contents to the temporary file, notice we
 	// intentionally don't Sync(), to benefit from filesystem caching.
 	_, err = io.Copy(tmpFile, fileReader)
 	if err != nil {
-		_ = os.RemoveAll(tmpDir)
+		_ = os.Remove(tmpFile.Name())
 		return nil, nil, errors.Wrap(err, "writing to temporary file")
 	}
 
 	// Reset for caller's convenience.
 	_, err = tmpFile.Seek(0, io.SeekStart)
 	if err != nil {
-		_ = os.RemoveAll(tmpDir)
+		_ = os.Remove(tmpFile.Name())
 		return nil, nil, errors.Wrap(err, "writing to temporary file")
 	}
 	return tmpFile, cleanup, nil
@@ -655,8 +664,8 @@ func (h *httpHandler) cleanUpdatersPeriodic(cleanupInterval, cleanupAge *time.Du
 func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
 	now := time.Now()
 
-	h.lock.Lock()
-	defer h.lock.Unlock()
+	h.updatersLock.Lock()
+	defer h.updatersLock.Unlock()
 
 	for id, updatingHandler := range h.updaters {
 		if now.Sub(updatingHandler.lastRequestedTime) > cleanupAge {
