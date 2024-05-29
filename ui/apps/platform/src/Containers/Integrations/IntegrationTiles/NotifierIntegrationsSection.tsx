@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import { selectors } from 'reducers';
 
 import {
@@ -12,7 +13,6 @@ import {
 import IntegrationsSection from './IntegrationsSection';
 import IntegrationTile from './IntegrationTile';
 import { featureFlagDependencyFilterer, integrationTypeCounter } from './integrationTiles.utils';
-import useCentralCapabilities from 'hooks/useCentralCapabilities';
 
 function NotifierIntegrationsSection(): ReactElement {
     const integrations = useSelector(selectors.getNotifiers);
