@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import pluralize from 'pluralize';
 import cloneDeep from 'lodash/cloneDeep';
-import { Card, Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
+import { Alert, Button, Card, Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
 
+import LinkShim from 'Components/PatternFly/LinkShim';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import CVETable from 'Containers/Images/CVETable';
+import { getWorkloadEntityPagePath } from 'Containers/Vulnerabilities/utils/searchUtils';
 import ScanDataMessage from 'Containers/VulnMgmt/Components/ScanDataMessage';
 import getImageScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScanMessage';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
@@ -17,6 +19,7 @@ import DateTimeField from 'Components/DateTimeField';
 import { entityToColumns } from 'constants/listColumns';
 import useTabs from 'hooks/patternfly/useTabs';
 import useModal from 'hooks/useModal';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import AffectedComponentsModal from '../../RiskAcceptance/AffectedComponents/AffectedComponentsModal';
 import DeferredCVEs from '../../RiskAcceptance/DeferredCVEs';
@@ -52,6 +55,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const [selectedCveName, setSelectedCveName] = useState('');
     const [selectedComponents, setSelectedComponents] = useState([]);
     const { isModalOpen, openModal, closeModal } = useModal();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyImage, ...data };
@@ -199,67 +203,86 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                         />
                     </div>
                 </CollapsibleSection>
-                <CollapsibleSection id="image-findings" title="Image Findings">
+                <CollapsibleSection id="image-findings" title="Image Findings" defaultOpen>
                     <div className="flex pdf-page pdf-stretch pdf-new rounded relative mb-4 ml-4 mr-4 pb-20">
-                        {/* TODO: replace these 3 repeated Fixable CVEs tabs with tabs for
-                            Observed, Deferred, and False Postive CVEs tables */}
-                        <div className="w-full">
-                            <AffectedComponentsModal
-                                cveName={selectedCveName}
-                                isOpen={isModalOpen}
-                                components={selectedComponents}
-                                onClose={closeModal}
+                        {isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') ? (
+                            <Alert
+                                variant="warning"
+                                isInline
+                                title={
+                                    <>
+                                        View this image{' '}
+                                        <Button
+                                            component={LinkShim}
+                                            variant="link"
+                                            href={getWorkloadEntityPagePath('Image', data.id)}
+                                            isInline
+                                        >
+                                            in Vulnerability Management 2.0
+                                        </Button>{' '}
+                                        for a detailed breakdown of detected vulnerabilities
+                                    </>
+                                }
                             />
-                            <Card isFlat>
-                                <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
-                                    <Tab
+                        ) : (
+                            <div className="w-full">
+                                <AffectedComponentsModal
+                                    cveName={selectedCveName}
+                                    isOpen={isModalOpen}
+                                    components={selectedComponents}
+                                    onClose={closeModal}
+                                />
+                                <Card isFlat>
+                                    <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
+                                        <Tab
+                                            eventKey="OBSERVED_CVES"
+                                            tabContentId="OBSERVED_CVES"
+                                            title={<TabTitleText>Observed CVEs</TabTitleText>}
+                                        />
+                                        <Tab
+                                            eventKey="DEFERRED_CVES"
+                                            tabContentId="DEFERRED_CVES"
+                                            title={<TabTitleText>Deferred CVEs</TabTitleText>}
+                                        />
+                                        <Tab
+                                            eventKey="FALSE_POSITIVE_CVES"
+                                            tabContentId="FALSE_POSITIVE_CVES"
+                                            title={<TabTitleText>False positive CVEs</TabTitleText>}
+                                        />
+                                    </Tabs>
+                                    <TabContent
                                         eventKey="OBSERVED_CVES"
-                                        tabContentId="OBSERVED_CVES"
-                                        title={<TabTitleText>Observed CVEs</TabTitleText>}
-                                    />
-                                    <Tab
+                                        id="OBSERVED_CVES"
+                                        hidden={activeKeyTab !== 'OBSERVED_CVES'}
+                                    >
+                                        <ObservedCVEs
+                                            imageId={data.id}
+                                            showComponentDetails={showComponentDetails}
+                                        />
+                                    </TabContent>
+                                    <TabContent
                                         eventKey="DEFERRED_CVES"
-                                        tabContentId="DEFERRED_CVES"
-                                        title={<TabTitleText>Deferred CVEs</TabTitleText>}
-                                    />
-                                    <Tab
+                                        id="DEFERRED_CVES"
+                                        hidden={activeKeyTab !== 'DEFERRED_CVES'}
+                                    >
+                                        <DeferredCVEs
+                                            imageId={data.id}
+                                            showComponentDetails={showComponentDetails}
+                                        />
+                                    </TabContent>
+                                    <TabContent
                                         eventKey="FALSE_POSITIVE_CVES"
-                                        tabContentId="FALSE_POSITIVE_CVES"
-                                        title={<TabTitleText>False positive CVEs</TabTitleText>}
-                                    />
-                                </Tabs>
-                                <TabContent
-                                    eventKey="OBSERVED_CVES"
-                                    id="OBSERVED_CVES"
-                                    hidden={activeKeyTab !== 'OBSERVED_CVES'}
-                                >
-                                    <ObservedCVEs
-                                        imageId={data.id}
-                                        showComponentDetails={showComponentDetails}
-                                    />
-                                </TabContent>
-                                <TabContent
-                                    eventKey="DEFERRED_CVES"
-                                    id="DEFERRED_CVES"
-                                    hidden={activeKeyTab !== 'DEFERRED_CVES'}
-                                >
-                                    <DeferredCVEs
-                                        imageId={data.id}
-                                        showComponentDetails={showComponentDetails}
-                                    />
-                                </TabContent>
-                                <TabContent
-                                    eventKey="FALSE_POSITIVE_CVES"
-                                    id="FALSE_POSITIVE_CVES"
-                                    hidden={activeKeyTab !== 'FALSE_POSITIVE_CVES'}
-                                >
-                                    <FalsePositiveCVEs
-                                        imageId={data.id}
-                                        showComponentDetails={showComponentDetails}
-                                    />
-                                </TabContent>
-                            </Card>
-                        </div>
+                                        id="FALSE_POSITIVE_CVES"
+                                        hidden={activeKeyTab !== 'FALSE_POSITIVE_CVES'}
+                                    >
+                                        <FalsePositiveCVEs
+                                            imageId={data.id}
+                                            showComponentDetails={showComponentDetails}
+                                        />
+                                    </TabContent>
+                                </Card>
+                            </div>
+                        )}
                     </div>
                 </CollapsibleSection>
             </div>
