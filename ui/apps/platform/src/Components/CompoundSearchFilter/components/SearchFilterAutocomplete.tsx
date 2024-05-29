@@ -14,12 +14,12 @@ import {
     Flex,
     debounce,
 } from '@patternfly/react-core';
-import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
-import { ArrowRightIcon } from '@patternfly/react-icons';
+import { ArrowRightIcon, TimesIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import SEARCH_AUTOCOMPLETE_QUERY, {
     SearchAutocompleteQueryResponse,
 } from 'queries/searchAutocomplete';
+import { ensureString } from '../utils/utils';
 
 type SearchFilterAutocompleteProps = {
     searchCategory: string;
@@ -44,9 +44,7 @@ function getSelectOptions(
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsMd' }}
                     >
-                        <Skeleton screenreaderText="Loading suggested options 1" width="100%" />
-                        <Skeleton screenreaderText="Loading suggested options 2" width="75%" />
-                        <Skeleton screenreaderText="Loading suggested options 3" width="90%" />
+                        <Skeleton screenreaderText="Loading suggested options" width="100%" />
                     </Flex>
                 ),
             },
@@ -91,6 +89,12 @@ function SearchFilterAutocomplete({
         () =>
             debounce((newValue: string) => {
                 setFilterValue(newValue);
+                if (newValue && !isOpen) {
+                    // Open the menu when the input value changes and the new value is not empty
+                    setIsOpen(true);
+                }
+                setActiveItem(null);
+                setFocusedItemIndex(null);
                 setIsTyping(false);
             }, 500),
         []
@@ -108,16 +112,6 @@ function SearchFilterAutocomplete({
 
     const selectOptions: SelectOptionProps[] = getSelectOptions(data, isLoading || isTyping);
 
-    React.useEffect(() => {
-        if (filterValue && !isOpen) {
-            // Open the menu when the input value changes and the new value is not empty
-            setIsOpen(true);
-        }
-        setActiveItem(null);
-        setFocusedItemIndex(null);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filterValue]);
-
     const onToggleClick = () => {
         setIsOpen(!isOpen);
     };
@@ -127,7 +121,7 @@ function SearchFilterAutocomplete({
         value: string | number | undefined
     ) => {
         if (value && value !== 'no results') {
-            onChange(value as string);
+            onChange(ensureString(value));
             setFilterValue('');
         }
         setIsOpen(false);
@@ -141,7 +135,7 @@ function SearchFilterAutocomplete({
         setIsTyping(true);
     };
 
-    const handleMenuArrowKeys = (key: string) => {
+    const handleMenuArrowKeys = (key: 'ArrowUp' | 'ArrowDown') => {
         let indexToFocus;
 
         if (isOpen) {
@@ -165,7 +159,7 @@ function SearchFilterAutocomplete({
 
             setFocusedItemIndex(indexToFocus);
             const focusedItem = selectOptions.filter((option) => !option.isDisabled)[indexToFocus];
-            setActiveItem(`select-typeahead-${focusedItem.value.replace(' ', '-')}`);
+            setActiveItem(`select-typeahead-${focusedItem?.value?.replace(' ', '-space-')}`);
         }
     };
 
@@ -178,7 +172,9 @@ function SearchFilterAutocomplete({
             // Select the first available option
             case 'Enter':
                 if (isOpen && focusedItem.value !== 'no results') {
-                    onChange(String(focusedItem.children));
+                    const newValue = String(focusedItem.children);
+                    onChange(newValue);
+                    onSearch(newValue);
                     setFilterValue('');
                 }
 
@@ -216,7 +212,6 @@ function SearchFilterAutocomplete({
                     onClick={onToggleClick}
                     onChange={onTextInputChange}
                     onKeyDown={onInputKeyDown}
-                    id="typeahead-select-input"
                     autoComplete="off"
                     innerRef={textInputRef}
                     placeholder={textLabel}
@@ -258,14 +253,17 @@ function SearchFilterAutocomplete({
                 }}
                 toggle={toggle}
             >
-                <SelectList id="select-typeahead-listbox">
+                <SelectList>
                     {selectOptions.map((option, index) => (
                         <SelectOption
                             key={option.value || option.children}
                             isFocused={focusedItemIndex === index}
                             className={option.className}
-                            onClick={() => onChange(option.value)}
-                            id={`select-typeahead-${option.value.replace(' ', '-')}`}
+                            onClick={() => {
+                                onChange(option.value);
+                                onSearch(option.value);
+                            }}
+                            id={`select-typeahead-${option?.value?.replace(' ', '-space-')}`}
                             {...option}
                             ref={null}
                         />
