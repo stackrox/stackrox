@@ -18,6 +18,7 @@ import useMap from 'hooks/useMap';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
@@ -31,8 +32,14 @@ import { NODE_CVE_SEARCH_OPTION, SNOOZED_NODE_CVE_SEARCH_OPTION } from '../../se
 import { nodeEntityTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
-import CVEsTable from './CVEsTable';
-import NodesTable from './NodesTable';
+import CVEsTable, {
+    sortFields as cveSortFields,
+    defaultSortOption as cveDefaultSortOption,
+} from './CVEsTable';
+import NodesTable, {
+    sortFields as nodeSortFields,
+    defaultSortOption as nodeDefaultSortOption,
+} from './NodesTable';
 import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
 
 const searchOptions = [NODE_CVE_SEARCH_OPTION, SNOOZED_NODE_CVE_SEARCH_OPTION];
@@ -43,6 +50,12 @@ function NodeCvesOverviewPage() {
     const [activeEntityTabKey] = useURLStringUnion('entityTab', nodeEntityTabValues);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { sortOption, getSortParams, setSortOption } = useURLSort({
+        sortFields: activeEntityTabKey === 'CVE' ? cveSortFields : nodeSortFields,
+        defaultSortOption:
+            activeEntityTabKey === 'CVE' ? cveDefaultSortOption : nodeDefaultSortOption,
+        onSort: () => pagination.setPage(1, 'replace'),
+    });
 
     // TODO - Need an equivalent function implementation for filter sanitization for Node CVEs
     const querySearchFilter = searchFilter;
@@ -53,9 +66,12 @@ function NodeCvesOverviewPage() {
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
 
-    function onEntityTabChange() {
+    function onEntityTabChange(entityTab: 'CVE' | 'Node') {
         pagination.setPage(1);
-        // TODO - set default sort here
+        setSortOption(
+            entityTab === 'CVE' ? cveDefaultSortOption : nodeDefaultSortOption,
+            'replace'
+        );
     }
 
     const { data } = useNodeCveEntityCounts(querySearchFilter);
@@ -165,6 +181,8 @@ function NodeCvesOverviewPage() {
                                         'NODE_CVE',
                                         isViewingSnoozedCves ? 'UNSNOOZE' : 'SNOOZE'
                                     )}
+                                    sortOption={sortOption}
+                                    getSortParams={getSortParams}
                                 />
                             )}
                             {activeEntityTabKey === 'Node' && (
@@ -172,6 +190,8 @@ function NodeCvesOverviewPage() {
                                     querySearchFilter={querySearchFilter}
                                     isFiltered={isFiltered}
                                     pagination={pagination}
+                                    sortOption={sortOption}
+                                    getSortParams={getSortParams}
                                 />
                             )}
                         </CardBody>
