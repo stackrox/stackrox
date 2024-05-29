@@ -41,7 +41,7 @@ const resourceDescriptions: Record<ResourceName, string> = {
     WatchedImage:
         'Read: View undeployed watched images monitored. Write: Configure watched images.',
     WorkflowAdministration:
-        'Read: View all resource collections. Write: Add, modify, or delete resource collections.',
+        'Read: View collections, vulnerability reports, policies, and policy categories. Write: Add, modify, or delete collections, vulnerability reports, policies, and policy categories.',
 };
 
 export type ResourceDescriptionProps = {
