@@ -486,8 +486,8 @@ func generateScanIndex(namespace string, scanName string) string {
 }
 
 func (m *handlerImpl) getResourcesInCluster(api complianceoperator.APIResource) (map[string]unstructured.Unstructured, error) {
-	cli := m.client.Resource(api.GroupVersionResource())
-	resourcesInCluster, err := cli.List(m.ctx(), v1.ListOptions{LabelSelector: labels.SelectorFromSet(stackroxLabels).String()})
+	resourceInterface := m.client.Resource(api.GroupVersionResource())
+	resourcesInCluster, err := resourceInterface.List(m.ctx(), v1.ListOptions{LabelSelector: labels.SelectorFromSet(stackroxLabels).String()})
 	if err != nil {
 		return nil, err
 	}
@@ -502,17 +502,17 @@ func (m *handlerImpl) getResourcesInCluster(api complianceoperator.APIResource) 
 func (m *handlerImpl) reconcileCreateOrUpdateResource(
 	namespace string,
 	req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan,
-	inCluster map[string]unstructured.Unstructured,
+	inClusterResources map[string]unstructured.Unstructured,
 	updateFn func(*unstructured.Unstructured, *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error),
 	convertFn func(string, *central.ApplyComplianceScanConfigRequest_BaseScanSettings, string) runtime.Object,
 	api complianceoperator.APIResource,
 ) error {
-	index := generateScanIndex(namespace, req.GetScanSettings().GetScanName())
-	if sb, isInCluster := inCluster[index]; isInCluster {
+	namespaceNameIndex := generateScanIndex(namespace, req.GetScanSettings().GetScanName())
+	if resource, isInCluster := inClusterResources[namespaceNameIndex]; isInCluster {
 		// Update Resource
 		log.Debugf("Update %s %s", api.Kind, req.GetScanSettings().GetScanName())
-		delete(inCluster, index)
-		updatedResource, err := updateFn(&sb, req)
+		delete(inClusterResources, namespaceNameIndex)
+		updatedResource, err := updateFn(&resource, req)
 		if err != nil {
 			return err
 		}
@@ -535,11 +535,11 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 	return nil
 }
 
-func (m *handlerImpl) reconcileDeleteResource(inCentral set.StringSet, inCluster map[string]unstructured.Unstructured, api complianceoperator.APIResource) error {
+func (m *handlerImpl) reconcileDeleteResource(inCentral set.StringSet, inClusterResources map[string]unstructured.Unstructured, api complianceoperator.APIResource) error {
 	var errList errorhelpers.ErrorList
 	deletePolicy := v1.DeletePropagationForeground
 	// Delete Resources that are no longer in Central
-	for index, resource := range inCluster {
+	for index, resource := range inClusterResources {
 		if !inCentral.Contains(index) {
 			// The Resource is in the cluster but not in Central
 			log.Debugf("Delete %s %s", api.Kind, resource.GetName())
@@ -565,8 +565,8 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 		return err
 	}
 
-	coNs := m.complianceOperatorInfo.GetNamespace()
-	if coNs == "" {
+	complianceNamespace := m.complianceOperatorInfo.GetNamespace()
+	if complianceNamespace == "" {
 		return errors.New("Compliance operator namespace not known")
 	}
 
@@ -578,10 +578,10 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 			errList.AddError(err)
 			continue
 		}
-		inCentralSet.Add(generateScanIndex(coNs, scanCfg.GetUpdateScan().GetScanSettings().GetScanName()))
+		inCentralSet.Add(generateScanIndex(complianceNamespace, scanCfg.GetUpdateScan().GetScanSettings().GetScanName()))
 		// Reconcile ScanSetting
 		if err := m.reconcileCreateOrUpdateResource(
-			coNs,
+			complianceNamespace,
 			scanCfg.GetUpdateScan(),
 			scanSettingsInCluster,
 			updateScanSettingFromUpdateRequest,
@@ -592,7 +592,7 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 		}
 		// Reconcile ScanSettingBinding
 		if err := m.reconcileCreateOrUpdateResource(
-			coNs,
+			complianceNamespace,
 			scanCfg.GetUpdateScan(),
 			scanSettingBindingsInCluster,
 			updateScanSettingBindingFromUpdateRequest,
