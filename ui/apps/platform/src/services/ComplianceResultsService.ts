@@ -52,7 +52,7 @@ export function getComplianceProfileCheckResult(
 ): Promise<ListComplianceCheckClusterResponse> {
     const queryParameters = {
         query: {
-            pagination: { ...getPaginationParams(page, perPage) },
+            pagination: getPaginationParams({ page, perPage }),
         },
     };
     const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
