@@ -95,7 +95,7 @@ func (s *ComplianceOperatorBenchmarkV2StoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundComplianceOperatorBenchmarkV2)
-	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorBenchmarkV2.GetId()), sac.ErrResourceAccessDenied)
+	s.NoError(store.Delete(withNoAccessCtx, complianceOperatorBenchmarkV2.GetId()))
 
 	var complianceOperatorBenchmarkV2s []*storage.ComplianceOperatorBenchmarkV2
 	var complianceOperatorBenchmarkV2IDs []string

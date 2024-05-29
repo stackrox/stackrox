@@ -29,7 +29,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ComplianceOperatorBenchmarkV2Schema
-	targetResource = resources.ComplianceOperator
+	targetResource = resources.Compliance
 )
 
 type storeType = storage.ComplianceOperatorBenchmarkV2
