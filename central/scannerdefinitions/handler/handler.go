@@ -281,7 +281,7 @@ func (h *httpHandler) openDefinitions(ctx context.Context, t updaterType, opts o
 		return offline, nil
 	}
 
-	online, err := h.openOnlineDefinitions(ctx, t, opts)
+	online, err := h.openOnlineDefinitions(t, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -378,67 +378,77 @@ func (h *httpHandler) openOfflineBlob(ctx context.Context, blobName string) (*vu
 
 // openOnlineDefinitions gets desired "online" file, which is pulled and managed
 // by the updater.
-func (h *httpHandler) openOnlineDefinitions(_ context.Context, t updaterType, opts openOpts) (*vulDefFile, error) {
-	u := h.getUpdater(t, opts.urlPath)
-	// Ensure the updater is running.
-	u.Start()
-	openedFile, onlineTime, err := u.file.Open()
+func (h *httpHandler) openOnlineDefinitions(t updaterType, opts openOpts) (*vulDefFile, error) {
+	u, err := h.getUpdater(t, opts.urlPath)
 	if err != nil {
 		return nil, err
 	}
-	if openedFile == nil {
-		return nil, fmt.Errorf("scanner V4 %s file %s not found", t, opts.urlPath)
+	// Ensure the updater is running.
+	// If already running, nothing will happen.
+	u.Start()
+	online, modTime, err := u.file.Open()
+	if err != nil {
+		return nil, err
 	}
-	log.Debugf("Compressed data file is available: %s", openedFile.Name())
+	if online == nil {
+		return nil, fmt.Errorf("scanner %s file %s not found", t, opts.urlPath)
+	}
+	log.Debugf("Online data %s file %s is available: %s", t, opts.urlPath, online.Name())
+
+	var f *vulDefFile
+
+	defer func() {
+		// If we are not returning the online file, itself, then close it.
+		if f != nil && f.File != online {
+			utils.IgnoreError(online.Close)
+		}
+	}()
+
 	switch t {
 	case mappingUpdaterType, v2UpdaterType:
-		targetFile, err := h.openFromArchive(openedFile.Name(), opts.fileName)
+		targetFile, err := h.openFromArchive(online.Name(), opts.fileName)
 		if err != nil {
 			return nil, err
 		}
-		return &vulDefFile{File: targetFile, modTime: onlineTime}, nil
+		f = &vulDefFile{File: targetFile, modTime: modTime}
 	case vulnerabilityUpdaterType:
-		return &vulDefFile{File: openedFile, modTime: onlineTime}, nil
+		f = &vulDefFile{File: online, modTime: modTime}
+	default:
+		return nil, fmt.Errorf("unknown updater type: %s", t)
 	}
-	return nil, fmt.Errorf("unknown Scanner V4 updater type: %s", t)
+	return f, nil
 }
 
 // getUpdater gets or creates an updater for the scanner definitions identified
 // by the given updater type and a URL path to the definitions file. If the
 // updater was created, it is no started here, callers are expected to start it.
-func (h *httpHandler) getUpdater(t updaterType, urlPath string) *requestedUpdater {
+func (h *httpHandler) getUpdater(t updaterType, urlPath string) (*requestedUpdater, error) {
 	h.updatersLock.Lock()
 	defer h.updatersLock.Unlock()
 
 	fileName := strings.ReplaceAll(filepath.Join(t.String(), urlPath), "/", "-")
-	updater, exists := h.updaters[fileName]
+	u, exists := h.updaters[fileName]
 	if !exists {
 		var updateURL *url.URL
-		var ext string
 		switch t {
 		case mappingUpdaterType:
 			updateURL = scannerUpdateBaseURL.JoinPath(scannerV4MappingSubDir, scannerV4MappingFile)
-			ext = ".zip"
 		case vulnerabilityUpdaterType:
 			updateURL = scannerUpdateBaseURL.JoinPath(scannerV4VulnSubDir, urlPath)
-			ext = ".json.zst"
-		default: // uuid
+		case v2UpdaterType:
 			updateURL = scannerUpdateBaseURL.JoinPath(urlPath, scannerV2DefsFile)
-			ext = ".zip"
+		default:
+			return nil, fmt.Errorf("unknown Scanner V4 updater type: %s", t)
 		}
 		filePath := filepath.Join(h.rootDir, fileName)
-		// Use a default extension if the URL path does not contain one.
-		if filepath.Ext(fileName) == "" {
-			filePath += ext
-		}
-		updater = &requestedUpdater{
+		u = &requestedUpdater{
 			updater: newUpdater(file.New(filePath), client, updateURL.String(), h.updaterInterval),
 		}
-		h.updaters[fileName] = updater
+		h.updaters[fileName] = u
 	}
 
-	updater.lastRequestedTime = time.Now()
-	return updater
+	u.lastRequestedTime = time.Now()
+	return u, nil
 }
 
 func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
