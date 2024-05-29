@@ -448,6 +448,56 @@ func TestEnrich_Go(t *testing.T) {
 			},
 			expected: "v0.0.0-20241102182017-d307bd883b97",
 		},
+		{
+			name: "fixed main version",
+			report: &claircore.VulnerabilityReport{
+				Packages: map[string]*claircore.Package{
+					"1": {
+						Name:    "stdlib",
+						Version: "go1.20.4",
+					},
+				},
+				Distributions: map[string]*claircore.Distribution{
+					"1": {
+						DID: "rhel",
+					},
+				},
+				Repositories: map[string]*claircore.Repository{
+					"1": {
+						Name: "go",
+						URI:  "https://pkg.go.dev/",
+					},
+				},
+				Environments: map[string][]*claircore.Environment{
+					"1": {
+						{
+							RepositoryIDs: []string{"1"},
+						},
+					},
+				},
+				Vulnerabilities: map[string]*claircore.Vulnerability{
+					"1": {
+						FixedInVersion: "",
+					},
+					"2": {
+						FixedInVersion: "1.20.12",
+					},
+					"3": {
+						FixedInVersion: "v0.0.0-20241002182016-d307bd883b97",
+					},
+					"4": {
+						FixedInVersion: "1.20.5",
+					},
+					"5": {
+						FixedInVersion: "",
+					},
+				},
+				PackageVulnerabilities: map[string][]string{
+					"1": {"1", "2", "3", "4", "5"},
+				},
+			},
+			expected: "1.20.12",
+		},
 	}
 
 	for _, tc := range tcs {
