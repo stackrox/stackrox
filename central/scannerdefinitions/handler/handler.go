@@ -549,6 +549,7 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV2DefsBlobName); err != nil {
 				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
 			}
+			log.Debugf("Successfully processed file: %s", zipF.Name)
 			count++
 			continue
 		}
@@ -558,23 +559,25 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 			}
 			log.Debugf("Successfully processed file: %s", zipF.Name)
 			count++
+			continue
 		}
 		// Ignore any other files which may be in the ZIP.
 	}
+	// Just do a simple check for at least one valid file.
+	// Anything stricter may come with incompatibilities.
 	if count > 0 {
 		return nil
 	}
-	return errors.New("scanner defs file not found in upload zip; wrong zip uploaded?")
+	return errors.New("scanner defs file(s) not found in upload zip: incorrect zip?")
 }
 
 func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File, blobName string) error {
 	r, err := zipF.Open()
 	if err != nil {
-		return errors.Wrap(err, "opening ZIP reader")
+		return errors.Wrap(err, "opening compressed file")
 	}
 	defer utils.IgnoreError(r.Close)
 
-	// POST requests only update the offline feed.
 	b := &storage.Blob{
 		Name:         blobName,
 		LastUpdated:  protocompat.TimestampNow(),
