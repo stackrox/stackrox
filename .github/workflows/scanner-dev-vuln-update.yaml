@@ -48,6 +48,7 @@ jobs:
       STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       STACKROX_NVD_API_CALL_INTERVAL: 6s
     steps:
+    # Checkout to run ./.github/actions/{download,upload}-artifact-with-retry
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
@@ -84,6 +85,13 @@ jobs:
     needs:
       - run-updater
     steps:
+    # Checkout to run ./.github/actions/download-artifact-with-retry
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
     - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: vulns
