@@ -23,6 +23,7 @@ import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entit
 import removeEntityContextColumns from 'utils/tableUtils';
 import { imageSortFields } from 'constants/sortFields';
 import usePermissions from 'hooks/usePermissions';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import queryService from 'utils/queryService';
 import WatchedImagesDialog from './WatchedImagesDialog';
 import WorkflowListPage from '../WorkflowListPage';
@@ -34,7 +35,7 @@ export const defaultImageSort = [
     },
 ];
 
-export function getCurriedImageTableColumns(watchedImagesTrigger) {
+export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagEnabled) {
     return function getImageTableColumns(workflowState) {
         const tableColumns = [
             {
@@ -151,7 +152,7 @@ export function getCurriedImageTableColumns(watchedImagesTrigger) {
                     return (
                         <div className="flex-col justify-center items-center w-full">
                             <ImageActiveIconText isActive={isActive} isTextOnly={pdf} />
-                            {isWatched && (
+                            {isWatched && !isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA') && (
                                 <button
                                     type="button"
                                     onClick={watchedImagesTrigger}
@@ -202,6 +203,7 @@ const VulnMgmtImages = ({
 }) => {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const [showWatchedImagesDialog, setShowWatchedImagesDialog] = useState(false);
     const workflowState = useContext(workflowStateContext);
@@ -241,13 +243,18 @@ const VulnMgmtImages = ({
         setShowWatchedImagesDialog(!showWatchedImagesDialog);
     }
     const tableHeaderComponents =
-        hasWriteAccessForWatchedImage && inactiveImageScanningEnabled ? (
+        hasWriteAccessForWatchedImage &&
+        inactiveImageScanningEnabled &&
+        !isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA') ? (
             <Button variant="secondary" onClick={toggleWatchedImagesDialog}>
                 Manage watches
             </Button>
         ) : null;
 
-    const getImageTableColumns = getCurriedImageTableColumns(toggleWatchedImagesDialog);
+    const getImageTableColumns = getCurriedImageTableColumns(
+        toggleWatchedImagesDialog,
+        isFeatureFlagEnabled
+    );
 
     return (
         <>
