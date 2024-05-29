@@ -268,38 +268,39 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpHandler) openDefinitions(ctx context.Context, t updaterType, opts openOpts) (*vulDefFile, error) {
-	log.Debugf("Fetching scanner V4 (online: %t): type %s: options: %#v", h.online, t, opts)
+	log.Debugf("Fetching scanner data (online: %t): type %s: options: %#v", h.online, t, opts)
 
-	file, err := h.openOfflineDefinitions(ctx, t, opts)
-	if !h.online {
-		return file, err
-	}
+	// offline is nil if it does not exist.
+	// This is ok, and we account for this.
+	offline, err := h.openOfflineDefinitions(ctx, t, opts)
 	if err != nil {
-		log.Debugf("Failed to access offline file (ignore the message if no "+
-			"offline bundle has been uploaded): %v", err)
+		return nil, err
+	}
+	// If we are in offline-mode, do not bother fetching the latest online data.
+	if !h.online {
+		// Note: It is possible the offline file is nil here.
+		return offline, nil
 	}
 
-	offlineFile := file
-
-	defer func() {
-		if offlineFile != nil {
-			_ = offlineFile.Close()
-		}
-	}()
-
-	file, err = h.openOnlineDefinitions(ctx, t, opts)
+	online, err := h.openOnlineDefinitions(ctx, t, opts)
 	if err != nil {
 		return nil, err
 	}
 
+	newer, older := online, offline
+	defer func() {
+		// We serve the newest of the online and offline data, so close the older one.
+		if older != nil {
+			utils.IgnoreError(older.Close)
+		}
+	}()
+
 	// If the offline files are newer, return them instead.
-	if offlineFile != nil && offlineFile.modTime.After(file.modTime) {
-		_ = file.Close()
-		// Set nil to protect the deferred close.
-		file, offlineFile = offlineFile, nil
+	if offline != nil && offline.modTime.After(online.modTime) {
+		newer, older = offline, online
 	}
 
-	return file, err
+	return newer, nil
 }
 
 // openOfflineDefinitions gets desired offline file from compressed bundle.
