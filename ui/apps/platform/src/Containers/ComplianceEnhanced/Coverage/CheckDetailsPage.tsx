@@ -15,7 +15,9 @@ import { getTableUIState } from 'utils/getTableUIState';
 import CheckDetailsTable from './CheckDetailsTable';
 import DetailsPageHeader, { PageHeaderLabel } from './components/DetailsPageHeader';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
+import { CLUSTER_QUERY } from './compliance.coverage.constants';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
+import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 
 function sortCheckStats(a: ComplianceCheckStatusCount, b: ComplianceCheckStatusCount) {
     const order: ComplianceCheckStatus[] = [
@@ -33,11 +35,11 @@ function sortCheckStats(a: ComplianceCheckStatusCount, b: ComplianceCheckStatusC
 function CheckDetails() {
     const { checkName, profileName } = useParams();
     const [currentDatetime, setCurrentDatetime] = useState(new Date());
-    const pagination = useURLPagination(10);
+    const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { page, perPage, setPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
-        sortFields: ['Cluster'],
-        defaultSortOption: { field: 'Cluster', direction: 'asc' },
+        sortFields: [CLUSTER_QUERY],
+        defaultSortOption: { field: CLUSTER_QUERY, direction: 'asc' },
         onSort: () => setPage(1),
     });
 
@@ -52,7 +54,8 @@ function CheckDetails() {
     } = useRestQuery(fetchCheckStats);
 
     const fetchCheckResults = useCallback(
-        () => getComplianceProfileCheckResult(profileName, checkName, sortOption, page, perPage),
+        () =>
+            getComplianceProfileCheckResult(profileName, checkName, { page, perPage, sortOption }),
         [page, perPage, checkName, profileName, sortOption]
     );
     const {
