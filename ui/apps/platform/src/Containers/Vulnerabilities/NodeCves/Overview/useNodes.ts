@@ -67,7 +67,7 @@ export default function useNodes(
     return useQuery<{ nodes: Node[] }>(nodeListQuery, {
         variables: {
             query: getRegexScopedQueryString(querySearchFilter),
-            pagination: { ...getPaginationParams(page, perPage), sortOption },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 }

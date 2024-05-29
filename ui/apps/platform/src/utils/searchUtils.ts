@@ -1,5 +1,6 @@
 import qs from 'qs';
 import { SearchEntry, ApiSortOption, GraphQLSortOption, SearchFilter } from 'types/search';
+import { Pagination } from 'services/types';
 import { ValueOf } from './type.utils';
 
 /**
@@ -222,13 +223,21 @@ export function getListQueryParams(
  * Calculates the API pagination limit and offset parameters given the
  * current page and number of items per page
  */
-export function getPaginationParams(
-    page: number,
-    perPage: number
-): { offset: number; limit: number } {
+export function getPaginationParams({
+    page,
+    perPage,
+    sortOption,
+}: {
+    page: number;
+    perPage: number;
+    sortOption?: ApiSortOption;
+}): Pagination {
+    const sortObject = sortOption ? { sortOption } : {};
+
     return {
         offset: (page - 1) * perPage,
         limit: perPage,
+        ...sortObject,
     };
 }
 
