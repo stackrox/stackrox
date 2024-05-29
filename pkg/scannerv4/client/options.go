@@ -42,6 +42,11 @@ type options struct {
 	comboMode   bool
 }
 
+// ImageRegistryOpt defines options for reaching out to image registries.
+type ImageRegistryOpt struct {
+	InsecureSkipTLSVerify bool
+}
+
 // WithSubject specifies the mTLS subject to use.
 func WithSubject(subject mtls.Subject) Option {
 	return func(o *options) {

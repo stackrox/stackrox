@@ -12,8 +12,9 @@ import (
 type Option func(*options)
 
 type options struct {
-	auth     authn.Authenticator
-	platform v1.Platform
+	auth                  authn.Authenticator
+	platform              v1.Platform
+	insecureSkipTLSVerify bool
 }
 
 // WithAuth specifies the authentication to use
@@ -23,6 +24,14 @@ type options struct {
 func WithAuth(auth authn.Authenticator) Option {
 	return func(o *options) {
 		o.auth = auth
+	}
+}
+
+// InsecureSkipTLSVerify specifies if TLS verification should be skipped
+// when reaching out to the registry.
+func InsecureSkipTLSVerify(insecure bool) Option {
+	return func(o *options) {
+		o.insecureSkipTLSVerify = insecure
 	}
 }
 
