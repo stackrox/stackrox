@@ -83,7 +83,7 @@ type ChildDescription = LinkDescription | SeparatorDescription;
 
 type ParentDescription = {
     type: 'parent';
-    title: string | TitleCallback;
+    title: string | ReactElement | TitleCallback;
     key: string; // for key prop and especially for title callback
     children: ChildDescription[];
 };
@@ -91,9 +91,7 @@ type ParentDescription = {
 type NavDescription = LinkDescription | ParentDescription;
 
 function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDescription[] {
-    const vulnMgmt2GaContentPredicate =
-        (techPreviewContent: string | ReactElement, gaContent: string | ReactElement) => () =>
-            isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA') ? gaContent : techPreviewContent;
+    const isVulnMgmt2GAEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA');
 
     return [
         {
@@ -224,27 +222,30 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
             children: [
                 {
                     type: 'link',
-                    content: vulnMgmt2GaContentPredicate(
-                        <NavigationContent variant="TechPreview">Workload CVEs</NavigationContent>,
+                    content: isVulnMgmt2GAEnabled ? (
                         'Workload CVEs'
+                    ) : (
+                        <NavigationContent variant="TechPreview">Workload CVEs</NavigationContent>
                     ),
                     path: vulnerabilitiesWorkloadCvesPath,
                     routeKey: 'workload-cves',
                 },
                 {
                     type: 'link',
-                    content: vulnMgmt2GaContentPredicate(
-                        <NavigationContent variant="TechPreview">Platform CVEs</NavigationContent>,
+                    content: isVulnMgmt2GAEnabled ? (
                         'Platform CVEs'
+                    ) : (
+                        <NavigationContent variant="TechPreview">Platform CVEs</NavigationContent>
                     ),
                     path: vulnerabilitiesPlatformCvesPath,
                     routeKey: 'platform-cves',
                 },
                 {
                     type: 'link',
-                    content: vulnMgmt2GaContentPredicate(
-                        <NavigationContent variant="TechPreview">Node CVEs</NavigationContent>,
+                    content: isVulnMgmt2GAEnabled ? (
                         'Node CVEs'
+                    ) : (
+                        <NavigationContent variant="TechPreview">Node CVEs</NavigationContent>
                     ),
                     path: vulnerabilitiesNodeCvesPath,
                     routeKey: 'node-cves',
@@ -270,11 +271,12 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
         {
             type: 'parent',
             key: keyForVulnerabilityManagement1,
-            title: vulnMgmt2GaContentPredicate(
-                'Vulnerability Management (1.0)',
+            title: isVulnMgmt2GAEnabled ? (
                 <NavigationContent variant="Deprecated">
                     Vulnerability Management (1.0)
                 </NavigationContent>
+            ) : (
+                'Vulnerability Management (1.0)'
             ),
             children: [
                 {
