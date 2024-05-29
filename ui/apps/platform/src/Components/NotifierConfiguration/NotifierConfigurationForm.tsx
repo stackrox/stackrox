@@ -245,7 +245,7 @@ function NotifierConfigurationForm({
                         const index = notifierConfigurations.indexOf(notifierConfigurationSelected);
                         if (index >= 0) {
                             const { emailConfig } = notifierConfigurationSelected;
-                            setFieldValue(`deliveryDestinations[${index}]`, {
+                            setFieldValue(`${fieldIdPrefixForFormikAndPatternFly}[${index}]`, {
                                 ...notifierConfigurationSelected,
                                 emailConfig: {
                                     ...emailConfig,

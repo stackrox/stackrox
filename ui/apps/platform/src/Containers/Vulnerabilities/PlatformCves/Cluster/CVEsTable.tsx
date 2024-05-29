@@ -10,6 +10,13 @@ import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/Vulnera
 import { TableUIState } from 'utils/getTableUIState';
 import useSet from 'hooks/useSet';
 
+import { UseURLSortResult } from 'hooks/useURLSort';
+import {
+    CLUSTER_CVE_STATUS_SORT_FIELD,
+    CVE_SORT_FIELD,
+    CVE_TYPE_SORT_FIELD,
+    CVSS_SORT_FIELD,
+} from '../../utils/sortFields';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import { getPlatformEntityPagePath } from '../../utils/searchUtils';
 
@@ -25,6 +32,15 @@ function displayCveType(cveType: string): string {
             return cveType;
     }
 }
+
+export const sortFields = [
+    CVE_SORT_FIELD,
+    CLUSTER_CVE_STATUS_SORT_FIELD,
+    CVE_TYPE_SORT_FIELD,
+    CVSS_SORT_FIELD,
+];
+
+export const defaultSortOption = { field: CVSS_SORT_FIELD, direction: 'desc' } as const;
 
 export const clusterVulnerabilityFragment = gql`
     fragment ClusterVulnerabilityFragment on ClusterVulnerability {
@@ -48,9 +64,10 @@ export type ClusterVulnerability = {
 
 export type CVEsTableProps = {
     tableState: TableUIState<ClusterVulnerability>;
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
-function CVEsTable({ tableState }: CVEsTableProps) {
+function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
     const COL_SPAN = 5;
     const expandedRowSet = useSet<string>();
 
@@ -65,10 +82,10 @@ function CVEsTable({ tableState }: CVEsTableProps) {
             <Thead noWrap>
                 <Tr>
                     <Th aria-label="Expand row" />
-                    <Th>CVE</Th>
-                    <Th>CVE status</Th>
-                    <Th>CVE type</Th>
-                    <Th>CVSS score</Th>
+                    <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
+                    <Th sort={getSortParams(CLUSTER_CVE_STATUS_SORT_FIELD)}>CVE status</Th>
+                    <Th sort={getSortParams(CVE_TYPE_SORT_FIELD)}>CVE type</Th>
+                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS score</Th>
                 </Tr>
             </Thead>
             <TbodyUnified

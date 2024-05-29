@@ -151,11 +151,16 @@ FROM
     `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`
 WHERE
     CONTAINS_SUBSTR(ShortJobName, "'"${job_name_match}"'")
+    -- omit PR check jobs
     AND NOT IsPullRequest
-    AND CONTAINS_SUBSTR(JobName, "master")
     AND NOT STARTS_WITH(JobName, "rehearse-")
-    AND NOT CONTAINS_SUBSTR(JobName, "ibmcloudz")
-    AND NOT CONTAINS_SUBSTR(JobName, "powervs")
+    -- omit jobs on release branches
+    AND NOT CONTAINS_SUBSTR(JobName, "-release-")
+    -- omit jobs not owned by ACS team
+    AND NOT CONTAINS_SUBSTR(JobName, "-ibmcloudz-")
+    AND NOT CONTAINS_SUBSTR(JobName, "-powervs-")
+    AND NOT CONTAINS_SUBSTR(JobName, "-interop-")
+    -- recent
     AND DATE(Timestamp) >= DATE_SUB(DATE_TRUNC(CURRENT_DATE(), WEEK(MONDAY)), INTERVAL 1 WEEK)
 GROUP BY
     Classname,

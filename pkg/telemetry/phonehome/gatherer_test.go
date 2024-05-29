@@ -34,13 +34,9 @@ func (s *gathererTestSuite) TestGatherer() {
 	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
 	g := newGatherer("Test", t, 24*time.Hour)
 
-	gomock.InOrder(
-		t.EXPECT().Track("Updated Test Identity", nil,
-			matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).
-			Times(1).Do(func(any, any, ...any) { g.Stop() }),
-		t.EXPECT().Track("Test Heartbeat", nil,
-			matchOptions(telemeter.WithTraits(nil))).
-			Times(1).Do(func(any, any, ...any) { g.Stop() }))
+	t.EXPECT().Track("Updated Test Identity", nil,
+		matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).
+		Times(2).Do(func(any, any, ...any) { g.Stop() })
 
 	props := make(map[string]any)
 	var i atomic.Int64
@@ -65,14 +61,12 @@ func (s *gathererTestSuite) TestGathererTicker() {
 
 	lastTrack := concurrency.NewSignal()
 	defer lastTrack.Wait()
+	expectedTraits := matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))
+	const expectedEvent = "Updated Test Identity"
 	gomock.InOrder(
-		t.EXPECT().Track("Updated Test Identity", nil,
-			matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).Times(1),
-		t.EXPECT().Track("Test Heartbeat", nil,
-			matchOptions(telemeter.WithTraits(nil))).Times(2),
+		t.EXPECT().Track(expectedEvent, nil, expectedTraits).Times(3),
 		// Stop gathering after 3rd heartbeat:
-		t.EXPECT().Track("Test Heartbeat", nil,
-			matchOptions(telemeter.WithTraits(nil))).Times(1).
+		t.EXPECT().Track(expectedEvent, nil, expectedTraits).Times(1).
 			Do(func(any, any, ...any) {
 				lastTrack.Signal()
 			}))
@@ -98,6 +92,37 @@ func (s *gathererTestSuite) TestGathererTicker() {
 	tickChan <- time.Now()
 	s.Equal(int64(3), <-n)
 	s.Equal(int64(4), <-n, "there should have been 4 gathering calls")
+}
+
+func (s *gathererTestSuite) TestGathererWithNoDuplicates() {
+	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
+
+	lastTrack := concurrency.NewSignal()
+	defer lastTrack.Wait()
+	expectedTraits := matchOptions(
+		telemeter.WithNoDuplicates("abc"),
+		telemeter.WithTraits(map[string]any{"key": "value"}),
+	)
+	const expectedEvent = "Updated Test Identity"
+	t.EXPECT().Track(expectedEvent, nil, expectedTraits).Times(1).
+		Do(func(any, any, ...any) {
+			lastTrack.Signal()
+		})
+	g := newGatherer("Test", t, 24*time.Hour)
+	defer g.Stop()
+	n := make(chan int64)
+	defer close(n)
+	var i atomic.Int64
+	g.AddGatherer(func(context.Context) (map[string]any, error) {
+		n <- i.Add(1)
+		return map[string]any{"key": "value"}, nil
+	})
+	g.Start(func(co *telemeter.CallOptions) {
+		telemeter.WithNoDuplicates("abc")(co)
+	})
+	s.Equal(int64(1), <-n, "gathering should be called once on start")
+	// The cache is implemented by the telemeter, and is out of scope here, as
+	// the mock is used. So we don't test the actual deduplication here.
 }
 
 func (s *gathererTestSuite) TestAddTotal() {

@@ -41,6 +41,7 @@ export const selectors = {
     paginationPrevious: "button[aria-label='Go to previous page']",
     paginationNext: "button[aria-label='Go to next page']",
     severityIcon: (severity) => `span.pf-v5-c-icon:contains('${severity}')`,
+    loadingSpinner: 'svg[role="progressbar"][aria-valuetext="Loading..."]',
 
     // Image/Deployment tab selectors
     vulnerabilitiesTab: 'button[role="tab"]:contains("Vulnerabilities")',
@@ -85,4 +86,7 @@ export const selectors = {
         `${selectors.currentWatchedImagesTable} tr:has(td:contains("${name}"))`,
     removeImageFromTableButton: (name) =>
         `${selectors.currentWatchedImagesTable} tr:has(td:contains("${name}")) button:contains("Remove watch")`,
+
+    // Observed CVE mode selectors
+    observedCveModeSelect: '*[aria-label="Observed CVE mode select"]',
 };

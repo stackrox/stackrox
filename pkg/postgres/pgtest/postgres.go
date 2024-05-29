@@ -15,7 +15,13 @@ import (
 	"k8s.io/utils/env"
 )
 
-const driverName = "pgx"
+const (
+	driverName = "pgx"
+
+	// defaultDatabaseName is needed to create and drop databases. Without it we can't create or drop databases, it is a catch-22
+	// because a database is needed for the connection.
+	defaultDatabaseName = "postgres"
+)
 
 // TestPostgres is a Postgres instance used in tests
 type TestPostgres struct {
@@ -39,7 +45,7 @@ func CreateADatabaseForT(t testing.TB) string {
 // CreateDatabase - creates a database for testing
 func CreateDatabase(t testing.TB, database string) {
 	// Bootstrap the test database by connecting to the default postgres database and running create
-	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, "postgres")
+	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, defaultDatabaseName)
 
 	db, err := sql.Open(driverName, sourceWithPostgresDatabase)
 	require.NoError(t, err)
@@ -64,8 +70,8 @@ func CreateDatabase(t testing.TB, database string) {
 // DropDatabase - drops the database specified from the testing scope
 func DropDatabase(t testing.TB, database string) {
 	// Connect to the admin postgres database to drop the test database.
-	if database != "postgres" {
-		sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, "postgres")
+	if database != defaultDatabaseName {
+		sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, defaultDatabaseName)
 		db, err := sql.Open(driverName, sourceWithPostgresDatabase)
 		require.NoError(t, err)
 
@@ -144,7 +150,7 @@ func (tp *TestPostgres) Teardown(t testing.TB) {
 
 // GetConnectionString returns a connection string for integration testing with Postgres
 func GetConnectionString(t testing.TB) string {
-	return conn.GetConnectionStringWithDatabaseName(t, env.GetString("POSTGRES_DB", "postgres"))
+	return conn.GetConnectionStringWithDatabaseName(t, env.GetString("POSTGRES_DB", defaultDatabaseName))
 }
 
 // GetConnectionStringWithDatabaseName returns a connection string for integration testing with Postgres

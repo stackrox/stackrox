@@ -1,7 +1,9 @@
 package channelmultiplexer
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -55,5 +57,31 @@ func TestMultiplexingChannels(t *testing.T) {
 				assert.Equal(t, m.str, received)
 			}
 		})
+	}
+}
+
+func TestCancelContext(t *testing.T) {
+	numChannels := 2
+	ctx, cancelFn := context.WithCancel(context.Background())
+	cm := NewMultiplexer[int](WithContext[int](ctx))
+	channels := make([]chan int, numChannels)
+	for i := range channels {
+		channels[i] = make(chan int)
+		cm.AddChannel(channels[i])
+	}
+	t.Cleanup(func() {
+		for _, c := range channels {
+			close(c)
+		}
+	})
+
+	cm.Run()
+	cancelFn()
+
+	select {
+	case <-time.NewTimer(5 * time.Second).C:
+		t.Error("timeout reached waiting for the channel multiplexer to stop")
+	case _, ok := <-cm.GetOutput():
+		assert.False(t, ok, "the output channel should be closed")
 	}
 }

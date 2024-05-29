@@ -2,6 +2,8 @@ import { gql, useQuery } from '@apollo/client';
 
 import { getPaginationParams } from 'utils/searchUtils';
 
+import { Pagination } from 'services/types';
+import { ApiSortOption } from 'types/search';
 import { ClusterVulnerability, clusterVulnerabilityFragment } from './CVEsTable';
 
 const clusterVulnerabilitiesQuery = gql`
@@ -21,7 +23,8 @@ export default function useClusterVulnerabilities(
     id: string,
     query: string,
     page: number,
-    perPage: number
+    perPage: number,
+    sortOption: ApiSortOption
 ) {
     return useQuery<
         {
@@ -33,13 +36,13 @@ export default function useClusterVulnerabilities(
         {
             id: string;
             query: string;
-            pagination: { limit: number; offset: number };
+            pagination: Pagination;
         }
     >(clusterVulnerabilitiesQuery, {
         variables: {
             id,
             query,
-            pagination: getPaginationParams(page, perPage),
+            pagination: { ...getPaginationParams(page, perPage), sortOption },
         },
     });
 }

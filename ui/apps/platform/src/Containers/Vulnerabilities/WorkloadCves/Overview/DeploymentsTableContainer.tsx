@@ -19,6 +19,7 @@ type DeploymentsTableContainerProps = {
     sort: ReturnType<typeof useURLSort>;
     workloadCvesScopedQueryString: string;
     isFiltered: boolean;
+    showCveDetailFields: boolean;
 };
 
 function DeploymentsTableContainer({
@@ -29,6 +30,7 @@ function DeploymentsTableContainer({
     sort,
     workloadCvesScopedQueryString,
     isFiltered,
+    showCveDetailFields,
 }: DeploymentsTableContainerProps) {
     const { searchFilter } = useURLSearch();
     const { page, perPage } = pagination;
@@ -78,6 +80,7 @@ function DeploymentsTableContainer({
                         getSortParams={getSortParams}
                         isFiltered={isFiltered}
                         filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
+                        showCveDetailFields={showCveDetailFields}
                     />
                 </div>
             )}
