@@ -61,13 +61,13 @@ function PlatformCvePage() {
         onSort: () => setPage(1),
     });
 
-    const { affectedClustersRequest, clusterData, clusterCount } = useAffectedClusters(
+    const { affectedClustersRequest, clusterData, clusterCount } = useAffectedClusters({
         query,
         page,
         perPage,
-        sortOption
-    );
-    const metadataRequest = usePlatformCveMetadata(cveId, query, page, perPage);
+        sortOption,
+    });
+    const metadataRequest = usePlatformCveMetadata({ cve: cveId, query, page, perPage });
     const cveName = metadataRequest.data?.platformCVE?.cve;
     const isFiltered = getHasSearchApplied(querySearchFilter);
 

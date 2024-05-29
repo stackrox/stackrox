@@ -45,13 +45,13 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
         onSort: () => setPage(1, 'replace'),
     });
 
-    const { data, loading, error } = useClusterVulnerabilities(
+    const { data, loading, error } = useClusterVulnerabilities({
         clusterId,
         query,
         page,
         perPage,
-        sortOption
-    );
+        sortOption,
+    });
     const summaryRequest = useClusterSummaryData(clusterId, query);
 
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);

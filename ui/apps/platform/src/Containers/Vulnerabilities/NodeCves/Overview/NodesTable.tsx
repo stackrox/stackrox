@@ -50,12 +50,12 @@ function NodesTable({
 }: NodesTableProps) {
     const { page, perPage } = pagination;
 
-    const { data, previousData, loading, error } = useNodes(
+    const { data, previousData, loading, error } = useNodes({
         querySearchFilter,
         page,
         perPage,
-        sortOption
-    );
+        sortOption,
+    });
     const tableData = data ?? previousData;
 
     const tableState = getTableUIState({

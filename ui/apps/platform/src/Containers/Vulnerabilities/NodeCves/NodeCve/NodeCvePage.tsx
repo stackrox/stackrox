@@ -67,7 +67,12 @@ function NodeCvePage() {
 
     const { metadataRequest, nodeCount, cveData } = useNodeCveMetadata(cveId, query);
 
-    const { affectedNodesRequest, nodeData } = useAffectedNodes(query, page, perPage, sortOption);
+    const { affectedNodesRequest, nodeData } = useAffectedNodes({
+        query,
+        page,
+        perPage,
+        sortOption,
+    });
 
     const nodeCveName = cveData?.cve;
 

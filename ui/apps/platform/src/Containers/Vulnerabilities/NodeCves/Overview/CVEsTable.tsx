@@ -74,12 +74,12 @@ function CVEsTable({
 }: CVEsTableProps) {
     const { page, perPage } = pagination;
 
-    const { data, previousData, loading, error } = useNodeCves(
+    const { data, previousData, loading, error } = useNodeCves({
         querySearchFilter,
         page,
         perPage,
-        sortOption
-    );
+        sortOption,
+    });
     const totalNodeCount = useTotalNodeCount();
 
     const tableData = data ?? previousData;
