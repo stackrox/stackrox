@@ -319,19 +319,17 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 	case mappingUpdaterType, v2UpdaterType:
 		// search mapping file
 		fileName := filepath.Base(opts.fileName)
-		targetFile, cleanUp, err := h.openFromArchive(openedFile.Name(), fileName)
+		targetFile, err := h.openFromArchive(openedFile.Name(), fileName)
 		if err != nil {
 			return nil, err
 		}
-		defer cleanUp()
 		offlineFile = &vulDefFile{File: targetFile, modTime: openedFile.modTime}
 	case vulnerabilityUpdaterType:
 		// check version information in manifest
-		mf, cleanUp, err := h.openFromArchive(openedFile.Name(), scannerV4ManifestFile)
+		mf, err := h.openFromArchive(openedFile.Name(), scannerV4ManifestFile)
 		if err != nil {
 			return nil, err
 		}
-		defer cleanUp()
 		offlineV, err := getOfflineFileVersion(mf)
 		if err != nil {
 			return nil, err
@@ -344,11 +342,10 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 			return nil, errors.New(msg)
 		}
 
-		vulns, cleanUp, err := h.openFromArchive(openedFile.Name(), opts.vulnBundle)
+		vulns, err := h.openFromArchive(openedFile.Name(), opts.vulnBundle)
 		if err != nil {
 			return nil, err
 		}
-		defer cleanUp()
 		offlineFile = &vulDefFile{File: vulns, modTime: openedFile.modTime}
 	default:
 		return nil, fmt.Errorf("unknown updater type: %s", t)
@@ -390,11 +387,10 @@ func (h *httpHandler) openOnlineDefinitions(_ context.Context, t updaterType, op
 	log.Debugf("Compressed data file is available: %s", openedFile.Name())
 	switch t {
 	case mappingUpdaterType, v2UpdaterType:
-		targetFile, cleanUp, err := h.openFromArchive(openedFile.Name(), opts.fileName)
+		targetFile, err := h.openFromArchive(openedFile.Name(), opts.fileName)
 		if err != nil {
 			return nil, err
 		}
-		defer cleanUp()
 		return &vulDefFile{File: targetFile, modTime: onlineTime}, nil
 	case vulnerabilityUpdaterType:
 		return &vulDefFile{File: openedFile, modTime: onlineTime}, nil
@@ -482,18 +478,17 @@ func (h *httpHandler) validateV4DefsVersion(zipPath string) error {
 
 	for _, zipF := range zipR.File {
 		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			defs, _, err := h.openFromArchive(zipPath, zipF.Name)
+			defs, err := h.openFromArchive(zipPath, zipF.Name)
 			if err != nil {
 				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
 			}
 			utils.IgnoreError(defs.Close)
-			mf, removeDefs, err := h.openFromArchive(defs.Name(), scannerV4ManifestFile)
+			mf, err := h.openFromArchive(defs.Name(), scannerV4ManifestFile)
 			if err != nil {
 				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
 			}
 			offlineV, err := getOfflineFileVersion(mf)
 			utils.IgnoreError(mf.Close)
-			removeDefs()
 			if err != nil {
 				return errors.Wrap(err, "couldn't get v4 offline defs version")
 			}
@@ -570,46 +565,51 @@ func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File,
 // The returned file struct has a file descriptor allocated on the filesystem outside the ZIP, but
 // its name is removed. Meaning: as soon as the file struct is closed, the data will be
 // freed in filesystem by the OS.
-func (h *httpHandler) openFromArchive(archiveFile string, fileName string) (*os.File, func(), error) {
+func (h *httpHandler) openFromArchive(archiveFile string, fileName string) (*os.File, error) {
 	// Open zip archive and extract the fileName.
 	zipReader, err := zip.OpenReader(archiveFile)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "opening zip archive")
+		return nil, errors.Wrap(err, "opening zip archive")
 	}
 	defer utils.IgnoreError(zipReader.Close)
-	fileReader, err := zipReader.Open(fileName)
+	zipFile, err := zipReader.Open(fileName)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "extracting")
+		return nil, errors.Wrap(err, "extracting")
 	}
-	defer utils.IgnoreError(fileReader.Close)
+	defer utils.IgnoreError(zipFile.Close)
 
 	// Create a temporary file and remove it for the OS to clean up once the
 	// struct is closed.
 	tmpFile, err := os.CreateTemp(h.dataDir, fileName)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "opening temporary file")
+		return nil, errors.Wrap(err, "opening temporary file")
 	}
-	// TODO: There is no real purpose to this, as we can just remove this upon finishing this function.
-	// Delete in the next commit.
-	cleanup := func() {
+	defer func() {
 		_ = os.Remove(tmpFile.Name())
-	}
+	}()
+	var success bool
+	defer func() {
+		// If this function is unsuccessful, then close the struct.
+		if !success {
+			utils.IgnoreError(tmpFile.Close)
+		}
+	}()
 
 	// Extract the file and copy contents to the temporary file, notice we
 	// intentionally don't Sync(), to benefit from filesystem caching.
-	_, err = io.Copy(tmpFile, fileReader)
+	_, err = io.Copy(tmpFile, zipFile)
 	if err != nil {
-		_ = os.Remove(tmpFile.Name())
-		return nil, nil, errors.Wrap(err, "writing to temporary file")
+		return nil, errors.Wrap(err, "writing to temporary file")
 	}
 
 	// Reset for caller's convenience.
 	_, err = tmpFile.Seek(0, io.SeekStart)
 	if err != nil {
-		_ = os.Remove(tmpFile.Name())
-		return nil, nil, errors.Wrap(err, "writing to temporary file")
+		return nil, errors.Wrap(err, "setting offset for temporary file")
 	}
-	return tmpFile, cleanup, nil
+
+	success = true
+	return tmpFile, nil
 }
 
 func getOfflineFileVersion(mf *os.File) (string, error) {
