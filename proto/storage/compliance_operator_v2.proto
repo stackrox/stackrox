@@ -189,6 +189,7 @@ message ComplianceOperatorCheckResultV2 {
   string rationale = 17; // @gotags: search:"Compliance Check Rationale,hidden"
   string scan_ref_id = 18; // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"
   string rule_ref_id = 19; // @gotags: search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"
+  int64 priority = 20; 
 }
 
 //Next Tag: 4

@@ -885,6 +885,38 @@ func (s *complianceCheckResultDataStoreTestSuite) TestGetComplianceCheckResult()
 	}
 }
 
+func (s *complianceCheckResultDataStoreTestSuite) TestWalkByQueryCheckResult() {
+	s.setupTestData()
+	rec1 := getTestRec(testconsts.Cluster1)
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
+	rec2 := getTestRec(testconsts.Cluster2)
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
+	parsedQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, rec1.GetScanConfigName()).
+		AddExactMatches(search.ClusterID, rec1.ClusterId).
+		ProtoQuery()
+	type repResults struct {
+		ClusterName string
+		CheckName   string
+		Status      string
+	}
+
+	results, err := s.dataStore.SearchComplianceCheckResults(s.testContexts[testutils.UnrestrictedReadWriteCtx], parsedQuery)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(results)
+	resultsQuery := []*repResults{}
+	s.dataStore.WalkByQuery(s.testContexts[testutils.UnrestrictedReadCtx], parsedQuery, func(c *storage.ComplianceOperatorCheckResultV2) error {
+		res := &repResults{
+			ClusterName: c.GetClusterName(),
+			CheckName:   c.GetCheckName(),
+			Status:      c.GetStatus().String(),
+		}
+		resultsQuery = append(resultsQuery, res)
+		return nil
+	})
+
+	s.Require().NotEmpty(resultsQuery)
+}
+
 func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResultStats() {
 	s.setupTestData()
 	testCases := []struct {

@@ -11,23 +11,29 @@ import (
 	"github.com/pkg/errors"
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 >>>>>>> 6faeddcd64 (Added test file)
+=======
+>>>>>>> 9c5d2f96de (Added walkbyquery for complaince check result to get data fro compliance report)
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 >>>>>>> 6faeddcd64 (Added test file)
+=======
+>>>>>>> 9c5d2f96de (Added walkbyquery for complaince check result to get data fro compliance report)
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/templates"
 )
 
@@ -35,11 +41,14 @@ var (
 	log = logging.LoggerForModule()
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	reportGenCtx = sac.WithAllAccess(context.Background())
 =======
 	reportGenCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 >>>>>>> 6faeddcd64 (Added test file)
 
+=======
+>>>>>>> 9c5d2f96de (Added walkbyquery for complaince check result to get data fro compliance report)
 	csvHeader = []string{
 		"Control Reference",
 		"Check(CCR)",
@@ -207,10 +216,54 @@ func (rg *complianceReportGeneratorImpl) getDataForReport(req *ComplianceReportR
 
 // getDataforReport returns map of cluster id and
 func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportRequest, ctx context.Context) (*resultEmail, error) {
+<<<<<<< HEAD
 >>>>>>> 6faeddcd64 (Added test file)
 	// TODO ROX-24356: Implement query to get checkresults data to generate cvs for compliance reporting
+=======
+	clusters := req.clusterIDs
 
-	return nil, nil
+	var resultsCSV map[string][]*resultRow
+
+	resultEmailComplianceReport := &resultEmail{
+		totalPass:  0,
+		totalMixed: 0,
+		totalFail:  0,
+		clusters:   0,
+	}
+
+	for _, clusterID := range clusters {
+
+		parsedQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfig, req.scanConfigID).
+			AddExactMatches(search.ClusterID, clusterID).
+			ProtoQuery()
+		resultCluster := []*resultRow{}
+
+		err := rg.checkResultsDS.WalkByQuery(ctx, parsedQuery, func(c *storage.ComplianceOperatorCheckResultV2) error {
+			// TODO: Add query to get profile name
+			row := &resultRow{
+				ClusterName: c.GetClusterName(),
+				CheckName:   c.GetCheckName(),
+				Description: c.GetDescription(),
+				Status:      c.GetStatus().String(),
+				Remediation: c.GetInstructions(),
+			}
+			resultCluster = append(resultCluster, row)
+			return nil
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		resultsCSV[clusterID] = resultCluster
+	}
+
+	resultEmailComplianceReport.clusters = len(req.clusterIDs)
+	resultEmailComplianceReport.profiles = req.profiles
+	resultEmailComplianceReport.resultCSVs = resultsCSV
+	return resultEmailComplianceReport, nil
+>>>>>>> 9c5d2f96de (Added walkbyquery for complaince check result to get data fro compliance report)
+
 }
 
 <<<<<<< HEAD
@@ -247,7 +300,7 @@ func (rg *complianceReportGeneratorImpl) sendEmail(zipData *bytes.Buffer, emailB
 		if customSubject != "" {
 			emailSubject = customSubject
 		}
-		err = retryableSendReportResults(reportNotifier, notifier.GetEmailConfig().GetMailingLists(),
+		err = retryableSendReportResults(ctx, reportNotifier, notifier.GetEmailConfig().GetMailingLists(),
 			zipData, emailSubject, emailBody)
 		if err != nil {
 			errorList.AddError(errors.Errorf("Error sending compliance report email for notifier '%s': %s",
@@ -280,10 +333,10 @@ func formatEmailBodywithDetails(subject string, data *formatBody) (string, error
 	return templates.ExecuteToString(tmpl, data)
 }
 
-func retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailingList []string,
+func retryableSendReportResults(ctx context.Context, reportNotifier notifiers.ReportNotifier, mailingList []string,
 	zippedCSVData *bytes.Buffer, emailSubject, emailBody string) error {
 	return retry.WithRetry(func() error {
-		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, emailSubject, emailBody)
+		return reportNotifier.ReportNotify(ctx, zippedCSVData, mailingList, emailSubject, emailBody)
 	},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
