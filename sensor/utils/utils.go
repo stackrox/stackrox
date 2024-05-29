@@ -5,10 +5,10 @@ import (
 )
 
 const (
-	KubernetesLabelManagedBy = "app.kubernetes.io/managed-by"
-	KubernetesLabelPartOf    = "app.kubernetes.io/created-by-deployment-id"
-	KubernetesLabelCreatedBy = "app.kubernetes.io/created-by"
-	KubernetesLabelName      = "app.kubernetes.io/name"
+	KubernetesLabelManagedBy  = "app.kubernetes.io/managed-by"
+	KubernetesLabelCreatedBy  = "app.kubernetes.io/created-by"
+	KubernetesLabelName       = "app.kubernetes.io/name"
+	KubernetesOwnerAnnotation = "owner"
 )
 
 // GetSensorKubernetesLabels returns the default labels for resources created by the sensor.
@@ -23,7 +23,7 @@ func GetSensorKubernetesLabels() map[string]string {
 // GetSensorKubernetesAnnotations returns the default annotations for resources created by the sensor.
 func GetSensorKubernetesAnnotations() map[string]string {
 	return map[string]string{
-		"owner": "stackrox",
+		KubernetesOwnerAnnotation: "stackrox",
 	}
 }
 
