@@ -2,6 +2,7 @@ package sac
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -21,14 +22,22 @@ func ForResource(resourceMD permissions.ResourceMetadata) ForResourceHelper {
 
 // ScopeChecker returns the scope checker for accessing the given resource in the specified way.
 func (h ForResourceHelper) ScopeChecker(ctx context.Context, am storage.Access, keys ...ScopeKey) ScopeChecker {
+	fmt.Println("In func (h ForResourceHelper) ScopeChecker(ctx context.Context, am storage.Access, keys ...ScopeKey) ScopeChecker")
 	resourceScopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(am).Resource(
 		h.resourceMD).SubScopeChecker(keys...)
+	fmt.Println(resourceScopeChecker)
+	fmt.Println(ctx)
+	fmt.Println(am)
+	fmt.Println(h.resourceMD)
+	fmt.Println(keys)
 
 	if h.resourceMD.GetReplacingResource() == nil {
+		fmt.Println("h.resourceMD.GetReplacingResource() == nil")
 		return resourceScopeChecker
 	}
 	// Conditionally create a OR scope checker if a replacing resource is given. This way we check access to either
 	// the old resource OR the replacing resource, keeping backwards-compatibility.
+	fmt.Println("return NewOrScopeChecker")
 	return NewOrScopeChecker(
 		resourceScopeChecker,
 		GlobalAccessScopeChecker(ctx).AccessMode(am).
@@ -38,11 +47,15 @@ func (h ForResourceHelper) ScopeChecker(ctx context.Context, am storage.Access, 
 // AccessAllowed checks if in the given context, we have access of the specified kind to the resource or
 // a subscope thereof.
 func (h ForResourceHelper) AccessAllowed(ctx context.Context, am storage.Access, keys ...ScopeKey) (bool, error) {
+	fmt.Println("")
+	fmt.Println("In func (h ForResourceHelper) AccessAllowed(ctx context.Context, am storage.Access, keys ...ScopeKey)")
 	return h.ScopeChecker(ctx, am, keys...).IsAllowed(), nil
 }
 
 // ReadAllowed checks if in the given context, we have read access to the resource or a subscope thereof.
 func (h ForResourceHelper) ReadAllowed(ctx context.Context, keys ...ScopeKey) (bool, error) {
+	fmt.Println("")
+	fmt.Println("In func (h ForResourceHelper) ReadAllowed(ctx context.Context, keys ...ScopeKey)")
 	return h.AccessAllowed(ctx, storage.Access_READ_ACCESS, keys...)
 }
 

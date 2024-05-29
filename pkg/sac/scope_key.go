@@ -159,6 +159,7 @@ type ScopeSuffix []ScopeKey
 
 // Allowed implements the ScopePredicate interface.
 func (i ScopeSuffix) Allowed(sc ScopeChecker) bool {
+	fmt.Println("In func (i ScopeSuffix) Allowed")
 	return sc.IsAllowed(i...)
 }
 
@@ -167,6 +168,7 @@ type AnyScope []ScopePredicate
 
 // Allowed implements the ScopePredicate interface.
 func (p AnyScope) Allowed(sc ScopeChecker) bool {
+	fmt.Println("In func (p AnyScope) Allowed(sc ScopeChecker)")
 	for _, pred := range p {
 		if pred.Allowed(sc) {
 			return true
@@ -180,6 +182,7 @@ type AllScopes []ScopePredicate
 
 // Allowed implements the ScopePredicate interface.
 func (p AllScopes) Allowed(sc ScopeChecker) bool {
+	fmt.Println("func (p AllScopes) Allowed(sc ScopeChecker)")
 	for _, pred := range p {
 		if !pred.Allowed(sc) {
 			return false

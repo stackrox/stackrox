@@ -2,6 +2,7 @@ package sac
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -56,8 +57,10 @@ func (c scopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 
 // IsAllowed checks (in a blocking way) if access to the given (sub-)scope is allowed.
 func (c scopeChecker) IsAllowed(subScopeKeys ...ScopeKey) bool {
+	fmt.Println("In func (c scopeChecker) IsAllowed(subScopeKeys ...ScopeKey)")
 	curr := c.core
 	for _, key := range subScopeKeys {
+		fmt.Println(key)
 		curr = curr.SubScopeChecker(key)
 	}
 	return curr.Allowed()
@@ -88,6 +91,8 @@ func (c scopeChecker) ForNamespaceScopedObject(obj NamespaceScopedObject) ScopeC
 
 // AccessMode returns a scope checker for the subscope corresponding to the given access mode.
 func (c scopeChecker) AccessMode(am storage.Access) ScopeChecker {
+	fmt.Println("In func (c scopeChecker) AccessMode")
+	fmt.Println(c)
 	return c.SubScopeChecker(AccessModeScopeKey(am))
 }
 

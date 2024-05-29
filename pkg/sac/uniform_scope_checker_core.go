@@ -1,6 +1,8 @@
 package sac
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
@@ -27,6 +29,7 @@ func (s uniformScopeCheckerCore) SubScopeChecker(_ ScopeKey) ScopeCheckerCore {
 }
 
 func (s uniformScopeCheckerCore) Allowed() bool {
+	fmt.Println("In func (s uniformScopeCheckerCore) Allowed()")
 	return bool(s)
 }
 

@@ -1,6 +1,8 @@
 package sac
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -75,6 +77,7 @@ func (c *allowedFixedScopesCheckerCore) SubScopeChecker(scopeKey ScopeKey) Scope
 }
 
 func (c *allowedFixedScopesCheckerCore) Allowed() bool {
+	fmt.Println("In func (c *allowedFixedScopesCheckerCore) Allowed()")
 	resourceScope := resources.GetScopeForResource(permissions.Resource(c.targetResource))
 	switch c.checkerLevel {
 	case GlobalScopeKind:

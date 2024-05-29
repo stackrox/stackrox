@@ -2,6 +2,7 @@ package sac
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/utils"
@@ -13,7 +14,9 @@ type globalAccessScopeContextKey struct{}
 // This function is guaranteed to return a non-nil value.
 func GlobalAccessScopeChecker(ctx context.Context) ScopeChecker {
 	core, _ := ctx.Value(globalAccessScopeContextKey{}).(ScopeCheckerCore)
+	fmt.Println(core)
 	if core == nil {
+		fmt.Println("core == nil")
 		utils.Must(errors.New("global access scope was not found in context"))
 		core = DenyAllAccessScopeChecker()
 	}
