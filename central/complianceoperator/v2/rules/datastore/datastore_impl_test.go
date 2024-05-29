@@ -96,30 +96,30 @@ func (s *complianceRuleDataStoreTestSuite) TestGetControl() {
 
 	testCases := map[string]struct {
 		inputRuleNames []string
-		exampleRules   []*storage.ComplianceOperatorRuleV2
+		ruleFixtures   []*storage.ComplianceOperatorRuleV2
 		ctx            context.Context
 		// By default assumes length of all given example rules.
 		expectedLength int
 	}{
 		"should return all controls": {
 			inputRuleNames: []string{"ocp4-api-server-anonymous-auth", "ocp4-api-server-admission-control-plugin-namespacelifecycle"},
-			exampleRules:   []*storage.ComplianceOperatorRuleV2{exampleRule1, exampleRule2},
+			ruleFixtures:   []*storage.ComplianceOperatorRuleV2{exampleRule1, exampleRule2},
 			ctx:            s.hasReadCtx,
 		},
 		"should return only controls for a single rule": {
 			inputRuleNames: []string{"ocp4-api-server-admission-control-plugin-namespacelifecycle"},
-			exampleRules:   []*storage.ComplianceOperatorRuleV2{exampleRule1},
+			ruleFixtures:   []*storage.ComplianceOperatorRuleV2{exampleRule1},
 			ctx:            s.hasReadCtx,
 			expectedLength: 0,
 		},
 		"should return an empty result": {
 			inputRuleNames: []string{"rule-does-not-exist"},
-			exampleRules:   []*storage.ComplianceOperatorRuleV2{},
+			ruleFixtures:   []*storage.ComplianceOperatorRuleV2{},
 			ctx:            s.hasReadCtx,
 		},
 		"should group results by name, control and standard": {
 			inputRuleNames: []string{"ocp4-api-server-anonymous-auth"},
-			exampleRules:   []*storage.ComplianceOperatorRuleV2{exampleRule2, exampleRule2},
+			ruleFixtures:   []*storage.ComplianceOperatorRuleV2{exampleRule2, exampleRule2},
 			ctx:            s.hasReadCtx,
 			expectedLength: 2,
 		},
@@ -128,7 +128,7 @@ func (s *complianceRuleDataStoreTestSuite) TestGetControl() {
 	for testName, testCase := range testCases {
 		s.T().Run(testName, func(t *testing.T) {
 			// setup test rules
-			for _, inputRule := range testCase.exampleRules {
+			for _, inputRule := range testCase.ruleFixtures {
 				err := s.dataStore.UpsertRule(ctx, inputRule)
 				s.Require().NoError(err)
 			}
@@ -136,19 +136,19 @@ func (s *complianceRuleDataStoreTestSuite) TestGetControl() {
 			controlQueryResults, err := s.dataStore.GetControlsByRuleNames(testCase.ctx, testCase.inputRuleNames)
 			s.Require().NoError(err)
 
-			for _, expectedRule := range s.getAllControls(testCase.exampleRules) {
+			for _, expectedRuleControl := range s.getAllRuleControls(testCase.ruleFixtures) {
 				// Lookup all control results, if a control result was found continue
 				found := false
 				for _, controlResult := range controlQueryResults {
-					if controlResult.Control == expectedRule.Control {
+					if controlResult.Control == expectedRuleControl.Control {
 						found = true
 					}
 				}
-				s.Require().True(found, "expected rule %s not found", expectedRule.Control)
+				s.Require().True(found, "expected rule %s not found", expectedRuleControl.Control)
 			}
 
 			if testCase.expectedLength == 0 {
-				s.Len(controlQueryResults, len(s.getAllControls(testCase.exampleRules)), "list of expected controls must be equal to the returned list.")
+				s.Len(controlQueryResults, len(s.getAllRuleControls(testCase.ruleFixtures)), "list of expected controls must be equal to the returned list.")
 			} else {
 				s.Len(controlQueryResults, testCase.expectedLength)
 			}
@@ -156,7 +156,7 @@ func (s *complianceRuleDataStoreTestSuite) TestGetControl() {
 	}
 }
 
-func (s *complianceRuleDataStoreTestSuite) getAllControls(rules []*storage.ComplianceOperatorRuleV2) []*storage.RuleControls {
+func (s *complianceRuleDataStoreTestSuite) getAllRuleControls(rules []*storage.ComplianceOperatorRuleV2) []*storage.RuleControls {
 	var controls []*storage.RuleControls
 	for _, rule := range rules {
 		controls = append(controls, rule.Controls...)
