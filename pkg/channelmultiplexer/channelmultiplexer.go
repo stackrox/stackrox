@@ -7,22 +7,37 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// OptionFunc provides options for the ChannelMultiplexer.
+type OptionFunc[K any] func(*ChannelMultiplexer[K])
+
+// WithContext provides a context to the ChannelMultiplexer,
+// If it's not provided context.Background will be used.
+func WithContext[K any](ctx context.Context) OptionFunc[K] {
+	return func(cm *ChannelMultiplexer[K]) {
+		cm.ctx = ctx
+	}
+}
+
 // ChannelMultiplexer combines n input channels of type T into one output channel of type T
 type ChannelMultiplexer[T any] struct {
 	inputChannels  []<-chan T
 	outputCommands chan T
+	ctx            context.Context
 
 	started concurrency.Signal
 }
 
 // NewMultiplexer creates a ChannelMultiplexer of type T
-func NewMultiplexer[T any]() *ChannelMultiplexer[T] {
-	multiplexer := ChannelMultiplexer[T]{
+func NewMultiplexer[T any](opts ...OptionFunc[T]) *ChannelMultiplexer[T] {
+	multiplexer := &ChannelMultiplexer[T]{
 		inputChannels:  make([]<-chan T, 0),
 		outputCommands: make(chan T),
-		started:        concurrency.NewSignal()}
-
-	return &multiplexer
+		started:        concurrency.NewSignal(),
+	}
+	for _, opt := range opts {
+		opt(multiplexer)
+	}
+	return multiplexer
 }
 
 // AddChannel Adds a channel to ComplianceCommunicator, AddChannel must be called
@@ -37,9 +52,11 @@ func (c *ChannelMultiplexer[T]) AddChannel(channel <-chan T) {
 // Run starts the ChannelMultiplexer. Make sure to only call Run after all AddChannel calls
 func (c *ChannelMultiplexer[T]) Run() {
 	c.started.Signal()
-	ctx := context.Background()
+	if c.ctx == nil {
+		c.ctx = context.Background()
+	}
 
-	output := FanIn[T](ctx, c.inputChannels...)
+	output := FanIn[T](c.ctx, c.inputChannels...)
 	go func() {
 		defer close(c.outputCommands)
 		for o := range output {
@@ -61,11 +78,19 @@ func FanIn[T any](ctx context.Context, channels ...<-chan T) <-chan T {
 
 	multiplex := func(ch <-chan T) {
 		defer wg.Done()
-		for i := range ch {
+		for {
 			select {
 			case <-ctx.Done():
 				return
-			case multiplexedStream <- i:
+			case i, ok := <-ch:
+				if !ok {
+					return
+				}
+				select {
+				case <-ctx.Done():
+					return
+				case multiplexedStream <- i:
+				}
 			}
 		}
 	}

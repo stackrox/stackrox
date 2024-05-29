@@ -558,9 +558,13 @@
         "modifiedBy": {
           "$ref": "#/definitions/v2SlimUser",
           "title": "Most recent user to update the scan settings"
+        },
+        "lastExecutedTime": {
+          "type": "string",
+          "format": "date-time"
         }
       },
-      "title": "Next available tag: 8"
+      "title": "Next available tag: 9"
     },
     "v2ComplianceScanConfigurationsCount": {
       "type": "object",

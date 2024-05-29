@@ -10,14 +10,10 @@ import {
 } from '@patternfly/react-core';
 import { SecurityIcon, UnknownIcon } from '@patternfly/react-icons';
 
-import { CRITICAL_SEVERITY_COLOR } from 'constants/severityColors';
 import { ObservedCveMode, isObservedCveMode, observedCveModeValues } from '../../types';
+import { getViewStateDescription, getViewStateTitle } from './string.utils';
 
-export const WITH_CVE_OPTION_TITLE = 'Image vulnerabilities';
-export const WITHOUT_CVE_OPTION_TITLE = 'Images without vulnerabilities';
-export const WITH_CVE_OPTION_DESCRIPTION = 'Images and deployments observed with CVEs';
-export const WITHOUT_CVE_OPTION_DESCRIPTION =
-    'Images and deployments observed without CVEs (results may be inaccurate due to scanner errors)';
+const width = '330px';
 
 export type ObservedCveModeSelectProps = {
     observedCveMode: ObservedCveMode;
@@ -31,11 +27,7 @@ function ObservedCveModeSelect({
     const [isCveModeSelectOpen, setIsCveModeSelectOpen] = useState(false);
     const isViewingWithCves = observedCveMode === 'WITH_CVES';
 
-    const menuToggleIcon = isViewingWithCves ? (
-        <SecurityIcon color={CRITICAL_SEVERITY_COLOR} />
-    ) : (
-        <UnknownIcon />
-    );
+    const menuToggleIcon = isViewingWithCves ? <SecurityIcon /> : <UnknownIcon />;
 
     const menuToggleText = isViewingWithCves
         ? 'View image vulnerabilities'
@@ -54,6 +46,8 @@ function ObservedCveModeSelect({
             onOpenChange={(isOpen) => setIsCveModeSelectOpen(isOpen)}
             toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
                 <MenuToggle
+                    style={{ width }}
+                    aria-label="Observed CVE mode select"
                     ref={toggleRef}
                     onClick={() => setIsCveModeSelectOpen(!isCveModeSelectOpen)}
                     isExpanded={isCveModeSelectOpen}
@@ -69,18 +63,18 @@ function ObservedCveModeSelect({
             )}
             shouldFocusToggleOnSelect
         >
-            <SelectList style={{ maxWidth: '300px' }}>
+            <SelectList style={{ width }}>
                 <SelectOption
                     value={observedCveModeValues[0]}
-                    description={WITH_CVE_OPTION_DESCRIPTION}
+                    description={getViewStateDescription('OBSERVED', 'WITH_CVES')}
                 >
-                    {WITH_CVE_OPTION_TITLE}
+                    {getViewStateTitle('OBSERVED', 'WITH_CVES')}
                 </SelectOption>
                 <SelectOption
                     value={observedCveModeValues[1]}
-                    description={WITHOUT_CVE_OPTION_DESCRIPTION}
+                    description={getViewStateDescription('OBSERVED', 'WITHOUT_CVES')}
                 >
-                    {WITHOUT_CVE_OPTION_TITLE}
+                    {getViewStateTitle('OBSERVED', 'WITHOUT_CVES')}
                 </SelectOption>
             </SelectList>
         </Select>

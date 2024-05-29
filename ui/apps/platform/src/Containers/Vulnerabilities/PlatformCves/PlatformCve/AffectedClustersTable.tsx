@@ -9,15 +9,21 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { TableUIState } from 'utils/getTableUIState';
 import { ClusterType } from 'types/cluster.proto';
 
+import {
+    CLUSTER_KUBERNETES_VERSION_SORT_FIELD,
+    CLUSTER_SORT_FIELD,
+    CLUSTER_TYPE_SORT_FIELD,
+} from '../../utils/sortFields';
 import { getPlatformEntityPagePath } from '../../utils/searchUtils';
 import { displayClusterType } from '../utils/stringUtils';
 
-export const sortFields = {
-    Cluster: 'Cluster',
-    ClusterType: 'Cluster Type',
-    ClusterKubernetesVersion: 'Cluster Kubernetes Version',
-} as const;
-export const defaultSortOption = { field: 'Cluster', direction: 'asc' } as const;
+export const sortFields = [
+    CLUSTER_SORT_FIELD,
+    CLUSTER_TYPE_SORT_FIELD,
+    CLUSTER_KUBERNETES_VERSION_SORT_FIELD,
+];
+
+export const defaultSortOption = { field: CLUSTER_SORT_FIELD, direction: 'asc' } as const;
 
 export const affectedClusterFragment = gql`
     fragment AffectedClusterFragment on Cluster {
@@ -59,9 +65,9 @@ function AffectedClustersTable({ tableState, getSortParams }: AffectedClustersTa
         >
             <Thead noWrap>
                 <Tr>
-                    <Th sort={getSortParams(sortFields.Cluster)}>Cluster</Th>
-                    <Th sort={getSortParams(sortFields.ClusterType)}>Cluster type</Th>
-                    <Th sort={getSortParams(sortFields.ClusterKubernetesVersion)}>
+                    <Th sort={getSortParams(CLUSTER_SORT_FIELD)}>Cluster</Th>
+                    <Th sort={getSortParams(CLUSTER_TYPE_SORT_FIELD)}>Cluster type</Th>
+                    <Th sort={getSortParams(CLUSTER_KUBERNETES_VERSION_SORT_FIELD)}>
                         Kubernetes version
                     </Th>
                 </Tr>

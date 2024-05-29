@@ -49,7 +49,7 @@ func TestOptionsMap(t *testing.T) {
 		"Cluster", "Component", "Component Version", "Deployment", "Deployment Annotation", "Deployment Label",
 		"Deployment Type", "Dockerfile Instruction Keyword", "Dockerfile Instruction Value", "Drop Capabilities",
 		"Environment Key", "Environment Value", "Environment Variable Source", "Exposed Node Port", "Exposing Service",
-		"Exposing Service Port", "Exposure Level", "External Hostname", "External IP", "Image", "Image Command",
+		"Exposing Service Port", "Exposure Level", "External Hostname", "External IP", "Image", "Image CVE Count", "Image Command",
 		"Image Created Time", "Image Entrypoint", "Image Label", "Image OS", "Image Pull Secret", "Image Registry",
 		"Image Remote", "Image Scan Time", "Image Tag", "Image Top CVSS", "Image User", "Image Volumes",
 		"Max Exposure Level", "Memory Limit (MB)", "Memory Request (MB)", "Namespace", "Namespace ID",

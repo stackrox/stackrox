@@ -6,10 +6,19 @@ import { gql, useQuery } from '@apollo/client';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useURLPagination from 'hooks/useURLPagination';
+import { UseURLSortResult } from 'hooks/useURLSort';
+import { Pagination } from 'services/types';
 import { ClusterType } from 'types/cluster.proto';
+import { ApiSortOption } from 'types/search';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import {
+    CLUSTER_KUBERNETES_VERSION_SORT_FIELD,
+    CLUSTER_SORT_FIELD,
+    CLUSTER_TYPE_SORT_FIELD,
+    CVE_COUNT_SORT_FIELD,
+} from '../../utils/sortFields';
 import { getPlatformEntityPagePath, getRegexScopedQueryString } from '../../utils/searchUtils';
 import { QuerySearchFilter } from '../../types';
 import { displayClusterType } from '../utils/stringUtils';
@@ -30,6 +39,15 @@ const clusterListQuery = gql`
     }
 `;
 
+export const sortFields = [
+    CLUSTER_SORT_FIELD,
+    CVE_COUNT_SORT_FIELD,
+    CLUSTER_TYPE_SORT_FIELD,
+    CLUSTER_KUBERNETES_VERSION_SORT_FIELD,
+];
+
+export const defaultSortOption = { field: CVE_COUNT_SORT_FIELD, direction: 'desc' } as const;
+
 export type Cluster = {
     id: string;
     name: string;
@@ -46,18 +64,23 @@ export type ClustersTableProps = {
     querySearchFilter: QuerySearchFilter;
     isFiltered: boolean;
     pagination: ReturnType<typeof useURLPagination>;
+    sortOption: ApiSortOption;
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
-function ClustersTable({ querySearchFilter, isFiltered, pagination }: ClustersTableProps) {
+function ClustersTable({
+    querySearchFilter,
+    isFiltered,
+    pagination,
+    sortOption,
+    getSortParams,
+}: ClustersTableProps) {
     const { page, perPage } = pagination;
     const { data, previousData, error, loading } = useQuery<
         { clusters: Cluster[] },
         {
             query: string;
-            pagination: {
-                offset: number;
-                limit: number;
-            };
+            pagination: Pagination;
         }
     >(clusterListQuery, {
         variables: {
@@ -65,6 +88,7 @@ function ClustersTable({ querySearchFilter, isFiltered, pagination }: ClustersTa
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,
+                sortOption,
             },
         },
     });
@@ -90,13 +114,15 @@ function ClustersTable({ querySearchFilter, isFiltered, pagination }: ClustersTa
         >
             <Thead noWrap>
                 <Tr>
-                    <Th>Cluster</Th>
-                    <Th>
+                    <Th sort={getSortParams(CLUSTER_SORT_FIELD)}>Cluster</Th>
+                    <Th sort={getSortParams(CVE_COUNT_SORT_FIELD)}>
                         CVEs
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th>Cluster type</Th>
-                    <Th>Kubernetes version</Th>
+                    <Th sort={getSortParams(CLUSTER_TYPE_SORT_FIELD)}>Cluster type</Th>
+                    <Th sort={getSortParams(CLUSTER_KUBERNETES_VERSION_SORT_FIELD)}>
+                        Kubernetes version
+                    </Th>
                 </Tr>
             </Thead>
             <TbodyUnified

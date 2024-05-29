@@ -1,17 +1,19 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Breadcrumb, BreadcrumbItem, Divider, PageSection } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
-
-import { complianceEnhancedCoveragePath } from 'routePaths';
-import useRestQuery from 'hooks/useRestQuery';
-import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
-import { getComplianceProfileCheckStats } from 'services/ComplianceResultsStatsService';
+import { generatePath, useParams } from 'react-router-dom';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
-import NotFoundMessage from 'Components/NotFoundMessage';
+import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
+import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
+import { getComplianceProfileCheckStats } from 'services/ComplianceResultsStatsService';
+import { getComplianceProfileCheckResult } from 'services/ComplianceResultsService';
+import { getTableUIState } from 'utils/getTableUIState';
+
+import CheckDetailsTable from './CheckDetailsTable';
 import DetailsPageHeader, { PageHeaderLabel } from './components/DetailsPageHeader';
+import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 
 function sortCheckStats(a: ComplianceCheckStatusCount, b: ComplianceCheckStatusCount) {
@@ -29,41 +31,50 @@ function sortCheckStats(a: ComplianceCheckStatusCount, b: ComplianceCheckStatusC
 
 function CheckDetails() {
     const { checkName, profileName } = useParams();
+    const [currentDatetime, setCurrentDatetime] = useState(new Date());
+    const pagination = useURLPagination(10);
 
-    const complianceCoverageChecksURL = `${complianceEnhancedCoveragePath}/profiles/${profileName}/checks`;
+    const { page, perPage } = pagination;
 
-    const profileCheckByIdFn = useCallback(
+    const fetchCheckStats = useCallback(
         () => getComplianceProfileCheckStats(profileName, checkName),
         [profileName, checkName]
     );
-    const { data, loading: isLoading, error } = useRestQuery(profileCheckByIdFn);
+    const {
+        data: checkStatsResponse,
+        loading: isLoadingCheckStats,
+        error: checkStatsError,
+    } = useRestQuery(fetchCheckStats);
 
-    if (error) {
-        return (
-            <PageSection variant="light">
-                <TableErrorComponent
-                    error={error}
-                    message="An error occurred. Try refreshing again"
-                />
-            </PageSection>
-        );
-    }
+    const fetchCheckResults = useCallback(
+        () => getComplianceProfileCheckResult(profileName, checkName, page, perPage),
+        [page, perPage, checkName, profileName]
+    );
+    const {
+        data: checkResultsResponse,
+        loading: isLoadingCheckResults,
+        error: checkResultsError,
+    } = useRestQuery(fetchCheckResults);
 
-    if (!isLoading && !data) {
-        return (
-            <NotFoundMessage
-                title="404: Profile check does not exist."
-                message={`A profile check called "${checkName}" could not be found.`}
-            />
-        );
-    }
+    const tableState = getTableUIState({
+        isLoading: isLoadingCheckResults,
+        data: checkResultsResponse?.checkResults,
+        error: checkResultsError,
+        searchFilter: {},
+    });
+
+    useEffect(() => {
+        if (checkResultsResponse) {
+            setCurrentDatetime(new Date());
+        }
+    }, [checkResultsResponse]);
 
     const checkStatsLabels =
-        data?.checkStats
+        checkStatsResponse?.checkStats
             .sort(sortCheckStats)
             .reduce((acc, checkStat) => {
                 const statusObject = getClusterResultsStatusObject(checkStat.status);
-                if (statusObject) {
+                if (statusObject && checkStat.count > 0) {
                     const label: PageHeaderLabel = {
                         text: `${statusObject.statusText}: ${checkStat.count}`,
                         icon: statusObject.icon,
@@ -81,7 +92,11 @@ function CheckDetails() {
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItem>Compliance coverage</BreadcrumbItem>
-                    <BreadcrumbItemLink to={complianceCoverageChecksURL}>
+                    <BreadcrumbItemLink
+                        to={generatePath(coverageProfileChecksPath, {
+                            profileName,
+                        })}
+                    >
                         {profileName}
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{checkName}</BreadcrumbItem>
@@ -90,15 +105,26 @@ function CheckDetails() {
             <Divider component="div" />
             <PageSection variant="light">
                 <DetailsPageHeader
-                    isLoading={isLoading}
+                    isLoading={isLoadingCheckStats}
                     name={checkName}
                     labels={checkStatsLabels}
-                    summary={data?.rationale}
+                    summary={checkStatsResponse?.rationale}
                     nameScreenReaderText="Loading profile check details"
                     metadataScreenReaderText="Loading profile check details"
+                    error={checkStatsError}
+                    errorAlertTitle="Unable to fetch profile check stats"
                 />
             </PageSection>
             <Divider component="div" />
+            <PageSection>
+                <CheckDetailsTable
+                    checkResultsCount={checkResultsResponse?.totalCount ?? 0}
+                    currentDatetime={currentDatetime}
+                    pagination={pagination}
+                    profileName={profileName}
+                    tableState={tableState}
+                />
+            </PageSection>
         </>
     );
 }

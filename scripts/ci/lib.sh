@@ -524,17 +524,20 @@ image_prefetcher_start() {
     manifest=$(mktemp)
     # TODO(porridge): retrieve from go.mod file once there is an official registry with image tags matching git tags.
     local image_prefetcher_version="v0.0.11"
-    case "${CI_JOB_NAME}" in
-    gke-*|*-gke-*)
+    case "${ORCHESTRATOR_FLAVOR}" in
+    k8s)
         flavor=vanilla
         ;;
-    *)
+    openshift)
         flavor=ocp
+        ;;
+    *)
+        die "unsupported ORCHESTRATOR: ${ORCHESTRATOR_FLAVOR}"
         ;;
     esac
 
     # daemonset
-    ${image_prefetcher_deploy} "$name" $image_prefetcher_version $flavor stackrox > "$manifest"
+    ${image_prefetcher_deploy} "$name" $image_prefetcher_version "$flavor" stackrox > "$manifest"
 
     # image list
     local image_tag_list
