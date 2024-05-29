@@ -18,6 +18,7 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
@@ -37,7 +38,6 @@ import (
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
@@ -71,8 +71,15 @@ var (
 
 	// regsNoRange is a set of registries which do not accept the Range HTTP header.
 	// This is used for logging purposes, only.
-	regsNoRange sync.Map
+	regsNoRange *lru.Cache[string, struct{}]
 )
+
+func init() {
+	var err error
+	// Size was chosen rather arbitrarily.
+	regsNoRange, err = lru.New[string, struct{}](100)
+	utils.CrashOnError(err) // This should never happen.
+}
 
 func proxiedRemoteTransport(insecure bool) http.RoundTripper {
 	tr := func() *http.Transport {
@@ -368,8 +375,7 @@ func getLayerRequest(ctx context.Context, httpClient *http.Client, imgRef name.R
 	}
 	utils.IgnoreError(res.Body.Close)
 	if res.StatusCode != http.StatusPartialContent {
-		if _, exists := regsNoRange.Load(registryURL.Host); !exists {
-			regsNoRange.Store(registryURL.Host, struct{}{})
+		if exists, _ := regsNoRange.ContainsOrAdd(registryURL.Host, struct{}{}); !exists {
 			zlog.Warn(ctx).
 				Str("registry", registryURL.Host).
 				Msg("Range HTTP header may not be supported, so indexing may required about twice as many image pulls")
