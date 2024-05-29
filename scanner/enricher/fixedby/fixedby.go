@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/url"
+	"strings"
 
 	"github.com/Masterminds/semver"
 	"github.com/quay/claircore"
@@ -47,6 +48,7 @@ const (
 	normalVersionType
 	urlEncodedVersionType
 	semverVersionType
+	goSemverVersionType
 )
 
 var (
@@ -117,6 +119,7 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 		}
 
 		var pkgSemver *semver.Version
+		var goSemver claircore.Version
 
 		matcher, versionType := findMatcher(ctx, fixedBy)
 		switch versionType {
@@ -128,6 +131,25 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 		case semverVersionType:
 			var err error
 			pkgSemver, err = semver.NewVersion(pkg.Version)
+			if err != nil {
+				zlog.Warn(ctx).
+					Err(err).
+					Str("package", pkg.Name).
+					Str("version", pkg.Version).
+					Msg("skipping")
+				continue
+			}
+		case goSemverVersionType:
+			pkgVersion := pkg.Version
+			// If this is the "stdlib" package, remove the "go" prefix.
+			// This is what ClairCore does for the version used in the PostgreSQL range checks
+			// https://github.com/quay/claircore/blob/v1.5.27/gobin/exe.go#L57.
+			if pkg.Name == "stdlib" {
+				pkgVersion = strings.TrimPrefix(pkgVersion, "go")
+			}
+
+			var err error
+			goSemver, err = gobin.ParseVersion(pkgVersion)
 			if err != nil {
 				zlog.Warn(ctx).
 					Err(err).
@@ -173,6 +195,31 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 
 				if pkgSemver.LessThan(vulnSemver) {
 					pkgSemver = vulnSemver
+					fixedBy.Package.Version = v.FixedInVersion
+				}
+			case goSemverVersionType:
+				// Go does not rely on the Vulnerable() function.
+				// Instead, it relies on Postgres to compare versions.
+
+				if v.FixedInVersion == "" {
+					continue
+				}
+
+				vulnSemver, err := semver.NewVersion(v.FixedInVersion)
+				if err != nil {
+					zlog.Warn(ctx).
+						Err(err).
+						Str("package", pkg.Name).
+						Str("vulnerability_id", v.ID).
+						Str("vulnerability", v.Name).
+						Str("fixed_in_version", v.FixedInVersion).
+						Msg("skipping")
+					continue
+				}
+				ccVulnVersion := claircore.FromSemver(vulnSemver)
+
+				if goSemver.Compare(&ccVulnVersion) < 0 {
+					goSemver = ccVulnVersion
 					fixedBy.Package.Version = v.FixedInVersion
 				}
 			case normalVersionType, urlEncodedVersionType:
@@ -279,7 +326,7 @@ func findMatcher(ctx context.Context, record *claircore.IndexRecord) (matcher, v
 		// For example: v1.2.2023071210521689159162
 		// TODO(ROX-22533): Once ClairCore converges on a version library,
 		// use that.
-		return &gobin.Matcher{}, semverVersionType
+		return &gobin.Matcher{}, goSemverVersionType
 	case (*java.Matcher)(nil).Filter(record):
 		return &java.Matcher{}, urlEncodedVersionType
 	case (*nodejs.Matcher)(nil).Filter(record):
