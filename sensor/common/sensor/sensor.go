@@ -164,7 +164,7 @@ func createKOCacheSource(centralEndpoint string, centralCerts []*x509.Certificat
 // It returns once tasks have successfully started.
 func (s *Sensor) Start() {
 	// Start up connections.
-	log.Infof("Connecting to Central server %s", s.centralEndpoint)
+	log.Infof("Connecting to Central server %s", s.centralEndpoint) // Do not change this line, it is checked by TLSChallengeTest.
 	if chaos.HasChaosProxy() {
 		chaos.InitializeChaosConfiguration(context.Background())
 	}
