@@ -28,17 +28,21 @@ type DataStore interface {
 
 	// DeleteRulesByCluster removes rule by cluster id
 	DeleteRulesByCluster(ctx context.Context, clusterID string) error
+
+	// GetControlsByRuleNames returns controls by a list of rule names group by control, standard and rule name.
+	GetControlsByRuleNames(ctx context.Context, ruleNames []string) ([]*ControlResult, error)
 }
 
 // New returns an instance of DataStore.
-func New(complianceRuleStorage pgStore.Store) DataStore {
+func New(complianceRuleStorage pgStore.Store, db postgres.DB) DataStore {
 	return &datastoreImpl{
 		store: complianceRuleStorage,
+		db:    db,
 	}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
-	return New(store)
+	return New(store, pool)
 }

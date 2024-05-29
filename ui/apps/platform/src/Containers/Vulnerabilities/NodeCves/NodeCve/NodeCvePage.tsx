@@ -26,6 +26,7 @@ import {
     SummaryCardLayout,
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
+import useURLSort from 'hooks/useURLSort';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import {
     getHiddenSeverities,
@@ -34,7 +35,7 @@ import {
 } from '../../utils/searchUtils';
 import CvePageHeader from '../../components/CvePageHeader';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
-import AffectedNodesTable from './AffectedNodesTable';
+import AffectedNodesTable, { defaultSortOption, sortFields } from './AffectedNodesTable';
 import AffectedNodesSummaryCard from './AffectedNodesSummaryCard';
 import useAffectedNodes from './useAffectedNodes';
 import useNodeCveMetadata from './useNodeCveMetadata';
@@ -56,12 +57,17 @@ function NodeCvePage() {
     });
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+        onSort: () => setPage(1, 'replace'),
+    });
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
 
     const { metadataRequest, nodeCount, cveData } = useNodeCveMetadata(cveId, query);
 
-    const { affectedNodesRequest, nodeData } = useAffectedNodes(query, page, perPage);
+    const { affectedNodesRequest, nodeData } = useAffectedNodes(query, page, perPage, sortOption);
 
     const nodeCveName = cveData?.cve;
 
@@ -136,15 +142,15 @@ function NodeCvePage() {
                                 page={page}
                                 onSetPage={(_, newPage) => setPage(newPage)}
                                 onPerPageSelect={(_, newPerPage) => {
-                                    if (nodeCount < (page - 1) * newPerPage) {
-                                        setPage(1);
-                                    }
                                     setPerPage(newPerPage);
+                                    if (nodeCount < (page - 1) * newPerPage) {
+                                        setPage(1, 'replace');
+                                    }
                                 }}
                             />
                         </SplitItem>
                     </Split>
-                    <AffectedNodesTable tableState={tableState} />
+                    <AffectedNodesTable tableState={tableState} getSortParams={getSortParams} />
                 </div>
             </PageSection>
         </>
