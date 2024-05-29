@@ -64,10 +64,10 @@ func TestRegistryMatch(t *testing.T) {
 }
 
 func TestLazyLoadRepoList(t *testing.T) {
-	numRepoListCalls := 0
+	var repoListCalls int
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v2/_catalog" {
-			numRepoListCalls++
+			repoListCalls++
 			_, _ = w.Write([]byte(`{"repositories":["repo/path"]}`))
 			return
 		}
@@ -82,17 +82,17 @@ func TestLazyLoadRepoList(t *testing.T) {
 
 	r, err := NewDockerRegistryWithConfig(c, &storage.ImageIntegration{})
 	require.NoError(t, err)
-	assert.Zero(t, numRepoListCalls) // No repo list calls should have been made during construction.
+	assert.Zero(t, repoListCalls) // No repo list calls should have been made during construction.
 
 	imgStr := fmt.Sprintf("%s/repo/path:latest", hostOnly)
 	imgName, _, err := utils.GenerateImageNameFromString(imgStr)
 	require.NoError(t, err)
 	assert.True(t, r.Match(imgName))
-	assert.Equal(t, 1, numRepoListCalls) // Lazy load should have executed once.
+	assert.Equal(t, 1, repoListCalls) // Lazy load should have executed once.
 
 	imgStr = fmt.Sprintf("%s/no/match:latest", hostOnly)
 	imgName, _, err = utils.GenerateImageNameFromString(imgStr)
 	require.NoError(t, err)
 	assert.False(t, r.Match(imgName))
-	assert.Equal(t, 1, numRepoListCalls) // Lazy load should NOT have executed again.
+	assert.Equal(t, 1, repoListCalls) // Lazy load should NOT have executed again.
 }

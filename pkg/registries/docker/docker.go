@@ -177,15 +177,11 @@ func (r *Registry) Match(image *storage.ImageName) bool {
 // This is safe to call multiple times.
 func (r *Registry) lazyLoadRepoList() {
 	r.repoListOnce.Do(func() {
-		if r.cfg.DisableRepoList {
-			return
-		}
-
 		repoSet, err := retrieveRepositoryList(r.Client)
 		if err != nil {
 			// This is not a critical error, matching will instead be performed solely
 			// based on the registry endpoint (instead of endpoint AND repo list).
-			log.Debugf("could not update repo list for integration %s: %v", r.protoImageIntegration.GetName(), err)
+			log.Debugf("could not initialize repo list for integration %s: %v", r.protoImageIntegration.GetName(), err)
 			return
 		}
 
