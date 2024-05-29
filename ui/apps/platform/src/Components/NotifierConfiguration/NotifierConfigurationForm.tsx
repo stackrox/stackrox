@@ -22,7 +22,10 @@ function isEmailNotifier(notifier: NotifierIntegrationBase) {
 }
 
 function splitAndTrimMailingListsString(mailingListsString: string): string[] {
-    return mailingListsString.split(',').map((email) => email.trim());
+    return mailingListsString
+        .split(',')
+        .map((email) => email.trim())
+        .filter((email) => email.length !== 0);
 }
 
 export type NotifierConfigurationFormProps = {
@@ -72,6 +75,29 @@ function NotifierConfigurationForm({
             });
     }, []);
 
+    // Initialize rare second source of truth for TextInput elements.
+    // Array length corresponds to number of delivery destinations.
+    const [mailingListsStrings, setMailingListsStrings] = useState<string[]>(
+        notifierConfigurations.map(({ emailConfig }) => emailConfig.mailingLists.join(', '))
+    );
+
+    // Update string value for TextInput element independently of mailingLists string array in formik state.
+    //
+    // The original split-trim-join round trip for mailingLists as single source of truth had two problems:
+    //
+    // On one side of the coin, join appends comma and space, which immediately replaced a deleted final space,
+    // therefore prevented user from backspacing to delete a comma after the last non-empty string.
+    //
+    // On other side of the coin, filter (not in original) to omit empty string items (which fail backend validation)
+    // would immediately omit a final comma.
+    function updateMailingListsString(index: number, mailingListsStringUpdated: string) {
+        setMailingListsStrings(
+            mailingListsStrings.map((mailingListsString, i) =>
+                i === index ? mailingListsStringUpdated : mailingListsString
+            )
+        );
+    }
+
     return (
         <>
             <ul>
@@ -110,6 +136,11 @@ function NotifierConfigurationForm({
                                                         fieldIdPrefixForFormikAndPatternFly,
                                                         notifierConfigurationsFiltered
                                                     );
+                                                    setMailingListsStrings(
+                                                        mailingListsStrings.filter(
+                                                            (_, i) => i !== index
+                                                        )
+                                                    );
                                                     if (
                                                         notifierConfigurationsFiltered.length ===
                                                             0 &&
@@ -130,7 +161,7 @@ function NotifierConfigurationForm({
                                         fieldIdPrefixForFormikAndPatternFly={fieldId}
                                         hasWriteAccessForIntegration={hasWriteAccessForIntegration}
                                         isLoadingNotifiers={isLoadingNotifiers}
-                                        mailingLists={mailingLists}
+                                        mailingListsString={mailingListsStrings[index]}
                                         notifierId={notifierId}
                                         notifierName={notifierName}
                                         notifiers={notifiers}
@@ -139,6 +170,7 @@ function NotifierConfigurationForm({
                                                 `${fieldId}.emailConfig.mailingLists`,
                                                 splitAndTrimMailingListsString(mailingListsString)
                                             );
+                                            updateMailingListsString(index, mailingListsString);
                                         }}
                                         setNotifier={(notifier: NotifierIntegrationBase) => {
                                             setFieldValue(fieldId, {
@@ -154,6 +186,7 @@ function NotifierConfigurationForm({
                                                 },
                                                 notifierName: notifier.name,
                                             });
+                                            updateMailingListsString(index, notifier.labelDefault);
                                         }}
                                         setNotifiers={setNotifiers}
                                     />
@@ -229,6 +262,7 @@ function NotifierConfigurationForm({
                                 ...notifierConfigurations,
                                 notifierConfiguration,
                             ]);
+                            setMailingListsStrings([...mailingListsStrings, '']);
                         }}
                     >
                         Add delivery destination
