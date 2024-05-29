@@ -303,51 +303,53 @@ func (h *httpHandler) openDefinitions(ctx context.Context, t updaterType, opts o
 }
 
 // openOfflineDefinitions gets desired offline file from compressed bundle.
+// If the offline file does not exist, it is not an error, and (nil, nil) is returned.
 func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType, opts openOpts) (*vulDefFile, error) {
-	log.Debugf("Getting v4 offline data for updater: type %s: options: %#v", t, opts)
-	openedFile, err := h.openOfflineBlob(ctx, opts.offlineBlobName)
+	log.Debugf("Fetching offline data for updater: type %s: options: %#v", t, opts)
+	offlineBlob, err := h.openOfflineBlob(ctx, opts.offlineBlobName)
 	if err != nil {
-		return nil, fmt.Errorf("opening offline definitions: %s: %w",
-			opts.offlineBlobName, err)
+		return nil, fmt.Errorf("opening offline definitions: %s: %w", opts.offlineBlobName, err)
 	}
-	if openedFile == nil {
-		log.Warnf("Blob %s does not exist", opts.offlineBlobName)
+	if offlineBlob == nil {
+		log.Warnf("Offline blob %s does not exist", opts.offlineBlobName)
 		return nil, nil
 	}
+	defer utils.IgnoreError(offlineBlob.Close)
+	archiveName := offlineBlob.Name()
+
 	var offlineFile *vulDefFile
-	defer utils.IgnoreError(openedFile.Close)
 	switch t {
-	case mappingUpdaterType, v2UpdaterType:
-		// search mapping file
+	case mappingUpdaterType, v2UpdaterType: // Basic file request.
 		fileName := filepath.Base(opts.fileName)
-		targetFile, err := h.openFromArchive(openedFile.Name(), fileName)
+		targetFile, err := h.openFromArchive(archiveName, fileName)
 		if err != nil {
 			return nil, err
 		}
-		offlineFile = &vulDefFile{File: targetFile, modTime: openedFile.modTime}
-	case vulnerabilityUpdaterType:
-		// check version information in manifest
-		mf, err := h.openFromArchive(openedFile.Name(), scannerV4ManifestFile)
-		if err != nil {
-			return nil, err
-		}
-		offlineV, err := getOfflineFileVersion(mf)
+		offlineFile = &vulDefFile{File: targetFile, modTime: offlineBlob.modTime}
+	case vulnerabilityUpdaterType: // More complicated logic for Scanner V4 vulnerabilities request.
+		// Check the version information in the manifest.
+		mf, err := h.openFromArchive(archiveName, scannerV4ManifestFile)
 		if err != nil {
 			return nil, err
 		}
 		defer utils.IgnoreError(mf.Close)
 
-		if offlineV != minorVersionPattern.FindString(opts.vulnVersion) && (opts.vulnVersion != "dev" || buildinfo.ReleaseBuild) {
-			msg := fmt.Sprintf("failed to get offline vuln file, uploaded file is version: %s and requested file version is: %s", offlineV, opts.vulnVersion)
-			log.Errorf(msg)
-			return nil, errors.New(msg)
-		}
-
-		vulns, err := h.openFromArchive(openedFile.Name(), opts.vulnBundle)
+		v, err := readV4ManifestVersion(mf)
 		if err != nil {
 			return nil, err
 		}
-		offlineFile = &vulDefFile{File: vulns, modTime: openedFile.modTime}
+		if v != minorVersionPattern.FindString(opts.vulnVersion) && (opts.vulnVersion != "dev" || buildinfo.ReleaseBuild) {
+			msg := fmt.Sprintf("Failed to get Scanner V4 offline data file: uploaded file is version != requested file version (%s != %s)", v, opts.vulnVersion)
+			log.Error(msg)
+			return nil, errors.New(msg)
+		}
+
+		vulns, err := h.openFromArchive(archiveName, opts.vulnBundle)
+		if err != nil {
+			return nil, err
+		}
+
+		offlineFile = &vulDefFile{File: vulns, modTime: offlineBlob.modTime}
 	default:
 		return nil, fmt.Errorf("unknown updater type: %s", t)
 	}
@@ -355,6 +357,8 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 	return offlineFile, nil
 }
 
+// openOfflineBlob opens the offline scanner data identified by the given blobName.
+// If the blob does not exist, then no file nor error is returned (nil, nil).
 func (h *httpHandler) openOfflineBlob(ctx context.Context, blobName string) (*vulDefFile, error) {
 	snap, err := snapshot.TakeBlobSnapshot(sac.WithAllAccess(ctx), h.blobStore, blobName)
 	if err != nil {
@@ -488,7 +492,7 @@ func (h *httpHandler) validateV4DefsVersion(zipPath string) error {
 			if err != nil {
 				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
 			}
-			offlineV, err := getOfflineFileVersion(mf)
+			offlineV, err := readV4ManifestVersion(mf)
 			utils.IgnoreError(mf.Close)
 			if err != nil {
 				return errors.Wrap(err, "couldn't get v4 offline defs version")
@@ -613,7 +617,7 @@ func (h *httpHandler) openFromArchive(archiveFile string, fileName string) (*os.
 	return tmpFile, nil
 }
 
-func getOfflineFileVersion(mf *os.File) (string, error) {
+func readV4ManifestVersion(mf *os.File) (string, error) {
 	var m manifest
 	err := json.NewDecoder(mf).Decode(&m)
 	if err != nil {
