@@ -112,7 +112,6 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 		e.feed, err = defaultFeed.Parse(".")
 		utils.CrashOnError(err)
 	}
-	e.feed.RawQuery = "noRejected"
 	zlog.Info(ctx).
 		Str("feed", e.feed.String()).
 		Bool("has_api_key", e.apiKey != "").
@@ -277,7 +276,6 @@ func (e *Enricher) feedURL(start time.Time, end time.Time, startIdx int) string 
 	v.Set("startIndex", strconv.Itoa(startIdx))
 	v.Set("pubStartDate", start.Format("2006-01-02T15:04:05Z"))
 	v.Set("pubEndDate", end.Format("2006-01-02T15:04:05Z"))
-	// v.Encode() will always assume there is a value fo each key.
 	// noRejected does not have a value, so manually append it here.
 	u.RawQuery = v.Encode() + "&noRejected"
 	return u.String()
