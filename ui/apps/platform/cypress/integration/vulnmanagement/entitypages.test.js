@@ -11,12 +11,6 @@ import { selectors } from './VulnerabilityManagement.selectors';
 describe('Entities single views', () => {
     withAuth();
 
-    before(function () {
-        if (hasFeatureFlag('ROX_VULN_MGMT_2_GA')) {
-            this.skip();
-        }
-    });
-
     // Some tests might fail in local deployment.
 
     // TODO skip pending more robust criterion than deployment count

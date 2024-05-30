@@ -74,22 +74,6 @@ function isActiveLink(pathname: string, { isActive, path }: LinkDescription) {
     return typeof isActive === 'function' ? isActive(pathname) : Boolean(matchPath(pathname, path));
 }
 
-// Predicate function that encapsulates the logic for rendering content based on whether or not Vulnerability
-// Management 2.0 is declared as GA.
-function vulnMgmt2GaContentPredicate(
-    techPreviewContent: string | ReactElement,
-    gaContent: string | ReactElement
-) {
-    return (navDescriptionsFiltered: NavDescription[]) =>
-        navDescriptionsFiltered.some(
-            (navDescription) =>
-                navDescription.type === 'parent' &&
-                navDescription.key === keyForVulnerabilityManagement1
-        )
-            ? techPreviewContent
-            : gaContent;
-}
-
 type SeparatorDescription = {
     type: 'separator';
     key: string; // corresponds to React key prop
@@ -99,90 +83,96 @@ type ChildDescription = LinkDescription | SeparatorDescription;
 
 type ParentDescription = {
     type: 'parent';
-    title: string | TitleCallback;
+    title: string | ReactElement | TitleCallback;
     key: string; // for key prop and especially for title callback
     children: ChildDescription[];
 };
 
 type NavDescription = LinkDescription | ParentDescription;
 
-const navDescriptions: NavDescription[] = [
-    {
-        type: 'link',
-        content: 'Dashboard',
-        path: dashboardPath,
-        routeKey: 'dashboard',
-    },
-    {
-        type: 'parent',
-        title: 'Network',
-        key: keyForNetwork,
-        children: [
-            {
-                type: 'link',
-                content: 'Network Graph',
-                path: networkBasePath,
-                routeKey: 'network-graph',
-            },
-            {
-                type: 'link',
-                content: 'Listening Endpoints',
-                path: listeningEndpointsBasePath,
-                routeKey: 'listening-endpoints',
-            },
-        ],
-    },
-    {
-        type: 'link',
-        content: 'Violations',
-        path: violationsBasePath,
-        routeKey: 'violations',
-    },
-    // Compliance with divided navigation.
-    // /*
-    {
-        type: 'parent',
-        title: (navDescriptionsFiltered) =>
-            navDescriptionsFiltered.some(
-                (navDescription) =>
-                    navDescription.type === 'link' && navDescription.routeKey === 'compliance'
-            )
-                ? 'Compliance (2.0)'
-                : 'Compliance',
-        key: keyForCompliance2,
-        children: [
-            {
-                type: 'link',
-                content: 'Coverage',
-                path: complianceEnhancedCoveragePath,
-                routeKey: 'compliance-enhanced',
-            },
-            {
-                type: 'link',
-                content: 'Schedules',
-                path: complianceEnhancedSchedulesPath,
-                routeKey: 'compliance-enhanced',
-            },
-        ],
-    },
-    {
-        type: 'link',
-        content: (navDescriptionsFiltered) =>
-            navDescriptionsFiltered.some(
-                (navDescription) =>
-                    navDescription.type === 'parent' && navDescription.key === keyForCompliance2
-            )
-                ? 'Compliance (1.0)'
-                : 'Compliance',
-        path: complianceBasePath,
-        routeKey: 'compliance',
-        isActive: (pathname) =>
-            Boolean(matchPath(pathname, complianceBasePath)) &&
-            !matchPath(pathname, [complianceEnhancedCoveragePath, complianceEnhancedSchedulesPath]),
-    },
-    // */
-    // Compliance with unified navigation.
-    /*
+function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDescription[] {
+    const isVulnMgmt2GAEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA');
+
+    return [
+        {
+            type: 'link',
+            content: 'Dashboard',
+            path: dashboardPath,
+            routeKey: 'dashboard',
+        },
+        {
+            type: 'parent',
+            title: 'Network',
+            key: keyForNetwork,
+            children: [
+                {
+                    type: 'link',
+                    content: 'Network Graph',
+                    path: networkBasePath,
+                    routeKey: 'network-graph',
+                },
+                {
+                    type: 'link',
+                    content: 'Listening Endpoints',
+                    path: listeningEndpointsBasePath,
+                    routeKey: 'listening-endpoints',
+                },
+            ],
+        },
+        {
+            type: 'link',
+            content: 'Violations',
+            path: violationsBasePath,
+            routeKey: 'violations',
+        },
+        // Compliance with divided navigation.
+        // /*
+        {
+            type: 'parent',
+            title: (navDescriptionsFiltered) =>
+                navDescriptionsFiltered.some(
+                    (navDescription) =>
+                        navDescription.type === 'link' && navDescription.routeKey === 'compliance'
+                )
+                    ? 'Compliance (2.0)'
+                    : 'Compliance',
+            key: keyForCompliance2,
+            children: [
+                {
+                    type: 'link',
+                    content: 'Coverage',
+                    path: complianceEnhancedCoveragePath,
+                    routeKey: 'compliance-enhanced',
+                },
+                {
+                    type: 'link',
+                    content: 'Schedules',
+                    path: complianceEnhancedSchedulesPath,
+                    routeKey: 'compliance-enhanced',
+                },
+            ],
+        },
+        {
+            type: 'link',
+            content: (navDescriptionsFiltered) =>
+                navDescriptionsFiltered.some(
+                    (navDescription) =>
+                        navDescription.type === 'parent' && navDescription.key === keyForCompliance2
+                )
+                    ? 'Compliance (1.0)'
+                    : 'Compliance',
+            path: complianceBasePath,
+            routeKey: 'compliance',
+            isActive: (pathname) =>
+                Boolean(matchPath(pathname, complianceBasePath)) &&
+                !matchPath(pathname, [
+                    complianceEnhancedCoveragePath,
+                    complianceEnhancedSchedulesPath,
+                ]),
+        },
+        // */
+        // Compliance with unified navigation.
+        /*
     {
         type: 'parent',
         title: (navDescriptionsFiltered) =>
@@ -225,161 +215,161 @@ const navDescriptions: NavDescription[] = [
         ],
     },
     */
-    {
-        type: 'parent',
-        title: vulnMgmt2GaContentPredicate(
-            'Vulnerability Management (2.0)',
-            'Vulnerability Management'
-        ),
-        key: keyForVulnerabilityManagement2,
-        children: [
-            {
-                type: 'link',
-                content: vulnMgmt2GaContentPredicate(
-                    <NavigationContent variant="TechPreview">Workload CVEs</NavigationContent>,
-                    'Workload CVEs'
-                ),
-                path: vulnerabilitiesWorkloadCvesPath,
-                routeKey: 'workload-cves',
-            },
-            {
-                type: 'link',
-                content: vulnMgmt2GaContentPredicate(
-                    <NavigationContent variant="TechPreview">Platform CVEs</NavigationContent>,
-                    'Platform CVEs'
-                ),
-                path: vulnerabilitiesPlatformCvesPath,
-                routeKey: 'platform-cves',
-            },
-            {
-                type: 'link',
-                content: vulnMgmt2GaContentPredicate(
-                    <NavigationContent variant="TechPreview">Node CVEs</NavigationContent>,
-                    'Node CVEs'
-                ),
-                path: vulnerabilitiesNodeCvesPath,
-                routeKey: 'node-cves',
-            },
-            {
-                type: 'separator',
-                key: 'following-cves',
-            },
-            {
-                type: 'link',
-                content: 'Exception Management',
-                path: exceptionManagementPath,
-                routeKey: 'exception-management',
-            },
-            {
-                type: 'link',
-                content: 'Vulnerability Reporting',
-                path: vulnerabilityReportsPath,
-                routeKey: 'vulnerabilities/reports',
-            },
-        ],
-    },
-    {
-        type: 'parent',
-        key: keyForVulnerabilityManagement1,
-        title: (navDescriptionsFiltered) =>
-            navDescriptionsFiltered.some(
-                (navDescription) =>
-                    navDescription.type === 'parent' &&
-                    navDescription.key === keyForVulnerabilityManagement2
-            )
-                ? 'Vulnerability Management (1.0)'
-                : 'Vulnerability Management',
-        children: [
-            {
-                type: 'link',
-                content: 'Dashboard',
-                path: vulnManagementPath,
-                routeKey: 'vulnerability-management',
-                isActive: (pathname) =>
-                    Boolean(matchPath(pathname, { vulnManagementPath, exact: true })),
-            },
-            {
-                type: 'link',
-                content: 'Risk Acceptance',
-                path: vulnManagementRiskAcceptancePath,
-                routeKey: 'vulnerability-management/risk-acceptance',
-            },
-        ],
-    },
-    {
-        type: 'link',
-        content: 'Configuration Management',
-        path: configManagementPath,
-        routeKey: 'configmanagement',
-    },
-    {
-        type: 'link',
-        content: 'Risk',
-        path: riskBasePath,
-        routeKey: 'risk',
-    },
-    {
-        type: 'parent',
-        key: 'Platform Configuration',
-        title: keyForPlatformConfiguration,
-        children: [
-            {
-                type: 'link',
-                content: 'Clusters',
-                path: clustersBasePath,
-                routeKey: 'clusters',
-            },
-            {
-                type: 'link',
-                content: 'Policy Management',
-                path: policyManagementBasePath,
-                routeKey: 'policy-management',
-            },
-            {
-                type: 'link',
-                content: 'Collections',
-                path: collectionsBasePath,
-                routeKey: 'collections',
-            },
-            {
-                type: 'link',
-                content: 'Integrations',
-                path: integrationsPath,
-                routeKey: 'integrations',
-            },
-            {
-                type: 'link',
-                content: 'Exception Configuration',
-                path: exceptionConfigurationPath,
-                routeKey: 'exception-configuration',
-            },
-            {
-                type: 'link',
-                content: 'Access Control',
-                path: accessControlBasePath,
-                routeKey: 'access-control',
-            },
-            {
-                type: 'link',
-                content: 'System Configuration',
-                path: systemConfigPath,
-                routeKey: 'systemconfig',
-            },
-            {
-                type: 'link',
-                content: 'Administration Events',
-                path: administrationEventsBasePath,
-                routeKey: 'administration-events',
-            },
-            {
-                type: 'link',
-                content: 'System Health',
-                path: systemHealthPath,
-                routeKey: 'system-health',
-            },
-        ],
-    },
-];
+        {
+            type: 'parent',
+            title: 'Vulnerability Management (2.0)',
+            key: keyForVulnerabilityManagement2,
+            children: [
+                {
+                    type: 'link',
+                    content: isVulnMgmt2GAEnabled ? (
+                        'Workload CVEs'
+                    ) : (
+                        <NavigationContent variant="TechPreview">Workload CVEs</NavigationContent>
+                    ),
+                    path: vulnerabilitiesWorkloadCvesPath,
+                    routeKey: 'workload-cves',
+                },
+                {
+                    type: 'link',
+                    content: isVulnMgmt2GAEnabled ? (
+                        'Platform CVEs'
+                    ) : (
+                        <NavigationContent variant="TechPreview">Platform CVEs</NavigationContent>
+                    ),
+                    path: vulnerabilitiesPlatformCvesPath,
+                    routeKey: 'platform-cves',
+                },
+                {
+                    type: 'link',
+                    content: isVulnMgmt2GAEnabled ? (
+                        'Node CVEs'
+                    ) : (
+                        <NavigationContent variant="TechPreview">Node CVEs</NavigationContent>
+                    ),
+                    path: vulnerabilitiesNodeCvesPath,
+                    routeKey: 'node-cves',
+                },
+                {
+                    type: 'separator',
+                    key: 'following-cves',
+                },
+                {
+                    type: 'link',
+                    content: 'Exception Management',
+                    path: exceptionManagementPath,
+                    routeKey: 'exception-management',
+                },
+                {
+                    type: 'link',
+                    content: 'Vulnerability Reporting',
+                    path: vulnerabilityReportsPath,
+                    routeKey: 'vulnerabilities/reports',
+                },
+            ],
+        },
+        {
+            type: 'parent',
+            key: keyForVulnerabilityManagement1,
+            title: isVulnMgmt2GAEnabled ? (
+                <NavigationContent variant="Deprecated">
+                    Vulnerability Management (1.0)
+                </NavigationContent>
+            ) : (
+                'Vulnerability Management (1.0)'
+            ),
+            children: [
+                {
+                    type: 'link',
+                    content: 'Dashboard',
+                    path: vulnManagementPath,
+                    routeKey: 'vulnerability-management',
+                    isActive: (pathname) =>
+                        Boolean(matchPath(pathname, { vulnManagementPath, exact: true })),
+                },
+                {
+                    type: 'link',
+                    content: 'Risk Acceptance',
+                    path: vulnManagementRiskAcceptancePath,
+                    routeKey: 'vulnerability-management/risk-acceptance',
+                },
+            ],
+        },
+        {
+            type: 'link',
+            content: 'Configuration Management',
+            path: configManagementPath,
+            routeKey: 'configmanagement',
+        },
+        {
+            type: 'link',
+            content: 'Risk',
+            path: riskBasePath,
+            routeKey: 'risk',
+        },
+        {
+            type: 'parent',
+            key: 'Platform Configuration',
+            title: keyForPlatformConfiguration,
+            children: [
+                {
+                    type: 'link',
+                    content: 'Clusters',
+                    path: clustersBasePath,
+                    routeKey: 'clusters',
+                },
+                {
+                    type: 'link',
+                    content: 'Policy Management',
+                    path: policyManagementBasePath,
+                    routeKey: 'policy-management',
+                },
+                {
+                    type: 'link',
+                    content: 'Collections',
+                    path: collectionsBasePath,
+                    routeKey: 'collections',
+                },
+                {
+                    type: 'link',
+                    content: 'Integrations',
+                    path: integrationsPath,
+                    routeKey: 'integrations',
+                },
+                {
+                    type: 'link',
+                    content: 'Exception Configuration',
+                    path: exceptionConfigurationPath,
+                    routeKey: 'exception-configuration',
+                },
+                {
+                    type: 'link',
+                    content: 'Access Control',
+                    path: accessControlBasePath,
+                    routeKey: 'access-control',
+                },
+                {
+                    type: 'link',
+                    content: 'System Configuration',
+                    path: systemConfigPath,
+                    routeKey: 'systemconfig',
+                },
+                {
+                    type: 'link',
+                    content: 'Administration Events',
+                    path: administrationEventsBasePath,
+                    routeKey: 'administration-events',
+                },
+                {
+                    type: 'link',
+                    content: 'System Health',
+                    path: systemHealthPath,
+                    routeKey: 'system-health',
+                },
+            ],
+        },
+    ];
+}
 
 type NavigationSidebarProps = {
     hasReadAccess: HasReadAccess;
@@ -410,7 +400,7 @@ function NavigationSidebar({
             : true;
     }
 
-    const navDescriptionsFiltered = navDescriptions
+    const navDescriptionsFiltered = getNavDescriptions(isFeatureFlagEnabled)
         .map((navDescription) => {
             switch (navDescription.type) {
                 case 'parent': {
