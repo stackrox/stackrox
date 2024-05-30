@@ -38,7 +38,7 @@ export default function useNodeVulnerabilities(
         variables: {
             id,
             query,
-            pagination: getPaginationParams(page, perPage),
+            pagination: getPaginationParams({ page, perPage }),
         },
     });
 }

@@ -46,7 +46,7 @@ export default function usePlatformCveMetadata(
         variables: {
             cve,
             query,
-            pagination: getPaginationParams(page, perPage),
+            pagination: getPaginationParams({ page, perPage }),
         },
     });
 }
