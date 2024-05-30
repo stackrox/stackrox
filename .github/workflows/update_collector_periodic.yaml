@@ -5,7 +5,7 @@ on:
     - cron: 0 5 * * 1-5
 jobs:
   update-collector:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
       with:
