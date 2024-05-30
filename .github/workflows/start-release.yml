@@ -153,7 +153,7 @@ jobs:
         run: |
           git switch --create "${{needs.variables.outputs.branch}}"
           git commit --allow-empty --message \
-            "Initial commit to release branch "${{needs.variables.outputs.release}}"
+            "Initial commit to release branch ${{needs.variables.outputs.release}}"
           git tag --annotate --message "Upstream automation" \
             "${{needs.variables.outputs.release}}.0-rc.0" HEAD
       - name: Switch to existing ${{needs.variables.outputs.branch}} branch
