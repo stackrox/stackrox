@@ -142,9 +142,8 @@ message ComplianceOperatorBenchmarkV2 {
   string version = 3;
   string description = 4;
   string provider = 5;
-  // Example: https://control.compliance.openshift.io/CIS-OCP
-  string profile_annotation = 6; // @gotags: search:"Compliance Profile Annotation";
-  // This is extracted from the annotation. Example: CIS-OCP
+  // This is extracted from the annotation.
+  // Example: from https://control.compliance.openshift.io/CIS-OCP we should have CIS-OCP
   string short_name = 7; // @gotags: search:"Compliance Benchmark Short Name,hidden"
 
   message Profile {

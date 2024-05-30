@@ -59,11 +59,10 @@ const (
 
 // ComplianceOperatorBenchmarkV2 holds the Gorm model for Postgres table `compliance_operator_benchmark_v2`.
 type ComplianceOperatorBenchmarkV2 struct {
-	ID                string `gorm:"column:id;type:uuid;primaryKey"`
-	Name              string `gorm:"column:name;type:varchar"`
-	ProfileAnnotation string `gorm:"column:profileannotation;type:varchar"`
-	ShortName         string `gorm:"column:shortname;type:varchar"`
-	Serialized        []byte `gorm:"column:serialized;type:bytea"`
+	ID         string `gorm:"column:id;type:uuid;primaryKey"`
+	Name       string `gorm:"column:name;type:varchar"`
+	ShortName  string `gorm:"column:shortname;type:varchar"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }
 
 // ComplianceOperatorBenchmarkV2Profiles holds the Gorm model for Postgres table `compliance_operator_benchmark_v2_profiles`.

@@ -95,12 +95,11 @@ func insertIntoComplianceOperatorBenchmarkV2(batch *pgx.Batch, obj *storage.Comp
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
-		obj.GetProfileAnnotation(),
 		obj.GetShortName(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_benchmark_v2 (Id, Name, ProfileAnnotation, ShortName, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ProfileAnnotation = EXCLUDED.ProfileAnnotation, ShortName = EXCLUDED.ShortName, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_benchmark_v2 (Id, Name, ShortName, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ShortName = EXCLUDED.ShortName, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -146,7 +145,6 @@ func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Delet
 	copyCols := []string{
 		"id",
 		"name",
-		"profileannotation",
 		"shortname",
 		"serialized",
 	}
@@ -165,7 +163,6 @@ func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Delet
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetName(),
-			obj.GetProfileAnnotation(),
 			obj.GetShortName(),
 			serialized,
 		})
