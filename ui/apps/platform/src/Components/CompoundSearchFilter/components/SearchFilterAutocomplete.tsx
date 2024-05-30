@@ -204,7 +204,7 @@ function SearchFilterAutocomplete({
             onClick={onToggleClick}
             isExpanded={isOpen}
             isFullWidth
-            aria-labelledby={`${textLabel} menu toggle`}
+            aria-labelledby="Filter results menu toggle"
         >
             <TextInputGroup isPlain>
                 <TextInputGroupMain
@@ -244,7 +244,7 @@ function SearchFilterAutocomplete({
     return (
         <>
             <Select
-                aria-label={`${textLabel} select menu`}
+                aria-label="Filter results select menu"
                 isOpen={isOpen}
                 selected={value}
                 onSelect={onSelect}

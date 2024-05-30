@@ -306,12 +306,11 @@ describe(Cypress.spec.relative, () => {
         };
 
         const autocompleteMenuToggle =
-            'div[aria-labelledby="Filter results by image name menu toggle"] button[aria-label="Menu toggle"]';
-        const autocompleteMenuItems =
-            'div[aria-label="Filter results by image name select menu"] ul li';
+            'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Menu toggle"]';
+        const autocompleteMenuItems = 'div[aria-label="Filter results select menu"] ul li';
         const autocompleteInput = 'input[aria-label="Filter results by image name"]';
         const autocompleteClearInputButton =
-            'div[aria-labelledby="Filter results by image name menu toggle"] button[aria-label="Clear input value"]';
+            'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Clear input value"]';
 
         setup(config);
 
