@@ -124,7 +124,11 @@ func (s *complianceBenchmarkDataStoreSuite) TestDeleteBenchmark() {
 	s.Require().NoError(err)
 	s.Require().Equal(1, count)
 
-	s.Require().Error(s.datastore.DeleteBenchmark(s.hasReadCtx, b2.GetId()))
+	s.datastore.DeleteBenchmark(s.noAccessCtx, b2.GetId())
+
+	count, err = s.storage.Count(s.hasReadCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Require().Equal(1, count)
 
 	s.Require().NoError(s.datastore.DeleteBenchmark(s.hasWriteCtx, b2.GetId()))
 
@@ -173,13 +177,12 @@ func getTestBenchmark(id string, name string, version string, profileCount int) 
 		})
 	}
 	return &storage.ComplianceOperatorBenchmarkV2{
-		Id:                id,
-		Name:              name,
-		Version:           version,
-		Provider:          fmt.Sprintf("provider-%s", name),
-		Profiles:          profiles,
-		ProfileAnnotation: fmt.Sprintf("annotation-%s", name),
-		ShortName:         fmt.Sprintf("short-name-%s", name),
+		Id:        id,
+		Name:      name,
+		Version:   version,
+		Provider:  fmt.Sprintf("provider-%s", name),
+		Profiles:  profiles,
+		ShortName: fmt.Sprintf("short-name-%s", name),
 	}
 }
 
@@ -189,6 +192,7 @@ func assertBenchmarks(t *testing.T, expected *storage.ComplianceOperatorBenchmar
 	assert.Equal(t, expected.GetVersion(), actual.GetVersion())
 	assert.Equal(t, expected.GetDescription(), actual.GetDescription())
 	assert.Equal(t, expected.GetProvider(), actual.GetProvider())
+	assert.Equal(t, expected.GetShortName(), actual.GetShortName())
 	assert.Equal(t, len(expected.GetProfiles()), len(actual.GetProfiles()))
 	for _, p := range expected.GetProfiles() {
 		assert.Contains(t, actual.GetProfiles(), p)
