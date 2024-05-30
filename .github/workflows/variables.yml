@@ -43,6 +43,9 @@ on:
       next-milestone:
         description: Next milestone (A.B.C[-N]-rc.`D+1`)
         value: ${{format('{0}.{1}{2}-rc.{3}', jobs.parse.outputs.release, jobs.parse.outputs.patch, jobs.parse.outputs.dash-name, jobs.parse.outputs.next-rc)}}
+      next-release:
+        description: Next Release (A.`B+1`)
+        value: ${{jobs.parse.outputs.next-release}}
       next-release-patch:
         description: Next Release.patch (A.B.`C+1`)
         value: ${{format('{0}.{1}', jobs.parse.outputs.release, jobs.parse.outputs.next-patch)}}
