@@ -10,12 +10,9 @@
 package mocks
 
 import (
-	bytes "bytes"
-	context "context"
 	reflect "reflect"
 
 	complianceReportgenerator "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator"
-	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,60 +39,14 @@ func (m *MockComplianceReportGenerator) EXPECT() *MockComplianceReportGeneratorM
 	return m.recorder
 }
 
-// Format mocks base method.
-func (m *MockComplianceReportGenerator) Format(results map[string][]*resultRow) (*bytes.Buffer, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Format", results)
-	ret0, _ := ret[0].(*bytes.Buffer)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Format indicates an expected call of Format.
-func (mr *MockComplianceReportGeneratorMockRecorder) Format(results any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Format", reflect.TypeOf((*MockComplianceReportGenerator)(nil).Format), results)
-}
-
 // ProcessReportRequest mocks base method.
-func (m *MockComplianceReportGenerator) ProcessReportRequest(ctx context.Context, req *complianceReportgenerator.ComplianceReportRequest) error {
+func (m *MockComplianceReportGenerator) ProcessReportRequest(req *complianceReportgenerator.ComplianceReportRequest) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessReportRequest", ctx, req)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "ProcessReportRequest", req)
 }
 
 // ProcessReportRequest indicates an expected call of ProcessReportRequest.
-func (mr *MockComplianceReportGeneratorMockRecorder) ProcessReportRequest(ctx, req any) *gomock.Call {
+func (mr *MockComplianceReportGeneratorMockRecorder) ProcessReportRequest(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReportRequest", reflect.TypeOf((*MockComplianceReportGenerator)(nil).ProcessReportRequest), ctx, req)
-}
-
-// getDataforReport mocks base method.
-func (m *MockComplianceReportGenerator) getDataforReport(req *complianceReportgenerator.ComplianceReportRequest, ctx context.Context) (*resultEmail, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "getDataforReport", req, ctx)
-	ret0, _ := ret[0].(*resultEmail)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// getDataforReport indicates an expected call of getDataforReport.
-func (mr *MockComplianceReportGeneratorMockRecorder) getDataforReport(req, ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "getDataforReport", reflect.TypeOf((*MockComplianceReportGenerator)(nil).getDataforReport), req, ctx)
-}
-
-// sendEmail mocks base method.
-func (m *MockComplianceReportGenerator) sendEmail(zipData *bytes.Buffer, emailBody *formatBody, formatEmailSub *formatSubject, notifiersList []*storage.NotifierConfiguration, ctx context.Context) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "sendEmail", zipData, emailBody, formatEmailSub, notifiersList, ctx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// sendEmail indicates an expected call of sendEmail.
-func (mr *MockComplianceReportGeneratorMockRecorder) sendEmail(zipData, emailBody, formatEmailSub, notifiersList, ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "sendEmail", reflect.TypeOf((*MockComplianceReportGenerator)(nil).sendEmail), zipData, emailBody, formatEmailSub, notifiersList, ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReportRequest", reflect.TypeOf((*MockComplianceReportGenerator)(nil).ProcessReportRequest), req)
 }

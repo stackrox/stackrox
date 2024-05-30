@@ -33,14 +33,14 @@ func TestComplianceReporting(t *testing.T) {
 
 func (s *ComplainceReportingTestSuite) TestFormatReport() {
 
-	_, err := s.reportGen.Format(s.getReportData())
+	_, err := format(s.getReportData())
 	s.Require().NoError(err)
 
 }
 
-func (s *ComplainceReportingTestSuite) getReportData() map[string][]*resultRow {
-	results := make(map[string][]*resultRow)
-	results["cluster1"] = []*resultRow{{
+func (s *ComplainceReportingTestSuite) getReportData() map[string][]*ResultRow {
+	results := make(map[string][]*ResultRow)
+	results["cluster1"] = []*ResultRow{{
 		ClusterName: "test_cluster1",
 		CheckName:   "test_check1",
 		Profile:     "test_profile1",

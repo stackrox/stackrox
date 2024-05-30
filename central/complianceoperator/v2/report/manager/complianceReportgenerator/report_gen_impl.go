@@ -10,13 +10,10 @@ import (
 
 	"github.com/pkg/errors"
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
-	"github.com/stackrox/rox/central/graphql/resolvers"
-	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -28,7 +25,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	reportGenCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
+	reportGenCtx = sac.WithAllAccess(context.Background())
 
 	csvHeader = []string{
 		"Control Reference",
@@ -46,19 +43,18 @@ const (
 )
 
 type formatBody struct {
-	BrandedPrefix    string
-	Profile          string
-	Pass             int
-	Fail             int
-	Mixed            int
-	Cluster          int
-	ComplianceStatus string
+	BrandedPrefix string
+	Profile       string
+	Pass          int
+	Fail          int
+	Mixed         int
+	Cluster       int
 }
 
 type formatSubject struct {
 	BrandedPrefix string
 	ScanConfig    string
-	Profiles      string
+	Profiles      int
 }
 
 type complianceReportGeneratorImpl struct {
@@ -67,7 +63,7 @@ type complianceReportGeneratorImpl struct {
 }
 
 // struct which hold all columns of a row
-type resultRow struct {
+type ResultRow struct {
 	ClusterName string
 	CheckName   string
 	Profile     string
@@ -77,62 +73,65 @@ type resultRow struct {
 	Remediation string
 }
 
-type resultEmail struct {
-	resultCSVs map[string][]*resultRow //map of cluster id to slice of *resultRow
-	totalPass  int
-	totalFail  int
-	totalMixed int
-	profiles   []string
-	clusters   int
+type ResultEmail struct {
+	ResultCSVs map[string][]*ResultRow // map of cluster id to slice of *resultRow
+	TotalPass  int
+	TotalFail  int
+	TotalMixed int
+	Profiles   []string
+	Clusters   int
 }
 
-func (rg *complianceReportGeneratorImpl) ProcessReportRequest(ctx context.Context, req *ComplianceReportRequest) error {
+func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceReportRequest) {
 
-	data, err := rg.getDataforReport(req, ctx)
+	data, err := rg.getDataForReport(req)
 	if err != nil {
-		return err
+		log.Errorf("Error getting report data for scan config %s", req.ScanConfigName)
+		return
+	}
+	if data == nil {
+		log.Errorf("Error getting report data for scan config %s", req.ScanConfigName)
+		return
 	}
 
-	zipData, err := rg.Format(data.resultCSVs)
+	zipData, err := format(data.ResultCSVs)
 	if err != nil {
-		return err
+		log.Errorf("Error zipping compliance reports for scan config %s", req.ScanConfigName)
+		return
 	}
-	profiles := strings.Join(req.profiles, ", ")
+	profiles := strings.Join(req.Profiles, ", ")
 	formatEmailBody := &formatBody{
 		BrandedPrefix: branding.GetCombinedProductAndShortName(),
 		Profile:       profiles,
-		Pass:          data.totalPass,
-		Fail:          data.totalFail,
-		Mixed:         data.totalMixed,
-		Cluster:       len(req.clusterIDs),
-	}
-	formatEmailBody.ComplianceStatus = "non compliant"
-	if data.totalFail == 0 {
-		formatEmailBody.ComplianceStatus = "compliant"
+		Pass:          data.TotalPass,
+		Fail:          data.TotalFail,
+		Mixed:         data.TotalMixed,
+		Cluster:       len(req.ClusterIDs),
 	}
 
 	if len(profiles) > maxNumberProfilesinSubject {
-		profiles = strings.Join(req.profiles[0:maxNumberProfilesinSubject], ", ")
+		profiles = strings.Join(req.Profiles[0:maxNumberProfilesinSubject], ", ")
 		profiles += "..."
 	}
 
 	formatEmailSub := &formatSubject{
 		BrandedPrefix: branding.GetCombinedProductAndShortName(),
-		ScanConfig:    req.scanConfigName,
-		Profiles:      profiles,
+		ScanConfig:    req.ScanConfigName,
+		Profiles:      len(profiles),
 	}
 
-	return rg.sendEmail(zipData, formatEmailBody, formatEmailSub, req.notifiers, ctx)
+	log.Infof("Sending email for scan config %s", req.ScanConfigName)
+	go rg.sendEmail(req.Ctx, zipData, formatEmailBody, formatEmailSub, req.Notifiers)
 }
 
-// getDataforReport returns map of cluster id and
-func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportRequest, ctx context.Context) (*resultEmail, error) {
+// getDataForReport returns map of cluster id and
+func (rg *complianceReportGeneratorImpl) getDataForReport(req *ComplianceReportRequest) (*ResultEmail, error) {
 	// TODO ROX-24356: Implement query to get checkresults data to generate cvs for compliance reporting
 
 	return nil, nil
 }
 
-func (rg *complianceReportGeneratorImpl) sendEmail(zipData *bytes.Buffer, emailBody *formatBody, formatEmailSub *formatSubject, notifiersList []*storage.NotifierConfiguration, ctx context.Context) error {
+func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData *bytes.Buffer, emailBody *formatBody, formatEmailSub *formatSubject, notifiersList []*storage.NotifierConfiguration) {
 
 	errorList := errorhelpers.NewErrorList("Error sending compliance report email notifications")
 	for _, notifier := range notifiersList {
@@ -170,7 +169,9 @@ func (rg *complianceReportGeneratorImpl) sendEmail(zipData *bytes.Buffer, emailB
 		}
 	}
 
-	return errorList
+	if !errorList.Empty() {
+		log.Errorf("Error in sending email to notifiers %s", errorList)
+	}
 }
 
 func formatEmailSubjectwithDetails(subject string, data *formatSubject) (string, error) {
@@ -203,7 +204,7 @@ func retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailing
 	)
 }
 
-func (rg *complianceReportGeneratorImpl) Format(results map[string][]*resultRow) (*bytes.Buffer, error) {
+func format(results map[string][]*ResultRow) (*bytes.Buffer, error) {
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
 	for cluster, res := range results {
@@ -220,7 +221,7 @@ func (rg *complianceReportGeneratorImpl) Format(results map[string][]*resultRow)
 	return &zipBuf, nil
 }
 
-func createCSVInZip(zipWriter *zip.Writer, filename string, res []*resultRow) error {
+func createCSVInZip(zipWriter *zip.Writer, filename string, res []*ResultRow) error {
 	w, err := zipWriter.Create(filename)
 	if err != nil {
 		return err
