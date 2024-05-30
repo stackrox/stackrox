@@ -65,7 +65,7 @@ export default function usePlatformCves(
     >(cveListQuery, {
         variables: {
             query: getRegexScopedQueryString(querySearchFilter),
-            pagination: { ...getPaginationParams(page, perPage), sortOption },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 }

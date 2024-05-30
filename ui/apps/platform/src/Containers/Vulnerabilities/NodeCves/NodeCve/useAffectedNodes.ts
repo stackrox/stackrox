@@ -30,7 +30,7 @@ export default function useAffectedNodes(
     >(affectedNodesQuery, {
         variables: {
             query,
-            pagination: { ...getPaginationParams(page, perPage), sortOption },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 

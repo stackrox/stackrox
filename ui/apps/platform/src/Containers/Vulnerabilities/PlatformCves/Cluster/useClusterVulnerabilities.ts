@@ -42,7 +42,7 @@ export default function useClusterVulnerabilities(
         variables: {
             id,
             query,
-            pagination: { ...getPaginationParams(page, perPage), sortOption },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 }

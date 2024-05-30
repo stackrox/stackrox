@@ -47,7 +47,7 @@ export function getComplianceClusterStats(
 ): Promise<ListComplianceClusterOverallStatsResponse> {
     const queryParameters = {
         query: {
-            pagination: { ...getPaginationParams(page, perPage), sortOption },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     };
     const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
