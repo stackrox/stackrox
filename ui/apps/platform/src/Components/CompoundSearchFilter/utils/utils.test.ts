@@ -12,12 +12,12 @@ describe('utils', () => {
             const config: Partial<CompoundSearchFilterConfig> = {
                 Image: imageSearchFilterConfig,
                 Deployment: deploymentSearchFilterConfig,
-                ImageCVE: imageCVESearchFilterConfig,
+                'Image CVE': imageCVESearchFilterConfig,
             };
 
             const result = getEntities(config);
 
-            expect(result).toStrictEqual(['Image', 'Deployment', 'ImageCVE']);
+            expect(result).toStrictEqual(['Image', 'Deployment', 'Image CVE']);
         });
     });
 
@@ -26,10 +26,10 @@ describe('utils', () => {
             const config: Partial<CompoundSearchFilterConfig> = {
                 Image: imageSearchFilterConfig,
                 Deployment: deploymentSearchFilterConfig,
-                ImageCVE: imageCVESearchFilterConfig,
+                'Image CVE': imageCVESearchFilterConfig,
             };
 
-            const result = getEntityAttributes('ImageCVE', config);
+            const result = getEntityAttributes('Image CVE', config);
 
             expect(result).toStrictEqual([
                 {
@@ -68,7 +68,7 @@ describe('utils', () => {
             const config: Partial<CompoundSearchFilterConfig> = {
                 Image: imageSearchFilterConfig,
                 Deployment: deploymentSearchFilterConfig,
-                ImageCVE: imageCVESearchFilterConfig,
+                'Image CVE': imageCVESearchFilterConfig,
             };
 
             const result = getDefaultEntity(config);
@@ -96,10 +96,10 @@ describe('utils', () => {
             const config: Partial<CompoundSearchFilterConfig> = {
                 Image: imageSearchFilterConfig,
                 Deployment: deploymentSearchFilterConfig,
-                ImageCVE: imageCVESearchFilterConfig,
+                'Image CVE': imageCVESearchFilterConfig,
             };
 
-            const result = getDefaultAttribute('ImageCVE', config);
+            const result = getDefaultAttribute('Image CVE', config);
 
             expect(result).toStrictEqual('ID');
         });
