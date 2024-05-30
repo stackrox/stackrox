@@ -16,7 +16,7 @@ jobs:
   define-job-matrix:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -74,7 +74,7 @@ jobs:
         branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
@@ -108,7 +108,7 @@ jobs:
             ui/monorepo.lock
 
   pre-build-cli:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
@@ -146,7 +146,7 @@ jobs:
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: define-job-matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
@@ -205,7 +205,7 @@ jobs:
           path: go-binaries-build.tgz
 
   pre-build-docs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
@@ -240,7 +240,7 @@ jobs:
             image/rhel/docs
 
   build-and-push-main:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
       - define-job-matrix
       - pre-build-ui
@@ -408,7 +408,7 @@ jobs:
             push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
   push-main-manifests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
     - define-job-matrix
     - build-and-push-main
@@ -508,7 +508,7 @@ jobs:
         add_build_comment_to_pr
 
   build-and-push-operator:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
       env:
@@ -591,7 +591,7 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'scan-go-binaries')
     env:
       ARTIFACT_DIR: junit-reports/
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     needs:
@@ -649,7 +649,7 @@ jobs:
       - build-and-push-operator
       - push-main-manifests
     name: Check images for vulnerabilities
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
       id-token: write
@@ -723,7 +723,7 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'ci-test-github-action-slack-messages')
       )
     name: Post failure message to Slack
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
       - pre-build-ui
       - pre-build-cli

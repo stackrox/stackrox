@@ -18,7 +18,7 @@ jobs:
   check-generated-files:
     env:
       ARTIFACT_DIR: junit-reports/
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
@@ -44,7 +44,7 @@ jobs:
   misc-checks:
     env:
       ARTIFACT_DIR: junit-reports/
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
@@ -76,7 +76,7 @@ jobs:
       run: scripts/ci/jobs/policy-checks.sh
 
   style-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
@@ -109,7 +109,7 @@ jobs:
 
   golangci-lint:
     timeout-minutes: 240
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
@@ -158,7 +158,7 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'ci-test-github-action-slack-messages')
       )
     name: Post failure message to Slack
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
       - check-generated-files
       - misc-checks

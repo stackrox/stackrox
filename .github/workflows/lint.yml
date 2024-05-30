@@ -14,7 +14,7 @@ on:
 
 jobs:
   github-actions-lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
       - name: Download actionlint
@@ -26,14 +26,14 @@ jobs:
         shell: bash
 
   github-actions-shellcheck:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
       - name: Check scripts with shellcheck
         run: shellcheck -P SCRIPTDIR -x ./.github/workflows/scripts/*.sh
 
   openshift-ci-lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:

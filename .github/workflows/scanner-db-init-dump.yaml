@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-updater:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.69
     steps:
@@ -32,7 +32,7 @@ jobs:
   build-init-dump:
     needs:
       - build-updater
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     services:
       postgres:
         image: registry.redhat.io/rhel8/postgresql-15
@@ -105,7 +105,7 @@ jobs:
   upload-init-dump:
     needs:
       - build-init-dump
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2

@@ -17,7 +17,7 @@ jobs:
   define-scanner-job-matrix:
     outputs:
       matrix: ${{ steps.define-scanner-job-matrix.outputs.matrix }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
 
   build-and-push-scanner:
     needs: define-scanner-job-matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       # Supports three go binary and image builds:
@@ -131,7 +131,7 @@ jobs:
     needs:
     - define-scanner-job-matrix
     - build-and-push-scanner
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       # Supports three image builds:

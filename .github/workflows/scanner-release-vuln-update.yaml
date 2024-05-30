@@ -6,7 +6,7 @@ on:
 
 jobs:
   read-release-versions:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       matrix: ${{ steps.output-matrix.outputs.matrix }}
     steps:
@@ -25,7 +25,7 @@ jobs:
 
   upload-release-vulnerabilities:
     needs: read-release-versions
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
       volumes:
@@ -105,7 +105,7 @@ jobs:
     needs:
     - read-release-versions
     - upload-release-vulnerabilities
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: failure()
     steps:
     - name: Send Slack notification on workflow failure

@@ -10,7 +10,7 @@ on:
 
 jobs:
   build-updater:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: >
       github.event_name == 'schedule' ||
       (github.event_name == 'pull_request' &&
@@ -43,7 +43,7 @@ jobs:
   run-updater:
     needs:
       - build-updater
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       STACKROX_NVD_API_CALL_INTERVAL: 6s
@@ -81,7 +81,7 @@ jobs:
         if-no-files-found: error
 
   upload-vulnerabilities:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
       - run-updater
     steps:
@@ -137,7 +137,7 @@ jobs:
   send-notification:
     needs:
     - upload-vulnerabilities
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: failure()
     steps:
     - name: Send Slack notification on workflow failure
