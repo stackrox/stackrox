@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	types "github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/search"
@@ -69,6 +70,10 @@ var (
 		ClusterId:        testconsts.Cluster3,
 		LastExecutedTime: types.TimestampNow(),
 	}
+
+	scan1Time = protoconv.ConvertTimestampToTimeOrNow(scan1.LastExecutedTime)
+	scan2Time = protoconv.ConvertTimestampToTimeOrNow(scan2.LastExecutedTime)
+	scan3Time = protoconv.ConvertTimestampToTimeOrNow(scan3.LastExecutedTime)
 )
 
 func TestAuthz(t *testing.T) {
@@ -215,9 +220,9 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceOverallCluster
 				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
 
 				results := []*datastore.ResultStatusCountByCluster{
-					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1),
-					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster2),
-					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster3),
+					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1, nil),
+					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster2, nil),
+					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster3, nil),
 				}
 
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), search.EmptyQuery(), search.ClusterID)
@@ -241,7 +246,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceOverallCluster
 				countQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery()
 
 				results := []*datastore.ResultStatusCountByCluster{
-					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1),
+					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1, nil),
 				}
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ClusterID)
 				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
@@ -311,22 +316,15 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResultStatusCountByCluster{
-					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1),
-					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster2),
-					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster3),
+					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1, &scan1Time),
+					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster2, &scan2Time),
+					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster3, &scan3Time),
 				}
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ClusterID)
 				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster1).Return([]*storage.ComplianceIntegration{integration1}, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster2).Return([]*storage.ComplianceIntegration{integration2}, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster3).Return([]*storage.ComplianceIntegration{integration3}, nil).Times(1)
-
-				scanQuery1 := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "test-profile").AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery()
-				scanQuery2 := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "test-profile").AddExactMatches(search.ClusterID, fixtureconsts.Cluster2).ProtoQuery()
-				scanQuery3 := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "test-profile").AddExactMatches(search.ClusterID, fixtureconsts.Cluster3).ProtoQuery()
-				s.scanDS.EXPECT().SearchScans(gomock.Any(), scanQuery1).Return([]*storage.ComplianceOperatorScanV2{scan1}, nil).Times(1)
-				s.scanDS.EXPECT().SearchScans(gomock.Any(), scanQuery2).Return([]*storage.ComplianceOperatorScanV2{scan2}, nil).Times(1)
-				s.scanDS.EXPECT().SearchScans(gomock.Any(), scanQuery3).Return([]*storage.ComplianceOperatorScanV2{scan3}, nil).Times(1)
 			},
 		},
 		{
@@ -350,14 +348,11 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResultStatusCountByCluster{
-					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1),
+					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1, &scan1Time),
 				}
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ClusterID)
 				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster1).Return([]*storage.ComplianceIntegration{integration1}, nil).Times(1)
-
-				scanQuery1 := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "test-profile").AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery()
-				s.scanDS.EXPECT().SearchScans(gomock.Any(), scanQuery1).Return([]*storage.ComplianceOperatorScanV2{scan1}, nil).Times(1)
 			},
 		},
 		{

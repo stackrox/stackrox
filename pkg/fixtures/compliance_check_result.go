@@ -8,7 +8,7 @@ import (
 )
 
 // GetComplianceCheckResult returns a test compliance check result
-func GetComplianceCheckResult(name, clusterID, clusterName, scanName, scanConfigName string) *storage.ComplianceOperatorCheckResultV2 {
+func GetComplianceCheckResult(name, clusterID, clusterName, scanName, scanConfigName, scanRefID string) *storage.ComplianceOperatorCheckResultV2 {
 	return &storage.ComplianceOperatorCheckResultV2{
 		Id:             uuid.NewV4().String(),
 		CheckId:        name,
@@ -27,5 +27,6 @@ func GetComplianceCheckResult(name, clusterID, clusterName, scanName, scanConfig
 		ClusterName:    clusterName,
 		ScanConfigName: scanConfigName,
 		Rationale:      "test rationale " + name,
+		ScanRefId:      scanRefID,
 	}
 }
