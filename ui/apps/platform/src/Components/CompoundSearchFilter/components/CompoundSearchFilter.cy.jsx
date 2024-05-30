@@ -1,6 +1,7 @@
 import React from 'react';
 
 import ComponentTestProviders from 'test-utils/ComponentProviders';
+import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 import CompoundSearchFilter from './CompoundSearchFilter';
 import {
@@ -20,6 +21,16 @@ const selectors = {
     attributeSelectItem: (text) => `${selectors.attributeSelectItems} button:contains(${text})`,
 };
 
+const imageNameResponseMock = {
+    data: {
+        searchAutocomplete: [
+            'docker.io/library/centos:7',
+            'docker.io/library/centos:8',
+            'quay.io/centos:7',
+        ],
+    },
+};
+
 function Wrapper({ config }) {
     return (
         <div className="pf-v5-u-p-md">
@@ -34,6 +45,25 @@ function setup(config) {
             <Wrapper config={config} />
         </ComponentTestProviders>
     );
+}
+
+function mockAutocompleteResponse() {
+    cy.intercept('POST', graphqlUrl('autocomplete'), (req) => {
+        const query = req?.body?.variables?.query || '';
+        const filterValue = query.includes(':') ? query.split(':')[1].replace('r/', '') : '';
+
+        const response = {
+            data: {
+                searchAutocomplete: filterValue
+                    ? imageNameResponseMock.data.searchAutocomplete.filter((value) =>
+                          value.includes(filterValue)
+                      )
+                    : imageNameResponseMock.data.searchAutocomplete,
+            },
+        };
+
+        req.reply(response);
+    }).as('autocomplete');
 }
 
 describe(Cypress.spec.relative, () => {
@@ -266,5 +296,47 @@ describe(Cypress.spec.relative, () => {
         cy.get('button[aria-label="Condition value minus button"]').click();
         cy.get('button[aria-label="Condition value minus button"]').should('be.disabled');
         cy.get('input[aria-label="Condition value input"]').should('have.value', '0');
+    });
+
+    it('should display the autocomplete input for the image name filter', () => {
+        mockAutocompleteResponse();
+
+        const config = {
+            Image: imageSearchFilterConfig,
+        };
+
+        const autocompleteMenuToggle =
+            'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Menu toggle"]';
+        const autocompleteMenuItems = 'div[aria-label="Filter results select menu"] ul li';
+        const autocompleteInput = 'input[aria-label="Filter results by image name"]';
+        const autocompleteClearInputButton =
+            'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Clear input value"]';
+
+        setup(config);
+
+        cy.get(autocompleteMenuToggle).click();
+
+        cy.wait('@autocomplete');
+
+        cy.get(autocompleteMenuItems).should('have.length', 3);
+        cy.get(autocompleteMenuItems).eq(0).should('have.text', 'docker.io/library/centos:7');
+        cy.get(autocompleteMenuItems).eq(1).should('have.text', 'docker.io/library/centos:8');
+        cy.get(autocompleteMenuItems).eq(2).should('have.text', 'quay.io/centos:7');
+
+        cy.get(autocompleteMenuItems).eq(0).click();
+
+        cy.get(autocompleteInput).should('have.value', 'docker.io/library/centos:7');
+
+        cy.get(autocompleteClearInputButton).click();
+
+        cy.get(autocompleteInput).should('have.value', '');
+
+        cy.get(autocompleteInput).type('docker.io');
+
+        cy.wait('@autocomplete');
+
+        cy.get(autocompleteMenuItems).should('have.length', 2);
+        cy.get(autocompleteMenuItems).eq(0).should('have.text', 'docker.io/library/centos:7');
+        cy.get(autocompleteMenuItems).eq(1).should('have.text', 'docker.io/library/centos:8');
     });
 });

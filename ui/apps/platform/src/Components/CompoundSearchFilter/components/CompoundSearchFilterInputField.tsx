@@ -12,6 +12,7 @@ import { ensureConditionNumber, ensureString, ensureStringArray } from '../utils
 
 import CheckboxSelect from './CheckboxSelect';
 import ConditionNumber from './ConditionNumber';
+import SearchFilterAutocomplete from './SearchFilterAutocomplete';
 
 export type InputFieldValue =
     | string
@@ -48,8 +49,8 @@ function CompoundSearchFilterInputField({
         return null;
     }
 
-    const attributeObject: SearchFilterAttribute =
-        config[selectedEntity]?.attributes[selectedAttribute];
+    const entityObject = config[selectedEntity];
+    const attributeObject: SearchFilterAttribute = entityObject?.attributes[selectedAttribute];
 
     if (!attributeObject) {
         return null;
@@ -92,6 +93,26 @@ function CompoundSearchFilterInputField({
                     onChange(newValue);
                     onSearch(newValue);
                 }}
+            />
+        );
+    }
+    if (entityObject && attributeObject.inputType === 'autocomplete') {
+        const { searchCategory } = entityObject;
+        const { searchTerm, filterChipLabel } = attributeObject;
+        const textLabel = `Filter results by ${filterChipLabel.toLowerCase()}`;
+        return (
+            <SearchFilterAutocomplete
+                searchCategory={searchCategory}
+                searchTerm={searchTerm}
+                value={ensureString(value)}
+                onChange={(newValue) => {
+                    onChange(newValue);
+                }}
+                onSearch={(newValue) => {
+                    onChange(newValue);
+                    onSearch(newValue);
+                }}
+                textLabel={textLabel}
             />
         );
     }
