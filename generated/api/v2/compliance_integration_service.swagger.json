@@ -228,6 +228,30 @@
       "default": "HEALTHY",
       "title": "Represents the status of compliance operator"
     },
+    "v2ClusterPlatformType": {
+      "type": "string",
+      "enum": [
+        "GENERIC_CLUSTER",
+        "KUBERNETES_CLUSTER",
+        "OPENSHIFT_CLUSTER",
+        "OPENSHIFT4_CLUSTER"
+      ],
+      "default": "GENERIC_CLUSTER"
+    },
+    "v2ClusterProviderType": {
+      "type": "string",
+      "enum": [
+        "UNSPECIFIED",
+        "AKS",
+        "ARO",
+        "EKS",
+        "GKE",
+        "OCP",
+        "OSD",
+        "ROSA"
+      ],
+      "default": "UNSPECIFIED"
+    },
     "v2ComplianceIntegration": {
       "type": "object",
       "properties": {
@@ -258,9 +282,15 @@
         },
         "status": {
           "$ref": "#/definitions/v2COStatus"
+        },
+        "clusterPlatformType": {
+          "$ref": "#/definitions/v2ClusterPlatformType"
+        },
+        "clusterProviderType": {
+          "$ref": "#/definitions/v2ClusterProviderType"
         }
       },
-      "title": "Next Tag: 9"
+      "title": "Next Tag: 11"
     },
     "v2CountComplianceIntegrationsResponse": {
       "type": "object",

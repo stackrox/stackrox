@@ -7,10 +7,10 @@ import (
 	"github.com/pkg/errors"
 	checkResultSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
+	complianceUtils "github.com/stackrox/rox/central/complianceoperator/v2/utils"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -72,7 +72,7 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceCheckResultStats")
 
 	var err error
-	query, err = withSACFilter(ctx, resources.Compliance, query)
+	query, err = complianceUtils.WithSACFilter(ctx, resources.Compliance, query)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query 
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceProfileResultStats")
 
 	var err error
-	query, err = withSACFilter(ctx, resources.Compliance, query)
+	query, err = complianceUtils.WithSACFilter(ctx, resources.Compliance, query)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceProfileResultStats")
 
 	var err error
-	query, err = withSACFilter(ctx, resources.Compliance, query)
+	query, err = complianceUtils.WithSACFilter(ctx, resources.Compliance, query)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +217,7 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceClusterStats")
 
 	var err error
-	query, err = withSACFilter(ctx, resources.Compliance, query)
+	query, err = complianceUtils.WithSACFilter(ctx, resources.Compliance, query)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 // CountByField retrieves the distinct scan result counts specified by query based on specified search field
 func (d *datastoreImpl) CountByField(ctx context.Context, query *v1.Query, field search.FieldLabel) (int, error) {
 	var err error
-	query, err = withSACFilter(ctx, resources.Compliance, query)
+	query, err = complianceUtils.WithSACFilter(ctx, resources.Compliance, query)
 	if err != nil {
 		return 0, err
 	}
@@ -433,12 +433,4 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 			).Proto(),
 	)
 	return cloned
-}
-
-func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetadata, query *v1.Query) (*v1.Query, error) {
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return nil, err
-	}
-	return search.FilterQueryByQuery(query, sacQueryFilter), nil
 }
