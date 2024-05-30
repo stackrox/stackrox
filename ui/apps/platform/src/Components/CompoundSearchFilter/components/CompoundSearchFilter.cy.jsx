@@ -31,18 +31,18 @@ const imageNameResponseMock = {
     },
 };
 
-function Wrapper({ config }) {
+function Wrapper({ config, onSearch }) {
     return (
         <div className="pf-v5-u-p-md">
-            <CompoundSearchFilter config={config} />
+            <CompoundSearchFilter config={config} onSearch={onSearch} />
         </div>
     );
 }
 
-function setup(config) {
+function setup(config, onSearch) {
     cy.mount(
         <ComponentTestProviders>
-            <Wrapper config={config} />
+            <Wrapper config={config} onSearch={onSearch} />
         </ComponentTestProviders>
     );
 }
@@ -70,7 +70,7 @@ describe(Cypress.spec.relative, () => {
     it('should display nothing in the entity selector', () => {
         const config = {};
 
-        setup(config);
+        setup(config, () => {});
 
         cy.get(selectors.entitySelectToggle).should('not.exist');
     });
@@ -80,7 +80,7 @@ describe(Cypress.spec.relative, () => {
             Image: imageSearchFilterConfig,
         };
 
-        setup(config);
+        setup(config, () => {});
 
         cy.get(selectors.entitySelectToggle).should('contain.text', 'Image');
 
@@ -96,7 +96,7 @@ describe(Cypress.spec.relative, () => {
             Deployment: deploymentSearchFilterConfig,
         };
 
-        setup(config);
+        setup(config, () => {});
 
         cy.get(selectors.entitySelectToggle).should('contain.text', 'Image');
 
@@ -114,7 +114,7 @@ describe(Cypress.spec.relative, () => {
             Cluster: clusterSearchFilterConfig,
         };
 
-        setup(config);
+        setup(config, () => {});
 
         cy.get(selectors.entitySelectToggle).should('contain.text', 'Image');
 
@@ -132,7 +132,7 @@ describe(Cypress.spec.relative, () => {
             Deployment: deploymentSearchFilterConfig,
         };
 
-        setup(config);
+        setup(config, () => {});
 
         cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
 
@@ -155,7 +155,7 @@ describe(Cypress.spec.relative, () => {
             Deployment: deploymentSearchFilterConfig,
         };
 
-        setup(config);
+        setup(config, () => {});
 
         cy.get(selectors.entitySelectToggle).click();
         cy.get(selectors.entitySelectItem('Deployment')).click();
@@ -170,13 +170,13 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.attributeSelectItems).eq(2).should('have.text', 'Annotation');
     });
 
-    it('should display the text input for the image tag search filter', () => {
+    it('should display text input and correctly search for image tags', () => {
         const config = {
             Image: imageSearchFilterConfig,
             NodeComponent: nodeComponentSearchFilterConfig,
         };
 
-        setup(config);
+        setup(config, () => {});
 
         cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
 
@@ -192,7 +192,7 @@ describe(Cypress.spec.relative, () => {
             ImageComponent: imageComponentSearchFilterConfig,
         };
 
-        setup(config);
+        setup(config, () => {});
 
         cy.get(selectors.entitySelectToggle).click();
         cy.get(selectors.entitySelectItem('Image Component')).click();
@@ -222,7 +222,7 @@ describe(Cypress.spec.relative, () => {
             Image: imageSearchFilterConfig,
         };
 
-        setup(config);
+        setup(config, () => {});
 
         cy.get(selectors.attributeSelectToggle).click();
         cy.get(selectors.attributeSelectItem('Created Time')).click();
@@ -253,7 +253,7 @@ describe(Cypress.spec.relative, () => {
             Image: imageSearchFilterConfig,
         };
 
-        setup(config);
+        setup(config, () => {});
 
         cy.get(selectors.attributeSelectToggle).click();
         cy.get(selectors.attributeSelectItem('CVSS')).click();
@@ -312,7 +312,7 @@ describe(Cypress.spec.relative, () => {
         const autocompleteClearInputButton =
             'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Clear input value"]';
 
-        setup(config);
+        setup(config, () => {});
 
         cy.get(autocompleteMenuToggle).click();
 
