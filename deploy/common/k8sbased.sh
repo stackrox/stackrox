@@ -746,7 +746,7 @@ function launch_sensor {
         helm_chart="${SENSOR_CHART_DIR_OVERRIDE}"
       fi
 
-      if [[ -n "${FORCE_COLLECTION_METHOD:-false}" == "true" ]]; then
+      if [[ "${FORCE_COLLECTION_METHOD:-false}" == "true" ]]; then
 	echo "Forcing collection method"
 	extra_helm_config+=(--set "collector.forceCollectionMethod=true")
       fi
