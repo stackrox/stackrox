@@ -47,7 +47,7 @@ message ComplianceOperatorProfileV2 {
   string name = 3; // @gotags: search:"Compliance Profile Name,hidden"
   string profile_version = 4; // @gotags: search:"Compliance Profile Version,hidden"
   string product_type = 5; // @gotags: search:"Compliance Profile Product Type,hidden"
-  string standard = 6; // @gotags: search:"Compliance Standard,hidden"
+  string standards = 6; // @gotags: search:"Compliance Standard,hidden"
   map<string, string> labels = 7;
   map<string, string> annotations = 8;
   string description = 9;

@@ -64,7 +64,10 @@ func (s *complianceBenchmarkDataStoreSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 
-	s.db = pgtest.ForT(s.T())
+	s.T().Setenv("USER", "postgres")
+	s.T().Setenv("POSTGRES_PASSWORD", "password")
+
+	s.db = pgtest.ForTCustomDB(s.T(), "central")
 	s.storage = benchmarkStorage.New(s.db)
 	s.datastore = New(s.storage)
 }
@@ -166,6 +169,16 @@ func (s *complianceBenchmarkDataStoreSuite) TestGetBenchmark() {
 	_, found, err = s.datastore.GetBenchmark(s.hasReadCtx, uuidNonExisting)
 	s.Require().NoError(err)
 	s.Require().False(found)
+}
+
+func (s *complianceBenchmarkDataStoreSuite) TestGetBenchmarksByProfileName() {
+	benchmark := getTestBenchmark(uuidStub1, "OpenShift CIS", "1.0", 1)
+	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, benchmark))
+
+	benchmarks, err := s.datastore.GetBenchmarksByProfileName(s.hasReadCtx, benchmark.GetProfiles()[0].GetProfileName())
+	s.Require().NoError(err)
+	s.Require().Len(benchmarks, 1)
+	s.Assert().Equal("OpenShift CIS", benchmarks[0].Name)
 }
 
 func getTestBenchmark(id string, name string, version string, profileCount int) *storage.ComplianceOperatorBenchmarkV2 {
