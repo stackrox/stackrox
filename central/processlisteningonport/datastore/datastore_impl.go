@@ -33,7 +33,7 @@ type datastoreImpl struct {
 
 var (
 	plopSAC = sac.ForResource(resources.DeploymentExtension)
-	log      = logging.LoggerForModule()
+	log     = logging.LoggerForModule()
 )
 
 func newDatastoreImpl(
