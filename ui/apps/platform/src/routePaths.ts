@@ -5,8 +5,8 @@
 import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/entityTypes';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
-import { FeatureFlagEnvVar } from 'types/featureFlag';
 import { ResourceName } from 'types/roleResources';
+import { FeatureFlagPredicate, allEnabled } from 'utils/featureFlagUtils';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -77,23 +77,6 @@ export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 // Vulnerability Management 1.0 path for links from Dashboard:
 
 export const vulnManagementImagesPath = `${vulnManagementPath}/images`;
-
-// Given an array of feature flags, higher-order functions return true or false based on
-// whether all feature flags are enabled or disabled
-
-type FeatureFlagPredicate = (isFeatureFlagEnabled: IsFeatureFlagEnabled) => boolean;
-
-export function allEnabled(featureFlags: FeatureFlagEnvVar[]): FeatureFlagPredicate {
-    return (isFeatureFlagEnabled: IsFeatureFlagEnabled): boolean => {
-        return featureFlags.every((featureFlag) => isFeatureFlagEnabled(featureFlag));
-    };
-}
-
-export function allDisabled(featureFlags: FeatureFlagEnvVar[]): FeatureFlagPredicate {
-    return (isFeatureFlagEnabled: IsFeatureFlagEnabled): boolean => {
-        return featureFlags.every((featureFlag) => !isFeatureFlagEnabled(featureFlag));
-    };
-}
 
 // Compose resourceAccessRequirements from resource names and predicates.
 
