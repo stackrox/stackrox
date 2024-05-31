@@ -82,6 +82,7 @@ choose_cluster_version() {
 
 create_cluster() {
     info "Creating a GKE cluster"
+    date -u +"%Y-%m-%dT%H:%M:%SZ" > /tmp/GKE_CLUSTER_REQUESTED_TIMESTAMP
 
     ensure_CI
 
@@ -219,8 +220,6 @@ create_cluster() {
         info "Cluster creation failed"
         return 1
     fi
-
-    date -u +"%Y-%m-%dT%H:%M:%SZ" > /tmp/GKE_CLUSTER_CREATED_TIMESTAMP
 
     add_a_maintenance_exclusion
 }
@@ -364,7 +363,7 @@ create_log_explorer_links() {
 HEAD
 
     local start_ts
-    start_ts="$(cat /tmp/GKE_CLUSTER_CREATED_TIMESTAMP)"
+    start_ts="$(cat /tmp/GKE_CLUSTER_REQUESTED_TIMESTAMP)"
     local end_ts
     end_ts="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     local project
