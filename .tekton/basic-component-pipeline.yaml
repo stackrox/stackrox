@@ -356,14 +356,22 @@ spec:
       operator: in
       values: [ "false" ]
 
-  - name: roxctl-image-scan
+  - name: acs-image-scan
     params:
     - name: image
       value: $(tasks.build-container.results.IMAGE_URL)@$(tasks.build-container.results.IMAGE_DIGEST)
+    - name: rox_central_endpoint
+      value: https://acs-cii18grublkv81uil8gg.acs.rhcloud.com
+    - name: rox_token_file
+      value: /rox-api-token-auth/rox_api_token
     - name: output_format
       value: table
     - name: rox_image
-      value: quay.io/stackrox-io/roxctl:4.4.2
+      value: quay.io/rhacs-eng/roxctl:4.4.2
+    workspaces:
+    - name: rox-api-token-auth
+      secret:
+        secretName: rox-api-token
     runAfter:
     - build-container
     taskRef:
@@ -372,7 +380,7 @@ spec:
       - name: name
         value: rhacs-image-scan
       - name: bundle
-        value: gcr.io/tekton-releases/catalog/upstream/rhacs-image-scan@sha256:6be52f9e623e3fecbf2d2b542ac59cc9c6993311306e78651aba98f4e520aa6c
+        value: gcr.io/tekton-releases/catalog/upstream/tasks/rhacs-image-scan@sha256:ba0464bb6ba62024b122599ac2630a1dfc141df0969440361e43b3f11f06a7aa
       - name: kind
         value: task
       resolver: bundles
