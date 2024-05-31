@@ -6,6 +6,7 @@ import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
+import useURLSort from 'hooks/useURLSort';
 import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
 import { getComplianceProfileCheckStats } from 'services/ComplianceResultsStatsService';
 import { getComplianceProfileCheckResult } from 'services/ComplianceResultsService';
@@ -33,8 +34,12 @@ function CheckDetails() {
     const { checkName, profileName } = useParams();
     const [currentDatetime, setCurrentDatetime] = useState(new Date());
     const pagination = useURLPagination(10);
-
-    const { page, perPage } = pagination;
+    const { page, perPage, setPage } = pagination;
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields: ['Cluster'],
+        defaultSortOption: { field: 'Cluster', direction: 'asc' },
+        onSort: () => setPage(1),
+    });
 
     const fetchCheckStats = useCallback(
         () => getComplianceProfileCheckStats(profileName, checkName),
@@ -47,8 +52,8 @@ function CheckDetails() {
     } = useRestQuery(fetchCheckStats);
 
     const fetchCheckResults = useCallback(
-        () => getComplianceProfileCheckResult(profileName, checkName, page, perPage),
-        [page, perPage, checkName, profileName]
+        () => getComplianceProfileCheckResult(profileName, checkName, sortOption, page, perPage),
+        [page, perPage, checkName, profileName, sortOption]
     );
     const {
         data: checkResultsResponse,
@@ -123,6 +128,7 @@ function CheckDetails() {
                     pagination={pagination}
                     profileName={profileName}
                     tableState={tableState}
+                    getSortParams={getSortParams}
                 />
             </PageSection>
         </>

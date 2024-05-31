@@ -124,10 +124,7 @@ function NamespaceViewPage() {
                 ...searchFilter,
                 ...defaultSearchFilters,
             }),
-            pagination: {
-                ...getPaginationParams(page, perPage),
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
         pollInterval,
     });

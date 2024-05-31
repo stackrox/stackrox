@@ -1,7 +1,7 @@
 /* eslint-disable react/jsx-no-comment-textnodes */
 // eslint-disable @typescript-eslint/ban-ts-comment
 import React, { useState } from 'react';
-import { Card, CardBody, CardHeader, CardTitle, Pagination } from '@patternfly/react-core';
+import { Flex, FlexItem, Pagination, Title } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, ThProps, Thead, Tr } from '@patternfly/react-table';
 
 import { ClusterScanStatus } from 'services/ComplianceScanConfigurationService';
@@ -10,9 +10,13 @@ import ComplianceClusterStatus from './ComplianceClusterStatus';
 
 type ScanConfigClustersTableProps = {
     clusterScanStatuses: ClusterScanStatus[];
+    headingLevel: 'h2' | 'h3';
 };
 
-function ScanConfigClustersTable({ clusterScanStatuses }: ScanConfigClustersTableProps) {
+function ScanConfigClustersTable({
+    clusterScanStatuses,
+    headingLevel,
+}: ScanConfigClustersTableProps) {
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(20);
 
@@ -92,51 +96,42 @@ function ScanConfigClustersTable({ clusterScanStatuses }: ScanConfigClustersTabl
     const clustersWindow = sortedClusters.slice(startNumber, endNumber);
 
     return (
-        <Card>
-            <CardHeader
-                actions={{
-                    actions: (
-                        <>
-                            <Pagination
-                                itemCount={clusterScanStatuses.length}
-                                page={page}
-                                onSetPage={onSetPage}
-                                perPage={perPage}
-                                onPerPageSelect={onPerPageSelect}
-                            />
-                        </>
-                    ),
-                    hasNoOffset: false,
-                    className: undefined,
-                }}
-            >
-                <CardTitle component="h2">Clusters</CardTitle>
-            </CardHeader>
-            <CardBody>
-                <Table borders={false}>
-                    <Thead noWrap>
-                        <Tr>
-                            <Th sort={getSortParams(0)}>Cluster</Th>
-                            <Th sort={getSortParams(1)} width={20}>
-                                Operator status
-                            </Th>
-                        </Tr>
-                    </Thead>
-                    <Tbody>
-                        {clustersWindow.map((cluster) => {
-                            return (
-                                <Tr key={cluster.clusterId}>
-                                    <Td dataLabel="Cluster">{cluster.clusterName}</Td>
-                                    <Td dataLabel="Operator status">
-                                        <ComplianceClusterStatus errors={cluster.errors} />
-                                    </Td>
-                                </Tr>
-                            );
-                        })}
-                    </Tbody>
-                </Table>
-            </CardBody>
-        </Card>
+        <Flex>
+            <Flex grow={{ default: 'grow' }}>
+                <Title headingLevel={headingLevel}>Clusters</Title>
+                <FlexItem align={{ default: 'alignRight' }}>
+                    <Pagination
+                        itemCount={clusterScanStatuses.length}
+                        page={page}
+                        onSetPage={onSetPage}
+                        perPage={perPage}
+                        onPerPageSelect={onPerPageSelect}
+                    />
+                </FlexItem>
+            </Flex>
+            <Table variant="compact" borders={false}>
+                <Thead noWrap>
+                    <Tr>
+                        <Th sort={getSortParams(0)}>Cluster</Th>
+                        <Th sort={getSortParams(1)} width={20}>
+                            Operator status
+                        </Th>
+                    </Tr>
+                </Thead>
+                <Tbody>
+                    {clustersWindow.map((cluster) => {
+                        return (
+                            <Tr key={cluster.clusterId}>
+                                <Td dataLabel="Cluster">{cluster.clusterName}</Td>
+                                <Td dataLabel="Operator status">
+                                    <ComplianceClusterStatus errors={cluster.errors} />
+                                </Td>
+                            </Tr>
+                        );
+                    })}
+                </Tbody>
+            </Table>
+        </Flex>
     );
 }
 

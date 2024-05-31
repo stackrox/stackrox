@@ -14,6 +14,7 @@ import {
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getUrlQueryStringForSearchFilter, getHasSearchApplied } from 'utils/searchUtils';
 
@@ -21,7 +22,7 @@ import BySeveritySummaryCard from 'Containers/Vulnerabilities/components/BySever
 import CvesByStatusSummaryCard from 'Containers/Vulnerabilities/WorkloadCves/SummaryCards/CvesByStatusSummaryCard';
 import { getHiddenSeverities, getHiddenStatuses } from '../../utils/searchUtils';
 
-import CVEsTable from './CVEsTable';
+import CVEsTable, { sortFields, defaultSortOption } from './CVEsTable';
 import useNodeVulnerabilities from './useNodeVulnerabilities';
 import useNodeSummaryData from './useNodeSummaryData';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
@@ -39,10 +40,20 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
     const query = getUrlQueryStringForSearchFilter(querySearchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+    });
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
 
-    const { data, loading, error } = useNodeVulnerabilities(nodeId, query, page, perPage);
+    const { data, loading, error } = useNodeVulnerabilities({
+        nodeId,
+        query,
+        page,
+        perPage,
+        sortOption,
+    });
     const summaryRequest = useNodeSummaryData(nodeId, query);
 
     const nodeCount = data?.node?.nodeVulnerabilityCount ?? 0;
@@ -108,15 +119,15 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                                 page={page}
                                 onSetPage={(_, newPage) => setPage(newPage)}
                                 onPerPageSelect={(_, newPerPage) => {
-                                    if (nodeCount < (page - 1) * newPerPage) {
-                                        setPage(1);
-                                    }
                                     setPerPage(newPerPage);
+                                    if (nodeCount < (page - 1) * newPerPage) {
+                                        setPage(1, 'replace');
+                                    }
                                 }}
                             />
                         </SplitItem>
                     </Split>
-                    <CVEsTable tableState={tableState} />
+                    <CVEsTable tableState={tableState} getSortParams={getSortParams} />
                 </div>
             </PageSection>
         </>

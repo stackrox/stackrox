@@ -71,7 +71,7 @@ export default function useNodeCves(
     >(cvesListQuery, {
         variables: {
             query: getRegexScopedQueryString(querySearchFilter),
-            pagination: { ...getPaginationParams(page, perPage), sortOption },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 }

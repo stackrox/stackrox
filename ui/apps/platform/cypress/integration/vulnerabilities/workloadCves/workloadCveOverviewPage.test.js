@@ -84,10 +84,7 @@ describe('Workload CVE overview page tests', () => {
 
     describe('Images without CVEs view tests', () => {
         beforeEach(function () {
-            if (
-                !hasFeatureFlag('ROX_VULN_MGMT_NO_CVES_VIEW') ||
-                !hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
-            ) {
+            if (!hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
                 this.skip();
             }
         });

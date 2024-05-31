@@ -8,13 +8,17 @@ import {
     BreadcrumbItem,
     Bullseye,
     Button,
+    Card,
+    CardBody,
+    DescriptionListDescription,
+    DescriptionListGroup,
+    DescriptionListTerm,
     Divider,
-    Grid,
-    GridItem,
     Flex,
     FlexItem,
     PageSection,
     Spinner,
+    Timestamp,
     Title,
 } from '@patternfly/react-core';
 
@@ -22,7 +26,9 @@ import { complianceEnhancedSchedulesPath } from 'routePaths';
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import LinkShim from 'Components/PatternFly/LinkShim';
+import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 import useAlert from 'hooks/useAlert';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import {
     runComplianceScanConfiguration,
     ComplianceScanConfigurationStatus,
@@ -30,9 +36,12 @@ import {
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
-import ScanConfigParameterView from './components/ScanConfigParameterView';
-import ScanConfigProfiles from './components/ScanConfigProfiles';
+import { customBodyDefault, getSubjectDefault } from './compliance.scanConfigs.utils';
+import ScanConfigParametersView from './components/ScanConfigParametersView';
+import ScanConfigProfilesView from './components/ScanConfigProfilesView';
 import ScanConfigClustersTable from './components/ScanConfigClustersTable';
+
+const headingLevel = 'h2';
 
 type ViewScanConfigDetailProps = {
     hasWriteAccessForCompliance: boolean;
@@ -49,6 +58,9 @@ function ViewScanConfigDetail({
 }: ViewScanConfigDetailProps): React.ReactElement {
     const [isTriggeringRescan, setIsTriggeringRescan] = useState(false);
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
 
     function onTriggerRescan() {
         if (scanConfig?.id) {
@@ -160,19 +172,65 @@ function ViewScanConfigDetail({
                     )
                 )}
                 {!isLoading && scanConfig && (
-                    <Grid hasGutter>
-                        <GridItem sm={12} md={6}>
-                            <ScanConfigParameterView scanConfig={scanConfig} />
-                        </GridItem>
-                        <GridItem sm={12} md={6}>
-                            <ScanConfigProfiles profiles={scanConfig.scanConfig.profiles} />
-                        </GridItem>
-                        <GridItem sm={12}>
-                            <ScanConfigClustersTable
-                                clusterScanStatuses={scanConfig.clusterStatus}
-                            />
-                        </GridItem>
-                    </Grid>
+                    <Card>
+                        <CardBody>
+                            <Flex
+                                direction={{ default: 'column' }}
+                                spaceItems={{ default: 'spaceItemsLg' }}
+                            >
+                                <ScanConfigParametersView
+                                    headingLevel={headingLevel}
+                                    scanName={scanConfig.scanName}
+                                    description={scanConfig.scanConfig.description}
+                                    scanSchedule={scanConfig.scanConfig.scanSchedule}
+                                >
+                                    <DescriptionListGroup>
+                                        <DescriptionListTerm>Last run</DescriptionListTerm>
+                                        <DescriptionListDescription>
+                                            {scanConfig.lastExecutedTime ? (
+                                                <Timestamp
+                                                    date={new Date(scanConfig.lastExecutedTime)}
+                                                    dateFormat="short"
+                                                    timeFormat="long"
+                                                    className="pf-v5-u-color-100 pf-v5-u-font-size-md"
+                                                />
+                                            ) : (
+                                                'Scan is in progress'
+                                            )}
+                                        </DescriptionListDescription>
+                                    </DescriptionListGroup>
+                                    <DescriptionListGroup>
+                                        <DescriptionListTerm>Last updated</DescriptionListTerm>
+                                        <DescriptionListDescription>
+                                            <Timestamp
+                                                date={new Date(scanConfig.lastUpdatedTime)}
+                                                dateFormat="short"
+                                                timeFormat="long"
+                                                className="pf-v5-u-color-100 pf-v5-u-font-size-md"
+                                            />
+                                        </DescriptionListDescription>
+                                    </DescriptionListGroup>
+                                </ScanConfigParametersView>
+                                <ScanConfigClustersTable
+                                    headingLevel={headingLevel}
+                                    clusterScanStatuses={scanConfig.clusterStatus}
+                                />
+                                <ScanConfigProfilesView
+                                    headingLevel={headingLevel}
+                                    profiles={scanConfig.scanConfig.profiles}
+                                />
+                                {isComplianceReportingEnabled && (
+                                    <NotifierConfigurationView
+                                        customBodyDefault={customBodyDefault}
+                                        customSubjectDefault={getSubjectDefault(
+                                            scanConfig.scanName
+                                        )}
+                                        notifierConfigurations={scanConfig.scanConfig.notifiers}
+                                    />
+                                )}
+                            </Flex>
+                        </CardBody>
+                    </Card>
                 )}
             </PageSection>
         </>
