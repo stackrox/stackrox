@@ -127,7 +127,7 @@ function ScanConfigsTablePage({
 
     const renderTableContent = () => {
         return scanSchedules?.map((scanSchedule) => {
-            const { id, scanName, scanConfig, lastUpdatedTime, clusterStatus } = scanSchedule;
+            const { id, scanName, scanConfig, lastExecutedTime, clusterStatus } = scanSchedule;
             const scanConfigUrl = generatePath(scanConfigDetailsPath, {
                 scanConfigId: id,
             });
@@ -156,18 +156,24 @@ function ScanConfigsTablePage({
 
             return (
                 <Tr key={id}>
-                    <Td>
+                    <Td dataLabel="Name">
                         <Link to={scanConfigUrl}>{scanName}</Link>
                     </Td>
-                    <Td>{formatScanSchedule(scanConfig.scanSchedule)}</Td>
-                    <Td>{format(lastUpdatedTime, 'DD MMM YYYY, h:mm:ss A')}</Td>
-                    <Td>
+                    <Td dataLabel="Schedule">{formatScanSchedule(scanConfig.scanSchedule)}</Td>
+                    <Td dataLabel="Last run">
+                        {lastExecutedTime
+                            ? format(lastExecutedTime, 'DD MMM YYYY, h:mm:ss A')
+                            : 'Scanning now'}
+                    </Td>
+                    <Td dataLabel="Clusters">
                         {displayOnlyItemOrItemCount(
                             clusterStatus.map((cluster) => cluster.clusterName),
                             'clusters'
                         )}
                     </Td>
-                    <Td>{displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}</Td>
+                    <Td dataLabel="Profiles">
+                        {displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}
+                    </Td>
                     <Td isActionCell>
                         <ActionsColumn
                             // menuAppendTo={() => document.body}
