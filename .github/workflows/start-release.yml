@@ -152,10 +152,14 @@ jobs:
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
           git switch --create "${{needs.variables.outputs.branch}}"
-          git commit --allow-empty --message \
-            "Initial commit to release branch ${{needs.variables.outputs.release}}"
+          # Tagging the branching point so that the commits on the main branch
+          # be correctly described.
           git tag --annotate --message "Upstream automation" \
-            "${{needs.variables.outputs.release}}.0-rc.0" HEAD
+            "${{needs.variables.outputs.release}}.x" HEAD
+
+          # TODO: tag the first commit on the release branch with the current
+          #       release version when main branch versioning is changed to
+          #       'next.version-dev'.
       - name: Switch to existing ${{needs.variables.outputs.branch}} branch
         if: steps.check-existing.outputs.branch-exists == 'true'
         run: |
@@ -170,21 +174,10 @@ jobs:
             git commit --message "Changelog for ${{inputs.version}}"
             echo "\`CHANGELOG.md\` has been updated on the release branch." >> "$GITHUB_STEP_SUMMARY"
           fi
-      - name: Tag master for next release
-        if: steps.check-existing.outputs.branch-exists == 'false'
-        run: |
-          git switch master
-          git commit --allow-empty --message \
-            "Bumping release tag to ${{needs.variables.outputs.next-release}}"
-          git tag --annotate --message "Upstream automation" \
-            "${{needs.variables.outputs.next-release}}" HEAD
       - name: Push changes
         if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
         run: |
-          git switch "${{needs.variables.outputs.branch}}"
           git push --follow-tags --set-upstream origin "${{needs.variables.outputs.branch}}"
-          git switch master
-          git push --follow-tags
       - name: Push changes
         if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'true'
         run: |
