@@ -6,7 +6,7 @@ import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/e
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { ResourceName } from 'types/roleResources';
-import { FeatureFlagPredicate, allEnabled, allDisabled } from 'utils/featureFlagUtils';
+import { FeatureFlagPredicate, allEnabled } from 'utils/featureFlagUtils';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
