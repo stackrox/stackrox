@@ -20,6 +20,12 @@ var (
 	}
 )
 
+// convertFunction signature of the convert functions
+type convertFunction func(string, *central.ApplyComplianceScanConfigRequest_BaseScanSettings, string) runtime.Object
+
+// updateFunction signature of the update functions
+type updateFunction func(*unstructured.Unstructured, *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error)
+
 type scanNameGetter interface {
 	GetScanName() string
 }
