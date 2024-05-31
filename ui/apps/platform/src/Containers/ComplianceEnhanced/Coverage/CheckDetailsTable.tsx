@@ -14,6 +14,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import IconText from 'Components/PatternFly/IconText/IconText';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseURLSortResult } from 'hooks/useURLSort';
 import { ClusterCheckStatus } from 'services/ComplianceResultsService';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { TableUIState } from 'utils/getTableUIState';
@@ -27,6 +28,7 @@ export type CheckDetailsTableProps = {
     pagination: UseURLPaginationResult;
     profileName: string;
     tableState: TableUIState<ClusterCheckStatus>;
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
 function CheckDetailsTable({
@@ -35,6 +37,7 @@ function CheckDetailsTable({
     pagination,
     profileName,
     tableState,
+    getSortParams,
 }: CheckDetailsTableProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
 
@@ -56,7 +59,7 @@ function CheckDetailsTable({
             <Table>
                 <Thead>
                     <Tr>
-                        <Th>Cluster</Th>
+                        <Th sort={getSortParams('Cluster')}>Cluster</Th>
                         <Th>Last scanned</Th>
                         <Th>Compliance status</Th>
                     </Tr>
