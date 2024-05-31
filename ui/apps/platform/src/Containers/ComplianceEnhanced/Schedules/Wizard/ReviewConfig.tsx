@@ -2,45 +2,42 @@ import React from 'react';
 import { FormikContextType, useFormikContext } from 'formik';
 import {
     Alert,
+    Badge,
     Divider,
     Flex,
     FlexItem,
+    List,
+    ListItem,
     PageSection,
-    Stack,
-    StackItem,
-    Text,
-    TextList,
-    TextListItem,
-    TextVariants,
     Title,
 } from '@patternfly/react-core';
 
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { ComplianceIntegration } from 'services/ComplianceIntegrationService';
-import { ComplianceProfileSummary } from 'services/ComplianceProfileService';
 
 import {
     convertFormikParametersToSchedule,
     customBodyDefault,
-    formatScanSchedule,
     getSubjectDefault,
     ScanConfigFormValues,
 } from '../compliance.scanConfigs.utils';
+import ScanConfigParametersView from '../components/ScanConfigParametersView';
+import ScanConfigProfilesView from '../components/ScanConfigProfilesView';
 
-export type ProfileSelectionProps = {
+const headingLevel = 'h3';
+
+export type ReviewConfigProps = {
     clusters: ComplianceIntegration[];
-    profiles: ComplianceProfileSummary[];
     errorMessage: string;
 };
 
-function ReviewConfig({ clusters, profiles, errorMessage }: ProfileSelectionProps) {
+function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
     const { values: formikValues }: FormikContextType<ScanConfigFormValues> = useFormikContext();
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
 
     const scanSchedule = convertFormikParametersToSchedule(formikValues.parameters);
-    const formattedScanSchedule = formatScanSchedule(scanSchedule);
 
     function findById<T, K extends keyof T>(selectedIds: string[], items: T[], idKey: K): T[] {
         return selectedIds
@@ -49,7 +46,6 @@ function ReviewConfig({ clusters, profiles, errorMessage }: ProfileSelectionProp
     }
 
     const selectedClusters = findById(formikValues.clusters, clusters, 'clusterId');
-    const selectedProfiles = findById(formikValues.profiles, profiles, 'name');
 
     return (
         <>
@@ -71,49 +67,40 @@ function ReviewConfig({ clusters, profiles, errorMessage }: ProfileSelectionProp
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Stack hasGutter className="pf-v5-u-py-lg pf-v5-u-px-lg">
-                <StackItem>
-                    <Text component={TextVariants.h3} className="pf-v5-u-font-weight-bold">
-                        Name
-                    </Text>
-                    <Text>{formikValues.parameters.name}</Text>
-                </StackItem>
-                <StackItem>
-                    <Text component={TextVariants.h3} className="pf-v5-u-font-weight-bold">
-                        Schedule
-                    </Text>
-                    <Text>{formattedScanSchedule}</Text>
-                </StackItem>
-                <StackItem>
-                    <Text component={TextVariants.h3} className="pf-v5-u-font-weight-bold">
-                        Clusters
-                    </Text>
-                    <TextList isPlain>
+            <Flex
+                direction={{ default: 'column' }}
+                spaceItems={{ default: 'spaceItemsLg' }}
+                className="pf-v5-u-pt-lg pf-v5-u-px-lg"
+            >
+                <ScanConfigParametersView
+                    headingLevel={headingLevel}
+                    scanName={formikValues.parameters.name}
+                    description={formikValues.parameters.description}
+                    scanSchedule={scanSchedule}
+                />
+                <Flex direction={{ default: 'column' }}>
+                    <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                        <Title headingLevel={headingLevel}>Clusters</Title>
+                        <Badge isRead>{selectedClusters.length}</Badge>
+                    </Flex>
+                    <List isPlain>
                         {selectedClusters.map((cluster) => (
-                            <TextListItem key={cluster.id}>{cluster.clusterName}</TextListItem>
+                            <ListItem key={cluster.id}>{cluster.clusterName}</ListItem>
                         ))}
-                    </TextList>
-                </StackItem>
-                <StackItem>
-                    <Text component={TextVariants.h3} className="pf-v5-u-font-weight-bold">
-                        Profiles
-                    </Text>
-                    <TextList isPlain>
-                        {selectedProfiles.map((profile) => (
-                            <TextListItem key={profile.name}>{profile.name}</TextListItem>
-                        ))}
-                    </TextList>
-                </StackItem>
+                    </List>
+                </Flex>
+                <ScanConfigProfilesView
+                    headingLevel={headingLevel}
+                    profiles={formikValues.profiles}
+                />
                 {isComplianceReportingEnabled && (
-                    <StackItem>
-                        <NotifierConfigurationView
-                            customBodyDefault={customBodyDefault}
-                            customSubjectDefault={getSubjectDefault(formikValues.parameters.name)}
-                            notifierConfigurations={formikValues.report.notifierConfigurations}
-                        />
-                    </StackItem>
+                    <NotifierConfigurationView
+                        customBodyDefault={customBodyDefault}
+                        customSubjectDefault={getSubjectDefault(formikValues.parameters.name)}
+                        notifierConfigurations={formikValues.report.notifierConfigurations}
+                    />
                 )}
-            </Stack>
+            </Flex>
         </>
     );
 }

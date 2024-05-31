@@ -72,9 +72,10 @@ export type ComplianceScanConfigurationStatus = {
     scanName: string;
     scanConfig: BaseComplianceScanConfigurationSettings;
     clusterStatus: ClusterScanStatus[];
-    createdTime: string; // ISO 8601 date string;
-    lastUpdatedTime: string; // ISO 8601 date string;
+    createdTime: string; // ISO 8601 date string
+    lastUpdatedTime: string; // ISO 8601 date string
     modifiedBy: SlimUser;
+    lastExecutedTime: string | null; // either ISO 8601 date string or null when scan is in progress
 };
 
 /*
