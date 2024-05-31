@@ -285,16 +285,9 @@ func (d *datastoreImpl) CountByField(ctx context.Context, query *v1.Query, field
 
 func (d *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.ComplianceOperatorCheckResultV2) error) error {
 	wrappedFn := func(checkRes *storage.ComplianceOperatorCheckResultV2) error {
-		d.updateCheckResultPriority()
 		return fn(checkRes)
 	}
 	return d.store.WalkByQuery(ctx, query, wrappedFn)
-}
-
-func (d *datastoreImpl) updateCheckResultPriority(checkResults ...*storage.ComplianceOperatorCheckResultV2) {
-	for _, checkResult := range checkResults {
-		checkResult.Priority = d.checkResultRanker.GetRankForID(checkResult.GetId())
-	}
 }
 
 func (d *datastoreImpl) countByCluster(ctx context.Context, query *v1.Query, field search.FieldLabel) (int, error) {

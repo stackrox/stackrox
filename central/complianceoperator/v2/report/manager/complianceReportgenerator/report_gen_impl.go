@@ -12,12 +12,17 @@ import (
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 >>>>>>> 6faeddcd64 (Added test file)
 =======
 >>>>>>> 9c5d2f96de (Added walkbyquery for complaince check result to get data fro compliance report)
+=======
+	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+	complianceRulesDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
+>>>>>>> 0224098a9c (Added query for profile name)
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/csv"
@@ -96,6 +101,8 @@ type formatSubject struct {
 type complianceReportGeneratorImpl struct {
 	checkResultsDS        checkResults.DataStore
 	notificationProcessor notifier.Processor
+	rulesDS               complianceRulesDS.DataStore
+	profileDS             profileDS.DataStore
 }
 
 // struct which hold all columns of a row
@@ -247,6 +254,23 @@ func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportR
 				Status:      c.GetStatus().String(),
 				Remediation: c.GetInstructions(),
 			}
+			q := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, c.GetRuleRefId()).ProtoQuery()
+			rule, err := rg.rulesDS.SearchRules(ctx, q)
+			if err != nil {
+				return err
+			}
+			if len(rule) < 0 {
+				return errors.New("Rule not found")
+			}
+			q = search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleName, rule[0].GetName()).ProtoQuery()
+			profiles, err := rg.profileDS.SearchProfiles(ctx, q)
+			if err != nil {
+				return err
+			}
+			if len(profiles) < 0 {
+				return errors.New("Profile not found")
+			}
+			row.Profile = profiles[0].GetName()
 			resultCluster = append(resultCluster, row)
 			return nil
 		})

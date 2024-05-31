@@ -2,6 +2,8 @@ package complianceReportgenerator
 
 import (
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+	complianceRulesDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -18,5 +20,5 @@ func Singleton() ComplianceReportGenerator {
 }
 
 func initialize() {
-	instance = New(checkResults.Singleton(), notifierProcessor.Singleton())
+	instance = New(checkResults.Singleton(), notifierProcessor.Singleton(), complianceRulesDS.Singleton(), profileDS.Singleton())
 }
