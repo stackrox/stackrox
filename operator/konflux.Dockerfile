@@ -8,14 +8,16 @@ COPY . .
 
 RUN scripts/konflux/fail-build-if-git-is-dirty.sh
 
+ARG VERSIONS_SUFFIX
+ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
+
 # Build the operator binary.
 # TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
 # GOTAGS="release"
 ENV CI=1 GOFLAGS="" CGO_ENABLED=1
 
-# TODO(ROX-19958): figure out if setting BUILD_TAG is actually needed.
-RUN GOOS=linux GOARCH=$(go env GOARCH) BUILD_TAG=$(make tag) scripts/go-build.sh operator && \
+RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh operator && \
     cp bin/linux_$(go env GOARCH)/operator image/bin/operator
 
 # TODO(ROX-20312): pin image tags when there's a process that updates them automatically.
@@ -45,8 +47,8 @@ RUN microdnf upgrade -y --nobest && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
 
-# TODO(ROX-22245): set proper image flavor for Fast Stream images.
-ENV ROX_IMAGE_FLAVOR="rhacs"
+# TODO(ROX-22245): set proper image flavor for user-facing GA Fast Stream images.
+ENV ROX_IMAGE_FLAVOR="development_build"
 
 # The following are numeric uid and gid of `nobody` user in UBI.
 # We can't use symbolic names because otherwise k8s will fail to start the pod with an error like this:

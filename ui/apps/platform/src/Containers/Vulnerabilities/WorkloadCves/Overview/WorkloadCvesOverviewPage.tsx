@@ -129,7 +129,6 @@ function WorkloadCvesOverviewPage() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
     const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
-    const isNoCvesViewEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_NO_CVES_VIEW');
 
     const { analyticsTrack } = useAnalytics();
 
@@ -349,7 +348,7 @@ function WorkloadCvesOverviewPage() {
                 >
                     <VulnerabilityStateTabs onChange={onVulnerabilityStateChange} />
                 </PageSection>
-                {isNoCvesViewEnabled && currentVulnerabilityState === 'OBSERVED' && (
+                {currentVulnerabilityState === 'OBSERVED' && (
                     <PageSection className="pf-v5-u-py-md" component="div" variant="light">
                         <ObservedCveModeSelect
                             observedCveMode={observedCveMode}

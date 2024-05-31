@@ -20,8 +20,8 @@ function ProfileClustersPage() {
 
     const { page, perPage, setPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
-        sortFields: ['Cluster ID'],
-        defaultSortOption: { field: 'Cluster ID', direction: 'asc' },
+        sortFields: ['Cluster'],
+        defaultSortOption: { field: 'Cluster', direction: 'asc' },
         onSort: () => setPage(1),
     });
 

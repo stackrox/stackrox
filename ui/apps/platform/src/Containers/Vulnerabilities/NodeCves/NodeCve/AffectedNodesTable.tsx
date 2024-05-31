@@ -12,6 +12,15 @@ import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/Vulnera
 
 import CvssFormatted from 'Components/CvssFormatted';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { UseURLSortResult } from 'hooks/useURLSort';
+import {
+    CLUSTER_SORT_FIELD,
+    CVE_SEVERITY_SORT_FIELD,
+    CVE_STATUS_SORT_FIELD,
+    CVSS_SORT_FIELD,
+    NODE_SORT_FIELD,
+    OPERATING_SYSTEM_SORT_FIELD,
+} from '../../utils/sortFields';
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
 import {
     getHighestVulnerabilitySeverity,
@@ -24,6 +33,17 @@ import NodeComponentsTable, {
     nodeComponentFragment,
 } from '../components/NodeComponentsTable';
 
+export const sortFields = [
+    NODE_SORT_FIELD,
+    CVE_SEVERITY_SORT_FIELD,
+    CVE_STATUS_SORT_FIELD,
+    CVSS_SORT_FIELD,
+    CLUSTER_SORT_FIELD,
+    OPERATING_SYSTEM_SORT_FIELD,
+];
+
+export const defaultSortOption = { field: CVE_SEVERITY_SORT_FIELD, direction: 'desc' } as const;
+
 export const affectedNodeFragment = gql`
     ${nodeComponentFragment}
     fragment AffectedNode on Node {
@@ -33,9 +53,9 @@ export const affectedNodeFragment = gql`
         cluster {
             name
         }
-        nodeComponents {
+        nodeComponents(query: $query) {
             ...NodeComponentFragment
-            nodeVulnerabilities {
+            nodeVulnerabilities(query: $query) {
                 vulnerabilityId: id
                 cve
                 severity
@@ -68,10 +88,11 @@ export type AffectedNode = {
 
 export type AffectedNodesTableProps = {
     tableState: TableUIState<AffectedNode>;
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
 // TODO Add filter icon to dynamic table columns
-function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
+function AffectedNodesTable({ tableState, getSortParams }: AffectedNodesTableProps) {
     const colSpan = 8;
     const expandedRowSet = useSet<string>();
 
@@ -86,12 +107,12 @@ function AffectedNodesTable({ tableState }: AffectedNodesTableProps) {
             <Thead noWrap>
                 <Tr>
                     <Th aria-label="Expand row" />
-                    <Th>Node</Th>
-                    <Th>CVE severity</Th>
-                    <Th>CVE status</Th>
-                    <Th>CVSS score</Th>
-                    <Th>Cluster</Th>
-                    <Th>Operating system</Th>
+                    <Th sort={getSortParams(NODE_SORT_FIELD)}>Node</Th>
+                    <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>CVE severity</Th>
+                    <Th sort={getSortParams(CVE_STATUS_SORT_FIELD)}>CVE status</Th>
+                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS score</Th>
+                    <Th sort={getSortParams(CLUSTER_SORT_FIELD)}>Cluster</Th>
+                    <Th sort={getSortParams(OPERATING_SYSTEM_SORT_FIELD)}>Operating system</Th>
                     <Th>Affected components</Th>
                 </Tr>
             </Thead>

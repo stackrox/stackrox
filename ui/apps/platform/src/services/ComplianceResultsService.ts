@@ -18,6 +18,7 @@ export type ClusterCheckStatus = {
     status: ComplianceCheckStatus;
     createdTime: string; // ISO 8601 date string
     checkUid: string;
+    lastScanTime: string; // ISO 8601 date string
 };
 
 export type ComplianceCheckResult = {
@@ -33,6 +34,36 @@ export type ComplianceCheckResult = {
     warnings: string[];
 };
 
+export type ListComplianceCheckClusterResponse = {
+    checkResults: ClusterCheckStatus[];
+    profileName: string;
+    checkName: string;
+    totalCount: number;
+};
+
+/**
+ * Fetches statuses per cluster based off a single check.
+ */
+export function getComplianceProfileCheckResult(
+    profileName: string,
+    checkName: string,
+    sortOption: ApiSortOption,
+    page: number,
+    perPage: number
+): Promise<ListComplianceCheckClusterResponse> {
+    const queryParameters = {
+        query: {
+            pagination: getPaginationParams({ page, perPage, sortOption }),
+        },
+    };
+    const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
+    return axios
+        .get<ListComplianceCheckClusterResponse>(
+            `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks/${checkName}?${params}`
+        )
+        .then((response) => response.data);
+}
+
 /**
  * Fetches the profile check results.
  */
@@ -44,7 +75,7 @@ export function getComplianceProfileResults(
 ): Promise<ListComplianceProfileResults> {
     const queryParameters = {
         query: {
-            pagination: { ...getPaginationParams(page, perPage), sortOption },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     };
     const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });

@@ -1,5 +1,6 @@
 import { gql, useQuery } from '@apollo/client';
 import { getPaginationParams } from 'utils/searchUtils';
+import { ApiSortOption } from 'types/search';
 import { getRegexScopedQueryString } from '../../utils/searchUtils';
 import { QuerySearchFilter } from '../../types';
 
@@ -60,12 +61,13 @@ type Node = {
 export default function useNodes(
     querySearchFilter: QuerySearchFilter,
     page: number,
-    perPage: number
+    perPage: number,
+    sortOption: ApiSortOption
 ) {
     return useQuery<{ nodes: Node[] }>(nodeListQuery, {
         variables: {
             query: getRegexScopedQueryString(querySearchFilter),
-            pagination: getPaginationParams(page, perPage),
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 }

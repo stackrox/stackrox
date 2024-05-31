@@ -135,6 +135,8 @@ describe('searchUtils', () => {
         it('should return an empty array when passed null', () => {
             const pageSearch = null;
 
+            // @ts-expect-error Testing invalid input, the function signature does not accept null but it is
+            //                  handled internally in the function
             const restSearch = convertToRestSearch(pageSearch);
 
             expect(restSearch).toEqual([]);
@@ -373,9 +375,11 @@ describe('searchUtils', () => {
                     page,
                     pageSize
                 );
-                const [, offsetParam] = params.match(/pagination.offset=(\d+)/);
+                const matchArr = params.match(/pagination.offset=(\d+)/);
+                const offsetParam = matchArr?.[1];
                 expect(offsetParam).not.toBe('');
-                const offset = parseInt(offsetParam, 10);
+                expect(typeof offsetParam).toBe('string');
+                const offset = parseInt(offsetParam as string, 10);
                 expect(offset % page).toBe(0);
             });
         });
@@ -383,11 +387,39 @@ describe('searchUtils', () => {
 
     describe('getPaginationParams', () => {
         it('should calculate the offset based on the page number and page size', () => {
-            expect(getPaginationParams(1, 20)).toEqual({ offset: 0, limit: 20 });
-            expect(getPaginationParams(2, 20)).toEqual({ offset: 20, limit: 20 });
-            expect(getPaginationParams(3, 20)).toEqual({ offset: 40, limit: 20 });
-            expect(getPaginationParams(4, 12)).toEqual({ offset: 36, limit: 12 });
-            expect(getPaginationParams(5, 1)).toEqual({ offset: 4, limit: 1 });
+            expect(getPaginationParams({ page: 1, perPage: 20 })).toEqual({ offset: 0, limit: 20 });
+            expect(getPaginationParams({ page: 2, perPage: 20 })).toEqual({
+                offset: 20,
+                limit: 20,
+            });
+            expect(getPaginationParams({ page: 3, perPage: 20 })).toEqual({
+                offset: 40,
+                limit: 20,
+            });
+            expect(getPaginationParams({ page: 4, perPage: 12 })).toEqual({
+                offset: 36,
+                limit: 12,
+            });
+            expect(getPaginationParams({ page: 5, perPage: 1 })).toEqual({ offset: 4, limit: 1 });
+        });
+
+        it('should include the optional sortOption parameter only when provided', () => {
+            expect(
+                getPaginationParams({
+                    page: 1,
+                    perPage: 20,
+                    sortOption: { field: 'Name', reversed: false },
+                })
+            ).toEqual({
+                offset: 0,
+                limit: 20,
+                sortOption: { field: 'Name', reversed: false },
+            });
+
+            expect(getPaginationParams({ page: 1, perPage: 20 })).toEqual({
+                offset: 0,
+                limit: 20,
+            });
         });
     });
 

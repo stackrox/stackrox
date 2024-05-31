@@ -226,6 +226,8 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.Cluster).Proto(),
+		search.NewQuerySelect(search.ComplianceOperatorScanLastExecutedTime).
+			AggrFunc(aggregatefunc.Max).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{

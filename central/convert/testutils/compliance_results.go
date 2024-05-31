@@ -3,6 +3,7 @@ package testutils
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
@@ -554,7 +555,7 @@ func GetComplianceProfileResultsV2(_ *testing.T, profileName string) *v2.ListCom
 }
 
 // GetComplianceStorageClusterCount returns mock data shaped like count query would return
-func GetComplianceStorageClusterCount(_ *testing.T, clusterID string) *datastore.ResultStatusCountByCluster {
+func GetComplianceStorageClusterCount(_ *testing.T, clusterID string, lastScanTime *time.Time) *datastore.ResultStatusCountByCluster {
 	return &datastore.ResultStatusCountByCluster{
 		PassCount:          passCount,
 		FailCount:          failCount,
@@ -565,6 +566,7 @@ func GetComplianceStorageClusterCount(_ *testing.T, clusterID string) *datastore
 		NotApplicableCount: notApplicableCount,
 		ClusterName:        clusterName1,
 		ClusterID:          clusterID,
+		LastScanTime:       lastScanTime,
 	}
 }
 

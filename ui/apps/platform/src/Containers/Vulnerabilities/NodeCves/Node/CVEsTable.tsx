@@ -11,6 +11,13 @@ import { TableUIState } from 'utils/getTableUIState';
 import useSet from 'hooks/useSet';
 
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
+import { UseURLSortResult } from 'hooks/useURLSort';
+import {
+    CVE_SEVERITY_SORT_FIELD,
+    CVE_SORT_FIELD,
+    CVE_STATUS_SORT_FIELD,
+    CVSS_SORT_FIELD,
+} from 'Containers/Vulnerabilities/utils/sortFields';
 import {
     getIsSomeVulnerabilityFixable,
     getHighestVulnerabilitySeverity,
@@ -20,6 +27,17 @@ import NodeComponentsTable, {
     NodeComponent,
     nodeComponentFragment,
 } from '../components/NodeComponentsTable';
+
+export const sortFields = [
+    CVE_SORT_FIELD,
+    CVE_SEVERITY_SORT_FIELD,
+    CVE_STATUS_SORT_FIELD,
+    CVSS_SORT_FIELD,
+    // TODO - Needs a BE field implementation
+    //  AFFECTED_COMPONENTS_SORT_FIELD
+];
+
+export const defaultSortOption = { field: CVE_SEVERITY_SORT_FIELD, direction: 'desc' } as const;
 
 export const nodeVulnerabilityFragment = gql`
     ${nodeComponentFragment}
@@ -55,9 +73,10 @@ export type NodeVulnerability = {
 
 export type CVEsTableProps = {
     tableState: TableUIState<NodeVulnerability>;
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
-function CVEsTable({ tableState }: CVEsTableProps) {
+function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
     const COL_SPAN = 6;
     const expandedRowSet = useSet<string>();
 
@@ -72,10 +91,10 @@ function CVEsTable({ tableState }: CVEsTableProps) {
             <Thead noWrap>
                 <Tr>
                     <Th aria-label="Expand row" />
-                    <Th>CVE</Th>
-                    <Th>Top severity</Th>
-                    <Th>CVE status</Th>
-                    <Th>CVSS score</Th>
+                    <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
+                    <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>Top severity</Th>
+                    <Th sort={getSortParams(CVE_STATUS_SORT_FIELD)}>CVE status</Th>
+                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS score</Th>
                     <Th>Affected components</Th>
                 </Tr>
             </Thead>

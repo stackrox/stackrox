@@ -17,6 +17,7 @@ import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
+import { allEnabled } from 'utils/featureFlagUtils';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
 import { isUserResource } from 'Containers/AccessControl/traits';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
@@ -68,8 +69,9 @@ function IntegrationsTable({
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const columns = tableColumnDescriptor[source][type].filter((integration) => {
-        if (typeof integration.featureFlagDependency === 'string') {
-            return isFeatureFlagEnabled(integration.featureFlagDependency);
+        const { featureFlagDependency } = integration;
+        if (featureFlagDependency && featureFlagDependency.length > 0) {
+            return allEnabled(featureFlagDependency)(isFeatureFlagEnabled);
         }
         return true;
     });

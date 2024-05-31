@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -20,12 +19,6 @@ const entitiesKey = 'images';
 
 describe('Vulnerability Management Images', () => {
     withAuth();
-
-    before(function () {
-        if (hasFeatureFlag('ROX_VULN_MGMT_2_GA')) {
-            this.skip();
-        }
-    });
 
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);

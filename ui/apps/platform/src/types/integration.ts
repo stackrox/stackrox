@@ -46,6 +46,7 @@ export type ImageIntegrationType =
 
 export type NotifierIntegrationType =
     | 'awsSecurityHub'
+    | 'acscsEmail'
     | 'cscc'
     | 'email'
     | 'generic'
