@@ -262,6 +262,21 @@ func (mr *MockMatcherStoreMockRecorder) UpdateEnrichments(ctx, kind, fingerprint
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichments", reflect.TypeOf((*MockMatcherStore)(nil).UpdateEnrichments), ctx, kind, fingerprint, enrichments)
 }
 
+// UpdateEnrichmentsIter mocks base method.
+func (m *MockMatcherStore) UpdateEnrichmentsIter(ctx context.Context, kind string, fingerprint driver.Fingerprint, enIter datastore.EnrichmentIter) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateEnrichmentsIter", ctx, kind, fingerprint, enIter)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateEnrichmentsIter indicates an expected call of UpdateEnrichmentsIter.
+func (mr *MockMatcherStoreMockRecorder) UpdateEnrichmentsIter(ctx, kind, fingerprint, enIter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichmentsIter", reflect.TypeOf((*MockMatcherStore)(nil).UpdateEnrichmentsIter), ctx, kind, fingerprint, enIter)
+}
+
 // UpdateVulnerabilities mocks base method.
 func (m *MockMatcherStore) UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
@@ -275,4 +290,19 @@ func (m *MockMatcherStore) UpdateVulnerabilities(ctx context.Context, updater st
 func (mr *MockMatcherStoreMockRecorder) UpdateVulnerabilities(ctx, updater, fingerprint, vulns any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilities", reflect.TypeOf((*MockMatcherStore)(nil).UpdateVulnerabilities), ctx, updater, fingerprint, vulns)
+}
+
+// UpdateVulnerabilitiesIter mocks base method.
+func (m *MockMatcherStore) UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter datastore.VulnerabilityIter) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateVulnerabilitiesIter", ctx, updater, fingerprint, vulnIter)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateVulnerabilitiesIter indicates an expected call of UpdateVulnerabilitiesIter.
+func (mr *MockMatcherStoreMockRecorder) UpdateVulnerabilitiesIter(ctx, updater, fingerprint, vulnIter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilitiesIter", reflect.TypeOf((*MockMatcherStore)(nil).UpdateVulnerabilitiesIter), ctx, updater, fingerprint, vulnIter)
 }
