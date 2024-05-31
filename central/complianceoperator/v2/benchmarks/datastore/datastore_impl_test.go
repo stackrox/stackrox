@@ -64,7 +64,7 @@ func (s *complianceBenchmarkDataStoreSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 
-	s.db = pgtest.ForT(s.T(), "central")
+	s.db = pgtest.ForT(s.T())
 	s.storage = benchmarkStorage.New(s.db)
 	s.datastore = New(s.storage)
 }
