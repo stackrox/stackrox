@@ -133,7 +133,7 @@ func (s *complianceRuleDataStoreTestSuite) TestGetControl() {
 				s.Require().NoError(err)
 			}
 
-			controlQueryResults, err := s.dataStore.GetControlsByRuleNames(testCase.ctx, testCase.inputRuleNames)
+			controlQueryResults, err := s.dataStore.GetControlsByRulesAndBenchmarks(testCase.ctx, testCase.inputRuleNames)
 			s.Require().NoError(err)
 
 			for _, expectedRuleControl := range s.getAllRuleControls(testCase.ruleFixtures) {

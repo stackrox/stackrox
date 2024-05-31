@@ -35,13 +35,13 @@ func GetLastScanTime(ctx context.Context, clusterID string, profileName string, 
 	return lastScanTime, nil
 }
 
-func GetControlsForScanResults(ctx context.Context, ruleDS complianceRuleDS.DataStore, scanResults []*complianceDS.ResourceResultsByProfile) ([]*complianceRuleDS.ControlResult, error) {
+func GetControlsForScanResults(ctx context.Context, ruleDS complianceRuleDS.DataStore, scanResults []*complianceDS.ResourceResultsByProfile, profileName string) ([]*complianceRuleDS.ControlResult, error) {
 	// Create a for loop to extract the rule name from the scan results into a string slice.
 	var ruleNames []string
 	for _, scanResult := range scanResults {
 		ruleNames = append(ruleNames, scanResult.RuleName)
 	}
-	controls, err := ruleDS.GetControlsByRuleNames(ctx, ruleNames)
+	controls, err := ruleDS.GetControlsByRulesAndBenchmarks(ctx, ruleNames, profileName)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not receive controls by rule controls")
 	}
