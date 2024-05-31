@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterid"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -169,8 +170,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	// i.e., after nodeInventoryHandler
 	components = append(components, nodeInventoryHandler, complianceMultiplexer)
 
-	coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0)
-	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater))
+	coReadySignal := concurrency.NewSignal()
+	coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0, &coReadySignal)
+	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater, &coReadySignal))
 
 	if !cfg.localSensor {
 		upgradeCmdHandler, err := upgrade.NewCommandHandler(configHandler)
