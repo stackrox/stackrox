@@ -4,7 +4,13 @@ import {
     imageCVESearchFilterConfig,
     imageSearchFilterConfig,
 } from '../types';
-import { getEntities, getEntityAttributes, getDefaultEntity, getDefaultAttribute } from './utils';
+import {
+    getEntities,
+    getEntityAttributes,
+    getDefaultEntity,
+    getDefaultAttribute,
+    makeFilterChipDescriptors,
+} from './utils';
 
 describe('utils', () => {
     describe('getEntities', () => {
@@ -102,6 +108,35 @@ describe('utils', () => {
             const result = getDefaultAttribute('Image CVE', config);
 
             expect(result).toStrictEqual('ID');
+        });
+    });
+
+    describe('makeFilterChipDescriptors', () => {
+        it('should create an array of FilterChipGroupDescriptor objects from a config object', () => {
+            const config: Partial<CompoundSearchFilterConfig> = {
+                'Image CVE': imageCVESearchFilterConfig,
+            };
+
+            const result = makeFilterChipDescriptors(config);
+
+            expect(result).toStrictEqual([
+                {
+                    displayName: 'Image CVE ID',
+                    searchFilterName: 'CVE ID',
+                },
+                {
+                    displayName: 'Image CVE Discovered Time',
+                    searchFilterName: 'CVE Created Time',
+                },
+                {
+                    displayName: 'Image CVE CVSS',
+                    searchFilterName: 'CVSS',
+                },
+                {
+                    displayName: 'Image CVE Type',
+                    searchFilterName: 'CVE Type',
+                },
+            ]);
         });
     });
 });

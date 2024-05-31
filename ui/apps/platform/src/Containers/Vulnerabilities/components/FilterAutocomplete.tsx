@@ -1,3 +1,4 @@
+/* TODO - This file should be deleted once ROX_VULN_MGMT_ADVANCED_FILTERS is deleted */
 import React, { useState, useMemo } from 'react';
 import { debounce, Skeleton, ToolbarGroup } from '@patternfly/react-core';
 import { Select, SelectOption } from '@patternfly/react-core/deprecated';
