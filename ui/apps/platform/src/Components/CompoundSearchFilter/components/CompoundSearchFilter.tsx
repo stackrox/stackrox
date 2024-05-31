@@ -24,7 +24,7 @@ export type CompoundSearchFilterProps = {
     config: Partial<CompoundSearchFilterConfig>;
     defaultEntity?: SearchFilterEntityName;
     defaultAttribute?: SearchFilterAttributeName;
-    onSearch: (searchKey: string, searchValue: string | string[] | undefined) => void;
+    onSearch: (searchKey: string, searchValue: string | string[]) => void;
 };
 
 function CompoundSearchFilter({
