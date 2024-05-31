@@ -69,7 +69,7 @@ function mockAutocompleteResponse() {
 describe(Cypress.spec.relative, () => {
     it('should display nothing in the entity selector', () => {
         const config = {};
-        const onSearch = cy.stub().as('onSearchMock');
+        const onSearch = cy.stub().as('onSearch');
 
         setup(config, onSearch);
 
@@ -80,7 +80,7 @@ describe(Cypress.spec.relative, () => {
         const config = {
             Image: imageSearchFilterConfig,
         };
-        const onSearch = cy.stub().as('onSearchMock');
+        const onSearch = cy.stub().as('onSearch');
 
         setup(config, onSearch);
 
@@ -97,7 +97,7 @@ describe(Cypress.spec.relative, () => {
             Image: imageSearchFilterConfig,
             Deployment: deploymentSearchFilterConfig,
         };
-        const onSearch = cy.stub().as('onSearchMock');
+        const onSearch = cy.stub().as('onSearch');
 
         setup(config, onSearch);
 
@@ -116,7 +116,7 @@ describe(Cypress.spec.relative, () => {
             Deployment: deploymentSearchFilterConfig,
             Cluster: clusterSearchFilterConfig,
         };
-        const onSearch = cy.stub().as('onSearchMock');
+        const onSearch = cy.stub().as('onSearch');
 
         setup(config, onSearch);
 
@@ -135,7 +135,7 @@ describe(Cypress.spec.relative, () => {
             Image: imageSearchFilterConfig,
             Deployment: deploymentSearchFilterConfig,
         };
-        const onSearch = cy.stub().as('onSearchMock');
+        const onSearch = cy.stub().as('onSearch');
 
         setup(config, onSearch);
 
@@ -159,7 +159,7 @@ describe(Cypress.spec.relative, () => {
             Image: imageSearchFilterConfig,
             Deployment: deploymentSearchFilterConfig,
         };
-        const onSearch = cy.stub().as('onSearchMock');
+        const onSearch = cy.stub().as('onSearch');
 
         setup(config, onSearch);
 
