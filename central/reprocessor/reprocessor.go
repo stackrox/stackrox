@@ -20,11 +20,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 	imageMapping "github.com/stackrox/rox/pkg/search/options/images"
@@ -46,6 +48,14 @@ var (
 	allAccessCtx = sac.WithAllAccess(context.Background())
 
 	emptyCtx = context.Background()
+
+	delegateScanCtx = sac.WithGlobalAccessScopeChecker(
+		context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Image),
+		),
+	)
 
 	imageClusterIDFieldPath = imageMapping.ImageDeploymentOptions.MustGet(search.ClusterID.String()).GetFieldPath()
 
@@ -460,9 +470,17 @@ func (l *loopImpl) reprocessNodes() {
 }
 
 func (l *loopImpl) reprocessWatchedImage(name string) bool {
-	img, err := imageEnricher.EnrichImageByName(emptyCtx, l.imageEnricher, imageEnricher.EnrichmentContext{
+	enrichmentCtx := imageEnricher.EnrichmentContext{
 		FetchOpt: imageEnricher.IgnoreExistingImages,
-	}, name)
+	}
+
+	ctx := emptyCtx
+	if features.DelegateWatchedImageReprocessing.Enabled() {
+		ctx = delegateScanCtx
+		enrichmentCtx.Delegable = true
+	}
+
+	img, err := imageEnricher.EnrichImageByName(ctx, l.imageEnricher, enrichmentCtx, name)
 	if err != nil {
 		log.Errorw("Error enriching watched image", logging.ImageName(name), logging.Err(err))
 		return false

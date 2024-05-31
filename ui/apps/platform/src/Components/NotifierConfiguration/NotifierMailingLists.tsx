@@ -24,7 +24,7 @@ type NotifierMailingListsProps = {
     fieldIdPrefixForFormikAndPatternFly: string;
     hasWriteAccessForIntegration: boolean;
     isLoadingNotifiers: boolean;
-    mailingLists: string[];
+    mailingListsString: string;
     notifierId: string;
     notifierName: string;
     notifiers: NotifierIntegrationBase[];
@@ -38,7 +38,7 @@ function NotifierMailingLists({
     fieldIdPrefixForFormikAndPatternFly,
     hasWriteAccessForIntegration,
     isLoadingNotifiers,
-    mailingLists,
+    mailingListsString,
     notifierId,
     notifierName,
     notifiers,
@@ -101,7 +101,6 @@ function NotifierMailingLists({
                       {name}
                   </SelectOption>
               ));
-    const mailingListsString = mailingLists.join(', ');
 
     return (
         <>

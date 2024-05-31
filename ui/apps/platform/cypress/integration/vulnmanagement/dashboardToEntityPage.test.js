@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import {
     interactAndWaitForVulnerabilityManagementEntity,
     visitVulnerabilityManagementDashboard,
@@ -51,11 +50,6 @@ function selectTopRiskiestOption(optionText) {
 
 describe('Vulnerability Management Dashboard', () => {
     withAuth();
-    before(function () {
-        if (hasFeatureFlag('ROX_VULN_MGMT_2_GA')) {
-            this.skip();
-        }
-    });
 
     // Some tests might fail in local deployment.
 
