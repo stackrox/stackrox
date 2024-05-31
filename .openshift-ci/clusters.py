@@ -29,8 +29,8 @@ class NullCluster:
 class GKECluster:
     # Provisioning timeout is tightly coupled to the time it may take gke.sh to
     # create a cluster.
-    PROVISION_TIMEOUT = 1  # do not wait - 140 * 60
-    WAIT_TIMEOUT = 1 # do not wait - 20 * 60
+    PROVISION_TIMEOUT = 5 * 60  # do not wait - 140 * 60
+    WAIT_TIMEOUT = 5 * 60 # do not wait - 20 * 60
     TEARDOWN_TIMEOUT = 5 * 60
     # separate script names used for testability - test_clusters.py
     PROVISION_PATH = "scripts/ci/gke.sh"
