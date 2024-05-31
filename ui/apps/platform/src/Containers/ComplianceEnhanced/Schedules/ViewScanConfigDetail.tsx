@@ -1,13 +1,11 @@
 /* eslint-disable no-nested-ternary */
 import React, { useState } from 'react';
-import { generatePath } from 'react-router-dom';
 import {
     Alert,
     AlertActionCloseButton,
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
-    Button,
     Card,
     CardBody,
     DescriptionListDescription,
@@ -25,21 +23,22 @@ import {
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import LinkShim from 'Components/PatternFly/LinkShim';
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 import useAlert from 'hooks/useAlert';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import {
-    runComplianceScanConfiguration,
     ComplianceScanConfigurationStatus,
+    runComplianceReport,
+    runComplianceScanConfiguration,
 } from 'services/ComplianceScanConfigurationService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import { customBodyDefault, getSubjectDefault } from './compliance.scanConfigs.utils';
 import ScanConfigParametersView from './components/ScanConfigParametersView';
 import ScanConfigProfilesView from './components/ScanConfigProfilesView';
 import ScanConfigClustersTable from './components/ScanConfigClustersTable';
+
+import ScanConfigActionDropdown from './ScanConfigActionDropdown';
 
 const headingLevel = 'h2';
 
@@ -62,29 +61,46 @@ function ViewScanConfigDetail({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
 
-    function onTriggerRescan() {
-        if (scanConfig?.id) {
-            clearAlertObj();
-            setIsTriggeringRescan(true);
+    function handleRunScanConfig(scanConfigResponse: ComplianceScanConfigurationStatus) {
+        clearAlertObj();
+        setIsTriggeringRescan(true);
 
-            runComplianceScanConfiguration(scanConfig.id)
-                .then(() => {
-                    setAlertObj({
-                        type: 'success',
-                        title: 'Successfully triggered a re-scan',
-                    });
-                })
-                .catch((error) => {
-                    setAlertObj({
-                        type: 'danger',
-                        title: 'Could not trigger a re-scan',
-                        children: getAxiosErrorMessage(error),
-                    });
-                })
-                .finally(() => {
-                    setIsTriggeringRescan(false);
+        runComplianceScanConfiguration(scanConfigResponse.id)
+            .then(() => {
+                setAlertObj({
+                    type: 'success',
+                    title: 'Successfully triggered a re-scan',
                 });
-        }
+                // TODO verify is lastExecutedTime expected to change? therefore, refetch?
+            })
+            .catch((error) => {
+                setAlertObj({
+                    type: 'danger',
+                    title: 'Could not trigger a re-scan',
+                    children: getAxiosErrorMessage(error),
+                });
+            })
+            .finally(() => {
+                setIsTriggeringRescan(false);
+            });
+    }
+
+    function handleSendReport(scanConfigResponse: ComplianceScanConfigurationStatus) {
+        clearAlertObj();
+        runComplianceReport(scanConfigResponse.id)
+            .then(() => {
+                setAlertObj({
+                    type: 'success',
+                    title: 'Successfully requested to send a report',
+                });
+            })
+            .catch((error) => {
+                setAlertObj({
+                    type: 'danger',
+                    title: 'Could not send a report',
+                    children: getAxiosErrorMessage(error),
+                });
+            });
     }
 
     return (
@@ -113,29 +129,15 @@ function ViewScanConfigDetail({
                             </FlexItem>
                             {hasWriteAccessForCompliance && (
                                 <FlexItem align={{ default: 'alignRight' }}>
-                                    <Button
-                                        variant="secondary"
-                                        component={Button}
-                                        onClick={onTriggerRescan}
-                                        isLoading={isTriggeringRescan}
-                                        isDisabled={isTriggeringRescan}
-                                    >
-                                        Re-scan
-                                    </Button>
-                                </FlexItem>
-                            )}
-                            {hasWriteAccessForCompliance && (
-                                <FlexItem align={{ default: 'alignRight' }}>
-                                    <Button
-                                        variant="primary"
-                                        component={LinkShim}
-                                        href={`${generatePath(scanConfigDetailsPath, {
-                                            scanConfigId: scanConfig.id,
-                                        })}?action=edit`}
-                                        isDisabled={!scanConfig || isTriggeringRescan}
-                                    >
-                                        Edit scan schedule
-                                    </Button>
+                                    <ScanConfigActionDropdown
+                                        handleRunScanConfig={handleRunScanConfig}
+                                        handleSendReport={handleSendReport}
+                                        isScanning={
+                                            isTriggeringRescan ||
+                                            scanConfig.lastExecutedTime === null
+                                        }
+                                        scanConfigResponse={scanConfig}
+                                    />
                                 </FlexItem>
                             )}
                         </Flex>
