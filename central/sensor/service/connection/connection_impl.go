@@ -532,6 +532,7 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 						StrictNodeScan: true,
 						Profiles:       profiles,
 					},
+					Cron: scanConfig.Schedule.String(),
 				},
 			},
 		}
