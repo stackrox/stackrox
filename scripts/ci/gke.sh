@@ -209,7 +209,7 @@ create_cluster() {
             fi
             info "Timed out"
             info "Attempting to delete the cluster before trying another zone"
-            gcloud container clusters delete "${CLUSTER_NAME}" || {
+            retry 10 true gcloud container clusters delete "${CLUSTER_NAME}" --async || {
                 info "An error occurred deleting the cluster: $?"
                 true
             }
