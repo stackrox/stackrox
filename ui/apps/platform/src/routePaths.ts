@@ -319,6 +319,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
     'vulnerability-management/risk-acceptance': {
+        featureFlagRequirements: allDisabled(['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL']),
         resourceAccessRequirements: everyResource([
             'VulnerabilityManagementApprovals',
             'VulnerabilityManagementRequests',
