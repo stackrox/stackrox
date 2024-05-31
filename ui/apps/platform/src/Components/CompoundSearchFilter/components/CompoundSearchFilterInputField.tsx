@@ -66,6 +66,7 @@ function CompoundSearchFilterInputField({
                 onChange={(_event, _value) => onChange(_value)}
                 onSearch={(_event, _value) => onSearch(_value)}
                 onClear={() => onChange('')}
+                submitSearchButtonLabel="Apply text input to search"
             />
         );
     }

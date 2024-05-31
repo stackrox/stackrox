@@ -24,7 +24,7 @@ export type CompoundSearchFilterProps = {
     config: Partial<CompoundSearchFilterConfig>;
     defaultEntity?: SearchFilterEntityName;
     defaultAttribute?: SearchFilterAttributeName;
-    onSearch: (searchKey: string, searchValue: string) => void;
+    onSearch: (searchKey: string, searchValue: string | string[] | undefined) => void;
 };
 
 function CompoundSearchFilter({
@@ -103,7 +103,7 @@ function CompoundSearchFilter({
                             entityObject?.attributes[selectedAttribute];
                         const { inputType } = attributeObject;
 
-                        let result = '';
+                        let result: string | string[] = '';
 
                         if (inputType === 'text') {
                             result = ensureString(value);
@@ -116,10 +116,10 @@ function CompoundSearchFilter({
                             result = ensureString(value);
                         } else if (inputType === 'select') {
                             const selection = ensureStringArray(value);
-                            result = selection.join(',');
+                            result = selection;
                         }
 
-                        if (result !== '') {
+                        if ((Array.isArray(result) && result.length > 0) || result !== '') {
                             // eslint-disable-next-line no-alert
                             onSearch(attributeObject.searchTerm, result);
                         }

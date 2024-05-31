@@ -69,8 +69,9 @@ function mockAutocompleteResponse() {
 describe(Cypress.spec.relative, () => {
     it('should display nothing in the entity selector', () => {
         const config = {};
+        const onSearch = cy.stub().as('onSearchMock');
 
-        setup(config, () => {});
+        setup(config, onSearch);
 
         cy.get(selectors.entitySelectToggle).should('not.exist');
     });
@@ -79,8 +80,9 @@ describe(Cypress.spec.relative, () => {
         const config = {
             Image: imageSearchFilterConfig,
         };
+        const onSearch = cy.stub().as('onSearchMock');
 
-        setup(config, () => {});
+        setup(config, onSearch);
 
         cy.get(selectors.entitySelectToggle).should('contain.text', 'Image');
 
@@ -95,8 +97,9 @@ describe(Cypress.spec.relative, () => {
             Image: imageSearchFilterConfig,
             Deployment: deploymentSearchFilterConfig,
         };
+        const onSearch = cy.stub().as('onSearchMock');
 
-        setup(config, () => {});
+        setup(config, onSearch);
 
         cy.get(selectors.entitySelectToggle).should('contain.text', 'Image');
 
@@ -113,8 +116,9 @@ describe(Cypress.spec.relative, () => {
             Deployment: deploymentSearchFilterConfig,
             Cluster: clusterSearchFilterConfig,
         };
+        const onSearch = cy.stub().as('onSearchMock');
 
-        setup(config, () => {});
+        setup(config, onSearch);
 
         cy.get(selectors.entitySelectToggle).should('contain.text', 'Image');
 
@@ -131,8 +135,9 @@ describe(Cypress.spec.relative, () => {
             Image: imageSearchFilterConfig,
             Deployment: deploymentSearchFilterConfig,
         };
+        const onSearch = cy.stub().as('onSearchMock');
 
-        setup(config, () => {});
+        setup(config, onSearch);
 
         cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
 
@@ -154,8 +159,9 @@ describe(Cypress.spec.relative, () => {
             Image: imageSearchFilterConfig,
             Deployment: deploymentSearchFilterConfig,
         };
+        const onSearch = cy.stub().as('onSearchMock');
 
-        setup(config, () => {});
+        setup(config, onSearch);
 
         cy.get(selectors.entitySelectToggle).click();
         cy.get(selectors.entitySelectItem('Deployment')).click();
@@ -170,13 +176,14 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.attributeSelectItems).eq(2).should('have.text', 'Annotation');
     });
 
-    it('should display text input and correctly search for image tags', () => {
+    it('should display the text input and correctly search for image tags', () => {
         const config = {
             Image: imageSearchFilterConfig,
             NodeComponent: nodeComponentSearchFilterConfig,
         };
+        const onSearch = cy.stub().as('onSearch');
 
-        setup(config, () => {});
+        setup(config, onSearch);
 
         cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
 
@@ -184,15 +191,22 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.attributeSelectItem('Tag')).click();
 
         cy.get('input[aria-label="Filter results by image tag"]').should('exist');
+
+        cy.get('input[aria-label="Filter results by image tag"]').clear();
+        cy.get('input[aria-label="Filter results by image tag"]').type('Tag 123');
+        cy.get('button[aria-label="Apply text input to search"]').click();
+
+        cy.get('@onSearch').should('have.been.calledWithExactly', 'Image Tag', 'Tag 123');
     });
 
-    it('should display the select input for the image component source search filter', () => {
+    it('should display the select input and correctly search for image component source', () => {
         const config = {
             Image: imageSearchFilterConfig,
             ImageComponent: imageComponentSearchFilterConfig,
         };
+        const onSearch = cy.stub().as('onSearch');
 
-        setup(config, () => {});
+        setup(config, onSearch);
 
         cy.get(selectors.entitySelectToggle).click();
         cy.get(selectors.entitySelectItem('Image Component')).click();
@@ -215,14 +229,24 @@ describe(Cypress.spec.relative, () => {
         cy.get(nodeComponenSourceSelectItems).eq(4).should('have.text', 'Node js');
         cy.get(nodeComponenSourceSelectItems).eq(5).should('have.text', 'Dotnet Core Runtime');
         cy.get(nodeComponenSourceSelectItems).eq(6).should('have.text', 'Infrastructure');
+
+        cy.get(nodeComponenSourceSelectItems).eq(1).click();
+        cy.get('@onSearch').should('have.been.calledWithExactly', 'Component Source', ['PYTHON']);
+
+        cy.get(nodeComponenSourceSelectItems).eq(4).click();
+        cy.get('@onSearch').should('have.been.calledWithExactly', 'Component Source', [
+            'PYTHON',
+            'NODEJS',
+        ]);
     });
 
-    it('should display the date-picker input for the image create time search filter', () => {
+    it('should display the date-picker input and correctly search for image create time', () => {
         const config = {
             Image: imageSearchFilterConfig,
         };
+        const onSearch = cy.stub().as('onSearch');
 
-        setup(config, () => {});
+        setup(config, onSearch);
 
         cy.get(selectors.attributeSelectToggle).click();
         cy.get(selectors.attributeSelectItem('Created Time')).click();
@@ -245,15 +269,21 @@ describe(Cypress.spec.relative, () => {
         cy.get('button.pf-v5-c-calendar-month__date:contains("15")').click();
 
         // Check updated date value
+        cy.get('@onSearch').should(
+            'have.been.calledWithExactly',
+            'Image Created Time',
+            '2034-01-15'
+        );
         cy.get('input[aria-label="Filter by date"]').should('have.value', '2034-01-15');
     });
 
-    it('should display the condition-number input for the image cvss filter', () => {
+    it('should display the condition-number input and correctly search for image cvss', () => {
         const config = {
             Image: imageSearchFilterConfig,
         };
+        const onSearch = cy.stub().as('onSearch');
 
-        setup(config, () => {});
+        setup(config, onSearch);
 
         cy.get(selectors.attributeSelectToggle).click();
         cy.get(selectors.attributeSelectItem('CVSS')).click();
@@ -278,6 +308,9 @@ describe(Cypress.spec.relative, () => {
         cy.get('input[aria-label="Condition value input"]').type(9.9);
         cy.get('input[aria-label="Condition value input"]').blur();
 
+        cy.get('button[aria-label="Apply condition and number input to search"]').click();
+        cy.get('@onSearch').should('have.been.calledWithExactly', 'Image Top CVSS', '<9.9');
+
         // should have new values
         cy.get('button[aria-label="Condition selector toggle"]').should(
             'have.text',
@@ -290,20 +323,27 @@ describe(Cypress.spec.relative, () => {
         cy.get('button[aria-label="Condition value plus button"]').should('be.disabled');
         cy.get('input[aria-label="Condition value input"]').should('have.value', '10');
 
+        cy.get('button[aria-label="Apply condition and number input to search"]').click();
+        cy.get('@onSearch').should('have.been.calledWithExactly', 'Image Top CVSS', '<10');
+
         // should decrement
         cy.get('input[aria-label="Condition value input"]').clear();
         cy.get('input[aria-label="Condition value input"]').type(0.1);
         cy.get('button[aria-label="Condition value minus button"]').click();
         cy.get('button[aria-label="Condition value minus button"]').should('be.disabled');
         cy.get('input[aria-label="Condition value input"]').should('have.value', '0');
+
+        cy.get('button[aria-label="Apply condition and number input to search"]').click();
+        cy.get('@onSearch').should('have.been.calledWithExactly', 'Image Top CVSS', '<0');
     });
 
-    it('should display the autocomplete input for the image name filter', () => {
+    it('should display the autocomplete input and correctly search for image name', () => {
         mockAutocompleteResponse();
 
         const config = {
             Image: imageSearchFilterConfig,
         };
+        const onSearch = cy.stub().as('onSearch');
 
         const autocompleteMenuToggle =
             'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Menu toggle"]';
@@ -311,8 +351,9 @@ describe(Cypress.spec.relative, () => {
         const autocompleteInput = 'input[aria-label="Filter results by image name"]';
         const autocompleteClearInputButton =
             'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Clear input value"]';
+        const autocompleteSearchButton = 'button[aria-label="Apply autocomplete input to search"]';
 
-        setup(config, () => {});
+        setup(config, onSearch);
 
         cy.get(autocompleteMenuToggle).click();
 
@@ -325,6 +366,11 @@ describe(Cypress.spec.relative, () => {
 
         cy.get(autocompleteMenuItems).eq(0).click();
 
+        cy.get('@onSearch').should(
+            'have.been.calledWithExactly',
+            'Image',
+            'docker.io/library/centos:7'
+        );
         cy.get(autocompleteInput).should('have.value', 'docker.io/library/centos:7');
 
         cy.get(autocompleteClearInputButton).click();
@@ -338,5 +384,8 @@ describe(Cypress.spec.relative, () => {
         cy.get(autocompleteMenuItems).should('have.length', 2);
         cy.get(autocompleteMenuItems).eq(0).should('have.text', 'docker.io/library/centos:7');
         cy.get(autocompleteMenuItems).eq(1).should('have.text', 'docker.io/library/centos:8');
+
+        cy.get(autocompleteSearchButton).click();
+        cy.get('@onSearch').should('have.been.calledWithExactly', 'Image', 'docker.io');
     });
 });
