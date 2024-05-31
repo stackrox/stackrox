@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,12 +12,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/datastore"
+	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
+	"github.com/quay/claircore/test"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/datastore/postgres/mocks"
+	"github.com/stackrox/rox/scanner/updater/jsonblob"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -77,7 +84,7 @@ func TestSingleBundleUpdate(t *testing.T) {
 		url:           srv.URL,
 		root:          t.TempDir(),
 		skipGC:        true,
-		importVulns: func(_ context.Context, _ io.Reader) error {
+		importFunc: func(_ context.Context, _ io.Reader) error {
 			return nil
 		},
 		retryDelay: 1 * time.Second,
@@ -137,7 +144,7 @@ func TestMultiBundleUpdate(t *testing.T) {
 		url:           srv.URL,
 		root:          t.TempDir(),
 		skipGC:        true,
-		importVulns: func(_ context.Context, _ io.Reader) error {
+		importFunc: func(_ context.Context, _ io.Reader) error {
 			return nil
 		},
 		retryDelay: 1 * time.Second,
@@ -256,5 +263,288 @@ func TestUpdater_Initialized(t *testing.T) {
 		assert.Contains(t, `"did not get previous vuln update timestamp"`, b.String())
 		assert.Contains(t, `"error":"last update failed (fake error)"`, b.String())
 		assert.Contains(t, `"level":"error"`, b.String())
+	})
+}
+
+func TestUpdater_Import(t *testing.T) {
+	ctx := zlog.Test(context.Background(), t)
+	ctrl := gomock.NewController(t)
+
+	// Represents one vulnerability or enrichment iteration.
+	type iteration struct {
+		O   *driver.UpdateOperation
+		V   []*claircore.Vulnerability
+		E   []*driver.EnrichmentRecord
+		Err string // Set to fail the iteration.
+	}
+
+	// Mock jsonblob.Iterate with fake iterations. Operations, vulnerabilities and
+	// enrichments are yielded in order. If Err is set, yields the operation followed
+	// by an error, unless the operation is nil, then yields error immediately.
+	mockIterate := func(t *testing.T, ops ...*iteration) func(_ io.Reader) (jsonblob.OperationIter, func() error) {
+		var err error
+		return func(_ io.Reader) (jsonblob.OperationIter, func() error) {
+			opIt := func(yield func(*driver.UpdateOperation, jsonblob.RecordIter) bool) {
+				for _, o := range ops {
+					if o.O == nil && o.Err != "" {
+						err = errors.New(o.Err)
+						break
+					}
+					ok := yield(o.O, func(yield func(*claircore.Vulnerability, *driver.EnrichmentRecord) bool) {
+						if o.Err != "" {
+							err = errors.New(o.Err)
+							return
+						}
+						for _, v := range o.V {
+							if !yield(v, nil) {
+								break
+							}
+						}
+						for _, e := range o.E {
+							if !yield(nil, e) {
+								break
+							}
+						}
+					})
+					if !ok {
+						break
+					}
+				}
+			}
+			itErr := func() error {
+				return err
+			}
+			return opIt, itErr
+		}
+	}
+
+	t.Run("when operation exists then skip updates", func(t *testing.T) {
+		// First operation, no records. Second, with records.
+		want := []*iteration{
+			{
+				O: &driver.UpdateOperation{
+					Kind:        driver.VulnerabilityKind,
+					Updater:     "fake-updater",
+					Fingerprint: "fake-fingerprint",
+				},
+			},
+			{
+				O: &driver.UpdateOperation{
+					Kind:        driver.VulnerabilityKind,
+					Updater:     "another-fake-updater",
+					Fingerprint: "another-fake-fingerprint",
+				},
+				V: test.GenUniqueVulnerabilities(5, "another-fake-updater"),
+			},
+		}
+
+		// Database already has the same operation.
+		storeMock := mocks.NewMockMatcherStore(ctrl)
+		var gotVulns []*claircore.Vulnerability
+		gomock.InOrder(
+			storeMock.
+				EXPECT().
+				GetUpdateOperations(gomock.Any(), driver.VulnerabilityKind, "fake-updater").
+				Return(map[string][]driver.UpdateOperation{"fake-updater": {
+					driver.UpdateOperation{Fingerprint: "fake-fingerprint"},
+				}}, nil),
+			storeMock.
+				EXPECT().
+				GetUpdateOperations(gomock.Any(), driver.VulnerabilityKind, "another-fake-updater").
+				Return(map[string][]driver.UpdateOperation{"another-fake-updater": {}}, nil),
+			storeMock.
+				EXPECT().
+				UpdateVulnerabilitiesIter(gomock.Any(), "another-fake-updater", driver.Fingerprint("another-fake-fingerprint"), gomock.Any()).
+				Do(func(_, _, _ any, it datastore.VulnerabilityIter) {
+					it(func(v *claircore.Vulnerability, err error) bool {
+						assert.NoError(t, err)
+						gotVulns = append(gotVulns, v)
+						return true
+					})
+				}),
+		)
+
+		u := &Updater{store: storeMock}
+		u.iterateFunc = mockIterate(t, want...)
+
+		err := u.Import(ctx, nil)
+
+		assert.NoError(t, err)
+		if !cmp.Equal(gotVulns, want[1].V) {
+			t.Error(cmp.Diff(gotVulns, want[1].V))
+		}
+	})
+
+	t.Run("when new vuln and enrichment operations then update", func(t *testing.T) {
+		// One operation, one vulnerability.
+		const vulnUpdater = "fake-vuln-updater"
+		const vulnFingerprint = "fake-vuln-fingerprint"
+
+		const enrichUpdater = "fake-enrich-updater"
+		const enrichFingerprint = "fake-enrich-fingerprint"
+
+		var want, got []*iteration
+
+		want = append(want,
+			&iteration{
+				O: &driver.UpdateOperation{
+					Kind:        driver.VulnerabilityKind,
+					Updater:     vulnUpdater,
+					Fingerprint: vulnFingerprint,
+				},
+				V: test.GenUniqueVulnerabilities(10, vulnUpdater),
+			},
+			&iteration{
+				O: &driver.UpdateOperation{
+					Kind:        driver.EnrichmentKind,
+					Updater:     enrichUpdater,
+					Fingerprint: enrichFingerprint,
+				},
+				E: func() (ens []*driver.EnrichmentRecord) {
+					for _, e := range test.GenEnrichments(15) {
+						ep := e
+						ens = append(ens, &ep)
+					}
+					return
+				}(),
+			})
+
+		storeMock := mocks.NewMockMatcherStore(ctrl)
+		for i := range want {
+			got = append(got, &iteration{})
+			wantIter := want[i]
+			gotIter := got[i]
+			opCall := storeMock.
+				EXPECT().
+				GetUpdateOperations(gomock.Any(), wantIter.O.Kind, wantIter.O.Updater).
+				Return(map[string][]driver.UpdateOperation{wantIter.O.Updater: {}}, nil).
+				Do(func(_ any, kind driver.UpdateKind, updater string) {
+					gotIter.O = &driver.UpdateOperation{
+						Kind:        kind,
+						Updater:     updater,
+						Fingerprint: wantIter.O.Fingerprint,
+					}
+				})
+			switch wantIter.O.Kind {
+			case driver.VulnerabilityKind:
+				storeMock.
+					EXPECT().
+					UpdateVulnerabilitiesIter(gomock.Any(), wantIter.O.Updater, wantIter.O.Fingerprint, gomock.Any()).
+					Do(func(_, _, _ any, it datastore.VulnerabilityIter) {
+						it(func(v *claircore.Vulnerability, err error) bool {
+							assert.NoError(t, err)
+							gotIter.V = append(gotIter.V, v)
+							return true
+						})
+					}).
+					After(opCall)
+			case driver.EnrichmentKind:
+				storeMock.
+					EXPECT().
+					UpdateEnrichmentsIter(gomock.Any(), wantIter.O.Updater, wantIter.O.Fingerprint, gomock.Any()).
+					Do(func(_, _, _ any, it datastore.EnrichmentIter) {
+						it(func(e *driver.EnrichmentRecord, err error) bool {
+							assert.NoError(t, err)
+							gotIter.E = append(gotIter.E, e)
+							return true
+						})
+					}).
+					After(opCall)
+			}
+		}
+
+		u := &Updater{store: storeMock}
+		u.iterateFunc = mockIterate(t, want...)
+		err := u.Import(ctx, nil)
+
+		assert.NoError(t, err)
+		if !cmp.Equal(got, want) {
+			t.Error(cmp.Diff(got, want))
+		}
+	})
+
+	t.Run("when iteration fails then stop and return the error", func(t *testing.T) {
+		var want, got []*iteration
+
+		want = append(want,
+			&iteration{
+				O: &driver.UpdateOperation{
+					Kind:        driver.VulnerabilityKind,
+					Updater:     "fake-updater",
+					Fingerprint: "fake-updater-fingerprint",
+				},
+				V: test.GenUniqueVulnerabilities(10, "fake-updater"),
+			},
+			&iteration{
+				O: &driver.UpdateOperation{
+					Kind:        driver.VulnerabilityKind,
+					Updater:     "another-fake-updater",
+					Fingerprint: "fake-updater-fingerprint",
+				},
+				Err: "fake error in the iteration",
+			})
+
+		storeMock := mocks.NewMockMatcherStore(ctrl)
+		got = append(got, &iteration{}, &iteration{})
+
+		gomock.InOrder(
+			// First iteration.
+			storeMock.
+				EXPECT().
+				GetUpdateOperations(gomock.Any(), want[0].O.Kind, want[0].O.Updater).
+				Return(map[string][]driver.UpdateOperation{want[0].O.Updater: {}}, nil).
+				Do(func(_ any, kind driver.UpdateKind, updater string) {
+					got[0].O = &driver.UpdateOperation{
+						Kind:        kind,
+						Updater:     updater,
+						Fingerprint: want[0].O.Fingerprint,
+					}
+				}),
+			storeMock.
+				EXPECT().
+				UpdateVulnerabilitiesIter(gomock.Any(), want[0].O.Updater, want[0].O.Fingerprint, gomock.Any()).
+				Do(func(_, _, _ any, it datastore.VulnerabilityIter) {
+					it(func(v *claircore.Vulnerability, err error) bool {
+						assert.NoError(t, err)
+						got[0].V = append(got[0].V, v)
+						return true
+					})
+				}),
+
+			// Second iteration.
+			storeMock.
+				EXPECT().
+				GetUpdateOperations(gomock.Any(), want[1].O.Kind, want[1].O.Updater).
+				Return(map[string][]driver.UpdateOperation{want[1].O.Updater: {}}, nil).
+				Do(func(_ any, kind driver.UpdateKind, updater string) {
+					got[1].O = &driver.UpdateOperation{
+						Kind:        kind,
+						Updater:     updater,
+						Fingerprint: want[1].O.Fingerprint,
+					}
+				}),
+			storeMock.
+				EXPECT().
+				UpdateVulnerabilitiesIter(gomock.Any(), want[1].O.Updater, want[1].O.Fingerprint, gomock.Any()).
+				DoAndReturn(func(_, _, _ any, it datastore.VulnerabilityIter) (any, error) {
+					var iterErr error
+					it(func(v *claircore.Vulnerability, err error) bool {
+						assert.Error(t, err, "fake error")
+						got[1].Err = err.Error()
+						iterErr = fmt.Errorf("iterating on vulnerabilities: %w", err)
+						return false
+					})
+					return nil, iterErr
+				}),
+		)
+
+		u := &Updater{store: storeMock}
+		u.iterateFunc = mockIterate(t, want...)
+		err := u.Import(ctx, nil)
+
+		assert.Error(t, err, "iterating on vulnerabilities: fake error")
+		if !cmp.Equal(got, want) {
+			t.Error(cmp.Diff(got, want))
+		}
 	})
 }
