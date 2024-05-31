@@ -8,6 +8,7 @@ import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
@@ -48,7 +49,8 @@ func (s *HandlerTestSuite) SetupSuite() {
 func (s *HandlerTestSuite) SetupTest() {
 	s.client = fake.NewSimpleDynamicClient(runtime.NewScheme(), &v1alpha1.ScanSettingBinding{TypeMeta: v1.TypeMeta{Kind: "ScanSetting", APIVersion: complianceoperator.GetGroupVersion().String()}})
 	s.statusInfo = mocks.NewMockStatusInfo(gomock.NewController(s.T()))
-	s.requestHandler = NewRequestHandler(s.client, s.statusInfo)
+	readySignal := concurrency.NewSignal()
+	s.requestHandler = NewRequestHandler(s.client, s.statusInfo, &readySignal)
 	s.Require().NoError(s.requestHandler.Start())
 }
 
