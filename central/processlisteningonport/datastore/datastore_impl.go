@@ -32,8 +32,7 @@ type datastoreImpl struct {
 }
 
 var (
-	// plopSAC = sac.ForResource(resources.Namespace)
-	adminSAC = sac.ForResource(resources.Access)
+	plopSAC = sac.ForResource(resources.DeploymentExtension)
 	log      = logging.LoggerForModule()
 )
 
@@ -122,7 +121,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		"ProcessListeningOnPort",
 		"AddProcessListeningOnPort",
 	)
-	if ok, err := adminSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -272,9 +271,9 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 ) (
 	processesListeningOnPorts []*storage.ProcessListeningOnPort, err error,
 ) {
-	// if ok, err := plopSAC.ReadAllowed(ctx); err != nil {
+	//if ok, err := plopSAC.ReadAllowed(ctx); err != nil {
 	//	return nil, err
-	// } else if !ok {
+	//} else if !ok {
 	//	return nil, sac.ErrResourceAccessDenied
 	//}
 
@@ -293,7 +292,7 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 }
 
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn WalkFn) error {
-	if ok, err := adminSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := plopSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -303,7 +302,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn WalkFn) error {
 }
 
 func (ds *datastoreImpl) RemoveProcessListeningOnPort(ctx context.Context, ids []string) error {
-	if ok, err := adminSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -538,7 +537,7 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 }
 
 func (ds *datastoreImpl) RemovePlopsByPod(ctx context.Context, id string) error {
-	if ok, err := adminSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied

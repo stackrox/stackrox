@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	metrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processlisteningonport/store"
+	//deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -25,12 +26,14 @@ func NewFullStore(db postgres.DB) store.Store {
 	return &fullStoreImpl{
 		Store: New(db),
 		db:    db,
+		//deploymentDS: deploymentDataStore.Singleton(),
 	}
 }
 
 type fullStoreImpl struct {
 	Store
 	db postgres.DB
+	//deploymentDS deploymentDataStore
 }
 
 // SQL query to join process_listening_on_port together with
@@ -44,7 +47,7 @@ const getByDeploymentStmt = "SELECT plop.serialized, " +
 	"ON plop.processindicatorid = proc.id " +
 	"WHERE plop.deploymentid = $1 AND plop.closed = false"
 
-// const getClusterAndNamespaceStmt = "select namespace, clusterid from deployments where id = $1"
+const getClusterAndNamespaceStmt = "select namespace, clusterid from deployments where id = $1"
 
 // Manually written function to get PLOP joined with ProcessIndicators
 func (s *fullStoreImpl) GetProcessListeningOnPort(
@@ -57,66 +60,82 @@ func (s *fullStoreImpl) GetProcessListeningOnPort(
 		"ProcessListeningOnPortStorage",
 	)
 
-	// _, err := pgutils.Retry2(func() (pgx.Rows, error) {
-	//	return s.checkPermission(ctx, deploymentID)
-	// })
+	 empty, err := pgutils.Retry2(func() (bool, error) {
+		return s.checkAccess(ctx, deploymentID)
+	 })
 
-	// if err != nil {
-	//	return nil, err
-	//}
+	 if err != nil {
+		log.Info("Returning nil, err")
+		return nil, err
+	}
+
+	if empty { return nil, nil }
+
+	// Importing deploymentDataStore results in a circular import cycle
+	//extendedCtx := sac.WithAllAccess(ctx)
+	//deployment, err := s.deploymentDS.GetDeployment(extendedCtx, deploymentID)
+	//if err != nil { return nil, err }
+	//allowed, err := plopSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment))
+	//if err != nil { return nil, err }
+	//if !allowed { return nil, nil }
+
 
 	return pgutils.Retry2(func() ([]*storage.ProcessListeningOnPort, error) {
 		return s.retryableGetPLOP(ctx, deploymentID)
 	})
 }
 
-// func (s *fullStoreImpl) checkPermission(
-//	ctx context.Context,
-//	deploymentID string,
-// ) (pgx.Rows, error) {
-//	rows, err := s.db.Query(ctx, getClusterAndNamespaceStmt, deploymentID)
-//
-//	if err != nil {
-//		//// Do not be alarmed if the error is simply NoRows
-//		//err = pgutils.ErrNilIfNoRows(err)
-//		//if err != nil {
-//		//	log.Warnf("%s: %s", getClusterAndNamespaceStmt, err)
-//		//}
-//		return nil, err
-//	}
-//	defer rows.Close()
-//
-//	err = s.checkPermissionsForRows(ctx, rows)
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return rows, nil
-//}
-//
-// func (s *fullStoreImpl) checkPermissionsForRows(
-//	ctx context.Context,
-//	rows pgx.Rows,
-// ) error {
-//	for rows.Next() {
-//		var namespace string
-//		var clusterID string
-//
-//		if err := rows.Scan(&namespace, &clusterID); err != nil {
-//			return pgutils.ErrNilIfNoRows(err)
-//		}
-//
-//		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID), sac.NamespaceScopeKey(namespace)); err != nil {
-//			return err
-//		} else if !ok {
-//			return sac.ErrResourceAccessDenied
-//		}
-//
-//	}
-//
-//	return nil
-//}
+func (s *fullStoreImpl) checkAccess(
+	ctx context.Context,
+	deploymentID string,
+ ) (bool, error) {
+
+	extendedCtx := sac.WithAllAccess(ctx)
+	rows, err := s.db.Query(extendedCtx, getClusterAndNamespaceStmt, deploymentID)
+
+	if err != nil {
+		// Do not be alarmed if the error is simply NoRows
+		err = pgutils.ErrNilIfNoRows(err)
+		if err != nil {
+			log.Warnf("%s: %s", getClusterAndNamespaceStmt, err)
+		}
+		return true, err
+	}
+	defer rows.Close()
+
+	err = s.checkAccesssForRows(ctx, rows)
+
+	if err != nil {
+		return true, err
+	}
+
+	empty := rows == nil
+
+	return empty, nil
+}
+
+func (s *fullStoreImpl) checkAccesssForRows(
+	ctx context.Context,
+	rows pgx.Rows,
+ ) error {
+	for rows.Next() {
+		var namespace string
+		var clusterID string
+
+		if err := rows.Scan(&namespace, &clusterID); err != nil {
+			return pgutils.ErrNilIfNoRows(err)
+		}
+
+		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID), sac.NamespaceScopeKey(namespace)); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrResourceAccessDenied
+		}
+
+	}
+
+	return nil
+}
 
 func (s *fullStoreImpl) retryableGetPLOP(
 	ctx context.Context,
@@ -245,14 +264,15 @@ func (s *fullStoreImpl) readRows(
 			ImageId:            procMsg.GetImageId(),
 		}
 
-		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(plop.ClusterId), sac.NamespaceScopeKey(plop.Namespace)); err != nil {
-			return nil, err
-		} else if !ok {
-			return nil, sac.ErrResourceAccessDenied
+		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(plop.ClusterId), sac.NamespaceScopeKey(plop.Namespace)); err == nil && ok {
+			plops = append(plops, plop)
 		}
-		plops = append(plops, plop)
 	}
 
 	log.Debugf("Read returned %+v plops", len(plops))
+	if len(plops) == 0 {
+		return nil, nil
+	}
+
 	return plops, nil
 }

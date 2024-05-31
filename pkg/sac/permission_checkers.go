@@ -2,7 +2,6 @@ package sac
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -24,8 +23,6 @@ func NewAnyGlobalResourceAllowedPermissionChecker(targetResources ...permissions
 }
 
 func (a *anyGlobalResourceAllowed) ReadAllowed(ctx context.Context) (bool, error) {
-	fmt.Println("")
-	fmt.Println("func (a *anyGlobalResourceAllowed) ReadAllowed")
 	return a.helper.AccessAllowedToAny(ctx, storage.Access_READ_ACCESS)
 }
 
@@ -46,8 +43,6 @@ func NewAllGlobalResourceAllowedPermissionChecker(targetResources ...permissions
 }
 
 func (a *allGlobalResourcesAllowed) ReadAllowed(ctx context.Context) (bool, error) {
-	fmt.Println("")
-	fmt.Println("func (a *allGlobalResourcesAllowed) ReadAllowed")
 	return a.helper.AccessAllowedToAll(ctx, storage.Access_READ_ACCESS)
 }
 
@@ -68,8 +63,6 @@ func NewNotGloballyDeniedPermissionChecker(targetResource permissions.ResourceMe
 }
 
 func (a *notGloballyDenied) ReadAllowed(ctx context.Context) (bool, error) {
-	fmt.Println("")
-	fmt.Println("func (a *notGloballyDenied) ReadAllowed")
 	return a.accessAllowed(ctx, storage.Access_READ_ACCESS)
 }
 
