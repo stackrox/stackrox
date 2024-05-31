@@ -1,3 +1,4 @@
+import { DeepPartial } from 'utils/type.utils';
 import {
     CompoundSearchFilterConfig,
     SearchFilterAttribute,
@@ -6,7 +7,9 @@ import {
     compoundSearchEntityNames,
 } from '../types';
 
-export function getEntities(config: Partial<CompoundSearchFilterConfig>): SearchFilterEntityName[] {
+export function getEntities(
+    config: DeepPartial<CompoundSearchFilterConfig>
+): SearchFilterEntityName[] {
     const entities = Object.keys(config) as SearchFilterEntityName[];
     return entities;
 }
@@ -16,7 +19,7 @@ function isSearchFilterEntity(key: string): key is SearchFilterEntityName {
 }
 
 export function getDefaultEntity(
-    config: Partial<CompoundSearchFilterConfig>
+    config: DeepPartial<CompoundSearchFilterConfig>
 ): SearchFilterEntityName | undefined {
     const entities = Object.keys(config).filter(isSearchFilterEntity);
     return entities[0];
@@ -24,7 +27,7 @@ export function getDefaultEntity(
 
 export function getEntityAttributes(
     entity: SearchFilterEntityName,
-    config: Partial<CompoundSearchFilterConfig>
+    config: DeepPartial<CompoundSearchFilterConfig>
 ): SearchFilterAttribute[] {
     const entityConfig = config[entity];
     if (entityConfig && entityConfig.attributes) {
@@ -34,9 +37,21 @@ export function getEntityAttributes(
     return [];
 }
 
+export function getEntityAttributeNames(
+    entity: SearchFilterEntityName,
+    config: DeepPartial<CompoundSearchFilterConfig>
+): string[] {
+    const entityConfig = config[entity];
+    if (entityConfig && entityConfig.attributes) {
+        const attributeValues = Object.keys(entityConfig.attributes);
+        return attributeValues;
+    }
+    return [];
+}
+
 export function getDefaultAttribute(
     entity: SearchFilterEntityName,
-    config: Partial<CompoundSearchFilterConfig>
+    config: DeepPartial<CompoundSearchFilterConfig>
 ): SearchFilterAttributeName | undefined {
     const entityConfig = config[entity];
     if (entityConfig && entityConfig.attributes) {
@@ -49,6 +64,9 @@ export function getDefaultAttribute(
 export function ensureStringArray(value: unknown): string[] {
     if (Array.isArray(value) && value.every((element) => typeof element === 'string')) {
         return value as string[];
+    }
+    if (value === 'string') {
+        return [value];
     }
     return [];
 }
