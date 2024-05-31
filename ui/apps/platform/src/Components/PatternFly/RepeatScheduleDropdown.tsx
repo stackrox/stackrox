@@ -38,7 +38,12 @@ function RepeatScheduleDropdown({
         </SelectOption>,
     ];
     if (showNoResultsOption) {
-        options = [<SelectOption isNoResultsOption>None</SelectOption>, ...options];
+        options = [
+            <SelectOption key="none" isNoResultsOption>
+                None
+            </SelectOption>,
+            ...options,
+        ];
     }
     return (
         <SelectSingle
