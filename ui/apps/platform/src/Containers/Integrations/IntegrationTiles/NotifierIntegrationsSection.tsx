@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import { selectors } from 'reducers';
 
 import {
@@ -20,11 +21,18 @@ function NotifierIntegrationsSection(): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const featureFlagDependencyFilter = featureFlagDependencyFilterer(isFeatureFlagEnabled);
 
+    const { isCentralCapabilityAvailable } = useCentralCapabilities();
+    const canUseAcscsEmailIntegration = isCentralCapabilityAvailable(
+        'centralCanUseAcscsEmailIntegration'
+    );
+
     return (
         <IntegrationsSection headerName="Notifier Integrations" id="notifier-integrations">
             {descriptors.filter(featureFlagDependencyFilter).map((descriptor) => {
                 const { image, label, type } = descriptor;
-
+                if (!canUseAcscsEmailIntegration && type === 'acscsEmail') {
+                    return <></>;
+                }
                 return (
                     <IntegrationTile
                         key={type}
