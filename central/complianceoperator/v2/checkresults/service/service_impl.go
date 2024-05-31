@@ -215,8 +215,13 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", request)
 	}
 
+	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, scanResults)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
+	}
+
 	return &v2.ListComplianceProfileResults{
-		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults),
+		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults, controls),
 		ProfileName:    request.GetProfileName(),
 		TotalCount:     int32(count),
 	}, nil

@@ -9,6 +9,7 @@ import (
 	resultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
+	ruleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	ruleMocks "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
@@ -368,6 +369,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 				}
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorCheckName).Return(1, nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+				s.ruleDS.EXPECT().GetControlsByRuleNames(gomock.Any(), gomock.Any()).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
 		{
@@ -392,6 +394,8 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 				}
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorCheckName).Return(1, nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+
+				s.ruleDS.EXPECT().GetControlsByRuleNames(gomock.Any(), []string{"rule-name"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
 		{
@@ -419,6 +423,14 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 				s.Require().Nil(results)
 			}
 		})
+	}
+}
+
+func getExpectedControlResults() []*ruleDS.ControlResult {
+	return []*ruleDS.ControlResult{
+		{RuleName: "rule-name", Standard: "OCP-CIS", Control: "1.2.2"},
+		{RuleName: "rule-name", Standard: "OCP-CIS", Control: "1.3.3"},
+		{RuleName: "rule-name", Standard: "OCP-CIS", Control: "1.4.4"},
 	}
 }
 

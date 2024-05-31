@@ -2,6 +2,7 @@ package storagetov2
 
 import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	compRule "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	types "github.com/stackrox/rox/pkg/protocompat"
@@ -140,14 +141,25 @@ func ComplianceV2ScanResults(incoming []*storage.ComplianceOperatorCheckResultV2
 }
 
 // ComplianceV2ProfileResults converts the counts to the v2 stats
-func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfile) []*v2.ComplianceCheckResultStatusCount {
+func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfile, controlResults []*compRule.ControlResult) []*v2.ComplianceCheckResultStatusCount {
 	var profileResults []*v2.ComplianceCheckResultStatusCount
 
 	for _, resultCount := range resultCounts {
+		var controls []*v2.ComplianceControl
+		for _, controlResult := range controlResults {
+			if controlResult.RuleName == resultCount.RuleName {
+				controls = append(controls, &v2.ComplianceControl{
+					Standard: controlResult.Standard,
+					Control:  controlResult.Control,
+				})
+			}
+		}
+
 		profileResults = append(profileResults, &v2.ComplianceCheckResultStatusCount{
 			CheckName: resultCount.CheckName,
 			Rationale: resultCount.CheckRationale,
 			RuleName:  resultCount.RuleName,
+			Controls:  controls,
 			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  int32(resultCount.FailCount),

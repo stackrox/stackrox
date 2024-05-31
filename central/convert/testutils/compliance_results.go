@@ -520,6 +520,11 @@ func GetComplianceProfileResultsV2(_ *testing.T, profileName string) *v2.ListCom
 				CheckName: "check-name",
 				Rationale: "",
 				RuleName:  "rule-name",
+				Controls: []*v2.ComplianceControl{
+					{Standard: "OCP-CIS", Control: "1.2.2"},
+					{Standard: "OCP-CIS", Control: "1.3.3"},
+					{Standard: "OCP-CIS", Control: "1.4.4"},
+				},
 				CheckStats: []*v2.ComplianceCheckStatusCount{
 					{
 						Count:  failCount,

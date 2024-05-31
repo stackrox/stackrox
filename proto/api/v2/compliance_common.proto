@@ -58,6 +58,12 @@ message ComplianceCheckResultStatusCount {
   string rationale = 2;
   string rule_name = 3;
   repeated ComplianceCheckStatusCount check_stats = 4;
+  repeated ComplianceControl controls = 5;
+}
+
+message ComplianceControl {
+  string standard = 1;
+  string control = 2;
 }
 
 message ComplianceBenchmark {

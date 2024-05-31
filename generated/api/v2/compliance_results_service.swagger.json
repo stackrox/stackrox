@@ -719,6 +719,12 @@
           "items": {
             "$ref": "#/definitions/v2ComplianceCheckStatusCount"
           }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceControl"
+          }
         }
       },
       "title": "Group the number of occurrences by status"
@@ -809,6 +815,17 @@
         }
       },
       "title": "ComplianceClusterCheckStatus provides the status of a compliance check result across clusters"
+    },
+    "v2ComplianceControl": {
+      "type": "object",
+      "properties": {
+        "standard": {
+          "type": "string"
+        },
+        "control": {
+          "type": "string"
+        }
+      }
     },
     "v2ComplianceScanCluster": {
       "type": "object",
