@@ -76,8 +76,8 @@ func (s *fullStoreImpl) GetProcessListeningOnPort(
 	// Importing deploymentDataStore results in a circular import cycle
 	// extendedCtx := sac.WithAllAccess(ctx)
 	// deployment, err := s.deploymentDS.GetDeployment(extendedCtx, deploymentID)
-	//if err != nil { return nil, err }
-	//allowed, err := plopSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment))
+	// if err != nil { return nil, err }
+	// allowed, err := plopSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment))
 	//if err != nil { return nil, err }
 	//if !allowed { return nil, nil }
 
