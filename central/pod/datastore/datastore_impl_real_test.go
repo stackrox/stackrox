@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,10 +43,7 @@ type PodDatastoreSuite struct {
 
 func (s *PodDatastoreSuite) SetupSuite() {
 
-	testContexts := testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
-		resources.Deployment)
-
-	s.ctx = testContexts[testutils.UnrestrictedReadWriteCtx]
+	s.ctx = sac.WithAllAccess(context.Background())
 
 	s.plopAndPiCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -116,7 +112,7 @@ func (s *PodDatastoreSuite) TestRemovePod() {
 
 	// Fetch inserted PLOP
 	newPlops, err := s.datastore.plops.GetProcessListeningOnPort(
-		s.plopAndPiCtx, fixtureconsts.Deployment1)
+		s.ctx, fixtureconsts.Deployment1)
 	s.NoError(err)
 
 	s.Len(newPlops, 3)
@@ -125,7 +121,7 @@ func (s *PodDatastoreSuite) TestRemovePod() {
 
 	// Fetch inserted PLOP back after deleting pod
 	newPlops, err = s.datastore.plops.GetProcessListeningOnPort(
-		s.plopAndPiCtx, fixtureconsts.Deployment1)
+		s.ctx, fixtureconsts.Deployment1)
 	s.NoError(err)
 
 	// Verify that the correct listening endpoints have been deleted
