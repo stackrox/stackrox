@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	metrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processlisteningonport/store"
-	//deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	// deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -33,7 +33,7 @@ func NewFullStore(db postgres.DB) store.Store {
 type fullStoreImpl struct {
 	Store
 	db postgres.DB
-	//deploymentDS deploymentDataStore
+	// deploymentDS deploymentDataStore
 }
 
 // SQL query to join process_listening_on_port together with
@@ -60,25 +60,26 @@ func (s *fullStoreImpl) GetProcessListeningOnPort(
 		"ProcessListeningOnPortStorage",
 	)
 
-	 empty, err := pgutils.Retry2(func() (bool, error) {
+	empty, err := pgutils.Retry2(func() (bool, error) {
 		return s.checkAccess(ctx, deploymentID)
-	 })
+	})
 
-	 if err != nil {
+	if err != nil {
 		log.Info("Returning nil, err")
 		return nil, err
 	}
 
-	if empty { return nil, nil }
+	if empty {
+		return nil, nil
+	}
 
 	// Importing deploymentDataStore results in a circular import cycle
-	//extendedCtx := sac.WithAllAccess(ctx)
-	//deployment, err := s.deploymentDS.GetDeployment(extendedCtx, deploymentID)
+	// extendedCtx := sac.WithAllAccess(ctx)
+	// deployment, err := s.deploymentDS.GetDeployment(extendedCtx, deploymentID)
 	//if err != nil { return nil, err }
 	//allowed, err := plopSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment))
 	//if err != nil { return nil, err }
 	//if !allowed { return nil, nil }
-
 
 	return pgutils.Retry2(func() ([]*storage.ProcessListeningOnPort, error) {
 		return s.retryableGetPLOP(ctx, deploymentID)
@@ -88,7 +89,7 @@ func (s *fullStoreImpl) GetProcessListeningOnPort(
 func (s *fullStoreImpl) checkAccess(
 	ctx context.Context,
 	deploymentID string,
- ) (bool, error) {
+) (bool, error) {
 
 	extendedCtx := sac.WithAllAccess(ctx)
 	rows, err := s.db.Query(extendedCtx, getClusterAndNamespaceStmt, deploymentID)
@@ -117,7 +118,7 @@ func (s *fullStoreImpl) checkAccess(
 func (s *fullStoreImpl) checkAccesssForRows(
 	ctx context.Context,
 	rows pgx.Rows,
- ) error {
+) error {
 	for rows.Next() {
 		var namespace string
 		var clusterID string

@@ -283,7 +283,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 	suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}))
 	suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: fixtureconsts.Deployment2, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}))
 
-
 	cases := map[string]struct {
 		ctx           context.Context
 		expectAllowed bool
@@ -642,7 +641,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 
 // TestPLOPCloseSameTimestamp: One PLOP object is added with a correct process
 // indicator reference and CloseTimestamp set to the same as existing one.
-  func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
+func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 
 	indicators := getIndicators()
 
