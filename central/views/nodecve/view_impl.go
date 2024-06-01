@@ -79,7 +79,7 @@ func (n *nodeCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCore, 
 	return ret, nil
 }
 
-func (n *nodeCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) (ResourceCountByCVESeverity, error) {
+func (n *nodeCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) {
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
@@ -96,20 +96,15 @@ func (n *nodeCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) 
 		return nil, err
 	}
 	if len(results) == 0 {
-		return NewEmptyResourceCountByCVESeverity(), nil
+		return common.NewEmptyResourceCountByCVESeverity(), nil
 	}
 	if len(results) > 1 {
 		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
 		utils.Should(err)
-		return NewEmptyResourceCountByCVESeverity(), err
+		return common.NewEmptyResourceCountByCVESeverity(), err
 	}
 
-	return &countByNodeCVESeverity{
-		CriticalSeverityCount:  results[0].CriticalSeverityCount,
-		ImportantSeverityCount: results[0].ImportantSeverityCount,
-		ModerateSeverityCount:  results[0].ModerateSeverityCount,
-		LowSeverityCount:       results[0].LowSeverityCount,
-	}, nil
+	return results[0], nil
 }
 
 func (n *nodeCVECoreViewImpl) GetNodeIDs(ctx context.Context, q *v1.Query) ([]string, error) {

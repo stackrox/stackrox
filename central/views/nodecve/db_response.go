@@ -2,6 +2,10 @@ package nodecve
 
 import (
 	"time"
+
+	"github.com/stackrox/rox/central/views/common"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type nodeCVECoreResponse struct {
@@ -39,28 +43,28 @@ func (c *nodeCVECoreResponse) GetNodeCount() int {
 }
 
 // GetNodeCountBySeverity returns the number of nodeMap of each severity level
-func (n *nodeCVECoreResponse) GetNodeCountBySeverity() ResourceCountByCVESeverity {
+func (c *nodeCVECoreResponse) GetNodeCountBySeverity() common.ResourceCountByCVESeverity {
 	return &countByNodeCVESeverity{
-		CriticalSeverityCount:  n.NodesWithCriticalSeverity,
-		ImportantSeverityCount: n.NodesWithImportantSeverity,
-		ModerateSeverityCount:  n.NodesWithModerateSeverity,
-		LowSeverityCount:       n.NodesWithLowSeverity,
+		CriticalSeverityCount:  c.NodesWithCriticalSeverity,
+		ImportantSeverityCount: c.NodesWithImportantSeverity,
+		ModerateSeverityCount:  c.NodesWithModerateSeverity,
+		LowSeverityCount:       c.NodesWithLowSeverity,
 	}
 }
 
 // GetNodeIDs returns the node ids affected by the node CVE
-func (n *nodeCVECoreResponse) GetNodeIDs() []string {
-	return n.NodeIDs
+func (c *nodeCVECoreResponse) GetNodeIDs() []string {
+	return c.NodeIDs
 }
 
 // GetFirstDiscoveredInSystem returns the first time the node CVE was discovered in the system
-func (n *nodeCVECoreResponse) GetFirstDiscoveredInSystem() *time.Time {
-	return n.FirstDiscoveredInSystem
+func (c *nodeCVECoreResponse) GetFirstDiscoveredInSystem() *time.Time {
+	return c.FirstDiscoveredInSystem
 }
 
 // GetOperatingSystemCount returns the number of operating systems of nodeMap affected by the node CVE
-func (n *nodeCVECoreResponse) GetOperatingSystemCount() int {
-	return n.OperatingSystemCount
+func (c *nodeCVECoreResponse) GetOperatingSystemCount() int {
+	return c.OperatingSystemCount
 }
 
 type nodeCVECoreCount struct {
@@ -74,20 +78,41 @@ type countByNodeCVESeverity struct {
 	LowSeverityCount       int `db:"low_severity_count"`
 }
 
-func (c countByNodeCVESeverity) GetCriticalSeverityCount() int {
-	return c.CriticalSeverityCount
+func (c *countByNodeCVESeverity) GetCriticalSeverityCount() common.ResourceCountByFixability {
+	return &resourceCountByFixability{
+		total: c.CriticalSeverityCount,
+	}
 }
 
-func (c countByNodeCVESeverity) GetImportantSeverityCount() int {
-	return c.ImportantSeverityCount
+func (c *countByNodeCVESeverity) GetImportantSeverityCount() common.ResourceCountByFixability {
+	return &resourceCountByFixability{
+		total: c.ImportantSeverityCount,
+	}
 }
 
-func (c countByNodeCVESeverity) GetModerateSeverityCount() int {
-	return c.ModerateSeverityCount
+func (c *countByNodeCVESeverity) GetModerateSeverityCount() common.ResourceCountByFixability {
+	return &resourceCountByFixability{
+		total: c.ModerateSeverityCount,
+	}
 }
 
-func (c countByNodeCVESeverity) GetLowSeverityCount() int {
-	return c.LowSeverityCount
+func (c *countByNodeCVESeverity) GetLowSeverityCount() common.ResourceCountByFixability {
+	return &resourceCountByFixability{
+		total: c.LowSeverityCount,
+	}
+}
+
+type resourceCountByFixability struct {
+	total int
+}
+
+func (c *resourceCountByFixability) GetTotal() int {
+	return c.total
+}
+
+func (c *resourceCountByFixability) GetFixable() int {
+	utils.Should(errox.NotImplemented)
+	return 0
 }
 
 type nodeResponse struct {
@@ -98,9 +123,8 @@ type nodeResponse struct {
 	ClusterName     string     `db:"cluster"`
 	OperatingSystem string     `db:"operating_system"`
 	ScanTime        *time.Time `db:"node_scan_time"`
-	// CVEBySeverity are with another jira <link>
 }
 
-func (r nodeResponse) GetNodeID() string {
+func (r *nodeResponse) GetNodeID() string {
 	return r.NodeID
 }

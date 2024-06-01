@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 	time "time"
 
+	common "github.com/stackrox/rox/central/views/common"
 	nodecve "github.com/stackrox/rox/central/views/nodecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	gomock "go.uber.org/mock/gomock"
@@ -99,10 +100,10 @@ func (mr *MockCveCoreMockRecorder) GetNodeCount() *gomock.Call {
 }
 
 // GetNodeCountBySeverity mocks base method.
-func (m *MockCveCore) GetNodeCountBySeverity() nodecve.ResourceCountByCVESeverity {
+func (m *MockCveCore) GetNodeCountBySeverity() common.ResourceCountByCVESeverity {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNodeCountBySeverity")
-	ret0, _ := ret[0].(nodecve.ResourceCountByCVESeverity)
+	ret0, _ := ret[0].(common.ResourceCountByCVESeverity)
 	return ret0
 }
 
@@ -193,10 +194,10 @@ func (mr *MockCveViewMockRecorder) Count(ctx, q any) *gomock.Call {
 }
 
 // CountBySeverity mocks base method.
-func (m *MockCveView) CountBySeverity(ctx context.Context, q *v1.Query) (nodecve.ResourceCountByCVESeverity, error) {
+func (m *MockCveView) CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CountBySeverity", ctx, q)
-	ret0, _ := ret[0].(nodecve.ResourceCountByCVESeverity)
+	ret0, _ := ret[0].(common.ResourceCountByCVESeverity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -235,83 +236,4 @@ func (m *MockCveView) GetNodeIDs(ctx context.Context, q *v1.Query) ([]string, er
 func (mr *MockCveViewMockRecorder) GetNodeIDs(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeIDs", reflect.TypeOf((*MockCveView)(nil).GetNodeIDs), ctx, q)
-}
-
-// MockResourceCountByCVESeverity is a mock of ResourceCountByCVESeverity interface.
-type MockResourceCountByCVESeverity struct {
-	ctrl     *gomock.Controller
-	recorder *MockResourceCountByCVESeverityMockRecorder
-}
-
-// MockResourceCountByCVESeverityMockRecorder is the mock recorder for MockResourceCountByCVESeverity.
-type MockResourceCountByCVESeverityMockRecorder struct {
-	mock *MockResourceCountByCVESeverity
-}
-
-// NewMockResourceCountByCVESeverity creates a new mock instance.
-func NewMockResourceCountByCVESeverity(ctrl *gomock.Controller) *MockResourceCountByCVESeverity {
-	mock := &MockResourceCountByCVESeverity{ctrl: ctrl}
-	mock.recorder = &MockResourceCountByCVESeverityMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockResourceCountByCVESeverity) EXPECT() *MockResourceCountByCVESeverityMockRecorder {
-	return m.recorder
-}
-
-// GetCriticalSeverityCount mocks base method.
-func (m *MockResourceCountByCVESeverity) GetCriticalSeverityCount() int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCriticalSeverityCount")
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// GetCriticalSeverityCount indicates an expected call of GetCriticalSeverityCount.
-func (mr *MockResourceCountByCVESeverityMockRecorder) GetCriticalSeverityCount() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCriticalSeverityCount", reflect.TypeOf((*MockResourceCountByCVESeverity)(nil).GetCriticalSeverityCount))
-}
-
-// GetImportantSeverityCount mocks base method.
-func (m *MockResourceCountByCVESeverity) GetImportantSeverityCount() int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImportantSeverityCount")
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// GetImportantSeverityCount indicates an expected call of GetImportantSeverityCount.
-func (mr *MockResourceCountByCVESeverityMockRecorder) GetImportantSeverityCount() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImportantSeverityCount", reflect.TypeOf((*MockResourceCountByCVESeverity)(nil).GetImportantSeverityCount))
-}
-
-// GetLowSeverityCount mocks base method.
-func (m *MockResourceCountByCVESeverity) GetLowSeverityCount() int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLowSeverityCount")
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// GetLowSeverityCount indicates an expected call of GetLowSeverityCount.
-func (mr *MockResourceCountByCVESeverityMockRecorder) GetLowSeverityCount() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLowSeverityCount", reflect.TypeOf((*MockResourceCountByCVESeverity)(nil).GetLowSeverityCount))
-}
-
-// GetModerateSeverityCount mocks base method.
-func (m *MockResourceCountByCVESeverity) GetModerateSeverityCount() int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetModerateSeverityCount")
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// GetModerateSeverityCount indicates an expected call of GetModerateSeverityCount.
-func (mr *MockResourceCountByCVESeverityMockRecorder) GetModerateSeverityCount() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetModerateSeverityCount", reflect.TypeOf((*MockResourceCountByCVESeverity)(nil).GetModerateSeverityCount))
 }

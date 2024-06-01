@@ -12,6 +12,7 @@ import (
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
+	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
@@ -228,10 +229,10 @@ func (s *NodeCVEViewTestSuite) TestGetNodeCVECoreWithPagination() {
 					// The total cve count should be equal to aggregation of the all severity cve counts.
 					assert.Equal(t,
 						record.GetNodeCount(),
-						record.GetNodeCountBySeverity().GetCriticalSeverityCount()+
-							record.GetNodeCountBySeverity().GetImportantSeverityCount()+
-							record.GetNodeCountBySeverity().GetModerateSeverityCount()+
-							record.GetNodeCountBySeverity().GetLowSeverityCount(),
+						record.GetNodeCountBySeverity().GetCriticalSeverityCount().GetTotal()+
+							record.GetNodeCountBySeverity().GetImportantSeverityCount().GetTotal()+
+							record.GetNodeCountBySeverity().GetModerateSeverityCount().GetTotal()+
+							record.GetNodeCountBySeverity().GetLowSeverityCount().GetTotal(),
 					)
 				}
 			})
@@ -788,7 +789,7 @@ func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []Cve
 	return expected
 }
 
-func (s *NodeCVEViewTestSuite) compileExpectedCountBySeverity(filter *filterImpl) ResourceCountByCVESeverity {
+func (s *NodeCVEViewTestSuite) compileExpectedCountBySeverity(filter *filterImpl) common.ResourceCountByCVESeverity {
 	var expected countByNodeCVESeverity
 	cveMap := make(map[string]set.Set[storage.VulnerabilitySeverity])
 	for _, n := range s.nodeMap {

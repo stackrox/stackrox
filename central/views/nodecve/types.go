@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
@@ -15,7 +16,7 @@ type CveCore interface {
 	GetCVEIDs() []string
 	GetTopCVSS() float32
 	GetNodeCount() int
-	GetNodeCountBySeverity() ResourceCountByCVESeverity
+	GetNodeCountBySeverity() common.ResourceCountByCVESeverity
 	GetNodeIDs() []string
 	GetFirstDiscoveredInSystem() *time.Time
 	GetOperatingSystemCount() int
@@ -30,15 +31,6 @@ type CveCore interface {
 type CveView interface {
 	Count(ctx context.Context, q *v1.Query) (int, error) // NodeCVECount
 	Get(ctx context.Context, q *v1.Query) ([]CveCore, error)
-	CountBySeverity(ctx context.Context, q *v1.Query) (ResourceCountByCVESeverity, error) // node view count cve by severity
+	CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) // node view count cve by severity
 	GetNodeIDs(ctx context.Context, q *v1.Query) ([]string, error)
-}
-
-// ResourceCountByCVESeverity provides ability to retrieve number of resources by severity
-// TODO(cdu): unify this interface with common.ResourceCountByCVESeverity
-type ResourceCountByCVESeverity interface {
-	GetCriticalSeverityCount() int
-	GetImportantSeverityCount() int
-	GetModerateSeverityCount() int
-	GetLowSeverityCount() int
 }
