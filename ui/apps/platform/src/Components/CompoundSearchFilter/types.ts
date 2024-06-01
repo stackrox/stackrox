@@ -349,8 +349,8 @@ export const nodeCVESearchFilterConfig = {
             inputType: 'select',
             inputProps: {
                 options: [
-                    { label: 'True', value: 'True' },
-                    { label: 'False', value: 'False' },
+                    { label: 'True', value: 'true' },
+                    { label: 'False', value: 'false' },
                 ],
             },
         },
@@ -400,8 +400,8 @@ export const platformCVESearchFilterConfig = {
             inputType: 'select',
             inputProps: {
                 options: [
-                    { label: 'True', value: 'True' },
-                    { label: 'False', value: 'False' },
+                    { label: 'True', value: 'true' },
+                    { label: 'False', value: 'false' },
                 ],
             },
         },
@@ -512,17 +512,17 @@ export type NodeComponentAttributeInputType = ValueOf<
 
 // Compound search filter config
 
-export const compoundSearchFilter = {
+export const compoundSearchFilter: CompoundSearchFilterConfig = {
     Image: imageSearchFilterConfig,
     Deployment: deploymentSearchFilterConfig,
     Namespace: namespaceSearchFilterConfig,
     Cluster: clusterSearchFilterConfig,
     Node: nodeSearchFilterConfig,
-    ImageCVE: imageCVESearchFilterConfig,
-    NodeCVE: nodeCVESearchFilterConfig,
-    PlatformCVE: platformCVESearchFilterConfig,
-    ImageComponent: imageComponentSearchFilterConfig,
-    NodeComponent: nodeComponentSearchFilterConfig,
+    'Image CVE': imageCVESearchFilterConfig,
+    'Node CVE': nodeCVESearchFilterConfig,
+    'Platform CVE': platformCVESearchFilterConfig,
+    'Image Component': imageComponentSearchFilterConfig,
+    'Node Component': nodeComponentSearchFilterConfig,
 };
 
 export type CompoundSearchFilterConfig = {
@@ -531,11 +531,11 @@ export type CompoundSearchFilterConfig = {
     Namespace: NamespaceSearchFilterConfig;
     Cluster: ClusterSearchFilterConfig;
     Node: NodeSearchFilterConfig;
-    ImageCVE: ImageCVESearchFilterConfig;
-    NodeCVE: NodeCVESearchFilterConfig;
-    PlatformCVE: PlatformCVESearchFilterConfig;
-    ImageComponent: ImageComponentSearchFilterConfig;
-    NodeComponent: NodeComponentSearchFilterConfig;
+    'Image CVE': ImageCVESearchFilterConfig;
+    'Node CVE': NodeCVESearchFilterConfig;
+    'Platform CVE': PlatformCVESearchFilterConfig;
+    'Image Component': ImageComponentSearchFilterConfig;
+    'Node Component': NodeComponentSearchFilterConfig;
 };
 
 export const compoundSearchEntityNames = Object.keys(compoundSearchFilter);
