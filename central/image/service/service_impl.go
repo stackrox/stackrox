@@ -243,9 +243,10 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	defer s.internalScanSemaphore.Release(1)
 
 	var (
-		img       *storage.Image
-		fetchOpt  enricher.FetchOption
-		imgExists bool
+		img         *storage.Image
+		fetchOpt    enricher.FetchOption
+		imgExists   bool
+		hadMetadata bool
 	)
 
 	imgID := request.GetImage().GetId()
@@ -264,6 +265,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 				return internalScanRespFromImage(existingImg), nil
 			}
 			existingImg.Names = append(existingImg.Names, request.GetImage().GetName())
+			hadMetadata = existingImg.GetMetadata() != nil
 			img = existingImg
 			// We only want to force re-fetching of signatures and verification data, the additional image name has no
 			// impact on image scan data.
@@ -287,14 +289,8 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		img = types.ToImage(request.GetImage())
 	}
 
-	if err := s.enrichImage(ctx, img, fetchOpt, request.GetSource()); err != nil && imgExists {
-		// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
-		// central, since it could lead to us overriding an enriched image with a non-enriched image.
-		return internalScanRespFromImage(img), nil
-	}
-	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
-	// contained a digest.
-	if imgID != "" {
+	err = s.enrichImage(ctx, img, fetchOpt, request.GetSource())
+	if shouldSaveImage(img, imgID, imgExists, hadMetadata, err) {
 		_ = s.saveImage(img)
 	}
 
@@ -338,6 +334,37 @@ func updateImageFromRequest(existingImg *storage.Image, reqImgName *storage.Imag
 	// over time via the various reprocessing workflows.
 	existingImg.Names = []*storage.ImageName{reqImgName}
 	return true
+}
+
+// shouldSaveImage returns true if the image should be saved to the DB, false otherwise.
+func shouldSaveImage(img *storage.Image, requestImgID string, imgExists bool, imgHadMetadata bool, enrichError error) bool {
+	if requestImgID == "" {
+		// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
+		// contained a digest.
+		return false
+	}
+
+	if enrichError == nil || !imgExists {
+		// Enrichment was successful or there is no existing image, in either case save the image.
+		return true
+	}
+
+	// If we got here the image was found in the DB and the enrichment had an error.
+
+	if !features.UnqualifiedSearchRegistries.Enabled() {
+		// The logic below this condition was introduced during a patch, to reduce impact
+		// if something were to go wrong, we're guarding it with a feature flag.
+		return false
+	}
+
+	if !imgHadMetadata && img.GetMetadata() != nil {
+		// Save the image if the existing image had no metadata but the new one does.
+		return true
+	}
+
+	// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
+	// central, since it could lead to us overriding an enriched image with a non-enriched image.
+	return false
 }
 
 // enrichImage will enrich the given image, additionally applying the request source and fetch option to the request.

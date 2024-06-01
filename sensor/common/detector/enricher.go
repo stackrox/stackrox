@@ -142,7 +142,7 @@ outer:
 	}
 }
 
-func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
+func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, existingNames []*storage.ImageName) {
 	defer c.signal.Signal()
 
 	// Ask Central to scan the image if the image is not local otherwise scan with local scanner
@@ -163,11 +163,17 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 		// so alerting can progress.
 		log.Errorf("Scan request failed for image %q: %s", req.containerImage.GetName().GetFullName(), err)
 		c.image = types.ToImage(req.containerImage)
+		if existingNames != nil {
+			c.image.Names = protoutils.SliceUnique(append(c.image.GetNames(), existingNames...))
+		}
 		return
 	}
 
 	log.Debugf("Successful image scan for image %s: %d components returned by scanner", req.containerImage.GetName().GetFullName(), len(scannedImage.GetImage().GetScan().GetComponents()))
 	c.image = scannedImage.GetImage()
+	if existingNames != nil {
+		c.image.Names = protoutils.SliceUnique(append(scannedImage.GetImage().GetNames(), existingNames...))
+	}
 }
 
 func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
@@ -210,6 +216,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	// result associated, this should not matter.
 	var forceEnrichImageWithSignatures bool
 
+	var existingNames []*storage.ImageName
 	img, ok := e.getImageFromCache(key)
 	if ok {
 		// If the container image name is already within the cached images names, we can short-circuit.
@@ -224,6 +231,12 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 		// Ensuring we have a fully enriched image (especially regarding image signatures), we need to make sure to
 		// scan this image once more. This should result in the signatures + signature verification being re-done.
 		forceEnrichImageWithSignatures = true
+		if features.UnqualifiedSearchRegistries.Enabled() {
+			// We're guarding this functionality with a feature flag because
+			// it was introduced during a patch. We want to make sure the
+			// Names slice is fully populated to prevent cache misses.
+			existingNames = img.GetNames()
+		}
 	}
 
 	newValue := &cacheValue{
@@ -233,7 +246,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {
-		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
+		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req, existingNames)
 	}
 	return imageChanResult{
 		image:        value.waitAndGet(),
