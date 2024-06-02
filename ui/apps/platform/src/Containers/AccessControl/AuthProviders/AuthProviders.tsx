@@ -32,7 +32,10 @@ import { actions as groupActions } from 'reducers/groups';
 import { actions as inviteActions } from 'reducers/invite';
 import { actions as roleActions, types as roleActionTypes } from 'reducers/roles';
 import { AuthProvider } from 'services/AuthService';
-
+import usePermissions from 'hooks/usePermissions';
+import { integrationsPath } from 'routePaths';
+import { getVersionedDocs } from 'utils/versioning';
+import useMetadata from 'hooks/useMetadata';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 import { mergeGroupsWithAuthProviders } from './authProviders.utils';
 
@@ -44,10 +47,6 @@ import AuthProvidersList from './AuthProvidersList';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
-import usePermissions from '../../../hooks/usePermissions';
-import { integrationsPath } from '../../../routePaths';
-import { getVersionedDocs } from '../../../utils/versioning';
-import useMetadata from '../../../hooks/useMetadata';
 
 const entityType = 'AUTH_PROVIDER';
 
@@ -221,7 +220,7 @@ function AuthProviders(): ReactElement {
                     variant="info"
                     title={
                         <span>
-                            Consider using short-lived tokens for machine to machine communications
+                            Consider using short-lived tokens for machine-to-machine communications
                             such as CI/CD pipelines, scripts, and other automation.
                         </span>
                     }
@@ -239,9 +238,11 @@ function AuthProviders(): ReactElement {
                                 How to configure short-lived access
                             </a>
                         </ExternalLink>
-                        <Link to={`${integrationsPath}/authProviders/machineAccess/create`}>
-                            Create a machine to machine configuration
-                        </Link>
+                        {hasWriteAccessForPage && (
+                            <Link to={`${integrationsPath}/authProviders/machineAccess/create`}>
+                                Create a machine access configuration
+                            </Link>
+                        )}
                     </Flex>
                     <ExpandableSection
                         toggleText="More resources"
