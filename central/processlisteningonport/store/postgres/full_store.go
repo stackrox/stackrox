@@ -7,7 +7,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	metrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processlisteningonport/store"
-	// deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -26,14 +25,12 @@ func NewFullStore(db postgres.DB) store.Store {
 	return &fullStoreImpl{
 		Store: New(db),
 		db:    db,
-		//deploymentDS: deploymentDataStore.Singleton(),
 	}
 }
 
 type fullStoreImpl struct {
 	Store
 	db postgres.DB
-	// deploymentDS deploymentDataStore
 }
 
 // SQL query to join process_listening_on_port together with
