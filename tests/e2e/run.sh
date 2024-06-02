@@ -11,6 +11,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$ROOT/scripts/lib.sh"
 # shellcheck source=../../scripts/ci/sensor-wait.sh
 source "$ROOT/scripts/ci/sensor-wait.sh"
+# shellcheck source=../../scripts/ci/scanner-v4-wait.sh
+source "$ROOT/scripts/ci/scanner-v4-wait.sh"
 # shellcheck source=../../tests/scripts/setup-certs.sh
 source "$ROOT/tests/scripts/setup-certs.sh"
 # shellcheck source=../../tests/e2e/lib.sh
