@@ -78,8 +78,8 @@ func (s *fullStoreImpl) GetProcessListeningOnPort(
 	// deployment, err := s.deploymentDS.GetDeployment(extendedCtx, deploymentID)
 	// if err != nil { return nil, err }
 	// allowed, err := plopSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment))
-	//if err != nil { return nil, err }
-	//if !allowed { return nil, nil }
+	// if err != nil { return nil, err }
+	// if !allowed { return nil, nil }
 
 	return pgutils.Retry2(func() ([]*storage.ProcessListeningOnPort, error) {
 		return s.retryableGetPLOP(ctx, deploymentID)
