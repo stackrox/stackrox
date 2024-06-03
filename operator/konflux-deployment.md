@@ -38,6 +38,5 @@ kubectl apply -n stackrox -f secured-cluster-cr.yaml
 
 ## TODO
 
-- [ ] Figure out correct limits & smoke test
-- [ ] Introduce MAIN_SUFFIX env var to operator's VERSION string
-- [ ] Decide how to deal with the .0 vs .x situation
+- [x] Figure out correct limits & smoke test
+- [ ] Operator expects .0 patch version, .x supplied. Blocked by ROX-22250.
