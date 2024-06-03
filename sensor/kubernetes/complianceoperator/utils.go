@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/pointers"
+	"github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,12 +42,10 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 			APIVersion: complianceoperator.GetGroupVersion().String(),
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      request.GetScanName(),
-			Namespace: namespace,
-			Labels:    stackroxLabels,
-			Annotations: map[string]string{
-				"owner": "stackrox",
-			},
+			Name:        request.GetScanName(),
+			Namespace:   namespace,
+			Labels:      utils.GetSensorKubernetesLabels(),
+			Annotations: utils.GetSensorKubernetesAnnotations(),
 		},
 		Roles: []string{masterRole, workerRole},
 		ComplianceSuiteSettings: v1alpha1.ComplianceSuiteSettings{
@@ -79,12 +78,10 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 			APIVersion: complianceoperator.GetGroupVersion().String(),
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      request.GetScanName(),
-			Namespace: namespace,
-			Labels:    stackroxLabels,
-			Annotations: map[string]string{
-				"owner": "stackrox",
-			},
+			Name:        request.GetScanName(),
+			Namespace:   namespace,
+			Labels:      utils.GetSensorKubernetesLabels(),
+			Annotations: utils.GetSensorKubernetesAnnotations(),
 		},
 		Profiles: profileRefs,
 		SettingsRef: &v1alpha1.NamedObjectReference{
