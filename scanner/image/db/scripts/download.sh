@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -euox pipefail
 
 # If this is updated, be sure to update PG_MAJOR in the Dockerfile and the signature file.
 postgres_major=15
