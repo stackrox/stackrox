@@ -1,16 +1,12 @@
-# Something
+# Operator deployment
 
 0. Make sure you have [cert-manager installed](https://cert-manager.io/docs/installation/).
    It takes care of the TLS aspects of the connection from k8s API server to the webhook server
    embedded in the manager binary.
 
-1. `ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy > resources.yaml`
+1. `ROX_PRODUCT_BRANDING=RHACS_BRANDING MAIN_TAG_SUFFIX=-fast make deploy`
 
-2. Set `spec.template.spec.containers[0].image` to `quay.io/rhacs-eng/stackrox-operator:4.4.x-811-geb354f05a3-fast` (remove `-dirty`, replace 0 with x)
-
-3. `cat resources.yaml| kubectl apply -f -`
-
-4. Add missing `quay.io/rhacs-eng` pull secret to Controller Manager service account.
+2. Add missing `quay.io/rhacs-eng` pull secret to Controller Manager service account.
 
 ```bash
 kubectl -n stackrox-operator-system create secret docker-registry quay-io-rhacs-eng-pull-secrets \
@@ -20,6 +16,9 @@ kubectl -n stackrox-operator-system create secret docker-registry quay-io-rhacs-
 
 kubectl -n stackrox-operator-system patch serviceaccount rhacs-operator-controller-manager -p '{"imagePullSecrets": [{"name": "quay-io-rhacs-eng-pull-secrets"}]}'
 ```
+
+3. Set `spec.template.spec.containers[0].image` to `quay.io/rhacs-eng/stackrox-operator:4.4.x-811-geb354f05a3-fast` (remove `-dirty`, replace 0 with x, or whatever image you want):
+    `kubectl -n stackrox-operator-system set image deployment/rhacs-operator-controller-manager manager=quay.io/rhacs-eng/stackrox-operator:4.4.x-811-geb354f05a3-fast`
 
 5. Create pull secret for stackrox deployments: `NAMESPACE="stackrox" make -C operator stackrox-image-pull-secret`
 
@@ -36,3 +35,9 @@ kubectl apply -f ~/Downloads/remote-Operator-secrets-cluster-init-bundle.yaml -n
 ```bash
 kubectl apply -n stackrox -f secured-cluster-cr.yaml
 ```
+
+## TODO
+
+- [ ] Figure out correct limits & smoke test
+- [ ] Introduce MAIN_SUFFIX env var to operator's VERSION string
+- [ ] Decide how to deal with the .0 vs .x situation
