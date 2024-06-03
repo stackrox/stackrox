@@ -1,3 +1,10 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: basic-component-acs-scan
+imagePullSecrets:
+- name: roxctl-pull
+---
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
@@ -368,6 +375,7 @@ spec:
       value: table
     - name: rox_image
       value: quay.io/rhacs-eng/roxctl:4.4.2
+    serviceAccountName: basic-component-acs-scan
     workspaces:
     - name: rox-api-token-auth
       secret:
