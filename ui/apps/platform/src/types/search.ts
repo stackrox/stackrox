@@ -33,3 +33,10 @@ export type GraphQLSortOption = {
     id: string;
     desc: boolean;
 };
+
+export type SearchQueryOptions = {
+    searchFilter?: SearchFilter;
+    sortOption?: ApiSortOption;
+    page: number;
+    perPage: number;
+};

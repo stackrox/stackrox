@@ -1,10 +1,8 @@
-import qs from 'qs';
-
 import axios from 'services/instance';
-import { ApiSortOption } from 'types/search';
-import { getPaginationParams } from 'utils/searchUtils';
+import { SearchQueryOptions } from 'types/search';
 
 import {
+    buildNestedRawQueryParams,
     ComplianceCheckStatus,
     ComplianceScanCluster,
     complianceV2Url,
@@ -47,16 +45,9 @@ export type ListComplianceCheckClusterResponse = {
 export function getComplianceProfileCheckResult(
     profileName: string,
     checkName: string,
-    sortOption: ApiSortOption,
-    page: number,
-    perPage: number
+    { sortOption, page, perPage }: SearchQueryOptions
 ): Promise<ListComplianceCheckClusterResponse> {
-    const queryParameters = {
-        query: {
-            pagination: getPaginationParams({ page, perPage, sortOption }),
-        },
-    };
-    const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
     return axios
         .get<ListComplianceCheckClusterResponse>(
             `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks/${checkName}?${params}`
@@ -69,17 +60,9 @@ export function getComplianceProfileCheckResult(
  */
 export function getComplianceProfileResults(
     profileName: string,
-    sortOption: ApiSortOption,
-    page: number,
-    perPage: number
+    { sortOption, page, perPage }: SearchQueryOptions
 ): Promise<ListComplianceProfileResults> {
-    const queryParameters = {
-        query: {
-            pagination: getPaginationParams({ page, perPage, sortOption }),
-        },
-    };
-    const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
-
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
     return axios
         .get<ListComplianceProfileResults>(
             `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks?${params}`
