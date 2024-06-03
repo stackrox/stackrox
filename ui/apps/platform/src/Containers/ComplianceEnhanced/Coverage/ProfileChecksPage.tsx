@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { Divider, PageSection, Title } from '@patternfly/react-core';
 
@@ -10,12 +10,15 @@ import { getComplianceProfileResults } from 'services/ComplianceResultsService';
 
 import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
-import CoveragesToggleGroup from './CoveragesToggleGroup';
+import { coverageProfileChecksPath } from './compliance.coverage.routes';
+import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
+import ProfilesToggleGroup from './ProfilesToggleGroup';
 import CoveragesPageHeader from './CoveragesPageHeader';
 import ProfileChecksTable from './ProfileChecksTable';
 
 function ProfileChecksPage() {
     const { profileName } = useParams();
+    const { profileScanStats } = useContext(ComplianceProfilesContext);
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { page, perPage, setPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
@@ -35,7 +38,10 @@ function ProfileChecksPage() {
             <PageTitle title="Compliance coverage - Profile checks" />
             <CoveragesPageHeader />
             <PageSection>
-                <CoveragesToggleGroup tableView="checks" />
+                <ProfilesToggleGroup
+                    profiles={profileScanStats.scanStats}
+                    route={coverageProfileChecksPath}
+                />
             </PageSection>
             <PageSection variant="default">
                 <PageSection variant="light" component="div">
