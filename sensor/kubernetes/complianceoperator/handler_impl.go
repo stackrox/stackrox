@@ -503,8 +503,8 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 	namespace string,
 	req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan,
 	inClusterResources map[string]unstructured.Unstructured,
-	updateFn func(*unstructured.Unstructured, *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error),
-	convertFn func(string, *central.ApplyComplianceScanConfigRequest_BaseScanSettings, string) runtime.Object,
+	updateFn updateFunction,
+	convertFn convertFunction,
 	api complianceoperator.APIResource,
 ) error {
 	namespaceNameIndex := generateScanIndex(namespace, req.GetScanSettings().GetScanName())
