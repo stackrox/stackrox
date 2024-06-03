@@ -91,39 +91,48 @@ func tlsConfigOptsForCentral(logger logger.Logger) (*clientconn.TLSConfigOptions
 
 	var dialContext func(ctx context.Context, addr string) (net.Conn, error)
 
-	skipVerify := false
+	skipVerify := flags.SkipTLSValidation() != nil && *flags.SkipTLSValidation()
 	var roots *x509.CertPool
 	var customVerifier tlscheck.TLSCertVerifier
-	if flags.CAFile() != "" {
-		caPEMData, err := os.ReadFile(flags.CAFile())
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse CA certificates from file")
-		}
-		roots = x509.NewCertPool()
-		if !roots.AppendCertsFromPEM(caPEMData) {
-			return nil, errors.Errorf("CA certificates file %s contains no certificates!", flags.CAFile())
-		}
-		if flags.SkipTLSValidation() != nil && *flags.SkipTLSValidation() {
+	var ca []byte
+	if skipVerify {
+		if flags.CAFile() != "" {
 			logger.WarnfLn("--insecure-skip-tls-verify has no effect when --ca is set")
 		}
 	} else {
-		if flags.SkipTLSValidation() == nil {
+		if flags.CAFile() != "" {
+			var err error
+			if ca, err = os.ReadFile(flags.CAFile()); err != nil {
+				return nil, errors.Wrap(err, "failed to parse CA certificates from file")
+			}
+		} else {
 			customVerifier = &insecureVerifierWithWarning{
 				logger: logger,
 			}
+			// Read the CA from the central secret.
 			if flags.UseKubeContext() {
-				var ca []byte
-				if ca, dialContext, err = getForwardingDialContext(); err != nil {
+				_, core, namespace, err := getConfigs()
+				if err != nil {
 					return nil, err
 				}
-				if ca != nil {
-					roots = x509.NewCertPool()
-					roots.AppendCertsFromPEM(ca)
+				var warn error
+				// Proceed with no CA on error. Return the error as warning later.
+				ca, warn = getCentralCA(context.Background(), core, namespace)
+				if warn != nil {
+					logger.WarnfLn("%v", warn)
 				}
 			}
-		} else if *flags.SkipTLSValidation() {
-			skipVerify = true
 		}
+	}
+
+	if ca != nil {
+		roots = x509.NewCertPool()
+		if !roots.AppendCertsFromPEM(ca) {
+			return nil, errors.Errorf("CA certificates file %s contains no certificates!", flags.CAFile())
+		}
+	}
+	if flags.UseKubeContext() {
+		dialContext = getForwardingDialContext()
 	}
 
 	return &clientconn.TLSConfigOptions{

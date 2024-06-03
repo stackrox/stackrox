@@ -126,6 +126,9 @@ func getPortForwarder(restConfig *rest.Config, pod *corev1.Pod, stopChannel <-ch
 	if err != nil {
 		return 0, nil, errors.WithMessage(err, "failed to construct k8s REST client")
 	}
+	// Role rule required:
+	//   resources: ["pods/portforward"]
+	//   verbs: ["create"]
 	req := restClient.Post().Resource(corev1.ResourcePods.String()).
 		Namespace(pod.GetNamespace()).Name(pod.GetName()).
 		SubResource("portforward")
@@ -212,7 +215,7 @@ func runPortForward(ctx context.Context) (string, uint16, error) {
 	if err != nil {
 		return "", 0, errors.WithMessage(err, "failed to acquire forwarding ports")
 	}
-	// centralPort is the central pod port, not service port, as forwaring goes
+	// centralPort is the central pod port, not service port, as forwarding goes
 	// directly to the pod, and service name is used to pass TLS validation.
 	centralEndpoint := fmt.Sprintf("central.%s:%d", namespace, centralPort)
 	return centralEndpoint, ports[0].Local, nil
@@ -237,19 +240,9 @@ func GetForwardingEndpoint() (string, string, error) {
 
 // getForwardingDialContext returns a dialer, that resolves central service
 // endpoint to the localhost forwarded endpoint: this way the TLS certificate
-// validation work.
-func getForwardingDialContext() ([]byte, func(ctx context.Context, addr string) (net.Conn, error), error) {
-	_, core, namespace, err := getConfigs()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	ca, err := getCentralCA(context.Background(), core, namespace)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	dialContext := func(ctx context.Context, addr string) (net.Conn, error) {
+// validation works.
+func getForwardingDialContext() func(ctx context.Context, addr string) (net.Conn, error) {
+	return func(ctx context.Context, addr string) (net.Conn, error) {
 		svcEndpoint, localEndpoint, err := GetForwardingEndpoint()
 		if err != nil {
 			return nil, err
@@ -259,5 +252,4 @@ func getForwardingDialContext() ([]byte, func(ctx context.Context, addr string) 
 		}
 		return (&net.Dialer{}).DialContext(ctx, "tcp", addr)
 	}
-	return ca, dialContext, nil
 }
