@@ -1,3 +1,7 @@
+import { generatePath } from 'react-router-dom';
+
+import logError from './logError';
+
 export const httpURLPattern = /(https?:\/\/[a-zA-Z0-9]+\.[^\s]{2,})/g;
 
 const urlPattern = new RegExp(
@@ -26,7 +30,32 @@ export function isValidCidrBlock(str) {
     return !!cidrBlockPattern.test(str);
 }
 
+/**
+ * Try to generate a path from a pattern and object, falling back to a default value if an error occurs.
+ * @param pathPattern A path pattern with placeholders for object properties.
+ * @param pathObject  An object with properties to replace placeholders in the path pattern.
+ * @param fallback  A fallback value to use if an error occurs.
+ * @returns A path generated from the pattern and object, or the fallback value if an error occurs.
+ */
+export function safeGeneratePath(
+    pathPattern: string,
+    pathObject: Partial<Record<string, unknown>>,
+    fallback: string
+): string {
+    let href: string;
+
+    try {
+        href = generatePath(pathPattern, pathObject);
+    } catch (error) {
+        href = fallback;
+        logError(error);
+    }
+
+    return href;
+}
+
 export default {
     isValidURL,
     isValidCidrBlock,
+    safeGeneratePath,
 };
