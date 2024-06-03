@@ -22,14 +22,16 @@ export type ClusterCheckStatus = {
 export type ComplianceCheckResult = {
     checkId: string;
     checkName: string;
-    clusters: ClusterCheckStatus[];
+    checkUid: string;
     description: string;
     instructions: string;
     standard: string;
-    control: string;
+    control: string[];
     rationale: string;
     valuesUsed: string[];
     warnings: string[];
+    status: ComplianceCheckStatus;
+    ruleName: string;
 };
 
 export type ListComplianceCheckClusterResponse = {
@@ -37,6 +39,14 @@ export type ListComplianceCheckClusterResponse = {
     profileName: string;
     checkName: string;
     totalCount: number;
+};
+
+export type ListComplianceCheckResultResponse = {
+    checkResults: ComplianceCheckResult[];
+    profileName: string;
+    clusterId: string;
+    totalCount: number;
+    lastScanTime: string; // ISO 8601 date string
 };
 
 /**
@@ -66,6 +76,20 @@ export function getComplianceProfileResults(
     return axios
         .get<ListComplianceProfileResults>(
             `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks?${params}`
+        )
+        .then((response) => response.data);
+}
+
+/**
+ * Fetches check results based off a cluster and profile.
+ */
+export function getComplianceProfileClusterResults(
+    profileName: string,
+    clusterId: string
+): Promise<ListComplianceCheckResultResponse> {
+    return axios
+        .get<ListComplianceCheckResultResponse>(
+            `${complianceResultsBaseUrl}/results/profiles/${profileName}/clusters/${clusterId}`
         )
         .then((response) => response.data);
 }

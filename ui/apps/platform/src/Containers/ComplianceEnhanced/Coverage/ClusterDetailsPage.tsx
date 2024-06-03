@@ -17,8 +17,11 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import useRestQuery from 'hooks/useRestQuery';
 import { getComplianceProfilesStats } from 'services/ComplianceResultsStatsService';
+import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { getComplianceProfileClusterResults } from 'services/ComplianceResultsService';
 
+import ClusterDetailsTable from './ClusterDetailsTable';
 import {
     coverageProfileClustersPath,
     coverageClusterDetailsPath,
@@ -133,6 +136,13 @@ function ClusterDetailsPage() {
                 <ProfilesToggleGroup
                     profiles={clusterProfileData?.scanStats ?? []}
                     handleToggleChange={handleProfilesToggleChange}
+                />
+            </PageSection>
+            <PageSection>
+                <ClusterDetailsTable
+                    clusterId={clusterId}
+                    profileName={profileName}
+                    tableState={tableState}
                 />
             </PageSection>
         </>
