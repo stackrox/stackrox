@@ -17,8 +17,7 @@ repositories {
 
 def grpcVersion = '1.57.2'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
-def protocVersion = '4.27.0'
-def protobufVersion = '3.25.3'
+def protobufVersion = '4.27.0'
 def nettyTcNativeVersion = '2.0.61.Final'
 def fabric8Version = '6.12.1'
 def jacksonVersion = '2.14.2'
@@ -31,7 +30,7 @@ protobuf {
         protocGenArch = ':osx-x86_64'
     }
 
-    protoc { artifact = "com.google.protobuf:protoc:${protocVersion}" }
+    protoc { artifact = "com.google.protobuf:protoc:${protobufVersion}" }
     plugins {
         grpc { artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}${protocGenArch}" }
     }
@@ -66,7 +65,6 @@ dependencies {
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
     implementation "io.grpc:grpc-stub:${grpcVersion}"
     implementation "io.grpc:grpc-auth:${grpcVersion}"
-    implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
     implementation platform('org.apache.groovy:groovy-bom:4.0.21')
