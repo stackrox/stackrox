@@ -65,6 +65,7 @@ func (d *datastoreImpl) GetControlsByRulesAndBenchmarks(ctx context.Context, rul
 	)
 
 	builder.AddExactMatches(search.ComplianceOperatorRuleName, ruleNames...)
+	builder.AddExactMatches(search.ComplianceOperatorStandard, benchmarks...)
 
 	// Add a group by clause to group the rule names by name, control and standard to reduce the result set.
 	builder.AddGroupBy(

@@ -29,7 +29,7 @@ type DataStore interface {
 	// DeleteRulesByCluster removes rule by cluster id
 	DeleteRulesByCluster(ctx context.Context, clusterID string) error
 
-	// GetControlsByRuleNames returns controls by a list of rule names group by control, standard and rule name.
+	// GetControlsByRulesAndBenchmarks returns controls by a list of rule names group by control, standard and rule name.
 	GetControlsByRulesAndBenchmarks(ctx context.Context, ruleNames []string, benchmarkNames []string) ([]*ControlResult, error)
 }
 

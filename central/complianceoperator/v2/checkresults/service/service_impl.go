@@ -5,6 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
@@ -48,7 +49,7 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore, ruleDS complianceRuleDS.DataStore, scanDS complianceScanDS.DataStore) Service {
+func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore, ruleDS complianceRuleDS.DataStore, scanDS complianceScanDS.DataStore, benchmarkDS benchmarksDS.DataStore) Service {
 	return &serviceImpl{
 		complianceResultsDS: complianceResultsDS,
 		scanConfigDS:        scanConfigDS,
@@ -56,6 +57,7 @@ func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConf
 		profileDS:           profileDS,
 		ruleDS:              ruleDS,
 		scanDS:              scanDS,
+		benchmarkDS:         benchmarkDS,
 	}
 }
 
@@ -68,6 +70,7 @@ type serviceImpl struct {
 	profileDS           profileDatastore.DataStore
 	ruleDS              complianceRuleDS.DataStore
 	scanDS              complianceScanDS.DataStore
+	benchmarkDS         benchmarksDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -215,7 +218,7 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", request)
 	}
 
-	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, scanResults)
+	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, scanResults, request.GetProfileName())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
 	}
