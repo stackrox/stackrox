@@ -41,9 +41,11 @@ import {
     ComplianceScanConfigurationStatus,
 } from 'services/ComplianceScanConfigurationService';
 import { SortOption } from 'types/table';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../../compliance.constants';
+import { SCAN_CONFIG_NAME_QUERY } from '../compliance.scanConfigs.constants';
 import { scanConfigDetailsPath } from '../compliance.scanConfigs.routes';
 import { formatScanSchedule } from '../compliance.scanConfigs.utils';
 
@@ -59,9 +61,9 @@ const CreateScanConfigButton = () => {
     );
 };
 
-const sortFields = ['Compliance Scan Config Name'];
+const sortFields = [SCAN_CONFIG_NAME_QUERY];
 const defaultSortOption = {
-    field: 'Compliance Scan Config Name',
+    field: SCAN_CONFIG_NAME_QUERY,
     direction: 'asc',
 } as SortOption;
 
@@ -75,7 +77,7 @@ function ScanConfigsTablePage({
     const [isDeletingScanConfigs, setIsDeletingScanConfigs] = useState(false);
     const history = useHistory();
 
-    const { page, perPage, setPage, setPerPage } = useURLPagination(10);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
