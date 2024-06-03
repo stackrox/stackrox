@@ -254,9 +254,6 @@ function DeploymentPageVulnerabilities({
                                     perPage={perPage}
                                     onSetPage={(_, newPage) => setPage(newPage)}
                                     onPerPageSelect={(_, newPerPage) => {
-                                        if (totalVulnerabilityCount < (page - 1) * newPerPage) {
-                                            setPage(1);
-                                        }
                                         setPerPage(newPerPage);
                                     }}
                                 />

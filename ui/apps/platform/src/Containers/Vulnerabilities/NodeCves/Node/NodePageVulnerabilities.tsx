@@ -120,9 +120,6 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                                 onSetPage={(_, newPage) => setPage(newPage)}
                                 onPerPageSelect={(_, newPerPage) => {
                                     setPerPage(newPerPage);
-                                    if (nodeCount < (page - 1) * newPerPage) {
-                                        setPage(1, 'replace');
-                                    }
                                 }}
                             />
                         </SplitItem>
