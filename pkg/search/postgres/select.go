@@ -43,7 +43,6 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schem
 		return nil, err
 	}
 
-	fmt.Println(query.AsSQL())
 	// A nil-query implies no results.
 	if query == nil {
 		return nil, nil

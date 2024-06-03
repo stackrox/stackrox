@@ -61,7 +61,6 @@ func (s *complianceRuleDataStoreTestSuite) SetupTest() {
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Compliance)
 	s.nonComplianceContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Deployment)
 
-	s.T().Setenv("POSTGRES_PORT", "5433")
 	s.db = pgtest.ForT(s.T())
 
 	s.storage = ruleStorage.New(s.db)
