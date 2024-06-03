@@ -108,6 +108,7 @@ func LightweightDeployment() *storage.Deployment {
 				},
 			},
 		},
+		Priority: 1,
 	}
 }
 
