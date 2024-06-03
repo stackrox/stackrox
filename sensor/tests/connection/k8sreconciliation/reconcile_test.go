@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sensor/hash"
 	"github.com/stackrox/rox/sensor/tests/helper"
@@ -56,6 +57,7 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 
 	cfg := helper.DefaultConfig()
 	cfg.SendDeduperState = true
+	cfg.CentralCaps = []string{centralsensor.SendDeduperStateOnReconnect}
 	c, err := helper.NewContextWithConfig(t, cfg)
 	require.NoError(t, err)
 
@@ -141,7 +143,7 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 
 		c.PatchResource(ctx, t, resourceMap[NginxUpdatedWhenOffline.YamlFile].obj, &NginxUpdatedWhenOffline)
 
-		testContext.StartFakeGRPC()
+		testContext.StartFakeGRPC(cfg.CentralCaps...)
 
 		archived := testContext.ArchivedMessages()
 		require.Len(t, archived, 1)
