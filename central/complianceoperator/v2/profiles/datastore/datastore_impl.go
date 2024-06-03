@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	benchmarkDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	profileSearch "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/search"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -22,9 +23,10 @@ var (
 )
 
 type datastoreImpl struct {
-	db       pgPkg.DB
-	store    pgStore.Store
-	searcher profileSearch.Searcher
+	db             pgPkg.DB
+	store          pgStore.Store
+	searcher       profileSearch.Searcher
+	benchmarkStore benchmarkDS.DataStore
 }
 
 // GetProfile returns the profile for the given profile ID
