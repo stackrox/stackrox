@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
@@ -524,15 +525,19 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 		for _, profile := range scanConfig.Profiles {
 			profiles = append(profiles, profile.ProfileName)
 		}
+		var cron string
+		cron, err = schedule.ConvertToCronTab(scanConfig.Schedule)
+		if err != nil {
+			return nil, err
+		}
 		scanConfigRequest := central.ApplyComplianceScanConfigRequest{
-			ScanRequest: &central.ApplyComplianceScanConfigRequest_ScheduledScan_{
-				ScheduledScan: &central.ApplyComplianceScanConfigRequest_ScheduledScan{
+			ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
+				UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
 					ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-						ScanName:       scanConfig.ScanConfigName,
-						StrictNodeScan: true,
-						Profiles:       profiles,
+						ScanName: scanConfig.ScanConfigName,
+						Profiles: profiles,
 					},
-					Cron: scanConfig.Schedule.String(),
+					Cron: cron,
 				},
 			},
 		}
