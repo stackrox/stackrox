@@ -55,6 +55,8 @@ message ComplianceClusterCheckStatus {
   string rationale = 8;
   repeated string valuesUsed = 9;
   repeated string warnings = 10;
+  map<string, string> labels = 11;
+  map<string, string> annotations = 12;
 }
 
 // ComplianceScanResult provides the results of a scan

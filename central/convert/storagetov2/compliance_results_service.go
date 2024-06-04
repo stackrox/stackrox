@@ -33,6 +33,8 @@ func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, 
 		Rationale:    incoming.GetRationale(),
 		ValuesUsed:   incoming.GetValuesUsed(),
 		Warnings:     incoming.GetWarnings(),
+		Labels:       incoming.GetLabels(),
+		Annotations:  incoming.GetAnnotations(),
 	}
 
 	return converted
@@ -58,6 +60,8 @@ func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheck
 				Rationale:    result.GetRationale(),
 				ValuesUsed:   result.GetValuesUsed(),
 				Warnings:     result.GetWarnings(),
+				Labels:       result.GetLabels(),
+				Annotations:  result.GetAnnotations(),
 			}
 		} else {
 			converted.Clusters = append(converted.Clusters, clusterStatus(result, nil))

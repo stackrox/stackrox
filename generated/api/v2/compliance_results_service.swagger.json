@@ -782,6 +782,18 @@
           "items": {
             "type": "string"
           }
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       },
       "title": "ComplianceClusterCheckStatus provides the status of a compliance check result across clusters"
