@@ -119,7 +119,7 @@ func tlsConfigOptsForCentral(logger logger.Logger) (*clientconn.TLSConfigOptions
 				// Proceed with no CA on error. Return the error as warning later.
 				ca, warn = getCentralCA(context.Background(), core, namespace)
 				if warn != nil {
-					logger.WarnfLn("%v", warn)
+					logger.WarnfLn("Failed to read the central certificate: %v", warn)
 				}
 			}
 		}

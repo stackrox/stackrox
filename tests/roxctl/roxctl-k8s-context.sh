@@ -21,8 +21,9 @@ test_roxctl_cmd() {
   echo "Central service endpoints:"
   kubectl get ep central
 
-  echo "Creating a service account with a restricted role..."
-  kubectl apply -f "../testdata/port-forward-role.yaml"
+  echo "Creating a service account with an insufficient role..."
+  kubectl apply -f "../testdata/port-forward-role-bad.yaml"
+  kubectl apply -f "../testdata/port-forward-sa.yaml"
   echo "Switching the context to use the service account token..."
   TOKEN=$(kubectl get secret "port-forward-sa-secret" -o jsonpath='{.data.token}' | base64 --decode)
   kubectl config set-credentials port-forward-user --token="$TOKEN"
@@ -31,6 +32,20 @@ test_roxctl_cmd() {
   kubectl config set-context port-forward-context --user="port-forward-user" --cluster="$CURRENT_CLUSTER"
   kubectl config use-context port-forward-context
   echo "New context:" "$(kubectl config current-context)"
+
+  # Verify central whoami using current k8s context.
+  OUTPUT=$(roxctl -p "$ROX_PASSWORD" central whoami --use-current-k8s-context 2>&1) || true
+  if [[ "$OUTPUT" == "ERROR:"*"could not get endpoint"*"cannot list resource"* ]] ; then
+      echo "[OK] roxctl central whoami using current k8s context and insufficient role fails"
+  else
+      eecho "[FAIL] roxctl central whoami using current k8s context and insufficient role works"
+      eecho "Captured output was:"
+      eecho "$OUTPUT"
+      FAILURES=$((FAILURES + 1))
+  fi
+
+  echo "Updating the role with sufficient permissions..."
+  kubectl apply -f "../testdata/port-forward-role-minimal.yaml"
 
   # Verify central whoami using current k8s context.
   if OUTPUT=$(roxctl -p "$ROX_PASSWORD" central whoami --use-current-k8s-context \
@@ -42,6 +57,7 @@ test_roxctl_cmd() {
       eecho "$OUTPUT"
       FAILURES=$((FAILURES + 1))
   fi
+
   echo "Switch to the original context..."
   kubectl config use-context "$CURRENT_CONTEXT"
 }
