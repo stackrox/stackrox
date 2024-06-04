@@ -10,11 +10,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/registry"
 	mockStore "github.com/stackrox/rox/sensor/common/store/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -77,7 +80,7 @@ func (s *enricherSuite) Test_dataRaceInRunScan() {
 	// bypass getImageFromCache and land to GetOrSet. If that happens, it shouldn't trigger the data race because
 	// forceEnrichImageWithSignatures is false and newValue != value so we shouldn't trigger a scan.
 	req3 := createScanImageRequest(0, "nginx-id", "nginx:1.14.2", false)
-	conn, closeFunc := createMockImageService(s.T())
+	conn, closeFunc := createMockImageService(s.T(), nil)
 	s.enricher.imageSvc = v1.NewImageServiceClient(conn)
 	defer closeFunc()
 	s.mockCache.RemoveAll()
@@ -100,13 +103,17 @@ func (s *enricherSuite) Test_dataRaceInRunScan() {
 	waitGroup.Wait()
 }
 
-func createMockImageService(t *testing.T) (*grpc.ClientConn, func()) {
+func createMockImageService(t *testing.T, imageServiceServer v1.ImageServiceServer) (*grpc.ClientConn, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
 	server := grpc.NewServer()
-	v1.RegisterImageServiceServer(server,
-		&mockImageServiceServer{})
+	if imageServiceServer == nil {
+		v1.RegisterImageServiceServer(server, &mockImageServiceServer{})
+	} else {
+		v1.RegisterImageServiceServer(server, imageServiceServer)
+	}
+
 	go func() {
 		utils.IgnoreError(func() error {
 			return server.Serve(listener)
@@ -125,10 +132,67 @@ func createMockImageService(t *testing.T) (*grpc.ClientConn, func()) {
 
 type mockImageServiceServer struct {
 	v1.UnimplementedImageServiceServer
+	callCounts     map[string]int
+	callCountsLock sync.Mutex
 }
 
 func (m *mockImageServiceServer) ScanImageInternal(_ context.Context, req *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+	if m.callCounts != nil {
+		m.callCountsLock.Lock()
+		defer m.callCountsLock.Unlock()
+		m.callCounts[req.GetImage().GetName().GetFullName()]++
+	}
+
 	return &v1.ScanImageInternalResponse{
 		Image: types.ToImage(req.Image),
 	}, nil
+}
+
+func (s *enricherSuite) TestScanAndSetWithLock() {
+	testutils.MustUpdateFeature(s.T(), features.UnqualifiedSearchRegistries, true)
+
+	req := createScanImageRequest(0, "nginx-id", "nginx:latest", false)
+	req2 := createScanImageRequest(0, "nginx-id", "quay.io/nginx:latest", false)
+	req3 := createScanImageRequest(0, "nginx-id", "nginx:1.14.2", false)
+
+	imageService := &mockImageServiceServer{callCounts: map[string]int{}}
+	conn, closeFunc := createMockImageService(s.T(), imageService)
+	s.enricher.imageSvc = v1.NewImageServiceClient(conn)
+	defer closeFunc()
+	s.mockCache.RemoveAll()
+
+	waitGroup := sync.WaitGroup{}
+	runAsyncScans(&waitGroup, s.enricher, []*scanImageRequest{req, req2, req3})
+	waitGroup.Wait()
+
+	// Only a single call per image name should have been made.
+	assert.Len(s.T(), imageService.callCounts, 3)
+	assert.Equal(s.T(), 1, imageService.callCounts[req.containerImage.GetName().GetFullName()])
+	assert.Equal(s.T(), 1, imageService.callCounts[req2.containerImage.GetName().GetFullName()])
+	assert.Equal(s.T(), 1, imageService.callCounts[req3.containerImage.GetName().GetFullName()])
+
+	// Simulate a cache expiry.
+	s.mockCache.RemoveAll()
+
+	waitGroup = sync.WaitGroup{}
+	runAsyncScans(&waitGroup, s.enricher, []*scanImageRequest{req, req2, req3})
+	waitGroup.Wait()
+
+	// Only one more call per image name should have been made.
+	assert.Len(s.T(), imageService.callCounts, 3)
+	assert.Equal(s.T(), 2, imageService.callCounts[req.containerImage.GetName().GetFullName()])
+	assert.Equal(s.T(), 2, imageService.callCounts[req2.containerImage.GetName().GetFullName()])
+	assert.Equal(s.T(), 2, imageService.callCounts[req3.containerImage.GetName().GetFullName()])
+}
+
+func runAsyncScans(waitGroup *sync.WaitGroup, e *enricher, reqs []*scanImageRequest) {
+	for i := 0; i < 100; i++ {
+		for _, req := range reqs {
+			waitGroup.Add(1)
+			go func(req *scanImageRequest) {
+				e.runScan(req)
+				waitGroup.Done()
+			}(req)
+		}
+	}
 }

@@ -143,6 +143,15 @@ outer:
 }
 
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
+	if features.UnqualifiedSearchRegistries.Enabled() {
+		// Guarding this with a feature flag because it's planning to be introduced in a
+		// patch release. This is intended to address an issue where many scan requests
+		// are sent to Central for the same image in quick succession. This would occur
+		// when one image was referenced by multiple names in a cluster.
+		c.scanAndSetWithLock(ctx, svc, req)
+		return
+	}
+
 	defer c.signal.Signal()
 
 	// Ask Central to scan the image if the image is not local otherwise scan with local scanner
@@ -168,6 +177,59 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 
 	log.Debugf("Successful image scan for image %s: %d components returned by scanner", req.containerImage.GetName().GetFullName(), len(scannedImage.GetImage().GetScan().GetComponents()))
 	c.image = scannedImage.GetImage()
+}
+
+func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
+	defer c.signal.Signal()
+
+	// A cacheValue is unique per image, obtain the lock before scanning to avoid sending multiple
+	// scan requests for the same image name at the same time.
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	if c.image != nil {
+		// Check to see if another routine already enriched this name, if so, short circuit.
+		if protoutils.SliceContains(req.containerImage.GetName(), c.image.GetNames()) {
+			log.Debugf("Image scan loaded from cache: %s: Components: (%d) - short circuit", req.containerImage.GetName().GetFullName(), len(c.image.GetScan().GetComponents()))
+			return
+		}
+	}
+
+	// Ask Central to scan the image if the image is not local otherwise scan with local scanner
+	scanImageFn := scanImage
+	if c.regStore.IsLocal(req.containerImage.GetName()) {
+		scanImageFn = scanImageLocal
+		log.Debugf("Sending scan to local scanner for image %q", req.containerImage.GetName().GetFullName())
+	} else {
+		log.Debugf("Sending scan to central for image %q", req.containerImage.GetName().GetFullName())
+	}
+
+	scannedImage, err := c.scanWithRetries(ctx, svc, req, scanImageFn)
+	if err != nil {
+		// Ignore the error and set the image to something basic,
+		// so alerting can progress.
+		// TODO: Possibly enhancement - check to see if this image was previously enriched successfully,
+		// and if so keep the older successful image.
+		log.Errorf("Scan request failed for image %q: %s", req.containerImage.GetName().GetFullName(), err)
+		existingNames := c.image.GetNames()
+		c.image = types.ToImage(req.containerImage)
+		updateNames(c.image, existingNames)
+		return
+	}
+
+	log.Debugf("Successful image scan for image %s: %d components returned by scanner", req.containerImage.GetName().GetFullName(), len(scannedImage.GetImage().GetScan().GetComponents()))
+	existingNames := c.image.GetNames()
+	c.image = scannedImage.GetImage()
+	updateNames(c.image, existingNames)
+}
+
+// updateNames ensures existing names are present in image.Names.
+func updateNames(image *storage.Image, existingNames []*storage.ImageName) {
+	if image == nil || len(existingNames) == 0 {
+		return
+	}
+
+	image.Names = protoutils.SliceUnique(append(image.GetNames(), existingNames...))
 }
 
 func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
