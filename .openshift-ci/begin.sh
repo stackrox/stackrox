@@ -27,6 +27,9 @@ if [[ "${JOB_NAME:-}" =~ -ocp-(4|stable)- ]]; then
     # https://github.com/stackrox/automation-flavors/blob/e6daf10b7df49fc003584790e25def036b2a3b0b/openshift-4/entrypoint.sh#L76
     set_ci_shared_export WORKER_NODE_COUNT 2
     set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
+    # Repeated timeouts on wait_for_api on OCP 4.16 rc.2 (ROX-24291)
+    # Increase default wait for all tests on *-ocp-*
+    set_ci_shared_export MAX_WAIT_SECONDS "${MAX_WAIT_SECONDS:-300}"
 fi
 
 if [[ "${JOB_NAME:-}" =~ -gke-perf-scale- ]]; then
