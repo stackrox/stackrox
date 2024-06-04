@@ -209,6 +209,7 @@ var (
 	ControlID = newFieldLabel("Control ID")
 	Control   = newFieldLabel("Control")
 
+	ComplianceOperatorIntegrationID          = newFieldLabel("Compliance Operator Integration ID")
 	ComplianceOperatorVersion                = newFieldLabel("Compliance Operator Version")
 	ComplianceOperatorScanName               = newFieldLabel("Compliance Scan Name")
 	ComplianceOperatorSeverity               = newFieldLabel("Compliance Rule Severity")
@@ -220,7 +221,7 @@ var (
 	ComplianceOperatorProfileProductType     = newFieldLabel("Compliance Profile Product Type")
 	ComplianceOperatorProfileUID             = newFieldLabel("Compliance Profile UID")
 	ComplianceOperatorProfileVersion         = newFieldLabel("Compliance Profile Version")
-	ComplianceOpeatorInstaled                = newFieldLabel("Compliance Operator Installed")
+	ComplianceOperatorInstalled              = newFieldLabel("Compliance Operator Installed")
 	ComplianceOperatorStandard               = newFieldLabel("Compliance Standard")
 	ComplianceOperatorControl                = newFieldLabel("Compliance Control")
 	ComplianceOperatorScanConfig             = newFieldLabel("Compliance Scan Config ID")
