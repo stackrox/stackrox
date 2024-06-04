@@ -760,8 +760,8 @@ function launch_sensor {
       fi
 
       if [[ "${FORCE_COLLECTION_METHOD:-false}" == "true" ]]; then
-	echo "Forcing collection method"
-	extra_helm_config+=(--set "collector.forceCollectionMethod=true")
+        echo "Forcing collection method"
+        extra_helm_config+=(--set "collector.forceCollectionMethod=true")
       fi
 
       if [[ -n "$CI" ]]; then
