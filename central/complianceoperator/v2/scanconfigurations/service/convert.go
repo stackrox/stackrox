@@ -72,6 +72,29 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 	}, nil
 }
 
+func convertV2NotifierConfigToProto(notifier *v2.NotifierConfiguration) *storage.NotifierConfiguration {
+	if notifier == nil {
+		return nil
+	}
+
+	ret := &storage.NotifierConfiguration{
+		Ref: &storage.NotifierConfiguration_Id{
+			Id: notifier.GetEmailConfig().GetNotifierId(),
+		},
+	}
+
+	if emailConfig := notifier.GetEmailConfig(); emailConfig != nil {
+		ret.NotifierConfig = &storage.NotifierConfiguration_EmailConfig{
+			EmailConfig: &storage.EmailNotifierConfiguration{
+				MailingLists:  emailConfig.GetMailingLists(),
+				CustomSubject: emailConfig.GetCustomSubject(),
+				CustomBody:    emailConfig.GetCustomBody(),
+			},
+		}
+	}
+	return ret
+}
+
 func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.ComplianceScanConfiguration) *storage.ComplianceOperatorScanConfigurationV2 {
 	if scanConfig == nil {
 		return nil
@@ -91,6 +114,15 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 		})
 	}
 
+	notifiers := []*storage.NotifierConfiguration{}
+	for _, notifier := range scanConfig.GetScanConfig().GetNotifiers() {
+		notifierStorage := convertV2NotifierConfigToProto(notifier)
+		if notifierStorage != nil {
+			notifiers = append(notifiers, notifierStorage)
+		}
+
+	}
+
 	return &storage.ComplianceOperatorScanConfigurationV2{
 		Id:                     scanConfig.GetId(),
 		ScanConfigName:         scanConfig.GetScanName(),
@@ -103,6 +135,7 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 		ModifiedBy:             authn.UserFromContext(ctx),
 		Description:            scanConfig.GetScanConfig().GetDescription(),
 		Clusters:               clusters,
+		Notifiers:              notifiers,
 	}
 }
 
