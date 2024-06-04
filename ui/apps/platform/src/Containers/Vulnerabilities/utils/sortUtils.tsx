@@ -28,7 +28,7 @@ export function getWorkloadSortFields(entityTab: WorkloadEntityTab): string[] {
         case 'Image':
             return ['Image', 'Image OS', 'Image created time', 'Image scan time'];
         case 'Deployment':
-            return ['Deployment', 'Deployment Risk Priority', 'Cluster', 'Namespace', 'Created'];
+            return ['Deployment', 'Cluster', 'Namespace', 'Created'];
         default:
             return ensureExhaustive(entityTab);
     }
@@ -45,7 +45,7 @@ export function getDefaultWorkloadSortOption(entityTab: WorkloadEntityTab): Sort
         case 'CVE':
             return { field: 'CVSS', aggregateBy: aggregateByCVSS, direction: 'desc' };
         case 'Deployment':
-            return { field: 'Deployment Risk Priority', direction: 'asc' };
+            return { field: 'Deployment', direction: 'asc' };
         case 'Image':
             return { field: 'Image created time', direction: 'asc' };
         default:
