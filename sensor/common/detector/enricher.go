@@ -144,9 +144,9 @@ outer:
 
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
 	if features.UnqualifiedSearchRegistries.Enabled() {
-		// Guarding this with a feature flag because it's planning to be introduced in a
+		// Guarding this with a feature flag because it's planned to be introduced in a
 		// patch release. This is intended to address an issue where many scan requests
-		// are sent to Central for the same image in quick succession. This would occur
+		// are sent for the same image in quick succession. This would occur
 		// when one image was referenced by multiple names in a cluster.
 		c.scanAndSetWithLock(ctx, svc, req)
 		return
@@ -208,8 +208,9 @@ func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageService
 	if err != nil {
 		// Ignore the error and set the image to something basic,
 		// so alerting can progress.
-		// TODO: Possibly enhancement - check to see if this image was previously enriched successfully,
-		// and if so keep the older successful image.
+
+		// TODO: Possible enhancement - check to see if the image was previously enriched successfully,
+		// and if so keep the old image.
 		log.Errorf("Scan request failed for image %q: %s", req.containerImage.GetName().GetFullName(), err)
 		existingNames := c.image.GetNames()
 		c.image = types.ToImage(req.containerImage)

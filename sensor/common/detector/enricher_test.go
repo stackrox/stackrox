@@ -154,6 +154,7 @@ func (s *enricherSuite) TestScanAndSetWithLock() {
 	req := createScanImageRequest(0, "nginx-id", "nginx:latest", false)
 	req2 := createScanImageRequest(0, "nginx-id", "quay.io/nginx:latest", false)
 	req3 := createScanImageRequest(0, "nginx-id", "nginx:1.14.2", false)
+	reqs := []*scanImageRequest{req, req2, req3}
 
 	imageService := &mockImageServiceServer{callCounts: map[string]int{}}
 	conn, closeFunc := createMockImageService(s.T(), imageService)
@@ -161,8 +162,7 @@ func (s *enricherSuite) TestScanAndSetWithLock() {
 	defer closeFunc()
 	s.mockCache.RemoveAll()
 
-	waitGroup := sync.WaitGroup{}
-	runAsyncScans(&waitGroup, s.enricher, []*scanImageRequest{req, req2, req3})
+	waitGroup := runAsyncScans(s.enricher, reqs)
 	waitGroup.Wait()
 
 	// Only a single call per image name should have been made.
@@ -174,8 +174,7 @@ func (s *enricherSuite) TestScanAndSetWithLock() {
 	// Simulate a cache expiry.
 	s.mockCache.RemoveAll()
 
-	waitGroup = sync.WaitGroup{}
-	runAsyncScans(&waitGroup, s.enricher, []*scanImageRequest{req, req2, req3})
+	waitGroup = runAsyncScans(s.enricher, reqs)
 	waitGroup.Wait()
 
 	// Only one more call per image name should have been made.
@@ -185,7 +184,8 @@ func (s *enricherSuite) TestScanAndSetWithLock() {
 	assert.Equal(s.T(), 2, imageService.callCounts[req3.containerImage.GetName().GetFullName()])
 }
 
-func runAsyncScans(waitGroup *sync.WaitGroup, e *enricher, reqs []*scanImageRequest) {
+func runAsyncScans(e *enricher, reqs []*scanImageRequest) *sync.WaitGroup {
+	waitGroup := &sync.WaitGroup{}
 	for i := 0; i < 100; i++ {
 		for _, req := range reqs {
 			waitGroup.Add(1)
@@ -195,4 +195,6 @@ func runAsyncScans(waitGroup *sync.WaitGroup, e *enricher, reqs []*scanImageRequ
 			}(req)
 		}
 	}
+
+	return waitGroup
 }
