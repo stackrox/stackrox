@@ -28,18 +28,18 @@ function ScanConfigActionsColumn({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
 
-    const { id, lastExecutedTime, scanConfig } = scanConfigResponse;
+    const { id, /* lastExecutedTime, */ scanConfig } = scanConfigResponse;
     const { notifiers } = scanConfig;
     const scanConfigUrl = generatePath(scanConfigDetailsPath, {
         scanConfigId: id,
     });
-    const isScanning = lastExecutedTime === null;
+    // const isScanning = lastExecutedTime === null;
 
     const items = [
         {
             title: 'Edit scan schedule',
-            description: isScanning ? 'Edit is disabled while scan is running' : '',
-            isDisabled: isScanning,
+            // description: isScanning ? 'Edit is disabled while scan is running' : '',
+            // isDisabled: isScanning,
             onClick: (event) => {
                 event.preventDefault();
                 history.push({
@@ -53,8 +53,8 @@ function ScanConfigActionsColumn({
         },
         {
             title: 'Run scan now',
-            description: isScanning ? 'Run is disabled while scan is already running' : '',
-            isDisabled: isScanning,
+            // description: isScanning ? 'Run is disabled while scan is already running' : '',
+            // isDisabled: isScanning,
             onClick: (event) => {
                 event.preventDefault();
                 handleRunScanConfig(scanConfigResponse);
@@ -66,10 +66,10 @@ function ScanConfigActionsColumn({
             description:
                 notifiers.length === 0
                     ? 'Send is disabled if no delivery destinations'
-                    : isScanning
+                    : /* isScanning
                       ? 'Send is disabled while scan is running'
-                      : '',
-            isDisabled: notifiers.length === 0 || isScanning,
+                      : */ '',
+            isDisabled: notifiers.length === 0 /* || isScanning */,
             onClick: (event) => {
                 event.preventDefault();
                 handleSendReport(scanConfigResponse);
@@ -81,12 +81,12 @@ function ScanConfigActionsColumn({
         },
         {
             title: (
-                <span className={isScanning ? '' : 'pf-v5-u-danger-color-100'}>
+                <span className={/* isScanning ? '' : */ 'pf-v5-u-danger-color-100'}>
                     Delete scan schedule
                 </span>
             ),
-            description: isScanning ? 'Delete is disabled while scan is running' : '',
-            isDisabled: isScanning,
+            // description: isScanning ? 'Delete is disabled while scan is running' : '',
+            // isDisabled: isScanning,
             onClick: (event) => {
                 event.preventDefault();
                 handleDeleteScanConfig(scanConfigResponse);

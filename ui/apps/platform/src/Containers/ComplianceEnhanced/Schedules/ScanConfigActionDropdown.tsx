@@ -55,8 +55,8 @@ function ScanConfigActionDropdown({
         <DropdownItem
             key="Edit scan schedule"
             component="button"
-            description={isScanning ? 'Edit is disabled while scan is running' : ''}
-            isDisabled={isScanning}
+            // description={isScanning ? 'Edit is disabled while scan is running' : ''}
+            // isDisabled={isScanning}
             onClick={() => {
                 history.push({
                     pathname: scanConfigUrl,
@@ -89,11 +89,11 @@ function ScanConfigActionDropdown({
                 description={
                     notifiers.length === 0
                         ? 'Send is disabled if no delivery destinations'
-                        : isScanning
-                          ? 'Send is disabled while scan is running'
-                          : ''
+                        : /* : isScanning
+                          ? 'Send is disabled while scan is running' */
+                          ''
                 }
-                isDisabled={notifiers.length === 0 || isScanning}
+                isDisabled={notifiers.length === 0 /* || isScanning */}
                 onClick={() => {
                     handleSendReport(scanConfigResponse);
                 }}

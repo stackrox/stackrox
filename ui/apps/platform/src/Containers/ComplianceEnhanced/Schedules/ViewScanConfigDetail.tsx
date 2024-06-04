@@ -133,8 +133,8 @@ function ViewScanConfigDetail({
                                         handleRunScanConfig={handleRunScanConfig}
                                         handleSendReport={handleSendReport}
                                         isScanning={
-                                            isTriggeringRescan ||
-                                            scanConfig.lastExecutedTime === null
+                                            isTriggeringRescan /* ||
+                                            scanConfig.lastExecutedTime === null */
                                         }
                                         scanConfigResponse={scanConfig}
                                     />
