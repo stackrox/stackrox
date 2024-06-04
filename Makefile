@@ -7,6 +7,8 @@ BASE_DIR=$(CURDIR)
 BENCHTIME ?= 1x
 BENCHTIMEOUT ?= 20m
 BENCHCOUNT ?= 1
+NPROCS = $(shell nproc --all || printf 1)
+MAKEFLAGS += -j$(NPROCS)
 
 ifeq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
 # Podman DTRT by running processes unprivileged in containers,
@@ -201,17 +203,19 @@ proto-style: $(BUF_BIN) deps
 .PHONY: qa-tests-style
 qa-tests-style:
 	@echo "+ $@"
-	make -C qa-tests-backend/ style
+	$(MAKE) -C qa-tests-backend/ style
 
 .PHONY: ui-lint
 ui-lint:
+	@echo "$(NPROCS)"
+	@echo "$(MAKEFLAGS)"
 	@echo "+ $@"
-	make -C ui lint
+	$(MAKE) -C ui lint
 
 .PHONY: openshift-ci-style
 openshift-ci-style:
 	@echo "+ $@"
-	make -C .openshift-ci/ style
+	$(MAKE) -C .openshift-ci/ style
 
 .PHONY: shell-style
 shell-style:
@@ -549,18 +553,18 @@ shell-unit-tests:
 .PHONY: ui-build
 ui-build:
 ifdef SKIP_UI_BUILD
-	test -d ui/build || make -C ui build
+	test -d ui/build || $(MAKE) -C ui build
 else
-	make -C ui build
+	$(MAKE) -C ui build
 endif
 
 .PHONY: ui-test
 ui-test:
-	make -C ui test
+	$(MAKE) -C ui test
 
 .PHONY: ui-component-tests
 ui-component-tests:
-	make -C ui test-component
+	$(MAKE) -C ui test-component
 
 .PHONY: test
 test: go-unit-tests ui-test shell-unit-tests
@@ -597,7 +601,7 @@ all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_S
 
 .PHONY: main-image
 main-image: all-builds
-	make docker-build-main-image
+	$(MAKE) docker-build-main-image
 
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir central-db-image
@@ -794,7 +798,7 @@ offline-bundle: clean-offline-bundle
 
 .PHONY: ui-publish-packages
 ui-publish-packages:
-	make -C ui publish-packages
+	$(MAKE) -C ui publish-packages
 
 .PHONY: check-debugger
 check-debugger:
