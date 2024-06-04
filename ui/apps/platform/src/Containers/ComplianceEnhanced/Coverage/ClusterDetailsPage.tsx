@@ -39,6 +39,23 @@ function ClusterDetailsPage() {
         error: clusterProfileDataError,
     } = useRestQuery(fetchProfilesStats);
 
+    const fetchCheckResults = useCallback(
+        () => getComplianceProfileClusterResults(profileName, clusterId),
+        [clusterId, profileName]
+    );
+    const {
+        data: checkResultsResponse,
+        loading: isLoadingCheckResults,
+        error: checkResultsError,
+    } = useRestQuery(fetchCheckResults);
+
+    const tableState = getTableUIState({
+        isLoading: isLoadingCheckResults,
+        data: checkResultsResponse?.checkResults,
+        error: checkResultsError,
+        searchFilter: {},
+    });
+
     function handleProfilesToggleChange(selectedProfile: string) {
         const path = generatePath(coverageClusterDetailsPath, {
             profileName: selectedProfile,
@@ -46,6 +63,7 @@ function ClusterDetailsPage() {
         });
         history.push(path);
     }
+
     if (clusterProfileDataError) {
         return (
             <Alert
