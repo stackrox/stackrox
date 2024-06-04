@@ -263,8 +263,7 @@ class K8sRbacTest extends BaseSpecification {
             def orchestratorBindingsSet = orchestratorBindings.collect { "${it.namespace}/${it.name}" }
 
             Diff diff = javers.compareCollections(stackroxBindingsSet, orchestratorBindingsSet, String)
-            log.info(diff.prettyPrint())
-            assert diff.changes.empty
+            assert diff.changes.empty, diff.prettyPrint()
 
             stackroxBindings.each { Rbac.K8sRoleBinding b ->
                 K8sRoleBinding binding = orchestratorBindings.find {
