@@ -1,0 +1,1 @@
+export const DEFAULT_COMPLIANCE_PAGE_SIZE = 10;

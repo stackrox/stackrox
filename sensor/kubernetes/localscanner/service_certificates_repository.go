@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -239,6 +240,8 @@ func (r *serviceCertificatesRepoSecretsImpl) createSecret(ctx context.Context, c
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            secretSpec.secretName,
 			Namespace:       r.namespace,
+			Labels:          utils.GetSensorKubernetesLabels(),
+			Annotations:     utils.GetSensorKubernetesLabels(),
 			OwnerReferences: []metav1.OwnerReference{r.ownerReference},
 		},
 		Data: r.secretDataForCertificate(secretSpec, caPem, certificate),

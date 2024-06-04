@@ -17,16 +17,20 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/klauspost/compress/zstd"
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln"
+	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
+	"github.com/stackrox/rox/scanner/updater/jsonblob"
 )
 
 const (
@@ -100,7 +104,12 @@ type Updater struct {
 	updateRetention int
 	fullGCInterval  time.Duration
 
-	importVulns func(ctx context.Context, reader io.Reader) error
+	// importFunc import records from a reader (to be mocked by tests).
+	importFunc func(ctx context.Context, reader io.Reader) error
+
+	// iterateFunc iterates over operations and their records from a reader (to be
+	// mocked by tests).
+	iterateFunc func(r io.Reader) (jsonblob.OperationIter, func() error)
 
 	retryDelay time.Duration
 	retryMax   int
@@ -134,9 +143,10 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 		retryDelay: opts.RetryDelay,
 		retryMax:   opts.RetryMax,
 	}
-	u.importVulns = func(ctx context.Context, reader io.Reader) error {
-		return libvuln.OfflineImport(ctx, u.pool, reader)
+	u.importFunc = func(ctx context.Context, reader io.Reader) error {
+		return u.Import(ctx, reader)
 	}
+	u.iterateFunc = jsonblob.Iterate
 
 	u.tryRemoveExiting()
 
@@ -181,6 +191,81 @@ func validate(opts Opts) error {
 	}
 	if _, err := url.Parse(opts.URL); err != nil {
 		return fmt.Errorf("invalid URL: %q", opts.URL)
+	}
+	return nil
+}
+
+func (u *Updater) Import(ctx context.Context, in io.Reader) (err error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.Import")
+	iter, iterErr := u.iterateFunc(in)
+	// For each update operation in the JSON blob file.
+	iter(func(op *driver.UpdateOperation, it jsonblob.RecordIter) bool {
+		var ops map[string][]driver.UpdateOperation
+		ops, err = u.store.GetUpdateOperations(ctx, op.Kind, op.Updater)
+		if err != nil {
+			return false
+		}
+		for _, o := range ops[op.Updater] {
+			// This only helps if updaters don't keep something that
+			// changes in the fingerprint.
+			if o.Fingerprint == op.Fingerprint {
+				zlog.Info(ctx).
+					Str("updater", op.Updater).
+					Msg("fingerprint match, skipping")
+				return true
+			}
+		}
+		zlog.Info(ctx).
+			Str("updater", op.Updater).
+			Str("kind", string(op.Kind)).
+			Msg("importing update")
+		var ref uuid.UUID
+		count := 0
+		switch op.Kind {
+		case driver.VulnerabilityKind:
+			ref, err = u.store.UpdateVulnerabilitiesIter(ctx, op.Updater, op.Fingerprint, func(yield func(*claircore.Vulnerability, error) bool) {
+				// For each vulnerability in the update operation.
+				it(func(v *claircore.Vulnerability, _ *driver.EnrichmentRecord) bool {
+					count++
+					// Offer one vulnerability to the datastore iterator.
+					return yield(v, nil)
+				})
+				if err := iterErr(); err != nil {
+					yield(nil, err)
+				}
+			})
+		case driver.EnrichmentKind:
+			ref, err = u.store.UpdateEnrichmentsIter(ctx, op.Updater, op.Fingerprint, func(yield func(*driver.EnrichmentRecord, error) bool) {
+				// For each enrichment in the update operation.
+				it(func(_ *claircore.Vulnerability, e *driver.EnrichmentRecord) bool {
+					count++
+					// Offer one enrichment to the datastore iterator.
+					return yield(e, nil)
+				})
+				if err := iterErr(); err != nil {
+					yield(nil, err)
+				}
+			})
+		default:
+			zlog.Warn(ctx).Str("kind", string(op.Kind)).Msg("unknown kind, skipping")
+		}
+		if err != nil {
+			err = fmt.Errorf("updating %s: %w", op.Kind, err)
+			return false
+		}
+		zlog.Info(ctx).
+			Str("updater", op.Updater).
+			Str("kind", string(op.Kind)).
+			Str("ref", ref.String()).
+			Int("count", count).
+			Msg("update imported")
+		return true
+	})
+	if err := iterErr(); err != nil {
+		return fmt.Errorf("iterating on the reader: %w", err)
+	}
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -331,7 +416,7 @@ func (u *Updater) runSingleBundleUpdate(ctx context.Context) error {
 	}
 	defer dec.Close()
 
-	if err := u.importVulns(ctx, dec); err != nil {
+	if err := u.importFunc(ctx, dec); err != nil {
 		return err
 	}
 
@@ -451,7 +536,7 @@ func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time
 	}
 	defer dec.Close()
 
-	if err := u.importVulns(lCtx, dec); err != nil {
+	if err := u.importFunc(lCtx, dec); err != nil {
 		return fmt.Errorf("importing vulnerabilities: %w", err)
 	}
 

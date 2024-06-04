@@ -16,7 +16,7 @@ export type ConditionNumberProps = {
     onSearch: (value: { condition: string; number: number }) => void;
 };
 
-const conditionMap = {
+export const conditionMap = {
     'Is greater than': '>',
     'Is greater than or equal to': '>=',
     'Is equal to': '=',

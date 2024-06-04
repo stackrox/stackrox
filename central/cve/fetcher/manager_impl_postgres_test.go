@@ -67,7 +67,7 @@ func TestReconcileIstioCVEsInPostgres(t *testing.T) {
 				BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
 					CVSSV3: &schema.CVSSV30{
 						BaseScore:    6.1,
-						VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						VectorString: "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
 						Version:      "3.0",
 					},
 					ExploitabilityScore: 1.8,
@@ -95,7 +95,7 @@ func TestReconcileIstioCVEsInPostgres(t *testing.T) {
 					Link:         "https://nvd.nist.gov/vuln/detail/CVE-4",
 					ScoreVersion: storage.CVEInfo_V3,
 					CvssV3: &storage.CVSSV3{
-						Vector:              "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						Vector:              "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
 						ExploitabilityScore: 1.8,
 						ImpactScore:         4.2,
 						AttackVector:        storage.CVSSV3_ATTACK_LOCAL,
@@ -189,7 +189,7 @@ func TestReconcileCVEsInPostgres(t *testing.T) {
 				BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
 					CVSSV3: &schema.CVSSV30{
 						BaseScore:    6.1,
-						VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						VectorString: "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
 						Version:      "3.0",
 					},
 					ExploitabilityScore: 1.8,
@@ -220,7 +220,7 @@ func TestReconcileCVEsInPostgres(t *testing.T) {
 				BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
 					CVSSV3: &schema.CVSSV30{
 						BaseScore:    6.1,
-						VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						VectorString: "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
 						Version:      "3.0",
 					},
 					ExploitabilityScore: 1.8,
@@ -253,7 +253,7 @@ func TestReconcileCVEsInPostgres(t *testing.T) {
 				BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
 					CVSSV3: &schema.CVSSV30{
 						BaseScore:    6.1,
-						VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						VectorString: "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
 						Version:      "3.0",
 					},
 					ExploitabilityScore: 1.8,
@@ -287,7 +287,7 @@ func TestReconcileCVEsInPostgres(t *testing.T) {
 					Link:         "https://nvd.nist.gov/vuln/detail/CVE-1",
 					ScoreVersion: storage.CVEInfo_V3,
 					CvssV3: &storage.CVSSV3{
-						Vector:              "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						Vector:              "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
 						ExploitabilityScore: 1.8,
 						ImpactScore:         4.2,
 						AttackVector:        storage.CVSSV3_ATTACK_LOCAL,
@@ -328,7 +328,7 @@ func TestReconcileCVEsInPostgres(t *testing.T) {
 					Link:         "https://nvd.nist.gov/vuln/detail/CVE-2",
 					ScoreVersion: storage.CVEInfo_V3,
 					CvssV3: &storage.CVSSV3{
-						Vector:              "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						Vector:              "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
 						ExploitabilityScore: 1.8,
 						ImpactScore:         4.2,
 						AttackVector:        storage.CVSSV3_ATTACK_LOCAL,
@@ -366,7 +366,7 @@ func TestReconcileCVEsInPostgres(t *testing.T) {
 					Link:         "https://nvd.nist.gov/vuln/detail/CVE-3",
 					ScoreVersion: storage.CVEInfo_V3,
 					CvssV3: &storage.CVSSV3{
-						Vector:              "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						Vector:              "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
 						ExploitabilityScore: 1.8,
 						ImpactScore:         4.2,
 						AttackVector:        storage.CVSSV3_ATTACK_LOCAL,

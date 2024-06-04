@@ -10,14 +10,16 @@ import (
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	"golang.org/x/sync/semaphore"
 )
 
 var (
 	log         = logging.LoggerForModule()
-	maxRequests = 10
+	maxRequests = 100
 )
 
 type reportRequest struct {
@@ -38,6 +40,8 @@ type managerImpl struct {
 
 	// Mutex to synchronize access to runningReportConfigs map
 	mu sync.Mutex
+
+	concurrencySem *semaphore.Weighted
 }
 
 func New(scanConfigDS scanConfigurationDS.DataStore) Manager {
@@ -46,6 +50,7 @@ func New(scanConfigDS scanConfigurationDS.DataStore) Manager {
 		stopper:              concurrency.NewStopper(),
 		runningReportConfigs: make(map[string]*reportRequest, maxRequests),
 		reportRequests:       make(chan *reportRequest, maxRequests),
+		concurrencySem:       semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
 	}
 }
 
@@ -65,8 +70,14 @@ func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *stora
 	req := &reportRequest{
 		scanConfig,
 	}
-	m.reportRequests <- req
-	m.runningReportConfigs[scanConfig.GetId()] = req
+
+	select {
+	case m.reportRequests <- req:
+		m.runningReportConfigs[scanConfig.GetId()] = req
+	default:
+		return errors.New(fmt.Sprintf("Error submitting report request for for scan configuration %q, request limit reached",
+			scanConfig.GetScanConfigName()))
+	}
 
 	return nil
 }
@@ -104,12 +115,15 @@ func (m *managerImpl) Stop() {
 }
 
 func (m *managerImpl) generateReport(req *reportRequest) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	defer m.concurrencySem.Release(1)
 
 	// TODO ROX-24172: Implement business logic for querying, formatting and sending report over email
 	logging.Infof("Executing report request for scan config %q", req.scanConfig.GetId())
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	delete(m.runningReportConfigs, req.scanConfig.GetId())
+
 }
 
 func (m *managerImpl) runReports() {
@@ -120,6 +134,10 @@ func (m *managerImpl) runReports() {
 			logging.Info("Signal received to stop compliance report manager")
 			return
 		case req := <-m.reportRequests:
+			if err := m.concurrencySem.Acquire(context.Background(), 1); err != nil {
+				log.Errorf("Error acquiring semaphore to run new report: %v", err)
+				continue
+			}
 			logging.Infof("Executing report %q at %v", req.scanConfig.GetId(), time.Now().Format(time.RFC822))
 			go m.generateReport(req)
 		}

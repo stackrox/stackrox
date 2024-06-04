@@ -9,6 +9,8 @@ import useURLSort from 'hooks/useURLSort';
 import { getComplianceClusterStats } from 'services/ComplianceResultsStatsService';
 import { getTableUIState } from 'utils/getTableUIState';
 
+import { CLUSTER_QUERY } from './compliance.coverage.constants';
+import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import CoveragesPageHeader from './CoveragesPageHeader';
 import CoveragesToggleGroup from './CoveragesToggleGroup';
 import ProfileClustersTable from './ProfileClustersTable';
@@ -16,17 +18,17 @@ import ProfileClustersTable from './ProfileClustersTable';
 function ProfileClustersPage() {
     const { profileName } = useParams();
     const [currentDatetime, setCurrentDatetime] = useState<Date>(new Date());
-    const pagination = useURLPagination(10);
+    const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
 
     const { page, perPage, setPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
-        sortFields: ['Cluster'],
-        defaultSortOption: { field: 'Cluster', direction: 'asc' },
+        sortFields: [CLUSTER_QUERY],
+        defaultSortOption: { field: CLUSTER_QUERY, direction: 'asc' },
         onSort: () => setPage(1),
     });
 
     const fetchProfileClusters = useCallback(
-        () => getComplianceClusterStats(profileName, sortOption, page, perPage),
+        () => getComplianceClusterStats(profileName, { sortOption, page, perPage }),
         [page, perPage, profileName, sortOption]
     );
     const { data: profileClusters, loading: isLoading, error } = useRestQuery(fetchProfileClusters);

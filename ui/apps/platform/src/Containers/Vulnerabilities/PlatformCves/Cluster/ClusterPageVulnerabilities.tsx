@@ -45,13 +45,13 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
         onSort: () => setPage(1, 'replace'),
     });
 
-    const { data, loading, error } = useClusterVulnerabilities(
+    const { data, loading, error } = useClusterVulnerabilities({
         clusterId,
         query,
         page,
         perPage,
-        sortOption
-    );
+        sortOption,
+    });
     const summaryRequest = useClusterSummaryData(clusterId, query);
 
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
@@ -112,9 +112,6 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                                 page={page}
                                 onSetPage={(_, newPage) => setPage(newPage)}
                                 onPerPageSelect={(_, newPerPage) => {
-                                    if (clusterVulnerabilityCount < (page - 1) * newPerPage) {
-                                        setPage(1);
-                                    }
                                     setPerPage(newPerPage);
                                 }}
                             />

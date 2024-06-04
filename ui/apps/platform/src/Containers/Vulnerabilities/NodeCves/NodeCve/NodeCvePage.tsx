@@ -67,7 +67,12 @@ function NodeCvePage() {
 
     const { metadataRequest, nodeCount, cveData } = useNodeCveMetadata(cveId, query);
 
-    const { affectedNodesRequest, nodeData } = useAffectedNodes(query, page, perPage, sortOption);
+    const { affectedNodesRequest, nodeData } = useAffectedNodes({
+        query,
+        page,
+        perPage,
+        sortOption,
+    });
 
     const nodeCveName = cveData?.cve;
 
@@ -143,9 +148,6 @@ function NodeCvePage() {
                                 onSetPage={(_, newPage) => setPage(newPage)}
                                 onPerPageSelect={(_, newPerPage) => {
                                     setPerPage(newPerPage);
-                                    if (nodeCount < (page - 1) * newPerPage) {
-                                        setPage(1, 'replace');
-                                    }
                                 }}
                             />
                         </SplitItem>
