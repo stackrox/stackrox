@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { generatePath, useParams } from 'react-router-dom';
+import { generatePath, useHistory, useParams } from 'react-router-dom';
 import {
     Alert,
     Breadcrumb,
@@ -26,6 +26,7 @@ import {
 import ProfilesToggleGroup from './ProfilesToggleGroup';
 
 function ClusterDetailsPage() {
+    const history = useHistory();
     const { clusterId, profileName } = useParams();
 
     const fetchProfilesStats = useCallback(
@@ -38,6 +39,13 @@ function ClusterDetailsPage() {
         error: clusterProfileDataError,
     } = useRestQuery(fetchProfilesStats);
 
+    function handleProfilesToggleChange(selectedProfile: string) {
+        const path = generatePath(coverageClusterDetailsPath, {
+            profileName: selectedProfile,
+            clusterId,
+        });
+        history.push(path);
+    }
     if (clusterProfileDataError) {
         return (
             <Alert
@@ -105,8 +113,8 @@ function ClusterDetailsPage() {
             <Divider component="div" />
             <PageSection>
                 <ProfilesToggleGroup
-                    profiles={clusterProfileData?.scanStats || []}
-                    route={coverageClusterDetailsPath.replace(':clusterId', clusterId)}
+                    profiles={clusterProfileData?.scanStats ?? []}
+                    handleToggleChange={handleProfilesToggleChange}
                 />
             </PageSection>
         </>

@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { generatePath, useHistory, useParams } from 'react-router-dom';
 import { Divider, PageSection, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
@@ -19,6 +19,7 @@ import ProfileClustersTable from './ProfileClustersTable';
 
 function ProfileClustersPage() {
     const { profileName } = useParams();
+    const history = useHistory();
     const { profileScanStats } = useContext(ComplianceProfilesContext);
     const [currentDatetime, setCurrentDatetime] = useState<Date>(new Date());
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
@@ -49,6 +50,13 @@ function ProfileClustersPage() {
         }
     }, [profileClusters]);
 
+    function handleProfilesToggleChange(selectedProfile: string) {
+        const path = generatePath(coverageProfileClustersPath, {
+            profileName: selectedProfile,
+        });
+        history.push(path);
+    }
+
     return (
         <>
             <PageTitle title="Compliance coverage - Profile clusters" />
@@ -56,7 +64,7 @@ function ProfileClustersPage() {
             <PageSection>
                 <ProfilesToggleGroup
                     profiles={profileScanStats.scanStats}
-                    route={coverageProfileClustersPath}
+                    handleToggleChange={handleProfilesToggleChange}
                 />
             </PageSection>
             <PageSection variant="default">

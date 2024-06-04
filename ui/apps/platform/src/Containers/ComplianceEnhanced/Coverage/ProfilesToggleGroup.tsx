@@ -1,22 +1,16 @@
 import React from 'react';
-import { generatePath, useHistory, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import { ComplianceProfileScanStats } from 'services/ComplianceResultsStatsService';
 
 type ProfilesToggleGroupProps = {
     profiles: ComplianceProfileScanStats[];
-    route: string;
+    handleToggleChange: (selectedProfile: string) => void;
 };
 
-function ProfilesToggleGroup({ profiles, route }: ProfilesToggleGroupProps) {
+function ProfilesToggleGroup({ profiles, handleToggleChange }: ProfilesToggleGroupProps) {
     const { profileName: profileNameParam } = useParams();
-    const history = useHistory();
-
-    const handleToggleChange = (selectedProfile) => {
-        const path = generatePath(route, { profileName: selectedProfile });
-        history.push(path);
-    };
 
     return (
         <ToggleGroup aria-label="Toggle for selected profile view">

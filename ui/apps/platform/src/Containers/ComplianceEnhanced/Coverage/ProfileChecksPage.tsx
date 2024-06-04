@@ -1,5 +1,5 @@
 import React, { useCallback, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { generatePath, useHistory, useParams } from 'react-router-dom';
 import { Divider, PageSection, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
@@ -18,6 +18,7 @@ import ProfileChecksTable from './ProfileChecksTable';
 
 function ProfileChecksPage() {
     const { profileName } = useParams();
+    const history = useHistory();
     const { profileScanStats } = useContext(ComplianceProfilesContext);
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { page, perPage, setPage } = pagination;
@@ -33,6 +34,13 @@ function ProfileChecksPage() {
     );
     const { data: profileChecks, loading: isLoading, error } = useRestQuery(fetchProfileChecks);
 
+    function handleProfilesToggleChange(selectedProfile: string) {
+        const path = generatePath(coverageProfileChecksPath, {
+            profileName: selectedProfile,
+        });
+        history.push(path);
+    }
+
     return (
         <>
             <PageTitle title="Compliance coverage - Profile checks" />
@@ -40,7 +48,7 @@ function ProfileChecksPage() {
             <PageSection>
                 <ProfilesToggleGroup
                     profiles={profileScanStats.scanStats}
-                    route={coverageProfileChecksPath}
+                    handleToggleChange={handleProfilesToggleChange}
                 />
             </PageSection>
             <PageSection variant="default">
