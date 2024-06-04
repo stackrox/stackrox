@@ -21,8 +21,13 @@ import (
 >>>>>>> 9c5d2f96de (Added walkbyquery for complaince check result to get data fro compliance report)
 =======
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+<<<<<<< HEAD
 	complianceRulesDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 >>>>>>> 0224098a9c (Added query for profile name)
+=======
+	remediationDS "github.com/stackrox/rox/central/complianceoperator/v2/remediations/datastore"
+	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+>>>>>>> c9939db731 (Fixed nit comments)
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/csv"
@@ -101,8 +106,9 @@ type formatSubject struct {
 type complianceReportGeneratorImpl struct {
 	checkResultsDS        checkResults.DataStore
 	notificationProcessor notifier.Processor
-	rulesDS               complianceRulesDS.DataStore
 	profileDS             profileDS.DataStore
+	remediationDS         remediationDS.DataStore
+	scanDS                scanDS.DataStore
 }
 
 // struct which hold all columns of a row
@@ -254,23 +260,35 @@ func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportR
 				Status:      c.GetStatus().String(),
 				Remediation: c.GetInstructions(),
 			}
-			q := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, c.GetRuleRefId()).ProtoQuery()
-			rule, err := rg.rulesDS.SearchRules(ctx, q)
+			//get profile name for the check result
+			q := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, c.GetScanRefId()).ProtoQuery()
+			scans, err := rg.scanDS.SearchScans(ctx, q)
 			if err != nil {
 				return err
 			}
-			if len(rule) < 0 {
+			if len(scans) < 1 {
 				return errors.New("Rule not found")
 			}
-			q = search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleName, rule[0].GetName()).ProtoQuery()
+			q = search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileID, scans[0].GetProfile().GetProfileId()).ProtoQuery()
 			profiles, err := rg.profileDS.SearchProfiles(ctx, q)
 			if err != nil {
 				return err
 			}
-			if len(profiles) < 0 {
+			if len(profiles) < 1 {
 				return errors.New("Profile not found")
 			}
 			row.Profile = profiles[0].GetName()
+
+			//get remediation for the check result
+			q = search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorCheckName, c.GetCheckName()).ProtoQuery()
+			remediations, err := rg.remediationDS.SearchRemediations(ctx, q)
+			if err != nil {
+				return err
+			}
+			if len(remediations) < 1 {
+				return errors.New("Remediation not found")
+			}
+			row.Remediation = remediations[0].GetName()
 			resultCluster = append(resultCluster, row)
 			return nil
 		})

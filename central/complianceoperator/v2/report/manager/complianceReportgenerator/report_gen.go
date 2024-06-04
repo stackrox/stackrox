@@ -9,7 +9,8 @@ import (
 
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
-	complianceRulesDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
+	remediationDS "github.com/stackrox/rox/central/complianceoperator/v2/remediations/datastore"
+	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/generated/storage"
 >>>>>>> 6faeddcd64 (Added test file)
 	"github.com/stackrox/rox/pkg/notifier"
@@ -34,11 +35,12 @@ type ComplianceReportGenerator interface {
 }
 
 // New will create a new instance of the ReportGenerator
-func New(checkResultDS checkResults.DataStore, notifierProcessor notifier.Processor, ruleDS complianceRulesDS.DataStore, profileDS profileDS.DataStore) ComplianceReportGenerator {
+func New(checkResultDS checkResults.DataStore, notifierProcessor notifier.Processor, profileDS profileDS.DataStore, remediationDS remediationDS.DataStore, scanDS scanDS.DataStore) ComplianceReportGenerator {
 	return &complianceReportGeneratorImpl{
 		checkResultsDS:        checkResultDS,
 		notificationProcessor: notifierProcessor,
-		rulesDS:               ruleDS,
 		profileDS:             profileDS,
+		remediationDS:         remediationDS,
+		scanDS:                scanDS,
 	}
 }
