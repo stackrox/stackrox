@@ -2,6 +2,7 @@ package detector
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -134,6 +135,7 @@ type mockImageServiceServer struct {
 	v1.UnimplementedImageServiceServer
 	callCounts     map[string]int
 	callCountsLock sync.Mutex
+	returnError    bool
 }
 
 func (m *mockImageServiceServer) ScanImageInternal(_ context.Context, req *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
@@ -141,6 +143,10 @@ func (m *mockImageServiceServer) ScanImageInternal(_ context.Context, req *v1.Sc
 		m.callCountsLock.Lock()
 		defer m.callCountsLock.Unlock()
 		m.callCounts[req.GetImage().GetName().GetFullName()]++
+	}
+
+	if m.returnError {
+		return nil, fmt.Errorf("broken")
 	}
 
 	return &v1.ScanImageInternalResponse{
@@ -156,32 +162,43 @@ func (s *enricherSuite) TestScanAndSetWithLock() {
 	req3 := createScanImageRequest(0, "nginx-id", "nginx:1.14.2", false)
 	reqs := []*scanImageRequest{req, req2, req3}
 
-	imageService := &mockImageServiceServer{callCounts: map[string]int{}}
-	conn, closeFunc := createMockImageService(s.T(), imageService)
-	s.enricher.imageSvc = v1.NewImageServiceClient(conn)
-	defer closeFunc()
-	s.mockCache.RemoveAll()
+	runScans := func(t *testing.T, imageService *mockImageServiceServer) {
+		conn, closeFunc := createMockImageService(s.T(), imageService)
+		s.enricher.imageSvc = v1.NewImageServiceClient(conn)
+		defer closeFunc()
+		s.mockCache.RemoveAll()
 
-	waitGroup := runAsyncScans(s.enricher, reqs)
-	waitGroup.Wait()
+		waitGroup := runAsyncScans(s.enricher, reqs)
+		waitGroup.Wait()
 
-	// Only a single call per image name should have been made.
-	assert.Len(s.T(), imageService.callCounts, 3)
-	assert.Equal(s.T(), 1, imageService.callCounts[req.containerImage.GetName().GetFullName()])
-	assert.Equal(s.T(), 1, imageService.callCounts[req2.containerImage.GetName().GetFullName()])
-	assert.Equal(s.T(), 1, imageService.callCounts[req3.containerImage.GetName().GetFullName()])
+		// Only a single call per image name should have been made.
+		assert.Len(t, imageService.callCounts, 3)
+		assert.Equal(t, 1, imageService.callCounts[req.containerImage.GetName().GetFullName()])
+		assert.Equal(t, 1, imageService.callCounts[req2.containerImage.GetName().GetFullName()])
+		assert.Equal(t, 1, imageService.callCounts[req3.containerImage.GetName().GetFullName()])
 
-	// Simulate a cache expiry.
-	s.mockCache.RemoveAll()
+		// Simulate a cache expiry.
+		s.mockCache.RemoveAll()
 
-	waitGroup = runAsyncScans(s.enricher, reqs)
-	waitGroup.Wait()
+		waitGroup = runAsyncScans(s.enricher, reqs)
+		waitGroup.Wait()
 
-	// Only one more call per image name should have been made.
-	assert.Len(s.T(), imageService.callCounts, 3)
-	assert.Equal(s.T(), 2, imageService.callCounts[req.containerImage.GetName().GetFullName()])
-	assert.Equal(s.T(), 2, imageService.callCounts[req2.containerImage.GetName().GetFullName()])
-	assert.Equal(s.T(), 2, imageService.callCounts[req3.containerImage.GetName().GetFullName()])
+		// Only one more call per image name should have been made.
+		assert.Len(t, imageService.callCounts, 3)
+		assert.Equal(t, 2, imageService.callCounts[req.containerImage.GetName().GetFullName()])
+		assert.Equal(t, 2, imageService.callCounts[req2.containerImage.GetName().GetFullName()])
+		assert.Equal(t, 2, imageService.callCounts[req3.containerImage.GetName().GetFullName()])
+	}
+
+	s.T().Run("succesfully scans", func(t *testing.T) {
+		imageService := &mockImageServiceServer{callCounts: map[string]int{}}
+		runScans(t, imageService)
+	})
+
+	s.T().Run("error scans", func(t *testing.T) {
+		imageService := &mockImageServiceServer{callCounts: map[string]int{}, returnError: true}
+		runScans(t, imageService)
+	})
 }
 
 func runAsyncScans(e *enricher, reqs []*scanImageRequest) *sync.WaitGroup {

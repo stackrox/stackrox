@@ -206,9 +206,6 @@ func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageService
 	if err != nil {
 		// Ignore the error and set the image to something basic,
 		// so alerting can progress.
-
-		// TODO: Possible enhancement - check to see if the image was previously enriched successfully,
-		// and if so keep the old image.
 		log.Errorf("Scan request failed for image %q: %s", req.containerImage.GetName().GetFullName(), err)
 		existingNames := c.image.GetNames()
 		c.image = types.ToImage(req.containerImage)
