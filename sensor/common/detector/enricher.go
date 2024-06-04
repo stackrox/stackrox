@@ -187,12 +187,10 @@ func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageService
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	if c.image != nil {
-		// Check to see if another routine already enriched this name, if so, short circuit.
-		if protoutils.SliceContains(req.containerImage.GetName(), c.image.GetNames()) {
-			log.Debugf("Image scan loaded from cache: %s: Components: (%d) - short circuit", req.containerImage.GetName().GetFullName(), len(c.image.GetScan().GetComponents()))
-			return
-		}
+	// Check to see if another routine already enriched this name, if so, short circuit.
+	if protoutils.SliceContains(req.containerImage.GetName(), c.image.GetNames()) {
+		log.Debugf("Image scan loaded from cache: %s: Components: (%d) - short circuit", req.containerImage.GetName().GetFullName(), len(c.image.GetScan().GetComponents()))
+		return
 	}
 
 	// Ask Central to scan the image if the image is not local otherwise scan with local scanner
