@@ -406,7 +406,7 @@ func (s *serviceImpl) GetComplianceProfileCheckStats(ctx context.Context, reques
 		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile check stats for %+v", request)
 	}
 
-	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, scanResults)
+	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, scanResults, request.GetProfileName(), s.benchmarkDS)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to retrieve controls for compliance profile check stats for %+v", request)
 	}

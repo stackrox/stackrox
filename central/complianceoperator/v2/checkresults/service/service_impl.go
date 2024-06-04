@@ -218,7 +218,7 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", request)
 	}
 
-	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, scanResults, request.GetProfileName())
+	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, scanResults, request.GetProfileName(), s.benchmarkDS)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
 	}
