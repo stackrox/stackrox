@@ -2,12 +2,11 @@ import React from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
 import {
-    CompoundSearchFilterConfig,
+    PartialCompoundSearchFilterConfig,
     SearchFilterEntityName,
 } from 'Components/CompoundSearchFilter/types';
 import { getEntities } from 'Components/CompoundSearchFilter/utils/utils';
 
-import { DeepPartial } from 'utils/type.utils';
 import SimpleSelect from './SimpleSelect';
 
 export type SelectedEntity = SearchFilterEntityName | undefined;
@@ -16,7 +15,7 @@ export type EntitySelectorOnChange = (value: string | number | undefined) => voi
 export type EntitySelectorProps = {
     selectedEntity: SelectedEntity;
     onChange: EntitySelectorOnChange;
-    config: DeepPartial<CompoundSearchFilterConfig>;
+    config: PartialCompoundSearchFilterConfig;
 };
 
 function EntitySelector({ selectedEntity, onChange, config }: EntitySelectorProps) {

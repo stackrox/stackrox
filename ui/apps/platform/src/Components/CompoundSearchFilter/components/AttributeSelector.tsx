@@ -1,10 +1,9 @@
 import React from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
-import { CompoundSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
+import { PartialCompoundSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
 import { getEntityAttributes } from 'Components/CompoundSearchFilter/utils/utils';
 
-import { DeepPartial } from 'utils/type.utils';
 import SimpleSelect from './SimpleSelect';
 import { SelectedEntity } from './EntitySelector';
 
@@ -15,7 +14,7 @@ export type AttributeSelectorProps = {
     selectedEntity: SelectedEntity;
     selectedAttribute: SelectedAttribute;
     onChange: AttributeSelectorOnChange;
-    config: DeepPartial<CompoundSearchFilterConfig>;
+    config: PartialCompoundSearchFilterConfig;
 };
 
 function AttributeSelector({
@@ -40,6 +39,7 @@ function AttributeSelector({
             onChange={onChange}
             ariaLabelMenu="compound search filter attribute selector menu"
             ariaLabelToggle="compound search filter attribute selector toggle"
+            isDisabled={entityAttributes.length === 1}
         >
             {entityAttributes.map((attribute) => {
                 return (

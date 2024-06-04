@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-duplicate-type-constituents */
 import { sourceTypeLabels, sourceTypes } from 'types/image.proto';
-import { ValueOf } from 'utils/type.utils';
+import { DeepPartialByKey, ValueOf } from 'utils/type.utils';
 
 export type SearchFilterConfig = {
     displayName: string;
@@ -514,7 +514,7 @@ export type NodeComponentAttributeInputType = ValueOf<
 
 export const profileCheckSearchFilterConfig = {
     displayName: 'Profile Check',
-    searchCategory: 'COMPLIANCE',
+    searchCategory: 'COMPLIANCE', //@TODO: Update this once we know what to use
     attributes: {
         Name: {
             displayName: 'Name',
@@ -541,7 +541,7 @@ export type ProfileCheckAttributeInputType = ValueOf<
 
 export const complianceScanSearchFilterConfig = {
     displayName: 'Compliance Scan',
-    searchCategory: 'COMPLIANCE',
+    searchCategory: 'COMPLIANCE', //@TODO: Update this once we know what to use
     attributes: {
         'Config ID': {
             displayName: 'Config ID',
@@ -596,6 +596,11 @@ export type CompoundSearchFilterConfig = {
     'Compliance Scan': ComplianceScanSearchFilterConfig;
 };
 
+// @TODO: Consider Dave's suggestion about reorganizing and readjusting types (https://github.com/stackrox/stackrox/pull/11349#discussion_r1628428375)
+export type PartialCompoundSearchFilterConfig = Partial<
+    DeepPartialByKey<CompoundSearchFilterConfig, 'attributes'>
+>;
+
 export const compoundSearchEntityNames = Object.keys(compoundSearchFilter);
 
 export type SearchFilterEntityName = keyof CompoundSearchFilterConfig;
@@ -625,3 +630,11 @@ export type SearchFilterAttributeInputType =
     | ImageComponentAttributeInputType
     | ProfileCheckAttributeInputType
     | ComplianceScanAttributeInputType;
+
+// Misc
+
+export type OnSearchPayload = {
+    action: 'ADD' | 'REMOVE';
+    category: string;
+    value: string;
+};

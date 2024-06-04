@@ -1,12 +1,12 @@
 import React from 'react';
 import { DatePicker, SearchInput, SelectOption } from '@patternfly/react-core';
 
-import { DeepPartial } from 'utils/type.utils';
 import { SearchFilter } from 'types/search';
 import { SelectedEntity } from './EntitySelector';
 import { SelectedAttribute } from './AttributeSelector';
 import {
-    CompoundSearchFilterConfig,
+    OnSearchPayload,
+    PartialCompoundSearchFilterConfig,
     SearchFilterAttribute,
     SelectSearchFilterAttribute,
 } from '../types';
@@ -15,12 +15,6 @@ import { ensureConditionNumber, ensureString, ensureStringArray } from '../utils
 import CheckboxSelect from './CheckboxSelect';
 import ConditionNumber, { conditionMap } from './ConditionNumber';
 import SearchFilterAutocomplete from './SearchFilterAutocomplete';
-
-export type OnSearchPayload = {
-    action: 'ADD' | 'REMOVE';
-    category: string;
-    value: string;
-};
 
 export type InputFieldValue =
     | string
@@ -37,7 +31,7 @@ export type CompoundSearchFilterInputFieldProps = {
     searchFilter: SearchFilter;
     onSearch: ({ action, category, value }: OnSearchPayload) => void;
     onChange: InputFieldOnChange;
-    config: DeepPartial<CompoundSearchFilterConfig>;
+    config: PartialCompoundSearchFilterConfig;
 };
 
 function isSelectType(
@@ -154,7 +148,7 @@ function CompoundSearchFilterInputField({
         const attributeLabel = attributeObject.displayName.toLowerCase();
         const selectOptions = attributeObject.inputProps.options;
         const { searchTerm } = attributeObject;
-        const selection = ensureStringArray(searchFilter[searchTerm]);
+        const selection = ensureStringArray(searchFilter?.[searchTerm]);
 
         return (
             <CheckboxSelect

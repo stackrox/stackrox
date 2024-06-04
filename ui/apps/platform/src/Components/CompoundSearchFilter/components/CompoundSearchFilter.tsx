@@ -1,27 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Split } from '@patternfly/react-core';
 
-import { DeepPartial } from 'utils/type.utils';
 import { SearchFilter } from 'types/search';
 import {
-    CompoundSearchFilterConfig,
+    OnSearchPayload,
+    PartialCompoundSearchFilterConfig,
     SearchFilterAttributeName,
     SearchFilterEntityName,
 } from '../types';
-import { getDefaultAttribute, getDefaultEntity, getEntityAttributeNames } from '../utils/utils';
+import { getDefaultAttribute, getDefaultEntity } from '../utils/utils';
 
 import EntitySelector, { SelectedEntity } from './EntitySelector';
 import AttributeSelector, { SelectedAttribute } from './AttributeSelector';
 import CompoundSearchFilterInputField, { InputFieldValue } from './CompoundSearchFilterInputField';
 
-export type OnSearchPayload = {
-    action: 'ADD' | 'REMOVE';
-    category: string;
-    value: string;
-};
-
 export type CompoundSearchFilterProps = {
-    config: DeepPartial<CompoundSearchFilterConfig>;
+    config: PartialCompoundSearchFilterConfig;
     defaultEntity?: SearchFilterEntityName;
     defaultAttribute?: SearchFilterAttributeName;
     searchFilter: SearchFilter;
@@ -67,10 +61,6 @@ function CompoundSearchFilter({
         }
     }, [defaultAttribute]);
 
-    const hasMultipleAttributes = selectedEntity
-        ? getEntityAttributeNames(selectedEntity, config).length > 1
-        : false;
-
     return (
         <Split className="pf-v5-u-flex-grow-1">
             <EntitySelector
@@ -86,17 +76,15 @@ function CompoundSearchFilter({
                 }}
                 config={config}
             />
-            {hasMultipleAttributes && (
-                <AttributeSelector
-                    selectedEntity={selectedEntity}
-                    selectedAttribute={selectedAttribute}
-                    onChange={(value) => {
-                        setSelectedAttribute(value as SearchFilterAttributeName);
-                        setInputValue('');
-                    }}
-                    config={config}
-                />
-            )}
+            <AttributeSelector
+                selectedEntity={selectedEntity}
+                selectedAttribute={selectedAttribute}
+                onChange={(value) => {
+                    setSelectedAttribute(value as SearchFilterAttributeName);
+                    setInputValue('');
+                }}
+                config={config}
+            />
             <CompoundSearchFilterInputField
                 selectedEntity={selectedEntity}
                 selectedAttribute={selectedAttribute}
