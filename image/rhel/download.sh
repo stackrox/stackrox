@@ -30,7 +30,8 @@ fi
 mkdir -p "$output_dir/rpms"
 # Install all the required compression packages for RocksDB to compile for amd64. RocksDB is not required for other architectures.
 if [[ "$goarch" == "amd64" ]]; then
-  rpm_url="http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/snappy-1.1.8-3.el8.x86_64.rpm"
+  # Using the EOL package as a safer option than picking from el9.
+  rpm_url="https://vault.centos.org/8-stream/BaseOS/x86_64/os/Packages/snappy-1.1.8-3.el8.x86_64.rpm"
   curl --retry 3 --silent --show-error -f -o "${output_dir}/rpms/snappy.rpm" "${rpm_url}"
 fi
 
