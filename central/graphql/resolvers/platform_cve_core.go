@@ -29,7 +29,7 @@ func init() {
 			[]string{
 				"clusterCountByPlatformType: ClusterCountByPlatformType!",
 				"clusterCount: Int!",
-				"clusters: [Cluster!]!",
+				"clusters(pagination: Pagination): [Cluster!]!",
 				"clusterVulnerability: ClusterVulnerability!",
 				"cve: String!",
 				"cveType: String!",
@@ -42,7 +42,7 @@ func init() {
 		schema.AddQuery("platformCVEs(query: String, pagination: Pagination): [PlatformCVECore!]!"),
 		// `subfieldScopeQuery` applies the scope query to all the subfields of the PlatformCVE resolver.
 		// This eliminates the need to pass queries to individual resolvers.
-		schema.AddQuery("platformCVE(cve: String, subfieldScopeQuery: String): PlatformCVECore"),
+		schema.AddQuery("platformCVE(cveID: String, subfieldScopeQuery: String): PlatformCVECore"),
 	)
 }
 
@@ -110,7 +110,7 @@ func (resolver *Resolver) PlatformCVEs(ctx context.Context, q PaginatedQuery) ([
 	}
 	query, err := q.AsV1QueryOrEmpty()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	cves, err := resolver.PlatformCVEView.Get(ctx, query)
@@ -159,7 +159,7 @@ func (resolver *Resolver) PlatformCVE(ctx context.Context, args struct {
 		return nil, nil
 	}
 	if len(cves) > 1 {
-		utils.Should(errors.Errorf("Retrieved multiple rows when only one row is expected for CVEID=%s query", *args.Cve))
+		utils.Should(errors.Errorf("Retrieved multiple rows when only one row is expected for CVEID=%s query", *args.CveID))
 		return nil, err
 	}
 	ret, err := resolver.wrapPlatformCVECoreWithContext(ctx, cves[0], err)

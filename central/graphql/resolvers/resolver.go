@@ -188,7 +188,7 @@ func New() *Resolver {
 				return platformcve.Singleton()
 			}
 			return nil
-		},
+		}(),
 	}
 
 	return resolver
