@@ -108,6 +108,12 @@ message ComplianceProfileClusterRequest {
   RawQuery query = 3;
 }
 
+message ComplianceCheckDetailRequest {
+  string profile_name = 1;
+  string check_name = 2;
+  RawQuery query = 3;
+}
+
 service ComplianceResultsService {
   // GetComplianceScanCheckResult returns the specific result by ID
   rpc GetComplianceScanCheckResult(ResourceByID) returns (ComplianceClusterCheckStatus) {
@@ -144,5 +150,10 @@ service ComplianceResultsService {
   // GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
   rpc GetComplianceProfileClusterResults(ComplianceProfileClusterRequest) returns (ListComplianceCheckResultResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/clusters/{cluster_id}"};
+  }
+
+  // GetComplianceProfileCheckDetails
+  rpc GetComplianceProfileCheckDetails(ComplianceCheckDetailRequest) returns (ComplianceClusterCheckStatus) {
+    option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/checks/{check_name}/details"};
   }
 }

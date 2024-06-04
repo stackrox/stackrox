@@ -38,6 +38,35 @@ func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, 
 	return converted
 }
 
+// ComplianceV2SpecificCheckResult converts a storage check result to a v2 check result
+func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheckResultV2, checkName string) *v2.ComplianceClusterCheckStatus {
+	var converted *v2.ComplianceClusterCheckStatus
+	for _, result := range incoming {
+		if result.GetCheckName() != checkName {
+			continue
+		}
+
+		if converted == nil {
+			converted = &v2.ComplianceClusterCheckStatus{
+				CheckId:   result.GetCheckId(),
+				CheckName: result.GetCheckName(),
+				Clusters: []*v2.ClusterCheckStatus{
+					clusterStatus(result, nil),
+				},
+				Description:  result.GetDescription(),
+				Instructions: result.GetInstructions(),
+				Rationale:    result.GetRationale(),
+				ValuesUsed:   result.GetValuesUsed(),
+				Warnings:     result.GetWarnings(),
+			}
+		} else {
+			converted.Clusters = append(converted.Clusters, clusterStatus(result, nil))
+		}
+	}
+
+	return converted
+}
+
 // ComplianceV2ScanResults converts the storage check results to v2 scan results
 func ComplianceV2ScanResults(incoming []*storage.ComplianceOperatorCheckResultV2, scanToScanID map[string]string) []*v2.ComplianceScanResult {
 	// Since a check result can hold the status for multiple clusters we need to build from
