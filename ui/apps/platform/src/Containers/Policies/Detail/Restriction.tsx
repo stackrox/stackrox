@@ -21,7 +21,9 @@ function Restriction({ clusters, restriction }: RestrictionProps): ReactElement 
                 <DescriptionListItem term="Cluster" desc={getClusterName(clusters, clusterId)} />
             )}
             {namespace && <DescriptionListItem term="Namespace" desc={namespace} />}
-            {label && <DescriptionListItem term="Deployment label" desc={`${label.key}=${label.value}`} />}
+            {label && (
+                <DescriptionListItem term="Deployment label" desc={`${label.key}=${label.value}`} />
+            )}
         </DescriptionList>
     );
 }
