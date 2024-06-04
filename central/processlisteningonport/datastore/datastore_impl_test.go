@@ -240,6 +240,13 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 		},
 	})
 
+	// Check deployment that doesn't exist
+	newPlops, err = suite.datastore.GetProcessListeningOnPort(
+		suite.hasReadCtx, fixtureconsts.Deployment3)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 0)
+
 	// Verify that newly added PLOP object doesn't have Process field set in
 	// the serialized column (because all the info is stored in the referenced
 	// process indicator record)
