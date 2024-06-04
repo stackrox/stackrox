@@ -159,7 +159,11 @@ jobs:
       with:
         name: go-binary-${{ matrix.name }}-${{ matrix.goos }}-${{ matrix.goarch }}
 
+<<<<<<< HEAD
     - name: Unpack Go binary
+=======
+    - name: Unpack Go binaries build
+>>>>>>> 369da11df8 (chore(ci): separate scanner go and image build)
       run: tar xvzf go-binary.tgz
 
     - name: Set build tag for prerelease images
