@@ -108,7 +108,7 @@ function ImageVulnerabilitiesTable({
                     <Th>{/* Header for expanded column */}</Th>
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams('CVE')}>CVE</Th>
-                    <Th sort={getSortParams('Severity')}>CVE Severity</Th>
+                    <Th sort={getSortParams('Severity')}>CVE severity</Th>
                     <Th>
                         CVE status
                         {isFiltered && <DynamicColumnIcon />}
