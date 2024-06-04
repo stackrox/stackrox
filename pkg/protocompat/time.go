@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	timestampvt "github.com/planetscale/vtprotobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -212,5 +213,11 @@ var (
 
 // IsZeroTimestamp returns whether a Timestamp pointer is either nil, or pointing to the zero of the type.
 func IsZeroTimestamp(ts *timestamppb.Timestamp) bool {
-	return ts == nil || Equal(ts, GetProtoTimestampZero()) || Equal(ts, zeroProtoTimestampFromTime)
+	return ts == nil || tsEqual(ts, GetProtoTimestampZero()) || tsEqual(ts, zeroProtoTimestampFromTime)
+}
+
+func tsEqual(a, b *timestamppb.Timestamp) bool {
+	x := (*timestampvt.Timestamp)(a)
+	y := (*timestampvt.Timestamp)(b)
+	return Equal(x, y)
 }

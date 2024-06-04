@@ -29,8 +29,13 @@ func Clone(msg proto.Message) proto.Message {
 // * Every other combination of things are not equal.
 //
 // The return value is undefined if a and b are not protocol buffers.
-func Equal(a proto.Message, b proto.Message) bool {
-	return proto.Equal(a, b)
+func Equal[T any](a Equalable[T], b T) bool {
+	return a.EqualVT(b)
+}
+
+// Equalable is an interface for proto messages that support equality check.
+type Equalable[T any] interface {
+	EqualVT(T) bool
 }
 
 // ErrNil is the error returned if Marshal is called with nil.
@@ -38,13 +43,17 @@ var ErrNil = errors.New("proto: Marshal called with nil")
 
 // Marshal takes a protocol buffer message and encodes it into
 // the wire format, returning the data. This is the main entry point.
-func Marshal(msg proto.Message) ([]byte, error) {
-	res, err := proto.Marshal(msg)
+func Marshal(msg marshalable) ([]byte, error) {
+	res, err := msg.Marshal()
 	if res == nil && err == nil {
 		return nil, ErrNil
 	}
 
 	return res, err
+}
+
+type marshalable interface {
+	Marshal() ([]byte, error)
 }
 
 // MarshalTextString writes a given protocol buffer in text format,
@@ -59,12 +68,12 @@ func MarshalTextString(m proto.Message) string {
 //
 // Unmarshal resets pb before starting to unmarshal, so any existing data
 // in pb is always removed.
-func Unmarshal(dAtA []byte, msg proto.Message) error {
+func Unmarshal[T any, PT Unmarshaler[T]](dAtA []byte, msg PT) error {
 	if dAtA == nil {
 		return ErrNil
 	}
 
-	return proto.Unmarshal(dAtA, msg)
+	return msg.Unmarshal(dAtA)
 }
 
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
@@ -76,9 +85,8 @@ type Unmarshaler[T any] interface {
 // ClonedUnmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler
 // and that have a Clone deep-copy method.
 type ClonedUnmarshaler[T any] interface {
+	Unmarshaler[T]
 	Clone() *T
-	Unmarshal(dAtA []byte) error
-	*T
 }
 
 // Merge merges src into dst.
