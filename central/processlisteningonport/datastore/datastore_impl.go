@@ -271,11 +271,6 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 ) (
 	processesListeningOnPorts []*storage.ProcessListeningOnPort, err error,
 ) {
-	// if ok, err := plopSAC.ReadAllowed(ctx); err != nil {
-	//	return nil, err
-	// } else if !ok {
-	//	return nil, sac.ErrResourceAccessDenied
-	//}
 
 	processesListeningOnPorts, err = ds.storage.GetProcessListeningOnPort(ctx, deploymentID)
 
