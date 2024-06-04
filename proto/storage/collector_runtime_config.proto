@@ -71,6 +71,24 @@ message CollectorRuntimeConfig {
   repeated ResourceCollection resource_collections = 2;
 }
 
+message StatusWithUser {
+  Status status = 1;
+  google.protobuf.Timestamp created_at = 3;
+  google.protobuf.Timestamp last_updated = 4;
+  SlimUser created_by = 5;
+  SlimUser updated_by = 6;
+}
+
+message CollectionWithFeatureStatuses {
+  string resource_collection_name = 1;
+  repeated StatusWithUser status_with_user = 2;
+}
+
+message StatusBasedConfig {
+  repeated CollectionWithFeatureStatuses collection_with_feature_statuses = 1;
+  repeated ResourceCollection resource_collections = 2;
+}
+
 // Collector needs to know the cluster it is running on to apply the rules correctly.
 message CollectorRuntimeConfigWithCluster {
   string cluster_name = 1;
