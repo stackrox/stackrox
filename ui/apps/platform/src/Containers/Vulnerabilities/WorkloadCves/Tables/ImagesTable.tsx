@@ -38,7 +38,6 @@ export const imageListQuery = gql`
                     total
                 }
             }
-            priority
             operatingSystem
             deploymentCount(query: $query)
             watchStatus
@@ -67,7 +66,6 @@ type Image = {
         moderate: { total: number };
         low: { total: number };
     };
-    priority: number;
     operatingSystem: string;
     deploymentCount: number;
     watchStatus: WatchStatus;
@@ -102,7 +100,7 @@ function ImagesTable({
     onUnwatchImage,
     showCveDetailFields,
 }: ImagesTableProps) {
-    const colSpan = 5 + (hasWriteAccessForWatchedImage ? 1 : 0) + (showCveDetailFields ? 2 : 0);
+    const colSpan = 5 + (hasWriteAccessForWatchedImage ? 1 : 0) + (showCveDetailFields ? 1 : 0);
 
     return (
         <Table borders={false} variant="compact">
@@ -110,9 +108,6 @@ function ImagesTable({
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Image')}>Image</Th>
-                    {showCveDetailFields && (
-                        <Th sort={getSortParams('Image Risk Priority')}>Risk priority</Th>
-                    )}
                     {showCveDetailFields && (
                         <TooltipTh tooltip="CVEs by severity across this image">
                             CVEs by severity
@@ -135,7 +130,6 @@ function ImagesTable({
                     id,
                     name,
                     imageCVECountBySeverity,
-                    priority,
                     operatingSystem,
                     deploymentCount,
                     metadata,
@@ -186,14 +180,6 @@ function ImagesTable({
                                         'Image name not available'
                                     )}
                                 </Td>
-                                {showCveDetailFields && (
-                                    <Td
-                                        dataLabel="Risk priority"
-                                        className="pf-v5-u-pr-2xl pf-v5-u-text-align-center-on-md"
-                                    >
-                                        {priority}
-                                    </Td>
-                                )}
                                 {showCveDetailFields && (
                                     <Td dataLabel="CVEs by severity">
                                         <SeverityCountLabels
