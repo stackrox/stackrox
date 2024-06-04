@@ -48,6 +48,8 @@ deploy_stackrox() {
 
     wait_for_collectors_to_be_operational "${sensor_namespace}"
 
+    pause_stackrox_operator_reconcile "${central_namespace}" "${sensor_namespace}"
+
     touch "${STATE_DEPLOYED}"
 }
 
@@ -397,6 +399,24 @@ deploy_sensor_via_operator() {
        kubectl -n "${sensor_namespace}" set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
        kubectl -n "${sensor_namespace}" set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
     fi
+}
+
+pause_stackrox_operator_reconcile() {
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "false" ]]; then
+        return
+    fi
+    local central_namespace=${1:-stackrox}
+    local sensor_namespace=${2:-stackrox}
+
+    kubectl -n "${central_namespace}" \
+        centrals.platform.stackrox.io \
+        stackrox-central-services \
+        stackrox.io/pause-reconcile=true
+
+    kubectl -n "${sensor_namespace}" \
+        securedclusters.platform.stackrox.io \
+        stackrox-secured-cluster-services \
+        stackrox.io/pause-reconcile=true
 }
 
 export_central_basic_auth_creds() {
