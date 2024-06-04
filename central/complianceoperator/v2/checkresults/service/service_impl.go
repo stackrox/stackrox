@@ -360,6 +360,14 @@ func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, requ
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
+	// Add the profile and check name to the query
+	parsedQuery = search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, request.GetProfileName()).
+			AddExactMatches(search.ComplianceOperatorCheckName, request.GetCheckName()).
+			ProtoQuery(),
+		parsedQuery,
+	)
+
 	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
