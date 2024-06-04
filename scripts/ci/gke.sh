@@ -82,6 +82,7 @@ choose_cluster_version() {
 
 create_cluster() {
     info "Creating a GKE cluster"
+    # Store requested timestamp to create log query link with time range.
     date -u +"%Y-%m-%dT%H:%M:%SZ" > /tmp/GKE_CLUSTER_REQUESTED_TIMESTAMP
 
     ensure_CI
