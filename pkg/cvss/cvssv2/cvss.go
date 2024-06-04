@@ -2,7 +2,6 @@ package cvssv2
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/facebookincubator/nvdtools/cvss2"
 	"github.com/stackrox/rox/generated/storage"
@@ -51,46 +50,26 @@ func GetSeverityMapProtoVal(s string) (storage.CVSSV2_Severity, error) {
 
 // ParseCVSSV2 parses the vector string and returns an internal representation of CVSS V2
 func ParseCVSSV2(vectorStr string) (*storage.CVSSV2, error) {
-	cvssV2 := &storage.CVSSV2{
-		Vector: vectorStr,
+	vec, err := cvss2.VectorFromString(vectorStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid CVSSv2 vector %q: %w", vectorStr, err)
+	}
+	if err := vec.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid CVSSv2 vector %q: %w", vectorStr, err)
 	}
 
-	vectors := strings.Split(vectorStr, "/")
-	for _, vector := range vectors {
-		vals := strings.Split(vector, ":")
-		if len(vals) != 2 {
-			return nil, fmt.Errorf("invalid format for vector subfield %q", vector)
-		}
-		k, v := strings.TrimSpace(vals[0]), strings.TrimSpace(vals[1])
-		var ok bool
-		switch k {
-		case "AV":
-			cvssV2.AttackVector, ok = attackVectorMap[v]
-		case "AC":
-			cvssV2.AccessComplexity, ok = accessComplexityMap[v]
-		case "Au":
-			cvssV2.Authentication, ok = authenticationMap[v]
-		case "C":
-			cvssV2.Confidentiality, ok = impactMap[v]
-		case "I":
-			cvssV2.Integrity, ok = impactMap[v]
-		case "A":
-			cvssV2.Availability, ok = impactMap[v]
-		case "E", "RL", "RC":
-			// Ignore temporal score metrics.
-			continue
-		case "CDP", "TD":
-			// Ignore environmental general modifiers.
-			continue
-		case "CR", "IR", "AR":
-			// Ignore environmental impact subscore modifiers.
-			continue
-		}
-		if !ok {
-			return nil, fmt.Errorf("invalid field value %q for %q", v, k)
-		}
-	}
-	return cvssV2, nil
+	// We only care about base metrics at this time.
+	metrics := vec.BaseMetrics
+
+	return &storage.CVSSV2{
+		Vector:           vectorStr,
+		AttackVector:     attackVectorMap[metrics.AccessVector.String()],
+		AccessComplexity: accessComplexityMap[metrics.AccessComplexity.String()],
+		Authentication:   authenticationMap[metrics.Authentication.String()],
+		Confidentiality:  impactMap[metrics.ConfidentialityImpact.String()],
+		Integrity:        impactMap[metrics.IntegrityImpact.String()],
+		Availability:     impactMap[metrics.AvailabilityImpact.String()],
+	}, nil
 }
 
 // Severity returns the severity for the cvss v2 score
@@ -112,8 +91,7 @@ func CalculateScores(cvssV2 *storage.CVSSV2) error {
 	if err != nil {
 		return fmt.Errorf("parsing: %w", err)
 	}
-	err = vec.Validate()
-	if err != nil {
+	if err := vec.Validate(); err != nil {
 		return fmt.Errorf("validating: %w", err)
 	}
 	cvssV2.Score = float32(vec.BaseScore())
