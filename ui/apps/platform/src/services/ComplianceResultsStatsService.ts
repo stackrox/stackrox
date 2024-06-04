@@ -1,7 +1,9 @@
 import { generatePath } from 'react-router-dom';
+import qs from 'qs';
 
 import axios from 'services/instance';
 import { SearchQueryOptions } from 'types/search';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import {
     buildNestedRawQueryParams,
@@ -14,7 +16,7 @@ import {
 
 const complianceResultsStatsBaseUrl = `${complianceV2Url}/scan/stats`;
 
-type ComplianceProfileScanStats = {
+export type ComplianceProfileScanStats = {
     checkStats: ComplianceCheckStatusCount[];
     profileName: string;
     title: string;
@@ -29,9 +31,22 @@ export type ListComplianceProfileScanStatsResponse = {
 /**
  * Fetches the scan stats grouped by profile.
  */
-export function getComplianceProfilesStats(): Promise<ListComplianceProfileScanStatsResponse> {
+export function getComplianceProfilesStats(
+    clusterId: string = ''
+): Promise<ListComplianceProfileScanStatsResponse> {
+    let params = '';
+    if (clusterId) {
+        const searchQuery = getRequestQueryStringForSearchFilter({
+            'Cluster ID': clusterId,
+        });
+
+        params = qs.stringify({ query: searchQuery }, { arrayFormat: 'repeat', allowDots: true });
+    }
+
     return axios
-        .get<ListComplianceProfileScanStatsResponse>(`${complianceResultsStatsBaseUrl}/profiles`)
+        .get<ListComplianceProfileScanStatsResponse>(
+            `${complianceResultsStatsBaseUrl}/profiles?${params}`
+        )
         .then((response) => response.data);
 }
 
