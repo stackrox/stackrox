@@ -209,7 +209,7 @@ create_cluster() {
             fi
             info "Timed out"
             info "Attempting to delete the cluster before trying another zone"
-            retry 10 true gcloud container clusters delete "${CLUSTER_NAME}" --async || {
+            gcloud container clusters delete "${CLUSTER_NAME}" || {
                 info "An error occurred deleting the cluster: $?"
                 true
             }
@@ -326,8 +326,16 @@ teardown_gke_cluster() {
         "$SCRIPTS_ROOT/scripts/ci/cleanup-deployment.sh" 2>&1 | sed -e 's/^/out: /' || true
     fi
 
-    echo "Retry if delete fails before it becomes async (still in creation process)."
-    retry 10 true gcloud container clusters delete "$CLUSTER_NAME" --async
+    for i in {1..10}; do
+        gcloud container clusters describe "${CLUSTER_NAME}" --format "flattened(status)"
+        if [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --format json | jq -r .status)" != "PROVISIONING" ]]; then
+            break
+        fi
+        info "Before deleting, waiting for cluster ${CLUSTER_NAME} in to leave provisioning state (wait $i of 10)"
+        sleep 60
+    done
+
+    gcloud container clusters delete "$CLUSTER_NAME" --async
 
     info "Cluster deleting asynchronously"
 
