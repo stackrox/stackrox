@@ -520,10 +520,9 @@ image_prefetcher_start() {
     local ns="prefetch-images"
     local name="$1"
     local image_prefetcher_deploy="$2"
+    local image_prefetcher_version="$3"
     local manifest
     manifest=$(mktemp)
-    # TODO(porridge): retrieve from go.mod file once there is an official registry with image tags matching git tags.
-    local image_prefetcher_version="v0.0.11"
     case "${ORCHESTRATOR_FLAVOR}" in
     k8s)
         flavor=vanilla
@@ -536,8 +535,13 @@ image_prefetcher_start() {
         ;;
     esac
 
-    # daemonset
-    ${image_prefetcher_deploy} "$name" $image_prefetcher_version "$flavor" stackrox > "$manifest"
+    # daemonset, etc
+    ${image_prefetcher_deploy} \
+        --version="$image_prefetcher_version" \
+        --k8s-flavor="$flavor" \
+        --secret=stackrox \
+        --collect-metrics \
+        "$name" > "$manifest"
 
     # image list
     local image_tag_list
@@ -554,7 +558,7 @@ image_prefetcher_start() {
     # pull secret
     NAMESPACE=$ns make -C operator stackrox-image-pull-secret
 
-    # apply daemonset and configmap
+    # apply configmap, daemonset etc
     retry 5 true kubectl apply --namespace=$ns -f "$manifest"
     rm -f "$image_list" "$manifest"
 }
@@ -563,6 +567,36 @@ image_prefetcher_await() {
     local ns="prefetch-images"
     local name="$1"
     kubectl rollout status daemonset "$name" -n "$ns" --timeout 15m
+    # All images fetched, now retrieve metrics.
+    local attempt=0
+    local service="service/${name}-metrics"
+    while [[ -z $(kubectl -n "${ns}" get "${service}" -o jsonpath="{.status.loadBalancer.ingress}" 2>/dev/null) ]]; do
+        if [ "$attempt" -lt "10" ]; then
+            info "Waiting for ${service} to obtain endpoint ..."
+            ((attempt++))
+            sleep 10
+        else
+            die "ERROR: Timeout waiting for ${service} to obtain endpoint!"
+        fi
+    done
+    local endpoint
+    endpoint="$(kubectl -n "${ns}" get "${service}" -o json | jq -r '.status.loadBalancer.ingress[] | .ip')"
+    local fetcher_metrics
+    fetcher_metrics="$(mktemp --suffix=.csv)"
+    local fetcher_metrics_json
+    fetcher_metrics_json="$(mktemp --suffix=.json)"
+    curl --silent --show-error --fail --retry 3 --retry-connrefused  "http://${endpoint}:8080/metrics" > "${fetcher_metrics_json}"
+    # See the stackrox_image_prefetches table definition in https://github.com/stackrox/automation-iac/blob/main/resources/testing/stackrox-ci/metrics.tf
+    # for the order of columns.
+    jq --raw-output \
+      --argjson cols '["attempt_id", "started_at", "image", "duration_ms", "node", "size_bytes", "error", "build_id", "job_name", "orchestrator", "build_tag"]' \
+      --argjson extra '{"build_id": "'"${BUILD_ID:-}"'", "job_name": "'"${JOB_NAME:-}"'", "orchestrator": "'"${ORCHESTRATOR_FLAVOR:-}"'", "build_tag": "'"${STACKROX_BUILD_TAG:-}"'"}' \
+      'map(.started_at = (.started_at | todate) | ($extra+.) as $row | $cols | map($row[.])) as $rows | $cols, $rows[] | @csv' \
+      "${fetcher_metrics_json}" > "${fetcher_metrics}"
+    rm -f "${fetcher_metrics_json}"
+
+    save_image_prefetches_metrics "${fetcher_metrics}"
+    rm -f "${fetcher_metrics}"
 }
 
 populate_image_list() {
