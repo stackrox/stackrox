@@ -2,7 +2,7 @@ package detector
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net"
 	"testing"
 	"time"
@@ -146,7 +146,7 @@ func (m *mockImageServiceServer) ScanImageInternal(_ context.Context, req *v1.Sc
 	}
 
 	if m.returnError {
-		return nil, fmt.Errorf("broken")
+		return nil, errors.New("broken")
 	}
 
 	return &v1.ScanImageInternalResponse{
