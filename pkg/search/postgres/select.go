@@ -42,7 +42,6 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schem
 	if err != nil {
 		return nil, err
 	}
-
 	// A nil-query implies no results.
 	if query == nil {
 		return nil, nil
@@ -103,7 +102,6 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	if err := applyPaginationForSearchAfter(parsedQuery); err != nil {
 		return nil, err
 	}
-
 	return parsedQuery, nil
 }
 
