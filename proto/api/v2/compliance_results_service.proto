@@ -34,6 +34,8 @@ message ComplianceCheckResult {
   repeated string warnings = 10;
   ComplianceCheckStatus status = 11;
   string rule_name = 12;
+  map<string, string> labels = 13;
+  map<string, string> annotations = 14;
 }
 
 message ComplianceCheckData {

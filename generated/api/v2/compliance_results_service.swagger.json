@@ -686,6 +686,18 @@
         },
         "ruleName": {
           "type": "string"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       },
       "title": "ComplianceCheckResult details of an instance of a compliance check result"

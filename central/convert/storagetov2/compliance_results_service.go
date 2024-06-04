@@ -234,13 +234,15 @@ func checkResult(incoming *storage.ComplianceOperatorCheckResultV2, ruleName str
 	return &v2.ComplianceCheckResult{
 		CheckId:      incoming.GetCheckId(),
 		CheckName:    incoming.GetCheckName(),
+		CheckUid:     incoming.GetId(),
 		Description:  incoming.GetDescription(),
 		Instructions: incoming.GetInstructions(),
 		Rationale:    incoming.GetRationale(),
 		ValuesUsed:   incoming.GetValuesUsed(),
 		Warnings:     incoming.GetWarnings(),
-		CheckUid:     incoming.GetId(),
 		Status:       convertComplianceCheckStatus(incoming.Status),
 		RuleName:     ruleName,
+		Labels:       incoming.GetLabels(),
+		Annotations:  incoming.GetAnnotations(),
 	}
 }
