@@ -10,7 +10,7 @@ require (
 	cloud.google.com/go/containeranalysis v0.11.4
 	cloud.google.com/go/securitycenter v1.27.0
 	cloud.google.com/go/storage v1.40.0
-	github.com/BurntSushi/toml v1.3.2
+	github.com/BurntSushi/toml v1.4.0
 	github.com/ComplianceAsCode/compliance-operator v1.4.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
