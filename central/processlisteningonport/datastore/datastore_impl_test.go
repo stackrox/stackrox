@@ -54,7 +54,7 @@ func (suite *PLOPDataStoreTestSuite) SetupSuite() {
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Namespace)))
+			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 
 	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -263,9 +263,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
-// TestPLOPAddSAC: Happy path for ProcessListeningOnPort, where the user has access to
-// the specified cluster and namespace
-func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
+// TestPLOPAdd: Tests getting the listening endpoints with various levels of access
+func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 	indicators := getIndicators()
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
@@ -294,7 +293,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 		"access to cluster and namespace": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.Namespace),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
 				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
 			)),
@@ -303,7 +302,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 		"read and write access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.Namespace),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
 				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
 			)),
@@ -312,7 +311,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 		"access to wrong namespace": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.Namespace),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
 				sac.NamespaceScopeKeys(fixtureconsts.Namespace2),
 			)),
@@ -321,7 +320,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 		"access to wrong cluster": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.Namespace),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(fixtureconsts.Cluster2),
 				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
 			)),
@@ -330,7 +329,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddSAC() {
 		"cluster level access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.Namespace),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
 			)),
 			expectAllowed: true,

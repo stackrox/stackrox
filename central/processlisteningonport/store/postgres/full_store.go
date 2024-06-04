@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	plopSAC = sac.ForResource(resources.Namespace)
+	plopSAC = sac.ForResource(resources.DeploymentExtension)
 )
 
 // NewFullStore augments the generated store with GetProcessListeningOnPort functions.
@@ -57,7 +57,7 @@ func (s *fullStoreImpl) GetProcessListeningOnPort(
 		"ProcessListeningOnPortStorage",
 	)
 
-	empty, err := pgutils.Retry2(func() (bool, error) {
+	allowed, err := pgutils.Retry2(func() (bool, error) {
 		return s.checkAccess(ctx, deploymentID)
 	})
 
@@ -66,17 +66,9 @@ func (s *fullStoreImpl) GetProcessListeningOnPort(
 		return nil, err
 	}
 
-	if empty {
+	if !allowed {
 		return nil, nil
 	}
-
-	// Importing deploymentDataStore results in a circular import cycle
-	// extendedCtx := sac.WithAllAccess(ctx)
-	// deployment, err := s.deploymentDS.GetDeployment(extendedCtx, deploymentID)
-	// if err != nil { return nil, err }
-	// allowed, err := plopSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment))
-	// if err != nil { return nil, err }
-	// if !allowed { return nil, nil }
 
 	return pgutils.Retry2(func() ([]*storage.ProcessListeningOnPort, error) {
 		return s.retryableGetPLOP(ctx, deploymentID)
@@ -107,9 +99,9 @@ func (s *fullStoreImpl) checkAccess(
 		return true, err
 	}
 
-	empty := rows == nil
+	allowed := rows != nil
 
-	return empty, nil
+	return allowed, nil
 }
 
 func (s *fullStoreImpl) checkAccesssForRows(
