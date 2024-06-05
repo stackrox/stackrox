@@ -1313,9 +1313,9 @@ func (m *ComplianceOperatorClusterScanConfigStatus) Clone() *ComplianceOperatorC
 
 // Next Tag: 7
 type ComplianceOperatorBenchmarkV2 struct {
-	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"`     // @gotags: sql:"pk,id,type(uuid)"
-	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Benchmark Name,hidden"` // @gotags: search:"Compliance Benchmark Name,hidden"
-	Version     string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"`           // @gotags: sql:"pk,id,type(uuid)"
+	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Benchmark Name,hidden"`       // @gotags: search:"Compliance Benchmark Name,hidden"
+	Version     string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Compliance Benchmark Version,hidden"` // @gotags: search:"Compliance Benchmark Version,hidden"
 	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	Provider    string `protobuf:"bytes,5,opt,name=provider,proto3" json:"provider,omitempty"`
 	// This is extracted from the annotation.
