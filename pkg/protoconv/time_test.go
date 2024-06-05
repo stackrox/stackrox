@@ -33,7 +33,7 @@ func TestConvertTimeString(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			assert.Equal(t, c.output, ConvertTimeString(c.input))
+			assert.True(t, protocompat.Equal(c.output, ConvertTimeString(c.input)))
 		})
 	}
 }

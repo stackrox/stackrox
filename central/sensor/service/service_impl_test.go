@@ -50,7 +50,7 @@ func TestGetCertExpiryStatus(t *testing.T) {
 			}))
 			result, err := getCertExpiryStatus(identity)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedStatus, result)
+			assert.True(t, protocompat.Equal(tc.expectedStatus, result))
 		})
 	}
 }

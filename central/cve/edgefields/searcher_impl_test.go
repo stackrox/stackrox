@@ -6,6 +6,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stretchr/testify/assert"
@@ -68,7 +69,7 @@ func TestGetCVEEdgeQuery(t *testing.T) {
 	}
 
 	getCVEEdgeQuery(query)
-	assert.Equal(t, expectedQuery, query)
+	assert.True(t, protocompat.Equal(expectedQuery, query))
 }
 
 func TestSnoozedQueryHandler(t *testing.T) {

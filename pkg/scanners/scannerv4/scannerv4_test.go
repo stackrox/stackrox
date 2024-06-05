@@ -67,7 +67,7 @@ func TestGetVulnDefinitionsInfo(t *testing.T) {
 				assert.Nil(t, vdi)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, tc.clientRet.GetLastVulnerabilityUpdate(), vdi.GetLastUpdatedTimestamp())
+				assert.True(t, protocompat.Equal(tc.clientRet.GetLastVulnerabilityUpdate(), vdi.GetLastUpdatedTimestamp()))
 			}
 		})
 	}

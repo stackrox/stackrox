@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -93,7 +94,7 @@ func TestFieldMerge(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			resourcesField.Merge(c.to, c.from)
-			assert.Equal(t, c.expected, c.to)
+			assert.True(t, protocompat.Equal(c.expected, c.to))
 		})
 	}
 }

@@ -70,7 +70,7 @@ func TestConvertTimeToTimestampOrError(t *testing.T) {
 
 	protoTS1, errTS1 := ConvertTimeToTimestampOrError(time1)
 	assert.NoError(t, errTS1)
-	assert.Equal(t, &types.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
+	assert.True(t, Equal(&types.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1))
 }
 
 func TestConvertTimestampToTimeOrNil(t *testing.T) {
@@ -108,7 +108,7 @@ func TestConvertTimeToTimestampOrNil(t *testing.T) {
 	time1 := time.Unix(seconds1, int64(nanos1))
 
 	protoTS1 := ConvertTimeToTimestampOrNil(&time1)
-	assert.Equal(t, &types.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
+	assert.True(t, Equal(&types.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1))
 
 	timeInvalid := time.Date(0, 12, 25, 23, 59, 59, 0, time.UTC)
 	protoTSInvalid := ConvertTimeToTimestampOrNil(&timeInvalid)
@@ -217,5 +217,5 @@ func TestDurationProto(t *testing.T) {
 		Nanos:   5,
 	}
 	protoDuration := DurationProto(timeDuration)
-	assert.Equal(t, expectedProtoDuration, protoDuration)
+	assert.True(t, Equal(expectedProtoDuration, protoDuration))
 }

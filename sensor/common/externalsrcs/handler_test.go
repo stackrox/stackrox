@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -264,8 +265,8 @@ func TestExternalSourcesLookup(t *testing.T) {
 	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 
 	expected := req.GetPushNetworkEntitiesRequest().GetEntities()[1]
-	assert.Equal(t, expected, handler.LookupByNetwork(net.IPNetworkFromCIDRBytes([]byte{192, 10, 0, 0, 16})))
+	assert.True(t, protocompat.Equal(expected, handler.LookupByNetwork(net.IPNetworkFromCIDRBytes([]byte{192, 10, 0, 0, 16}))))
 
 	expected = req.GetPushNetworkEntitiesRequest().GetEntities()[3]
-	assert.Equal(t, expected, handler.LookupByNetwork(net.IPNetworkFromCIDRBytes([]byte{0, 0, 0, 0, 0})))
+	assert.True(t, protocompat.Equal(expected, handler.LookupByNetwork(net.IPNetworkFromCIDRBytes([]byte{0, 0, 0, 0, 0}))))
 }

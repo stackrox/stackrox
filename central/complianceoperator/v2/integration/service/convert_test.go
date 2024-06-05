@@ -10,6 +10,7 @@ import (
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -103,7 +104,7 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 				assert.NoError(t, err)
 				assert.True(t, clusterFound)
 			}
-			assert.Equal(t, c.expected, converted)
+			assert.True(t, protocompat.Equal(c.expected, converted))
 		})
 	}
 }

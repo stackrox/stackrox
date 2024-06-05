@@ -151,7 +151,7 @@ func (c *fakeAdmissionControlManagementServiceClient) PolicyAlerts(_ context.Con
 		c.t.Error("To many calls to PolicyAlerts")
 	}
 	if c.responseRequestPairs[c.currResponse].request != nil {
-		assert.Equal(c.t, c.responseRequestPairs[c.currResponse].request, req)
+		assert.True(c.t, protocompat.Equal(c.responseRequestPairs[c.currResponse].request, req))
 	}
 	return c.responseRequestPairs[c.currResponse].response, c.responseRequestPairs[c.currResponse].err
 }

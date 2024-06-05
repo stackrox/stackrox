@@ -9,5 +9,5 @@ import (
 func TestEmpty(t *testing.T) {
 	refEmpty := &Empty{}
 
-	assert.Equal(t, refEmpty, ProtoEmpty())
+	assert.True(t, Equal(refEmpty, ProtoEmpty()))
 }

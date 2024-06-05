@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protocompat"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stackrox/scanner/pkg/component"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +16,7 @@ import (
 func TestConvertVulnerability(t *testing.T) {
 	clairVulns, protoVulns := mock.GetTestVulns()
 	for i, vuln := range clairVulns {
-		assert.Equal(t, protoVulns[i], ConvertVulnerability(vuln))
+		assert.True(t, protocompat.Equal(protoVulns[i], ConvertVulnerability(vuln)))
 	}
 }
 
@@ -150,7 +151,7 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 			convertedComponents := ConvertFeatures(img, c.features, "")
 			require.Equal(t, len(c.expectedComponents), len(convertedComponents))
 			for i := range convertedComponents {
-				assert.Equal(t, c.expectedComponents[i], convertedComponents[i])
+				assert.True(t, protocompat.Equal(c.expectedComponents[i], convertedComponents[i]))
 			}
 		})
 	}

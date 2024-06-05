@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -79,5 +80,5 @@ func TestStringsRoundTrip(t *testing.T) {
 	}
 
 	assert.True(t, ReconstituteStrings(resultsWithoutStrings, stringsProto))
-	assert.Equal(t, results, resultsWithoutStrings)
+	assert.True(t, protocompat.Equal(results, resultsWithoutStrings))
 }

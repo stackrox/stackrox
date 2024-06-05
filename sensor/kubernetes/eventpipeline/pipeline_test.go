@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	mockDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
@@ -253,7 +254,7 @@ func (s *eventPipelineSuite) Test_UpdatedImage() {
 		defer messageReceived.Done()
 		image, ok := msg.(*storage.Image)
 		assert.True(s.T(), ok)
-		assert.Equal(s.T(), msgFromCentral.GetUpdatedImage(), image)
+		assert.True(s.T(), protocompat.Equal(msgFromCentral.GetUpdatedImage(), image))
 	})
 
 	s.resolver.EXPECT().Send(gomock.Any()).Times(1).Do(func(msg interface{}) {
@@ -282,7 +283,7 @@ func (s *eventPipelineSuite) Test_ReprocessDeployment() {
 		defer messageReceived.Done()
 		reprocessDeployment, ok := msg.(*central.ReprocessDeployment)
 		assert.True(s.T(), ok)
-		assert.Equal(s.T(), msgFromCentral.GetReprocessDeployment(), reprocessDeployment)
+		assert.True(s.T(), protocompat.Equal(msgFromCentral.GetReprocessDeployment(), reprocessDeployment))
 	})
 
 	s.resolver.EXPECT().Send(gomock.Any()).Times(1).Do(func(msg interface{}) {
@@ -311,7 +312,7 @@ func (s *eventPipelineSuite) Test_InvalidateImageCache() {
 		defer messageReceived.Done()
 		invalidateCache, ok := msg.(*central.InvalidateImageCache)
 		assert.True(s.T(), ok)
-		assert.Equal(s.T(), msgFromCentral.GetInvalidateImageCache(), invalidateCache)
+		assert.True(s.T(), protocompat.Equal(msgFromCentral.GetInvalidateImageCache(), invalidateCache))
 	})
 
 	s.resolver.EXPECT().Send(gomock.Any()).Times(1).Do(func(msg interface{}) {

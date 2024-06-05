@@ -175,7 +175,7 @@ func TestGetScannerV4CertExpiry(t *testing.T) {
 				} else {
 					expectedExpiry, err := protocompat.ConvertTimeToTimestampOrError(*tc.expiryExpected)
 					require.NoError(t, err)
-					assert.Equal(t, expectedExpiry, actual.Expiry)
+					assert.True(t, protocompat.Equal(expectedExpiry, actual.Expiry))
 				}
 			}
 		})

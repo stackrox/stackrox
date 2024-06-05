@@ -4,11 +4,12 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEmptyQuery(t *testing.T) {
-	assert.Equal(t, &v1.Query{}, NewQueryBuilder().ProtoQuery())
+	assert.True(t, protocompat.Equal(&v1.Query{}, NewQueryBuilder().ProtoQuery()))
 }
 
 func TestDocIDs(t *testing.T) {
@@ -42,6 +43,6 @@ func TestDocIDs(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, expected, q)
+		assert.True(t, protocompat.Equal(expected, q))
 	}
 }

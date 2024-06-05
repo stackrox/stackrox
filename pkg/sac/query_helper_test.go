@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -107,7 +108,7 @@ func TestClusterScopeFilterGeneration(topLevelTest *testing.T) {
 			assert.Truef(t, correctFilter, "mismatch between queries")
 			if !correctFilter {
 				// Expose the mismatch in the test output
-				assert.Equal(t, tc.expected, filter)
+				assert.True(t, protocompat.Equal(tc.expected, filter))
 			}
 		})
 	}
@@ -277,7 +278,7 @@ func TestNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			assert.Truef(t, correctFilter, "mismatch between queries")
 			if !correctFilter {
 				// Expose the mismatch in the test output
-				assert.Equal(t, tc.expected, filter)
+				assert.True(t, protocompat.Equal(tc.expected, filter))
 			}
 		})
 	}
@@ -357,7 +358,7 @@ func TestNonVerboseClusterScopeFilterGeneration(topLevelTest *testing.T) {
 			assert.Truef(t, correctFilter, "mismatch between queries")
 			if !correctFilter {
 				// Expose the mismatch in the test output
-				assert.Equal(t, tc.expected, filter)
+				assert.True(t, protocompat.Equal(tc.expected, filter))
 			}
 		})
 	}
@@ -511,7 +512,7 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			assert.Truef(t, correctFilter, "mismatch between queries")
 			if !correctFilter {
 				// Expose the mismatch in the test output
-				assert.Equal(t, tc.expected, filter)
+				assert.True(t, protocompat.Equal(tc.expected, filter))
 			}
 		})
 	}

@@ -4,18 +4,19 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDeploymentExclusionToQuery_Nil(t *testing.T) {
 	q := DeploymentExclusionToQuery(nil)
-	assert.Equal(t, q, search.MatchNoneQuery())
+	assert.True(t, protocompat.Equal(q, search.MatchNoneQuery()))
 }
 
 func TestDeploymentExclusionToQuery_NoExclusions(t *testing.T) {
 	q := DeploymentExclusionToQuery([]*storage.Exclusion{})
-	assert.Equal(t, q, search.MatchNoneQuery())
+	assert.True(t, protocompat.Equal(q, search.MatchNoneQuery()))
 }
 
 func TestDeploymentExclusionToQuery_NoDeploymentExclusions(t *testing.T) {
@@ -27,7 +28,7 @@ func TestDeploymentExclusionToQuery_NoDeploymentExclusions(t *testing.T) {
 			},
 		},
 	})
-	assert.Equal(t, q, search.MatchNoneQuery())
+	assert.True(t, protocompat.Equal(q, search.MatchNoneQuery()))
 }
 
 func TestDeploymentExclusionToQuery_MalformedDeploymentExclusion(t *testing.T) {
@@ -37,7 +38,7 @@ func TestDeploymentExclusionToQuery_MalformedDeploymentExclusion(t *testing.T) {
 			Deployment: &storage.Exclusion_Deployment{},
 		},
 	})
-	assert.Equal(t, q, search.MatchNoneQuery())
+	assert.True(t, protocompat.Equal(q, search.MatchNoneQuery()))
 }
 
 func TestDeploymentExclusionToQuery_NamedDeploymentExclusion(t *testing.T) {
@@ -49,7 +50,7 @@ func TestDeploymentExclusionToQuery_NamedDeploymentExclusion(t *testing.T) {
 			},
 		},
 	})
-	assert.Equal(t, q, search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "blessed-deployment").ProtoQuery())
+	assert.True(t, protocompat.Equal(q, search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "blessed-deployment").ProtoQuery()))
 }
 
 func TestDeploymentExclusionToQuery_ScopedDeploymentExclusion(t *testing.T) {
@@ -63,5 +64,5 @@ func TestDeploymentExclusionToQuery_ScopedDeploymentExclusion(t *testing.T) {
 			},
 		},
 	})
-	assert.Equal(t, q, search.NewQueryBuilder().AddExactMatches(search.ClusterID, "blessed-cluster-id").ProtoQuery())
+	assert.True(t, protocompat.Equal(q, search.NewQueryBuilder().AddExactMatches(search.ClusterID, "blessed-cluster-id").ProtoQuery()))
 }

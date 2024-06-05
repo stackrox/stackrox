@@ -316,7 +316,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 			if actual != nil {
 				actual.StateTimestamp = 0
 			}
-			assert.Equal(t, c.expectedDeployment, actual)
+			assert.True(t, protocompat.Equal(c.expectedDeployment, actual))
 		})
 	}
 }

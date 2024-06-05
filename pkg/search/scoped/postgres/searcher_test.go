@@ -5,6 +5,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -31,7 +32,7 @@ func TestScoping(t *testing.T) {
 	)
 	actual, err := scopeQuery(query, scopes)
 	assert.NoError(t, err)
-	assert.Equal(t, expected, actual)
+	assert.True(t, protocompat.Equal(expected, actual))
 
 	scopes = []scoped.Scope{
 		{
@@ -50,5 +51,5 @@ func TestScoping(t *testing.T) {
 	)
 	actual, err = scopeQuery(query, scopes)
 	assert.NoError(t, err)
-	assert.Equal(t, expected, actual)
+	assert.True(t, protocompat.Equal(expected, actual))
 }

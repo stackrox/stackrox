@@ -202,5 +202,5 @@ func TestSplitAndMergeNode(t *testing.T) {
 	assert.Equal(t, splitExpected, splitActual)
 
 	nodeActual := Merge(splitActual)
-	assert.Equal(t, node, nodeActual)
+	assert.True(t, protocompat.Equal(node, nodeActual))
 }

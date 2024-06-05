@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	pkgTestUtils "github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -207,7 +208,7 @@ func TestUpdatingImageFromRequest(t *testing.T) {
 
 			clone := tc.existingImg.Clone()
 			updateImageFromRequest(clone, tc.reqImgName)
-			assert.Equal(t, tc.expectedName, clone.Name)
+			assert.True(t, protocompat.Equal(tc.expectedName, clone.Name))
 		})
 	}
 }

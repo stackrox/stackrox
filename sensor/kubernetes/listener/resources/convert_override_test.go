@@ -209,7 +209,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 			if actual != nil {
 				actual.StateTimestamp = 0
 			}
-			assert.Equal(t, base.expectedDeployment, actual)
+			assert.True(t, protocompat.Equal(base.expectedDeployment, actual))
 		})
 	}
 }

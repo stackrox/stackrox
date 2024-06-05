@@ -571,7 +571,7 @@ func TestMergeProcessesFromOldIntoNew(t *testing.T) {
 			out := mergeProcessesFromOldIntoNew(c.old, c.new)
 			assert.Equal(t, c.expectedOutput, out)
 			if c.expectedNew != nil {
-				assert.Equal(t, c.expectedNew, c.new)
+				assert.True(t, protocompat.Equal(c.expectedNew, c.new))
 			}
 		})
 	}
@@ -701,7 +701,7 @@ func TestMergeRunTimeAlerts(t *testing.T) {
 			out := mergeRunTimeAlerts(c.old, c.new)
 			assert.Equal(t, c.expectedOutput, out)
 			if c.expectedNew != nil {
-				assert.Equal(t, c.expectedNew, c.new)
+				assert.True(t, protocompat.Equal(c.expectedNew, c.new))
 			}
 		})
 	}
@@ -829,7 +829,7 @@ func TestFindAlert(t *testing.T) {
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			found := findAlert(c.toFind, c.alerts)
-			assert.Equal(t, c.expected, found)
+			assert.True(t, protocompat.Equal(c.expected, found))
 		})
 	}
 }

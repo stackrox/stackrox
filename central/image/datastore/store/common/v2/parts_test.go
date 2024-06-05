@@ -255,5 +255,5 @@ func TestSplitAndMergeImage(t *testing.T) {
 	}
 
 	imageActual := Merge(splitActual)
-	assert.Equal(t, image, imageActual)
+	assert.True(t, protocompat.Equal(image, imageActual))
 }

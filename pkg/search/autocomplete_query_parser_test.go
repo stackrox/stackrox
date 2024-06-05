@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -167,7 +168,7 @@ func TestParseAutocompleteQuery(t *testing.T) {
 			}
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedKey, actualKey)
-			assert.Equal(t, tc.expectedQuery, actualQuery)
+			assert.True(t, protocompat.Equal(tc.expectedQuery, actualQuery))
 		})
 	}
 }

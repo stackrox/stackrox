@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -70,20 +71,21 @@ func TestUnmarshal(t *testing.T) {
 
 	bundles, err := ExtractMitreAttackBundle(Enterprise, []Platform{Container}, rawBundle.Objects)
 	assert.NoError(t, err)
-	assert.Equal(t, &storage.MitreAttackBundle{
+	assert.True(t, protocompat.Equal(&storage.MitreAttackBundle{
 		Version: "9.0",
 		Matrices: []*storage.MitreAttackMatrix{
 			expectedContainerMatrix,
 		},
-	}, bundles)
+	}, bundles))
 
 	bundles, err = ExtractMitreAttackBundle(Enterprise, []Platform{Linux, Container}, rawBundle.Objects)
 	assert.NoError(t, err)
-	assert.Equal(t, &storage.MitreAttackBundle{
+	assert.True(t, protocompat.Equal(&storage.MitreAttackBundle{
 		Version: "9.0",
 		Matrices: []*storage.MitreAttackMatrix{
 			expectedContainerMatrix,
 			expectedLinuxMatrix,
 		},
-	}, bundles)
+	}, bundles))
+
 }

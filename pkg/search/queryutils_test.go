@@ -5,6 +5,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,7 +42,7 @@ func TestFilterQuery(t *testing.T) {
 
 	newQuery, filtered := FilterQueryWithMap(query, optionsMap)
 	assert.True(t, filtered)
-	assert.Equal(t, &v1.Query{
+	assert.True(t, protocompat.Equal(&v1.Query{
 		Query: &v1.Query_BaseQuery{
 			BaseQuery: &v1.BaseQuery{
 				Query: &v1.BaseQuery_MatchFieldQuery{
@@ -49,12 +50,12 @@ func TestFilterQuery(t *testing.T) {
 				},
 			},
 		},
-	}, newQuery)
+	}, newQuery))
 
 	var expected *v1.Query
 	newQuery, filtered = FilterQueryWithMap(EmptyQuery(), optionsMap)
 	assert.False(t, filtered)
-	assert.Equal(t, expected, newQuery)
+	assert.True(t, protocompat.Equal(expected, newQuery))
 
 	q := &v1.Query{
 		Query: &v1.Query_BaseQuery{
@@ -70,7 +71,7 @@ func TestFilterQuery(t *testing.T) {
 	}
 	newQuery, filtered = FilterQueryWithMap(q, optionsMap)
 	assert.False(t, filtered)
-	assert.Equal(t, q, newQuery)
+	assert.True(t, protocompat.Equal(q, newQuery))
 }
 
 func TestInverseFilterQuery(t *testing.T) {
@@ -106,7 +107,7 @@ func TestInverseFilterQuery(t *testing.T) {
 
 	newQuery, filtered := InverseFilterQueryWithMap(query, optionsMap)
 	assert.True(t, filtered)
-	assert.Equal(t, &v1.Query{
+	assert.True(t, protocompat.Equal(&v1.Query{
 		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
 			Queries: []*v1.Query{
 				{Query: &v1.Query_BaseQuery{
@@ -125,12 +126,12 @@ func TestInverseFilterQuery(t *testing.T) {
 				}},
 			},
 		}},
-	}, newQuery)
+	}, newQuery))
 
 	var expected *v1.Query
 	newQuery, filtered = InverseFilterQueryWithMap(EmptyQuery(), optionsMap)
 	assert.False(t, filtered)
-	assert.Equal(t, expected, newQuery)
+	assert.True(t, protocompat.Equal(expected, newQuery))
 
 	q := &v1.Query{
 		Query: &v1.Query_BaseQuery{
@@ -146,7 +147,7 @@ func TestInverseFilterQuery(t *testing.T) {
 	}
 	newQuery, filtered = InverseFilterQueryWithMap(q, optionsMap)
 	assert.False(t, filtered)
-	assert.Equal(t, expected, newQuery)
+	assert.True(t, protocompat.Equal(expected, newQuery))
 }
 
 func TestAddAsConjunction(t *testing.T) {
@@ -211,7 +212,7 @@ func TestAddAsConjunction(t *testing.T) {
 
 	added, err := AddAsConjunction(toAdd, addTo)
 	assert.NoError(t, err)
-	assert.Equal(t, expected, added)
+	assert.True(t, protocompat.Equal(expected, added))
 
 	addTo = &v1.Query{
 		Query: &v1.Query_BaseQuery{
@@ -246,7 +247,7 @@ func TestAddAsConjunction(t *testing.T) {
 
 	added, err = AddAsConjunction(toAdd, addTo)
 	assert.NoError(t, err)
-	assert.Equal(t, expected, added)
+	assert.True(t, protocompat.Equal(expected, added))
 
 	addTo = &v1.Query{
 		Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{

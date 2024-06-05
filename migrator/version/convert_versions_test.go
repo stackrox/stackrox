@@ -21,5 +21,5 @@ func TestVersionSerialization(t *testing.T) {
 	assert.NoError(t, err)
 	// ConvertVersionFromProto and ConvertVersionToProto rounds up ts to microseconds, so make sure obj field is also rounded up.
 	obj.LastPersisted = protoutils.RoundTimestamp(obj.LastPersisted, time.Microsecond)
-	assert.Equal(t, obj, conv)
+	assert.True(t, protocompat.Equal(obj, conv))
 }

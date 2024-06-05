@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -88,7 +89,7 @@ func TestUpdateRuntimeAlertViolationMessage(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			processViolation := getAlertProcessViolation("", tc.processes...)
 			UpdateProcessAlertViolationMessage(processViolation)
-			assert.Equal(t, getAlertProcessViolation(tc.expectedMessage, tc.processes...), processViolation)
+			assert.True(t, protocompat.Equal(getAlertProcessViolation(tc.expectedMessage, tc.processes...), processViolation))
 		})
 	}
 }

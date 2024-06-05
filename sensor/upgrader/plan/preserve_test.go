@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -152,7 +153,7 @@ func TestPreserveResources(t *testing.T) {
 	var mergedDS v1.DaemonSet
 	require.NoError(t, convert(scheme.Scheme, newDSUnstructured, &mergedDS))
 
-	assert.Equal(t, expectedMergedDS, &mergedDS)
+	assert.True(t, protocompat.Equal(expectedMergedDS, &mergedDS))
 }
 
 func TestPreserveTolerations(t *testing.T) {
@@ -249,7 +250,7 @@ func TestPreserveTolerations(t *testing.T) {
 	var mergedDeploy v1.Deployment
 	require.NoError(t, convert(scheme.Scheme, newDeployUnstructured, &mergedDeploy))
 
-	assert.Equal(t, expectedMergedDeploy, &mergedDeploy)
+	assert.True(t, protocompat.Equal(expectedMergedDeploy, &mergedDeploy))
 }
 
 func Test_applyPreservedProperties(t *testing.T) {

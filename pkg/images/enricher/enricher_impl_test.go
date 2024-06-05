@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/protocompat"
 	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
@@ -1267,7 +1268,7 @@ func TestFetchFromDatabase_ForceFetch(t *testing.T) {
 	}
 	imgFetchedFromDB, exists := e.fetchFromDatabase(context.Background(), img, UseImageNamesRefetchCachedValues)
 	assert.False(t, exists)
-	assert.Equal(t, img.GetName(), imgFetchedFromDB.GetName())
+	assert.True(t, protocompat.Equal(img.GetName(), imgFetchedFromDB.GetName()))
 	assert.ElementsMatch(t, img.GetNames(), imgFetchedFromDB.GetNames())
 	assert.Nil(t, img.GetSignature())
 	assert.Nil(t, img.GetSignatureVerificationData())
@@ -1421,5 +1422,5 @@ func TestUpdateImageFromDatabase_Metadata(t *testing.T) {
 
 	e.updateImageFromDatabase(context.Background(), img, UseCachesIfPossible)
 	assert.Equal(t, imageSHA, img.GetId())
-	assert.Equal(t, metadata, img.GetMetadata())
+	assert.True(t, protocompat.Equal(metadata, img.GetMetadata()))
 }
