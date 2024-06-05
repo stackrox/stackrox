@@ -569,6 +569,46 @@ func TestBackend(t *testing.T) {
 				"expires_in":   literalValue{"20"},
 			},
 		},
+		"extra scopes requested": {
+			config: map[string]string{
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "https://test-issuer",
+				ModeConfigKey:         "post",
+				ExtraScopesConfigKey:  "groups roles",
+			},
+			oidcProvider: &mockOIDCProvider{
+				responseTypesSupported:     allResponseTypes,
+				responseModesSupported:     allResponseModes,
+				userInfoAssertAccessToken:  mockAccessToken,
+				claimsFromUserInfoEndpoint: suppliedClaims,
+			},
+			wantBackend: &wantBackend{
+				responseMode:  "form_post",
+				responseTypes: []string{"code"},
+				config: map[string]string{
+					ClientIDConfigKey:     "testclientid",
+					ClientSecretConfigKey: "testsecret",
+					IssuerConfigKey:       "https://test-issuer",
+					ModeConfigKey:         "post",
+					ExtraScopesConfigKey:  "groups roles",
+				},
+				baseOauthConfig: &oauth2.Config{
+					ClientID:     "testclientid",
+					ClientSecret: "testsecret",
+					Endpoint: oauth2.Endpoint{
+						AuthURL:  "fake-auth-url",
+						TokenURL: "fake-token-url",
+					},
+					Scopes: []string{"openid", "profile", "email", "offline_access", "groups", "roles"},
+				},
+			},
+			issueNonce: true,
+			idpResponseTemplate: map[string]responseValueProvider{
+				"code": literalValue{mockAuthorizationCode},
+			},
+			exchangedTokenClaims: &suppliedClaims,
+		},
 		"mode fragment with both token and id_token, and userinfo endpoint failure": {
 			config: map[string]string{
 				ClientIDConfigKey:     "testclientid",
