@@ -31,7 +31,7 @@ var bannedFunctions = set.NewFrozenStringSet(
 	//"(*github.com/stretchr/testify/require.Assertions).NotEqual",
 	////TODO(janisz): enable it in a separated PR
 	////"github.com/google/go-cmp/cmp.Diff",
-	////"github.com/google/go-cmp/cmp.Equal",
+	"github.com/google/go-cmp/cmp.Equal",
 	//"github.com/stretchr/testify/assert.Contains",
 	//"github.com/stretchr/testify/assert.Equal",
 	//"github.com/stretchr/testify/assert.NotEqual",
