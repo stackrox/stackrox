@@ -5,9 +5,7 @@ import (
 
 	"github.com/go-logr/logr"
 	mapkubeapisCommon "github.com/helm/helm-mapkubeapis/pkg/common"
-	mapkubeapisV3 "github.com/helm/helm-mapkubeapis/pkg/v3"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
-	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/operator/pkg/config/mapkubeapis"
 	"helm.sh/helm/v3/pkg/storage/driver"

@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
-	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"golang.org/x/sys/unix"
 )

@@ -5,7 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/cockroachdb/pebble"
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
 	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
@@ -16,7 +15,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
-	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/version"

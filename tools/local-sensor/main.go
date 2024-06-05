@@ -34,7 +34,6 @@ import (
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
-	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"github.com/stackrox/rox/sensor/testutils"
 	"google.golang.org/grpc"
