@@ -154,6 +154,8 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 		}
 	}
 
+	// TODO GET THE CONTROLS
+
 	return storagetov2.ComplianceV2CheckResult(scanResult, lastScanTime), nil
 }
 
@@ -213,12 +215,17 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile scan stats for %+v", request)
 	}
 
+	ruleNames := make([]string, 0, len(scanResults))
+	for _, result := range scanResults {
+		ruleNames = append(ruleNames, result.RuleName)
+	}
+
 	count, err := s.complianceResultsDS.CountByField(ctx, countQuery, search.ComplianceOperatorCheckName)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", request)
 	}
 
-	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, scanResults, request.GetProfileName(), s.benchmarkDS)
+	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName(), s.benchmarkDS)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
 	}
@@ -267,12 +274,26 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 
 	// Lookup the scans to get the last scan time
 	clusterLastScan := make(map[string]*types.Timestamp, len(scanResults))
+
+	// This is a single check which has results across clusters.  So there will be one single underlying rule.
+	ruleNames := make([]string, 0, 1)
 	for _, result := range scanResults { // Check the Compliance Scan object to get the scan time.
 		lastExecutedTime, err := utils.GetLastScanTime(ctx, result.ClusterId, request.GetProfileName(), s.scanDS)
 		if err != nil {
 			return nil, err
 		}
 		clusterLastScan[result.ClusterId] = lastExecutedTime
+
+		if len(ruleNames) == 0 {
+			rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, result.GetRuleRefId()).ProtoQuery())
+			if err != nil {
+				return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for query %v", parsedQuery)
+			}
+			if len(rules) != 1 {
+				return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
+			}
+			ruleNames = append(ruleNames, rules[0].GetName())
+		}
 	}
 
 	resultCount, err := s.complianceResultsDS.CountCheckResults(ctx, countQuery)
@@ -280,11 +301,22 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", parsedQuery)
 	}
 
+	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName(), s.benchmarkDS)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
+	}
+
+	var convertedControls []*v2.ComplianceControl
+	if len(ruleNames) == 1 {
+		convertedControls = storagetov2.GetControls(ruleNames[0], controls)
+	}
+
 	return &v2.ListComplianceCheckClusterResponse{
 		CheckResults: storagetov2.ComplianceV2CheckClusterResults(scanResults, clusterLastScan),
 		ProfileName:  request.GetProfileName(),
 		CheckName:    request.GetCheckName(),
 		TotalCount:   int32(resultCount),
+		Controls:     convertedControls,
 	}, nil
 }
 
@@ -323,6 +355,7 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 	}
 
 	checkToRule := make(map[string]string, len(scanResults))
+	ruleNames := make([]string, 0, len(scanResults))
 	for _, result := range scanResults {
 		rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, result.GetRuleRefId()).ProtoQuery())
 		if err != nil {
@@ -332,6 +365,13 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
 		}
 		checkToRule[result.GetRuleRefId()] = rules[0].GetName()
+		ruleNames = append(ruleNames, rules[0].GetName())
+	}
+
+	// TODO GET THE CONTROLS
+	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName(), s.benchmarkDS)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
 	}
 
 	resultCount, err := s.complianceResultsDS.CountCheckResults(ctx, countQuery)
@@ -346,7 +386,7 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 	}
 
 	return &v2.ListComplianceCheckResultResponse{
-		CheckResults: storagetov2.ComplianceV2CheckResults(scanResults, checkToRule),
+		CheckResults: storagetov2.ComplianceV2CheckResults(scanResults, checkToRule, controls),
 		ProfileName:  request.GetProfileName(),
 		ClusterId:    request.GetClusterId(),
 		TotalCount:   int32(resultCount),
@@ -391,6 +431,7 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 	}
 
 	checkToRule := make(map[string]string, len(scanResults))
+	var ruleNames []string
 	for _, result := range scanResults {
 		rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, result.GetRuleRefId()).ProtoQuery())
 		if err != nil {
@@ -400,7 +441,14 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
 		}
 		checkToRule[result.GetRuleRefId()] = rules[0].GetName()
+		ruleNames = append(ruleNames, rules[0].GetName())
 	}
+
+	// TODO GET THE CONTROLS
+	//controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName(), s.benchmarkDS)
+	//if err != nil {
+	//	return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
+	//}
 
 	count, err := s.complianceResultsDS.CountCheckResults(ctx, countQuery)
 	if err != nil {

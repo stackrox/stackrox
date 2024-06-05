@@ -145,15 +145,7 @@ func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfi
 	var profileResults []*v2.ComplianceCheckResultStatusCount
 
 	for _, resultCount := range resultCounts {
-		var controls []*v2.ComplianceControl
-		for _, controlResult := range controlResults {
-			if controlResult.RuleName == resultCount.RuleName {
-				controls = append(controls, &v2.ComplianceControl{
-					Standard: controlResult.Standard,
-					Control:  controlResult.Control,
-				})
-			}
-		}
+		controls := GetControls(resultCount.RuleName, controlResults)
 
 		profileResults = append(profileResults, &v2.ComplianceCheckResultStatusCount{
 			CheckName: resultCount.CheckName,
@@ -207,10 +199,10 @@ func ComplianceV2CheckClusterResults(incoming []*storage.ComplianceOperatorCheck
 }
 
 // ComplianceV2CheckResults converts the storage check results to v2 scan results
-func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV2, ruleMap map[string]string) []*v2.ComplianceCheckResult {
+func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV2, ruleMap map[string]string, controlResults []*compRule.ControlResult) []*v2.ComplianceCheckResult {
 	clusterResults := make([]*v2.ComplianceCheckResult, 0, len(incoming))
 	for _, result := range incoming {
-		clusterResults = append(clusterResults, checkResult(result, ruleMap[result.GetRuleRefId()]))
+		clusterResults = append(clusterResults, checkResult(result, ruleMap[result.GetRuleRefId()], controlResults))
 	}
 
 	return clusterResults
@@ -222,7 +214,7 @@ func ComplianceV2CheckData(incoming []*storage.ComplianceOperatorCheckResultV2, 
 		results = append(results, &v2.ComplianceCheckData{
 			ClusterId: result.GetClusterId(),
 			ScanName:  result.GetScanConfigName(),
-			Result:    checkResult(result, ruleMap[result.GetRuleRefId()]),
+			Result:    checkResult(result, ruleMap[result.GetRuleRefId()], nil),
 		})
 	}
 
@@ -242,13 +234,14 @@ func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTi
 	}
 }
 
-func checkResult(incoming *storage.ComplianceOperatorCheckResultV2, ruleName string) *v2.ComplianceCheckResult {
+func checkResult(incoming *storage.ComplianceOperatorCheckResultV2, ruleName string, controlResults []*compRule.ControlResult) *v2.ComplianceCheckResult {
 	return &v2.ComplianceCheckResult{
 		CheckId:      incoming.GetCheckId(),
 		CheckName:    incoming.GetCheckName(),
 		CheckUid:     incoming.GetId(),
 		Description:  incoming.GetDescription(),
 		Instructions: incoming.GetInstructions(),
+		Controls:     GetControls(ruleName, controlResults),
 		Rationale:    incoming.GetRationale(),
 		ValuesUsed:   incoming.GetValuesUsed(),
 		Warnings:     incoming.GetWarnings(),
@@ -257,4 +250,18 @@ func checkResult(incoming *storage.ComplianceOperatorCheckResultV2, ruleName str
 		Labels:       incoming.GetLabels(),
 		Annotations:  incoming.GetAnnotations(),
 	}
+}
+
+func GetControls(ruleName string, controlResults []*compRule.ControlResult) []*v2.ComplianceControl {
+	var controls []*v2.ComplianceControl
+	for _, controlResult := range controlResults {
+		if controlResult.RuleName == ruleName {
+			controls = append(controls, &v2.ComplianceControl{
+				Standard: controlResult.Standard,
+				Control:  controlResult.Control,
+			})
+		}
+	}
+
+	return controls
 }

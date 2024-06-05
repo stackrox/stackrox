@@ -657,15 +657,6 @@
         "instructions": {
           "type": "string"
         },
-        "standard": {
-          "type": "string"
-        },
-        "control": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
         "rationale": {
           "type": "string"
         },
@@ -697,6 +688,12 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
+          }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceControl"
           }
         }
       },
@@ -856,6 +853,12 @@
         "totalCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceControl"
+          }
         }
       },
       "title": "ListComplianceCheckClusterResponse provides stats per cluster"

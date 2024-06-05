@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	benchmarkDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
-	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	complianceScanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/pkg/errox"
@@ -37,7 +36,7 @@ func GetLastScanTime(ctx context.Context, clusterID string, profileName string, 
 	return lastScanTime, nil
 }
 
-func GetControlsForScanResults(ctx context.Context, ruleDS complianceRuleDS.DataStore, scanResults []*complianceDS.ResourceResultsByProfile, profileName string, benchmarkDS benchmarkDS.DataStore) ([]*complianceRuleDS.ControlResult, error) {
+func GetControlsForScanResults(ctx context.Context, ruleDS complianceRuleDS.DataStore, ruleNames []string, profileName string, benchmarkDS benchmarkDS.DataStore) ([]*complianceRuleDS.ControlResult, error) {
 	benchmarks, err := benchmarkDS.GetBenchmarksByProfileName(ctx, profileName)
 	if err != nil {
 		return nil, errors.Wrapf(errox.NotFound, "Unable to retrieve benchmarks for profile %v", profileName)
@@ -52,11 +51,6 @@ func GetControlsForScanResults(ctx context.Context, ruleDS complianceRuleDS.Data
 		benchmarkShortNames = append(benchmarkShortNames, benchmark.GetShortName())
 	}
 
-	// Create a for loop to extract the rule name from the scan results into a string slice.
-	var ruleNames []string
-	for _, scanResult := range scanResults {
-		ruleNames = append(ruleNames, scanResult.RuleName)
-	}
 	controls, err := ruleDS.GetControlsByRulesAndBenchmarks(ctx, ruleNames, benchmarkShortNames)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not receive controls by rule controls")
