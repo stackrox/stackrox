@@ -230,6 +230,7 @@ spec:
     - name: BUILD_ARGS
       value:
       - VERSIONS_SUFFIX=$(params.output-tag-suffix)
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.image-tag)
     runAfter:
     - prefetch-dependencies
     taskRef:

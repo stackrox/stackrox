@@ -38,6 +38,8 @@ RUN microdnf upgrade -y --nobest && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
 
+ARG MAIN_IMAGE_TAG
+
 LABEL \
     com.redhat.component="rhacs-roxctl-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
@@ -51,8 +53,7 @@ LABEL \
     summary="The CLI for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     # We must set version label to prevent inheriting value set in the base stage.
-    # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
-    version="0.0.1-todo"
+    version="${MAIN_IMAGE_TAG}"
 
 ENV ROX_ROXCTL_IN_MAIN_IMAGE="true"
 
