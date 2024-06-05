@@ -391,7 +391,7 @@ build-prep: deps
 cli-build: cli-linux cli-darwin cli-windows
 
 .PHONY: cli-install
-cli-install:
+cli-install: cli-build
 	# Workaround a bug on MacOS
 	rm -f $(GOPATH)/bin/roxctl
 	# Copy the user's specific OS into gopath
