@@ -1,7 +1,6 @@
 package donotcompareproto
 
 import (
-	"fmt"
 	"go/ast"
 	"go/types"
 	"strings"
@@ -57,7 +56,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		}
 		pass.Report(analysis.Diagnostic{
 			Pos:     call.End(),
-			Message: fmt.Sprintf("Use protocompat.Equal to compare proto.Message"),
+			Message: "Use protocompat.Equal to compare proto.Message",
 		})
 	})
 	return nil, nil
