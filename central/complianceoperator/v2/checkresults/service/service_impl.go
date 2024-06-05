@@ -42,6 +42,7 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceProfileResults",
 			"/v2.ComplianceResultsService/GetComplianceProfileCheckResult",
 			"/v2.ComplianceResultsService/GetComplianceProfileClusterResults",
+			"/v2.ComplianceResultsService/GetComplianceProfileCheckDetails",
 		},
 	})
 )
@@ -343,6 +344,36 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 		TotalCount:   int32(resultCount),
 		LastScanTime: lastExecutedTime,
 	}, nil
+}
+
+func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, request *v2.ComplianceCheckDetailRequest) (*v2.ComplianceClusterCheckStatus, error) {
+	if request.GetProfileName() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
+	}
+	if request.GetCheckName() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Check name is required")
+	}
+
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	// Add the profile and check name to the query
+	parsedQuery = search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, request.GetProfileName()).
+			AddExactMatches(search.ComplianceOperatorCheckName, request.GetCheckName()).
+			ProtoQuery(),
+		parsedQuery,
+	)
+
+	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
+	}
+
+	return storagetov2.ComplianceV2SpecificCheckResult(scanResults, request.GetCheckName()), nil
 }
 
 func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQuery *v1.Query, countQuery *v1.Query) (*v2.ListComplianceResultsResponse, error) {
