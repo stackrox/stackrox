@@ -25,5 +25,5 @@ runs:
         key: go-build-v1-${{ github.job }}-${{ hashFiles('**/go.sum') }}
 
     - name: Download Go modules
-      run: make deps --always-make
+      run: make -j4 deps --always-make
       shell: bash
