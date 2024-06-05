@@ -26,7 +26,8 @@ spec:
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
-    value: '13w'
+    # TODO(ROX-24530): return expiration for non-released images to 13w
+    value: '52w'
   - name: output-image-repo
     value: quay.io/rhacs-eng/main
   - name: path-context
