@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
@@ -20,7 +21,9 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -345,6 +348,54 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationMissingRequiredAtt
 		"should redirect to the registry redirect URL")
 	s.Equal(errox.NoCredentials.CausedBy("required attribute \"name\" did not have the required value").Error(), redirectURLFragments.Get("error"),
 		"callback activated for user without role should issue an explicit message")
+}
+
+func TestGetSerializedAuthStatusData(t *testing.T) {
+	var nilAuthStatus *v1.AuthStatus
+	_, err := getSerializedAuthStatusData(nilAuthStatus)
+	assert.Error(t, err)
+
+	expiresTime := time.Date(2020, time.December, 31, 23, 59, 59, 999999999, time.UTC)
+	expiresTimestamp := protocompat.ConvertTimeToTimestampOrNil(&expiresTime)
+	authStatus := &v1.AuthStatus{
+		Id: &v1.AuthStatus_UserId{
+			UserId: "admin",
+		},
+		Expires: expiresTimestamp,
+		AuthProvider: &storage.AuthProvider{
+			Id:   "adaaaaaa-cccc-4011-0000-111111111111",
+			Name: "Login with username/password",
+			Type: "basic",
+		},
+		UserInfo: &storage.UserInfo{
+			Username:     "admin",
+			FriendlyName: "",
+			Roles: []*storage.UserInfo_Role{
+				{
+					Name: "Admin",
+					ResourceToAccess: map[string]storage.Access{
+						"Administration": storage.Access_READ_WRITE_ACCESS,
+					},
+				},
+			},
+		},
+		UserAttributes: []*v1.UserAttribute{
+			{
+				Key:    "role",
+				Values: []string{"Admin"},
+			},
+			{
+				Key:    "username",
+				Values: []string{"admin"},
+			},
+		},
+		IdpToken: "abcdefghijklmnopqrstuvwxyz0123456789",
+	}
+	expectedSerializedAuthStatus := `{
+}`
+	buf, err := getSerializedAuthStatusData(authStatus)
+	assert.NoError(t, err)
+	assert.JSONEq(t, expectedSerializedAuthStatus, buf.String())
 }
 
 /*****************************************************
