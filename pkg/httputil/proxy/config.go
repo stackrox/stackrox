@@ -15,6 +15,7 @@ import (
 
 var (
 	defaultExcludes = []string{
+		"openshift.default.svc",
 		"*.stackrox",
 		"*.stackrox.svc",
 		"localhost",
