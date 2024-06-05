@@ -2,7 +2,6 @@ package common
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/protocompat"

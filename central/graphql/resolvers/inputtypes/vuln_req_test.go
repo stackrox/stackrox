@@ -1,7 +1,6 @@
 package inputtypes
 
 import (
-	"reflect"
 	"testing"
 	"time"
 

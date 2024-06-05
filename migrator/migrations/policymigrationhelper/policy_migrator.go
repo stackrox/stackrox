@@ -2,7 +2,6 @@ package policymigrationhelper
 
 import (
 	"embed"
-	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -10,6 +9,7 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
@@ -143,12 +143,12 @@ type FieldComparator func(first, second *storage.Policy) bool
 
 // PolicySectionComparator compares the policySections of both policies and returns true if they are equal
 func PolicySectionComparator(first, second *storage.Policy) bool {
-	return reflect.DeepEqual(first.GetPolicySections(), second.GetPolicySections())
+	return protoutils.SlicesEqual(first.GetPolicySections(), second.GetPolicySections())
 }
 
 // ExclusionComparator compares the Exclusions of both policies and returns true if they are equal
 func ExclusionComparator(first, second *storage.Policy) bool {
-	return reflect.DeepEqual(first.GetExclusions(), second.GetExclusions())
+	return protoutils.SlicesEqual(first.GetExclusions(), second.GetExclusions())
 }
 
 // NameComparator compares both policies' names and returns true if they are equal
@@ -205,14 +205,14 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 	afterPolicy.Exclusions = nil
 
 	// Policy section
-	if !reflect.DeepEqual(beforePolicy.GetPolicySections(), afterPolicy.GetPolicySections()) {
+	if !protoutils.SlicesEqual(beforePolicy.GetPolicySections(), afterPolicy.GetPolicySections()) {
 		updates.PolicySections = afterPolicy.PolicySections
 	}
 	beforePolicy.PolicySections = nil
 	afterPolicy.PolicySections = nil
 
 	// MITRE section
-	if !reflect.DeepEqual(beforePolicy.GetMitreAttackVectors(), afterPolicy.GetMitreAttackVectors()) {
+	if !protoutils.SlicesEqual(beforePolicy.GetMitreAttackVectors(), afterPolicy.GetMitreAttackVectors()) {
 		updates.MitreVectors = afterPolicy.MitreAttackVectors
 	}
 	beforePolicy.MitreAttackVectors = nil
