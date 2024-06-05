@@ -17,8 +17,11 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import useRestQuery from 'hooks/useRestQuery';
 import { getComplianceProfilesStats } from 'services/ComplianceResultsStatsService';
+import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { getComplianceProfileClusterResults } from 'services/ComplianceResultsService';
 
+import ClusterDetailsTable from './ClusterDetailsTable';
 import {
     coverageProfileClustersPath,
     coverageClusterDetailsPath,
@@ -39,6 +42,23 @@ function ClusterDetailsPage() {
         error: clusterProfileDataError,
     } = useRestQuery(fetchProfilesStats);
 
+    const fetchCheckResults = useCallback(
+        () => getComplianceProfileClusterResults(profileName, clusterId),
+        [clusterId, profileName]
+    );
+    const {
+        data: checkResultsResponse,
+        loading: isLoadingCheckResults,
+        error: checkResultsError,
+    } = useRestQuery(fetchCheckResults);
+
+    const tableState = getTableUIState({
+        isLoading: isLoadingCheckResults,
+        data: checkResultsResponse?.checkResults,
+        error: checkResultsError,
+        searchFilter: {},
+    });
+
     function handleProfilesToggleChange(selectedProfile: string) {
         const path = generatePath(coverageClusterDetailsPath, {
             profileName: selectedProfile,
@@ -46,6 +66,7 @@ function ClusterDetailsPage() {
         });
         history.push(path);
     }
+
     if (clusterProfileDataError) {
         return (
             <Alert
@@ -115,6 +136,13 @@ function ClusterDetailsPage() {
                 <ProfilesToggleGroup
                     profiles={clusterProfileData?.scanStats ?? []}
                     handleToggleChange={handleProfilesToggleChange}
+                />
+            </PageSection>
+            <PageSection>
+                <ClusterDetailsTable
+                    clusterId={clusterId}
+                    profileName={profileName}
+                    tableState={tableState}
                 />
             </PageSection>
         </>
