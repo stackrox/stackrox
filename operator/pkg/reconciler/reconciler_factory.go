@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/operator-framework/helm-operator-plugins/pkg/client"
+	"github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/operator-framework/helm-operator-plugins/pkg/values"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"

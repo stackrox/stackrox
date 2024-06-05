@@ -1,6 +1,7 @@
 package extensions
 
 import (
+	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/pkg/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"

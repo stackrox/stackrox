@@ -6,8 +6,13 @@ import (
 
 	"github.com/go-logr/logr"
 	mapkubeapisCommon "github.com/helm/helm-mapkubeapis/pkg/common"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	helmClient "github.com/operator-framework/helm-operator-plugins/pkg/client"
+	"github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/pkg/errors"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
+	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/storage"
 	"helm.sh/helm/v3/pkg/storage/driver"

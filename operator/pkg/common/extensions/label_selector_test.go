@@ -3,6 +3,7 @@ package extensions
 import (
 	"testing"
 
+	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
