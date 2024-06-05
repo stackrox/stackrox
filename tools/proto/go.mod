@@ -6,7 +6,7 @@ require (
 	github.com/bufbuild/buf v1.32.2
 	github.com/favadi/protoc-go-inject-tag v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.4.0
 )
 
 require (
