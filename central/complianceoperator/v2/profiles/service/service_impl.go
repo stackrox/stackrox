@@ -27,9 +27,9 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Compliance)): {
-			"/v2.ComplianceProfileService/GetComplianceProfile",
-			"/v2.ComplianceProfileService/ListComplianceProfiles",
-			"/v2.ComplianceProfileService/ListProfileSummaries",
+			"/v2.ComplianceProfileService/GetComplianceProfile",   // TODO: Lists Standard in Proto, necessary here?
+			"/v2.ComplianceProfileService/ListComplianceProfiles", // TODO: Lists Standard in Proto, necessary here?
+			"/v2.ComplianceProfileService/ListProfileSummaries",   // does not include standard/control
 			"/v2.ComplianceProfileService/GetComplianceProfileCount",
 		},
 	})

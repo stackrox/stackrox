@@ -34,14 +34,14 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Compliance)): {
-			"/v2.ComplianceResultsService/GetComplianceScanResults",
+			"/v2.ComplianceResultsService/GetComplianceScanResults", // TODO: add standard/control data to check results, proto fields already implemented
 			"/v2.ComplianceResultsService/GetComplianceOverallClusterCount",
-			"/v2.ComplianceResultsService/GetComplianceScanCheckResult",
-			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResults",
-			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResultsCount",
-			"/v2.ComplianceResultsService/GetComplianceProfileResults",
+			"/v2.ComplianceResultsService/GetComplianceScanCheckResult",               // TODO: add standard/control data to check results, proto fields already implemented
+			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResults",      // TODO: add standard/control data to check results, proto fields already implemented
+			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResultsCount", // TODO: remove
+			"/v2.ComplianceResultsService/GetComplianceProfileResults",                // TODO: Add standard/control data
 			"/v2.ComplianceResultsService/GetComplianceProfileCheckResult",
-			"/v2.ComplianceResultsService/GetComplianceProfileClusterResults",
+			"/v2.ComplianceResultsService/GetComplianceProfileClusterResults", // TODO: add standard/control data to check results, proto fields already implemented
 		},
 	})
 )
