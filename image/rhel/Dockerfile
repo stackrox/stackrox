@@ -51,7 +51,6 @@ COPY static-bin /stackrox/
 COPY --from=downloads /output/rpms/ /tmp/
 COPY --from=downloads /output/go/ /go/
 
-RUN if [[ "$(uname -m)" == "x86_64" ]]; then rpm -i /tmp/snappy.rpm && rm /tmp/snappy.rpm; fi
 RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
     microdnf -y upgrade --nobest && \
     rpm -i --nodeps /tmp/postgres-libs.rpm && \

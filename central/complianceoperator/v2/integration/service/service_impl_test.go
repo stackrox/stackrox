@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
@@ -92,26 +93,39 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 			expectedResp := &apiV2.ListComplianceIntegrationsResponse{
 				Integrations: []*apiV2.ComplianceIntegration{
 					{
-						Id:           uuid.NewDummy().String(),
-						Version:      "22",
-						ClusterId:    fixtureconsts.Cluster1,
-						ClusterName:  mockClusterName,
-						Namespace:    fixtureconsts.Namespace1,
-						StatusErrors: []string{"Error 1", "Error 2", "Error 3"},
+						Id:                  uuid.NewDummy().String(),
+						Version:             "22",
+						ClusterId:           fixtureconsts.Cluster1,
+						ClusterName:         mockClusterName,
+						Namespace:           fixtureconsts.Namespace1,
+						StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
+						OperatorInstalled:   true,
+						Status:              apiV2.COStatus_HEALTHY,
+						ClusterPlatformType: apiV2.ClusterPlatformType_OPENSHIFT_CLUSTER,
+						ClusterProviderType: apiV2.ClusterProviderType_OCP,
 					},
 				},
 				TotalCount: 6,
 			}
 
-			s.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return(mockClusterName, true, nil).Times(1)
+			s.complianceIntegrationDataStore.EXPECT().GetComplianceIntegration(gomock.Any(), gomock.Any()).Return(&storage.ComplianceIntegration{
+				Id:                  uuid.NewDummy().String(),
+				Version:             "22",
+				ClusterId:           fixtureconsts.Cluster1,
+				ComplianceNamespace: fixtureconsts.Namespace1,
+				StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
+			}, true, nil).Times(1)
 
-			s.complianceIntegrationDataStore.EXPECT().GetComplianceIntegrations(allAccessContext, tc.expectedQ).
-				Return([]*storage.ComplianceIntegration{{
-					Id:                  uuid.NewDummy().String(),
-					Version:             "22",
-					ClusterId:           fixtureconsts.Cluster1,
-					ComplianceNamespace: fixtureconsts.Namespace1,
-					StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
+			s.complianceIntegrationDataStore.EXPECT().GetComplianceIntegrationsView(allAccessContext, tc.expectedQ).
+				Return([]*datastore.IntegrationDetails{{
+					ID:                                uuid.NewDummy().String(),
+					Version:                           "22",
+					OperatorInstalled:                 true,
+					OperatorStatus:                    storage.COStatus_HEALTHY,
+					ClusterID:                         fixtureconsts.Cluster1,
+					ClusterName:                       mockClusterName,
+					Type:                              storage.ClusterType_OPENSHIFT_CLUSTER,
+					StatusProviderMetadataClusterType: storage.ClusterMetadata_OCP,
 				},
 				}, nil).Times(1)
 

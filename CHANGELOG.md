@@ -23,6 +23,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Deprecated Features
 
+- Slim/Full Collector images have been deprecated and will be removed in a
+  future release. The two image flavors are now functionally identical (neither contain any kernel drivers.)
+
 ### Technical Changes
 
 - ROX-18969: Added a label selector for the caching configuration of secrets and configmaps to the operator.

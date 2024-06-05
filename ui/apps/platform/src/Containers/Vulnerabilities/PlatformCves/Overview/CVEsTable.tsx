@@ -82,12 +82,12 @@ function CVEsTable({
 }: CVEsTableProps) {
     const { page, perPage } = pagination;
 
-    const { data, previousData, error, loading } = usePlatformCves(
+    const { data, previousData, error, loading } = usePlatformCves({
         querySearchFilter,
         page,
         perPage,
-        sortOption
-    );
+        sortOption,
+    });
     const totalClusterCountRequest = useQuery(totalClusterCountQuery);
     const totalClusterCount = totalClusterCountRequest.data?.clusterCount ?? 0;
 

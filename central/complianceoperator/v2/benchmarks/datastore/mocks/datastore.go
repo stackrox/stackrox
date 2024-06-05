@@ -70,6 +70,21 @@ func (mr *MockDataStoreMockRecorder) GetBenchmark(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBenchmark", reflect.TypeOf((*MockDataStore)(nil).GetBenchmark), ctx, id)
 }
 
+// GetBenchmarksByProfileName mocks base method.
+func (m *MockDataStore) GetBenchmarksByProfileName(ctx context.Context, profileName string) ([]*storage.ComplianceOperatorBenchmarkV2, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBenchmarksByProfileName", ctx, profileName)
+	ret0, _ := ret[0].([]*storage.ComplianceOperatorBenchmarkV2)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBenchmarksByProfileName indicates an expected call of GetBenchmarksByProfileName.
+func (mr *MockDataStoreMockRecorder) GetBenchmarksByProfileName(ctx, profileName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBenchmarksByProfileName", reflect.TypeOf((*MockDataStore)(nil).GetBenchmarksByProfileName), ctx, profileName)
+}
+
 // UpsertBenchmark mocks base method.
 func (m *MockDataStore) UpsertBenchmark(ctx context.Context, result *storage.ComplianceOperatorBenchmarkV2) error {
 	m.ctrl.T.Helper()

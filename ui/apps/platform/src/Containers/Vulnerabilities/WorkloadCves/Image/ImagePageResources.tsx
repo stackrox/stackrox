@@ -105,9 +105,6 @@ function ImagePageResources({ imageId, pagination }: ImagePageResourcesProps) {
                                 perPage={perPage}
                                 onSetPage={(_, newPage) => setPage(newPage)}
                                 onPerPageSelect={(_, newPerPage) => {
-                                    if (deploymentCount < (page - 1) * newPerPage) {
-                                        setPage(1);
-                                    }
                                     setPerPage(newPerPage);
                                 }}
                             />

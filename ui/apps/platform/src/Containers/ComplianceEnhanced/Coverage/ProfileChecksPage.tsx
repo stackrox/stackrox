@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useCallback, useContext } from 'react';
+import { generatePath, useHistory, useParams } from 'react-router-dom';
 import { Divider, PageSection, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
@@ -10,12 +10,16 @@ import { getComplianceProfileResults } from 'services/ComplianceResultsService';
 
 import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
-import CoveragesToggleGroup from './CoveragesToggleGroup';
+import { coverageProfileChecksPath } from './compliance.coverage.routes';
+import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
+import ProfilesToggleGroup from './ProfilesToggleGroup';
 import CoveragesPageHeader from './CoveragesPageHeader';
 import ProfileChecksTable from './ProfileChecksTable';
 
 function ProfileChecksPage() {
     const { profileName } = useParams();
+    const history = useHistory();
+    const { profileScanStats } = useContext(ComplianceProfilesContext);
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { page, perPage, setPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
@@ -30,12 +34,22 @@ function ProfileChecksPage() {
     );
     const { data: profileChecks, loading: isLoading, error } = useRestQuery(fetchProfileChecks);
 
+    function handleProfilesToggleChange(selectedProfile: string) {
+        const path = generatePath(coverageProfileChecksPath, {
+            profileName: selectedProfile,
+        });
+        history.push(path);
+    }
+
     return (
         <>
             <PageTitle title="Compliance coverage - Profile checks" />
             <CoveragesPageHeader />
             <PageSection>
-                <CoveragesToggleGroup tableView="checks" />
+                <ProfilesToggleGroup
+                    profiles={profileScanStats.scanStats}
+                    handleToggleChange={handleProfilesToggleChange}
+                />
             </PageSection>
             <PageSection variant="default">
                 <PageSection variant="light" component="div">
