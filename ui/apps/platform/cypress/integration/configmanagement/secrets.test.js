@@ -37,6 +37,8 @@ describe('Configuration Management Secrets', () => {
 
     it('should take you to a secrets single when the "navigate away" button is clicked', () => {
         visitConfigurationManagementEntityInSidePanel(entitiesKey);
+        // A potential fix - wait for side panel to render content.
+        // cy.get('[data-testid="side-panel"] [data-testid="collapsible-content"]')
         navigateToSingleEntityPage(entitiesKey);
     });
 
