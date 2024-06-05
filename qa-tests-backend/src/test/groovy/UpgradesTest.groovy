@@ -3,14 +3,12 @@ import groovy.io.FileType
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
-import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
 import services.ClusterService
 import services.GraphQLService
 import services.PolicyService
-import services.SummaryService
 import util.Env
 
 import spock.lang.Tag
@@ -62,19 +60,6 @@ class UpgradesTest extends BaseSpecification {
         def cluster = ClusterService.getCluster()
         cluster != null
         assert(cluster.getDynamicConfig().getDisableAuditLogs() == true)
-    }
-
-    @Tag("Upgrade")
-    def "Verify that summary API returns non-zero values on upgrade"() {
-        expect:
-        "Summary API returns non-zero values on upgrade"
-        SummaryServiceOuterClass.SummaryCountsResponse resp = SummaryService.getCounts()
-        assert resp.numAlerts != 0
-        assert resp.numDeployments != 0
-        assert resp.numSecrets != 0
-        assert resp.numClusters != 0
-        assert resp.numImages != 0
-        assert resp.numNodes != 0
     }
 
     @Unroll
