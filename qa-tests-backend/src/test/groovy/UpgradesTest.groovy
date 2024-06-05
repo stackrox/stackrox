@@ -65,6 +65,7 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Tag("Upgrade")
+    @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
     def "Verify that summary API returns non-zero values on upgrade"() {
         expect:
         "Summary API returns non-zero values on upgrade"

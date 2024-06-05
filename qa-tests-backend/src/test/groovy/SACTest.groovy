@@ -255,6 +255,7 @@ class SACTest extends BaseSpecification {
         NAMESPACE_QA2 | _
     }
 
+    @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
     def "Verify GetSummaryCounts using a token without access receives no results"() {
         when:
         "GetSummaryCounts is called using a token without access"
@@ -274,6 +275,7 @@ class SACTest extends BaseSpecification {
         deleteSecret(DEPLOYMENT_QA1.namespace)
     }
 
+    @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
     def "Verify GetSummaryCounts using a token with partial access receives partial results"() {
         when:
         "GetSummaryCounts is called using a token with restricted access"
@@ -295,6 +297,7 @@ class SACTest extends BaseSpecification {
         deleteSecret(DEPLOYMENT_QA2.namespace)
     }
 
+    @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
     def "Verify GetSummaryCounts using a token with all access receives all results"() {
         when:
         "GetSummaryCounts is called using a token with all access"
