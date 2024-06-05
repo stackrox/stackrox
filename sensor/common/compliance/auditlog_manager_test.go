@@ -118,8 +118,8 @@ func (s *AuditLogCollectionManagerTestSuite) TestEnableCollectionSendsFileStateI
 
 	manager.EnableCollection()
 
-	s.Equal(fileStates["node-a"],
-		servers["node-a"].(*mockServer).sentList[0].GetAuditLogCollectionRequest().GetStartReq().GetCollectStartState())
+	s.True(protocompat.Equal(fileStates["node-a"],
+		servers["node-a"].(*mockServer).sentList[0].GetAuditLogCollectionRequest().GetStartReq().GetCollectStartState()))
 
 	s.Nil(servers["node-b"].(*mockServer).sentList[0].GetAuditLogCollectionRequest().GetStartReq().GetCollectStartState())
 }
@@ -180,8 +180,8 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdateAuditLogFileStateSendsFil
 
 	s.Equal(fileStates, manager.fileStates)
 
-	s.Equal(fileStates["node-a"],
-		servers["node-a"].(*mockServer).sentList[0].GetAuditLogCollectionRequest().GetStartReq().GetCollectStartState())
+	s.True(protocompat.Equal(fileStates["node-a"],
+		servers["node-a"].(*mockServer).sentList[0].GetAuditLogCollectionRequest().GetStartReq().GetCollectStartState()))
 
 	// Explicitly checking that if we got a nil state we send that down
 	s.Nil(servers["node-b"].(*mockServer).sentList[0].GetAuditLogCollectionRequest().GetStartReq().GetCollectStartState())

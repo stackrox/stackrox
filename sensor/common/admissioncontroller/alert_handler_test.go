@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/suite"
 )
@@ -66,7 +67,7 @@ func (s *alertHandlerSuite) TestProcessAlert() {
 					if !ok {
 						s.T().Error("ResponsesC should not be closed")
 					}
-					s.Assert().Equal(createAlertResultsMsg(admissionControlAlerts.AlertResults[0]), res)
+					s.Assert().True(protocompat.Equal(createAlertResultsMsg(admissionControlAlerts.AlertResults[0]), res))
 				}
 			}
 		})

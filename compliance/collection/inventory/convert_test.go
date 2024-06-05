@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/suite"
@@ -123,7 +124,7 @@ func (s *inventoryConvertTestSuite) TestToStorageComponents() {
 		s.Run(caseName, func() {
 			convertedComponent := toStorageComponents(testCase.inComponent)
 			if testCase.inComponent != nil {
-				s.Equal(testCase.outComponent, convertedComponent)
+				s.True(protocompat.Equal(testCase.outComponent, convertedComponent))
 			} else {
 				s.Nil(convertedComponent)
 			}

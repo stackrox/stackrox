@@ -113,7 +113,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			Contents: nil,
 		})
 		s.NoError(err)
-		s.Equal(res, &v4.VulnerabilityReport{
+		s.True(protocompat.Equal(res, &v4.VulnerabilityReport{
 			HashId: hashID,
 			Contents: &v4.Contents{
 				Packages: []*v4.Package{
@@ -121,7 +121,8 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 				},
 			},
 			Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
-		})
+		}))
+
 	})
 
 	s.Run("when contents is provided then parse index report and return", func() {
@@ -149,7 +150,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			}},
 		})
 		s.NoError(err)
-		s.Equal(res, &v4.VulnerabilityReport{
+		s.True(protocompat.Equal(res, &v4.VulnerabilityReport{
 			HashId: hashID,
 			Contents: &v4.Contents{
 				Packages: []*v4.Package{
@@ -157,7 +158,8 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 				},
 			},
 			Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
-		})
+		}))
+
 	})
 }
 
@@ -174,9 +176,10 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata() {
 	srv := NewMatcherService(s.matcherMock, nil)
 	res, err := srv.GetMetadata(s.ctx, protocompat.ProtoEmpty())
 	s.NoError(err)
-	s.Equal(&v4.Metadata{
+	s.True(protocompat.Equal(&v4.Metadata{
 		LastVulnerabilityUpdate: protoNow,
-	}, res)
+	}, res))
+
 }
 
 func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata_error() {

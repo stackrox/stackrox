@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -69,7 +70,7 @@ func (s *usageSvcSuite) TestGetMaxUsage() {
 	svc := New(s.store)
 	res, err := svc.GetMaxSecuredUnitsUsage(context.Background(), req)
 	s.Require().NoError(err)
-	s.Equal(exp, res)
+	s.True(protocompat.Equal(exp, res))
 }
 
 func (s *usageSvcSuite) TestGetCurrentUsage() {
@@ -88,5 +89,5 @@ func (s *usageSvcSuite) TestGetCurrentUsage() {
 	svc := New(s.store)
 	res, err := svc.GetCurrentSecuredUnitsUsage(context.Background(), &v1.Empty{})
 	s.Require().NoError(err)
-	s.Equal(exp, res)
+	s.True(protocompat.Equal(exp, res))
 }

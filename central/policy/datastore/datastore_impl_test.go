@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -64,13 +65,13 @@ func (s *PolicyDatastoreTestSuite) SetupTest() {
 
 func (s *PolicyDatastoreTestSuite) testImportSuccessResponse(expectedPolicy *storage.Policy, resp *v1.ImportPolicyResponse) {
 	s.True(resp.Succeeded)
-	s.Equal(expectedPolicy, resp.GetPolicy())
+	s.True(protocompat.Equal(expectedPolicy, resp.GetPolicy()))
 	s.Empty(resp.Errors)
 }
 
 func (s *PolicyDatastoreTestSuite) testImportFailResponse(expectedPolicy *storage.Policy, expectedErrTypes, expectedErrorStrings, expectedNames []string, resp *v1.ImportPolicyResponse) {
 	s.False(resp.Succeeded)
-	s.Equal(expectedPolicy, resp.GetPolicy())
+	s.True(protocompat.Equal(expectedPolicy, resp.GetPolicy()))
 	s.Require().Len(resp.GetErrors(), len(expectedErrTypes))
 	s.Require().Len(resp.GetErrors(), len(expectedErrorStrings))
 	s.Require().Len(resp.GetErrors(), len(expectedNames))
@@ -361,7 +362,7 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 
 	resp := responses[0]
 	s.True(resp.GetSucceeded())
-	s.Equal(resultPolicy, resp.GetPolicy())
+	s.True(protocompat.Equal(resultPolicy, resp.GetPolicy()))
 	s.Require().Len(resp.GetErrors(), 1)
 	importError := resp.GetErrors()[0]
 	s.Equal(importError.GetType(), policies.ErrImportClustersOrNotifiersRemoved)
@@ -411,6 +412,6 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 
 	resp := responses[0]
 	s.True(resp.GetSucceeded())
-	s.Equal(resp.GetPolicy(), policy)
+	s.True(protocompat.Equal(resp.GetPolicy(), policy))
 	s.Empty(resp.GetErrors())
 }

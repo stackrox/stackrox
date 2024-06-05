@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -131,5 +132,5 @@ func (suite *QuaySuite) TestGetScan() {
 	expectedImageScan := convertScanToImageScan(image, expectedQuayScan)
 	suite.Equal(expectedImageScan.Components, scan.Components)
 	suite.Equal(expectedImageScan.OperatingSystem, scan.OperatingSystem)
-	suite.Equal(expectedImageScan.DataSource, scan.DataSource)
+	suite.True(protocompat.Equal(expectedImageScan.DataSource, scan.DataSource))
 }

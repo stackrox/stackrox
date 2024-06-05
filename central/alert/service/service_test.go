@@ -83,7 +83,7 @@ func (s *getAlertTests) TestGetAlert() {
 	result, err := s.service.GetAlert(fakeContext, s.fakeResourceByIDRequest)
 
 	s.NoError(err)
-	s.Equal(fakeAlert, result)
+	s.True(protocompat.Equal(fakeAlert, result))
 }
 
 func (s *getAlertTests) TestGetAlertWhenTheDataAccessLayerFails() {
@@ -94,7 +94,7 @@ func (s *getAlertTests) TestGetAlertWhenTheDataAccessLayerFails() {
 	result, err := s.service.GetAlert(fakeContext, s.fakeResourceByIDRequest)
 
 	s.EqualError(err, "fake error")
-	s.Equal((*storage.Alert)(nil), result)
+	s.True(protocompat.Equal((*storage.Alert)(nil), result))
 }
 
 func (s *getAlertTests) TestGetAlertWhenAlertIsMissing() {
@@ -105,7 +105,7 @@ func (s *getAlertTests) TestGetAlertWhenAlertIsMissing() {
 	result, err := s.service.GetAlert(fakeContext, s.fakeResourceByIDRequest)
 
 	s.EqualError(err, errors.Wrapf(errox.NotFound, "alert with id '%s' does not exist", alerttest.FakeAlertID).Error())
-	s.Equal((*storage.Alert)(nil), result)
+	s.True(protocompat.Equal((*storage.Alert)(nil), result))
 }
 
 type listAlertsTests struct {
@@ -176,7 +176,7 @@ func (s *listAlertsTests) TestListAlerts() {
 	})
 
 	s.NoError(err)
-	s.Equal(s.expectedListAlertsResponse, result)
+	s.True(protocompat.Equal(s.expectedListAlertsResponse, result))
 }
 
 func (s *listAlertsTests) TestListAlertsWhenTheDataLayerFails() {
@@ -196,7 +196,7 @@ func (s *listAlertsTests) TestListAlertsWhenTheDataLayerFails() {
 	})
 
 	s.EqualError(err, "fake error")
-	s.Equal((*v1.ListAlertsResponse)(nil), result)
+	s.True(protocompat.Equal((*v1.ListAlertsResponse)(nil), result))
 }
 
 type getAlertsGroupsTests struct {
@@ -355,7 +355,7 @@ func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*stora
 	})
 
 	s.NoError(err)
-	s.Equal(expected, result)
+	s.True(protocompat.Equal(expected, result))
 }
 
 func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
@@ -371,7 +371,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
 	})
 
 	s.EqualError(err, "fake error")
-	s.Equal((*v1.GetAlertsGroupResponse)(nil), result)
+	s.True(protocompat.Equal((*v1.GetAlertsGroupResponse)(nil), result))
 }
 
 type getAlertsCountsTests struct {
@@ -673,7 +673,7 @@ func (s *getAlertsCountsTests) testGetAlertCounts(fakeSearchResultsSlice []searc
 	}, GroupBy: groupBy})
 
 	s.NoError(err)
-	s.Equal(expected, result)
+	s.True(protocompat.Equal(expected, result))
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
@@ -741,7 +741,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 	}, GroupBy: unknownGroupBy})
 
 	s.EqualError(err, errors.Wrapf(errox.InvalidArgs, "unknown group by: %v", unknownGroupBy).Error())
-	s.Equal((*v1.GetAlertsCountsResponse)(nil), result)
+	s.True(protocompat.Equal((*v1.GetAlertsCountsResponse)(nil), result))
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheDataAccessLayerFails() {
@@ -753,7 +753,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheDataAccessLayerFails() 
 	}})
 
 	s.EqualError(err, "fake error")
-	s.Equal((*v1.GetAlertsCountsResponse)(nil), result)
+	s.True(protocompat.Equal((*v1.GetAlertsCountsResponse)(nil), result))
 }
 
 type getAlertTimeseriesTests struct {
@@ -871,7 +871,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 	})
 
 	s.NoError(err)
-	s.Equal(expected, result)
+	s.True(protocompat.Equal(expected, result))
 }
 
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFails() {
@@ -884,7 +884,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFa
 	})
 
 	s.EqualError(err, "fake error")
-	s.Equal((*v1.GetAlertTimeseriesResponse)(nil), result)
+	s.True(protocompat.Equal((*v1.GetAlertTimeseriesResponse)(nil), result))
 }
 
 type patchAlertTests struct {
@@ -924,7 +924,7 @@ func (s *patchAlertTests) TestSnoozeAlert() {
 	s.NoError(err)
 
 	s.Equal(fakeAlert.State, storage.ViolationState_SNOOZED)
-	s.Equal(fakeAlert.SnoozeTill, snoozeTill)
+	s.True(protocompat.Equal(fakeAlert.SnoozeTill, snoozeTill))
 }
 
 func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {

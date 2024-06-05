@@ -80,7 +80,7 @@ func (suite *PodDataStoreTestSuite) TestGetPod() {
 	pod, ok, err := suite.datastore.GetPod(ctx, expectedPod.GetId())
 	suite.NoError(err)
 	suite.True(ok)
-	suite.Equal(expectedPod, pod)
+	suite.True(protocompat.Equal(expectedPod, pod))
 
 	suite.storage.EXPECT().Get(ctx, expectedPod.GetId()).Return(nil, false, nil)
 	_, ok, err = suite.datastore.GetPod(ctx, expectedPod.GetId())

@@ -11,6 +11,7 @@ import (
 	identityMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -117,7 +118,7 @@ func (suite *AuditLogTestSuite) TestPermissionsRemoval() {
 	withPermissions := a.newAuditMessage(ctxWithMockIdentity, "this is a test", "/v1./Test",
 		interceptor.AuthStatus{Error: nil}, nil)
 
-	suite.Equal(userInfo, withPermissions.GetUser())
+	suite.True(protocompat.Equal(userInfo, withPermissions.GetUser()))
 
 	a = &audit{withoutPermissions: true}
 	withoutPermissions := a.newAuditMessage(ctxWithMockIdentity, "this is a test", "/v1./Test",

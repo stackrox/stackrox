@@ -1239,7 +1239,7 @@ func (s *NetworkGraphServiceTestSuite) TestPatchExternalNetworkEntity() {
 	actual, err := s.tested.PatchExternalNetworkEntity(ctx, patch)
 	s.NoError(err)
 	entity.Info.GetExternalSource().Name = "newcidr"
-	s.Equal(entity, actual)
+	s.True(protocompat.Equal(entity, actual))
 
 	// Not found
 	s.entities.EXPECT().GetEntity(ctx, entity.GetInfo().GetId()).Return(nil, false, nil)

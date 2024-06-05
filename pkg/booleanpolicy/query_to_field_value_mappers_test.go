@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -30,7 +31,7 @@ func (s *SearchMapperTestSuite) testMapSearchString(fieldLabel search.FieldLabel
 	s.Equal(shouldFindMaper, foundMapper)
 	s.Equal(shouldBeAltered, fieldsAltered)
 	s.Equal(storage.BooleanOperator_OR, policyGroup.GetBooleanOperator())
-	s.Equal(expectedGroup, policyGroup)
+	s.True(protocompat.Equal(expectedGroup, policyGroup))
 }
 
 func (s *SearchMapperTestSuite) testDirectMapSearchString(fieldLabel search.FieldLabel, expectedPolicyField string) {

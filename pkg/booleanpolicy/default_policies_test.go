@@ -3474,7 +3474,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 			for i, expected := range testCase.alerts {
 				suite.Equal(expected.GetType(), allAlerts[i].Type)
 				suite.Equal(expected.GetMessage(), allAlerts[i].Message)
-				suite.Equal(expected.GetKeyValueAttrs(), allAlerts[i].GetKeyValueAttrs())
+				suite.True(protocompat.Equal(expected.GetKeyValueAttrs(), allAlerts[i].GetKeyValueAttrs()))
 				// We do not want to compare time, as the violation timestamp uses now()
 				suite.NotNil(allAlerts[i].GetTime())
 			}

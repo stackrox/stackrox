@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -80,7 +81,7 @@ func (s *countEventsTestSuite) TestCountAdministrationEvents_Success() {
 	result, err := s.service.CountAdministrationEvents(s.ctx, s.fakeCountEventsRequest)
 
 	s.Require().NoError(err)
-	s.Equal(s.fakeCountEventsResponse, result)
+	s.True(protocompat.Equal(s.fakeCountEventsResponse, result))
 }
 
 func (s *countEventsTestSuite) TestCountAdministrationEvents_Error() {
@@ -114,7 +115,7 @@ func (s *getEventTestSuite) TestGetAdministrationEvent_Success() {
 	result, err := s.service.GetAdministrationEvent(s.ctx, s.fakeResourceByIDRequest)
 
 	s.Require().NoError(err)
-	s.Equal(s.fakeGetEventResponse, result)
+	s.True(protocompat.Equal(s.fakeGetEventResponse, result))
 }
 
 func (s *getEventTestSuite) TestGetAdministrationEvent_Error() {
@@ -158,7 +159,7 @@ func (s *listEventsTestSuite) TestListAdministrationEvents_Success() {
 	result, err := s.service.ListAdministrationEvents(s.ctx, s.fakeListEventsRequest)
 
 	s.Require().NoError(err)
-	s.Equal(s.fakeListEventsResponse, result)
+	s.True(protocompat.Equal(s.fakeListEventsResponse, result))
 }
 
 func (s *listEventsTestSuite) TestListAdministrationEvents_Error() {

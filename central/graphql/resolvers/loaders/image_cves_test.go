@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/cve/image/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -55,7 +56,7 @@ func (suite *ImageCVELoaderTestSuite) TestFromID() {
 	// Get a preloaded cve from id.
 	cve, err := loader.FromID(suite.ctx, imageCve1)
 	suite.NoError(err)
-	suite.Equal(loader.loaded[imageCve1], cve)
+	suite.True(protocompat.Equal(loader.loaded[imageCve1], cve))
 
 	// Get a non-preloaded cve from id.
 	thirdCVE := &storage.ImageCVE{Id: imageCve3}
@@ -64,12 +65,12 @@ func (suite *ImageCVELoaderTestSuite) TestFromID() {
 
 	cve, err = loader.FromID(suite.ctx, imageCve3)
 	suite.NoError(err)
-	suite.Equal(thirdCVE, cve)
+	suite.True(protocompat.Equal(thirdCVE, cve))
 
 	// Above call should now be preloaded.
 	cve, err = loader.FromID(suite.ctx, imageCve3)
 	suite.NoError(err)
-	suite.Equal(loader.loaded[imageCve3], cve)
+	suite.True(protocompat.Equal(loader.loaded[imageCve3], cve))
 }
 
 func (suite *ImageCVELoaderTestSuite) TestFromIDs() {

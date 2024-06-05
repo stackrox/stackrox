@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/registries"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	mirrorStoreMocks "github.com/stackrox/rox/pkg/registrymirror/mocks"
@@ -249,7 +250,7 @@ func (suite *scanTestSuite) TestEnrichLocalImageInNamespace() {
 	mirrorStore.EXPECT().PullSources(containerImg.GetName().GetFullName())
 	resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, "", "", false)
 	suite.Require().NoError(err)
-	suite.Assert().Equal(img, resultImg)
+	suite.Assert().True(protocompat.Equal(img, resultImg))
 	suite.Assert().True(imageServiceClient.enrichTriggered)
 	suite.Assert().True(fakeRegStore.getMatchingCentralRegistryIntegrationsInvoked)
 	suite.Assert().False(fakeRegStore.getRegistryForImageInNamespaceInvoked)
@@ -263,7 +264,7 @@ func (suite *scanTestSuite) TestEnrichLocalImageInNamespace() {
 	mirrorStore.EXPECT().PullSources(containerImg.GetName().GetFullName())
 	resultImg, err = scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, namespace, "", false)
 	suite.Require().NoError(err)
-	suite.Assert().Equal(img, resultImg)
+	suite.Assert().True(protocompat.Equal(img, resultImg))
 	suite.Assert().True(imageServiceClient.enrichTriggered)
 	suite.Assert().True(fakeRegStore.getMatchingCentralRegistryIntegrationsInvoked)
 	suite.Assert().True(fakeRegStore.getRegistryForImageInNamespaceInvoked)

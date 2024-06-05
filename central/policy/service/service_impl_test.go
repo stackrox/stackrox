@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
@@ -123,7 +124,7 @@ func (s *PolicyServiceTestSuite) TestExportValidIDSucceeds() {
 	s.NoError(err)
 	s.NotNil(resp)
 	s.Len(resp.GetPolicies(), 1)
-	s.Equal(mockPolicy, resp.Policies[0])
+	s.True(protocompat.Equal(mockPolicy, resp.Policies[0]))
 }
 
 func (s *PolicyServiceTestSuite) TestExportMixedSuccessAndMissing() {
@@ -169,7 +170,7 @@ func (s *PolicyServiceTestSuite) TestExportedPolicyHasNoSortFields() {
 	s.NoError(err)
 	s.NotNil(resp)
 	s.Len(resp.GetPolicies(), 1)
-	s.Equal(expectedPolicy, resp.Policies[0])
+	s.True(protocompat.Equal(expectedPolicy, resp.Policies[0]))
 }
 
 func (s *PolicyServiceTestSuite) TestPoliciesHaveNoUnexpectedSORTFields() {

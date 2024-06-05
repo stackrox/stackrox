@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/suite"
 	coreV1 "k8s.io/api/core/v1"
@@ -40,7 +41,7 @@ func (s *ClusterMetricsTestSuite) TestZeroNodes() {
 
 	metrics := s.getClusterMetrics()
 
-	s.Equal(expected, metrics)
+	s.True(protocompat.Equal(expected, metrics))
 }
 
 func (s *ClusterMetricsTestSuite) TestSingleNode() {
@@ -49,7 +50,7 @@ func (s *ClusterMetricsTestSuite) TestSingleNode() {
 
 	metrics := s.getClusterMetrics()
 
-	s.Equal(expected, metrics)
+	s.True(protocompat.Equal(expected, metrics))
 }
 
 func (s *ClusterMetricsTestSuite) TestMultipleNodes() {
@@ -60,7 +61,7 @@ func (s *ClusterMetricsTestSuite) TestMultipleNodes() {
 
 	metrics := s.getClusterMetrics()
 
-	s.Equal(expected, metrics)
+	s.True(protocompat.Equal(expected, metrics))
 }
 
 func (s *ClusterMetricsTestSuite) TestOfflineMode() {

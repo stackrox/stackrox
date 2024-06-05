@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/namespace/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -54,7 +55,7 @@ func (suite *NamespaceLoaderTestSuite) TestFromID() {
 	// Get a preloaded namespace from id.
 	namespace, err := loader.FromID(suite.ctx, namespace1)
 	suite.NoError(err)
-	suite.Equal(loader.loaded[namespace1], namespace)
+	suite.True(protocompat.Equal(loader.loaded[namespace1], namespace))
 
 	// Get a non-preloaded namespace from id.
 	thirdNamespace := &storage.NamespaceMetadata{Id: namespace3}
@@ -63,12 +64,12 @@ func (suite *NamespaceLoaderTestSuite) TestFromID() {
 
 	namespace, err = loader.FromID(suite.ctx, namespace3)
 	suite.NoError(err)
-	suite.Equal(thirdNamespace, namespace)
+	suite.True(protocompat.Equal(thirdNamespace, namespace))
 
 	// Above call should now be preloaded.
 	namespace, err = loader.FromID(suite.ctx, namespace3)
 	suite.NoError(err)
-	suite.Equal(loader.loaded[namespace3], namespace)
+	suite.True(protocompat.Equal(loader.loaded[namespace3], namespace))
 }
 
 func (suite *NamespaceLoaderTestSuite) TestFromIDs() {

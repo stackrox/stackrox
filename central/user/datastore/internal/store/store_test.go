@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -72,7 +73,7 @@ func (s *UserStoreTestSuite) TestUserStore() {
 	for _, a := range users {
 		full, err := s.sto.GetUser(a.GetId())
 		s.NoError(err)
-		s.Equal(a, full)
+		s.True(protocompat.Equal(a, full))
 	}
 
 	retrievedUsers, err := s.sto.GetAllUsers()

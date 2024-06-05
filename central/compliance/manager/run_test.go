@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgStandards "github.com/stackrox/rox/pkg/compliance/checks/standards"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -122,9 +123,9 @@ func (s *RunTestSuite) TestFoldNodeResults() {
 
 	complianceRunResults := testRun.collectResults(testRunData, testNodeResults)
 	s.Require().Contains(complianceRunResults.NodeResults, testNodeID)
-	s.Equal(expectedNodeRunResults, complianceRunResults.NodeResults[testNodeID])
+	s.True(protocompat.Equal(expectedNodeRunResults, complianceRunResults.NodeResults[testNodeID]))
 
-	s.Equal(expectedClusterRunResults, complianceRunResults.GetClusterResults())
+	s.True(protocompat.Equal(expectedClusterRunResults, complianceRunResults.GetClusterResults()))
 }
 
 func (s *RunTestSuite) TestNoteMissing() {
@@ -170,7 +171,7 @@ func (s *RunTestSuite) TestNoteDoesNotReplace() {
 	// The existing result must not have changed
 	s.Require().Contains(clusterResults, existingResultName)
 	returnedResult := clusterResults[existingResultName]
-	s.Equal(existingResult, returnedResult)
+	s.True(protocompat.Equal(existingResult, returnedResult))
 }
 
 func (s *RunTestSuite) TestMergesMultipleClusterResults() {

@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -134,7 +135,7 @@ func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(requestConfig, result)
+				s.True(protocompat.Equal(requestConfig, result))
 			}
 		})
 	}
@@ -233,7 +234,7 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(&apiV2.Empty{}, result)
+				s.True(protocompat.Equal(&apiV2.Empty{}, result))
 			}
 		})
 	}
@@ -299,7 +300,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 
 			configs, err := s.service.ListReportConfigurations(allAccessContext, tc.query)
 			s.NoError(err)
-			s.Equal(expectedResp, configs)
+			s.True(protocompat.Equal(expectedResp, configs))
 		})
 	}
 }
@@ -355,7 +356,7 @@ func (s *ReportServiceTestSuite) TestGetReportConfigurationByID() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(expectedResp, config)
+				s.True(protocompat.Equal(expectedResp, config))
 			}
 		})
 	}
@@ -1033,7 +1034,7 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(tc.resp, response)
+				s.True(protocompat.Equal(tc.resp, response))
 			}
 		})
 	}
@@ -1194,7 +1195,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(&apiV2.Empty{}, response)
+				s.True(protocompat.Equal(&apiV2.Empty{}, response))
 			}
 		})
 	}
@@ -1343,7 +1344,7 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(&apiV2.Empty{}, response)
+				s.True(protocompat.Equal(&apiV2.Empty{}, response))
 			}
 		})
 	}

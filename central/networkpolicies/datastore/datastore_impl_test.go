@@ -114,7 +114,7 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 	result, found, err := s.dataStore.GetNetworkPolicy(s.hasNS1ReadCtx, FakeID1)
 	s.NoError(err)
 	s.True(found)
-	s.Equal(result, netPolNm1)
+	s.True(protocompat.Equal(result, netPolNm1))
 
 	// Test we can get with NS2 permissions.
 	s.storage.EXPECT().Get(gomock.Any(), FakeID2).Return(netPolNm2, true, nil)
@@ -122,7 +122,7 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 	result, found, err = s.dataStore.GetNetworkPolicy(s.hasNS2ReadCtx, FakeID2)
 	s.NoError(err)
 	s.True(found)
-	s.Equal(result, netPolNm2)
+	s.True(protocompat.Equal(result, netPolNm2))
 
 	// Test we cannot do the opposite.
 	s.storage.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Return(nil, nil)
