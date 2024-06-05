@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	podSearch "github.com/stackrox/rox/central/pod/datastore/internal/search"
 	podStore "github.com/stackrox/rox/central/pod/datastore/internal/store/postgres"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -92,6 +93,10 @@ func (s *PodDatastoreSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndic
 // Add plops, process indicators, pods. Delete one of the pods.
 // Check that the correct pod, process indicators, and plops are deleted.
 func (s *PodDatastoreSuite) TestRemovePod() {
+
+	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
+	s.Nil(err)
+	s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}))
 
 	s.NoError(s.datastore.UpsertPod(s.ctx, fixtures.GetPod1()))
 

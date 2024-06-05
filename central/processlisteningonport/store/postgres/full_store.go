@@ -84,10 +84,11 @@ func (s *fullStoreImpl) checkAccess(
 
 	if err != nil {
 		// Do not be alarmed if the error is simply NoRows
-		if err == pgx.ErrNoRows { return false, nil }
-		if err != nil {
-			log.Warnf("%s: %s", getClusterAndNamespaceStmt, err)
+		if err == pgx.ErrNoRows {
+			return false, nil
 		}
+		log.Warnf("%s: %s", getClusterAndNamespaceStmt, err)
+
 		return false, err
 	}
 	defer rows.Close()
@@ -121,7 +122,9 @@ func (s *fullStoreImpl) checkAccesssForRows(
 			return false, sac.ErrResourceAccessDenied
 		}
 
-	} else { return false, nil }
+	} else {
+		return false, nil
+	}
 
 	return true, nil
 }
