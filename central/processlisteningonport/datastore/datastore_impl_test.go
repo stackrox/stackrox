@@ -82,7 +82,7 @@ func (suite *PLOPDataStoreTestSuite) TearDownTest() {
 
 func (suite *PLOPDataStoreTestSuite) getPlopsFromDB() []*storage.ProcessListeningOnPortStorage {
 	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
-	err := suite.datastore.WalkAll(suite.hasAllCtx,
+	err := suite.datastore.WalkAll(suite.hasReadCtx,
 		func(plop *storage.ProcessListeningOnPortStorage) error {
 			plopsFromDB = append(plopsFromDB, plop)
 			return nil
@@ -214,7 +214,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasAllCtx, fixtureconsts.Cluster1, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -240,7 +240,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 		},
 	})
 
-	// Check deployment that doesn't exist
+	// Check a deployment that doesn't exist
 	newPlops, err = suite.datastore.GetProcessListeningOnPort(
 		suite.hasReadCtx, fixtureconsts.Deployment3)
 	suite.NoError(err)
@@ -270,7 +270,51 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
-// TestPLOPAdd: Tests getting the listening endpoints with various levels of access
+// TestPLOPAddNoDeployments: Add PLOPs without a matching deployment in the deployments table
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoDeployments() {
+	indicators := getIndicators()
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasReadCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 0)
+
+	// Verify that newly added PLOP object doesn't have Process field set in
+	// the serialized column (because all the info is stored in the referenced
+	// process indicator record)
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:                 newPlopsFromDB[0].GetId(),
+		Port:               plopObjects[0].GetPort(),
+		Protocol:           plopObjects[0].GetProtocol(),
+		CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
+		ProcessIndicatorId: indicators[0].GetId(),
+		Closed:             false,
+		Process:            nil,
+		DeploymentId:       plopObjects[0].GetDeploymentId(),
+		PodUid:             plopObjects[0].GetPodUid(),
+		ClusterId:          fixtureconsts.Cluster1,
+		Namespace:          fixtureconsts.Namespace1,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+}
+
+// TestPLOPSAC: Tests getting the PLOPs with various levels of access
 func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 	indicators := getIndicators()
 
@@ -282,12 +326,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasAllCtx, fixtureconsts.Cluster1, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
-	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(suite.T(), suite.postgres.DB)
-	suite.Nil(err)
-	suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}))
-	suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: fixtureconsts.Deployment2, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}))
+	suite.addDeployments()
 
 	cases := map[string]struct {
 		ctx           context.Context
@@ -2479,13 +2520,13 @@ func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPs() {
 
 			err = suite.store.UpsertMany(suite.hasWriteCtx, c.initialPlops)
 			suite.NoError(err)
-			plopCount, err := suite.store.Count(suite.hasAllCtx, search.EmptyQuery())
+			plopCount, err := suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
 			suite.NoError(err)
 			suite.Equal(len(c.initialPlops), plopCount)
 
 			suite.datastore.PruneOrphanedPLOPs(suite.hasWriteCtx, orphanWindow)
 
-			plopCount, err = suite.store.Count(suite.hasAllCtx, search.EmptyQuery())
+			plopCount, err = suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
 			suite.NoError(err)
 			suite.Equal(len(c.initialPlops)-len(c.expectedPlopDeletions), plopCount)
 
@@ -2654,13 +2695,13 @@ func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPsByProcesses() {
 
 			err = suite.store.UpsertMany(suite.hasWriteCtx, c.initialPlops)
 			suite.NoError(err)
-			plopCount, err := suite.store.Count(suite.hasAllCtx, search.EmptyQuery())
+			plopCount, err := suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
 			suite.NoError(err)
 			suite.Equal(len(c.initialPlops), plopCount)
 
 			suite.datastore.PruneOrphanedPLOPsByProcessIndicators(suite.hasAllCtx, orphanWindow)
 
-			plopCount, err = suite.store.Count(suite.hasAllCtx, search.EmptyQuery())
+			plopCount, err = suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
 			suite.NoError(err)
 			suite.Equal(len(c.initialPlops)-len(c.expectedPlopDeletions), plopCount)
 

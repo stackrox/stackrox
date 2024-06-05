@@ -44,7 +44,7 @@ const getByDeploymentStmt = "SELECT plop.serialized, " +
 	"ON plop.processindicatorid = proc.id " +
 	"WHERE plop.deploymentid = $1 AND plop.closed = false"
 
-const getClusterAndNamespaceStmt = "select namespace, clusterid from deployments where id = $1"
+const getClusterAndNamespaceStmt = "SELECT namespace, clusterid FROM deployments WHERE id = $1"
 
 // Manually written function to get PLOP joined with ProcessIndicators
 func (s *fullStoreImpl) GetProcessListeningOnPort(
@@ -62,7 +62,6 @@ func (s *fullStoreImpl) GetProcessListeningOnPort(
 	})
 
 	if err != nil {
-		log.Info("Returning nil, err")
 		return nil, err
 	}
 
@@ -85,21 +84,19 @@ func (s *fullStoreImpl) checkAccess(
 
 	if err != nil {
 		// Do not be alarmed if the error is simply NoRows
-		err = pgutils.ErrNilIfNoRows(err)
+		if err == pgx.ErrNoRows { return false, nil }
 		if err != nil {
 			log.Warnf("%s: %s", getClusterAndNamespaceStmt, err)
 		}
-		return true, err
+		return false, err
 	}
 	defer rows.Close()
 
-	err = s.checkAccesssForRows(ctx, rows)
+	allowed, err := s.checkAccesssForRows(ctx, rows)
 
 	if err != nil {
-		return true, err
+		return false, err
 	}
-
-	allowed := rows != nil
 
 	return allowed, nil
 }
@@ -107,24 +104,26 @@ func (s *fullStoreImpl) checkAccess(
 func (s *fullStoreImpl) checkAccesssForRows(
 	ctx context.Context,
 	rows pgx.Rows,
-) error {
-	for rows.Next() {
+) (bool, error) {
+
+	// There should only be one row
+	if rows.Next() {
 		var namespace string
 		var clusterID string
 
 		if err := rows.Scan(&namespace, &clusterID); err != nil {
-			return pgutils.ErrNilIfNoRows(err)
+			return false, pgutils.ErrNilIfNoRows(err)
 		}
 
 		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID), sac.NamespaceScopeKey(namespace)); err != nil {
-			return err
+			return false, err
 		} else if !ok {
-			return sac.ErrResourceAccessDenied
+			return false, sac.ErrResourceAccessDenied
 		}
 
-	}
+	} else { return false, nil }
 
-	return nil
+	return true, nil
 }
 
 func (s *fullStoreImpl) retryableGetPLOP(
