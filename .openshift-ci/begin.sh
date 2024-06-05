@@ -22,9 +22,8 @@ fi
 
 # TODO:: Remove ocp-stable if it's deleted from the OSCI, e.g.,
 # https://github.com/openshift/release/blob/a14f76e0918b047d2406e9eb6baac82b55ced05a/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-stable-scanner-v4.yaml
-if [[ "${JOB_NAME:-}" =~ -ocp-(4|stable)- ]]; then
+if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
     info "Setting worker node type and count for OCP 4 jobs"
-    # https://github.com/stackrox/automation-flavors/blob/e6daf10b7df49fc003584790e25def036b2a3b0b/openshift-4/entrypoint.sh#L76
     set_ci_shared_export WORKER_NODE_COUNT 2
     set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
 fi
@@ -35,7 +34,7 @@ if [[ "${JOB_NAME:-}" =~ -gke-perf-scale- ]]; then
     set_ci_shared_export MACHINE_TYPE n1-standard-8
 fi
 
-if [[ "${JOB_NAME:-}" =~ ocp-4-.*-perf-scale- ]]; then
+if [[ "${JOB_NAME:-}" =~ ocp-.*-perf-scale- ]]; then
     info "Setting worker node type and count for OCP perf scale jobs"
     set_ci_shared_export WORKER_NODE_COUNT 9
     set_ci_shared_export WORKER_NODE_TYPE n1-standard-8
