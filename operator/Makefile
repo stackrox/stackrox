@@ -456,11 +456,11 @@ bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bun
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) build/bundle/
 
 .PHONY: bundle-test-image
-bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in the registry. Bundle image must be pushed beforehand.
+bundle-test-image: bundle-build operator-sdk ## Run scorecard tests against bundle image in the registry. Bundle image must be pushed beforehand.
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) $(BUNDLE_IMG)
 
 .PHONY: index-build
-index-build: bundle-post-process yq ## Build Index (a.k.a. Catalog) image with the bundles. Bundle image must be pushed beforehand.
+index-build: docker-build bundle-build bundle-post-process yq ## Build Index (a.k.a. Catalog) image with the bundles. Bundle image must be pushed beforehand.
 # If the bundle has `replaces:` attribute in CSV, then the one it replaces has to already be in the index. Otherwise,
 # validation of the index fails because more than one version is identified as the head of the channel. An example of an
 # error: `multiple channel heads found in graph: rhacs-operator.v3.67.0, rhacs-operator.v3.69.0`
@@ -479,17 +479,17 @@ index-build: bundle-post-process yq ## Build Index (a.k.a. Catalog) image with t
 ##@ Push images
 
 .PHONY: docker-push
-docker-push: ## Push docker image with the operator.
+docker-push: docker-build  ## Push docker image with the operator.
 # Use push-as-manifest-list.sh here to make sure manifests for the operator image are created. The script also retries on error.
 # We're not using push-as-manifest-list.sh for pushing other two images because they are independent from architecture.
 	../scripts/ci/push-as-manifest-list.sh "$(IMG)"
 
 .PHONY: docker-push-bundle
-docker-push-bundle: ## Push docker image with the bundle.
+docker-push-bundle: bundle-build  ## Push docker image with the bundle.
 	docker push "$(BUNDLE_IMG)"
 
 .PHONY: docker-push-index
-docker-push-index: ## Push docker image with the index.
+docker-push-index: index-build  ## Push docker image with the index.
 	docker push "$(INDEX_IMG)"
 
 # PLATFORMS defines the target platforms for the manager image be built to provide support to multiple
