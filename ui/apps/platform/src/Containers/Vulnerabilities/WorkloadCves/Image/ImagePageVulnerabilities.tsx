@@ -122,7 +122,7 @@ function ImagePageVulnerabilities({
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
-            field: 'CVE',
+            field: 'Severity',
             direction: 'desc',
         },
         onSort: () => setPage(1),
