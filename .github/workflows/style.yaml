@@ -102,10 +102,10 @@ jobs:
         uses: ./.github/actions/cache-gradle-dependencies
 
       - name: Fetch UI deps
-        run: make -C ui deps
+        run: make -j4 -C ui deps
 
       - name: make style-slim
-        run: make style-slim
+        run: make -j4 style-slim
 
   golangci-lint:
     timeout-minutes: 240
@@ -127,7 +127,7 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Check Cache golangci-lint
-      run: make golangci-lint-cache-status
+      run: make -j4 golangci-lint-cache-status
 
     - name: Cache golangci-lint
       uses: actions/cache@v4
@@ -139,13 +139,13 @@ jobs:
           go-lint-v2-
 
     - name: Check cache golangci-lint
-      run: make golangci-lint-cache-status
+      run: make -j4 golangci-lint-cache-status
 
     - name: make golangci-lint
-      run: make golangci-lint
+      run: make -j4 golangci-lint
 
     - name: Check Cache golangci-lint
-      run: make golangci-lint-cache-status
+      run: make -j4 golangci-lint-cache-status
 
   slack-on-style-failure:
     env:
