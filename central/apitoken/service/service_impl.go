@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"strings"
-	"sort"
+	"slices"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
