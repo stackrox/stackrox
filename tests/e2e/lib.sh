@@ -408,12 +408,12 @@ pause_stackrox_operator_reconcile() {
     local central_namespace=${1:-stackrox}
     local sensor_namespace=${2:-stackrox}
 
-    kubectl -n "${central_namespace}" \
+    kubectl annotate -n "${central_namespace}" \
         centrals.platform.stackrox.io \
         stackrox-central-services \
         stackrox.io/pause-reconcile=true
 
-    kubectl -n "${sensor_namespace}" \
+    kubectl annotate -n "${sensor_namespace}" \
         securedclusters.platform.stackrox.io \
         stackrox-secured-cluster-services \
         stackrox.io/pause-reconcile=true
