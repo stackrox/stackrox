@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -194,7 +195,7 @@ func migrate(database *types.Databases) error {
 				return errors.Wrapf(err, "failed to query v2 report config with id %s", newConfig.GetId())
 			}
 			if migrated {
-				if !reflect.DeepEqual(newConfig, data) {
+				if !protocompat.Equal(newConfig, data) {
 					log.Errorf("v1 report config %+v was migrated to create v2 report config.The v1 config has changed since last migration. Skipping re-migration...", reportConfigProto)
 				}
 				continue

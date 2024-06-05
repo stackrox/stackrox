@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,7 +86,7 @@ func Test_getCentralPod(t *testing.T) {
 				t.Errorf("getCentralPod() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if !protocompat.Equal(got, tt.want) {
 				t.Errorf("getCentralPod() = %v, want %v", got, tt.want)
 			}
 		})
