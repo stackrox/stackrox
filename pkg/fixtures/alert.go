@@ -299,3 +299,107 @@ func GetSACTestAlertSet() []*storage.Alert {
 	alerts = append(alerts, getImageAlertWithID(uuid.NewV4().String()))
 	return alerts
 }
+
+// GetSerializationTestAlert returns a mock alert that can be used
+// for serialization and deserialization tests.
+//
+// The equivalent JSON serialized format can be obtained with
+// GetJSONSerializedTestAlert.
+func GetSerializationTestAlert() *storage.Alert {
+	return &storage.Alert{
+		Id: fixtureconsts.Alert1,
+		Violations: []*storage.Alert_Violation{
+			{
+				Message: "Deployment is affected by 'CVE-2017-15670'",
+			},
+			{
+				Message: "This is a kube event violation",
+				MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+					KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+						Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+							{Key: "pod", Value: "nginx"},
+							{Key: "container", Value: "nginx"},
+						},
+					},
+				},
+			},
+		},
+		ProcessViolation: &storage.Alert_ProcessViolation{
+			Message: "This is a process violation",
+		},
+		ClusterId:   fixtureconsts.Cluster1,
+		ClusterName: "prod cluster",
+		Namespace:   "stackrox",
+	}
+}
+
+// GetJSONSerializedTestAlertWithDefaults returns the ProtoJSON serialized form
+// of the alert returned by GetSerializationTestAlert,
+// with default value emission during serialization.
+func GetJSONSerializedTestAlertWithDefaults() string {
+	return `{
+	"id": "aeaaaaaa-bbbb-4011-0000-111111111111",
+	"clusterId": "caaaaaaa-bbbb-4011-0000-111111111111",
+	"clusterName": "prod cluster",
+	"enforcement": null,
+	"firstOccurred": null,
+	"lifecycleStage": "DEPLOY",
+	"namespace": "stackrox",
+	"namespaceId": "",
+	"policy": null,
+	"processViolation": {
+		"message": "This is a process violation",
+		"processes": []
+	},
+	"resolvedAt":null,
+	"snoozeTill":null,
+	"state": "ACTIVE",
+	"time": null,
+	"violations": [
+		{
+			"message": "Deployment is affected by 'CVE-2017-15670'",
+			"time": null,
+			"type": "GENERIC"
+		},
+		{
+			"message": "This is a kube event violation",
+			"keyValueAttrs": {
+				"attrs": [
+					{"key": "pod", "value": "nginx"},
+					{"key": "container", "value": "nginx"}
+				]
+			},
+			"time": null,
+			"type": "GENERIC"
+		}
+	]
+}`
+}
+
+// GetJSONSerializedTestAlert returns the ProtoJSON serialized form
+// of the alert returned by GetSerializationTestAlert.
+func GetJSONSerializedTestAlert() string {
+	return `{
+	"id": "aeaaaaaa-bbbb-4011-0000-111111111111",
+	"clusterId": "caaaaaaa-bbbb-4011-0000-111111111111",
+	"clusterName": "prod cluster",
+	"namespace": "stackrox",
+	"processViolation": {
+		"message": "This is a process violation"
+	},
+	"violations": [
+		{
+			"message": "Deployment is affected by 'CVE-2017-15670'"
+		},
+		{
+			"message": "This is a kube event violation",
+			"keyValueAttrs": {
+				"attrs": [
+					{"key": "pod", "value": "nginx"},
+					{"key": "container", "value": "nginx"}
+				]
+			}
+		}
+	]
+}`
+}
