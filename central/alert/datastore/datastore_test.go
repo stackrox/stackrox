@@ -74,7 +74,8 @@ func (s *alertDataStoreTestSuite) TestSearchRawAlerts() {
 	result, err := s.dataStore.SearchRawAlerts(s.hasReadCtx, &v1.Query{})
 
 	s.Equal(errFake, err)
-	s.Equal([]*storage.Alert{{Id: alerttest.FakeAlertID}}, result)
+	s.Len(result, 1)
+	s.Equal(alerttest.FakeAlertID, result[0].GetId())
 }
 
 func (s *alertDataStoreTestSuite) TestSearchListAlerts() {
@@ -83,7 +84,8 @@ func (s *alertDataStoreTestSuite) TestSearchListAlerts() {
 	result, err := s.dataStore.SearchListAlerts(s.hasReadCtx, &v1.Query{})
 
 	s.Equal(errFake, err)
-	s.Equal(alerttest.NewFakeListAlertSlice(), result)
+	s.Len(result, 1)
+	s.Equal(alerttest.NewFakeListAlert(), result[0])
 }
 
 func (s *alertDataStoreTestSuite) TestCountAlerts_Success() {

@@ -51,27 +51,30 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		if !ok || !bannedFunctions.Contains(fn.FullName()) {
 			return
 		}
-		if !hasStorageArg(call, pass) {
+		has, expr := hasStorageArg(call, pass)
+		if !has {
 			return
 		}
 		pass.Report(analysis.Diagnostic{
-			Pos:     call.End(),
+			Pos:     expr.Pos(),
 			Message: "Use protocompat.Equal to compare proto.Message",
 		})
 	})
 	return nil, nil
 }
 
-func hasStorageArg(call *ast.CallExpr, pass *analysis.Pass) bool {
+func hasStorageArg(call *ast.CallExpr, pass *analysis.Pass) (bool, ast.Expr) {
 	for _, arg := range call.Args {
 		if isStorage(pass.TypesInfo, arg) {
-			return true
+			return true, arg
 		}
 	}
-	return false
+	return false, ast.Expr(nil)
 }
 
 func isStorage(info *types.Info, expr ast.Expr) bool {
 	typ := info.Types[expr].Type
-	return typ != nil && strings.Contains(typ.String(), "github.com/stackrox/rox/generated/storage.")
+	return typ != nil &&
+		strings.Contains(typ.String(), "github.com/stackrox/rox/generated/storage.") &&
+		typ.Underlying().String() != "int32"
 }

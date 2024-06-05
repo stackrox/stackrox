@@ -951,7 +951,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 
 					for componentID, expectedContexts := range testCase.acsToUpdate {
 						acID := acConverter.ComposeID(deployment.GetId(), componentID)
-						assert.Contains(t, actualAcs, acID)
+						assert.NotEmpty(t, actualAcs[acID])
 						assert.Equal(t, deployment.GetId(), actualAcs[acID].GetDeploymentId())
 						assert.Equal(t, componentID, actualAcs[acID].GetComponentId())
 						assert.Equal(t, acID, actualAcs[acID].GetId())
