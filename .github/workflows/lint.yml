@@ -48,4 +48,4 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Pylint
-        run: make -C .openshift-ci lint
+        run: make -j4 -C .openshift-ci lint
