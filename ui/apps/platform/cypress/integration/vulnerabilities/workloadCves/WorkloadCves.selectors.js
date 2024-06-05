@@ -49,6 +49,7 @@ export const selectors = {
 
     // Data table selectors
     isUpdatingTable: '*[aria-busy="true"] table',
+    tableWithLoadingSpinner: 'table tbody svg[aria-label="Loading table data"]',
     nthTableRow: (n) =>
         `.workload-cves-table-container > table > tbody:nth-of-type(${n}) > tr:nth-of-type(1)`,
     firstTableRow: 'table tbody:nth-of-type(1) tr:nth-of-type(1)',
