@@ -34,6 +34,8 @@ message ComplianceCheckResult {
   repeated string warnings = 10;
   ComplianceCheckStatus status = 11;
   string rule_name = 12;
+  map<string, string> labels = 13;
+  map<string, string> annotations = 14;
 }
 
 message ComplianceCheckData {
@@ -55,6 +57,8 @@ message ComplianceClusterCheckStatus {
   string rationale = 8;
   repeated string valuesUsed = 9;
   repeated string warnings = 10;
+  map<string, string> labels = 11;
+  map<string, string> annotations = 12;
 }
 
 // ComplianceScanResult provides the results of a scan
@@ -108,6 +112,12 @@ message ComplianceProfileClusterRequest {
   RawQuery query = 3;
 }
 
+message ComplianceCheckDetailRequest {
+  string profile_name = 1;
+  string check_name = 2;
+  RawQuery query = 3;
+}
+
 service ComplianceResultsService {
   // GetComplianceScanCheckResult returns the specific result by ID
   rpc GetComplianceScanCheckResult(ResourceByID) returns (ComplianceClusterCheckStatus) {
@@ -144,5 +154,10 @@ service ComplianceResultsService {
   // GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
   rpc GetComplianceProfileClusterResults(ComplianceProfileClusterRequest) returns (ListComplianceCheckResultResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/clusters/{cluster_id}"};
+  }
+
+  // GetComplianceProfileCheckDetails
+  rpc GetComplianceProfileCheckDetails(ComplianceCheckDetailRequest) returns (ComplianceClusterCheckStatus) {
+    option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/checks/{check_name}/details"};
   }
 }
