@@ -44,15 +44,15 @@ func (f *UpdaterFactory) Create(ctx context.Context, unmarshaler v1.ConfigUnmars
 		return nil, err
 	}
 
-	updaterSet, err := libVulnFac.UpdaterSet(ctx)
+	libVulnUpdSet, err := libVulnFac.UpdaterSet(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	var updaters []v1.Updater
-	for _, updater := range updaterSet.Updaters() {
+	for _, libVulnUpd := range libVulnUpdSet.Updaters() {
 		wrappedUpdater := &Updater{
-			libvulnUpdater: updater,
+			libvulnUpdater: libVulnUpd,
 		}
 		updaters = append(updaters, wrappedUpdater)
 	}
