@@ -20,6 +20,7 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';
 import { getTableUIState } from 'utils/getTableUIState';
 
+import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
@@ -81,7 +82,7 @@ function ProfileChecksTable({
             <Table>
                 <Thead>
                     <Tr>
-                        <Th sort={getSortParams('Compliance Check Name')} width={60}>
+                        <Th sort={getSortParams(CHECK_NAME_QUERY)} width={60}>
                             Check
                         </Th>
                         <Th modifier="fitContent">Controls</Th>
