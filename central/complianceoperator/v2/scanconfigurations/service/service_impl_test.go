@@ -128,6 +128,13 @@ func (s *ComplianceScanConfigServiceTestSuite) TestComplianceScanConfigurationNa
 	_, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().Error(err)
 
+	request.ScanName = "default"
+	_, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Contains(err.Error(), "Scan configuration name \"default\" cannot be used as it is reserved by the Compliance Operator")
+
+	request.ScanName = "default-auto-apply"
+	_, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Contains(err.Error(), "Scan configuration name \"default-auto-apply\" cannot be used as it is reserved by the Compliance Operator")
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfiguration() {
