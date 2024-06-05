@@ -53,7 +53,7 @@ spec:
     name: output-image-repo
     type: string
   - default: "-fast"
-    description: Suffix that will be appended to the output image tag and embedded version strings.
+    description: Suffix that will be appended to the output image tag and embedded in version strings.
     name: output-tag-suffix
     type: string
   - default: .

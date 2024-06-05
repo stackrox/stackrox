@@ -53,7 +53,7 @@ spec:
     name: output-image-repo
     type: string
   - default: "-fast"
-    description: Suffix that will be appended to the output image tag.
+    description: Suffix that will be appended to the output image tag and embedded in version strings.
     name: output-tag-suffix
     type: string
   - default: .
@@ -218,7 +218,7 @@ spec:
         script: |
           #!/usr/bin/env bash
           set -euo pipefail
-          microdnf install -y zip
+          microdnf -y install zip
           exec "$(workspaces.source.path)/source/image/rhel/fetch-stackrox-data.sh" \
               "$(workspaces.source.path)/source/.konflux/stackrox-data"
     workspaces:
