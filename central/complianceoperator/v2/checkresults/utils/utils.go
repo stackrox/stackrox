@@ -42,6 +42,11 @@ func GetControlsForScanResults(ctx context.Context, ruleDS complianceRuleDS.Data
 	if err != nil {
 		return nil, errors.Wrapf(errox.NotFound, "Unable to retrieve benchmarks for profile %v", profileName)
 	}
+	// If the profile does not map to a benchmark then we cannot map control data.
+	if len(benchmarks) == 0 {
+		return nil, nil
+	}
+
 	var benchmarkShortNames []string
 	for _, benchmark := range benchmarks {
 		benchmarkShortNames = append(benchmarkShortNames, benchmark.GetShortName())
