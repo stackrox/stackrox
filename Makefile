@@ -7,8 +7,6 @@ BASE_DIR=$(CURDIR)
 BENCHTIME ?= 1x
 BENCHTIMEOUT ?= 20m
 BENCHCOUNT ?= 1
-NPROCS = $(shell nproc --all || printf 1)
-MAKEFLAGS += -j$(NPROCS)
 
 ifeq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
 # Podman DTRT by running processes unprivileged in containers,

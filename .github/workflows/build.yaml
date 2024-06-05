@@ -95,10 +95,10 @@ jobs:
       - uses: ./.github/actions/handle-tagged-build
 
       - name: Fetch UI deps
-        run: make -C ui deps
+        run: make -j4 -C ui deps
 
       - name: Build UI
-        run: make -C ui build
+        run: make -j4 -C ui build
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
@@ -128,7 +128,7 @@ jobs:
       - uses: ./.github/actions/handle-tagged-build
 
       - name: Build CLI
-        run: make cli
+        run: make -j4 cli
 
       - name: Bundle build to preserve permissions
         run: tar -cvzf cli-build.tgz bin
@@ -190,10 +190,10 @@ jobs:
         run: |
           if [[ "${{ matrix.arch }}" != "amd64" ]]; then
             echo "Building non-amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make -j4 build-prep main-build-nodeps
           else
             echo "Building amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make -j4 build-prep main-build-nodeps
           fi
 
       - name: Bundle the build to preserve permissions
@@ -229,7 +229,7 @@ jobs:
 
       - name: Generate the swagger docs
         run: |
-          make swagger-docs
+          make -j4 swagger-docs
           # Workaround to handle https://github.com/actions/cache/issues/753
           rm -rf .proto
 
@@ -352,7 +352,7 @@ jobs:
 
       # explicitly fetch deps just in case cache was not ready
       - name: Fetch UI deps
-        run: make -C ui deps
+        run: make -j4 -C ui deps
 
       - name: Generate OSS notice
         run: make ossls-notice
@@ -367,14 +367,14 @@ jobs:
 
       - name: Build main images
         run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
+          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -j4 docker-build-main-image
 
       - name: Check debugger presence in the main image
         run: make check-debugger
 
       - name: Build roxctl image
         run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
+          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -j4 docker-build-roxctl-image
 
       # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
       - name: Docker login
@@ -568,7 +568,7 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          make -C operator/ docker-push docker-push-bundle | cat
+          make -j4 -C operator/ docker-push docker-push-bundle | cat
 
       # Index image can only be built once bundle was pushed
       - name: Build index
@@ -583,7 +583,7 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          make -C operator/ docker-push-index | cat
+          make -j4 -C operator/ docker-push-index | cat
 
   scan-go-binaries:
     if: |
