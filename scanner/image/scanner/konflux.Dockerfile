@@ -24,6 +24,8 @@ RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-script
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
+ARG MAIN_IMAGE_TAG
+
 LABEL \
     com.redhat.component="rhacs-scanner-v4-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
@@ -37,8 +39,7 @@ LABEL \
     summary="The image scanner v4 for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     # We must set version label to prevent inheriting value set in the base stage.
-    # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
-    version="0.0.1-todo"
+    version="${MAIN_IMAGE_TAG}"
 
 COPY --from=builder \
     /src/scanner/image/scanner/scripts/entrypoint.sh \
