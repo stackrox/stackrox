@@ -1,6 +1,8 @@
 package protocompat
 
 import (
+	"errors"
+
 	"github.com/gogo/protobuf/proto"
 )
 
@@ -30,14 +32,26 @@ func Equal(a proto.Message, b proto.Message) bool {
 	return proto.Equal(a, b)
 }
 
+// ErrNil is the error returned if Marshal is called with nil.
+var ErrNil = errors.New("proto: Marshal called with nil")
+
 // Marshal takes a protocol buffer message and encodes it into
 // the wire format, returning the data. This is the main entry point.
-func Marshal(msg proto.Message) ([]byte, error) {
-	return proto.Marshal(msg)
+func Marshal(msg marshalable) ([]byte, error) {
+	res, err := msg.Marshal()
+	if res == nil && err == nil {
+		return nil, ErrNil
+	}
+
+	return res, err
+}
+
+type marshalable interface {
+	Marshal() ([]byte, error)
 }
 
 // MarshalTextString writes a given protocol buffer in text format,
-// returning the string directly..
+// returning the string directly.
 func MarshalTextString(msg proto.Message) string {
 	return proto.MarshalTextString(msg)
 }
@@ -48,8 +62,12 @@ func MarshalTextString(msg proto.Message) string {
 //
 // Unmarshal resets pb before starting to unmarshal, so any existing data
 // in pb is always removed.
-func Unmarshal(dAtA []byte, msg proto.Message) error {
-	return proto.Unmarshal(dAtA, msg)
+func Unmarshal[T any, PT Unmarshaler[T]](dAtA []byte, msg PT) error {
+	if dAtA == nil {
+		return ErrNil
+	}
+
+	return msg.Unmarshal(dAtA)
 }
 
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
@@ -62,8 +80,7 @@ type Unmarshaler[T any] interface {
 // and that have a Clone deep-copy method.
 type ClonedUnmarshaler[T any] interface {
 	Clone() *T
-	proto.Unmarshaler
-	*T
+	Unmarshaler[T]
 }
 
 // Merge merges src into dst.

@@ -17,8 +17,7 @@ func TestErrorOnNilMarshal(t *testing.T) {
 	assert.Equal(t, proto.ErrNil, err)
 
 	var img *storage.Image
-	var msg protocompat.Message = img
-	_, err = protocompat.Marshal(msg)
+	_, err = protocompat.Marshal(img)
 	assert.Equal(t, proto.ErrNil, err)
 
 	_, err = protocompat.Marshal(&storage.Image{})
@@ -26,10 +25,7 @@ func TestErrorOnNilMarshal(t *testing.T) {
 }
 
 func TestErrorOnNilUnmarshal(t *testing.T) {
-	err := protocompat.Unmarshal(nil, nil)
-	assert.Equal(t, proto.ErrNil, err)
-
-	err = protocompat.Unmarshal(nil, (*storage.Image)(nil))
+	err := protocompat.Unmarshal(nil, (*storage.Image)(nil))
 	assert.Equal(t, proto.ErrNil, err)
 
 	var img *storage.Image
