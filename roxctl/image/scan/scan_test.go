@@ -3,7 +3,6 @@ package scan
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"net"
 	"os"
 	"path"
@@ -341,19 +340,15 @@ func (s *imageScanTestSuite) TestConstruct() {
 }
 
 func (s *imageScanTestSuite) TestDeprecationNote() {
-	expectedDeprecationNote := fmt.Sprintf("WARN:\tFlag --format has been deprecated, %s\n", deprecationNote)
 	emptyOutputFormatPrinterFactory, err := printer.NewObjectPrinterFactory("json", printer.NewJSONPrinterFactory(false, false))
 	s.Require().NoError(err)
 	emptyOutputFormatPrinterFactory.OutputFormat = ""
 
 	cases := map[string]struct {
-		formatChanged    bool
-		outputChanged    bool
-		printDeprecation bool
+		formatChanged bool
+		outputChanged bool
 	}{
-		"default values are not changed, the deprecation warning should be printed": {
-			printDeprecation: true,
-		},
+		"default values are not changed, the deprecation warning should not be printed": {},
 		"changes in format, deprecation warning should not be printed": {
 			formatChanged: true,
 		},
@@ -378,11 +373,7 @@ func (s *imageScanTestSuite) TestDeprecationNote() {
 			cmd.Flag("output").Changed = c.outputChanged
 
 			_ = imgScanCmd.Construct(nil, cmd, emptyOutputFormatPrinterFactory)
-			if c.printDeprecation {
-				s.Assert().Equal(expectedDeprecationNote, errOut.String())
-			} else {
-				s.Assert().Empty(errOut.String())
-			}
+			s.Assert().Empty(errOut.String())
 		})
 	}
 }
