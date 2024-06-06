@@ -10,6 +10,8 @@ import { VulnerabilityState } from 'types/cve.proto';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { TableUIState } from 'utils/getTableUIState';
 import {
     getIsSomeVulnerabilityFixable,
     getHighestCvssScore,
@@ -22,7 +24,6 @@ import ImageComponentVulnerabilitiesTable, {
     imageComponentVulnerabilitiesFragment,
     imageMetadataContextFragment,
 } from './ImageComponentVulnerabilitiesTable';
-import EmptyTableResults from '../components/EmptyTableResults';
 import { WatchStatus } from '../../types';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
@@ -73,19 +74,21 @@ export const imagesForCveFragment = gql`
 `;
 
 export type AffectedImagesTableProps = {
-    images: ImageForCve[];
+    tableState: TableUIState<ImageForCve>;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     cve: string;
     vulnerabilityState: VulnerabilityState | undefined; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    onClearFilters: () => void;
 };
 
 function AffectedImagesTable({
-    images,
+    tableState,
     getSortParams,
     isFiltered,
     cve,
     vulnerabilityState,
+    onClearFilters,
 }: AffectedImagesTableProps) {
     const expandedRowSet = useSet<string>();
 
@@ -109,79 +112,88 @@ function AffectedImagesTable({
                     <Th>First discovered</Th>
                 </Tr>
             </Thead>
-            {images.length === 0 && <EmptyTableResults colSpan={7} />}
-            {images.map((image, rowIndex) => {
-                const { id, name, operatingSystem, scanTime, imageComponents } = image;
-                const vulnerabilities = imageComponents.flatMap(
-                    (imageComponent) => imageComponent.imageVulnerabilities
-                );
-                const topSeverity = getHighestVulnerabilitySeverity(vulnerabilities);
-                const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
-                const { cvss, scoreVersion } = getHighestCvssScore(vulnerabilities);
-                const hasPendingException = imageComponents.some((imageComponent) =>
-                    imageComponent.imageVulnerabilities.some(
-                        (imageVulnerability) => imageVulnerability.pendingExceptionCount > 0
-                    )
-                );
+            <TbodyUnified
+                tableState={tableState}
+                colSpan={8}
+                emptyProps={{ message: 'No images were found that are affected by this CVE' }}
+                filteredEmptyProps={{ onClearFilters }}
+                renderer={({ data }) =>
+                    data.map((image, rowIndex) => {
+                        const { id, name, operatingSystem, scanTime, imageComponents } = image;
+                        const vulnerabilities = imageComponents.flatMap(
+                            (imageComponent) => imageComponent.imageVulnerabilities
+                        );
+                        const topSeverity = getHighestVulnerabilitySeverity(vulnerabilities);
+                        const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
+                        const { cvss, scoreVersion } = getHighestCvssScore(vulnerabilities);
+                        const hasPendingException = imageComponents.some((imageComponent) =>
+                            imageComponent.imageVulnerabilities.some(
+                                (imageVulnerability) => imageVulnerability.pendingExceptionCount > 0
+                            )
+                        );
 
-                const isExpanded = expandedRowSet.has(id);
+                        const isExpanded = expandedRowSet.has(id);
 
-                return (
-                    <Tbody key={id} isExpanded={isExpanded}>
-                        <Tr>
-                            <Td
-                                expand={{
-                                    rowIndex,
-                                    isExpanded,
-                                    onToggle: () => expandedRowSet.toggle(id),
-                                }}
-                            />
-                            <Td dataLabel="Image">
-                                {name ? (
-                                    <PendingExceptionLabelLayout
-                                        hasPendingException={hasPendingException}
-                                        cve={cve}
-                                        vulnerabilityState={vulnerabilityState}
-                                    >
-                                        <ImageNameLink name={name} id={id} />
-                                    </PendingExceptionLabelLayout>
-                                ) : (
-                                    'Image name not available'
-                                )}
-                            </Td>
-                            <Td dataLabel="CVE severity" modifier="nowrap">
-                                <VulnerabilitySeverityIconText severity={topSeverity} />
-                            </Td>
-                            <Td dataLabel="CVSS" modifier="nowrap">
-                                <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
-                            </Td>
-                            <Td dataLabel="CVE status" modifier="nowrap">
-                                <VulnerabilityFixableIconText isFixable={isFixableInImage} />
-                            </Td>
-                            <Td dataLabel="Operating system">{operatingSystem}</Td>
-                            <Td dataLabel="Affected components">
-                                {imageComponents.length === 1
-                                    ? imageComponents[0].name
-                                    : `${imageComponents.length} components`}
-                            </Td>
-                            <Td dataLabel="First discovered">
-                                <DateDistance date={scanTime} />
-                            </Td>
-                        </Tr>
-                        <Tr isExpanded={isExpanded}>
-                            <Td />
-                            <Td colSpan={7}>
-                                <ExpandableRowContent>
-                                    <ImageComponentVulnerabilitiesTable
-                                        imageMetadataContext={image}
-                                        componentVulnerabilities={image.imageComponents}
+                        return (
+                            <Tbody key={id} isExpanded={isExpanded}>
+                                <Tr>
+                                    <Td
+                                        expand={{
+                                            rowIndex,
+                                            isExpanded,
+                                            onToggle: () => expandedRowSet.toggle(id),
+                                        }}
                                     />
-                                </ExpandableRowContent>
-                            </Td>
-                        </Tr>
-                    </Tbody>
-                );
-            })}
+                                    <Td dataLabel="Image">
+                                        {name ? (
+                                            <PendingExceptionLabelLayout
+                                                hasPendingException={hasPendingException}
+                                                cve={cve}
+                                                vulnerabilityState={vulnerabilityState}
+                                            >
+                                                <ImageNameLink name={name} id={id} />
+                                            </PendingExceptionLabelLayout>
+                                        ) : (
+                                            'Image name not available'
+                                        )}
+                                    </Td>
+                                    <Td dataLabel="CVE severity" modifier="nowrap">
+                                        <VulnerabilitySeverityIconText severity={topSeverity} />
+                                    </Td>
+                                    <Td dataLabel="CVSS" modifier="nowrap">
+                                        <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
+                                    </Td>
+                                    <Td dataLabel="CVE status" modifier="nowrap">
+                                        <VulnerabilityFixableIconText
+                                            isFixable={isFixableInImage}
+                                        />
+                                    </Td>
+                                    <Td dataLabel="Operating system">{operatingSystem}</Td>
+                                    <Td dataLabel="Affected components">
+                                        {imageComponents.length === 1
+                                            ? imageComponents[0].name
+                                            : `${imageComponents.length} components`}
+                                    </Td>
+                                    <Td dataLabel="First discovered">
+                                        <DateDistance date={scanTime} />
+                                    </Td>
+                                </Tr>
+                                <Tr isExpanded={isExpanded}>
+                                    <Td />
+                                    <Td colSpan={7}>
+                                        <ExpandableRowContent>
+                                            <ImageComponentVulnerabilitiesTable
+                                                imageMetadataContext={image}
+                                                componentVulnerabilities={image.imageComponents}
+                                            />
+                                        </ExpandableRowContent>
+                                    </Td>
+                                </Tr>
+                            </Tbody>
+                        );
+                    })
+                }
+            />
         </Table>
     );
 }

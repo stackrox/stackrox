@@ -3,13 +3,11 @@ import { gql, useQuery } from '@apollo/client';
 import {
     Breadcrumb,
     BreadcrumbItem,
-    Bullseye,
     Divider,
     Flex,
     PageSection,
     Pagination,
     Skeleton,
-    Spinner,
     Split,
     SplitItem,
 } from '@patternfly/react-core';
@@ -34,6 +32,7 @@ import {
     SummaryCardLayout,
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
+import { getTableUIState } from 'utils/getTableUIState';
 import {
     SearchOption,
     IMAGE_SEARCH_OPTION,
@@ -183,7 +182,7 @@ function ImageCvePage() {
     const urlParams = useParams();
     const cveId = urlParams.cveId ?? '';
     const exactCveIdSearchRegex = `^${cveId}$`;
-    const { searchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
     const query = getVulnStateScopedQueryString(
         {
@@ -281,28 +280,15 @@ function ImageCvePage() {
         skip: entityTab !== 'Deployment',
     });
 
-    // We generalize the imageData and deploymentData requests here so that we can use most of
-    // the same logic for both tables and components in the return value below
-    const imageData = imageDataRequest.data ?? imageDataRequest.previousData;
-    const deploymentData = deploymentDataRequest.data ?? deploymentDataRequest.previousData;
     const imageCount = summaryRequest.data?.imageCount ?? 0;
     const deploymentCount = summaryRequest.data?.deploymentCount ?? 0;
 
-    let tableDataAvailable = false;
     let tableRowCount = 0;
-    let tableError: Error | undefined;
-    let tableLoading = false;
 
     if (entityTab === 'Image') {
-        tableDataAvailable = !!imageData;
         tableRowCount = imageCount;
-        tableError = imageDataRequest.error;
-        tableLoading = imageDataRequest.loading;
     } else if (entityTab === 'Deployment') {
-        tableDataAvailable = !!deploymentData;
         tableRowCount = deploymentCount;
-        tableError = deploymentDataRequest.error;
-        tableLoading = deploymentDataRequest.loading;
     }
 
     function onEntityTypeChange(entityTab: WorkloadEntityTab) {
@@ -315,6 +301,11 @@ function ImageCvePage() {
                 page: 'CVE Detail',
             },
         });
+    }
+
+    function onClearFilters() {
+        setSearchFilter({});
+        setPage(1, 'replace');
     }
 
     // Track the initial entity tab view
@@ -337,6 +328,19 @@ function ImageCvePage() {
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const severitySummary = summaryRequest.data?.imageCVE ?? defaultSeveritySummary;
+
+    const imageTableState = getTableUIState({
+        isLoading: imageDataRequest.loading,
+        data: imageDataRequest.data?.images,
+        error: imageDataRequest.error,
+        searchFilter,
+    });
+    const deploymentTableState = getTableUIState({
+        isLoading: deploymentDataRequest.loading,
+        data: deploymentDataRequest.data?.deployments,
+        error: deploymentDataRequest.error,
+        searchFilter,
+    });
 
     return (
         <>
@@ -443,48 +447,32 @@ function ImageCvePage() {
                             />
                         </SplitItem>
                     </Split>
-                    {tableError ? (
-                        <TableErrorComponent
-                            error={tableError}
-                            message="Adjust your filters and try again"
-                        />
-                    ) : (
-                        <>
-                            {tableLoading && !tableDataAvailable && (
-                                <Bullseye>
-                                    <Spinner />
-                                </Bullseye>
-                            )}
-                            {tableDataAvailable && (
-                                <>
-                                    <Divider />
-                                    <div className="pf-v5-u-px-lg workload-cves-table-container">
-                                        {entityTab === 'Image' && (
-                                            <AffectedImagesTable
-                                                images={imageData?.images ?? []}
-                                                getSortParams={getSortParams}
-                                                isFiltered={isFiltered}
-                                                cve={cveId}
-                                                vulnerabilityState={currentVulnerabilityState}
-                                            />
-                                        )}
-                                        {entityTab === 'Deployment' && (
-                                            <AffectedDeploymentsTable
-                                                deployments={deploymentData?.deployments ?? []}
-                                                getSortParams={getSortParams}
-                                                isFiltered={isFiltered}
-                                                filteredSeverities={
-                                                    searchFilter.SEVERITY as VulnerabilitySeverityLabel[]
-                                                }
-                                                cve={cveId}
-                                                vulnerabilityState={currentVulnerabilityState}
-                                            />
-                                        )}
-                                    </div>
-                                </>
-                            )}
-                        </>
-                    )}
+                    <Divider />
+                    <div className="pf-v5-u-px-lg workload-cves-table-container">
+                        {entityTab === 'Image' && (
+                            <AffectedImagesTable
+                                tableState={imageTableState}
+                                getSortParams={getSortParams}
+                                isFiltered={isFiltered}
+                                cve={cveId}
+                                vulnerabilityState={currentVulnerabilityState}
+                                onClearFilters={onClearFilters}
+                            />
+                        )}
+                        {entityTab === 'Deployment' && (
+                            <AffectedDeploymentsTable
+                                tableState={deploymentTableState}
+                                getSortParams={getSortParams}
+                                isFiltered={isFiltered}
+                                filteredSeverities={
+                                    searchFilter.SEVERITY as VulnerabilitySeverityLabel[]
+                                }
+                                cve={cveId}
+                                vulnerabilityState={currentVulnerabilityState}
+                                onClearFilters={onClearFilters}
+                            />
+                        )}
+                    </div>
                 </div>
             </PageSection>
         </>
