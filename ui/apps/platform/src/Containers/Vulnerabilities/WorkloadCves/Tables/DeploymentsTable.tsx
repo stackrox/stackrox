@@ -34,7 +34,6 @@ export const deploymentListQuery = gql`
                     total
                 }
             }
-            priority
             clusterName
             namespace
             imageCount(query: $query)
@@ -52,7 +51,6 @@ export type Deployment = {
         moderate: { total: number };
         low: { total: number };
     };
-    priority: number;
     clusterName: string;
     namespace: string;
     imageCount: number;
@@ -82,9 +80,6 @@ function DeploymentsTable({
                 <Tr>
                     <Th sort={getSortParams('Deployment')}>Deployment</Th>
                     {showCveDetailFields && (
-                        <Th sort={getSortParams('Deployment Risk Priority')}>Risk priority</Th>
-                    )}
-                    {showCveDetailFields && (
                         <TooltipTh tooltip="CVEs by severity across this deployment">
                             CVEs by severity
                             {isFiltered && <DynamicColumnIcon />}
@@ -105,7 +100,6 @@ function DeploymentsTable({
                     id,
                     name,
                     imageCVECountBySeverity,
-                    priority,
                     clusterName,
                     namespace,
                     imageCount,
@@ -134,14 +128,6 @@ function DeploymentsTable({
                                         <Truncate position="middle" content={name} />
                                     </Link>
                                 </Td>
-                                {showCveDetailFields && (
-                                    <Td
-                                        dataLabel="Risk priority"
-                                        className="pf-v5-u-pr-2xl pf-v5-u-text-align-center-on-md"
-                                    >
-                                        {priority}
-                                    </Td>
-                                )}
                                 {showCveDetailFields && (
                                     <Td>
                                         <SeverityCountLabels
