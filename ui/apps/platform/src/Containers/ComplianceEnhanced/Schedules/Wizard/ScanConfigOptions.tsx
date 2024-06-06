@@ -56,9 +56,9 @@ function ScanConfigOptions(): ReactElement {
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
-                        <Title headingLevel="h2">Configuration options</Title>
+                        <Title headingLevel="h2">Parameters</Title>
                     </FlexItem>
-                    <FlexItem>Set up name, schedule, and options</FlexItem>
+                    <FlexItem>Set name and schedule to scan on a recurring basis</FlexItem>
                 </Flex>
             </PageSection>
             <Divider component="div" />
@@ -111,10 +111,7 @@ function ScanConfigOptions(): ReactElement {
                     <StackItem>
                         <Flex direction={{ default: 'column' }}>
                             <FlexItem>
-                                <Title headingLevel="h3">Configure schedule</Title>
-                            </FlexItem>
-                            <FlexItem>
-                                Configure or setup a schedule to scan on a recurring basis.
+                                <Title headingLevel="h3">Schedule</Title>
                             </FlexItem>
                             <FlexItem flex={{ default: 'flexNone' }}>
                                 <Flex direction={{ default: 'column' }}>

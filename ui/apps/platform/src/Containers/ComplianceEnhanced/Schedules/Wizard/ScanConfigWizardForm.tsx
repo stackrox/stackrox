@@ -21,7 +21,7 @@ import ScanConfigWizardFooter from './ScanConfigWizardFooter';
 import useFormikScanConfig from './useFormikScanConfig';
 import { convertFormikToScanConfig, ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
-const PARAMETERS = 'Set Parameters';
+const PARAMETERS = 'Set parameters';
 const PARAMETERS_ID = 'parameters';
 const SELECT_CLUSTERS = 'Select clusters';
 const SELECT_CLUSTERS_ID = 'clusters';
@@ -188,8 +188,6 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         },
     ].filter(({ id }) => id !== CONFIGURE_REPORT_ID || isComplianceReportingEnabled);
 
-    const isEditing = initialFormValues?.id !== undefined;
-
     return (
         <>
             <FormikProvider value={formik}>
@@ -206,7 +204,6 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                             onSave={onSave}
                             isSaving={isCreating}
                             proceedToNextStepIfValid={proceedToNextStepIfValid}
-                            isEditing={isEditing}
                         />
                     }
                 />
