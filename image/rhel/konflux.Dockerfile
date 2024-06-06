@@ -18,8 +18,7 @@ RUN /tmp/.konflux/subscription-manager-bro.sh register "$FINAL_STAGE_PATH"
 RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
     dnf -y --installroot="$FINAL_STAGE_PATH" module enable postgresql:13 && \
     # find is used in /stackrox/import-additional-cas \
-    # snappy provides libsnappy.so.1, which is needed by most stackrox binaries \
-    dnf -y --installroot="$FINAL_STAGE_PATH" install findutils snappy zstd postgresql && \
+    dnf -y --installroot="$FINAL_STAGE_PATH" install findutils zstd postgresql && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \
     dnf -y --installroot="$FINAL_STAGE_PATH" clean all && \
     rpm --root="$FINAL_STAGE_PATH" --verbose -e --nodeps $(rpm --root="$FINAL_STAGE_PATH" -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
