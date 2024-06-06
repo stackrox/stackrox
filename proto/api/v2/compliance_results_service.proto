@@ -53,13 +53,14 @@ message ComplianceClusterCheckStatus {
   repeated ClusterCheckStatus clusters = 3;
   string description = 4;
   string instructions = 5;
-  string standard = 6;
-  repeated string control = 7;
+  reserved 6;
+  reserved 7;
   string rationale = 8;
   repeated string valuesUsed = 9;
   repeated string warnings = 10;
   map<string, string> labels = 11;
   map<string, string> annotations = 12;
+  repeated ComplianceControl controls = 13;
 }
 
 // ComplianceScanResult provides the results of a scan

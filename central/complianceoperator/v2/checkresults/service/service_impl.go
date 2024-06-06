@@ -137,14 +137,14 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 	}
 
 	// Check the Compliance Scan object to get the scan time.
-	scanQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, scanResult.GetScanRefId()).
+	scanRefQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, scanResult.GetScanRefId()).
 		ProtoQuery()
-	scans, err := s.scanDS.SearchScans(ctx, scanQuery)
+	scans, err := s.scanDS.SearchScans(ctx, scanRefQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to retrieve scan data for result %q", req.GetId())
 	}
 	if len(scans) == 0 {
-		return nil, errors.Errorf("Unable to retrieve scan data for result %q", req.GetId())
+		return nil, errors.Errorf("Unable to find scan data for result %q", req.GetId())
 	}
 
 	var lastScanTime *types.Timestamp
@@ -154,9 +154,31 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 		}
 	}
 
-	// TODO GET THE CONTROLS
+	// Check the Profile so we can get the controls.
+	profiles, err := s.profileDS.SearchProfiles(ctx, scanRefQuery)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve profiles for result %q", req.GetId())
+	}
+	if len(profiles) == 0 {
+		return nil, errors.Errorf("Unable to find profiles for result %q", req.GetId())
+	}
 
-	return storagetov2.ComplianceV2CheckResult(scanResult, lastScanTime), nil
+	ruleNames := make([]string, 0, 1)
+	rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, scanResult.GetRuleRefId()).ProtoQuery())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for result %q", req.GetId())
+	}
+	if len(rules) != 1 {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for result %q", req.GetId())
+	}
+	ruleNames = append(ruleNames, rules[0].GetName())
+
+	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, profiles[0].GetName(), s.benchmarkDS)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for result %q", req.GetId())
+	}
+
+	return storagetov2.ComplianceV2CheckResult(scanResult, lastScanTime, ruleNames[0], controls), nil
 }
 
 // GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
@@ -368,7 +390,6 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 		ruleNames = append(ruleNames, rules[0].GetName())
 	}
 
-	// TODO GET THE CONTROLS
 	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName(), s.benchmarkDS)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
@@ -431,8 +452,19 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 	}
 
 	checkToRule := make(map[string]string, len(scanResults))
-	var ruleNames []string
+	checkToControls := make(map[string][]*complianceRuleDS.ControlResult, len(scanResults))
 	for _, result := range scanResults {
+		// Check the Profile so we can get the controls.
+		scanRefQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, result.GetScanRefId()).
+			ProtoQuery()
+		profiles, err := s.profileDS.SearchProfiles(ctx, scanRefQuery)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Unable to retrieve profiles for result %v", parsedQuery)
+		}
+		if len(profiles) != 0 {
+			return nil, errors.Errorf("Unable to find profiles for result %v", parsedQuery)
+		}
+
 		rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, result.GetRuleRefId()).ProtoQuery())
 		if err != nil {
 			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for query %v", parsedQuery)
@@ -441,14 +473,16 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
 		}
 		checkToRule[result.GetRuleRefId()] = rules[0].GetName()
-		ruleNames = append(ruleNames, rules[0].GetName())
-	}
 
-	// TODO GET THE CONTROLS
-	//controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName(), s.benchmarkDS)
-	//if err != nil {
-	//	return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
-	//}
+		if _, found := checkToControls[result.GetCheckName()]; !found {
+			controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, []string{rules[0].GetName()}, profiles[0].GetName(), s.benchmarkDS)
+			if err != nil {
+				return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", parsedQuery)
+			}
+
+			checkToControls[result.GetCheckName()] = controls
+		}
+	}
 
 	count, err := s.complianceResultsDS.CountCheckResults(ctx, countQuery)
 	if err != nil {
@@ -456,7 +490,7 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 	}
 
 	return &v2.ListComplianceResultsResponse{
-		ScanResults: storagetov2.ComplianceV2CheckData(scanResults, checkToRule),
+		ScanResults: storagetov2.ComplianceV2CheckData(scanResults, checkToRule, checkToControls),
 		TotalCount:  int32(count),
 	}, nil
 }

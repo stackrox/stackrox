@@ -22,7 +22,7 @@ type scanResultKey struct {
 }
 
 // ComplianceV2CheckResult converts a storage check result to a v2 check result
-func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTime *types.Timestamp) *v2.ComplianceClusterCheckStatus {
+func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTime *types.Timestamp, ruleName string, controlResults []*compRule.ControlResult) *v2.ComplianceClusterCheckStatus {
 	converted := &v2.ComplianceClusterCheckStatus{
 		CheckId:   incoming.GetCheckId(),
 		CheckName: incoming.GetCheckName(),
@@ -36,6 +36,7 @@ func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, 
 		Warnings:     incoming.GetWarnings(),
 		Labels:       incoming.GetLabels(),
 		Annotations:  incoming.GetAnnotations(),
+		Controls:     GetControls(ruleName, controlResults),
 	}
 
 	return converted
@@ -93,7 +94,7 @@ func ComplianceV2ScanResults(incoming []*storage.ComplianceOperatorCheckResultV2
 		// First time seeing this rule in the results.
 		if !found {
 			orderedKeys = append(orderedKeys, key)
-			resultsByScanCheck[key] = ComplianceV2CheckResult(result, nil)
+			resultsByScanCheck[key] = ComplianceV2CheckResult(result, nil, "", nil)
 		} else {
 			// Append the new cluster status to the v2 check result.
 			workingResult.Clusters = append(workingResult.Clusters, clusterStatus(result, nil))
@@ -208,13 +209,13 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 	return clusterResults
 }
 
-func ComplianceV2CheckData(incoming []*storage.ComplianceOperatorCheckResultV2, ruleMap map[string]string) []*v2.ComplianceCheckData {
+func ComplianceV2CheckData(incoming []*storage.ComplianceOperatorCheckResultV2, ruleMap map[string]string, controlMap map[string][]*compRule.ControlResult) []*v2.ComplianceCheckData {
 	results := make([]*v2.ComplianceCheckData, 0, len(incoming))
 	for _, result := range incoming {
 		results = append(results, &v2.ComplianceCheckData{
 			ClusterId: result.GetClusterId(),
 			ScanName:  result.GetScanConfigName(),
-			Result:    checkResult(result, ruleMap[result.GetRuleRefId()], nil),
+			Result:    checkResult(result, ruleMap[result.GetRuleRefId()], controlMap[result.GetCheckName()]),
 		})
 	}
 
