@@ -174,3 +174,24 @@ export function runComplianceScanConfiguration(scanConfigId: string) {
             return response.data;
         });
 }
+
+export type ComplianceReportRunState = 'SUBMITTED' | 'ERROR';
+
+export type ComplianceRunReportResponse = {
+    runState: ComplianceReportRunState;
+    submittedAt: string; // ISO 8601 date string
+    errorMsg: string;
+};
+
+/*
+ * Run an on demand compliance report for the scan configuration ID.
+ */
+export function runComplianceReport(scanConfigId: string): Promise<ComplianceRunReportResponse> {
+    return axios
+        .put<ComplianceRunReportResponse>(`${complianceScanConfigBaseUrl}/reports/run`, {
+            scanConfigId,
+        })
+        .then((response) => {
+            return response.data;
+        });
+}

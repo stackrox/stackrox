@@ -6,6 +6,7 @@ import pluralize from 'pluralize';
 
 import {
     Alert,
+    AlertActionCloseButton,
     AlertGroup,
     Bullseye,
     Button,
@@ -31,14 +32,17 @@ import DeleteModal from 'Components/PatternFly/DeleteModal';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import TabNavHeader from 'Components/TabNav/TabNavHeader';
 import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
+import useAlert from 'hooks/useAlert';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import {
-    listComplianceScanConfigurations,
-    getComplianceScanConfigurationsCount,
-    deleteComplianceScanConfiguration,
     ComplianceScanConfigurationStatus,
+    deleteComplianceScanConfiguration,
+    getComplianceScanConfigurationsCount,
+    listComplianceScanConfigurations,
+    runComplianceReport,
+    runComplianceScanConfiguration,
 } from 'services/ComplianceScanConfigurationService';
 import { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -48,6 +52,7 @@ import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../../compliance.constants';
 import { SCAN_CONFIG_NAME_QUERY } from '../compliance.scanConfigs.constants';
 import { scanConfigDetailsPath } from '../compliance.scanConfigs.routes';
 import { formatScanSchedule } from '../compliance.scanConfigs.utils';
+import ScanConfigActionsColumn from '../ScanConfigActionsColumn';
 
 type ScanConfigsTablePageProps = {
     hasWriteAccessForCompliance: boolean;
@@ -92,6 +97,10 @@ function ScanConfigsTablePage({
     const countQuery = useCallback(() => getComplianceScanConfigurationsCount(), []);
     const { data: scanSchedulesCount } = useRestQuery(countQuery);
 
+    const { alertObj, setAlertObj, clearAlertObj } = useAlert();
+
+    const colSpan = hasWriteAccessForCompliance ? 6 : 5;
+
     function openDeleteModal(scanConfigs) {
         setScanConfigsToDelete(scanConfigs);
     }
@@ -127,34 +136,53 @@ function ScanConfigsTablePage({
             });
     }
 
+    function handleDeleteScanConfig(scanConfigResponse: ComplianceScanConfigurationStatus) {
+        openDeleteModal([scanConfigResponse]);
+    }
+
+    function handleRunScanConfig(scanConfigResponse: ComplianceScanConfigurationStatus) {
+        clearAlertObj();
+        runComplianceScanConfiguration(scanConfigResponse.id)
+            .then(() => {
+                setAlertObj({
+                    type: 'success',
+                    title: 'Successfully triggered a re-scan',
+                });
+                refetch(); // TODO verify is lastExecutedTime expected to change?
+            })
+            .catch((error) => {
+                setAlertObj({
+                    type: 'danger',
+                    title: 'Could not trigger a re-scan',
+                    children: getAxiosErrorMessage(error),
+                });
+            });
+    }
+
+    function handleSendReport(scanConfigResponse: ComplianceScanConfigurationStatus) {
+        clearAlertObj();
+        runComplianceReport(scanConfigResponse.id)
+            .then(() => {
+                setAlertObj({
+                    type: 'success',
+                    title: 'Successfully requested to send a report',
+                });
+            })
+            .catch((error) => {
+                setAlertObj({
+                    type: 'danger',
+                    title: 'Could not send a report',
+                    children: getAxiosErrorMessage(error),
+                });
+            });
+    }
+
     const renderTableContent = () => {
         return scanSchedules?.map((scanSchedule) => {
             const { id, scanName, scanConfig, lastExecutedTime, clusterStatus } = scanSchedule;
             const scanConfigUrl = generatePath(scanConfigDetailsPath, {
                 scanConfigId: id,
             });
-
-            const rowActions = [
-                {
-                    title: 'Edit scan schedule',
-                    onClick: (event) => {
-                        event.preventDefault();
-                        history.push({
-                            pathname: scanConfigUrl,
-                            search: 'action=edit',
-                        });
-                    },
-                    isDisabled: !hasWriteAccessForCompliance,
-                },
-                {
-                    title: 'Delete scan schedule',
-                    onClick: (event) => {
-                        event.preventDefault();
-                        openDeleteModal([scanSchedule]);
-                    },
-                    isDisabled: !hasWriteAccessForCompliance,
-                },
-            ];
 
             return (
                 <Tr key={id}>
@@ -176,12 +204,16 @@ function ScanConfigsTablePage({
                     <Td dataLabel="Profiles">
                         {displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}
                     </Td>
-                    <Td isActionCell>
-                        <ActionsColumn
-                            // menuAppendTo={() => document.body}
-                            items={rowActions}
-                        />
-                    </Td>
+                    {hasWriteAccessForCompliance && (
+                        <Td isActionCell>
+                            <ScanConfigActionsColumn
+                                handleDeleteScanConfig={handleDeleteScanConfig}
+                                handleRunScanConfig={handleRunScanConfig}
+                                handleSendReport={handleSendReport}
+                                scanConfigResponse={scanSchedule}
+                            />
+                        </Td>
+                    )}
                 </Tr>
             );
         });
@@ -189,7 +221,7 @@ function ScanConfigsTablePage({
 
     const renderLoadingContent = () => (
         <Tr>
-            <Td colSpan={5}>
+            <Td colSpan={colSpan}>
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
@@ -199,7 +231,7 @@ function ScanConfigsTablePage({
 
     const renderEmptyContent = () => (
         <Tr>
-            <Td colSpan={5}>
+            <Td colSpan={colSpan}>
                 <Bullseye>
                     <EmptyStateTemplate
                         title="No scan schedules"
@@ -248,6 +280,17 @@ function ScanConfigsTablePage({
                 actions={hasWriteAccessForCompliance ? <CreateScanConfigButton /> : <></>}
                 description="Configure a scan schedule to run profile compliance checks on selected clusters"
             />
+            {alertObj !== null && (
+                <Alert
+                    title={alertObj.title}
+                    variant={alertObj.type}
+                    className="pf-v5-u-mb-lg pf-v5-u-mx-lg"
+                    component="h2"
+                    actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
+                >
+                    {alertObj.children}
+                </Alert>
+            )}
             <Divider component="div" />
             {error ? (
                 <PageSection variant="light" isFilled id="policies-table-error">
@@ -279,7 +322,7 @@ function ScanConfigsTablePage({
                                 <Th>Last run</Th>
                                 <Th>Clusters</Th>
                                 <Th>Profiles</Th>
-                                <Td />
+                                {hasWriteAccessForCompliance && <Td />}
                             </Tr>
                         </Thead>
                         <Tbody>{renderTableBodyContent()}</Tbody>
