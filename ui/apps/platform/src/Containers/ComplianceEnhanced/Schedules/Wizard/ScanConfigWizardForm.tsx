@@ -29,7 +29,7 @@ const SELECT_PROFILES = 'Select profiles';
 const SELECT_PROFILES_ID = 'profiles';
 const CONFIGURE_REPORT = 'Configure report';
 const CONFIGURE_REPORT_ID = 'report';
-const REVIEW_CONFIG = 'Review and create';
+const REVIEW_CONFIG = 'Review';
 const REVIEW_CONFIG_ID = 'review';
 
 type ScanConfigWizardFormProps = {
