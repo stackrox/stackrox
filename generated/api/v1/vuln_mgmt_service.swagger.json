@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/v1/vuln_mgmt_workload_service.proto",
+    "title": "api/v1/vuln_mgmt_service.proto",
     "version": "version not set"
   },
   "consumes": [
@@ -13,7 +13,8 @@
   "paths": {
     "/v1/export/vuln-mgmt/workloads": {
       "get": {
-        "operationId": "VulnMgmtWorkloadService_VulnMgmtExportWorkloads",
+        "summary": "Streams vulnerability data upon request. Each entry consists of a deployment and the associated\ncontainer images.",
+        "operationId": "VulnMgmtService_VulnMgmtExportWorkloads",
         "responses": {
           "200": {
             "description": "A successful response.(streaming responses)",
@@ -40,6 +41,7 @@
         "parameters": [
           {
             "name": "timeout",
+            "description": "Request timeout in seconds.",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -47,13 +49,14 @@
           },
           {
             "name": "query",
+            "description": "Query to constrain the deployments for which vulnerability data is returned.\nFor HTTP requests the query should be quoted. For example\n\u003e curl \"$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox\".\nqueries vulnerability data for all scanner deployments in the stackrox namespace.",
             "in": "query",
             "required": false,
             "type": "string"
           }
         ],
         "tags": [
-          "VulnMgmtWorkloadService"
+          "VulnMgmtService"
         ]
       }
     }

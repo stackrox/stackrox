@@ -10,7 +10,12 @@ option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 message VulnMgmtExportWorkloadsRequest {
+  // Request timeout in seconds.
   int32 timeout = 1;
+  // Query to constrain the deployments for which vulnerability data is returned.
+  // For HTTP requests the query should be quoted. For example
+  // > curl "$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox".
+  // queries vulnerability data for all scanner deployments in the stackrox namespace.
   string query = 2;
 }
 
@@ -21,8 +26,10 @@ message VulnMgmtExportWorkloadsResponse {
   repeated storage.Image images = 2;
 }
 
-// VulnMgmtWorkloadService APIs are used to manage workload vulnerabilities.
-service VulnMgmtWorkloadService {
+// VulnMgmtService APIs are used to manage workload vulnerabilities.
+service VulnMgmtService {
+  // Streams vulnerability data upon request. Each entry consists of a deployment and the associated
+  // container images.
   rpc VulnMgmtExportWorkloads(VulnMgmtExportWorkloadsRequest) returns (stream VulnMgmtExportWorkloadsResponse) {
     option (google.api.http) = {get: "/v1/export/vuln-mgmt/workloads"};
   }

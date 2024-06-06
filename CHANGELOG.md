@@ -15,8 +15,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-23852: `roxctl image scan` now has the option to filter by vulnerability severities using the `--severity` flag.
 - ROX-22376: Add a new notifier integration to enable notification via email for ACS Cloud Service managed centrals
 - ROX-24411: `roxctl image scan --output=csv` and `roxctl image scan --output=table` now include the fixed version by default.
-- ROX-24173: A new export API `/v1/export/vuln-mgmt/workloads` for workload vulnerabilities has been added. It provides a
-  a performant way of exporting both deployments and images in a single query.
+- ROX-24173: A new export API `/v1/export/vuln-mgmt/workloads` for workload vulnerabilities has been added. It provides a performant way of exporting both deployments and images in a single query which will hold all relevant data for vulnerability management.
 
 ### Removed Features
 

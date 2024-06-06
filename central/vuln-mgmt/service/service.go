@@ -15,7 +15,7 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	v1.VulnMgmtWorkloadServiceServer
+	v1.VulnMgmtServiceServer
 }
 
 // New returns a new vulnerability management workload service instance.

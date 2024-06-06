@@ -24,7 +24,7 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Deployment), permissions.View(resources.Image)): {
-			"/v1.VulnMgmtWorkloadService/VulnMgmtExportWorkloads",
+			"/v1.VulnMgmtService/VulnMgmtExportWorkloads",
 		},
 	})
 	log = logging.LoggerForModule()
@@ -32,7 +32,7 @@ var (
 
 // serviceImpl provides APIs for workload vulnerabilities.
 type serviceImpl struct {
-	v1.UnimplementedVulnMgmtWorkloadServiceServer
+	v1.UnimplementedVulnMgmtServiceServer
 
 	deployments deploymentDS.DataStore
 	images      imageDS.DataStore
@@ -40,21 +40,21 @@ type serviceImpl struct {
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
-	v1.RegisterVulnMgmtWorkloadServiceServer(grpcServer, s)
+	v1.RegisterVulnMgmtServiceServer(grpcServer, s)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return v1.RegisterVulnMgmtWorkloadServiceHandler(ctx, mux, conn)
+	return v1.RegisterVulnMgmtServiceHandler(ctx, mux, conn)
 }
 
-// AuthFuncOverride specifies the auth criteria for this API.
+// AuthFuncOverride specifies the auth criteria for this service.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsRequest,
-	srv v1.VulnMgmtWorkloadService_VulnMgmtExportWorkloadsServer,
+	srv v1.VulnMgmtService_VulnMgmtExportWorkloadsServer,
 ) error {
 	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
@@ -63,20 +63,23 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 	ctx := srv.Context()
 	if timeout := req.GetTimeout(); timeout != 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(srv.Context(), time.Duration(timeout)*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 		defer cancel()
 	}
 	return s.deployments.WalkByQuery(ctx, parsedQuery, func(d *storage.Deployment) error {
 		containers := d.GetContainers()
 		images := make([]*storage.Image, 0, len(containers))
 		for _, container := range containers {
-			img, exists, err := s.images.GetImage(ctx, container.GetImage().GetId())
+			imgID := container.GetImage().GetId()
+			img, exists, err := s.images.GetImage(ctx, imgID)
 			if err != nil {
-				log.Errorf("Error getting image for container %s.%s: %v", d.GetId(), container.GetName(), err)
+				log.Errorf("Error getting image for container %q (SHA: %s): %v", d.GetName(), container.GetId(), err)
 				continue
 			}
 			if exists {
 				images = append(images, img)
+			} else {
+				log.Warnf("Image %q for container %q (SHA: %s) not found", imgID, d.GetName(), container.GetId())
 			}
 		}
 

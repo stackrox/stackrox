@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -77,7 +76,7 @@ func (s *servicePostgresTestSuite) createGRPCWorkloadsService(ctx context.Contex
 	listener := bufconn.Listen(buffer)
 
 	server := grpc.NewServer(grpc.StreamInterceptor(s.authInterceptor))
-	v1.RegisterVulnMgmtWorkloadServiceServer(server, s.service)
+	v1.RegisterVulnMgmtServiceServer(server, s.service)
 
 	go func() {
 		utils.IgnoreError(func() error { return server.Serve(listener) })
@@ -118,7 +117,7 @@ func (s *servicePostgresTestSuite) upsertDeployments(deployments []*storage.Depl
 	}
 }
 
-func (s *servicePostgresTestSuite) receiveWorkloads(client v1.VulnMgmtWorkloadServiceClient,
+func (s *servicePostgresTestSuite) receiveWorkloads(client v1.VulnMgmtServiceClient,
 	request *v1.VulnMgmtExportWorkloadsRequest,
 ) []*v1.VulnMgmtExportWorkloadsResponse {
 	out, err := client.VulnMgmtExportWorkloads(s.ctx, request)
@@ -202,12 +201,13 @@ func (s *servicePostgresTestSuite) TestExport() {
 			request := &v1.VulnMgmtExportWorkloadsRequest{Timeout: 5, Query: c.query}
 			conn, closeFunc := s.createGRPCWorkloadsService(s.ctx)
 			defer closeFunc()
-			client := v1.NewVulnMgmtWorkloadServiceClient(conn)
+			client := v1.NewVulnMgmtServiceClient(conn)
 			results := s.receiveWorkloads(client, request)
 
 			s.Require().Len(results, len(c.expected))
 			for i := range results {
 				s.Assert().Equal(c.expected[i].Deployment, results[i].Deployment)
+				// We cannot perform a full assert on the imagages because they contain timestamps.
 				s.Require().Len(results[i].Images, len(c.expected[i].Images))
 				for j := range results[i].Images {
 					s.Assert().Equal(c.expected[i].Images[j].GetId(), results[i].Images[j].GetId())
