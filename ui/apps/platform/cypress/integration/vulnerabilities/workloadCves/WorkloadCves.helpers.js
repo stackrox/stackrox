@@ -291,7 +291,6 @@ export function verifyExceptionConfirmationDetails(params) {
         getDescriptionListGroup('Expires', expiry);
     }
     if (scope) {
-        const scopeWithoutSha = scope.replace(/@sha256/, '');
         getDescriptionListGroup('Scope', scope);
     }
 }
