@@ -453,16 +453,22 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 
 	checkToRule := make(map[string]string, len(scanResults))
 	checkToControls := make(map[string][]*complianceRuleDS.ControlResult, len(scanResults))
+	// Cache profiles for scan ref id so we don't have to look them up each time.
+	profileCache := make(map[string]string, len(scanResults))
 	for _, result := range scanResults {
 		// Check the Profile so we can get the controls.
-		scanRefQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, result.GetScanRefId()).
-			ProtoQuery()
-		profiles, err := s.profileDS.SearchProfiles(ctx, scanRefQuery)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Unable to retrieve profiles for result %v", parsedQuery)
-		}
-		if len(profiles) == 0 {
-			return nil, errors.Errorf("Unable to find profiles for result %v", parsedQuery)
+		profileName, found := profileCache[result.GetScanRefId()]
+		if !found {
+			scanRefQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, result.GetScanRefId()).
+				ProtoQuery()
+			profiles, err := s.profileDS.SearchProfiles(ctx, scanRefQuery)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Unable to retrieve profiles for result %v", parsedQuery)
+			}
+			if len(profiles) == 0 {
+				return nil, errors.Errorf("Unable to find profiles for result %v", parsedQuery)
+			}
+			profileName = profiles[0].GetName()
 		}
 
 		rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, result.GetRuleRefId()).ProtoQuery())
@@ -475,7 +481,7 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 		checkToRule[result.GetRuleRefId()] = rules[0].GetName()
 
 		if _, found := checkToControls[result.GetCheckName()]; !found {
-			controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, []string{rules[0].GetName()}, profiles[0].GetName(), s.benchmarkDS)
+			controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, []string{rules[0].GetName()}, profileName, s.benchmarkDS)
 			if err != nil {
 				return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", parsedQuery)
 			}
