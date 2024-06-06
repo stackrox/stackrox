@@ -6,6 +6,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -103,7 +104,7 @@ func TestPublicAPIToStorage(t *testing.T) {
 			got := PublicAPIToStorage(test.in)
 			assert.Equal(t, test.want.GetEnabledFor(), got.GetEnabledFor())
 			assert.Equal(t, test.want.GetDefaultClusterId(), got.GetDefaultClusterId())
-			assert.Equal(t, test.want.GetRegistries(), got.GetRegistries())
+			protoassert.SlicesEqual(t, test.want.GetRegistries(), got.GetRegistries())
 		}
 
 		t.Run(name, tf)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -202,5 +203,5 @@ func TestSplitAndMergeNode(t *testing.T) {
 	assert.Equal(t, splitExpected, splitActual)
 
 	nodeActual := Merge(splitActual)
-	assert.Equal(t, node, nodeActual)
+	protoassert.Equal(t, node, nodeActual)
 }

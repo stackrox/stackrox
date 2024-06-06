@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/scanners/clairify/mock"
 	v1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/assert"
@@ -130,7 +131,7 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 			KubeletVersion:   testCase.kubeletVersion,
 			KubeProxyVersion: testCase.kubeProxyVersion,
 		}
-		assert.Equal(t, testCase.expected, convertNodeToVulnRequest(node, testCase.nodeInventory))
+		protoassert.Equal(t, testCase.expected, convertNodeToVulnRequest(node, testCase.nodeInventory))
 	}
 }
 
@@ -344,7 +345,7 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 func TestConvertNodeVulnerabilities(t *testing.T) {
 	scannerVulns, protoVulns := mock.GetTestScannerVulns()
 	for i := range scannerVulns {
-		assert.Equal(t, protoVulns[i], convertVulnerability(&scannerVulns[i], storage.EmbeddedVulnerability_NODE_VULNERABILITY))
+		protoassert.Equal(t, protoVulns[i], convertVulnerability(&scannerVulns[i], storage.EmbeddedVulnerability_NODE_VULNERABILITY))
 	}
 }
 
@@ -481,5 +482,5 @@ func TestConvertFeatures(t *testing.T) {
 	}
 
 	converted := convertFeatures(metadata, features, "")
-	assert.Equal(t, expectedFeatures, converted)
+	protoassert.SlicesEqual(t, expectedFeatures, converted)
 }

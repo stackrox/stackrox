@@ -33,10 +33,10 @@ var bannedFunctions = set.NewFrozenStringSet(
 	////"github.com/google/go-cmp/cmp.Diff",
 	"github.com/google/go-cmp/cmp.Equal",
 	//"github.com/stretchr/testify/assert.Contains",
-	//"github.com/stretchr/testify/assert.Equal",
+	"github.com/stretchr/testify/assert.Equal",
 	//"github.com/stretchr/testify/assert.NotEqual",
 	//"github.com/stretchr/testify/require.Contains",
-	//"github.com/stretchr/testify/require.Equal",
+	"github.com/stretchr/testify/require.Equal",
 	//"github.com/stretchr/testify/require.NotEqual",
 	"reflect.DeepEqual",
 )

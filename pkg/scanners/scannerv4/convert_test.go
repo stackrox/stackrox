@@ -5,6 +5,7 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -115,7 +116,7 @@ func TestConvert(t *testing.T) {
 
 	actual := imageScan(inMetadata, inReport)
 
-	assert.Equal(t, expected.Components, actual.Components)
+	protoassert.SlicesEqual(t, expected.Components, actual.Components)
 	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
 }
 
@@ -339,7 +340,7 @@ func TestSetScoresAndScoreVersion(t *testing.T) {
 			}
 
 			assert.NoError(t, err)
-			assert.Equal(t, testcase.expected, vuln)
+			protoassert.Equal(t, testcase.expected, vuln)
 		})
 	}
 }

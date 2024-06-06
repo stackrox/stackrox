@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 )
 
 func TestNetworkPoliciesStoreFind(t *testing.T) {
@@ -61,7 +62,7 @@ func TestNetworkPoliciesStoreFind(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			found := store.Find(defaultNS, tt.podLabels)
-			assert.Equal(t, len(tt.expectedIDs), len(found), "expected to find %d IDs, but found: %v", len(tt.expectedIDs), found)
+			assert.Equal(t, len(tt.expectedIDs), len(found), "expected to find %d IDs, but found: %s", len(tt.expectedIDs), maps.Keys(found))
 
 			for _, expID := range tt.expectedIDs {
 				assert.Equal(t, expID, found[expID].GetId())

@@ -10,6 +10,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
@@ -41,7 +42,7 @@ func Test_ToProtoV4IndexReport(t *testing.T) {
 				assert.Nil(t, tt.want)
 				assert.ErrorContains(t, err, tt.wantErr)
 			} else {
-				assert.Equal(t, tt.want, got)
+				protoassert.Equal(t, tt.want, got)
 				assert.NoError(t, err)
 			}
 		})
@@ -134,7 +135,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 			} else {
 				assert.ErrorContains(t, err, tt.wantErr)
 			}
-			assert.Equal(t, tt.want, got)
+			protoassert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -399,7 +400,7 @@ func Test_toProtoV4Package(t *testing.T) {
 				assert.ErrorContains(t, err, tt.wantErr)
 				assert.Nil(t, tt.want)
 			} else {
-				assert.Equal(t, tt.want, got)
+				protoassert.Equal(t, tt.want, got)
 				assert.NoError(t, err)
 			}
 		})
@@ -465,7 +466,7 @@ func Test_toProtoV4Distribution(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := toProtoV4Distribution(tt.arg)
-			assert.Equal(t, tt.want, got)
+			protoassert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -500,7 +501,7 @@ func Test_toProtoV4Repository(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := toProtoV4Repository(tt.arg)
-			assert.Equal(t, tt.want, got)
+			protoassert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -539,7 +540,7 @@ func Test_toProtoV4Environment(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			got := toProtoV4Environment(tt.arg)
-			assert.Equal(t, tt.want, got)
+			protoassert.Equal(t, tt.want, got)
 			if tt.want != nil && tt.want.RepositoryIds != nil {
 				assert.NotEqual(t, &tt.want.RepositoryIds, &got.RepositoryIds)
 			}

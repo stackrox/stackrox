@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/protoassert"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
@@ -2368,5 +2369,5 @@ func TestGetApplyingPoliciesPerDeployment(t *testing.T) {
 	}
 
 	resultMap := evaluator.GetApplyingPoliciesPerDeployment(deployments, nil, networkPolicies)
-	assert.Equal(t, expectedResults, resultMap)
+	protoassert.MapSliceEqual(t, expectedResults, resultMap)
 }

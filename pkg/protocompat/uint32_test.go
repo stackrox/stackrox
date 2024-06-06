@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/rox/pkg/protoassert"
 )
 
 func TestProtoUInt32Value(t *testing.T) {
@@ -14,7 +14,7 @@ func TestProtoUInt32Value(t *testing.T) {
 	}
 
 	val1 := ProtoUInt32Value(input1)
-	assert.Equal(t, expectedVal1, val1)
+	protoassert.Equal(t, expectedVal1, val1)
 
 	input2 := uint32(1234567890)
 	expectedVal2 := &types.UInt32Value{
@@ -22,5 +22,5 @@ func TestProtoUInt32Value(t *testing.T) {
 	}
 
 	val2 := ProtoUInt32Value(input2)
-	assert.Equal(t, expectedVal2, val2)
+	protoassert.Equal(t, expectedVal2, val2)
 }

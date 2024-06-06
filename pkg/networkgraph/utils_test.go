@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
@@ -47,8 +48,8 @@ func TestGetQueries(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			actualDepQ, actualScopeQ, err := GetFilterAndScopeQueries("c1", tc.rawQ, tc.scope)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.depQ, actualDepQ)
-			assert.Equal(t, tc.scopeQ, actualScopeQ)
+			protoassert.Equal(t, tc.depQ, actualDepQ)
+			protoassert.Equal(t, tc.scopeQ, actualScopeQ)
 		})
 	}
 }

@@ -60,7 +60,7 @@ func TestRoundTimestamp(t *testing.T) {
 		Nanos:   123456789,
 	}
 	notRounded := RoundTimestamp(tsInvalid, time.Microsecond)
-	assert.Equal(t, tsInvalid, notRounded)
+	assert.True(t, tsInvalid.Equal(notRounded))
 
 	ts1 := &types.Timestamp{
 		Seconds: 1510860932,
