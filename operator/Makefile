@@ -3,8 +3,6 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-# The version reported by the root Makefile is converted to be compatible with SemVer. Specifically, inner-zero is
-# dropped (e.g. 3.0.61.1 -> 3.61.1) and development version ".x" is changed to ".0" (e.g. 3.0.61.x-123 -> 3.0.61.0-123).
 VERSION ?= $(shell $(MAKE) --quiet --no-print-directory -C .. tag)
 
 # Set to empty string to echo some command lines which are hidden by default.
