@@ -167,6 +167,8 @@ tests:
 
 - name: "scanner with network policies disabled"
   values:
+    scannerV4:
+      disable: false
     system:
       enableNetworkPolicies: false
   expect: |
