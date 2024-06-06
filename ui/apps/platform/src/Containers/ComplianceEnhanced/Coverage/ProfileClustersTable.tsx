@@ -69,7 +69,7 @@ function ProfileClustersTable({
             <Table>
                 <Thead>
                     <Tr>
-                        <Th sort={getSortParams('Cluster ID')}>Cluster</Th>
+                        <Th sort={getSortParams('Cluster')}>Cluster</Th>
                         <Th>Last scanned</Th>
                         <Th>Fail status</Th>
                         <Th>Pass status</Th>

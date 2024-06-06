@@ -35,6 +35,7 @@ const (
 	IssuerConfigKey       = "issuer"
 	ClientIDConfigKey     = "client_id"
 	ClientSecretConfigKey = "client_secret"
+	ExtraScopesConfigKey  = "extra_scopes"
 	//#nosec G101 -- This is a false positive
 	DontUseClientSecretConfigKey       = "do_not_use_client_secret"
 	ModeConfigKey                      = "mode"
@@ -383,6 +384,11 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		return nil, err
 	}
 
+	extraScopes, extraScopesRequested := config[ExtraScopesConfigKey]
+	if extraScopesRequested {
+		b.baseOauthConfig.Scopes = append(b.baseOauthConfig.Scopes, strings.Split(extraScopes, " ")...)
+	}
+
 	b.config = map[string]string{
 		IssuerConfigKey:       issuerHelper.Issuer(),
 		ClientIDConfigKey:     clientID,
@@ -391,6 +397,9 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 	}
 	if disableOfflineAccessScope {
 		b.config[DisableOfflineAccessScopeConfigKey] = "true"
+	}
+	if extraScopesRequested {
+		b.config[ExtraScopesConfigKey] = extraScopes
 	}
 
 	return b, nil

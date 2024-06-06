@@ -209,6 +209,7 @@ var (
 	ControlID = newFieldLabel("Control ID")
 	Control   = newFieldLabel("Control")
 
+	ComplianceOperatorIntegrationID          = newFieldLabel("Compliance Operator Integration ID")
 	ComplianceOperatorVersion                = newFieldLabel("Compliance Operator Version")
 	ComplianceOperatorScanName               = newFieldLabel("Compliance Scan Name")
 	ComplianceOperatorSeverity               = newFieldLabel("Compliance Rule Severity")
@@ -220,7 +221,7 @@ var (
 	ComplianceOperatorProfileProductType     = newFieldLabel("Compliance Profile Product Type")
 	ComplianceOperatorProfileUID             = newFieldLabel("Compliance Profile UID")
 	ComplianceOperatorProfileVersion         = newFieldLabel("Compliance Profile Version")
-	ComplianceOpeatorInstaled                = newFieldLabel("Compliance Operator Installed")
+	ComplianceOperatorInstalled              = newFieldLabel("Compliance Operator Installed")
 	ComplianceOperatorStandard               = newFieldLabel("Compliance Standard")
 	ComplianceOperatorControl                = newFieldLabel("Compliance Control")
 	ComplianceOperatorScanConfig             = newFieldLabel("Compliance Scan Config ID")
@@ -242,7 +243,7 @@ var (
 	ComplianceOperatorRuleRef                = newFieldLabel("Rule Ref ID")
 	ComplianceOperatorRemediationName        = newFieldLabel("Compliance Remediation Name")
 	ComplianceOperatorBenchmarkName          = newFieldLabel("Compliance Benchmark Name")
-	ComplianceOperatorProfileAnnotation      = newFieldLabel("Compliance Profile Annotation")
+	ComplianceOperatorBenchmarkShortName     = newFieldLabel("Compliance Benchmark Short Name")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")
@@ -313,6 +314,10 @@ var (
 	DeploymentPriority = newDerivedFieldLabel("Deployment Risk Priority", DeploymentRiskScore, SimpleReverseSortDerivationType)
 	ImagePriority      = newDerivedFieldLabel("Image Risk Priority", ImageRiskScore, SimpleReverseSortDerivationType)
 	ComponentPriority  = newDerivedFieldLabel("Component Risk Priority", ComponentRiskScore, SimpleReverseSortDerivationType)
+
+	// Max-based derived fields.  These fields are primarily used in pagination.  If used in a select it will correspond
+	// to the type of the reference field and simply provide the max function on that field.
+	ComplianceLastScanMax = newDerivedFieldLabel("Compliance Scan Last Executed Time Max", ComplianceOperatorScanLastExecutedTime, MaxDerivationType)
 
 	// External network sources fields
 	DefaultExternalSource = newFieldLabel("Default External Source")
@@ -537,4 +542,5 @@ type DerivationType int
 const (
 	CountDerivationType DerivationType = iota
 	SimpleReverseSortDerivationType
+	MaxDerivationType
 )

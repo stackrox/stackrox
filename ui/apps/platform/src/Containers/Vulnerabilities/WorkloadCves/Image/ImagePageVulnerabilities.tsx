@@ -122,7 +122,7 @@ function ImagePageVulnerabilities({
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
-            field: 'CVE',
+            field: 'Severity',
             direction: 'desc',
         },
         onSort: () => setPage(1),
@@ -281,9 +281,6 @@ function ImagePageVulnerabilities({
                                 perPage={perPage}
                                 onSetPage={(_, newPage) => setPage(newPage)}
                                 onPerPageSelect={(_, newPerPage) => {
-                                    if (totalVulnerabilityCount < (page - 1) * newPerPage) {
-                                        setPage(1);
-                                    }
                                     setPerPage(newPerPage);
                                 }}
                             />

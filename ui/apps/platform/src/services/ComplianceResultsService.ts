@@ -1,10 +1,8 @@
-import qs from 'qs';
-
 import axios from 'services/instance';
-import { ApiSortOption } from 'types/search';
-import { getPaginationParams } from 'utils/searchUtils';
+import { SearchQueryOptions } from 'types/search';
 
 import {
+    buildNestedRawQueryParams,
     ComplianceCheckStatus,
     ComplianceScanCluster,
     complianceV2Url,
@@ -24,14 +22,16 @@ export type ClusterCheckStatus = {
 export type ComplianceCheckResult = {
     checkId: string;
     checkName: string;
-    clusters: ClusterCheckStatus[];
+    checkUid: string;
     description: string;
     instructions: string;
     standard: string;
-    control: string;
+    control: string[];
     rationale: string;
     valuesUsed: string[];
     warnings: string[];
+    status: ComplianceCheckStatus;
+    ruleName: string;
 };
 
 export type ListComplianceCheckClusterResponse = {
@@ -41,21 +41,23 @@ export type ListComplianceCheckClusterResponse = {
     totalCount: number;
 };
 
+export type ListComplianceCheckResultResponse = {
+    checkResults: ComplianceCheckResult[];
+    profileName: string;
+    clusterId: string;
+    totalCount: number;
+    lastScanTime: string; // ISO 8601 date string
+};
+
 /**
  * Fetches statuses per cluster based off a single check.
  */
 export function getComplianceProfileCheckResult(
     profileName: string,
     checkName: string,
-    page: number,
-    perPage: number
+    { sortOption, page, perPage }: SearchQueryOptions
 ): Promise<ListComplianceCheckClusterResponse> {
-    const queryParameters = {
-        query: {
-            pagination: { ...getPaginationParams(page, perPage) },
-        },
-    };
-    const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
     return axios
         .get<ListComplianceCheckClusterResponse>(
             `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks/${checkName}?${params}`
@@ -68,20 +70,26 @@ export function getComplianceProfileCheckResult(
  */
 export function getComplianceProfileResults(
     profileName: string,
-    sortOption: ApiSortOption,
-    page: number,
-    perPage: number
+    { sortOption, page, perPage }: SearchQueryOptions
 ): Promise<ListComplianceProfileResults> {
-    const queryParameters = {
-        query: {
-            pagination: { ...getPaginationParams(page, perPage), sortOption },
-        },
-    };
-    const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
-
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
     return axios
         .get<ListComplianceProfileResults>(
             `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks?${params}`
+        )
+        .then((response) => response.data);
+}
+
+/**
+ * Fetches check results based off a cluster and profile.
+ */
+export function getComplianceProfileClusterResults(
+    profileName: string,
+    clusterId: string
+): Promise<ListComplianceCheckResultResponse> {
+    return axios
+        .get<ListComplianceCheckResultResponse>(
+            `${complianceResultsBaseUrl}/results/profiles/${profileName}/clusters/${clusterId}`
         )
         .then((response) => response.data);
 }

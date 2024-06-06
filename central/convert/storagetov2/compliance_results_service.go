@@ -33,6 +33,39 @@ func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, 
 		Rationale:    incoming.GetRationale(),
 		ValuesUsed:   incoming.GetValuesUsed(),
 		Warnings:     incoming.GetWarnings(),
+		Labels:       incoming.GetLabels(),
+		Annotations:  incoming.GetAnnotations(),
+	}
+
+	return converted
+}
+
+// ComplianceV2SpecificCheckResult converts a storage check result to a v2 check result
+func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheckResultV2, checkName string) *v2.ComplianceClusterCheckStatus {
+	var converted *v2.ComplianceClusterCheckStatus
+	for _, result := range incoming {
+		if result.GetCheckName() != checkName {
+			continue
+		}
+
+		if converted == nil {
+			converted = &v2.ComplianceClusterCheckStatus{
+				CheckId:   result.GetCheckId(),
+				CheckName: result.GetCheckName(),
+				Clusters: []*v2.ClusterCheckStatus{
+					clusterStatus(result, nil),
+				},
+				Description:  result.GetDescription(),
+				Instructions: result.GetInstructions(),
+				Rationale:    result.GetRationale(),
+				ValuesUsed:   result.GetValuesUsed(),
+				Warnings:     result.GetWarnings(),
+				Labels:       result.GetLabels(),
+				Annotations:  result.GetAnnotations(),
+			}
+		} else {
+			converted.Clusters = append(converted.Clusters, clusterStatus(result, nil))
+		}
 	}
 
 	return converted
@@ -201,13 +234,15 @@ func checkResult(incoming *storage.ComplianceOperatorCheckResultV2, ruleName str
 	return &v2.ComplianceCheckResult{
 		CheckId:      incoming.GetCheckId(),
 		CheckName:    incoming.GetCheckName(),
+		CheckUid:     incoming.GetId(),
 		Description:  incoming.GetDescription(),
 		Instructions: incoming.GetInstructions(),
 		Rationale:    incoming.GetRationale(),
 		ValuesUsed:   incoming.GetValuesUsed(),
 		Warnings:     incoming.GetWarnings(),
-		CheckUid:     incoming.GetId(),
 		Status:       convertComplianceCheckStatus(incoming.Status),
 		RuleName:     ruleName,
+		Labels:       incoming.GetLabels(),
+		Annotations:  incoming.GetAnnotations(),
 	}
 }

@@ -13,3 +13,6 @@ type Locker = sync.Locker
 
 // Map is an alias for `sync.Map`.
 type Map = sync.Map
+
+// Pool is an alias for `sync.Pool`.
+type Pool = sync.Pool

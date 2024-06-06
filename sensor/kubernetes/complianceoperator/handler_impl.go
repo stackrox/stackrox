@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sync/atomic"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
@@ -11,12 +12,15 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/utils/pointer"
@@ -29,8 +33,10 @@ type handlerImpl struct {
 	response chan *message.ExpiringMessage
 	request  chan *central.ComplianceRequest
 
-	disabled   concurrency.Signal
-	stopSignal concurrency.Signal
+	disabled          concurrency.Signal
+	stopSignal        concurrency.Signal
+	started           *atomic.Bool
+	complianceIsReady *concurrency.Signal
 }
 
 type scanScheduleConfiguration struct {
@@ -42,7 +48,7 @@ type scanScheduleConfiguration struct {
 }
 
 // NewRequestHandler returns instance of common.SensorComponent interface which can handle compliance requests from Central.
-func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo) common.SensorComponent {
+func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo, coIsReady *concurrency.Signal) common.SensorComponent {
 	return &handlerImpl{
 		client:                 client,
 		complianceOperatorInfo: complianceOperatorInfo,
@@ -50,12 +56,15 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		request:  make(chan *central.ComplianceRequest),
 		response: make(chan *message.ExpiringMessage),
 
-		disabled:   concurrency.NewSignal(),
-		stopSignal: concurrency.NewSignal(),
+		started:           &atomic.Bool{},
+		disabled:          concurrency.NewSignal(),
+		stopSignal:        concurrency.NewSignal(),
+		complianceIsReady: coIsReady,
 	}
 }
 
 func (m *handlerImpl) Start() error {
+	defer m.started.Store(true)
 	// TODO: create default scan setting for ad-hoc scan
 	go m.run()
 	return nil
@@ -65,7 +74,7 @@ func (m *handlerImpl) Stop(_ error) {
 	m.stopSignal.Signal()
 }
 
-func (m *handlerImpl) Notify(common.SensorComponentEvent) {}
+func (m *handlerImpl) Notify(_ common.SensorComponentEvent) {}
 
 func (m *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
@@ -75,6 +84,14 @@ func (m *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	req := msg.GetComplianceRequest()
 	if req == nil {
 		return nil
+	}
+	// Sync Scan Configs is done during the syncing process between Sensor and Central
+	if _, ok := req.GetRequest().(*central.ComplianceRequest_SyncScanConfigs); ok {
+		return m.handleSyncScanCfgRequest(req.GetSyncScanConfigs())
+	}
+
+	if !m.started.Load() {
+		return errors.Errorf("the compliance operator handler was not started ignoring message %v to avoid blocking", msg.GetComplianceRequest())
 	}
 
 	select {
@@ -177,7 +194,7 @@ func (m *handlerImpl) createScanResources(requestID string, ns string, request *
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request))
+	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request, ""))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -232,13 +249,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	var scanSetting v1alpha1.ScanSetting
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(ssObj.Object, &scanSetting); err != nil {
-		err = errors.Wrap(err, "Could not convert unstructured to scan setting")
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
-	}
-
-	updatedScanSetting, err := runtimeObjToUnstructured(updateScanSettingFromCentralRequest(&scanSetting, request))
+	updatedScanSetting, err := updateScanSettingFromUpdateRequest(ssObj, request)
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -246,19 +257,13 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 	var updatedScanSettingBinding *unstructured.Unstructured
 	// It is possible that we successfully created the scan setting but had issues on the binding.
 	if ssbObj != nil {
-		var scanSettingBinding v1alpha1.ScanSettingBinding
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(ssbObj.Object, &scanSettingBinding); err != nil {
-			err = errors.Wrap(err, "Could not convert unstructured to scan setting")
-			return m.composeAndSendApplyScanConfigResponse(requestID, err)
-		}
-
-		updatedScanSettingBinding, err = runtimeObjToUnstructured(updateScanSettingBindingFromCentralRequest(&scanSettingBinding, request.GetScanSettings()))
+		updatedScanSettingBinding, err = updateScanSettingBindingFromUpdateRequest(ssObj, request)
 		if err != nil {
 			return m.composeAndSendApplyScanConfigResponse(requestID, err)
 		}
 
 	} else {
-		updatedScanSettingBinding, err = runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
+		updatedScanSettingBinding, err = runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings(), ""))
 		if err != nil {
 			return m.composeAndSendApplyScanConfigResponse(requestID, err)
 		}
@@ -456,6 +461,156 @@ func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplia
 		}
 		return m.composeAndSendDeleteResponse(request.GetId(), "", nil)
 	}
+}
+
+func (m *handlerImpl) handleSyncScanCfgRequest(request *central.SyncComplianceScanConfigRequest) error {
+	go func() {
+		select {
+		case <-m.disabled.Done():
+			log.Errorf("Compliance is disabled. Cannot process request: %s", protoutils.NewWrapper(request))
+			return
+		case <-m.stopSignal.Done():
+			return
+		case <-m.complianceIsReady.Done():
+			if err := m.processSyncScanCfg(request); err != nil {
+				log.Error(err)
+				return
+			}
+		}
+	}()
+	return nil
+}
+
+func generateScanIndex(namespace string, scanName string) string {
+	return fmt.Sprintf("%s-%s", namespace, scanName)
+}
+
+func (m *handlerImpl) getResourcesInCluster(api complianceoperator.APIResource) (map[string]unstructured.Unstructured, error) {
+	resourceInterface := m.client.Resource(api.GroupVersionResource())
+	resourcesInCluster, err := resourceInterface.List(m.ctx(), v1.ListOptions{LabelSelector: labels.SelectorFromSet(stackroxLabels).String()})
+	if err != nil {
+		return nil, err
+	}
+	resourcesInClusterMap := make(map[string]unstructured.Unstructured)
+	for _, resource := range resourcesInCluster.Items {
+		log.Debugf("%s in the cluster: %s", api.Kind, resource.GetName())
+		resourcesInClusterMap[generateScanIndex(resource.GetNamespace(), resource.GetName())] = resource
+	}
+	return resourcesInClusterMap, nil
+}
+
+func (m *handlerImpl) reconcileCreateOrUpdateResource(
+	namespace string,
+	req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan,
+	inClusterResources map[string]unstructured.Unstructured,
+	updateFn updateFunction,
+	convertFn convertFunction,
+	api complianceoperator.APIResource,
+) error {
+	namespaceNameIndex := generateScanIndex(namespace, req.GetScanSettings().GetScanName())
+	if resource, isInCluster := inClusterResources[namespaceNameIndex]; isInCluster {
+		// Update Resource
+		log.Debugf("Update %s %s", api.Kind, req.GetScanSettings().GetScanName())
+		delete(inClusterResources, namespaceNameIndex)
+		updatedResource, err := updateFn(&resource, req)
+		if err != nil {
+			return err
+		}
+		_, err = m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Update(m.ctx(), updatedResource, v1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	} else {
+		// The Resource is in Central but not in the cluster
+		log.Debugf("Create %s %s", api.Kind, req.GetScanSettings().GetScanName())
+		resource, err := runtimeObjToUnstructured(convertFn(namespace, req.GetScanSettings(), req.GetCron()))
+		if err != nil {
+			return err
+		}
+		_, err = m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Create(m.ctx(), resource, v1.CreateOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "Could not create namespaces/%s/%s/%s", namespace, api.Name, resource.GetName())
+		}
+	}
+	return nil
+}
+
+func (m *handlerImpl) reconcileDeleteResource(inCentral set.StringSet, inClusterResources map[string]unstructured.Unstructured, api complianceoperator.APIResource) error {
+	var errList errorhelpers.ErrorList
+	deletePolicy := v1.DeletePropagationForeground
+	// Delete Resources that are no longer in Central
+	for index, resource := range inClusterResources {
+		if !inCentral.Contains(index) {
+			// The Resource is in the cluster but not in Central
+			log.Debugf("Delete %s %s", api.Kind, resource.GetName())
+			cli := m.client.Resource(api.GroupVersionResource()).Namespace(resource.GetNamespace())
+			err := cli.Delete(m.ctx(), resource.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
+			if err != nil && !kubeAPIErr.IsNotFound(err) {
+				errList.AddError(err)
+			}
+		}
+	}
+	return errList.ToError()
+}
+
+func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConfigRequest) error {
+	// List all ScanSettings in the cluster with the `stackrox` label.
+	scanSettingsInCluster, err := m.getResourcesInCluster(complianceoperator.ScanSetting)
+	if err != nil {
+		return err
+	}
+	// List all ScanSettingBindings in the cluster with the `stackrox` label.
+	scanSettingBindingsInCluster, err := m.getResourcesInCluster(complianceoperator.ScanSettingBinding)
+	if err != nil {
+		return err
+	}
+
+	complianceNamespace := m.complianceOperatorInfo.GetNamespace()
+	if complianceNamespace == "" {
+		return errors.New("Compliance operator namespace not known")
+	}
+
+	// Compare with the ScanConfig in the request.
+	var errList errorhelpers.ErrorList
+	inCentralSet := set.NewStringSet()
+	for _, scanCfg := range request.GetScanConfigs() {
+		if err := validateUpdateScheduledScanConfigRequest(scanCfg.GetUpdateScan()); err != nil {
+			errList.AddError(err)
+			continue
+		}
+		inCentralSet.Add(generateScanIndex(complianceNamespace, scanCfg.GetUpdateScan().GetScanSettings().GetScanName()))
+		// Reconcile ScanSetting
+		if err := m.reconcileCreateOrUpdateResource(
+			complianceNamespace,
+			scanCfg.GetUpdateScan(),
+			scanSettingsInCluster,
+			updateScanSettingFromUpdateRequest,
+			convertCentralRequestToScanSetting,
+			complianceoperator.ScanSetting,
+		); err != nil {
+			errList.AddError(err)
+		}
+		// Reconcile ScanSettingBinding
+		if err := m.reconcileCreateOrUpdateResource(
+			complianceNamespace,
+			scanCfg.GetUpdateScan(),
+			scanSettingBindingsInCluster,
+			updateScanSettingBindingFromUpdateRequest,
+			convertCentralRequestToScanSettingBinding,
+			complianceoperator.ScanSettingBinding,
+		); err != nil {
+			errList.AddError(err)
+		}
+	}
+	// Delete ScanSettingBindings that are no longer in Central
+	if err := m.reconcileDeleteResource(inCentralSet, scanSettingBindingsInCluster, complianceoperator.ScanSettingBinding); err != nil {
+		errList.AddError(err)
+	}
+	// Delete ScanSettings that are no longer in Central
+	if err := m.reconcileDeleteResource(inCentralSet, scanSettingsInCluster, complianceoperator.ScanSetting); err != nil {
+		errList.AddError(err)
+	}
+	return errList.ToError()
 }
 
 func (m *handlerImpl) composeAndSendEnableComplianceResponse(requestID string, err error) bool {

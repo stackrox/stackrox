@@ -1,6 +1,5 @@
 import { gql, useQuery } from '@apollo/client';
-import { ApiSortOption } from 'types/search';
-import { Pagination } from 'services/types';
+import { ClientPagination, Pagination } from 'services/types';
 import { getPaginationParams } from 'utils/searchUtils';
 import { affectedNodeFragment, AffectedNode } from './AffectedNodesTable';
 
@@ -13,12 +12,12 @@ const affectedNodesQuery = gql`
     }
 `;
 
-export default function useAffectedNodes(
-    query: string,
-    page: number,
-    perPage: number,
-    sortOption: ApiSortOption
-) {
+export default function useAffectedNodes({
+    query,
+    page,
+    perPage,
+    sortOption,
+}: { query: string } & ClientPagination) {
     const affectedNodesRequest = useQuery<
         {
             nodes: AffectedNode[];
@@ -30,7 +29,7 @@ export default function useAffectedNodes(
     >(affectedNodesQuery, {
         variables: {
             query,
-            pagination: { ...getPaginationParams(page, perPage), sortOption },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 

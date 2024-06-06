@@ -41,9 +41,11 @@ import {
     ComplianceScanConfigurationStatus,
 } from 'services/ComplianceScanConfigurationService';
 import { SortOption } from 'types/table';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../../compliance.constants';
+import { SCAN_CONFIG_NAME_QUERY } from '../compliance.scanConfigs.constants';
 import { scanConfigDetailsPath } from '../compliance.scanConfigs.routes';
 import { formatScanSchedule } from '../compliance.scanConfigs.utils';
 
@@ -59,9 +61,9 @@ const CreateScanConfigButton = () => {
     );
 };
 
-const sortFields = ['Compliance Scan Config Name'];
+const sortFields = [SCAN_CONFIG_NAME_QUERY];
 const defaultSortOption = {
-    field: 'Compliance Scan Config Name',
+    field: SCAN_CONFIG_NAME_QUERY,
     direction: 'asc',
 } as SortOption;
 
@@ -75,7 +77,7 @@ function ScanConfigsTablePage({
     const [isDeletingScanConfigs, setIsDeletingScanConfigs] = useState(false);
     const history = useHistory();
 
-    const { page, perPage, setPage, setPerPage } = useURLPagination(10);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
@@ -127,7 +129,7 @@ function ScanConfigsTablePage({
 
     const renderTableContent = () => {
         return scanSchedules?.map((scanSchedule) => {
-            const { id, scanName, scanConfig, lastUpdatedTime, clusterStatus } = scanSchedule;
+            const { id, scanName, scanConfig, lastExecutedTime, clusterStatus } = scanSchedule;
             const scanConfigUrl = generatePath(scanConfigDetailsPath, {
                 scanConfigId: id,
             });
@@ -156,18 +158,24 @@ function ScanConfigsTablePage({
 
             return (
                 <Tr key={id}>
-                    <Td>
+                    <Td dataLabel="Name">
                         <Link to={scanConfigUrl}>{scanName}</Link>
                     </Td>
-                    <Td>{formatScanSchedule(scanConfig.scanSchedule)}</Td>
-                    <Td>{format(lastUpdatedTime, 'DD MMM YYYY, h:mm:ss A')}</Td>
-                    <Td>
+                    <Td dataLabel="Schedule">{formatScanSchedule(scanConfig.scanSchedule)}</Td>
+                    <Td dataLabel="Last run">
+                        {lastExecutedTime
+                            ? format(lastExecutedTime, 'DD MMM YYYY, h:mm:ss A')
+                            : 'Scanning now'}
+                    </Td>
+                    <Td dataLabel="Clusters">
                         {displayOnlyItemOrItemCount(
                             clusterStatus.map((cluster) => cluster.clusterName),
                             'clusters'
                         )}
                     </Td>
-                    <Td>{displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}</Td>
+                    <Td dataLabel="Profiles">
+                        {displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}
+                    </Td>
                     <Td isActionCell>
                         <ActionsColumn
                             // menuAppendTo={() => document.body}

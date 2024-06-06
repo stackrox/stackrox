@@ -83,7 +83,7 @@ func (s *MockSensorServiceClient) Communicate(_ context.Context, _ ...grpc.CallO
 var _ central.SensorServiceClient = (*MockSensorServiceClient)(nil)
 
 var centralSyncMessages = []*central.MsgToSensor{
-	debuggerMessage.SensorHello("00000000-0000-4000-A000-000000000000"),
+	debuggerMessage.SensorHello("00000000-0000-4000-A000-000000000000", centralsensor.SendDeduperStateOnReconnect),
 	debuggerMessage.ClusterConfig(),
 	debuggerMessage.PolicySync([]*storage.Policy{}),
 	debuggerMessage.BaselineSync([]*storage.ProcessBaseline{}),

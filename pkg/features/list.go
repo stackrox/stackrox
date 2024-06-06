@@ -38,7 +38,7 @@ var (
 	ClusterAwareDeploymentCheck = registerFeature("Enables cluster level check for the 'roxctl deployment check' command.", "ROX_CLUSTER_AWARE_DEPLOYMENT_CHECK", true)
 
 	// WorkloadCVEsFixabilityFilters enables Workload CVE UI controls for fixability filters and default filters
-	WorkloadCVEsFixabilityFilters = registerFeature("Enables Workload CVE fixability filters", "ROX_WORKLOAD_CVES_FIXABILITY_FILTERS", false)
+	WorkloadCVEsFixabilityFilters = registerFeature("Enables Workload CVE fixability filters", "ROX_WORKLOAD_CVES_FIXABILITY_FILTERS", true)
 
 	// SensorReconciliationOnReconnect enables sensors to support reconciliation when reconnecting
 	SensorReconciliationOnReconnect = registerFeature("Enable Sensors to support reconciliation on reconnect", "ROX_SENSOR_RECONCILIATION", true)
@@ -116,6 +116,7 @@ var (
 	// VulnMgmtAdvancedFilters enables support for advanced filters for VM 2.0 GA
 	VulnMgmtAdvancedFilters = registerFeature("Enables support for advanced filters for VM 2.0 GA", "ROX_VULN_MGMT_ADVANCED_FILTERS", false)
 
-	// VulnMgmtNoCvesView enables the "Images/Deployments" without CVEs view in VM 2.0
-	VulnMgmtNoCvesView = registerFeature("Enables support for entities without CVEs for VM 2.0", "ROX_VULN_MGMT_NO_CVES_VIEW", false)
+	// DelegateWatchedImageReprocessing when set to true reprocessing of watched images may be delegated to secured clusters based
+	// on the delegated scanning config.
+	DelegateWatchedImageReprocessing = registerFeature("Enables delegating scans for watched images during reprocessing", "ROX_DELEGATE_WATCHED_IMAGE_REPROCESSING", true)
 )

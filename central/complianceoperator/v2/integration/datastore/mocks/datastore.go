@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	datastore "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
@@ -115,6 +116,21 @@ func (m *MockDataStore) GetComplianceIntegrations(ctx context.Context, query *v1
 func (mr *MockDataStoreMockRecorder) GetComplianceIntegrations(ctx, query any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComplianceIntegrations", reflect.TypeOf((*MockDataStore)(nil).GetComplianceIntegrations), ctx, query)
+}
+
+// GetComplianceIntegrationsView mocks base method.
+func (m *MockDataStore) GetComplianceIntegrationsView(ctx context.Context, query *v1.Query) ([]*datastore.IntegrationDetails, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetComplianceIntegrationsView", ctx, query)
+	ret0, _ := ret[0].([]*datastore.IntegrationDetails)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetComplianceIntegrationsView indicates an expected call of GetComplianceIntegrationsView.
+func (mr *MockDataStoreMockRecorder) GetComplianceIntegrationsView(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComplianceIntegrationsView", reflect.TypeOf((*MockDataStore)(nil).GetComplianceIntegrationsView), ctx, query)
 }
 
 // RemoveComplianceIntegration mocks base method.

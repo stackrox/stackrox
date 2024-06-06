@@ -14,7 +14,7 @@ import (
 )
 
 func tryExport(ctx context.Context, outputDir string, opts *updater.ExportOptions) error {
-	const timeout = 1 * time.Hour
+	const timeout = 2 * time.Hour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	err := updater.Export(ctx, outputDir, opts)

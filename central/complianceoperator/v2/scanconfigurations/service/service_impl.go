@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"regexp"
+	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -23,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
+	"k8s.io/utils/strings/slices"
 )
 
 const (
@@ -46,6 +48,8 @@ var (
 	})
 
 	configNameRegexp = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]*[a-z0-9]?$`)
+
+	reservedConfigNames = []string{"default", "default-auto-apply"}
 )
 
 // New returns a service object for registering with grpc.
@@ -88,6 +92,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req *v2.ComplianceScanConfiguration) (*v2.ComplianceScanConfiguration, error) {
 	if req.GetScanName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
+	}
+
+	if slices.Contains(reservedConfigNames, strings.ToLower(req.GetScanName())) {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name %q cannot be used as it is reserved by the Compliance Operator", req.GetScanName())
 	}
 
 	validName := configNameRegexp.MatchString(req.GetScanName())

@@ -1,11 +1,12 @@
-import qs from 'qs';
 import { generatePath } from 'react-router-dom';
+import qs from 'qs';
 
 import axios from 'services/instance';
-import { ApiSortOption } from 'types/search';
-import { getPaginationParams } from 'utils/searchUtils';
+import { SearchQueryOptions } from 'types/search';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import {
+    buildNestedRawQueryParams,
     ComplianceCheckResultStatusCount,
     ComplianceCheckStatusCount,
     complianceV2Url,
@@ -15,7 +16,7 @@ import {
 
 const complianceResultsStatsBaseUrl = `${complianceV2Url}/scan/stats`;
 
-type ComplianceProfileScanStats = {
+export type ComplianceProfileScanStats = {
     checkStats: ComplianceCheckStatusCount[];
     profileName: string;
     title: string;
@@ -30,9 +31,22 @@ export type ListComplianceProfileScanStatsResponse = {
 /**
  * Fetches the scan stats grouped by profile.
  */
-export function getComplianceProfilesStats(): Promise<ListComplianceProfileScanStatsResponse> {
+export function getComplianceProfilesStats(
+    clusterId: string = ''
+): Promise<ListComplianceProfileScanStatsResponse> {
+    let params = '';
+    if (clusterId) {
+        const searchQuery = getRequestQueryStringForSearchFilter({
+            'Cluster ID': clusterId,
+        });
+
+        params = qs.stringify({ query: searchQuery }, { arrayFormat: 'repeat', allowDots: true });
+    }
+
     return axios
-        .get<ListComplianceProfileScanStatsResponse>(`${complianceResultsStatsBaseUrl}/profiles`)
+        .get<ListComplianceProfileScanStatsResponse>(
+            `${complianceResultsStatsBaseUrl}/profiles?${params}`
+        )
         .then((response) => response.data);
 }
 
@@ -41,16 +55,9 @@ export function getComplianceProfilesStats(): Promise<ListComplianceProfileScanS
  */
 export function getComplianceClusterStats(
     profileName: string,
-    sortOption: ApiSortOption,
-    page: number,
-    perPage: number
+    { sortOption, page, perPage }: SearchQueryOptions
 ): Promise<ListComplianceClusterOverallStatsResponse> {
-    const queryParameters = {
-        query: {
-            pagination: { ...getPaginationParams(page, perPage), sortOption },
-        },
-    };
-    const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
     return axios
         .get<ListComplianceClusterOverallStatsResponse>(
             `${complianceResultsStatsBaseUrl}/profiles/${profileName}/clusters?${params}`

@@ -24,6 +24,7 @@ import ScannerV4IntegrationForm from './Forms/ScannerV4IntegrationForm';
 // notifiers
 import AwsSecurityHubIntegrationForm from './Forms/AwsSecurityHubIntegrationForm';
 import EmailIntegrationForm from './Forms/EmailIntegrationForm';
+import ACSCSEmailIntegrationForm from './Forms/AcscsEmailIntegrationForm';
 import GenericWebhookIntegrationForm from './Forms/GenericWebhookIntegrationForm';
 import GoogleCloudSccIntegrationForm from './Forms/GoogleCloudSccIntegrationForm';
 import JiraIntegrationForm from './Forms/JiraIntegrationForm';
@@ -84,6 +85,7 @@ const ComponentFormMap = {
         awsSecurityHub: AwsSecurityHubIntegrationForm,
         cscc: GoogleCloudSccIntegrationForm,
         email: EmailIntegrationForm,
+        acscsEmail: ACSCSEmailIntegrationForm,
         generic: GenericWebhookIntegrationForm,
         jira: JiraIntegrationForm,
         pagerduty: PagerDutyIntegrationForm,

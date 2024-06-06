@@ -27,6 +27,7 @@ var (
 type clusterInfo struct {
 	clusterID   string
 	clusterName string
+	scanRefID   string
 }
 
 func cleanupDatabase(b *testing.B, pool *pgtest.TestPostgres) {
@@ -57,23 +58,34 @@ func setupTest(b *testing.B, pool *pgtest.TestPostgres, datastore DataStore, num
 	}
 
 	clusters := make([]clusterInfo, 0, numClusters)
+	profiles := make(map[string]string, numClusters)
 	for i := 0; i < numClusters; i++ {
 		clusterID := uuid.NewV4().String()
 		clusterName := fmt.Sprintf("cluster-%d", i)
+		scanRefID := uuid.NewV4().String()
 		_, err := pool.DB.Exec(context.Background(), "insert into clusters (id, name) values ($1, $2)", clusterID, clusterName)
 		require.NoError(b, err)
 
 		clusters = append(clusters, clusterInfo{
 			clusterID:   clusterID,
 			clusterName: clusterName,
+			scanRefID:   scanRefID,
 		})
+
+		profileRefID := uuid.NewV4().String()
+		profiles[clusterID] = profileRefID
+		_, err = pool.DB.Exec(context.Background(), "insert into compliance_operator_profile_v2 (id, profileid, name, producttype, clusterid, profilerefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), "profile-1", "ocp4-cis-node", "node", clusterID, profileRefID)
+		require.NoError(b, err)
+
+		_, err = pool.DB.Exec(context.Background(), "insert into compliance_operator_scan_v2 (id, scanconfigname, scanname, profile_profileid, clusterid, scanrefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), scanConfigs[0], scanConfigs[0], profileRefID, clusterID, scanRefID)
+		require.NoError(b, err)
 	}
 
 	for i := 0; i < numResults; i++ {
 		resultName := fmt.Sprintf("check-result-%d", i)
 		for _, cluster := range clusters {
 			for _, scanConfig := range scanConfigs {
-				require.NoError(b, datastore.UpsertResult(hasComplianceCtx, fixtures.GetComplianceCheckResult(resultName, cluster.clusterID, cluster.clusterName, scanConfig, scanConfig)))
+				require.NoError(b, datastore.UpsertResult(hasComplianceCtx, fixtures.GetComplianceCheckResult(resultName, cluster.clusterID, cluster.clusterName, scanConfig, scanConfig, cluster.scanRefID)))
 			}
 		}
 

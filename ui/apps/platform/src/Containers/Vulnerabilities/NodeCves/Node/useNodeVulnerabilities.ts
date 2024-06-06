@@ -1,6 +1,7 @@
 import { gql, useQuery } from '@apollo/client';
 
 import { getPaginationParams } from 'utils/searchUtils';
+import { ClientPagination, Pagination } from 'services/types';
 import { NodeVulnerability, nodeVulnerabilityFragment } from './CVEsTable';
 
 const nodeVulnerabilitiesQuery = gql`
@@ -16,12 +17,13 @@ const nodeVulnerabilitiesQuery = gql`
     }
 `;
 
-export default function useNodeVulnerabilities(
-    id: string,
-    query: string,
-    page: number,
-    perPage: number
-) {
+export default function useNodeVulnerabilities({
+    nodeId,
+    query,
+    page,
+    perPage,
+    sortOption,
+}: { nodeId: string; query: string } & ClientPagination) {
     return useQuery<
         {
             node: {
@@ -32,13 +34,13 @@ export default function useNodeVulnerabilities(
         {
             id: string;
             query: string;
-            pagination: { limit: number; offset: number };
+            pagination: Pagination;
         }
     >(nodeVulnerabilitiesQuery, {
         variables: {
-            id,
+            id: nodeId,
             query,
-            pagination: getPaginationParams(page, perPage),
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 }

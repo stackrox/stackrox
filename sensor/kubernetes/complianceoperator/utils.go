@@ -9,10 +9,23 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/pointers"
+	"github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+var (
+	stackroxLabels = map[string]string{
+		"app.kubernetes.io/name": "stackrox",
+	}
+)
+
+// convertFunction signature of the convert functions
+type convertFunction func(string, *central.ApplyComplianceScanConfigRequest_BaseScanSettings, string) runtime.Object
+
+// updateFunction signature of the update functions
+type updateFunction func(*unstructured.Unstructured, *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error)
 
 type scanNameGetter interface {
 	GetScanName() string
@@ -28,21 +41,17 @@ func validateScanName(req scanNameGetter) error {
 	return nil
 }
 
-func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) *v1alpha1.ScanSetting {
+func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) runtime.Object {
 	return &v1alpha1.ScanSetting{
 		TypeMeta: v1.TypeMeta{
 			Kind:       complianceoperator.ScanSetting.Kind,
 			APIVersion: complianceoperator.GetGroupVersion().String(),
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      request.GetScanName(),
-			Namespace: namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/name": "stackrox",
-			},
-			Annotations: map[string]string{
-				"owner": "stackrox",
-			},
+			Name:        request.GetScanName(),
+			Namespace:   namespace,
+			Labels:      utils.GetSensorKubernetesLabels(),
+			Annotations: utils.GetSensorKubernetesAnnotations(),
 		},
 		Roles: []string{masterRole, workerRole},
 		ComplianceSuiteSettings: v1alpha1.ComplianceSuiteSettings{
@@ -59,7 +68,7 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 	}
 }
 
-func convertCentralRequestToScanSettingBinding(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) *v1alpha1.ScanSettingBinding {
+func convertCentralRequestToScanSettingBinding(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, _ string) runtime.Object {
 	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
 	for _, profile := range request.GetProfiles() {
 		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
@@ -75,14 +84,10 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 			APIVersion: complianceoperator.GetGroupVersion().String(),
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      request.GetScanName(),
-			Namespace: namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/name": "stackrox",
-			},
-			Annotations: map[string]string{
-				"owner": "stackrox",
-			},
+			Name:        request.GetScanName(),
+			Namespace:   namespace,
+			Labels:      utils.GetSensorKubernetesLabels(),
+			Annotations: utils.GetSensorKubernetesAnnotations(),
 		},
 		Profiles: profileRefs,
 		SettingsRef: &v1alpha1.NamedObjectReference{
@@ -194,4 +199,22 @@ func runtimeObjToUnstructured(obj runtime.Object) (*unstructured.Unstructured, e
 	return &unstructured.Unstructured{
 		Object: unstructuredObj,
 	}, nil
+}
+
+func updateScanSettingFromUpdateRequest(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
+	var scanSetting v1alpha1.ScanSetting
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &scanSetting); err != nil {
+		return nil, errors.Wrap(err, "Could not convert unstructured to scan setting")
+	}
+
+	return runtimeObjToUnstructured(updateScanSettingFromCentralRequest(&scanSetting, req))
+}
+
+func updateScanSettingBindingFromUpdateRequest(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
+	var scanSettingBinding v1alpha1.ScanSettingBinding
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &scanSettingBinding); err != nil {
+		return nil, errors.Wrap(err, "Could not convert unstructured to scan setting")
+	}
+
+	return runtimeObjToUnstructured(updateScanSettingBindingFromCentralRequest(&scanSettingBinding, req.GetScanSettings()))
 }

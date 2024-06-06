@@ -140,6 +140,8 @@ $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tool
 $(call go-tool, GOVULNCHECK_BIN, golang.org/x/vuln/cmd/govulncheck, tools/linters)
 $(call go-tool, IMAGE_PREFETCHER_DEPLOY, github.com/stackrox/image-prefetcher/deploy, tools/test)
 
+IMAGE_PREFETCHER_DEPLOY_VERSION = $(shell go -C tools/test list -m -f '{{.Version}}' github.com/stackrox/image-prefetcher/deploy)
+
 ###########
 ## Style ##
 ###########
@@ -819,7 +821,7 @@ bootstrap_migration:
 
 .PHONY: image-prefetcher-start
 image-prefetcher-start: $(IMAGE_PREFETCHER_DEPLOY)
-	. scripts/ci/lib.sh; image_prefetcher_start stackrox-images $(IMAGE_PREFETCHER_DEPLOY)
+	. scripts/ci/lib.sh; image_prefetcher_start stackrox-images $(IMAGE_PREFETCHER_DEPLOY) $(IMAGE_PREFETCHER_DEPLOY_VERSION)
 
 .PHONY: image-prefetcher-await
 image-prefetcher-await:

@@ -196,7 +196,7 @@ export const mountPropagationCriteriaName = 'Mount Propagation';
     defaultValue: the default value to set, if provided
     disabled: disables the field entirely
     reverse: will reverse boolean value on store
-    featureFlagDependency: optional property to filter descriptor by feature flag enabled or disabled
+    featureFlagDependency: optional property to filter descriptor by feature flags enabled or disabled
  */
 
 export type DescriptorOption = {
@@ -225,7 +225,7 @@ export type BaseDescriptor = {
     type: DescriptorType;
     canBooleanLogic?: boolean;
     disabled?: boolean;
-    featureFlagDependency?: FeatureFlagEnvVar;
+    featureFlagDependency?: FeatureFlagEnvVar[];
     lifecycleStages: LifecycleStage[];
 };
 

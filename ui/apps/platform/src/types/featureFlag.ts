@@ -2,6 +2,7 @@
 // However, add strings in alphabetical order to minimize merge conflicts when multiple people add strings.
 // prettier-ignore
 export type FeatureFlagEnvVar =
+    | 'ROX_ACSCS_EMAIL_NOTIFIER'
     | 'ROX_ACTIVE_VULN_MGMT'
     | 'ROX_ADMINISTRATION_EVENTS'
     | 'ROX_CLOUD_CREDENTIALS'
@@ -12,7 +13,6 @@ export type FeatureFlagEnvVar =
     | 'ROX_VULN_MGMT_2_GA'
     | 'ROX_VULN_MGMT_ADVANCED_FILTERS'
     | 'ROX_VULN_MGMT_LEGACY_SNOOZE'
-    | 'ROX_VULN_MGMT_NO_CVES_VIEW'
     | 'ROX_VULN_MGMT_NODE_PLATFORM_CVES'
     | 'ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'
     | 'ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL'

@@ -2,6 +2,7 @@ import { gql, useQuery } from '@apollo/client';
 
 import { getPaginationParams } from 'utils/searchUtils';
 
+import { ClientPagination } from 'services/types';
 import { ClustersByType, clustersByTypeFragment } from './ClustersByTypeSummaryCard';
 
 const platformCveMetadataQuery = gql`
@@ -32,12 +33,12 @@ export type PlatformCveMetadata = {
     firstDiscoveredInSystem: string;
 };
 
-export default function usePlatformCveMetadata(
-    cve: string,
-    query: string,
-    page: number,
-    perPage: number
-) {
+export default function usePlatformCveMetadata({
+    cve,
+    query,
+    page,
+    perPage,
+}: { cve: string; query: string } & ClientPagination) {
     return useQuery<{
         totalClusterCount: number;
         clusterCount: number;
@@ -46,7 +47,7 @@ export default function usePlatformCveMetadata(
         variables: {
             cve,
             query,
-            pagination: getPaginationParams(page, perPage),
+            pagination: getPaginationParams({ page, perPage }),
         },
     });
 }

@@ -48,6 +48,8 @@ deploy_stackrox() {
 
     wait_for_collectors_to_be_operational "${sensor_namespace}"
 
+    pause_stackrox_operator_reconcile "${central_namespace}" "${sensor_namespace}"
+
     touch "${STATE_DEPLOYED}"
 }
 
@@ -146,7 +148,6 @@ export_test_environment() {
     ci_export ROX_VULN_MGMT_2_GA "${ROX_VULN_MGMT_2_GA:-true}"
     ci_export ROX_VULN_MGMT_ADVANCED_FILTERS "${ROX_VULN_MGMT_ADVANCED_FILTERS:-true}"
     ci_export ROX_VULN_MGMT_LEGACY_SNOOZE "${ROX_VULN_MGMT_LEGACY_SNOOZE:-true}"
-    ci_export ROX_VULN_MGMT_NO_CVES_VIEW "${ROX_VULN_MGMT_NO_CVES_VIEW:-true}"
     ci_export ROX_WORKLOAD_CVES_FIXABILITY_FILTERS "${ROX_WORKLOAD_CVES_FIXABILITY_FILTERS:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
@@ -284,7 +285,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_VULN_MGMT_LEGACY_SNOOZE'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_VULN_MGMT_NO_CVES_VIEW'
+    customize_envVars+=$'\n      - name: ROX_WORKLOAD_CVES_FIXABILITY_FILTERS'
     customize_envVars+=$'\n        value: "true"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
@@ -400,6 +401,24 @@ deploy_sensor_via_operator() {
        kubectl -n "${sensor_namespace}" set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
        kubectl -n "${sensor_namespace}" set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
     fi
+}
+
+pause_stackrox_operator_reconcile() {
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "false" ]]; then
+        return
+    fi
+    local central_namespace=${1:-stackrox}
+    local sensor_namespace=${2:-stackrox}
+
+    kubectl annotate -n "${central_namespace}" \
+        centrals.platform.stackrox.io \
+        stackrox-central-services \
+        stackrox.io/pause-reconcile=true
+
+    kubectl annotate -n "${sensor_namespace}" \
+        securedclusters.platform.stackrox.io \
+        stackrox-secured-cluster-services \
+        stackrox.io/pause-reconcile=true
 }
 
 export_central_basic_auth_creds() {
