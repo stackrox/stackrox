@@ -461,7 +461,7 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 		if err != nil {
 			return nil, errors.Wrapf(err, "Unable to retrieve profiles for result %v", parsedQuery)
 		}
-		if len(profiles) != 0 {
+		if len(profiles) == 0 {
 			return nil, errors.Errorf("Unable to find profiles for result %v", parsedQuery)
 		}
 
