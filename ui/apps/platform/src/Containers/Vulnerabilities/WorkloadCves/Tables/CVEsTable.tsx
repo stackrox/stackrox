@@ -22,6 +22,12 @@ import TooltipTh from 'Components/TooltipTh';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
+<<<<<<< Updated upstream
+=======
+import { TableUIState } from 'utils/getTableUIState';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import ExpandRowTd from 'Components/ExpandRowTableHeader';
+>>>>>>> Stashed changes
 import { VulnerabilitySeverityLabel } from '../../types';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
@@ -147,7 +153,7 @@ function CVEsTable({
         <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <Th>{/* Header for expanded column */}</Th>
+                    <ExpandRowTd />
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams('CVE')}>CVE</Th>
                     <TooltipTh tooltip="Severity of this CVE across images">
