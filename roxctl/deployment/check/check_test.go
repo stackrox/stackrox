@@ -273,12 +273,11 @@ func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientCo
 
 func (d *deployCheckTestSuite) SetupTest() {
 	d.defaultDeploymentCheckCommand = deploymentCheckCommand{
-		files:              []string{"testdata/deployment.yaml"},
-		retryDelay:         3,
-		retryCount:         3,
-		timeout:            1 * time.Minute,
-		printAllViolations: true,
-		namespace:          defaultNamespace,
+		files:      []string{"testdata/deployment.yaml"},
+		retryDelay: 3,
+		retryCount: 3,
+		timeout:    1 * time.Minute,
+		namespace:  defaultNamespace,
 	}
 }
 
@@ -355,7 +354,6 @@ func (d *deployCheckTestSuite) TestConstruct() {
 		timeout    time.Duration
 		f          *printer.ObjectPrinterFactory
 		p          printer.ObjectPrinter
-		json       bool
 		shouldFail bool
 		error      error
 	}{
@@ -363,11 +361,6 @@ func (d *deployCheckTestSuite) TestConstruct() {
 			timeout: expectedTimeout,
 			f:       validObjectPrinterFactory,
 			p:       jsonPrinter,
-		},
-		"should not create a printer when using legacy json output": {
-			timeout: expectedTimeout,
-			f:       validObjectPrinterFactory,
-			json:    true,
 		},
 		"should fail when invalid values are provided for object printer factory": {
 			timeout:    expectedTimeout,
@@ -380,7 +373,6 @@ func (d *deployCheckTestSuite) TestConstruct() {
 	for name, c := range cases {
 		d.Run(name, func() {
 			deployCheckCmd := d.defaultDeploymentCheckCommand
-			deployCheckCmd.json = c.json
 
 			err := deployCheckCmd.Construct(nil, testCmd, c.f)
 			if c.shouldFail {
@@ -530,50 +522,6 @@ func (d *deployCheckTestSuite) TestCheck_JunitOutput() {
 		"deployment-check", defaultJunitJSONPathExpressions).CreatePrinter("junit")
 	d.Require().NoError(err)
 	d.runOutputTests(cases, csvPrinter, true)
-}
-
-func (d *deployCheckTestSuite) TestCheck_LegacyJSONOutput() {
-	cases := map[string]outputFormatTest{
-		"should render legacy JSON output and return no error with non failing alerts": {
-			alerts:         testDeploymentAlertsWithoutFailure,
-			expectedOutput: "testDeploymentAlertsWithoutFailure_legacy.json",
-		},
-		"should render legacy JSON output and return no error with failing alerts": {
-			alerts:         testDeploymentAlertsWithFailure,
-			expectedOutput: "testDeploymentAlertsWithFailure_legacy.json",
-			shouldFail:     false,
-		},
-		"should render empty output with empty alerts": {
-			alerts:         nil,
-			expectedOutput: "empty.json",
-		},
-	}
-
-	d.runLegacyOutputTests(cases, true)
-}
-
-func (d *deployCheckTestSuite) runLegacyOutputTests(cases map[string]outputFormatTest, json bool) {
-	for name, c := range cases {
-		d.Run(name, func() {
-			var out *bytes.Buffer
-			conn, closeFunction, _ := d.createGRPCMockDetectionService(c.alerts, c.ignoredObjRefs)
-			defer closeFunction()
-
-			deployCheckCmd := d.defaultDeploymentCheckCommand
-			deployCheckCmd.env, out, _ = d.createMockEnvironmentWithConn(conn)
-			deployCheckCmd.json = json
-
-			err := deployCheckCmd.Check()
-			if c.shouldFail {
-				d.Require().Error(err)
-			} else {
-				d.Require().NoError(err)
-			}
-			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
-			d.Require().NoError(err)
-			d.Assert().Equal(string(expectedOutput), out.String())
-		})
-	}
 }
 
 func (d *deployCheckTestSuite) runOutputTests(cases map[string]outputFormatTest, printer printer.ObjectPrinter,

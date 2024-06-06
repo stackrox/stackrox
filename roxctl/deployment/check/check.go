@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
-	"github.com/stackrox/rox/roxctl/common/report"
 	"github.com/stackrox/rox/roxctl/summaries/policy"
 )
 
@@ -112,21 +111,14 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	objectPrinterFactory.AddFlags(c)
 
 	c.Flags().StringArrayVarP(&deploymentCheckCmd.files, "file", "f", nil, "YAML files to send to Central to evaluate policies against")
-	c.Flags().BoolVar(&deploymentCheckCmd.json, "json", false, "Output policy results as json.")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
 	c.Flags().StringSliceVarP(&deploymentCheckCmd.policyCategories, "categories", "c", nil, "Optional comma separated list of policy categories to run.  Defaults to all policy categories.")
-	c.Flags().BoolVar(&deploymentCheckCmd.printAllViolations, "print-all-violations", false, "Whether to print all violations per alert or truncate violations for readability")
 	c.Flags().BoolVar(&deploymentCheckCmd.force, "force", false, "Bypass Central's cache for images and force a new pull from the Scanner")
 	utils.Must(c.MarkFlagRequired("file"))
 	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "Cluster name or ID to use as context for evaluation. Setting cluster enables enhancing deployments with cluster-specific information.")
 	c.Flags().StringVarP(&deploymentCheckCmd.namespace, "namespace", "n", defaultNamespace, "A namespace to enhance the deployments with context information (network policies, RBACs, services) for deployments that lack namespace in their spec. Namespace defined in spec will not be changed.")
 	c.Flags().BoolVarP(&deploymentCheckCmd.verbose, "verbose", "v", false, "Enable additional output like permission level and applied network policies for checked deployments")
-	// mark legacy output format specific flags as deprecated
-	utils.Must(c.Flags().MarkDeprecated("json", "Use the new output format which also offers JSON. NOTE: "+
-		"The new output format's structure has changed in a non-backward compatible way."))
-	utils.Must(c.Flags().MarkDeprecated("print-all-violations", "Use the new output format where all "+
-		"violations are printed by default. This flag will only be relevant in combination with the --json flag"))
 
 	return c
 }
@@ -134,18 +126,16 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 type deploymentCheckCommand struct {
 	// properties bound to cobra flags
 	// TODO(ROX-21443): Remove firstFile once sarif printers can handle multiple entities
-	firstFile          string
-	files              []string
-	json               bool
-	retryDelay         int
-	retryCount         int
-	policyCategories   []string
-	printAllViolations bool
-	timeout            time.Duration
-	force              bool
-	cluster            string
-	namespace          string
-	verbose            bool
+	firstFile        string
+	files            []string
+	retryDelay       int
+	retryCount       int
+	policyCategories []string
+	timeout          time.Duration
+	force            bool
+	cluster          string
+	namespace        string
+	verbose          bool
 
 	// injected or constructed values by Construct
 	env                environment.Environment
@@ -161,16 +151,12 @@ func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *pr
 	// d.firstFile needs to be populated before the printer is created
 	d.firstFile = d.files[0]
 
-	// Only create a printer if legacy json output format is not used
-	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format
-	if !d.json {
-		p, err := f.CreatePrinter()
-		if err != nil {
-			return errors.Wrap(err, "could not create printer for deployment check results")
-		}
-		d.printer = p
-		d.standardizedFormat = f.IsStandardizedFormat()
+	p, err := f.CreatePrinter()
+	if err != nil {
+		return errors.Wrap(err, "could not create printer for deployment check results")
 	}
+	d.printer = p
+	d.standardizedFormat = f.IsStandardizedFormat()
 
 	return nil
 }
@@ -286,10 +272,6 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 	// want this to be visible to the old output format.
 	for _, ignoredObjRef := range ignoredObjectRefs {
 		d.env.Logger().InfofLn("Ignored object %q as its schema was not registered.", ignoredObjRef)
-	}
-
-	if d.json {
-		return errors.Wrap(report.JSONWithRemarks(d.env.InputOutput().Out(), alerts, remarks), "could not print JSON report")
 	}
 
 	// TODO: Need to refactor this to include additional summary info for non-standardized formats
