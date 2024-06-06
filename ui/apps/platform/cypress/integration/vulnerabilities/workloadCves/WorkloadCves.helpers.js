@@ -236,7 +236,8 @@ export function visitAnyImageSinglePage() {
     cy.get('tbody tr td[data-label="Image"] a').first().click();
 
     return cy.get('h1').then(($h1) => {
-        return $h1.text().split(':');
+        // Remove the SHA and/or tag from the image name
+        return $h1.text().replace(/(@sha256)?:.*/, '');
     });
 }
 
