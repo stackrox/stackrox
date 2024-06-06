@@ -55,9 +55,9 @@ export type ListComplianceCheckResultResponse = {
 export function getComplianceProfileCheckResult(
     profileName: string,
     checkName: string,
-    { sortOption, page, perPage }: SearchQueryOptions
+    { sortOption, page, perPage, searchFilter }: SearchQueryOptions
 ): Promise<ListComplianceCheckClusterResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
     return axios
         .get<ListComplianceCheckClusterResponse>(
             `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks/${checkName}?${params}`
