@@ -7,6 +7,7 @@ import (
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -93,6 +94,29 @@ func convertV2NotifierConfigToProto(notifier *v2.NotifierConfiguration) *storage
 		}
 	}
 	return ret
+}
+
+// convertProtoNotifierConfigToV2 converts storage.NotifierConfiguration to v2.NotifierConfiguration
+func convertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguration, notifierName string) (*v2.NotifierConfiguration, error) {
+	if notifierConfig == nil {
+		return nil, nil
+	}
+
+	if notifierConfig.GetEmailConfig() == nil {
+		return nil, errors.New("Email config read from database is nil")
+	}
+
+	return &v2.NotifierConfiguration{
+		NotifierName: notifierName,
+		NotifierConfig: &v2.NotifierConfiguration_EmailConfig{
+			EmailConfig: &v2.EmailNotifierConfiguration{
+				NotifierId:    notifierConfig.GetId(),
+				MailingLists:  notifierConfig.GetEmailConfig().GetMailingLists(),
+				CustomSubject: notifierConfig.GetEmailConfig().GetCustomSubject(),
+				CustomBody:    notifierConfig.GetEmailConfig().GetCustomBody(),
+			},
+		},
+	}, nil
 }
 
 func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.ComplianceScanConfiguration) *storage.ComplianceOperatorScanConfigurationV2 {
@@ -206,9 +230,26 @@ func getLatestBindingError(status *storage.ComplianceOperatorStatus) string {
 
 func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 	scanConfig *storage.ComplianceOperatorScanConfigurationV2, configDS complianceDS.DataStore,
-	bindingsDS bindingsDS.DataStore, suiteDS suiteDS.DataStore) (*v2.ComplianceScanConfigurationStatus, error) {
+	bindingsDS bindingsDS.DataStore, suiteDS suiteDS.DataStore, notifierDS notifierDS.DataStore) (*v2.ComplianceScanConfigurationStatus, error) {
 	if scanConfig == nil {
 		return nil, nil
+	}
+
+	notifiers := []*v2.NotifierConfiguration{}
+	for _, notifierConfig := range scanConfig.GetNotifiers() {
+
+		notifier, found, err := notifierDS.GetNotifier(ctx, notifierConfig.GetId())
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			return nil, errors.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetId())
+		}
+		notifierV2, err := convertProtoNotifierConfigToV2(notifierConfig, notifier.GetName())
+		if err != nil {
+			return nil, err
+		}
+		notifiers = append(notifiers, notifierV2)
 	}
 
 	scanClusters, err := configDS.GetScanConfigClusterStatus(ctx, scanConfig.GetId())
@@ -248,6 +289,7 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 
 		clusterToSuiteMap[suite.ClusterId] = suiteStatus
 	}
+
 	return &v2.ComplianceScanConfigurationStatus{
 		Id:       scanConfig.GetId(),
 		ScanName: scanConfig.GetScanConfigName(),
@@ -285,6 +327,7 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 			ScanSchedule: convertProtoScheduleToV2(scanConfig.GetSchedule()),
 			Profiles:     profiles,
 			Description:  scanConfig.GetDescription(),
+			Notifiers:    notifiers,
 		},
 		ModifiedBy: &v2.SlimUser{
 			Id:   scanConfig.GetModifiedBy().GetId(),
@@ -298,14 +341,14 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 
 func convertStorageScanConfigToV2ScanStatuses(ctx context.Context,
 	scanConfigs []*storage.ComplianceOperatorScanConfigurationV2,
-	configDS complianceDS.DataStore, bindingDS bindingsDS.DataStore, suiteDS suiteDS.DataStore) ([]*v2.ComplianceScanConfigurationStatus, error) {
+	configDS complianceDS.DataStore, bindingDS bindingsDS.DataStore, suiteDS suiteDS.DataStore, notifierDS notifierDS.DataStore) ([]*v2.ComplianceScanConfigurationStatus, error) {
 	if scanConfigs == nil {
 		return nil, nil
 	}
 
 	scanStatuses := make([]*v2.ComplianceScanConfigurationStatus, 0, len(scanConfigs))
 	for _, scanConfig := range scanConfigs {
-		converted, err := convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, configDS, bindingDS, suiteDS)
+		converted, err := convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, configDS, bindingDS, suiteDS, notifierDS)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error converting storage compliance operator scan configuration status with name %s to response", scanConfig.GetScanConfigName())
 		}

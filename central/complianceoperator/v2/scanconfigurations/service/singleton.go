@@ -6,6 +6,7 @@ import (
 	scanSettingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanSettingBindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -27,7 +28,7 @@ func Singleton() Service {
 
 	serviceInstanceInit.Do(func() {
 		serviceInstance = New(scanSettingsDS.Singleton(), scanSettingBindingsDS.Singleton(), suiteDS.Singleton(),
-			compliancemanager.Singleton(), reportManager.Singleton())
+			compliancemanager.Singleton(), reportManager.Singleton(), notifierDS.Singleton())
 	})
 	return serviceInstance
 }
