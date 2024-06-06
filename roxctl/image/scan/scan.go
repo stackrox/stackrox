@@ -2,12 +2,10 @@ package scan
 
 import (
 	"context"
-	"io"
 	"slices"
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -25,11 +23,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/common/util"
-)
-
-const (
-	deprecationNote = "please use --output/-o to specify the output format. " +
-		"NOTE: The new JSON / CSV format contains breaking changes, make sure you adapt to the new structure before migrating."
 )
 
 var (
@@ -101,15 +94,11 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	imageScanCmd := &imageScanCommand{env: cliEnvironment}
 
-	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table",
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("json",
 		append(supportedObjectPrinters,
 			printer.NewSarifPrinterFactory(printers.SarifVulnerabilityReport, sarifJSONPathExpressions, &imageScanCmd.image))...)
 	// should not happen when using default values, must be a programming error
 	utils.Must(err)
-	// Set the Output Format to empty, so by default the new output format will not be used and the legacy one will be
-	// preferred and used. Once the output format is set, it will take precedence over the legacy one specified
-	// via the --format flag.
-	objectPrinterFactory.OutputFormat = ""
 
 	c := &cobra.Command{
 		Use:   "scan",
@@ -144,13 +133,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}, "List of severities to include in the output. Use this to filter for specific severities")
 	c.Flags().BoolVarP(&imageScanCmd.failOnFinding, "fail", "", false, "Fail if vulnerabilities have been found")
 
-	// Deprecated flag
-	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format and are sure we do not break existing customer scripts
-	// The error message will be prefixed by "command <command-name> has been deprecated,"
-	// Fully deprecated "pretty" format, since we can assume no customer has built scripting around its loose format
-	c.Flags().StringVarP(&imageScanCmd.format, "format", "", "json", "Format of the output. Choose output format from json and csv.")
-	utils.Must(c.Flags().MarkDeprecated("format", deprecationNote))
-
 	utils.Must(c.MarkFlagRequired("image"))
 	return c
 }
@@ -161,7 +143,6 @@ type imageScanCommand struct {
 	image          string
 	force          bool
 	includeSnoozed bool
-	format         string
 	retryDelay     int
 	retryCount     int
 	timeout        time.Duration
@@ -183,16 +164,12 @@ func (i *imageScanCommand) Construct(_ []string, cmd *cobra.Command, f *printer.
 		return common.ErrInvalidCommandOption.CausedBy(err)
 	}
 
-	// Only create the printer when the old, deprecated output format is not used
-	// TODO(ROX-8303): This can be removed once the old output format is fully deprecated
-	if f.OutputFormat != "" {
-		p, err := f.CreatePrinter()
-		if err != nil {
-			return errors.Wrap(err, "could not create printer for image scan result")
-		}
-		i.printer = p
-		i.standardizedFormat = f.IsStandardizedFormat()
+	p, err := f.CreatePrinter()
+	if err != nil {
+		return errors.Wrap(err, "could not create printer for image scan result")
 	}
+	i.printer = p
+	i.standardizedFormat = f.IsStandardizedFormat()
 
 	return nil
 }
@@ -202,15 +179,6 @@ func (i *imageScanCommand) Construct(_ []string, cmd *cobra.Command, f *printer.
 func (i *imageScanCommand) Validate() error {
 	if i.image == "" {
 		return errox.InvalidArgs.New("no image name specified via the -i or --image flag")
-	}
-
-	// Only verify the legacy output format if no printer is constructed, thus the new output format is not used
-	if i.printer == nil {
-		// TODO(ROX-8303): this can be removed once the old output format is fully deprecated
-		if i.format != "" && i.format != "json" && i.format != "csv" {
-			return errox.InvalidArgs.Newf("invalid output format %q used. You can "+
-				"only specify json or csv", i.format)
-		}
 	}
 
 	validSeverities := []string{
@@ -291,7 +259,7 @@ func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
 // via a printer.ObjectPrinter
 func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 	if i.printer == nil {
-		return legacyPrintFormat(imageResult, i.format, i.env.InputOutput().Out(), i.env.Logger())
+		return errors.New("no result printer configured")
 	}
 
 	cveSummary := newCVESummaryForPrinting(imageResult.GetScan(), i.severities)
@@ -332,24 +300,4 @@ func printCVEWarning(numOfVulns int, numOfComponents int, out logger.Logger) {
 		out.WarnfLn("A total of %d unique vulnerabilities were found in %d components",
 			numOfVulns, numOfComponents)
 	}
-}
-
-// TODO(ROX-8303): remove this once we have fully deprecated the legacy output format
-// print CVE scan result in legacy output format
-func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer, logger logger.Logger) error {
-	switch format {
-	case "csv":
-		return PrintCSV(imageResult, out)
-	default:
-		marshaller := &jsonpb.Marshaler{
-			Indent: "  ",
-		}
-		jsonResult, err := marshaller.MarshalToString(imageResult)
-		if err != nil {
-			return errors.Wrap(err, "could not marshal image result")
-		}
-
-		logger.PrintfLn(jsonResult)
-	}
-	return nil
 }

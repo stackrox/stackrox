@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
-	"github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -291,25 +290,19 @@ func (s *imageScanTestSuite) TestConstruct() {
 	cmd := &cobra.Command{Use: "test"}
 	cmd.Flags().Duration("timeout", 1*time.Minute, "")
 	cmd.Flags().Duration("retry-timeout", 1*time.Minute, "")
-	cmd.Flags().String("format", "", "")
 	cmd.Flags().String("output", "", "")
 
 	cases := map[string]struct {
-		legacyFormat       string
 		printerFactory     *printer.ObjectPrinterFactory
 		standardizedFormat bool
 		printer            printer.ObjectPrinter
 		shouldFail         bool
 		error              error
 	}{
-		"new output format and valid default values": {
+		"valid default values": {
 			printerFactory:     validObjPrinterFactory,
 			standardizedFormat: true,
 			printer:            jsonPrinter,
-		},
-		"legacy output format should never create printers with empty output format": {
-			legacyFormat:   "json",
-			printerFactory: emptyOutputFormatPrinterFactory,
 		},
 		"invalid printer factory should return an error": {
 			printerFactory: invalidObjPrinterFactory,
@@ -322,7 +315,6 @@ func (s *imageScanTestSuite) TestConstruct() {
 		s.Run(name, func() {
 			imgScanCmd := s.defaultImageScanCommand
 			imgScanCmd.env, _, _ = s.newTestMockEnvironmentWithConn(nil)
-			imgScanCmd.format = c.legacyFormat
 
 			err := imgScanCmd.Construct(nil, cmd, c.printerFactory)
 			if c.shouldFail {
@@ -339,61 +331,20 @@ func (s *imageScanTestSuite) TestConstruct() {
 	}
 }
 
-func (s *imageScanTestSuite) TestDeprecationNote() {
-	emptyOutputFormatPrinterFactory, err := printer.NewObjectPrinterFactory("json", printer.NewJSONPrinterFactory(false, false))
-	s.Require().NoError(err)
-	emptyOutputFormatPrinterFactory.OutputFormat = ""
-
-	cases := map[string]struct {
-		formatChanged bool
-		outputChanged bool
-	}{
-		"default values are not changed, the deprecation warning should not be printed": {},
-		"changes in format, deprecation warning should not be printed": {
-			formatChanged: true,
-		},
-		"changes in output format, deprecation warning should not be printed": {
-			outputChanged: true,
-		},
-		"changes in both format and output format, deprecation warning should not be printed": {
-			outputChanged: true,
-			formatChanged: true,
-		},
-	}
-
-	for name, c := range cases {
-		s.Run(name, func() {
-			imgScanCmd := s.defaultImageScanCommand
-			io, _, _, errOut := io.TestIO()
-			imgScanCmd.env = environment.NewTestCLIEnvironment(s.T(), io, printer.DefaultColorPrinter())
-			cmd := Command(imgScanCmd.env)
-			cmd.Flags().Duration("timeout", 1*time.Minute, "")
-			cmd.Flags().Duration("retry-timeout", 1*time.Minute, "")
-			cmd.Flag("format").Changed = c.formatChanged
-			cmd.Flag("output").Changed = c.outputChanged
-
-			_ = imgScanCmd.Construct(nil, cmd, emptyOutputFormatPrinterFactory)
-			s.Assert().Empty(errOut.String())
-		})
-	}
-}
-
 func (s *imageScanTestSuite) TestValidate() {
 	jsonPrinter, err := printer.NewJSONPrinterFactory(false, false).CreatePrinter("json")
 	s.Require().NoError(err)
 
 	cases := map[string]struct {
-		image        string
-		legacyFormat string
-		printer      printer.ObjectPrinter
-		shouldFail   bool
-		error        error
+		image      string
+		printer    printer.ObjectPrinter
+		shouldFail bool
+		error      error
 	}{
-		"valid legacy output format and image name should not result in an error": {
-			image:        s.defaultImageScanCommand.image,
-			legacyFormat: "json",
+		"no output format and image name should not result in an error": {
+			image: s.defaultImageScanCommand.image,
 		},
-		"valid new output format and image name should not result in an error": {
+		"valid output printer and image name should not result in an error": {
 			image:   s.defaultImageScanCommand.image,
 			printer: jsonPrinter,
 		},
@@ -401,24 +352,12 @@ func (s *imageScanTestSuite) TestValidate() {
 			image: "c:",
 			error: errox.InvalidArgs,
 		},
-		"wrong legacy output format should result in an error when new output format IS NOT used": {
-			image:        s.defaultImageScanCommand.image,
-			legacyFormat: "table",
-			shouldFail:   true,
-			error:        errox.InvalidArgs,
-		},
-		"wrong legacy output format should NOT result in an error when new output format IS used": {
-			image:        s.defaultImageScanCommand.image,
-			legacyFormat: "table",
-			printer:      jsonPrinter,
-		},
 	}
 
 	for name, c := range cases {
 		s.Run(name, func() {
 			imgScanCmd := s.defaultImageScanCommand
 			imgScanCmd.image = c.image
-			imgScanCmd.format = c.legacyFormat
 			imgScanCmd.printer = c.printer
 
 			err := imgScanCmd.Validate()
@@ -522,29 +461,7 @@ func (s *imageScanTestSuite) TestScan_CSVOutput() {
 	s.runOutputTests(cases, csvPrinter, true)
 }
 
-func (s *imageScanTestSuite) TestScan_LegacyCSVOutput() {
-	cases := map[string]outputFormatTest{
-		"should print legacy CSV output if format is set": {
-			components:     testComponents,
-			expectedOutput: "legacy_testComponents.csv",
-		},
-	}
-
-	s.runLegacyOutputTests(cases, "csv")
-}
-
-func (s *imageScanTestSuite) TestScan_LegacyJSONOutput() {
-	cases := map[string]outputFormatTest{
-		"should print legacy JSON output if format is set": {
-			components:     testComponents,
-			expectedOutput: "legacy_testComponents.json",
-		},
-	}
-
-	s.runLegacyOutputTests(cases, "json")
-}
-
-// helpers to run output formats tests either for legacy formats or printer.ObjectPrinter supported formats
+// helpers to run printer.ObjectPrinter supported formats
 
 func (s *imageScanTestSuite) runOutputTests(cases map[string]outputFormatTest, printer printer.ObjectPrinter,
 	standardizedFormat bool,
@@ -591,26 +508,6 @@ func (s *imageScanTestSuite) createImgScanCmd(c outputFormatTest, printer printe
 	imgScanCmd.env, out, errOut = s.newTestMockEnvironmentWithConn(conn)
 	imgScanCmd.failOnFinding = c.failOnFinding
 	return out, errOut, closeF, imgScanCmd
-}
-
-func (s *imageScanTestSuite) runLegacyOutputTests(cases map[string]outputFormatTest, format string) {
-	for name, c := range cases {
-		s.Run(name, func() {
-			var out *bytes.Buffer
-			conn, closeF := s.createGRPCMockImageService(c.components)
-			defer closeF()
-
-			imgScanCmd := s.defaultImageScanCommand
-			imgScanCmd.format = format
-			imgScanCmd.env, out, _ = s.newTestMockEnvironmentWithConn(conn)
-
-			err := imgScanCmd.Scan()
-			s.Require().NoError(err)
-			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
-			s.Require().NoError(err)
-			s.Assert().Equal(string(expectedOutput), out.String())
-		})
-	}
 }
 
 func (s *imageScanTestSuite) TestScan_IncludeSnoozed() {
