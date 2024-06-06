@@ -18,6 +18,7 @@ MANDATORY:
   --replaced-version   Version that the bundle replaces. Example: v1.0.0
 
 OPTION:
+  --platform           Platforms to use with docker buildx.  Otherwise, use docker build.
   --base-dir           Working directory for the script. Default: '.'
   --clean-output-dir   Delete '{base-dir}/build/index' directory.
   --use-http           Use plain HTTP for container image registries.
@@ -38,6 +39,7 @@ BUNDLE_TAG=""
 REPLACED_VERSION=""
 BASE_DIR="."
 RUN_BUILD=1
+PLATFORM=""
 
 # Helpful for local development and testing
 CLEAN_OUTPUT_DIR=""
@@ -65,6 +67,8 @@ function read_arguments() {
                 SKIP_TLS_VERIFY="--skip-tls-verify";;
             "--skip-build")
                 RUN_BUILD=0;;
+            "--platform")
+		PLATFORM="${2}";shift;;
             *)
                 echo "Error: Unknown parameter: ${1}" >&2
                 usage_exit
@@ -149,7 +153,14 @@ EOF
 "${OPM}" validate "${BUILD_INDEX_DIR}"
 
 if (( RUN_BUILD )); then
-  docker build --quiet --file "${BUILD_INDEX_DIR}.Dockerfile" --tag "${INDEX_TAG}" "${BUILD_INDEX_DIR}/.."
+  if [[ -z "${PLATFORM}" ]]; then
+    docker build --quiet --file "${BUILD_INDEX_DIR}.Dockerfile" --tag "${INDEX_TAG}" "${BUILD_INDEX_DIR}/.."
+  else
+    docker buildx create --name project-v3-builder
+    docker buildx use project-v3-builder
+    docker buildx build --platform=${PLATFORM} --push --tag ${INDEX_TAG} -f "${BUILD_INDEX_DIR}.Dockerfile" "${BUILD_INDEX_DIR}/.."
+    docker buildx rm project-v3-builder
+  fi
 
   echo "Index image ${INDEX_TAG} is successfully created."
 else
