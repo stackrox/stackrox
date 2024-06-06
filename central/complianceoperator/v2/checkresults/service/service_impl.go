@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -46,6 +47,7 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceProfileCheckDetails",
 		},
 	})
+	log = logging.LoggerForModule()
 )
 
 // New returns a service object for registering with grpc.
@@ -446,6 +448,7 @@ func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, requ
 }
 
 func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQuery *v1.Query, countQuery *v1.Query) (*v2.ListComplianceResultsResponse, error) {
+	log.Info("SHREWS -- enter searchComplianceCheckResults")
 	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
@@ -455,7 +458,8 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 	checkToControls := make(map[string][]*complianceRuleDS.ControlResult, len(scanResults))
 	// Cache profiles for scan ref id so we don't have to look them up each time.
 	profileCache := make(map[string]string, len(scanResults))
-	for _, result := range scanResults {
+	for i, result := range scanResults {
+		log.Infof("SHREWS -- iteration %d", i)
 		// Check the Profile so we can get the controls.
 		profileName, found := profileCache[result.GetScanRefId()]
 		if !found {
@@ -470,6 +474,7 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 			}
 			profileName = profiles[0].GetName()
 		}
+		log.Info("SHREWS -- got profile")
 
 		rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, result.GetRuleRefId()).ProtoQuery())
 		if err != nil {
@@ -479,6 +484,7 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
 		}
 		checkToRule[result.GetRuleRefId()] = rules[0].GetName()
+		log.Info("SHREWS -- got rules")
 
 		if _, found := checkToControls[result.GetCheckName()]; !found {
 			controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, []string{rules[0].GetName()}, profileName, s.benchmarkDS)
@@ -488,13 +494,17 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 
 			checkToControls[result.GetCheckName()] = controls
 		}
+		log.Info("SHREWS -- got controls")
+		log.Info("SHREWS -- exit loop")
 	}
 
+	log.Info("SHREWS -- loop done")
 	count, err := s.complianceResultsDS.CountCheckResults(ctx, countQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve count of compliance scan results for query %v", parsedQuery)
 	}
 
+	log.Info("SHREWS -- exit searchComplianceCheckResults")
 	return &v2.ListComplianceResultsResponse{
 		ScanResults: storagetov2.ComplianceV2CheckData(scanResults, checkToRule, checkToControls),
 		TotalCount:  int32(count),
