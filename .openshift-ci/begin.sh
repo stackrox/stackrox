@@ -20,6 +20,8 @@ if [[ -z "${SHARED_DIR:-}" ]]; then
     exit 0 # not fatal but worth highlighting
 fi
 
+info "Testing OCP 4.16 with JOB_NAME:${JOB_NAME}"
+
 # TODO:: Remove ocp-stable if it's deleted from the OSCI, e.g.,
 # https://github.com/openshift/release/blob/a14f76e0918b047d2406e9eb6baac82b55ced05a/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-stable-scanner-v4.yaml
 if [[ "${JOB_NAME:-}" =~ -ocp-(4|stable)- ]]; then
