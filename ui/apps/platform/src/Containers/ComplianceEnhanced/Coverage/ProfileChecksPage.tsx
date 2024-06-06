@@ -24,18 +24,13 @@ import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/Com
 import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import useURLSearch from 'hooks/useURLSearch';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
-import {
-    CHECK_NAME_QUERY,
-    CHECK_STATUS_QUERY,
-    CLUSTER_QUERY,
-} from './compliance.coverage.constants';
+import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
 import CoveragesPageHeader from './CoveragesPageHeader';
 import ProfileChecksTable from './ProfileChecksTable';
-import CheckStatusDropdown from './components/CheckStatusDropdown';
 
 function ProfileChecksPage() {
     const { profileName } = useParams();
@@ -46,13 +41,13 @@ function ProfileChecksPage() {
     const { sortOption, getSortParams } = useURLSort({
         sortFields: [CHECK_NAME_QUERY],
         defaultSortOption: { field: CHECK_NAME_QUERY, direction: 'asc' },
-        onSort: () => setPage(1),
+        onSort: () => setPage(1, 'replace'),
     });
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const fetchProfileChecks = useCallback(
-        () => getComplianceProfileResults(profileName, { sortOption, page, perPage }),
-        [page, perPage, profileName, sortOption]
+        () => getComplianceProfileResults(profileName, { sortOption, page, perPage, searchFilter }),
+        [page, perPage, profileName, sortOption, searchFilter]
     );
     const { data: profileChecks, loading: isLoading, error } = useRestQuery(fetchProfileChecks);
 
@@ -76,24 +71,6 @@ function ProfileChecksPage() {
         setSearchFilter({
             ...searchFilter,
             [category]: newSelection,
-        });
-    };
-
-    const onSelectCheckStatus = (
-        filterType: 'Compliance Check Status',
-        checked: boolean,
-        selection: string
-    ) => {
-        const currentSelection = searchFilter[filterType] || [];
-        let newSelection = !Array.isArray(currentSelection) ? [currentSelection] : currentSelection;
-        if (checked) {
-            newSelection.push(selection);
-        } else {
-            newSelection = newSelection.filter((value) => value !== selection);
-        }
-        setSearchFilter({
-            ...searchFilter,
-            [filterType]: newSelection,
         });
     };
 
@@ -131,12 +108,6 @@ function ProfileChecksPage() {
                                         onSearch={onSearch}
                                     />
                                 </ToolbarItem>
-                                <ToolbarItem align={{ default: 'alignRight' }}>
-                                    <CheckStatusDropdown
-                                        searchFilter={searchFilter}
-                                        onSelect={onSelectCheckStatus}
-                                    />
-                                </ToolbarItem>
                             </ToolbarGroup>
                             <ToolbarGroup className="pf-v5-u-w-100">
                                 <SearchFilterChips
@@ -148,10 +119,6 @@ function ProfileChecksPage() {
                                         {
                                             displayName: 'Cluster',
                                             searchFilterName: CLUSTER_QUERY,
-                                        },
-                                        {
-                                            displayName: 'Compliance Status',
-                                            searchFilterName: CHECK_STATUS_QUERY,
                                         },
                                     ]}
                                 />
