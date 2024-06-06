@@ -5,6 +5,7 @@ ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=latest
 
+
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.21 as builder
 
 ENV GOFLAGS=""
@@ -21,6 +22,7 @@ WORKDIR /src
 RUN scripts/konflux/fail-build-if-git-is-dirty.sh
 
 RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-scripts
+
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
@@ -39,7 +41,10 @@ LABEL \
     summary="The image scanner v4 for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     # We must set version label to prevent inheriting value set in the base stage.
-    version="${MAIN_IMAGE_TAG}"
+    version="${MAIN_IMAGE_TAG}" \
+    # Release label is required by EC although has no practical semantics.
+    # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
+    release="1"
 
 COPY --from=builder \
     /src/scanner/image/scanner/scripts/entrypoint.sh \
