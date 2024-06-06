@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-duplicate-type-constituents */
 import { sourceTypeLabels, sourceTypes } from 'types/image.proto';
-import { ValueOf } from 'utils/type.utils';
+import { DeepPartialByKey, ValueOf } from 'utils/type.utils';
 
 export type SearchFilterConfig = {
     displayName: string;
@@ -510,6 +510,60 @@ export type NodeComponentAttributeInputType = ValueOf<
     NodeComponentSearchFilterConfig['attributes']
 >['inputType'];
 
+// Profile Check search filter
+
+export const profileCheckSearchFilterConfig = {
+    displayName: 'Profile Check',
+    searchCategory: 'COMPLIANCE', //@TODO: Update this once we know what to use
+    attributes: {
+        Name: {
+            displayName: 'Name',
+            filterChipLabel: 'Profile Check Name',
+            searchTerm: 'Compliance Check Name',
+            inputType: 'text',
+        },
+    },
+} as const;
+
+export type ProfileCheckSearchFilterConfig = {
+    displayName: (typeof profileCheckSearchFilterConfig)['displayName'];
+    searchCategory: (typeof profileCheckSearchFilterConfig)['searchCategory'];
+    attributes: (typeof profileCheckSearchFilterConfig)['attributes'];
+};
+
+export type ProfileCheckAttribute = keyof ProfileCheckSearchFilterConfig['attributes'];
+
+export type ProfileCheckAttributeInputType = ValueOf<
+    ProfileCheckSearchFilterConfig['attributes']
+>['inputType'];
+
+// Compliance Rule search filter
+
+export const complianceScanSearchFilterConfig = {
+    displayName: 'Compliance Scan',
+    searchCategory: 'COMPLIANCE', //@TODO: Update this once we know what to use
+    attributes: {
+        'Config ID': {
+            displayName: 'Config ID',
+            filterChipLabel: 'Compliance Scan Config ID',
+            searchTerm: 'Compliance Scan Config Id',
+            inputType: 'text',
+        },
+    },
+} as const;
+
+export type ComplianceScanSearchFilterConfig = {
+    displayName: (typeof complianceScanSearchFilterConfig)['displayName'];
+    searchCategory: (typeof complianceScanSearchFilterConfig)['searchCategory'];
+    attributes: (typeof complianceScanSearchFilterConfig)['attributes'];
+};
+
+export type ComplianceScanAttribute = keyof ComplianceScanSearchFilterConfig['attributes'];
+
+export type ComplianceScanAttributeInputType = ValueOf<
+    ComplianceScanSearchFilterConfig['attributes']
+>['inputType'];
+
 // Compound search filter config
 
 export const compoundSearchFilter: CompoundSearchFilterConfig = {
@@ -523,6 +577,8 @@ export const compoundSearchFilter: CompoundSearchFilterConfig = {
     'Platform CVE': platformCVESearchFilterConfig,
     'Image Component': imageComponentSearchFilterConfig,
     'Node Component': nodeComponentSearchFilterConfig,
+    'Profile Check': profileCheckSearchFilterConfig,
+    'Compliance Scan': complianceScanSearchFilterConfig,
 };
 
 export type CompoundSearchFilterConfig = {
@@ -536,7 +592,14 @@ export type CompoundSearchFilterConfig = {
     'Platform CVE': PlatformCVESearchFilterConfig;
     'Image Component': ImageComponentSearchFilterConfig;
     'Node Component': NodeComponentSearchFilterConfig;
+    'Profile Check': ProfileCheckSearchFilterConfig;
+    'Compliance Scan': ComplianceScanSearchFilterConfig;
 };
+
+// @TODO: Consider Dave's suggestion about reorganizing and readjusting types (https://github.com/stackrox/stackrox/pull/11349#discussion_r1628428375)
+export type PartialCompoundSearchFilterConfig = Partial<
+    DeepPartialByKey<CompoundSearchFilterConfig, 'attributes'>
+>;
 
 export const compoundSearchEntityNames = Object.keys(compoundSearchFilter);
 
@@ -552,7 +615,9 @@ export type SearchFilterAttributeName =
     | ImageCVEAttribute
     | NodeCVEAttribute
     | PlatformCVEAttribute
-    | ImageComponentAttribute;
+    | ImageComponentAttribute
+    | ProfileCheckAttribute
+    | ComplianceScanAttribute;
 
 export type SearchFilterAttributeInputType =
     | ImageAttributeInputType
@@ -562,4 +627,14 @@ export type SearchFilterAttributeInputType =
     | ImageCVEAttributeInputType
     | NodeCVEAttributeInputType
     | PlatformCVEAttributeInputType
-    | ImageComponentAttributeInputType;
+    | ImageComponentAttributeInputType
+    | ProfileCheckAttributeInputType
+    | ComplianceScanAttributeInputType;
+
+// Misc
+
+export type OnSearchPayload = {
+    action: 'ADD' | 'REMOVE';
+    category: string;
+    value: string;
+};
