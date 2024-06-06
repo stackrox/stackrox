@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	podSearch "github.com/stackrox/rox/central/pod/datastore/internal/search"
 	podStore "github.com/stackrox/rox/central/pod/datastore/internal/store/postgres"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -20,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,10 +44,7 @@ type PodDatastoreSuite struct {
 
 func (s *PodDatastoreSuite) SetupSuite() {
 
-	testContexts := testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
-		resources.Deployment)
-
-	s.ctx = testContexts[testutils.UnrestrictedReadWriteCtx]
+	s.ctx = sac.WithAllAccess(context.Background())
 
 	s.plopAndPiCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -97,6 +94,10 @@ func (s *PodDatastoreSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndic
 // Check that the correct pod, process indicators, and plops are deleted.
 func (s *PodDatastoreSuite) TestRemovePod() {
 
+	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
+	s.Nil(err)
+	s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}))
+
 	s.NoError(s.datastore.UpsertPod(s.ctx, fixtures.GetPod1()))
 
 	indicator1 := fixtures.GetProcessIndicator1()
@@ -116,7 +117,7 @@ func (s *PodDatastoreSuite) TestRemovePod() {
 
 	// Fetch inserted PLOP
 	newPlops, err := s.datastore.plops.GetProcessListeningOnPort(
-		s.plopAndPiCtx, fixtureconsts.Deployment1)
+		s.ctx, fixtureconsts.Deployment1)
 	s.NoError(err)
 
 	s.Len(newPlops, 3)
@@ -125,7 +126,7 @@ func (s *PodDatastoreSuite) TestRemovePod() {
 
 	// Fetch inserted PLOP back after deleting pod
 	newPlops, err = s.datastore.plops.GetProcessListeningOnPort(
-		s.plopAndPiCtx, fixtureconsts.Deployment1)
+		s.ctx, fixtureconsts.Deployment1)
 	s.NoError(err)
 
 	// Verify that the correct listening endpoints have been deleted
