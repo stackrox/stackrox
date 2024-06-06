@@ -20,6 +20,8 @@ export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 # `envsubst`` before passing it to `env`.
 envsubst=$(command -v envsubst)
 
+# Meaningless change to trigger tests
+
 # shellcheck disable=SC2120
 deploy_stackrox() {
     local tls_client_certs=${1:-}
