@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	"github.com/stackrox/rox/central/hash/manager/mocks"
 	clusterMgrMock "github.com/stackrox/rox/central/sensor/service/common/mocks"
 	pipelineMock "github.com/stackrox/rox/central/sensor/service/pipeline/mocks"
@@ -19,6 +20,7 @@ import (
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -31,11 +33,17 @@ func TestHandler(t *testing.T) {
 
 type testSuite struct {
 	suite.Suite
+	mockCtrl *gomock.Controller
+
+	scanConfigDS *scanConfigMocks.MockDataStore
 }
 
 func (s *testSuite) SetupTest() {
 	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
+
+	s.mockCtrl = gomock.NewController(s.T())
+	s.scanConfigDS = scanConfigMocks.NewMockDataStore(s.mockCtrl)
 }
 
 type mockServer struct {
@@ -55,6 +63,82 @@ func (c *mockServer) Send(msg *central.MsgToSensor) error {
 
 func (c *mockServer) Recv() (*central.MsgFromSensor, error) {
 	return nil, nil
+}
+
+func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
+	scanConfigs := []*storage.ComplianceOperatorScanConfigurationV2{
+		{
+			ScanConfigName: "TestConfigName",
+			Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+				{
+					ProfileName: "TestProfileName",
+				},
+			},
+			Schedule: &storage.Schedule{
+				IntervalType: storage.Schedule_DAILY,
+				Hour:         1,
+				Minute:       2, Interval: &storage.Schedule_DaysOfWeek_{
+					DaysOfWeek: &storage.Schedule_DaysOfWeek{
+						Days: []int32{1},
+					},
+				},
+			},
+		},
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+
+	ctrl := gomock.NewController(s.T())
+	mgrMock := clusterMgrMock.NewMockClusterManager(ctrl)
+	pipeline := pipelineMock.NewMockClusterPipeline(ctrl)
+	deduper := mocks.NewMockDeduper(ctrl)
+	stopSig := concurrency.NewErrorSignal()
+
+	hello := &central.SensorHello{
+		SensorVersion: "1.0",
+	}
+
+	eventHandler := newSensorEventHandler(&storage.Cluster{}, "", pipeline, nil, &stopSig, deduper, nil)
+
+	sensorMockConn := &sensorConnection{
+		//clusterID:          fixtureconsts.Cluster1,
+		clusterMgr:         mgrMock,
+		sensorEventHandler: eventHandler,
+		sensorHello:        hello,
+		hashDeduper:        deduper,
+		scanSettingDS:      s.scanConfigDS,
+		sendC:              make(chan *central.MsgToSensor),
+	}
+
+	caps := set.NewSet[centralsensor.SensorCapability]([]centralsensor.SensorCapability{centralsensor.SendDeduperStateOnReconnect}...)
+
+	mgrMock.EXPECT().GetCluster(ctx, gomock.Any()).Return(&storage.Cluster{}, true, nil).AnyTimes()
+	deduper.EXPECT().GetSuccessfulHashes().Return(map[string]uint64{"deployment:1": 0}).Times(1)
+	s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).AnyTimes()
+
+	server := &mockServer{
+		sentList: make([]*central.MsgToSensor, 0),
+	}
+
+	err := sensorMockConn.Run(ctx, server, caps)
+	s.NoError(err)
+
+	var complianceRequests []*central.ComplianceRequest
+	for _, msg := range server.sentList {
+		if m := msg.GetComplianceRequest(); m != nil {
+			complianceRequests = append(complianceRequests, m)
+		}
+	}
+
+	s.Equal(1, len(complianceRequests))
+	ScanConfigs := complianceRequests[0].GetSyncScanConfigs().GetScanConfigs()
+	s.Equal(1, len(ScanConfigs))
+	UpdateScan := ScanConfigs[0].GetUpdateScan()
+	s.Equal("TestConfigName", UpdateScan.GetScanSettings().GetScanName())
+	Profiles := UpdateScan.GetScanSettings().GetProfiles()
+	s.Equal(1, len(Profiles))
+	s.Equal("TestProfileName", Profiles[0])
+	s.Equal("2 1 * * *", UpdateScan.GetCron())
 }
 
 func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeBelowMinimumVersion() {

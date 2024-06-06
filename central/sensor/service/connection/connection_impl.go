@@ -75,6 +75,7 @@ type sensorConnection struct {
 	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager
 	imageIntegrationMgr        common.ImageIntegrationManager
 	complianceOperatorMgr      common.ComplianceOperatorManager
+	scanSettingDS              compScanSetting.DataStore
 
 	sensorHello  *central.SensorHello
 	capabilities set.Set[centralsensor.SensorCapability]
@@ -114,6 +115,7 @@ func newConnection(ctx context.Context,
 		delegatedRegistryConfigMgr: delegatedRegistryConfigMgr,
 		imageIntegrationMgr:        imageIntegrationMgr,
 		complianceOperatorMgr:      complianceOperatorMgr,
+		scanSettingDS:              compScanSetting.Singleton(),
 
 		sensorHello: sensorHello,
 		capabilities: set.NewSet(sliceutils.
@@ -513,8 +515,7 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 	}
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, c.clusterID).ProtoQuery()
-	scanSettingDS := compScanSetting.Singleton()
-	scanConfigs, err := scanSettingDS.GetScanConfigurations(ctx, q)
+	scanConfigs, err := c.scanSettingDS.GetScanConfigurations(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -522,11 +523,11 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 	var reformatedConfigs []*central.ApplyComplianceScanConfigRequest
 	for _, scanConfig := range scanConfigs {
 		var profiles []string
-		for _, profile := range scanConfig.Profiles {
-			profiles = append(profiles, profile.ProfileName)
+		for _, profile := range scanConfig.GetProfiles() {
+			profiles = append(profiles, profile.GetProfileName())
 		}
 		var cron string
-		cron, err = schedule.ConvertToCronTab(scanConfig.Schedule)
+		cron, err = schedule.ConvertToCronTab(scanConfig.GetSchedule())
 		if err != nil {
 			return nil, err
 		}
@@ -534,7 +535,7 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 			ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
 				UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
 					ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-						ScanName: scanConfig.ScanConfigName,
+						ScanName: scanConfig.GetScanConfigName(),
 						Profiles: profiles,
 					},
 					Cron: cron,
