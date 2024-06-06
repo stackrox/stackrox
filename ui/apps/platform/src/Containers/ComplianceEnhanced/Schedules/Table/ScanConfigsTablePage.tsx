@@ -283,17 +283,6 @@ function ScanConfigsTablePage({
                         </FlexItem>
                     )}
                 </Flex>
-                {alertObj !== null && (
-                    <Alert
-                        title={alertObj.title}
-                        variant={alertObj.type}
-                        className="pf-v5-u-mb-lg pf-v5-u-mx-lg"
-                        component="h2"
-                        actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
-                    >
-                        {alertObj.children}
-                    </Alert>
-                )}
             </PageSection>
             <Divider component="div" />
             {error ? (
@@ -304,6 +293,19 @@ function ScanConfigsTablePage({
                 </PageSection>
             ) : (
                 <PageSection>
+                    {alertObj !== null && (
+                        <Alert
+                            title={alertObj.title}
+                            variant={alertObj.type}
+                            isInline
+                            className="pf-v5-u-mb-lg"
+                            component="h2"
+                            actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
+                        >
+                            {alertObj.children}
+                        </Alert>
+                    )}
+
                     <Toolbar>
                         <ToolbarContent>
                             <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
