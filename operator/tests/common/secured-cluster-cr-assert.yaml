@@ -10,9 +10,9 @@ collectors:
 - type: pod
   selector: app=collector
   tail: -1
-- command: kubectl describe pod -n $NAMESPACE -l app=sensor
-- command: kubectl describe pod -n $NAMESPACE -l app=admission-control
-- command: kubectl describe pod -n $NAMESPACE -l app=collector
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=sensor
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=admission-control
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=collector
 # Please keep the above lists in sync with pods-debug.yaml
 timeout: 1500
 ---

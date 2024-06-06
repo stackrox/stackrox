@@ -12,4 +12,4 @@ commands:
     # With 3 objects we specify a timeout value of 25, aiming for ~5 minutes.
     ./hack/envsubst-kuttl.sh tests/common/delete-central-errors-cluster.envsubst.yaml errors --timeout 25
     # With 2 objects we specify a timeout value of 32, aiming for ~5 minutes.
-    if kubectl get scc > /dev/null 2>&1; then ./hack/envsubst-kuttl.sh tests/common/delete-central-errors-cluster-openshift.envsubst.yaml errors --timeout 32; fi
+    if retry-kubectl.sh get scc > /dev/null 2>&1; then ./hack/envsubst-kuttl.sh tests/common/delete-central-errors-cluster-openshift.envsubst.yaml errors --timeout 32; fi

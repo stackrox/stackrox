@@ -15,7 +15,7 @@ function create_namespace() {
   local -r operator_ns="$1"
   log "Creating namespace..."
   echo '{"kind": "Namespace", "apiVersion": "v1", "metadata": { "name": "'"${operator_ns}"'" } }' \
-    | kubectl apply -f -
+    | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" apply -f -
 }
 
 function create_pull_secret() {
@@ -25,7 +25,7 @@ function create_pull_secret() {
   # see https://stack-rox.atlassian.net/browse/RS-261
   log "Creating image pull secret..."
   "${ROOT_DIR}/deploy/common/pull-secret.sh" "${pull_secret}" "${registry_hostname}" \
-    | kubectl -n "${operator_ns}" apply -f -
+    | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
 }
 
 function apply_operator_manifests() {
@@ -41,7 +41,7 @@ function apply_operator_manifests() {
   # Here we check if the CatalogSource CRD has securityContextConfig attribute. When it's not available, we emit YAML
   # comment symbol "# " to hide the securityContextConfig attribute and not get API validation errors.
   local catalog_source_crd
-  catalog_source_crd="$(kubectl get customresourcedefinitions.apiextensions.k8s.io catalogsources.operators.coreos.com -o yaml)"
+  catalog_source_crd="$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get customresourcedefinitions.apiextensions.k8s.io catalogsources.operators.coreos.com -o yaml)"
   local disable_security_context_config="# "
   local has_scc_key
   has_scc_key="$(yq eval '[.. | select(key == "grpcPodConfig")].[].properties | has("securityContextConfig")' - <<< "$catalog_source_crd")"
@@ -56,13 +56,13 @@ function apply_operator_manifests() {
     INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" OPERATOR_CHANNEL="${operator_channel}" \
     IMAGE_TAG_BASE="${image_tag_base}" \
     envsubst < "${ROOT_DIR}/operator/hack/operator-midstream.envsubst.yaml" \
-    | kubectl -n "${operator_ns}" apply -f -
+    | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
   else
   env -i PATH="${PATH}" \
     INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" \
     IMAGE_TAG_BASE="${image_tag_base}" DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
     envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
-    | kubectl -n "${operator_ns}" apply -f -
+    | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
   fi
 }
 
@@ -104,19 +104,19 @@ function approve_install_plan() {
   local -r version_tag="$2"
 
   log "Waiting for an install plan to be created"
-  if ! retry 15 5 kubectl -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s; then
+  if ! retry 15 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s; then
     log "Install plan failed to materialize."
     log "Dumping pod descriptions..."
-    kubectl -n "${operator_ns}" describe pods -l "olm.catalogSource=stackrox-operator-test-index" || true
+    "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe pods -l "olm.catalogSource=stackrox-operator-test-index" || true
     log "Dumping catalog sources and subscriptions..."
-    kubectl -n "${operator_ns}" describe "subscription.operators.coreos.com,catalogsource.operators.coreos.com" || true
+    "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe "subscription.operators.coreos.com,catalogsource.operators.coreos.com" || true
     return 1
   fi
 
   log "Verifying that the subscription is progressing to the expected CSV of ${version_tag}..."
   local current_csv
   # `local` ignores `errexit` so we assign value separately: http://mywiki.wooledge.org/BashFAQ/105
-  current_csv=$(kubectl get -n "${operator_ns}" subscription.operators.coreos.com stackrox-operator-test-subscription -o jsonpath="{.status.currentCSV}")
+  current_csv=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get -n "${operator_ns}" subscription.operators.coreos.com stackrox-operator-test-subscription -o jsonpath="{.status.currentCSV}")
   readonly current_csv
   local -r expected_csv="rhacs-operator.v${version_tag}"
   if [[ $current_csv != $expected_csv ]]; then
@@ -126,11 +126,11 @@ function approve_install_plan() {
 
   local install_plan_name
   # `local` ignores `errexit` so we assign value separately: http://mywiki.wooledge.org/BashFAQ/105
-  install_plan_name=$(kubectl get -n "${operator_ns}" subscription.operators.coreos.com stackrox-operator-test-subscription -o jsonpath="{.status.installPlanRef.name}")
+  install_plan_name=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get -n "${operator_ns}" subscription.operators.coreos.com stackrox-operator-test-subscription -o jsonpath="{.status.installPlanRef.name}")
   readonly install_plan_name
 
   log "Approving install plan ${install_plan_name}"
-  retry 3 5 kubectl -n "${operator_ns}" patch installplan "${install_plan_name}" --type merge -p '{"spec":{"approved":true}}'
+  retry 3 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" patch installplan "${install_plan_name}" --type merge -p '{"spec":{"approved":true}}'
 }
 
 function nurse_deployment_until_available() {
@@ -138,7 +138,7 @@ function nurse_deployment_until_available() {
   local -r version_tag="$2"
 
   log "Patching image pull secret into ${version_tag} CSV..."
-  retry 30 10 kubectl -n "${operator_ns}" patch clusterserviceversions.operators.coreos.com \
+  retry 30 10 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" patch clusterserviceversions.operators.coreos.com \
     "rhacs-operator.v${version_tag}" --type json \
     -p '[ { "op": "add", "path": "/spec/install/spec/deployments/0/spec/template/spec/imagePullSecrets", "value": [{"name": "'"${pull_secret}"'"}] } ]'
 
@@ -163,5 +163,5 @@ END
 
   # Double-check that the deployment itself is healthy.
   log "Making sure the ${version_tag} operator deployment is available..."
-  retry 3 5 kubectl -n "${operator_ns}" wait deployments.apps -l "olm.owner=rhacs-operator.v${version_tag}" --for condition=available --timeout 5s
+  retry 3 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait deployments.apps -l "olm.owner=rhacs-operator.v${version_tag}" --for condition=available --timeout 5s
 }
