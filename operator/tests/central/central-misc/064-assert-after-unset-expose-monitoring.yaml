@@ -13,7 +13,7 @@ commands:
 - script: |
     set -eu # shell in CI does not grok -o pipefail
     # Test that Central auth reader rolebinding DOES NOT exist in kube-system any more.
-    ! kubectl get rolebinding rhacs-central-auth-reader-${NAMESPACE} -n kube-system
+    ! retry-kubectl.sh get rolebinding rhacs-central-auth-reader-${NAMESPACE} -n kube-system
 ---
 apiVersion: platform.stackrox.io/v1alpha1
 kind: Central
