@@ -43,14 +43,12 @@ List<String> orchestratorDaemonSetNames = orchestrator.getDaemonSetCount()
 List<String> orchestratorStaticPodNames = orchestrator.getStaticPodCount().collect {  "static-" + it + "-pods"  }
 List<String> orchestratorStatefulSetNames = orchestrator.getStatefulSetCount()
 List<String> orchestratorJobNames = orchestrator.getJobCount()
-List<String> orchestratorServiceNames = orchestrator.client.services().inAnyNamespace().list().getItems().collect { it.metadata.name }
 
 log.info "orchestratorDeploymentNames: ${orchestratorDeploymentNames.size()}"
 log.info "orchestratorDaemonSetNames: ${orchestratorDaemonSetNames.size()}"
 log.info "orchestratorStaticPodNames: ${orchestratorStaticPodNames.size()}"
 log.info "orchestratorStatefulSetNames: ${orchestratorStatefulSetNames.size()}"
 log.info "orchestratorJobNames: ${orchestratorJobNames.size()}"
-log.info "orchestratorServiceNames: ${orchestratorServiceNames.size()}"
 
 List<String> orchestratorResourceNames = orchestratorDeploymentNames +
     orchestratorDaemonSetNames +
