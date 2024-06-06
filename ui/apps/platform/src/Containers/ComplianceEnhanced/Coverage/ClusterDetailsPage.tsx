@@ -16,12 +16,16 @@ import {
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSort from 'hooks/useURLSort';
 import { getComplianceProfilesStats } from 'services/ComplianceResultsStatsService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getComplianceProfileClusterResults } from 'services/ComplianceResultsService';
 
 import ClusterDetailsTable from './ClusterDetailsTable';
+import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
+import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import {
     coverageProfileClustersPath,
     coverageClusterDetailsPath,
@@ -31,6 +35,13 @@ import ProfilesToggleGroup from './ProfilesToggleGroup';
 function ClusterDetailsPage() {
     const history = useHistory();
     const { clusterId, profileName } = useParams();
+    const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
+    const { page, perPage, setPage } = pagination;
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields: [CHECK_NAME_QUERY],
+        defaultSortOption: { field: CHECK_NAME_QUERY, direction: 'asc' },
+        onSort: () => setPage(1),
+    });
 
     const fetchProfilesStats = useCallback(
         () => getComplianceProfilesStats(clusterId),
@@ -43,8 +54,13 @@ function ClusterDetailsPage() {
     } = useRestQuery(fetchProfilesStats);
 
     const fetchCheckResults = useCallback(
-        () => getComplianceProfileClusterResults(profileName, clusterId),
-        [clusterId, profileName]
+        () =>
+            getComplianceProfileClusterResults(profileName, clusterId, {
+                page,
+                perPage,
+                sortOption,
+            }),
+        [clusterId, page, perPage, profileName, sortOption]
     );
     const {
         data: checkResultsResponse,
@@ -140,9 +156,12 @@ function ClusterDetailsPage() {
             </PageSection>
             <PageSection>
                 <ClusterDetailsTable
+                    checkResultsCount={checkResultsResponse?.totalCount ?? 0}
                     clusterId={clusterId}
                     profileName={profileName}
                     tableState={tableState}
+                    pagination={pagination}
+                    getSortParams={getSortParams}
                 />
             </PageSection>
         </>

@@ -1,33 +1,70 @@
 import React, { useState } from 'react';
 import { generatePath, Link } from 'react-router-dom';
-import { Button, ButtonVariant, Text, TextVariants, Tooltip } from '@patternfly/react-core';
+import {
+    Button,
+    ButtonVariant,
+    Pagination,
+    Text,
+    TextVariants,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+    Tooltip,
+} from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseURLSortResult } from 'hooks/useURLSort';
 import { ComplianceCheckResult } from 'services/ComplianceResultsService';
 import { TableUIState } from 'utils/getTableUIState';
 
+import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import CheckStatusModal from './components/CheckStatusModal';
 
 export type ClusterDetailsTableProps = {
+    checkResultsCount: number;
     clusterId: string;
     profileName: string;
     tableState: TableUIState<ComplianceCheckResult>;
+    pagination: UseURLPaginationResult;
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
-function ClusterDetailsTable({ clusterId, profileName, tableState }: ClusterDetailsTableProps) {
+function ClusterDetailsTable({
+    checkResultsCount,
+    clusterId,
+    profileName,
+    tableState,
+    pagination,
+    getSortParams,
+}: ClusterDetailsTableProps) {
     const [selectedCheckResult, setSelectedCheckResult] = useState<ComplianceCheckResult | null>(
         null
     );
+    const { page, perPage, setPage, setPerPage } = pagination;
     return (
         <>
+            <Toolbar>
+                <ToolbarContent>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={checkResultsCount}
+                            page={page}
+                            perPage={perPage}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
+                        />
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
             <Table>
                 <Thead>
                     <Tr>
-                        <Th>Check</Th>
+                        <Th sort={getSortParams(CHECK_NAME_QUERY)}>Check</Th>
                         <Td modifier="fitContent" width={10}>
                             Controls
                         </Td>
