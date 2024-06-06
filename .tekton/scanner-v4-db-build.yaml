@@ -9,27 +9,27 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     # TODO(ROX-21073): re-enable for all PR branches
-    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && (source_branch.contains("konflux") || source_branch.contains("rhtap"))
+    pipelinesascode.tekton.dev/on-cel-expression: (event == "push" && target_branch == "master") || (event == "pull_request" && (source_branch.contains("rhtap") || source_branch.contains("konflux")))
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: operator
+    appstudio.openshift.io/component: scanner-v4-db
     pipelines.appstudio.openshift.io/type: build
-  name: operator-on-pull-request
+  name: scanner-v4-db-build
   namespace: rh-acs-tenant
 
 spec:
 
   params:
   - name: dockerfile
-    value: operator/konflux.Dockerfile
+    value: scanner/image/db/konflux.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
     # TODO(ROX-24530): return expiration for non-released images to 13w
     value: '52w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/stackrox-operator
+    value: quay.io/rhacs-eng/scanner-v4-db
   - name: path-context
     value: .
   - name: revision
@@ -39,8 +39,9 @@ spec:
   # TODO(ROX-20234): Enable hermetic builds
   # - name: hermetic
   #   value: "true"
+  # No language dependencies are required for scanner-v4-db image.
   - name: prefetch-input
-    value: '{"type": "gomod", "path": "."}'
+    value: ''
   - name: build-source-image
     value: 'true'
   - name: clone-depth
@@ -58,7 +59,7 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 3Gi
+            storage: 1Gi
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'

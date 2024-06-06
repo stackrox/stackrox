@@ -5,15 +5,17 @@ metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch == "master"
+    # TODO(ROX-21073): re-enable for all PR branches
+    pipelinesascode.tekton.dev/on-cel-expression: (event == "push" && target_branch == "master") || (event == "pull_request" && (source_branch.contains("rhtap") || source_branch.contains("konflux")))
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: main
     pipelines.appstudio.openshift.io/type: build
-  name: main-on-push
+  name: main-build
   namespace: rh-acs-tenant
 
 spec:
