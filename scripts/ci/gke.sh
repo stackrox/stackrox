@@ -82,6 +82,8 @@ choose_cluster_version() {
 
 create_cluster() {
     info "Creating a GKE cluster"
+    # Store requested timestamp to create log query link with time range.
+    date -u +"%Y-%m-%dT%H:%M:%SZ" > /tmp/GKE_CLUSTER_REQUESTED_TIMESTAMP
 
     ensure_CI
 
@@ -220,8 +222,6 @@ create_cluster() {
         return 1
     fi
 
-    date -u +"%Y-%m-%dT%H:%M:%SZ" > /tmp/GKE_CLUSTER_CREATED_TIMESTAMP
-
     add_a_maintenance_exclusion
 }
 
@@ -327,6 +327,15 @@ teardown_gke_cluster() {
         "$SCRIPTS_ROOT/scripts/ci/cleanup-deployment.sh" 2>&1 | sed -e 's/^/out: /' || true
     fi
 
+    for i in {1..10}; do
+        gcloud container clusters describe "${CLUSTER_NAME}" --format "flattened(status)"
+        if [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --format 'get(status)')" != "PROVISIONING" ]]; then
+            break
+        fi
+        info "Before deleting, waiting for cluster ${CLUSTER_NAME} to leave provisioning state (wait $i of 10)"
+        sleep 60
+    done
+
     gcloud container clusters delete "$CLUSTER_NAME" --async
 
     info "Cluster deleting asynchronously"
@@ -363,7 +372,7 @@ create_log_explorer_links() {
 HEAD
 
     local start_ts
-    start_ts="$(cat /tmp/GKE_CLUSTER_CREATED_TIMESTAMP)"
+    start_ts="$(cat /tmp/GKE_CLUSTER_REQUESTED_TIMESTAMP)"
     local end_ts
     end_ts="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     local project
