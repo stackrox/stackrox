@@ -37,16 +37,16 @@ var ErrNil = errors.New("proto: Marshal called with nil")
 
 // Marshal takes a protocol buffer message and encodes it into
 // the wire format, returning the data. This is the main entry point.
-func Marshal(msg marshalable) ([]byte, error) {
-	res, err := msg.Marshal()
-	if res == nil && err == nil {
+func Marshal[T any, PT marshalable[T]](msg PT) ([]byte, error) {
+	var null PT
+	if msg == null {
 		return nil, ErrNil
 	}
-
-	return res, err
+	return msg.Marshal()
 }
 
-type marshalable interface {
+type marshalable[T any] interface {
+	*T
 	Marshal() ([]byte, error)
 }
 

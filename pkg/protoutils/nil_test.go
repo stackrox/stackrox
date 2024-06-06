@@ -9,15 +9,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var null = (*storage.Image)(nil)
+
 func TestErrorOnNilMarshal(t *testing.T) {
-	_, err := protocompat.Marshal(nil)
+	_, err := protocompat.Marshal(null)
 	assert.Equal(t, proto.ErrNil, err)
 
-	_, err = protocompat.Marshal((*storage.Image)(nil))
-	assert.Equal(t, proto.ErrNil, err)
-
-	var img *storage.Image
-	_, err = protocompat.Marshal(img)
+	var msg *storage.Image
+	_, err = protocompat.Marshal(msg)
 	assert.Equal(t, proto.ErrNil, err)
 
 	_, err = protocompat.Marshal(&storage.Image{})
@@ -25,14 +24,16 @@ func TestErrorOnNilMarshal(t *testing.T) {
 }
 
 func TestErrorOnNilUnmarshal(t *testing.T) {
-	err := protocompat.Unmarshal(nil, (*storage.Image)(nil))
+	err := protocompat.Unmarshal([]byte{}, null)
+	assert.NoError(t, err)
+
+	err = protocompat.Unmarshal(nil, null)
 	assert.Equal(t, proto.ErrNil, err)
 
-	var img *storage.Image
-	err = protocompat.Unmarshal(nil, img)
+	err = protocompat.Unmarshal(nil, null)
 	assert.Equal(t, proto.ErrNil, err)
 
-	img = &storage.Image{}
+	img := &storage.Image{}
 	err = protocompat.Unmarshal([]byte{}, img)
 	assert.NoError(t, err)
 }
