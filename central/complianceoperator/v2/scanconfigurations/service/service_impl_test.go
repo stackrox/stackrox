@@ -177,7 +177,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 	request.ScanConfig = nil
 	config, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().Error(err)
-	s.Require().Contains(err.Error(), "At least one profile is required for a scan configuration")
+	s.Require().Contains(err.Error(), "The scan configuration is nil.")
 	s.Require().Nil(config)
 
 	request = getTestAPIRec()
@@ -220,7 +220,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfigura
 	request.ScanConfig = nil
 	_, err = s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().Error(err)
-	s.Require().Contains(err.Error(), "At least one profile is required for a scan configuration")
+	s.Require().Contains(err.Error(), "The scan configuration is nil.")
 
 	// Test Case 4: No clusters
 	request = getTestAPIRec()
