@@ -1,10 +1,6 @@
 package sampleScripts
 
 import common.Constants
-import io.stackrox.proto.storage.NodeOuterClass.Node
-import io.stackrox.proto.storage.Rbac
-import objects.K8sRole
-import objects.K8sRoleBinding
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
 import org.javers.core.Javers
@@ -16,7 +12,6 @@ import services.BaseService
 import services.SummaryService
 import services.DeploymentService
 import util.Env
-import util.Helpers
 
 // Repeat the deployment counts found in SummaryTest.
 
