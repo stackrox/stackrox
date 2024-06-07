@@ -11,7 +11,7 @@ import {
     WeeklySchedule,
 } from 'services/ComplianceScanConfigurationService';
 import { NotifierConfiguration } from 'services/ReportsService.types';
-import { getDayOfMonthWithOrdinal, getTimeHoursMinutes } from 'utils/dateUtils';
+import { getDayOfMonthWithOrdinal } from 'utils/dateUtils';
 
 export type ScanConfigParameters = {
     name: string;
@@ -36,26 +36,34 @@ export type ScanConfigFormValues = {
 
 export type PageActions = 'create' | 'edit' | 'clone';
 
+export function getTimeWithHourMinuteFromISO8601(timeISO8601: string) {
+    // Given an ISO 8601 date time string from response, for example, 2024-02-29T17:13:28.710959319Z
+    // Return yy-mm-dd hh:mm UTC
+    return `${timeISO8601.slice(0, 10)} ${timeISO8601.slice(11, 16)} UTC`;
+}
+
+function pad2(timeElement: number) {
+    return timeElement.toString().padStart(2, '0');
+}
+
+export function getHourMinuteStringFromScheduleBase({ hour, minute }: ScheduleBase) {
+    // Return 24-hour hh:mm string for hour and minute.
+    return [pad2(hour), pad2(minute)].join(':');
+}
+
+function getScheduleBaseFromHourMinuteString(time: string): ScheduleBase {
+    // Return hour and minute for 24-hour hh:mm string.
+    const [hourString, minuteString] = time.split(/[: ]+/);
+    const hour = parseInt(hourString, 10);
+    const minute = parseInt(minuteString, 10);
+
+    return { hour, minute };
+}
+
 export function convertFormikParametersToSchedule(parameters: ScanConfigParameters): Schedule {
     const { intervalType, time, daysOfWeek, daysOfMonth } = parameters;
 
-    // Convert the time to hour and minute
-    const [hourString, minuteString] = time.split(/[: ]+/);
-    let hour = parseInt(hourString, 10);
-    const minute = parseInt(minuteString, 10);
-
-    // Convert 12-hour format to 24-hour format
-    if (time.includes('PM') && hour < 12) {
-        hour += 12;
-    }
-    if (time.includes('AM') && hour === 12) {
-        hour = 0;
-    }
-
-    const baseSchedule: ScheduleBase = {
-        hour,
-        minute,
-    };
+    const baseSchedule = getScheduleBaseFromHourMinuteString(time);
 
     switch (intervalType) {
         case 'WEEKLY': {
@@ -100,12 +108,7 @@ export function convertFormikParametersToSchedule(parameters: ScanConfigParamete
 export function convertScheduleToFormikParameters(
     scanSchedule: Schedule
 ): Pick<ScanConfigParameters, 'intervalType' | 'time' | 'daysOfWeek' | 'daysOfMonth'> {
-    const { hour, minute } = scanSchedule;
-
-    // eslint-disable-next-line no-nested-ternary
-    const adjustedHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-    const suffix = hour > 12 ? 'PM' : 'AM';
-    const time = `${adjustedHour}:${minute.toString().padStart(2, '0')} ${suffix}`;
+    const time = getHourMinuteStringFromScheduleBase(scanSchedule);
 
     let intervalType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'UNSET' = 'UNSET';
     let daysOfWeek: DayOfWeek[] = [];
@@ -199,9 +202,7 @@ export function formatScanSchedule(schedule: Schedule) {
         return `${days.slice(0, -1).join(', ')}, and ${days[days.length - 1]}`;
     };
 
-    // arbitrary date, we only care about the time
-    const date = new Date(2000, 0, 0, schedule.hour, schedule.minute);
-    const timeString = getTimeHoursMinutes(date);
+    const timeString = `${getHourMinuteStringFromScheduleBase(schedule)} UTC`;
 
     switch (schedule.intervalType) {
         case 'DAILY':

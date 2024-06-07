@@ -7,7 +7,7 @@ import { complianceEnhancedSchedulesPath } from 'routePaths';
 
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import { PageActions } from './compliance.scanConfigs.utils';
-import ScanConfigsTablePage from './Table/ScanConfigsTablePage';
+import ScanConfigsTablePage from './ScanConfigsTablePage';
 import CreateScanConfigPage from './CreateScanConfigPage';
 import ScanConfigDetailPage from './ScanConfigDetailPage';
 
