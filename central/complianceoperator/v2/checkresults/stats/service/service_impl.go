@@ -39,6 +39,7 @@ var (
 		user.With(permissions.View(resources.Compliance)): {
 			"/v2.ComplianceResultsStatsService/GetComplianceProfileStats",
 			"/v2.ComplianceResultsStatsService/GetComplianceProfilesStats",
+			"/v2.ComplianceResultsStatsService/GetComplianceProfilesClusterStats",
 			"/v2.ComplianceResultsStatsService/GetComplianceClusterScanStats",
 			"/v2.ComplianceResultsStatsService/GetComplianceOverallClusterStats",
 			"/v2.ComplianceResultsStatsService/GetComplianceClusterStats",
