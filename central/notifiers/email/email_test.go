@@ -3,10 +3,13 @@ package email
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"math/rand"
+	"regexp"
 	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,6 +51,108 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 
 	assert.Contains(t, msgStr, base64.StdEncoding.EncodeToString(attachBuf.Bytes()))
 	assert.Contains(t, msgStr, "<div>\r\nHow you doin'?\r\n</div>\r\n")
+
+	lastBoundary, expectedFinalBoundary, err := obtainLastAndExpectedBoundaryString(msgStr)
+	if assert.NoError(t, err) {
+		assert.Equal(t, expectedFinalBoundary, lastBoundary)
+	}
+}
+
+func obtainLastAndExpectedBoundaryString(msgStr string) (string, string, error) {
+	// Obtain boundary to verify the close delimiter
+	regex := regexp.MustCompile(` boundary="([^"]+)"`)
+	match := regex.FindString(msgStr)
+	if match == "" {
+		return "", "", errors.New("boundary not found in the message")
+	}
+	splitResults := strings.Split(match, "=")
+	boundaryValue := strings.Trim(splitResults[1], `"`)
+	expectedFinalBoundary := fmt.Sprintf("--%s--", boundaryValue)
+
+	lines := strings.Split(msgStr, "\n")
+	if len(lines) < 2 {
+		return "", "", errors.New("message too short to have a final boundary")
+	}
+	lastBoundary := strings.TrimSpace(lines[len(lines)-2])
+
+	return lastBoundary, expectedFinalBoundary, nil
+}
+
+func TestEmailMsgWithMultipleAttachments(t *testing.T) {
+	var attachBuf bytes.Buffer
+
+	content := make([]byte, 200)
+	_, err := rand.Read(content)
+	assert.NoError(t, err)
+
+	msg := &Message{
+		To:      []string{"foo@stackrox.com", "bar@stackrox.com"},
+		From:    "xyz@stackrox.com",
+		Subject: "Test Email",
+		Body:    "How you doin'?",
+		Attachments: map[string][]byte{
+			"attachment1.zip": attachBuf.Bytes(),
+			"attachment2.zip": attachBuf.Bytes(),
+		},
+		EmbedLogo: true,
+	}
+
+	msgBytes := msg.Bytes()
+	msgStr := string(msgBytes)
+
+	assert.Contains(t, msgStr, "From: xyz@stackrox.com\r\n")
+	assert.Contains(t, msgStr, "To: foo@stackrox.com,bar@stackrox.com\r\n")
+	assert.Contains(t, msgStr, "Subject: Test Email\r\n")
+	assert.Contains(t, msgStr, "MIME-Version: 1.0\r\n")
+	assert.Contains(t, msgStr, "Content-Type: multipart/mixed;")
+	assert.Contains(t, msgStr, "Content-Type: application/zip\r\n")
+	assert.Contains(t, msgStr, "Content-Transfer-Encoding: base64\r\n")
+	assert.Contains(t, msgStr, "Content-Disposition: attachment; filename=attachment1.zip\r\n")
+	assert.Contains(t, msgStr, "Content-Disposition: attachment; filename=attachment2.zip\r\n")
+
+	assert.Contains(t, msgStr, "Content-Type: image/png; name=logo.png\r\n")
+	assert.Contains(t, msgStr, "Content-Transfer-Encoding: base64\r\n")
+	assert.Contains(t, msgStr, "Content-Disposition: inline; filename=logo.png\r\n")
+	assert.Contains(t, msgStr, "Content-ID: <logo.png>\r\n")
+	assert.Contains(t, msgStr, "X-Attachment-Id: logo.png\r\n")
+
+	assert.Contains(t, msgStr, base64.StdEncoding.EncodeToString(attachBuf.Bytes()))
+	assert.Contains(t, msgStr, "<div>\r\nHow you doin'?\r\n</div>\r\n")
+
+	lastBoundary, expectedFinalBoundary, err := obtainLastAndExpectedBoundaryString(msgStr)
+	if assert.NoError(t, err) {
+		assert.Equal(t, expectedFinalBoundary, lastBoundary)
+	}
+}
+
+func TestEmailMsgNoAttachmentsWithLogo(t *testing.T) {
+	msg := &Message{
+		To:        []string{"foo@stackrox.com", "bar@stackrox.com"},
+		From:      "xyz@stackrox.com",
+		Subject:   "Test Email",
+		Body:      "How you doin'?",
+		EmbedLogo: true,
+	}
+
+	msgBytes := msg.Bytes()
+	msgStr := string(msgBytes)
+
+	assert.Contains(t, msgStr, "From: xyz@stackrox.com\r\n")
+	assert.Contains(t, msgStr, "To: foo@stackrox.com,bar@stackrox.com\r\n")
+	assert.Contains(t, msgStr, "Subject: Test Email\r\n")
+	assert.Contains(t, msgStr, "MIME-Version: 1.0\r\n")
+	assert.Contains(t, msgStr, "Content-Type: text/html; charset=\"utf-8\"\r\n\r\n")
+	assert.Contains(t, msgStr, "Content-Type: multipart/mixed;")
+	assert.Contains(t, msgStr, "Content-Transfer-Encoding: base64\r\n")
+	assert.NotContains(t, msgStr, "Content-Type: application/zip\r\n")
+	assert.NotContains(t, msgStr, "Content-Disposition: attachment;")
+
+	assert.Contains(t, msgStr, "How you doin'?\r\n")
+
+	lastBoundary, expectedFinalBoundary, err := obtainLastAndExpectedBoundaryString(msgStr)
+	if assert.NoError(t, err) {
+		assert.Equal(t, expectedFinalBoundary, lastBoundary)
+	}
 }
 
 func TestEmailMsgNoAttachments(t *testing.T) {
