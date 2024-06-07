@@ -93,7 +93,7 @@ require (
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.53.0
 	github.com/quay/claircore v1.5.28
-	github.com/quay/claircore/toolkit v1.2.0
+	github.com/quay/claircore/toolkit v1.2.1
 	github.com/quay/goval-parser v0.8.8
 	github.com/quay/zlog v1.1.8
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
