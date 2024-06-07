@@ -37,9 +37,10 @@ export type ScanConfigFormValues = {
 export type PageActions = 'create' | 'edit' | 'clone';
 
 export function getTimeWithHourMinuteFromISO8601(timeISO8601: string) {
-    // Given an ISO 8601 date time string from response, for example, 2024-02-29T17:13:28.710959319Z
-    // Return yy-mm-dd hh:mm UTC
-    return `${timeISO8601.slice(0, 8)} ${timeISO8601.slice(9, 14)} UTC`;
+    // Given an ISO 8601 date time string from response,
+    // for example, 2024-02-29T17:13:28.710959319Z
+    // Return yyyy-mm-dd hh:mm UTC
+    return `${timeISO8601.slice(0, 10)} ${timeISO8601.slice(11, 16)} UTC`;
 }
 
 function pad2(timeElement: number) {
