@@ -38,6 +38,28 @@ type testSuite struct {
 	scanConfigDS *scanConfigMocks.MockDataStore
 }
 
+var (
+	scanConfigs = []*storage.ComplianceOperatorScanConfigurationV2{
+		{
+			ScanConfigName: "TestConfigName",
+			Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+				{
+					ProfileName: "TestProfileName",
+				},
+			},
+			Schedule: &storage.Schedule{
+				IntervalType: storage.Schedule_DAILY,
+				Hour:         1,
+				Minute:       2, Interval: &storage.Schedule_DaysOfWeek_{
+					DaysOfWeek: &storage.Schedule_DaysOfWeek{
+						Days: []int32{1},
+					},
+				},
+			},
+		},
+	}
+)
+
 func (s *testSuite) SetupTest() {
 	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
@@ -66,25 +88,6 @@ func (c *mockServer) Recv() (*central.MsgFromSensor, error) {
 }
 
 func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
-	scanConfigs := []*storage.ComplianceOperatorScanConfigurationV2{
-		{
-			ScanConfigName: "TestConfigName",
-			Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
-				{
-					ProfileName: "TestProfileName",
-				},
-			},
-			Schedule: &storage.Schedule{
-				IntervalType: storage.Schedule_DAILY,
-				Hour:         1,
-				Minute:       2, Interval: &storage.Schedule_DaysOfWeek_{
-					DaysOfWeek: &storage.Schedule_DaysOfWeek{
-						Days: []int32{1},
-					},
-				},
-			},
-		},
-	}
 
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -114,7 +117,7 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 
 	mgrMock.EXPECT().GetCluster(ctx, gomock.Any()).Return(&storage.Cluster{}, true, nil).AnyTimes()
 	deduper.EXPECT().GetSuccessfulHashes().Return(map[string]uint64{"deployment:1": 0}).Times(1)
-	s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).AnyTimes()
+	s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).Times(1)
 
 	server := &mockServer{
 		sentList: make([]*central.MsgToSensor, 0),
@@ -254,6 +257,7 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 				sensorEventHandler: eventHandler,
 				sensorHello:        hello,
 				hashDeduper:        deduper,
+				scanSettingDS:      s.scanConfigDS,
 			}
 
 			server := &mockServer{
@@ -263,6 +267,7 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 
 			caps := set.NewSet[centralsensor.SensorCapability](tc.givenSensorCapabilities...)
 
+			s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).AnyTimes()
 			mgrMock.EXPECT().GetCluster(ctx, gomock.Any()).Return(&storage.Cluster{}, true, nil).AnyTimes()
 			if tc.expectDeduperStateSent {
 				deduper.EXPECT().GetSuccessfulHashes().Return(tc.expectDeduperStateContents).Times(1)
@@ -349,14 +354,16 @@ func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
 	mgrMock := clusterMgrMock.NewMockClusterManager(ctrl)
 
 	sensorMockConn := &sensorConnection{
-		clusterID:  clusterID,
-		clusterMgr: mgrMock,
+		clusterID:     clusterID,
+		clusterMgr:    mgrMock,
+		scanSettingDS: s.scanConfigDS,
 	}
 	server := &mockServer{
 		sentList: make([]*central.MsgToSensor, 0),
 	}
 	caps := set.NewSet(centralsensor.AuditLogEventsCap)
 
+	s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).Times(1)
 	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
 
 	s.NoError(sensorMockConn.Run(ctx, server, caps))
@@ -450,7 +457,9 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 		clusterMgr:                 mgrMock,
 		delegatedRegistryConfigMgr: deleRegMgr,
 		imageIntegrationMgr:        iiMgr,
+		scanSettingDS:              s.scanConfigDS,
 	}
+	s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).AnyTimes()
 	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
 	iiMgr.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).AnyTimes()
 
@@ -540,7 +549,9 @@ func (s *testSuite) TestImageIntegrationsOnRun() {
 		clusterMgr:                 mgrMock,
 		delegatedRegistryConfigMgr: deleRegMgr,
 		imageIntegrationMgr:        iiMgr,
+		scanSettingDS:              s.scanConfigDS,
 	}
+	s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).AnyTimes()
 	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
 	deleRegMgr.EXPECT().GetConfig(ctx).AnyTimes()
 
