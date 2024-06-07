@@ -386,6 +386,8 @@ deploy_sensor_via_operator() {
 
     upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
 
+    # forceCollection only has an impact when the collection method is EBPF
+    # but upgrade tests can fail if forceCollection is used for 4.3 or older.
     if [[ "${upper_case_collection_method}" == "CORE_BPF" ]]; then
       sed -i.bak '/forceCollection/d' "${secured_cluster_yaml_path}"
     fi
