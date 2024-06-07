@@ -8,6 +8,7 @@ import {
     TextVariants,
     Toolbar,
     ToolbarContent,
+    ToolbarGroup,
     ToolbarItem,
     Tooltip,
 } from '@patternfly/react-core';
@@ -20,10 +21,18 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { ComplianceCheckResult } from 'services/ComplianceResultsService';
 import { TableUIState } from 'utils/getTableUIState';
 
-import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
+import {
+    OnSearchPayload,
+    PartialCompoundSearchFilterConfig,
+} from 'Components/CompoundSearchFilter/types';
+import { SearchFilter } from 'types/search';
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import { CHECK_NAME_QUERY, CHECK_STATUS_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import CheckStatusModal from './components/CheckStatusModal';
+import CheckStatusDropdown from './components/CheckStatusDropdown';
 
 export type ClusterDetailsTableProps = {
     checkResultsCount: number;
@@ -32,6 +41,14 @@ export type ClusterDetailsTableProps = {
     tableState: TableUIState<ComplianceCheckResult>;
     pagination: UseURLPaginationResult;
     getSortParams: UseURLSortResult['getSortParams'];
+    searchFilterConfig: PartialCompoundSearchFilterConfig;
+    searchFilter: SearchFilter;
+    onSearch: (payload: OnSearchPayload) => void;
+    onCheckStatusSelect: (
+        filterType: 'Compliance Check Status',
+        checked: boolean,
+        selection: string
+    ) => void;
 };
 
 function ClusterDetailsTable({
@@ -41,6 +58,10 @@ function ClusterDetailsTable({
     tableState,
     pagination,
     getSortParams,
+    searchFilterConfig,
+    searchFilter,
+    onSearch,
+    onCheckStatusSelect,
 }: ClusterDetailsTableProps) {
     const [selectedCheckResult, setSelectedCheckResult] = useState<ComplianceCheckResult | null>(
         null
@@ -50,15 +71,44 @@ function ClusterDetailsTable({
         <>
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
-                        <Pagination
-                            itemCount={checkResultsCount}
-                            page={page}
-                            perPage={perPage}
-                            onSetPage={(_, newPage) => setPage(newPage)}
-                            onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
+                    <ToolbarGroup className="pf-v5-u-w-100">
+                        <ToolbarItem className="pf-v5-u-flex-1">
+                            <CompoundSearchFilter
+                                config={searchFilterConfig}
+                                searchFilter={searchFilter}
+                                onSearch={onSearch}
+                            />
+                        </ToolbarItem>
+                        <ToolbarItem>
+                            <CheckStatusDropdown
+                                searchFilter={searchFilter}
+                                onSelect={onCheckStatusSelect}
+                            />
+                        </ToolbarItem>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                            <Pagination
+                                itemCount={checkResultsCount}
+                                page={page}
+                                perPage={perPage}
+                                onSetPage={(_, newPage) => setPage(newPage)}
+                                onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
+                            />
+                        </ToolbarItem>
+                    </ToolbarGroup>
+                    <ToolbarGroup className="pf-v5-u-w-100">
+                        <SearchFilterChips
+                            filterChipGroupDescriptors={[
+                                {
+                                    displayName: 'Profile Check',
+                                    searchFilterName: CHECK_NAME_QUERY,
+                                },
+                                {
+                                    displayName: 'Compliance Status',
+                                    searchFilterName: CHECK_STATUS_QUERY,
+                                },
+                            ]}
                         />
-                    </ToolbarItem>
+                    </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>
             <Table>
