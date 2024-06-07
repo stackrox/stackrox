@@ -61,6 +61,7 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			Description:    "description 1",
 			Instructions:   "instructions 1",
 			ScanConfigName: scanConfigName1,
+			ScanRefId:      "test-ref",
 		},
 		{
 			Id:             complianceCheckUID2,
@@ -72,6 +73,7 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			Description:    "description 1",
 			Instructions:   "instructions 1",
 			ScanConfigName: scanConfigName1,
+			ScanRefId:      "test-ref",
 		},
 		{
 			Id:             complianceCheckUID3,
@@ -83,6 +85,7 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			Description:    "description 2",
 			Instructions:   "instructions 2",
 			ScanConfigName: scanConfigName1,
+			ScanRefId:      "test-ref",
 		},
 		{
 			Id:             complianceCheckUID4,
@@ -94,6 +97,7 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			Description:    "description 2",
 			Instructions:   "instructions 2",
 			ScanConfigName: scanConfigName2,
+			ScanRefId:      "test-ref",
 		},
 		{
 			Id:             complianceCheckUID5,
@@ -105,6 +109,7 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			Description:    "description 3",
 			Instructions:   "instructions 3",
 			ScanConfigName: scanConfigName3,
+			ScanRefId:      "test-ref",
 		},
 		{
 			Id:             complianceCheckUID6,
@@ -116,6 +121,7 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			Description:    "description 3",
 			Instructions:   "instructions 3",
 			ScanConfigName: scanConfigName3,
+			ScanRefId:      "test-ref",
 		},
 		{
 			Id:             complianceCheckUID7,
@@ -127,6 +133,7 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			Description:    "description 3",
 			Instructions:   "instructions 3",
 			ScanConfigName: scanConfigName3,
+			ScanRefId:      "test-ref",
 		},
 	}
 }
@@ -144,6 +151,7 @@ func GetOneClusterComplianceStorageResults(_ *testing.T, clusterID string) []*st
 			Description:    "description 1",
 			Instructions:   "instructions 1",
 			ScanConfigName: scanConfigName1,
+			ScanRefId:      "test-ref",
 		},
 		{
 			Id:             complianceCheckUID2,
@@ -155,6 +163,7 @@ func GetOneClusterComplianceStorageResults(_ *testing.T, clusterID string) []*st
 			Description:    "description 2",
 			Instructions:   "instructions 2",
 			ScanConfigName: scanConfigName2,
+			ScanRefId:      "test-ref",
 		},
 		{
 			Id:             complianceCheckUID3,
@@ -166,6 +175,7 @@ func GetOneClusterComplianceStorageResults(_ *testing.T, clusterID string) []*st
 			Description:    "description 3",
 			Instructions:   "instructions 3",
 			ScanConfigName: scanConfigName3,
+			ScanRefId:      "test-ref",
 		},
 	}
 }
@@ -295,7 +305,12 @@ func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
 				Description:  "description 1",
 				Instructions: "instructions 1",
 				Status:       v2.ComplianceCheckStatus_INFO,
-				RuleName:     "test-rule-name",
+				RuleName:     "rule-name",
+				Controls: []*v2.ComplianceControl{
+					{Standard: "OCP-CIS", Control: "1.2.2"},
+					{Standard: "OCP-CIS", Control: "1.3.3"},
+					{Standard: "OCP-CIS", Control: "1.4.4"},
+				},
 			},
 		},
 		{
@@ -308,7 +323,12 @@ func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
 				Description:  "description 1",
 				Instructions: "instructions 1",
 				Status:       v2.ComplianceCheckStatus_PASS,
-				RuleName:     "test-rule-name",
+				RuleName:     "rule-name",
+				Controls: []*v2.ComplianceControl{
+					{Standard: "OCP-CIS", Control: "1.2.2"},
+					{Standard: "OCP-CIS", Control: "1.3.3"},
+					{Standard: "OCP-CIS", Control: "1.4.4"},
+				},
 			},
 		},
 		{
@@ -321,7 +341,12 @@ func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
 				Description:  "description 2",
 				Instructions: "instructions 2",
 				Status:       v2.ComplianceCheckStatus_PASS,
-				RuleName:     "test-rule-name",
+				RuleName:     "rule-name",
+				Controls: []*v2.ComplianceControl{
+					{Standard: "OCP-CIS", Control: "1.2.2"},
+					{Standard: "OCP-CIS", Control: "1.3.3"},
+					{Standard: "OCP-CIS", Control: "1.4.4"},
+				},
 			},
 		},
 		{
@@ -334,7 +359,12 @@ func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
 				Description:  "description 2",
 				Instructions: "instructions 2",
 				Status:       v2.ComplianceCheckStatus_INFO,
-				RuleName:     "test-rule-name",
+				RuleName:     "rule-name",
+				Controls: []*v2.ComplianceControl{
+					{Standard: "OCP-CIS", Control: "1.2.2"},
+					{Standard: "OCP-CIS", Control: "1.3.3"},
+					{Standard: "OCP-CIS", Control: "1.4.4"},
+				},
 			},
 		},
 		{
@@ -347,7 +377,12 @@ func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
 				Description:  "description 3",
 				Instructions: "instructions 3",
 				Status:       v2.ComplianceCheckStatus_INFO,
-				RuleName:     "test-rule-name",
+				RuleName:     "rule-name",
+				Controls: []*v2.ComplianceControl{
+					{Standard: "OCP-CIS", Control: "1.2.2"},
+					{Standard: "OCP-CIS", Control: "1.3.3"},
+					{Standard: "OCP-CIS", Control: "1.4.4"},
+				},
 			},
 		},
 		{
@@ -360,7 +395,12 @@ func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
 				Description:  "description 3",
 				Instructions: "instructions 3",
 				Status:       v2.ComplianceCheckStatus_FAIL,
-				RuleName:     "test-rule-name",
+				RuleName:     "rule-name",
+				Controls: []*v2.ComplianceControl{
+					{Standard: "OCP-CIS", Control: "1.2.2"},
+					{Standard: "OCP-CIS", Control: "1.3.3"},
+					{Standard: "OCP-CIS", Control: "1.4.4"},
+				},
 			},
 		},
 		{
@@ -373,7 +413,12 @@ func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
 				Description:  "description 3",
 				Instructions: "instructions 3",
 				Status:       v2.ComplianceCheckStatus_INFO,
-				RuleName:     "test-rule-name",
+				RuleName:     "rule-name",
+				Controls: []*v2.ComplianceControl{
+					{Standard: "OCP-CIS", Control: "1.2.2"},
+					{Standard: "OCP-CIS", Control: "1.3.3"},
+					{Standard: "OCP-CIS", Control: "1.4.4"},
+				},
 			},
 		},
 	}
@@ -631,6 +676,7 @@ func GetComplianceStorageResult(_ *testing.T) *storage.ComplianceOperatorCheckRe
 		Instructions:   "instructions 1",
 		ScanConfigName: scanConfigName1,
 		RuleRefId:      "test-ref-id",
+		ScanRefId:      "test-ref",
 	}
 }
 
@@ -652,6 +698,11 @@ func GetConvertedComplianceResult(_ *testing.T, lastScanTime *types.Timestamp) *
 		},
 		Description:  "description 1",
 		Instructions: "instructions 1",
+		Controls: []*v2.ComplianceControl{
+			{Standard: "OCP-CIS", Control: "1.2.2"},
+			{Standard: "OCP-CIS", Control: "1.3.3"},
+			{Standard: "OCP-CIS", Control: "1.4.4"},
+		},
 	}
 }
 
@@ -665,7 +716,12 @@ func GetConvertedCheckResult(_ *testing.T) []*v2.ComplianceCheckResult {
 			Instructions: "instructions 1",
 			Status:       v2.ComplianceCheckStatus_INFO,
 			CheckUid:     complianceCheckUID1,
-			RuleName:     "test-rule-name",
+			RuleName:     "rule-name",
+			Controls: []*v2.ComplianceControl{
+				{Standard: "OCP-CIS", Control: "1.2.2"},
+				{Standard: "OCP-CIS", Control: "1.3.3"},
+				{Standard: "OCP-CIS", Control: "1.4.4"},
+			},
 		},
 	}
 }

@@ -444,8 +444,36 @@ func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, requ
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
 	}
+	if len(scanResults) == 0 {
+		return nil, nil
+	}
 
-	return storagetov2.ComplianceV2SpecificCheckResult(scanResults, request.GetCheckName()), nil
+	rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, scanResults[0].GetRuleRefId()).ProtoQuery())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for query %v", parsedQuery)
+	}
+	if len(rules) != 1 {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
+	}
+
+	scanRefQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, scanResults[0].GetScanRefId()).
+		ProtoQuery()
+	profiles, err := s.profileDS.SearchProfiles(ctx, scanRefQuery)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve profiles for result %v", parsedQuery)
+	}
+	var convertedControls []*v2.ComplianceControl
+	if len(profiles) != 0 {
+		// TODO(ROX-22362): implement tailored profiles
+		log.Warnf("Unable to find profiles for result %v.  It is possible results match a tailored profile which have not been implemented in Compliance V2", parsedQuery)
+		controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, []string{rules[0].GetName()}, profiles[0].GetName(), s.benchmarkDS)
+		if err != nil {
+			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", parsedQuery)
+		}
+		convertedControls = storagetov2.GetControls(rules[0].GetName(), controls)
+	}
+
+	return storagetov2.ComplianceV2SpecificCheckResult(scanResults, request.GetCheckName(), convertedControls), nil
 }
 
 func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQuery *v1.Query, countQuery *v1.Query) (*v2.ListComplianceResultsResponse, error) {
@@ -483,6 +511,7 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 				continue
 			}
 			profileName = profiles[0].GetName()
+			profileCache[result.GetScanRefId()] = profileName
 		}
 
 		if _, found := checkToControls[result.GetCheckName()]; !found {

@@ -43,7 +43,7 @@ func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, 
 }
 
 // ComplianceV2SpecificCheckResult converts a storage check result to a v2 check result
-func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheckResultV2, checkName string) *v2.ComplianceClusterCheckStatus {
+func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheckResultV2, checkName string, controls []*v2.ComplianceControl) *v2.ComplianceClusterCheckStatus {
 	var converted *v2.ComplianceClusterCheckStatus
 	for _, result := range incoming {
 		if result.GetCheckName() != checkName {
@@ -64,6 +64,7 @@ func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheck
 				Warnings:     result.GetWarnings(),
 				Labels:       result.GetLabels(),
 				Annotations:  result.GetAnnotations(),
+				Controls:     controls,
 			}
 		} else {
 			converted.Clusters = append(converted.Clusters, clusterStatus(result, nil))
