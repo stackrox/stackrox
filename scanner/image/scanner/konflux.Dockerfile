@@ -54,7 +54,7 @@ COPY --from=builder \
 # files.  If the file does not exist, the indexer raises an error during bootstrap.
 # (Note that the file is downloaded from Central after initial seeding.)
 
-COPY .konflux/repository-to-cpe.json .konflux/container-name-repos-map.json /run/mappings/
+COPY .konflux/scanner-data/repository-to-cpe.json .konflux/scanner-data/container-name-repos-map.json /run/mappings/
 
 RUN microdnf upgrade --nobest && \
     microdnf clean all && \
