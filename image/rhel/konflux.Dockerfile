@@ -11,7 +11,7 @@ FROM ubi-base AS rpm-installer
 ARG FINAL_STAGE_PATH
 COPY --from=final-base / "$FINAL_STAGE_PATH"
 
-COPY ./scripts/konflux/subscription-manager/* /tmp/.konflux/
+COPY ./.konflux/scripts/subscription-manager/* /tmp/.konflux/
 RUN /tmp/.konflux/subscription-manager-bro.sh register "$FINAL_STAGE_PATH"
 
 # Install packages for the final stage.
