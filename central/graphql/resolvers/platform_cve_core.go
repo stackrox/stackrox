@@ -203,7 +203,7 @@ func (resolver *platformCVECoreResolver) Clusters(ctx context.Context, args stru
 		return nil, err
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCVEID()).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEID()).ProtoQuery()
 	if resolver.subFieldQuery != nil {
 		query = search.ConjunctionQuery(query, resolver.subFieldQuery)
 	}
