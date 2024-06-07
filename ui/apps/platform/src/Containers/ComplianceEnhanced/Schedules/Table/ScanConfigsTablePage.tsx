@@ -20,6 +20,7 @@ import {
     Spinner,
     Text,
     TextContent,
+    Title,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -30,7 +31,7 @@ import { OutlinedClockIcon } from '@patternfly/react-icons';
 import { complianceEnhancedCoveragePath, complianceEnhancedSchedulesPath } from 'routePaths';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
-import TabNavHeader from 'Components/TabNav/TabNavHeader';
+import PageTitle from 'Components/PageTitle';
 import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
 import useAlert from 'hooks/useAlert';
 import useRestQuery from 'hooks/useRestQuery';
@@ -266,31 +267,23 @@ function ScanConfigsTablePage({
 
     return (
         <>
-            <TabNavHeader
-                currentTabTitle="Schedules"
-                tabLinks={[
-                    { title: 'Coverage', href: complianceEnhancedCoveragePath },
-                    { title: 'Schedules', href: complianceEnhancedSchedulesPath },
-                ]}
-                pageTitle="Compliance - Cluster compliance"
-                mainTitle="Cluster compliance"
-            />
-            <Divider component="div" />
-            <TabNavSubHeader
-                actions={hasWriteAccessForCompliance ? <CreateScanConfigButton /> : <></>}
-                description="Configure a scan schedule to run profile compliance checks on selected clusters"
-            />
-            {alertObj !== null && (
-                <Alert
-                    title={alertObj.title}
-                    variant={alertObj.type}
-                    className="pf-v5-u-mb-lg pf-v5-u-mx-lg"
-                    component="h2"
-                    actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
-                >
-                    {alertObj.children}
-                </Alert>
-            )}
+            <PageTitle title="Compliance - Schedules" />
+            <PageSection component="div" variant="light">
+                <Flex direction={{ default: 'row' }}>
+                    <FlexItem>
+                        <Title headingLevel="h1">Schedules</Title>
+                        <Text>
+                            Configure scan schedules to run profile compliance checks on selected
+                            clusters
+                        </Text>
+                    </FlexItem>
+                    {hasWriteAccessForCompliance && (
+                        <FlexItem align={{ default: 'alignRight' }}>
+                            <CreateScanConfigButton />
+                        </FlexItem>
+                    )}
+                </Flex>
+            </PageSection>
             <Divider component="div" />
             {error ? (
                 <PageSection variant="light" isFilled id="policies-table-error">
@@ -300,6 +293,19 @@ function ScanConfigsTablePage({
                 </PageSection>
             ) : (
                 <PageSection>
+                    {alertObj !== null && (
+                        <Alert
+                            title={alertObj.title}
+                            variant={alertObj.type}
+                            isInline
+                            className="pf-v5-u-mb-lg"
+                            component="h2"
+                            actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
+                        >
+                            {alertObj.children}
+                        </Alert>
+                    )}
+
                     <Toolbar>
                         <ToolbarContent>
                             <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>

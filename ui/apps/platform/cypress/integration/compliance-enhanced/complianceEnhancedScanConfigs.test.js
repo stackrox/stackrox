@@ -47,7 +47,7 @@ describe('Compliance Schedules', () => {
     it('should have have a form to add a new scan config', () => {
         visitComplianceEnhancedScanConfigs();
 
-        cy.get('.pf-v5-c-toolbar__content a:contains("Create scan schedule")').click();
+        cy.get('.pf-v5-l-flex.pf-m-row a:contains("Create scan schedule")').click();
 
         cy.get(`h1:contains("Create scan schedule")`);
 
