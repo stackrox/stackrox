@@ -37,7 +37,7 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 COPY . .
 
 # Ensure there will be no unintended -dirty suffix. package-lock is restored because it's touched by Cachi2.
-RUN git restore scripts/konflux/bootstrap-yarn/package-lock.json && \
+RUN git restore .konflux/bootstrap-yarn/package-lock.json && \
     .konflux/scripts/fail-build-if-git-is-dirty.sh
 
 ARG VERSIONS_SUFFIX
@@ -68,9 +68,9 @@ COPY . .
 
 # This installs yarn from Cachi2 and makes `yarn` executable available.
 # Not using `npm install --global` because it won't get us `yarn` globally.
-RUN cd scripts/konflux/bootstrap-yarn && \
+RUN cd .konflux/bootstrap-yarn && \
     npm ci --no-audit --no-fund
-ENV PATH="$PATH:/go/src/github.com/stackrox/rox/app/scripts/konflux/bootstrap-yarn/node_modules/.bin/"
+ENV PATH="$PATH:/go/src/github.com/stackrox/rox/app/.konflux/bootstrap-yarn/node_modules/.bin/"
 
 # This sets branding during UI build time. This is to make sure UI is branded as commercial RHACS (not StackRox).
 # ROX_PRODUCT_BRANDING is also set in the resulting image so that Central Go code knows its RHACS.
