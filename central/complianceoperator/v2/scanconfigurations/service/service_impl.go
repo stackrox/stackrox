@@ -55,7 +55,7 @@ var (
 		},
 	})
 
-	configNameRegexp = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]*$`)
+	configNameRegexp = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$`)
 
 	reservedConfigNames = []string{"default", "default-auto-apply"}
 )
