@@ -2360,8 +2360,8 @@ github.com/protocolbuffers/txtpbfmt v0.0.0-20231025115547-084445ff1adf/go.mod h1
 github.com/quay/claircore v1.5.28 h1:NQ6zJGm/G406D8DF7XlxNS0IdxhrVic+eehly9VjnOU=
 github.com/quay/claircore v1.5.28/go.mod h1:S5sFYMwJiF8bChlCkhu4MpwB6iqozlF+koSMMZS2uMk=
 github.com/quay/claircore/toolkit v1.0.0/go.mod h1:3ELtgf92x7o1JCTSKVOAqhcnCTXc4s5qiGaEDx62i20=
-github.com/quay/claircore/toolkit v1.2.0 h1:cgMCIJH8Gzl/7p6y4hVAhSEvPvT9iGWHcmpIeO8PbJQ=
-github.com/quay/claircore/toolkit v1.2.0/go.mod h1:m6ZRpxJClVAraNpIYyCsW/ULF/33ye7KkGTyNTMwvDY=
+github.com/quay/claircore/toolkit v1.2.1 h1:6cpa0xGWtFIn7QAsc8zbJohQ7Tm8yOGZMCq/iQkrsqQ=
+github.com/quay/claircore/toolkit v1.2.1/go.mod h1:m6ZRpxJClVAraNpIYyCsW/ULF/33ye7KkGTyNTMwvDY=
 github.com/quay/claircore/updater/driver v1.0.0 h1:w7dAUjO3GBK6RjNyTZ2Kwz0l/Wuic3ykKJWPB80uA94=
 github.com/quay/claircore/updater/driver v1.0.0/go.mod h1:My5aY1wBpgxcWaHQZ0VoPmmj/EzuH7fq4ntzJbos4OI=
 github.com/quay/goval-parser v0.8.8 h1:Uf+f9iF2GIR5GPUY2pGoa9il2+4cdES44ZlM0mWm4cA=
