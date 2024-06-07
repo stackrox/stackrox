@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -46,6 +47,8 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceProfileCheckDetails",
 		},
 	})
+
+	log = logging.LoggerForModule()
 )
 
 // New returns a service object for registering with grpc.
@@ -456,6 +459,15 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 	// Cache profiles for scan ref id so we don't have to look them up each time.
 	profileCache := make(map[string]string, len(scanResults))
 	for _, result := range scanResults {
+		rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, result.GetRuleRefId()).ProtoQuery())
+		if err != nil {
+			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for query %v", parsedQuery)
+		}
+		if len(rules) != 1 {
+			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
+		}
+		checkToRule[result.GetRuleRefId()] = rules[0].GetName()
+
 		// Check the Profile so we can get the controls.
 		profileName, found := profileCache[result.GetScanRefId()]
 		if !found {
@@ -466,19 +478,12 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 				return nil, errors.Wrapf(err, "Unable to retrieve profiles for result %v", parsedQuery)
 			}
 			if len(profiles) == 0 {
-				return nil, errors.Errorf("Unable to find profiles for result %v", parsedQuery)
+				// TODO(ROX-22362): implement tailored profiles
+				log.Warnf("Unable to find profiles for result %v.  It is possible results match a tailored profile which have not been implemented in Compliance V2", parsedQuery)
+				continue
 			}
 			profileName = profiles[0].GetName()
 		}
-
-		rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, result.GetRuleRefId()).ProtoQuery())
-		if err != nil {
-			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for query %v", parsedQuery)
-		}
-		if len(rules) != 1 {
-			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
-		}
-		checkToRule[result.GetRuleRefId()] = rules[0].GetName()
 
 		if _, found := checkToControls[result.GetCheckName()]; !found {
 			controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, []string{rules[0].GetName()}, profileName, s.benchmarkDS)

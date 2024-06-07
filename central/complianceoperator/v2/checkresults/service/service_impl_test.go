@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	benchmarkMocks "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	resultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
@@ -58,6 +59,7 @@ type ComplianceResultsServiceTestSuite struct {
 	service         Service
 	profilsDS       *profileDatastore.MockDataStore
 	scanDS          *scanMocks.MockDataStore
+	benchmarkDS     *benchmarkMocks.MockDataStore
 }
 
 func (s *ComplianceResultsServiceTestSuite) SetupSuite() {
@@ -78,8 +80,9 @@ func (s *ComplianceResultsServiceTestSuite) SetupTest() {
 	s.profilsDS = profileDatastore.NewMockDataStore(s.mockCtrl)
 	s.ruleDS = ruleMocks.NewMockDataStore(s.mockCtrl)
 	s.scanDS = scanMocks.NewMockDataStore(s.mockCtrl)
+	s.benchmarkDS = benchmarkMocks.NewMockDataStore(s.mockCtrl)
 
-	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS, s.profilsDS, s.ruleDS, s.scanDS)
+	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS, s.profilsDS, s.ruleDS, s.scanDS, s.benchmarkDS)
 }
 
 func (s *ComplianceResultsServiceTestSuite) TearDownTest() {

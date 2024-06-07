@@ -11,6 +11,7 @@ import (
 	resultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
+	ruleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	ruleMocks "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
@@ -27,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -808,6 +810,9 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 					convertUtils.GetComplianceStorageProfileResults(s.T(), "ocp4"),
 				}
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).Times(1)
+				s.ruleDatastore.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
 		{
@@ -832,10 +837,14 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 					convertUtils.GetComplianceStorageProfileResults(s.T(), "ocp4"),
 				}
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).Times(1)
+
+				s.ruleDatastore.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
 		{
-			desc: "Query with non-existent field",
+			desc: "Missing required profile name",
 			query: &apiV2.ComplianceProfileCheckRequest{
 				ProfileName: "",
 				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
@@ -845,7 +854,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 			},
 		},
 		{
-			desc: "Query with non-existent field",
+			desc: "Missing required check name",
 			query: &apiV2.ComplianceProfileCheckRequest{
 				ProfileName: "ocp4",
 				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
@@ -869,6 +878,30 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 				s.Require().Nil(results)
 			}
 		})
+	}
+}
+
+func getExpectedControlResults() []*ruleDS.ControlResult {
+	return []*ruleDS.ControlResult{
+		{RuleName: "rule-name", Standard: "OCP-CIS", Control: "1.2.2"},
+		{RuleName: "rule-name", Standard: "OCP-CIS", Control: "1.3.3"},
+		{RuleName: "rule-name", Standard: "OCP-CIS", Control: "1.4.4"},
+	}
+}
+
+func getExpectedBenchmark() []*storage.ComplianceOperatorBenchmarkV2 {
+	return []*storage.ComplianceOperatorBenchmarkV2{
+		{
+			Id:          uuid.NewV4().String(),
+			Name:        "CIS Benchmark",
+			Version:     "1.5",
+			Description: "blah",
+			Provider:    "",
+			ShortName:   "OCP_CIS",
+			Profiles: []*storage.ComplianceOperatorBenchmarkV2_Profile{
+				{ProfileName: "ocp4", ProfileVersion: "1.5"},
+			},
+		},
 	}
 }
 
