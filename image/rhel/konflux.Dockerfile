@@ -38,7 +38,7 @@ COPY . .
 
 # Ensure there will be no unintended -dirty suffix. package-lock is restored because it's touched by Cachi2.
 RUN git restore scripts/konflux/bootstrap-yarn/package-lock.json && \
-    scripts/konflux/fail-build-if-git-is-dirty.sh
+    .konflux/scripts/fail-build-if-git-is-dirty.sh
 
 ARG VERSIONS_SUFFIX
 ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"

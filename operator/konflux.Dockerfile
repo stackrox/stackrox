@@ -6,7 +6,7 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-RUN scripts/konflux/fail-build-if-git-is-dirty.sh
+RUN .konflux/scripts/fail-build-if-git-is-dirty.sh
 
 ARG VERSIONS_SUFFIX
 ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
