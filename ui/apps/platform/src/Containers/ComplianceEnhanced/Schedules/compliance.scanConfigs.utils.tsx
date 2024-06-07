@@ -43,13 +43,13 @@ export function getTimeWithHourMinuteFromISO8601(timeISO8601: string) {
     return `${timeISO8601.slice(0, 10)} ${timeISO8601.slice(11, 16)} UTC`;
 }
 
-function pad2(timeElement: number) {
+function padStart2(timeElement: number) {
     return timeElement.toString().padStart(2, '0');
 }
 
 export function getHourMinuteStringFromScheduleBase({ hour, minute }: ScheduleBase) {
     // Return 24-hour hh:mm string for hour and minute.
-    return [pad2(hour), pad2(minute)].join(':');
+    return [padStart2(hour), padStart2(minute)].join(':');
 }
 
 function getScheduleBaseFromHourMinuteString(time: string): ScheduleBase {
