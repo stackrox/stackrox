@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	resultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
@@ -88,13 +89,14 @@ type ComplianceResultsStatsServiceTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 
-	ctx             context.Context
-	resultDatastore *resultMocks.MockDataStore
-	scanConfigDS    *scanConfigMocks.MockDataStore
-	integrationDS   *integrationMocks.MockDataStore
-	service         Service
-	profileDS       *profileDatastore.MockDataStore
-	scanDS          *scanMocks.MockDataStore
+	ctx              context.Context
+	resultDatastore  *resultMocks.MockDataStore
+	scanConfigDS     *scanConfigMocks.MockDataStore
+	integrationDS    *integrationMocks.MockDataStore
+	service          Service
+	profileDS        *profileDatastore.MockDataStore
+	scanDS           *scanMocks.MockDataStore
+	clusterDatastore *clusterDatastoreMocks.MockDataStore
 }
 
 func (s *ComplianceResultsStatsServiceTestSuite) SetupSuite() {
@@ -114,8 +116,9 @@ func (s *ComplianceResultsStatsServiceTestSuite) SetupTest() {
 	s.integrationDS = integrationMocks.NewMockDataStore(s.mockCtrl)
 	s.profileDS = profileDatastore.NewMockDataStore(s.mockCtrl)
 	s.scanDS = scanMocks.NewMockDataStore(s.mockCtrl)
+	s.clusterDatastore = clusterDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
-	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS, s.profileDS, s.scanDS)
+	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS, s.profileDS, s.scanDS, s.clusterDatastore)
 }
 
 func (s *ComplianceResultsStatsServiceTestSuite) TearDownTest() {
@@ -584,6 +587,112 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 			tc.setMocks()
 
 			results, err := s.service.GetComplianceProfileStats(s.ctx, tc.query)
+			if tc.expectedErr == nil {
+				s.Require().NoError(err)
+			} else {
+				s.Require().Error(tc.expectedErr, err)
+			}
+
+			if tc.expectedResp != nil {
+				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+			}
+		})
+	}
+}
+
+func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesClusterStats() {
+	testCases := []struct {
+		desc         string
+		query        *apiV2.ComplianceScanClusterRequest
+		expectedResp []*apiV2.ComplianceProfileScanStats
+		expectedErr  error
+		setMocks     func()
+	}{
+		{
+			desc: "Empty query",
+			query: &apiV2.ComplianceScanClusterRequest{
+				ClusterId: fixtureconsts.Cluster1,
+				Query:     &apiV2.RawQuery{Query: ""},
+			},
+			expectedErr: nil,
+			expectedResp: []*apiV2.ComplianceProfileScanStats{
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4"),
+			},
+			setMocks: func() {
+
+				expectedQ := search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
+					search.EmptyQuery(),
+				)
+				countQuery := expectedQ.Clone()
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+
+				results := []*datastore.ResourceResultCountByProfile{
+					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "ocp4"),
+				}
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorProfileName)
+				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+				profilesOcp := []*storage.ComplianceOperatorProfileV2{{
+					Name:           "ocp4",
+					ProfileVersion: "test_version_ocp4",
+					Title:          "test_title_ocp4",
+				}}
+				s.profileDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
+					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery()).Return(profilesOcp, nil).Times(1)
+				s.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
+			},
+		},
+		{
+			desc: "Query with search field",
+			query: &apiV2.ComplianceScanClusterRequest{
+				ClusterId: fixtureconsts.Cluster1,
+				Query:     &apiV2.RawQuery{Query: "Compliance Profile Name:" + "ocp4-node"},
+			},
+			expectedErr: nil,
+			expectedResp: []*apiV2.ComplianceProfileScanStats{
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4-node"),
+			},
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().AddStrings(search.ComplianceOperatorProfileName, "ocp4-node").ProtoQuery()
+				expectedQ = search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
+					expectedQ,
+				)
+				countQuery := expectedQ.Clone()
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+
+				results := []*datastore.ResourceResultCountByProfile{
+					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "ocp4-node"),
+				}
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorProfileName)
+				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+				profiles := []*storage.ComplianceOperatorProfileV2{{
+					Name:           "ocp4-node",
+					ProfileVersion: "test_version_ocp4-node",
+					Title:          "test_title_ocp4-node",
+				}}
+				s.profileDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
+					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-node").ProtoQuery()).Return(profiles, nil).Times(1)
+				s.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
+			},
+		},
+		{
+			desc: "Query with non-existent field",
+			query: &apiV2.ComplianceScanClusterRequest{
+				ClusterId: "",
+				Query:     &apiV2.RawQuery{Query: "Compliance Profile Name:" + "ocp4-node"},
+			},
+			expectedErr: errors.Wrap(errox.InvalidArgs, "Cluster ID is required"),
+			setMocks: func() {
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			tc.setMocks()
+
+			results, err := s.service.GetComplianceProfilesClusterStats(s.ctx, tc.query)
 			if tc.expectedErr == nil {
 				s.Require().NoError(err)
 			} else {
