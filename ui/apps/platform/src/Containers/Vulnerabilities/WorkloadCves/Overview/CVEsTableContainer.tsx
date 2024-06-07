@@ -49,7 +49,7 @@ function CVEsTableContainer({
     const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data } = useQuery<{
+    const { error, loading, data, previousData } = useQuery<{
         imageCVEs: ImageCVE[];
     }>(cveListQuery, {
         variables: {
@@ -80,9 +80,10 @@ function CVEsTableContainer({
 
     const createTableActions = showDeferralUI ? createExceptionModalActions : undefined;
 
+    const tableData = data ?? previousData;
     const tableState = getTableUIState({
         isLoading: loading,
-        data: data?.imageCVEs,
+        data: tableData?.imageCVEs,
         error,
         searchFilter,
     });

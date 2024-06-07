@@ -17,7 +17,10 @@ function LiveTd({ children, ...props }: LiveTdProps) {
                   without affecting the layout of the table.
                 */
                 <Flex style={{ position: 'relative' }} alignItems={{ default: 'alignItemsCenter' }}>
-                    <Skeleton className="pf-v5-u-w-100" style={{ position: 'absolute' }} />
+                    <Skeleton
+                        className="pf-v5-u-w-100 pf-v5-u-w-100"
+                        style={{ position: 'absolute' }}
+                    />
                     <FlexItem style={{ visibility: 'hidden' }}>{children}</FlexItem>
                 </Flex>
             ) : (
