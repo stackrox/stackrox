@@ -27,6 +27,7 @@ type VulnMgmtExportWorkloadsRequest struct {
 	// Request timeout in seconds.
 	Timeout int32 `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
 	// Query to constrain the deployments for which vulnerability data is returned.
+	// The queries contain pairs of `Search Option:Value` separated by `+` signs.
 	// For HTTP requests the query should be quoted. For example
 	// > curl "$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox".
 	// queries vulnerability data for all scanner deployments in the stackrox namespace.

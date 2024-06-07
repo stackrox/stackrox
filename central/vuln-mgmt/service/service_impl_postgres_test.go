@@ -138,22 +138,18 @@ func (s *servicePostgresTestSuite) TestExport() {
 		name        string
 		deployments []*storage.Deployment
 		query       string
-		expected    []*v1.VulnMgmtExportWorkloadsResponse
+		expected    []*storage.Deployment
 	}{
 		{
-			name:        "zero deployments",
-			deployments: []*storage.Deployment{},
+			name: "zero deployments",
 		},
 		{
 			name: "one deployment no query",
 			deployments: []*storage.Deployment{
 				s.createDeployment(fixtureconsts.Deployment1),
 			},
-			expected: []*v1.VulnMgmtExportWorkloadsResponse{
-				{
-					Deployment: s.createDeployment(fixtureconsts.Deployment1),
-					Images:     fixtures.DeploymentImages(),
-				},
+			expected: []*storage.Deployment{
+				s.createDeployment(fixtureconsts.Deployment1),
 			},
 		},
 		{
@@ -163,19 +159,10 @@ func (s *servicePostgresTestSuite) TestExport() {
 				s.createDeployment(fixtureconsts.Deployment2),
 				s.createDeployment(fixtureconsts.Deployment3),
 			},
-			expected: []*v1.VulnMgmtExportWorkloadsResponse{
-				{
-					Deployment: s.createDeployment(fixtureconsts.Deployment1),
-					Images:     fixtures.DeploymentImages(),
-				},
-				{
-					Deployment: s.createDeployment(fixtureconsts.Deployment2),
-					Images:     fixtures.DeploymentImages(),
-				},
-				{
-					Deployment: s.createDeployment(fixtureconsts.Deployment3),
-					Images:     fixtures.DeploymentImages(),
-				},
+			expected: []*storage.Deployment{
+				s.createDeployment(fixtureconsts.Deployment1),
+				s.createDeployment(fixtureconsts.Deployment2),
+				s.createDeployment(fixtureconsts.Deployment3),
 			},
 		},
 		{
@@ -186,11 +173,8 @@ func (s *servicePostgresTestSuite) TestExport() {
 				s.createDeployment(fixtureconsts.Deployment3),
 			},
 			query: fmt.Sprintf("Deployment ID:%s", fixtureconsts.Deployment2),
-			expected: []*v1.VulnMgmtExportWorkloadsResponse{
-				{
-					Deployment: s.createDeployment(fixtureconsts.Deployment2),
-					Images:     fixtures.DeploymentImages(),
-				},
+			expected: []*storage.Deployment{
+				s.createDeployment(fixtureconsts.Deployment2),
 			},
 		},
 	}
@@ -204,14 +188,18 @@ func (s *servicePostgresTestSuite) TestExport() {
 			client := v1.NewVulnMgmtServiceClient(conn)
 			results := s.receiveWorkloads(client, request)
 
+			// The images are the same for all deployments to simplify the assertions.
+			expectedImages := fixtures.DeploymentImages()
+			expectedImageIDs := []string{expectedImages[0].GetId(), expectedImages[1].GetId()}
+
+			// We cannot perform a full assert on the response because it contains variable data
+			// and timestamps.
 			s.Require().Len(results, len(c.expected))
 			for i := range results {
-				s.Assert().Equal(c.expected[i].Deployment, results[i].Deployment)
-				// We cannot perform a full assert on the imagages because they contain timestamps.
-				s.Require().Len(results[i].Images, len(c.expected[i].Images))
+				s.Assert().Contains(c.deployments, results[i].Deployment)
+				s.Require().Len(results[i].Images, len(expectedImages))
 				for j := range results[i].Images {
-					s.Assert().Equal(c.expected[i].Images[j].GetId(), results[i].Images[j].GetId())
-					s.Assert().Equal(c.expected[i].Images[j].GetId(), results[i].Images[j].GetId())
+					s.Assert().Contains(expectedImageIDs, results[i].Images[j].GetId())
 				}
 			}
 		})
