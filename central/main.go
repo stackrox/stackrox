@@ -168,7 +168,7 @@ import (
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
 	versionUtils "github.com/stackrox/rox/central/version/utils"
-	vulnMgmtService "github.com/stackrox/rox/central/vuln-mgmt/service"
+	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
 	vulnRequestServiceV2 "github.com/stackrox/rox/central/vulnerabilityrequest/service/v2"
