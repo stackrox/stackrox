@@ -29,8 +29,9 @@ type VulnMgmtExportWorkloadsRequest struct {
 	// Query to constrain the deployments for which vulnerability data is returned.
 	// The queries contain pairs of `Search Option:Value` separated by `+` signs.
 	// For HTTP requests the query should be quoted. For example
-	// > curl "$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox".
+	// > curl "$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox"
 	// queries vulnerability data for all scanner deployments in the stackrox namespace.
+	// See https://docs.openshift.com/acs/4.4/operating/search-filter.html for more information.
 	Query                string   `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
