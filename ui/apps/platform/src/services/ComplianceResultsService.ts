@@ -70,9 +70,9 @@ export function getComplianceProfileCheckResult(
  */
 export function getComplianceProfileResults(
     profileName: string,
-    { sortOption, page, perPage }: SearchQueryOptions
+    { sortOption, page, perPage, searchFilter }: SearchQueryOptions
 ): Promise<ListComplianceProfileResults> {
-    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
     return axios
         .get<ListComplianceProfileResults>(
             `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks?${params}`
