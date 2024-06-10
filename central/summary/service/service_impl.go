@@ -81,6 +81,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetSummaryCounts returns the global counts of alerts, clusters, deployments, and images.
 func (s *serviceImpl) GetSummaryCounts(ctx context.Context, _ *v1.Empty) (*v1.SummaryCountsResponse, error) {
+	log.Warn("The `/v1/summary/counts` API has been deprecated in 4.5 and will be removed in the future.")
 	alerts, err := s.alerts.CountAlerts(ctx)
 	if err != nil {
 		log.Error(err)
