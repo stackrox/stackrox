@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	lru "github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -20,6 +21,10 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
+)
+
+const (
+	cacheSize = 1000
 )
 
 var (
@@ -67,6 +72,8 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 		ctx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 		defer cancel()
 	}
+	imageCache := lru.NewLRU[string, *storage.Image](cacheSize, nil, 0)
+
 	return s.deployments.WalkByQuery(ctx, parsedQuery, func(d *storage.Deployment) error {
 		containers := d.GetContainers()
 		images := make([]*storage.Image, 0, len(containers))
@@ -79,13 +86,19 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 			}
 			imageIDs.Add(imgID)
 
-			img, exists, err := s.images.GetImage(ctx, imgID)
+			if img, found := imageCache.Get(imgID); found {
+				images = append(images, img)
+				continue
+			}
+
+			img, found, err := s.images.GetImage(ctx, imgID)
 			if err != nil {
 				log.Errorf("Error getting image for container %q (SHA: %s): %v", d.GetName(), container.GetId(), err)
 				continue
 			}
-			if exists {
+			if found {
 				images = append(images, img)
+				imageCache.Add(imgID, img)
 			} else {
 				log.Warnf("Image %q for container %q (SHA: %s) not found", imgID, d.GetName(), container.GetId())
 			}
