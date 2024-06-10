@@ -1818,7 +1818,7 @@ type ComplianceOperatorScanV2 struct {
 	Status               *ScanStatus       `protobuf:"bytes,10,opt,name=status,proto3" json:"status,omitempty"`
 	CreatedTime          *types.Timestamp  `protobuf:"bytes,11,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
 	LastExecutedTime     *types.Timestamp  `protobuf:"bytes,12,opt,name=last_executed_time,json=lastExecutedTime,proto3" json:"last_executed_time,omitempty" search:"Compliance Scan Last Executed Time,hidden"` // @gotags: search:"Compliance Scan Last Executed Time,hidden"
-	ScanName             string            `protobuf:"bytes,13,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty" search:"Compliance Scan Name,hidden"`                           // @gotags: search:"Compliance Scan Name,hidden"
+	ScanName             string            `protobuf:"bytes,13,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
 	Warnings             string            `protobuf:"bytes,14,opt,name=warnings,proto3" json:"warnings,omitempty"`
 	ProductType          string            `protobuf:"bytes,15,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty"`
 	ScanRefId            string            `protobuf:"bytes,16,opt,name=scan_ref_id,json=scanRefId,proto3" json:"scan_ref_id,omitempty" search:"Scan Ref ID,hidden" sql:"type(uuid)"` // @gotags: search:"Scan Ref ID,hidden" sql:"type(uuid)"

@@ -60,7 +60,6 @@ type ComplianceOperatorScanV2 struct {
 	ProfileProfileID string     `gorm:"column:profile_profileid;type:uuid"`
 	StatusResult     string     `gorm:"column:status_result;type:varchar"`
 	LastExecutedTime *time.Time `gorm:"column:lastexecutedtime;type:timestamp"`
-	ScanName         string     `gorm:"column:scanname;type:varchar"`
 	ScanRefID        string     `gorm:"column:scanrefid;type:uuid"`
 	Serialized       []byte     `gorm:"column:serialized;type:bytea"`
 }

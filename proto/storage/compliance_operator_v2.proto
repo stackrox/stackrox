@@ -213,7 +213,7 @@ message ComplianceOperatorScanV2 {
   ScanStatus status = 10;
   google.protobuf.Timestamp created_time = 11;
   google.protobuf.Timestamp last_executed_time = 12; // @gotags: search:"Compliance Scan Last Executed Time,hidden"
-  string scan_name = 13; // @gotags: search:"Compliance Scan Name,hidden"
+  string scan_name = 13;
   string warnings = 14;
   string product_type = 15;
   string scan_ref_id = 16; // @gotags: search:"Scan Ref ID,hidden" sql:"type(uuid)"
