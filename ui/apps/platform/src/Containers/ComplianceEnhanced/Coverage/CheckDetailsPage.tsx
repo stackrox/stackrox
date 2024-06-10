@@ -12,6 +12,9 @@ import { getComplianceProfileCheckStats } from 'services/ComplianceResultsStatsS
 import { getComplianceProfileCheckResult } from 'services/ComplianceResultsService';
 import { getTableUIState } from 'utils/getTableUIState';
 
+import useURLSearch from 'hooks/useURLSearch';
+import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
+import { OnSearchPayload, clusterSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
 import CheckDetailsTable from './CheckDetailsTable';
 import DetailsPageHeader, { PageHeaderLabel } from './components/DetailsPageHeader';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
@@ -40,8 +43,9 @@ function CheckDetails() {
     const { sortOption, getSortParams } = useURLSort({
         sortFields: [CLUSTER_QUERY],
         defaultSortOption: { field: CLUSTER_QUERY, direction: 'asc' },
-        onSort: () => setPage(1),
+        onSort: () => setPage(1, 'replace'),
     });
+    const { searchFilter, setSearchFilter } = useURLSearch();
 
     const fetchCheckStats = useCallback(
         () => getComplianceProfileCheckStats(profileName, checkName),
@@ -55,8 +59,13 @@ function CheckDetails() {
 
     const fetchCheckResults = useCallback(
         () =>
-            getComplianceProfileCheckResult(profileName, checkName, { page, perPage, sortOption }),
-        [page, perPage, checkName, profileName, sortOption]
+            getComplianceProfileCheckResult(profileName, checkName, {
+                page,
+                perPage,
+                sortOption,
+                searchFilter,
+            }),
+        [page, perPage, checkName, profileName, sortOption, searchFilter]
     );
     const {
         data: checkResultsResponse,
@@ -64,18 +73,16 @@ function CheckDetails() {
         error: checkResultsError,
     } = useRestQuery(fetchCheckResults);
 
+    const searchFilterConfig = {
+        Cluster: getFilteredConfig(clusterSearchFilterConfig, ['Name']),
+    };
+
     const tableState = getTableUIState({
         isLoading: isLoadingCheckResults,
         data: checkResultsResponse?.checkResults,
         error: checkResultsError,
         searchFilter: {},
     });
-
-    useEffect(() => {
-        if (checkResultsResponse) {
-            setCurrentDatetime(new Date());
-        }
-    }, [checkResultsResponse]);
 
     const checkStatsLabels =
         checkStatsResponse?.checkStats
@@ -93,6 +100,41 @@ function CheckDetails() {
                 return acc;
             }, [] as PageHeaderLabel[])
             .filter((component) => component !== null) || [];
+
+    useEffect(() => {
+        if (checkResultsResponse) {
+            setCurrentDatetime(new Date());
+        }
+    }, [checkResultsResponse]);
+
+    // @TODO: Consider making a function to make this more reusable
+    const onSearch = (payload: OnSearchPayload) => {
+        const { action, category, value } = payload;
+        const currentSelection = searchFilter[category] || [];
+        let newSelection = !Array.isArray(currentSelection) ? [currentSelection] : currentSelection;
+        if (action === 'ADD') {
+            newSelection.push(value);
+        } else if (action === 'REMOVE') {
+            newSelection = newSelection.filter((datum) => datum !== value);
+        } else {
+            // Do nothing
+        }
+        setSearchFilter({
+            ...searchFilter,
+            [category]: newSelection,
+        });
+    };
+
+    const onCheckStatusSelect = (
+        filterType: 'Compliance Check Status',
+        checked: boolean,
+        selection: string
+    ) => {
+        const action = checked ? 'ADD' : 'REMOVE';
+        const category = filterType;
+        const value = selection;
+        onSearch({ action, category, value });
+    };
 
     return (
         <>
@@ -132,6 +174,10 @@ function CheckDetails() {
                     profileName={profileName}
                     tableState={tableState}
                     getSortParams={getSortParams}
+                    searchFilterConfig={searchFilterConfig}
+                    searchFilter={searchFilter}
+                    onSearch={onSearch}
+                    onCheckStatusSelect={onCheckStatusSelect}
                 />
             </PageSection>
         </>
