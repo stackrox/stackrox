@@ -27,6 +27,7 @@ import {
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import useURLSort from 'hooks/useURLSort';
+import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import {
     getHiddenSeverities,
@@ -34,6 +35,7 @@ import {
     getRegexScopedQueryString,
 } from '../../utils/searchUtils';
 import CvePageHeader from '../../components/CvePageHeader';
+import { nodeSearchFilterConfig, nodeComponentSearchFilterConfig } from '../../searchFilterConfig';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import AffectedNodesTable, { defaultSortOption, sortFields } from './AffectedNodesTable';
 import AffectedNodesSummaryCard from './AffectedNodesSummaryCard';
@@ -42,8 +44,13 @@ import useNodeCveMetadata from './useNodeCveMetadata';
 
 const nodeCveOverviewCvePath = getOverviewPagePath('Node', { entityTab: 'CVE' });
 
+const searchFilterConfig = {
+    Node: nodeSearchFilterConfig,
+    'Node Component': nodeComponentSearchFilterConfig,
+} as const;
+
 function NodeCvePage() {
-    const { searchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
     // TODO - Need an equivalent function implementation for filter sanitization for Node CVEs
     const querySearchFilter = searchFilter;
 
@@ -102,6 +109,17 @@ function NodeCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-v5-u-flex-grow-1">
+                <AdvancedFiltersToolbar
+                    searchFilter={searchFilter}
+                    searchFilterConfig={searchFilterConfig}
+                    onFilterChange={(newFilter, { action }) => {
+                        setSearchFilter(newFilter);
+
+                        if (action === 'ADD') {
+                            // TODO - Add analytics tracking
+                        }
+                    }}
+                />
                 <SummaryCardLayout
                     error={metadataRequest.error}
                     isLoading={metadataRequest.loading}

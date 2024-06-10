@@ -1,0 +1,13 @@
+.advanced-filters-toolbar .pf-m-typeahead .pf-v5-c-chip-group,
+.advanced-filters-toolbar .pf-m-typeahead button.pf-v5-c-select__toggle-clear {
+    display: none;
+}
+
+.advanced-filters-toolbar .pf-v5-c-select__toggle-wrapper {
+    flex-wrap: nowrap
+}
+
+/* Fixes the issue where badge counts in select components wrap to a new line */
+.advanced-filters-toolbar .vm-filter-toolbar-dropdown .pf-v5-c-select__toggle-wrapper {
+  flex-wrap: nowrap;
+}
