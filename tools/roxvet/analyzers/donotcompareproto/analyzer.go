@@ -79,8 +79,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			return
 		}
 		name := fn.FullName()
-		isAssert := bannedAssertFunctions.Contains(name)
-		if !bannedEqualFunctions.Contains(name) && !isAssert {
+		isBannedAssert := bannedAssertFunctions.Contains(name)
+		isBannedEqual := bannedEqualFunctions.Contains(name)
+		if !isBannedEqual && !isBannedAssert {
 			return
 		}
 
@@ -99,7 +100,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				for modfier, r := range replacements {
 					if strings.HasPrefix(s, modfier+protoPkg) {
 						pkg := "protoutils"
-						if isAssert {
+						if isBannedAssert {
 							pkg = "protoassert"
 						}
 						pass.Report(analysis.Diagnostic{
