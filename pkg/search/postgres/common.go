@@ -277,22 +277,26 @@ func (q *query) AsSQL() string {
 		querySB.WriteString(" inner join ")
 		querySB.WriteString(innerJoin.rightTable)
 		querySB.WriteString(" on")
-		if (i == len(q.InnerJoins)-1) && (innerJoin.rightTable == pkgSchema.ImageCveEdgesTableName) {
-			// Step 4: Join image_cve_edges table such that both its ImageID and ImageCveId columns are matched with the joins so far
-			imageIDTable := findImageIDTableAndField(q.InnerJoins)
-			imageCVEIDTable := findImageCVEIDTableAndField(q.InnerJoins)
-			if imageIDTable != "" && imageCVEIDTable != "" {
-				imageIDField := tableWithImageIDToField[imageIDTable]
-				imageCVEIDField := tableWithImageCVEIDToField[imageCVEIDTable]
-				querySB.WriteString(fmt.Sprintf("(%s.%s = %s.%s and %s.%s = %s.%s)",
-					imageIDTable, imageIDField, pkgSchema.ImageCveEdgesTableName, "ImageId",
-					imageCVEIDTable, imageCVEIDField, pkgSchema.ImageCveEdgesTableName, "ImageCveId"))
-				continue
-			} else {
-				log.Error("Could not find tables to match both ImageId and ImageCveId columns on image_cve_edges table. " +
-					"Continuing with incomplete join")
+
+		if env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
+			if (i == len(q.InnerJoins)-1) && (innerJoin.rightTable == pkgSchema.ImageCveEdgesTableName) {
+				// Step 4: Join image_cve_edges table such that both its ImageID and ImageCveId columns are matched with the joins so far
+				imageIDTable := findImageIDTableAndField(q.InnerJoins)
+				imageCVEIDTable := findImageCVEIDTableAndField(q.InnerJoins)
+				if imageIDTable != "" && imageCVEIDTable != "" {
+					imageIDField := tableWithImageIDToField[imageIDTable]
+					imageCVEIDField := tableWithImageCVEIDToField[imageCVEIDTable]
+					querySB.WriteString(fmt.Sprintf("(%s.%s = %s.%s and %s.%s = %s.%s)",
+						imageIDTable, imageIDField, pkgSchema.ImageCveEdgesTableName, "ImageId",
+						imageCVEIDTable, imageCVEIDField, pkgSchema.ImageCveEdgesTableName, "ImageCveId"))
+					continue
+				} else {
+					log.Error("Could not find tables to match both ImageId and ImageCveId columns on image_cve_edges table. " +
+						"Continuing with incomplete join")
+				}
 			}
 		}
+
 		for i, columnNamePair := range innerJoin.columnNamePairs {
 			if i > 0 {
 				querySB.WriteString(" and")
@@ -401,9 +405,12 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	standardizeFieldNamesInQuery(q)
 	innerJoins, dbFields := getJoinsAndFields(schema, q)
 
-	innerJoins, err := handleImageCveEdgesTableInJoins(schema, innerJoins)
-	if err != nil {
-		return nil, err
+	var err error
+	if env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
+		innerJoins, err = handleImageCveEdgesTableInJoins(schema, innerJoins)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	queryEntry, err := compileQueryToPostgres(schema, q, dbFields, nowForQuery)

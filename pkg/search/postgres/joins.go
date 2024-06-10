@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
@@ -140,15 +141,17 @@ type searchFieldMetadata struct {
 func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string]searchFieldMetadata) {
 	unreachedFields := collectFields(q)
 
-	// Step 1: If ImageCveEdgesSchema is going to be a part of joins, we want to ensure that we are able to join on both
-	//  ImageId and ImageCveId fields
-	if src != schema.ImageCveEdgesSchema &&
-		containsFieldsFromSchemas(unreachedFields, []*walker.Schema{schema.ImageCveEdgesSchema}) {
-		if !containsFieldsFromSchemas(unreachedFields, schemasWithImageID) {
-			unreachedFields.Add(strings.ToLower(search.ImageSHA.String()))
-		}
-		if !containsFieldsFromSchemas(unreachedFields, schemasWithImageCVEID) {
-			unreachedFields.Add(strings.ToLower(search.CVEID.String()))
+	if env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
+		// Step 1: If ImageCveEdgesSchema is going to be a part of joins, we want to ensure that we are able to join on both
+		//  ImageId and ImageCveId fields
+		if src != schema.ImageCveEdgesSchema &&
+			containsFieldsFromSchemas(unreachedFields, []*walker.Schema{schema.ImageCveEdgesSchema}) {
+			if !containsFieldsFromSchemas(unreachedFields, schemasWithImageID) {
+				unreachedFields.Add(strings.ToLower(search.ImageSHA.String()))
+			}
+			if !containsFieldsFromSchemas(unreachedFields, schemasWithImageCVEID) {
+				unreachedFields.Add(strings.ToLower(search.CVEID.String()))
+			}
 		}
 	}
 
@@ -168,18 +171,21 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string
 		currElem := queue[0]
 		queue = queue[1:]
 
-		// Step 2: Avoid using ImageCveEdgesSchema unless there is no other way to get to the required fields.
-		// If ImageCveEdgesSchema is root schema, then it is unavoidable.
-		if currElem.schema == schema.ImageCveEdgesSchema && currElem.schema != src {
-			// If there are more schemas to expand in queue, expand them first. Hopefully we will find all required fields
-			//   without having to use ImageCveEdgesSchema.
-			// But if there are no more schemas to expand, and we still have unreachable fields,
-			//   then they must be fields of ImageCveEdgesSchema. In that case ImageCveEdgesSchema is unavoidable.
-			if len(queue) > 0 {
-				queue = append(queue, currElem)
-				continue
+		if env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
+			// Step 2: Avoid using ImageCveEdgesSchema unless there is no other way to get to the required fields.
+			// If ImageCveEdgesSchema is root schema, then it is unavoidable.
+			if currElem.schema == schema.ImageCveEdgesSchema && currElem.schema != src {
+				// If there are more schemas to expand in queue, expand them first. Hopefully we will find all required fields
+				//   without having to use ImageCveEdgesSchema.
+				// But if there are no more schemas to expand, and we still have unreachable fields,
+				//   then they must be fields of ImageCveEdgesSchema. In that case ImageCveEdgesSchema is unavoidable.
+				if len(queue) > 0 {
+					queue = append(queue, currElem)
+					continue
+				}
 			}
 		}
+
 		if !visited.Add(currElem.schema.Table) {
 			continue
 		}
@@ -220,16 +226,19 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string
 				}
 			}
 
-			// We want to make sure ImageCveEdgesSchema gets added only once to queue. If there are multiple copies of
-			// ImageCveEdgesSchema in the queue, then we can enter an infinite loop trying to push one copy after another
-			// to the end of queue.
-			if rel.OtherSchema == schema.ImageCveEdgesSchema {
-				if imageCveEdgesSchemaInQueue {
-					continue
-				} else {
-					imageCveEdgesSchemaInQueue = true
+			if env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
+				// We want to make sure ImageCveEdgesSchema gets added only once to queue. If there are multiple copies of
+				// ImageCveEdgesSchema in the queue, then we can enter an infinite loop trying to push one copy after another
+				// to the end of queue.
+				if rel.OtherSchema == schema.ImageCveEdgesSchema {
+					if imageCveEdgesSchemaInQueue {
+						continue
+					} else {
+						imageCveEdgesSchemaInQueue = true
+					}
 				}
 			}
+
 			newElem := bfsQueueElem{
 				schema: rel.OtherSchema,
 			}

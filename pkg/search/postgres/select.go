@@ -10,6 +10,7 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -66,9 +67,11 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 		return nil, nil
 	}
 
-	innerJoins, err = handleImageCveEdgesTableInJoins(schema, innerJoins)
-	if err != nil {
-		return nil, err
+	if env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
+		innerJoins, err = handleImageCveEdgesTableInJoins(schema, innerJoins)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	parsedQuery := &query{

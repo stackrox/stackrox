@@ -15,6 +15,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/mathutil"
@@ -964,6 +965,11 @@ func standardizeImages(images ...*storage.Image) {
 }
 
 func TestImageCVEEdgeIsJoinedLast(t *testing.T) {
+	t.Setenv(env.ImageCVEEdgeJoinWorkaround.EnvVar(), "true")
+	if !env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
+		t.Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
+		t.SkipNow()
+	}
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)
 
