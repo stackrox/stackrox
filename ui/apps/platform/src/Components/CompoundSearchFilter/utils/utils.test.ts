@@ -39,9 +39,9 @@ describe('utils', () => {
 
             expect(result).toStrictEqual([
                 {
-                    displayName: 'ID',
-                    filterChipLabel: 'Image CVE ID',
-                    searchTerm: 'CVE ID',
+                    displayName: 'Name',
+                    filterChipLabel: 'Image CVE',
+                    searchTerm: 'CVE',
                     inputType: 'autocomplete',
                 },
                 {
@@ -107,7 +107,7 @@ describe('utils', () => {
 
             const result = getDefaultAttribute('Image CVE', config);
 
-            expect(result).toStrictEqual('ID');
+            expect(result).toStrictEqual('Name');
         });
     });
 
@@ -121,8 +121,8 @@ describe('utils', () => {
 
             expect(result).toStrictEqual([
                 {
-                    displayName: 'Image CVE ID',
-                    searchFilterName: 'CVE ID',
+                    displayName: 'Image CVE',
+                    searchFilterName: 'CVE',
                 },
                 {
                     displayName: 'Image CVE Discovered Time',
