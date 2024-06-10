@@ -103,7 +103,7 @@ func convertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguratio
 	}
 
 	if notifierConfig.GetEmailConfig() == nil {
-		return nil, errors.New("Email config read from database is nil")
+		return nil, errors.New("Email notifier is not configured")
 	}
 
 	return &v2.NotifierConfiguration{
