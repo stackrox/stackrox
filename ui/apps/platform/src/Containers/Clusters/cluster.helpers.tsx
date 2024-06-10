@@ -30,7 +30,7 @@ export const runtimeOptions = [
     {
         label: 'eBPF Program',
         tableDisplay: 'eBPF',
-        value: 'EBPF',
+        value: 'CORE_BPF',
     },
 ];
 
