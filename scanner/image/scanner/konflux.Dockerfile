@@ -19,7 +19,7 @@ ENV CI=1
 COPY . /src
 WORKDIR /src
 
-RUN scripts/konflux/fail-build-if-git-is-dirty.sh
+RUN .konflux/scripts/fail-build-if-git-is-dirty.sh
 
 RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-scripts
 
@@ -59,7 +59,7 @@ COPY --from=builder \
 # files.  If the file does not exist, the indexer raises an error during bootstrap.
 # (Note that the file is downloaded from Central after initial seeding.)
 
-COPY .konflux/repository-to-cpe.json .konflux/container-name-repos-map.json /run/mappings/
+COPY .konflux/scanner-data/repository-to-cpe.json .konflux/scanner-data/container-name-repos-map.json /run/mappings/
 
 RUN microdnf upgrade --nobest && \
     microdnf clean all && \
