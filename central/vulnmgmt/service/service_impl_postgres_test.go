@@ -99,8 +99,7 @@ func (s *servicePostgresTestSuite) createGRPCWorkloadsService(ctx context.Contex
 	return conn, closeFunc
 }
 
-func (s *servicePostgresTestSuite) createDeployment(id string) *storage.Deployment {
-	deployment := fixtures.GetDeployment()
+func (s *servicePostgresTestSuite) createDeployment(deployment *storage.Deployment, id string) *storage.Deployment {
 	deployment.Id = id
 	return deployment
 }
@@ -146,35 +145,45 @@ func (s *servicePostgresTestSuite) TestExport() {
 		{
 			name: "one deployment no query",
 			deployments: []*storage.Deployment{
-				s.createDeployment(fixtureconsts.Deployment1),
+				s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment1),
 			},
 			expected: []*storage.Deployment{
-				s.createDeployment(fixtureconsts.Deployment1),
+				s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment1),
 			},
 		},
 		{
 			name: "multiple deployments no query",
 			deployments: []*storage.Deployment{
-				s.createDeployment(fixtureconsts.Deployment1),
-				s.createDeployment(fixtureconsts.Deployment2),
-				s.createDeployment(fixtureconsts.Deployment3),
+				s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment1),
+				s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment2),
+				s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment3),
 			},
 			expected: []*storage.Deployment{
-				s.createDeployment(fixtureconsts.Deployment1),
-				s.createDeployment(fixtureconsts.Deployment2),
-				s.createDeployment(fixtureconsts.Deployment3),
+				s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment1),
+				s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment2),
+				s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment3),
 			},
 		},
 		{
 			name: "multiple deployments with query",
 			deployments: []*storage.Deployment{
-				s.createDeployment(fixtureconsts.Deployment1),
-				s.createDeployment(fixtureconsts.Deployment2),
-				s.createDeployment(fixtureconsts.Deployment3),
+				s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment1),
+				s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment2),
+				s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment3),
 			},
 			query: fmt.Sprintf("Deployment ID:%s", fixtureconsts.Deployment2),
 			expected: []*storage.Deployment{
-				s.createDeployment(fixtureconsts.Deployment2),
+				s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment2),
+			},
+		},
+		{
+			name: "duplicate image deployment",
+			deployments: []*storage.Deployment{
+				s.createDeployment(fixtures.DuplicateImageDeployment(), fixtureconsts.Deployment6),
+			},
+			query: fmt.Sprintf("Deployment ID:%s", fixtureconsts.Deployment6),
+			expected: []*storage.Deployment{
+				s.createDeployment(fixtures.DuplicateImageDeployment(), fixtureconsts.Deployment6),
 			},
 		},
 	}

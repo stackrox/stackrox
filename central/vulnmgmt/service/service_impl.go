@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 )
 
@@ -69,8 +70,15 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 	return s.deployments.WalkByQuery(ctx, parsedQuery, func(d *storage.Deployment) error {
 		containers := d.GetContainers()
 		images := make([]*storage.Image, 0, len(containers))
+		imageIDs := set.NewStringSet()
 		for _, container := range containers {
 			imgID := container.GetImage().GetId()
+			// Deduplicate images by their ID.
+			if imageIDs.Contains(imgID) {
+				continue
+			}
+			imageIDs.Add(imgID)
+
 			img, exists, err := s.images.GetImage(ctx, imgID)
 			if err != nil {
 				log.Errorf("Error getting image for container %q (SHA: %s): %v", d.GetName(), container.GetId(), err)
