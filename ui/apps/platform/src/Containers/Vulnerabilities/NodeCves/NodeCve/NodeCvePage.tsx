@@ -27,12 +27,13 @@ import {
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import useURLSort from 'hooks/useURLSort';
-import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
+import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import {
     getHiddenSeverities,
     getOverviewPagePath,
     getRegexScopedQueryString,
+    parseQuerySearchFilter,
 } from '../../utils/searchUtils';
 import CvePageHeader from '../../components/CvePageHeader';
 import { nodeSearchFilterConfig, nodeComponentSearchFilterConfig } from '../../searchFilterConfig';
@@ -51,8 +52,7 @@ const searchFilterConfig = {
 
 function NodeCvePage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
-    // TODO - Need an equivalent function implementation for filter sanitization for Node CVEs
-    const querySearchFilter = searchFilter;
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
     // We need to scope all queries to the *exact* CVE name so that we don't accidentally get
     // data that matches a prefix of the CVE name in the nested fields
@@ -110,6 +110,7 @@ function NodeCvePage() {
             <Divider component="div" />
             <PageSection className="pf-v5-u-flex-grow-1">
                 <AdvancedFiltersToolbar
+                    className="pf-v5-u-pt-lg pf-v5-u-pb-0 pf-v5-u-px-sm"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
                     onFilterChange={(newFilter, { action }) => {

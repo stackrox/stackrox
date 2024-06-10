@@ -19,7 +19,7 @@ import { getTableUIState } from 'utils/getTableUIState';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import useURLSort from 'hooks/useURLSort';
 import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
-import { getHiddenStatuses } from '../../utils/searchUtils';
+import { getHiddenStatuses, parseQuerySearchFilter } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import useClusterVulnerabilities from './useClusterVulnerabilities';
@@ -34,8 +34,7 @@ export type ClusterPageVulnerabilitiesProps = {
 
 function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesProps) {
     const { searchFilter } = useURLSearch();
-    // TODO - Need an equivalent function implementation for filter sanitization for Platform CVEs
-    const querySearchFilter = searchFilter;
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const query = getUrlQueryStringForSearchFilter(querySearchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);

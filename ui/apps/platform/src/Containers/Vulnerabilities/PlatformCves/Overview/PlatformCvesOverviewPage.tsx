@@ -25,6 +25,7 @@ import useSnoozeCveModal from 'Containers/Vulnerabilities/components/SnoozeCvesM
 import SnoozeCvesModal from 'Containers/Vulnerabilities/components/SnoozeCvesModal/SnoozeCvesModal';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 
+import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
@@ -54,8 +55,7 @@ function PlatformCvesOverviewPage() {
         onSort: () => pagination.setPage(1, 'replace'),
     });
 
-    // TODO - Need an equivalent function implementation for filter sanitization for Platform CVEs
-    const querySearchFilter = searchFilter;
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const isViewingSnoozedCves = querySearchFilter['CVE Snoozed']?.[0] === 'true';

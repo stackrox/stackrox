@@ -39,7 +39,7 @@ import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,
 } from '../SummaryCards/CvesByStatusSummaryCard';
 import {
-    parseWorkloadQuerySearchFilter,
+    parseQuerySearchFilter,
     getHiddenSeverities,
     getHiddenStatuses,
     getVulnStateScopedQueryString,
@@ -105,7 +105,7 @@ function DeploymentPageVulnerabilities({
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
-    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
     const { page, setPage, perPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
