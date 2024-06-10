@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -247,15 +248,16 @@ func NewManager(
 		externalSrcs:      externalSrcs,
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
+		initialSync:       &atomic.Bool{},
 		finished:          &sync.WaitGroup{},
 		activeConnections: make(map[connection]*networkConnIndicator),
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
 	}
 
+	enricherTicker.Stop()
 	if features.SensorCapturesIntermediateEvents.Enabled() {
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.NetworkFlowBufferSize))
 	} else {
-		enricherTicker.Stop()
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage)
 	}
 
@@ -284,6 +286,7 @@ type networkFlowManager struct {
 	ctxMutex    sync.Mutex
 	cancelCtx   context.CancelFunc
 	pipelineCtx context.Context
+	initialSync *atomic.Bool
 
 	enricherTicker *time.Ticker
 
@@ -314,18 +317,25 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
-	if !features.SensorCapturesIntermediateEvents.Enabled() {
-		log.Info(common.LogSensorComponentEvent(e))
-		switch e {
-		case common.SensorComponentEventCentralReachable:
-			m.resetContext()
-			m.resetLastSentState()
-			m.centralReady.Signal()
-			m.enricherTicker.Reset(tickerTime)
-		case common.SensorComponentEventOfflineMode:
-			m.centralReady.Reset()
-			m.enricherTicker.Stop()
+	log.Info(common.LogSensorComponentEvent(e))
+	switch e {
+	case common.SensorComponentEventSyncFinished:
+		if features.SensorCapturesIntermediateEvents.Enabled() {
+			if m.initialSync.CompareAndSwap(false, true) {
+				m.enricherTicker.Reset(tickerTime)
+			}
+			return
 		}
+		m.resetContext()
+		m.resetLastSentState()
+		m.centralReady.Signal()
+		m.enricherTicker.Reset(tickerTime)
+	case common.SensorComponentEventOfflineMode:
+		if features.SensorCapturesIntermediateEvents.Enabled() {
+			return
+		}
+		m.centralReady.Reset()
+		m.enricherTicker.Stop()
 	}
 }
 
