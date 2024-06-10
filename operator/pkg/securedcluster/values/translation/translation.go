@@ -34,6 +34,7 @@ const (
 	collectorTLSSecretName        = "collector-tls"
 
 	legacyCollectionKernelModule = "KernelModule"
+	legacyCollectionEBPF         = "EBPF"
 )
 
 var (
@@ -305,21 +306,13 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *platform
 		// Override the helm-charts default collectionMethod selection logic.
 		cv.SetBoolValue("forceCollectionMethod", true)
 		switch *c {
-		case platform.CollectionEBPF:
-			// EBPF collection has been deprecated, translate it to CORE_BPF if it's not forced
-			if collectorContainerSpec.ForceCollection != nil &&
-				*collectorContainerSpec.ForceCollection {
-				cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
-			} else {
-				cv.SetStringValue("collectionMethod", storage.CollectionMethod_CORE_BPF.String())
-			}
 		case platform.CollectionNone:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_NO_COLLECTION.String())
 		case platform.CollectionCOREBPF:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_CORE_BPF.String())
-		case legacyCollectionKernelModule:
-			// Kernel module collection has been removed, but for the
-			// purposes of upgrades, we translate it to CORE_BPF
+		case legacyCollectionKernelModule, legacyCollectionEBPF:
+			// Kernel module and eBPF collection have been removed, but for the
+			// purposes of upgrades, we translate them to CORE_BPF
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_CORE_BPF.String())
 		default:
 			return cv.SetError(fmt.Errorf("invalid spec.perNode.collection %q", *c))
