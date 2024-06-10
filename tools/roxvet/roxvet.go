@@ -1,7 +1,7 @@
 package main
 
 import (
-	donotcompareproto "github.com/stackrox/rox/tools/roxvet/analyzers/dontcompareproto"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/donotcompareproto"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/dontprintferr"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/filepathwalk"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/godoccapitalizationmismatch"
