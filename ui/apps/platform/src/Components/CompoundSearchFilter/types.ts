@@ -275,10 +275,10 @@ export const imageCVESearchFilterConfig = {
     displayName: 'Image CVE',
     searchCategory: 'IMAGE_VULNERABILITIES',
     attributes: {
-        ID: {
-            displayName: 'ID',
-            filterChipLabel: 'Image CVE ID',
-            searchTerm: 'CVE ID',
+        Name: {
+            displayName: 'Name',
+            filterChipLabel: 'Image CVE',
+            searchTerm: 'CVE',
             inputType: 'autocomplete',
         },
         'Discovered Time': {
