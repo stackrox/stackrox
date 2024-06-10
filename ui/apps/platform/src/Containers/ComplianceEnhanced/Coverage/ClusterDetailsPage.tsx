@@ -22,6 +22,12 @@ import { getComplianceProfilesStats } from 'services/ComplianceResultsStatsServi
 import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getComplianceProfileClusterResults } from 'services/ComplianceResultsService';
+import useURLSearch from 'hooks/useURLSearch';
+import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
+import {
+    OnSearchPayload,
+    profileCheckSearchFilterConfig,
+} from 'Components/CompoundSearchFilter/types';
 
 import ClusterDetailsTable from './ClusterDetailsTable';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
@@ -40,8 +46,9 @@ function ClusterDetailsPage() {
     const { sortOption, getSortParams } = useURLSort({
         sortFields: [CHECK_NAME_QUERY],
         defaultSortOption: { field: CHECK_NAME_QUERY, direction: 'asc' },
-        onSort: () => setPage(1),
+        onSort: () => setPage(1, 'replace'),
     });
+    const { searchFilter, setSearchFilter } = useURLSearch();
 
     const fetchProfilesStats = useCallback(
         () => getComplianceProfilesStats(clusterId),
@@ -59,14 +66,19 @@ function ClusterDetailsPage() {
                 page,
                 perPage,
                 sortOption,
+                searchFilter,
             }),
-        [clusterId, page, perPage, profileName, sortOption]
+        [clusterId, page, perPage, profileName, sortOption, searchFilter]
     );
     const {
         data: checkResultsResponse,
         loading: isLoadingCheckResults,
         error: checkResultsError,
     } = useRestQuery(fetchCheckResults);
+
+    const searchFilterConfig = {
+        'Profile Check': getFilteredConfig(profileCheckSearchFilterConfig, ['Name']),
+    };
 
     const tableState = getTableUIState({
         isLoading: isLoadingCheckResults,
@@ -82,6 +94,35 @@ function ClusterDetailsPage() {
         });
         history.push(path);
     }
+
+    // @TODO: Consider making a function to make this more reusable
+    const onSearch = (payload: OnSearchPayload) => {
+        const { action, category, value } = payload;
+        const currentSelection = searchFilter[category] || [];
+        let newSelection = !Array.isArray(currentSelection) ? [currentSelection] : currentSelection;
+        if (action === 'ADD') {
+            newSelection.push(value);
+        } else if (action === 'REMOVE') {
+            newSelection = newSelection.filter((datum) => datum !== value);
+        } else {
+            // Do nothing
+        }
+        setSearchFilter({
+            ...searchFilter,
+            [category]: newSelection,
+        });
+    };
+
+    const onCheckStatusSelect = (
+        filterType: 'Compliance Check Status',
+        checked: boolean,
+        selection: string
+    ) => {
+        const action = checked ? 'ADD' : 'REMOVE';
+        const category = filterType;
+        const value = selection;
+        onSearch({ action, category, value });
+    };
 
     if (clusterProfileDataError) {
         return (
@@ -162,6 +203,10 @@ function ClusterDetailsPage() {
                     tableState={tableState}
                     pagination={pagination}
                     getSortParams={getSortParams}
+                    searchFilterConfig={searchFilterConfig}
+                    searchFilter={searchFilter}
+                    onSearch={onSearch}
+                    onCheckStatusSelect={onCheckStatusSelect}
                 />
             </PageSection>
         </>
