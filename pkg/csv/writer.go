@@ -58,11 +58,6 @@ func (c *GenericWriter) WriteBytes(buf *bytes.Buffer) error {
 	return nil
 }
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-=======
->>>>>>> 6faeddcd64 (Added test file)
 // WriteCSVwrites out csv header and values to the provided IO writer
 func (c *GenericWriter) WriteCSV(w io.Writer) error {
 	cw := csv.NewWriter(w)
@@ -77,10 +72,6 @@ func (c *GenericWriter) WriteCSV(w io.Writer) error {
 	return nil
 }
 
-<<<<<<< HEAD
-=======
->>>>>>> 977397fb1f (Added test file)
->>>>>>> 6faeddcd64 (Added test file)
 // Write writes back the CSV file contents into the http.ResponseWriter.
 func (c *GenericWriter) Write(w http.ResponseWriter, filename string) {
 	writeHeaders(w, filename)

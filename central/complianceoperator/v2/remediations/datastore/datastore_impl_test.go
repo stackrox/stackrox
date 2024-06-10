@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -62,6 +63,32 @@ func (s *complianceRemediationDataStoreTestSuite) SetupTest() {
 
 func (s *complianceRemediationDataStoreTestSuite) TearDownTest() {
 	s.db.Teardown(s.T())
+}
+
+func (s *complianceRemediationDataStoreTestSuite) TestSearchRemediation() {
+	remediationFixture := &storage.ComplianceOperatorRemediationV2{
+		Id:                        uuid.NewV4().String(),
+		ClusterId:                 uuid.NewV4().String(),
+		Name:                      "test-name",
+		ComplianceCheckResultName: "test-check-res",
+	}
+	// test insert
+	err := s.dataStore.UpsertRemediation(s.hasWriteCtx, remediationFixture)
+	remediationFixture = &storage.ComplianceOperatorRemediationV2{
+		Id:                        uuid.NewV4().String(),
+		ClusterId:                 uuid.NewV4().String(),
+		Name:                      "test-name2",
+		ComplianceCheckResultName: "test-check-res2",
+	}
+	// test insert
+	err = s.dataStore.UpsertRemediation(s.hasWriteCtx, remediationFixture)
+	s.Require().NoError(err)
+	q := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorCheckName, "test-check-res").ProtoQuery()
+	remediations, err := s.dataStore.SearchRemediations(s.hasReadCtx, q)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(remediations)
+	s.Require().Equal(remediations[0].GetComplianceCheckResultName(), "test-check-res")
+
 }
 
 func (s *complianceRemediationDataStoreTestSuite) TestRemediation() {

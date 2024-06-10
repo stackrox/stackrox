@@ -9,7 +9,6 @@ import (
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	complianceUtils "github.com/stackrox/rox/central/complianceoperator/v2/utils"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/ranking"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -27,10 +26,9 @@ var (
 )
 
 type datastoreImpl struct {
-	store             store.Store
-	db                postgres.DB
-	searcher          checkResultSearch.Searcher
-	checkResultRanker *ranking.Ranker
+	store    store.Store
+	db       postgres.DB
+	searcher checkResultSearch.Searcher
 }
 
 // UpsertResult adds the result to the database  If enabling the use of this
@@ -284,8 +282,8 @@ func (d *datastoreImpl) CountByField(ctx context.Context, query *v1.Query, field
 }
 
 func (d *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.ComplianceOperatorCheckResultV2) error) error {
-	wrappedFn := func(checkRes *storage.ComplianceOperatorCheckResultV2) error {
-		return fn(checkRes)
+	wrappedFn := func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
+		return fn(checkResult)
 	}
 	return d.store.WalkByQuery(ctx, query, wrappedFn)
 }

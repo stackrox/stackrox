@@ -10,39 +10,18 @@ import (
 
 	"github.com/pkg/errors"
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	"github.com/stackrox/rox/central/graphql/resolvers"
-	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
->>>>>>> 6faeddcd64 (Added test file)
-=======
->>>>>>> 9c5d2f96de (Added walkbyquery for complaince check result to get data fro compliance report)
-=======
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
-<<<<<<< HEAD
-	complianceRulesDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
->>>>>>> 0224098a9c (Added query for profile name)
-=======
 	remediationDS "github.com/stackrox/rox/central/complianceoperator/v2/remediations/datastore"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
->>>>>>> c9939db731 (Fixed nit comments)
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	"github.com/stackrox/rox/pkg/grpc/authz/allow"
->>>>>>> 6faeddcd64 (Added test file)
-=======
->>>>>>> 9c5d2f96de (Added walkbyquery for complaince check result to get data fro compliance report)
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/templates"
 )
@@ -50,15 +29,8 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	reportGenCtx = sac.WithAllAccess(context.Background())
-=======
-	reportGenCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
->>>>>>> 6faeddcd64 (Added test file)
 
-=======
->>>>>>> 9c5d2f96de (Added walkbyquery for complaince check result to get data fro compliance report)
 	csvHeader = []string{
 		"Control Reference",
 		"Check(CCR)",
@@ -75,48 +47,30 @@ const (
 )
 
 type formatBody struct {
-<<<<<<< HEAD
 	BrandedPrefix string
 	Profile       string
 	Pass          int
 	Fail          int
 	Mixed         int
 	Cluster       int
-=======
-	BrandedPrefix    string
-	Profile          string
-	Pass             int
-	Fail             int
-	Mixed            int
-	Cluster          int
-	ComplianceStatus string
->>>>>>> 6faeddcd64 (Added test file)
 }
 
 type formatSubject struct {
 	BrandedPrefix string
 	ScanConfig    string
-<<<<<<< HEAD
 	Profiles      int
-=======
-	Profiles      string
->>>>>>> 6faeddcd64 (Added test file)
 }
 
 type complianceReportGeneratorImpl struct {
 	checkResultsDS        checkResults.DataStore
 	notificationProcessor notifier.Processor
+	scanDS                scanDS.DataStore
 	profileDS             profileDS.DataStore
 	remediationDS         remediationDS.DataStore
-	scanDS                scanDS.DataStore
 }
 
 // struct which hold all columns of a row
-<<<<<<< HEAD
 type ResultRow struct {
-=======
-type resultRow struct {
->>>>>>> 6faeddcd64 (Added test file)
 	ClusterName string
 	CheckName   string
 	Profile     string
@@ -126,7 +80,6 @@ type resultRow struct {
 	Remediation string
 }
 
-<<<<<<< HEAD
 type ResultEmail struct {
 	ResultCSVs map[string][]*ResultRow // map of cluster id to slice of *resultRow
 	TotalPass  int
@@ -138,225 +91,157 @@ type ResultEmail struct {
 
 func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceReportRequest) {
 
-	data, err := rg.getDataForReport(req)
+	log.Infof("Processing report request %s", req)
+	data, err := rg.getDataforReport(req)
 	if err != nil {
-		log.Errorf("Error getting report data for scan config %s", req.ScanConfigName)
+		log.Errorf("Error getting report data for scan config %s:%s", req.ScanConfigName, err)
 		return
 	}
 	if data == nil {
-		log.Errorf("Error getting report data for scan config %s", req.ScanConfigName)
+		log.Errorf("Error getting report data for scan config %s. NO data returned by query", req.ScanConfigName)
 		return
 	}
 
 	zipData, err := format(data.ResultCSVs)
 	if err != nil {
-		log.Errorf("Error zipping compliance reports for scan config %s", req.ScanConfigName)
+		log.Errorf("Error zipping compliance reports for scan config %s:%s", req.ScanConfigName, err)
 		return
 	}
-	profiles := strings.Join(req.Profiles, ", ")
+
 	formatEmailBody := &formatBody{
 		BrandedPrefix: branding.GetCombinedProductAndShortName(),
-		Profile:       profiles,
+		Profile:       strings.Join(req.Profiles, ","),
 		Pass:          data.TotalPass,
 		Fail:          data.TotalFail,
 		Mixed:         data.TotalMixed,
 		Cluster:       len(req.ClusterIDs),
 	}
 
-	if len(profiles) > maxNumberProfilesinSubject {
-		profiles = strings.Join(req.Profiles[0:maxNumberProfilesinSubject], ", ")
-=======
-type resultEmail struct {
-	resultCSVs map[string][]*resultRow //map of cluster id to slice of *resultRow
-	totalPass  int
-	totalFail  int
-	totalMixed int
-	profiles   []string
-	clusters   int
-}
-
-func (rg *complianceReportGeneratorImpl) ProcessReportRequest(ctx context.Context, req *ComplianceReportRequest) error {
-
-	data, err := rg.getDataforReport(req, ctx)
-	if err != nil {
-		return err
-	}
-
-	zipData, err := rg.Format(data.resultCSVs)
-	if err != nil {
-		return err
-	}
-	profiles := strings.Join(req.profiles, ", ")
-	formatEmailBody := &formatBody{
-		BrandedPrefix: branding.GetCombinedProductAndShortName(),
-		Profile:       profiles,
-		Pass:          data.totalPass,
-		Fail:          data.totalFail,
-		Mixed:         data.totalMixed,
-		Cluster:       len(req.clusterIDs),
-	}
-	formatEmailBody.ComplianceStatus = "non compliant"
-	if data.totalFail == 0 {
-		formatEmailBody.ComplianceStatus = "compliant"
-	}
-
-	if len(profiles) > maxNumberProfilesinSubject {
-		profiles = strings.Join(req.profiles[0:maxNumberProfilesinSubject], ", ")
->>>>>>> 6faeddcd64 (Added test file)
-		profiles += "..."
-	}
-
 	formatEmailSub := &formatSubject{
 		BrandedPrefix: branding.GetCombinedProductAndShortName(),
-<<<<<<< HEAD
 		ScanConfig:    req.ScanConfigName,
-		Profiles:      len(profiles),
+		Profiles:      len(req.Profiles),
 	}
 
 	log.Infof("Sending email for scan config %s", req.ScanConfigName)
 	go rg.sendEmail(req.Ctx, zipData, formatEmailBody, formatEmailSub, req.Notifiers)
 }
 
-// getDataForReport returns map of cluster id and
-func (rg *complianceReportGeneratorImpl) getDataForReport(req *ComplianceReportRequest) (*ResultEmail, error) {
-=======
-		ScanConfig:    req.scanConfigName,
-		Profiles:      profiles,
-	}
-
-	return rg.sendEmail(zipData, formatEmailBody, formatEmailSub, req.notifiers, ctx)
-}
-
-// getDataforReport returns map of cluster id and
-func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportRequest, ctx context.Context) (*resultEmail, error) {
-<<<<<<< HEAD
->>>>>>> 6faeddcd64 (Added test file)
-	// TODO ROX-24356: Implement query to get checkresults data to generate cvs for compliance reporting
-=======
-	clusters := req.clusterIDs
-
-	var resultsCSV map[string][]*resultRow
-
-	resultEmailComplianceReport := &resultEmail{
-		totalPass:  0,
-		totalMixed: 0,
-		totalFail:  0,
-		clusters:   0,
+// getDataforReport returns map of cluster id and slice of ResultRow
+func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportRequest) (*ResultEmail, error) {
+	clusters := req.ClusterIDs
+	resultsCSV := make(map[string][]*ResultRow)
+	resultEmailComplianceReport := &ResultEmail{
+		TotalPass:  0,
+		TotalMixed: 0,
+		TotalFail:  0,
+		Clusters:   0,
 	}
 
 	for _, clusterID := range clusters {
-
-		parsedQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfig, req.scanConfigID).
+		parsedQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfig, req.ScanConfigID).
 			AddExactMatches(search.ClusterID, clusterID).
 			ProtoQuery()
-		resultCluster := []*resultRow{}
+		resultCluster := []*ResultRow{}
 
-		err := rg.checkResultsDS.WalkByQuery(ctx, parsedQuery, func(c *storage.ComplianceOperatorCheckResultV2) error {
-			// TODO: Add query to get profile name
-			row := &resultRow{
+		err := rg.checkResultsDS.WalkByQuery(req.Ctx, parsedQuery, func(c *storage.ComplianceOperatorCheckResultV2) error {
+			row := &ResultRow{
 				ClusterName: c.GetClusterName(),
 				CheckName:   c.GetCheckName(),
 				Description: c.GetDescription(),
 				Status:      c.GetStatus().String(),
 				Remediation: c.GetInstructions(),
 			}
-			//get profile name for the check result
+			// get profile name for the check result
 			q := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, c.GetScanRefId()).ProtoQuery()
-			scans, err := rg.scanDS.SearchScans(ctx, q)
-			if err != nil {
-				return err
-			}
-			if len(scans) < 1 {
-				return errors.New("Rule not found")
-			}
-			q = search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileID, scans[0].GetProfile().GetProfileId()).ProtoQuery()
-			profiles, err := rg.profileDS.SearchProfiles(ctx, q)
+			log.Info("query to get profiles is %s", q)
+			profiles, err := rg.profileDS.SearchProfiles(req.Ctx, q)
 			if err != nil {
 				return err
 			}
 			if len(profiles) < 1 {
 				return errors.New("Profile not found")
 			}
+
 			row.Profile = profiles[0].GetName()
 
-			//get remediation for the check result
-			q = search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorCheckName, c.GetCheckName()).ProtoQuery()
-			remediations, err := rg.remediationDS.SearchRemediations(ctx, q)
+			// get remediation for the check result
+			q = search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorCheckName, c.GetCheckName()).AddExactMatches(search.ClusterID, c.GetClusterId()).ProtoQuery()
+			remediations, err := rg.remediationDS.SearchRemediations(req.Ctx, q)
 			if err != nil {
 				return err
 			}
-			if len(remediations) < 1 {
-				return errors.New("Remediation not found")
+			if len(remediations) > 0 {
+				row.Remediation = remediations[0].GetName()
 			}
-			row.Remediation = remediations[0].GetName()
+
 			resultCluster = append(resultCluster, row)
+			if c.GetStatus() == storage.ComplianceOperatorCheckResultV2_FAIL {
+				resultEmailComplianceReport.TotalFail += 1
+			} else if c.GetStatus() == storage.ComplianceOperatorCheckResultV2_PASS {
+				resultEmailComplianceReport.TotalPass += 1
+			} else {
+				resultEmailComplianceReport.TotalMixed += 1
+			}
 			return nil
 		})
-
 		if err != nil {
 			return nil, err
 		}
 
 		resultsCSV[clusterID] = resultCluster
 	}
-
-	resultEmailComplianceReport.clusters = len(req.clusterIDs)
-	resultEmailComplianceReport.profiles = req.profiles
-	resultEmailComplianceReport.resultCSVs = resultsCSV
+	resultEmailComplianceReport.Clusters = len(req.ClusterIDs)
+	resultEmailComplianceReport.Profiles = req.Profiles
+	resultEmailComplianceReport.ResultCSVs = resultsCSV
 	return resultEmailComplianceReport, nil
->>>>>>> 9c5d2f96de (Added walkbyquery for complaince check result to get data fro compliance report)
-
 }
 
-<<<<<<< HEAD
 func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData *bytes.Buffer, emailBody *formatBody, formatEmailSub *formatSubject, notifiersList []*storage.NotifierConfiguration) {
-=======
-func (rg *complianceReportGeneratorImpl) sendEmail(zipData *bytes.Buffer, emailBody *formatBody, formatEmailSub *formatSubject, notifiersList []*storage.NotifierConfiguration, ctx context.Context) error {
->>>>>>> 6faeddcd64 (Added test file)
 
 	errorList := errorhelpers.NewErrorList("Error sending compliance report email notifications")
-	for _, notifier := range notifiersList {
-		nf := rg.notificationProcessor.GetNotifier(ctx, notifier.GetEmailConfig().GetNotifierId())
+	for _, repNotifier := range notifiersList {
+		notifierID := repNotifier.GetId()
+		nf := rg.notificationProcessor.GetNotifier(ctx, notifierID)
 		reportNotifier, ok := nf.(notifiers.ReportNotifier)
+		log.Infof("nf is %s", nf)
+		log.Infof("reportnotifier is %s", reportNotifier)
 		if !ok {
-			errorList.AddError(errors.Errorf("incorrect type of notifier '%s' for compliance report", notifier.GetEmailConfig().GetNotifierId()))
+			errorList.AddError(errors.Errorf("incorrect type of notifier %s for compliance report", repNotifier.GetEmailConfig().GetNotifierId()))
 			continue
 		}
 
-		customBody := notifier.GetEmailConfig().GetCustomBody()
-		emailBody, err := formatEmailBodywithDetails(defaultEmailBodyTemplate, emailBody)
+		customBody := repNotifier.GetEmailConfig().GetCustomBody()
+		body, err := formatEmailBodywithDetails(defaultEmailBodyTemplate, emailBody)
+		log.Infof("format email body is %s.body is %s", emailBody, body)
 		if err != nil {
-			errorList.AddError(errors.Errorf("Error sending compliance report email for notifier '%s': %s",
-				notifier.GetEmailConfig().GetNotifierId(), err))
+			errorList.AddError(errors.Errorf("Error formatting email body for notifier %s: %s",
+				repNotifier.GetEmailConfig().GetNotifierId(), err))
 		}
 		if customBody != "" {
-			emailBody = customBody
+			body = customBody
 		}
 
-		customSubject := notifier.GetEmailConfig().GetCustomSubject()
+		customSubject := repNotifier.GetEmailConfig().GetCustomSubject()
 		emailSubject, err := formatEmailSubjectwithDetails(defaultSubjectTemplate, formatEmailSub)
 		if err != nil {
-			errorList.AddError(errors.Errorf("Error sending compliance report email for notifier '%s': %s",
-				notifier.GetEmailConfig().GetNotifierId(), err))
+			errorList.AddError(errors.Errorf("Error formatting email subject for notifier %s: %s",
+				repNotifier.GetEmailConfig().GetNotifierId(), err))
 		}
 		if customSubject != "" {
 			emailSubject = customSubject
 		}
-		err = retryableSendReportResults(ctx, reportNotifier, notifier.GetEmailConfig().GetMailingLists(),
-			zipData, emailSubject, emailBody)
+		err = retryableSendReportResults(reportNotifier, repNotifier.GetEmailConfig().GetMailingLists(),
+			zipData, emailSubject, body)
 		if err != nil {
-			errorList.AddError(errors.Errorf("Error sending compliance report email for notifier '%s': %s",
-				notifier.GetEmailConfig().GetNotifierId(), err))
+			errorList.AddError(errors.Errorf("Error sending compliance report email for notifier %s: %s",
+				repNotifier.GetEmailConfig().GetNotifierId(), err))
 		}
 	}
 
-<<<<<<< HEAD
 	if !errorList.Empty() {
 		log.Errorf("Error in sending email to notifiers %s", errorList)
 	}
-=======
-	return errorList
->>>>>>> 6faeddcd64 (Added test file)
 }
 
 func formatEmailSubjectwithDetails(subject string, data *formatSubject) (string, error) {
@@ -375,10 +260,10 @@ func formatEmailBodywithDetails(subject string, data *formatBody) (string, error
 	return templates.ExecuteToString(tmpl, data)
 }
 
-func retryableSendReportResults(ctx context.Context, reportNotifier notifiers.ReportNotifier, mailingList []string,
+func retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailingList []string,
 	zippedCSVData *bytes.Buffer, emailSubject, emailBody string) error {
 	return retry.WithRetry(func() error {
-		return reportNotifier.ReportNotify(ctx, zippedCSVData, mailingList, emailSubject, emailBody)
+		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, emailSubject, emailBody)
 	},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -389,14 +274,11 @@ func retryableSendReportResults(ctx context.Context, reportNotifier notifiers.Re
 	)
 }
 
-<<<<<<< HEAD
 func format(results map[string][]*ResultRow) (*bytes.Buffer, error) {
-=======
-func (rg *complianceReportGeneratorImpl) Format(results map[string][]*resultRow) (*bytes.Buffer, error) {
->>>>>>> 6faeddcd64 (Added test file)
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
 	for cluster, res := range results {
+		log.Infof("Creating csv for cluster %s", cluster)
 		err := createCSVInZip(zipWriter, cluster, res)
 		if err != nil {
 			return nil, errors.Wrap(err, "error creating csv report")
@@ -410,11 +292,7 @@ func (rg *complianceReportGeneratorImpl) Format(results map[string][]*resultRow)
 	return &zipBuf, nil
 }
 
-<<<<<<< HEAD
 func createCSVInZip(zipWriter *zip.Writer, filename string, res []*ResultRow) error {
-=======
-func createCSVInZip(zipWriter *zip.Writer, filename string, res []*resultRow) error {
->>>>>>> 6faeddcd64 (Added test file)
 	w, err := zipWriter.Create(filename)
 	if err != nil {
 		return err
@@ -433,6 +311,5 @@ func createCSVInZip(zipWriter *zip.Writer, filename string, res []*resultRow) er
 		}
 		csvWriter.AddValue(record)
 	}
-
 	return csvWriter.WriteCSV(w)
 }

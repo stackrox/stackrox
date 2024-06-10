@@ -367,6 +367,7 @@ func (s *complianceCheckResultDataStoreTestSuite) SetupTest() {
 	configStorage := checkResultsStorage.New(s.db)
 	s.searcher = checkresultsSearch.New(configStorage)
 	s.dataStore = New(s.storage, s.db, s.searcher)
+
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) TearDownTest() {
@@ -899,11 +900,11 @@ func (s *complianceCheckResultDataStoreTestSuite) TestWalkByQueryCheckResult() {
 		CheckName   string
 		Status      string
 	}
-
 	results, err := s.dataStore.SearchComplianceCheckResults(s.testContexts[testutils.UnrestrictedReadWriteCtx], parsedQuery)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(results)
 	resultsQuery := []*repResults{}
+
 	s.dataStore.WalkByQuery(s.testContexts[testutils.UnrestrictedReadCtx], parsedQuery, func(c *storage.ComplianceOperatorCheckResultV2) error {
 		res := &repResults{
 			ClusterName: c.GetClusterName(),
@@ -1055,7 +1056,8 @@ func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
 	}
 
 	for k, v := range profileCluster {
-		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_profile_v2 (id, profileid, name, producttype, clusterid, profilerefid,) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), "profile-1", "ocp4-cis-node", "node", k, v)
+		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_profile_v2 (id, profileid, name, producttype, clusterid, profilerefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), "profile-1", "ocp4-cis-node", "node", k, v)
+
 		s.Require().NoError(err)
 	}
 
