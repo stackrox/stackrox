@@ -22,8 +22,8 @@ test_roxctl_cmd() {
   kubectl get ep central
 
   echo "Creating a service account with an insufficient role..."
-  kubectl apply -f "../testdata/port-forward-role-bad.yaml"
-  kubectl apply -f "../testdata/port-forward-sa.yaml"
+  kubectl apply -f "tests/testdata/port-forward-role-bad.yaml"
+  kubectl apply -f "tests/testdata/port-forward-sa.yaml"
   echo "Switching the context to use the service account token..."
   TOKEN=$(kubectl get secret "port-forward-sa-secret" -o jsonpath='{.data.token}' | base64 --decode)
   kubectl config set-credentials port-forward-user --token="$TOKEN"
@@ -45,7 +45,7 @@ test_roxctl_cmd() {
   fi
 
   echo "Updating the role with sufficient permissions..."
-  kubectl apply -f "../testdata/port-forward-role-minimal.yaml"
+  kubectl apply -f "tests/testdata/port-forward-role-minimal.yaml"
 
   # Verify central whoami using current k8s context.
   if OUTPUT=$(roxctl -p "$ROX_PASSWORD" central whoami --use-current-k8s-context \
