@@ -94,11 +94,11 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			if typ.Underlying().String() == "int32" {
 				continue
 			}
-			s := typ.String()
+			comparedTypeString := typ.String()
 
 			for _, protoPkg := range protoPkgs {
-				for modfier, r := range replacements {
-					if strings.HasPrefix(s, modfier+protoPkg) {
+				for modifier, r := range replacements {
+					if strings.HasPrefix(comparedTypeString, modifier+protoPkg) {
 						pkg := "protoutils"
 						if isBannedAssert {
 							pkg = "protoassert"
@@ -111,7 +111,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					}
 				}
 
-				if strings.Contains(s, protoPkg) {
+				if strings.Contains(comparedTypeString, protoPkg) {
 					pass.Report(analysis.Diagnostic{
 						Pos:     arg.Pos(),
 						Message: fmt.Sprintf("Do not use %s on proto.Message", name),
