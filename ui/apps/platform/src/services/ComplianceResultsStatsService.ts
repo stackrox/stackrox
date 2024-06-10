@@ -55,9 +55,9 @@ export function getComplianceProfilesStats(
  */
 export function getComplianceClusterStats(
     profileName: string,
-    { sortOption, page, perPage }: SearchQueryOptions
+    { sortOption, page, perPage, searchFilter }: SearchQueryOptions
 ): Promise<ListComplianceClusterOverallStatsResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
     return axios
         .get<ListComplianceClusterOverallStatsResponse>(
             `${complianceResultsStatsBaseUrl}/profiles/${profileName}/clusters?${params}`
