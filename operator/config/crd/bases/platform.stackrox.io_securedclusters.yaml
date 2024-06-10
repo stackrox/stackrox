@@ -519,11 +519,8 @@ spec:
                         type: string
                       forceCollection:
                         default: false
-                        description: |-
-                          When the "collection" field is set to the deprecated value "EBPF", then
-                          setting this to "true" prevents conversion of the collection method to
-                          "CORE_BPF". This could be used in exceptional situations when "EBPF" has
-                          to be used.
+                        description: Deprecated field. This field will be removed
+                          in a future release.
                         type: boolean
                       imageFlavor:
                         default: Regular
