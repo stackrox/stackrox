@@ -1,3 +1,5 @@
+import { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
+
 import {
     PartialCompoundSearchFilterConfig,
     SearchFilterAttribute,
@@ -81,4 +83,22 @@ export function ensureConditionNumber(value: unknown): { condition: string; numb
         condition: '',
         number: 0,
     };
+}
+
+/**
+ * Helper function to convert a search filter config object into an
+ * array of FilterChipGroupDescriptor objects for use in the SearchFilterChips component
+ *
+ * @param searchFilterConfig Config object for the search filter
+ * @returns An array of FilterChipGroupDescriptor objects
+ */
+export function makeFilterChipDescriptors(
+    searchFilterConfig: PartialCompoundSearchFilterConfig
+): FilterChipGroupDescriptor[] {
+    return Object.values(searchFilterConfig).flatMap(({ attributes = {} }) =>
+        Object.values(attributes).map((attributeConfig) => ({
+            displayName: attributeConfig.filterChipLabel,
+            searchFilterName: attributeConfig.searchTerm,
+        }))
+    );
 }
