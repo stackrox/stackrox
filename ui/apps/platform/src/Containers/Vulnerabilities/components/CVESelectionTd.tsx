@@ -7,12 +7,14 @@ export type CVESelectionTdProps<T extends { cve: string }> = {
     selectedCves: ReturnType<typeof useMap<string, T>>;
     rowIndex: number;
     item: T;
+    isDisabled?: boolean;
 };
 
 function CVESelectionTd<T extends { cve: string }>({
     selectedCves,
     rowIndex,
     item,
+    isDisabled,
 }: CVESelectionTdProps<T>) {
     const { cve } = item;
     return (
@@ -27,6 +29,7 @@ function CVESelectionTd<T extends { cve: string }>({
                     }
                 },
                 isSelected: selectedCves.has(cve),
+                isDisabled,
             }}
         />
     );

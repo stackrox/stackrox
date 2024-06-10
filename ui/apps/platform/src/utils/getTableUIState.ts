@@ -8,6 +8,11 @@ export type LoadingState = {
     type: 'LOADING';
 };
 
+export type UpdatingState<DataType> = {
+    type: 'UPDATING';
+    data: DataType[];
+};
+
 export type PollingState<DataType> = {
     type: 'POLLING';
     data: DataType[];
@@ -31,6 +36,7 @@ export type TableUIState<DataType> =
     | IdleState
     | LoadingState
     | PollingState<DataType>
+    | UpdatingState<DataType>
     | CompleteState<DataType>
     | EmptyState
     | ErrorState;
@@ -58,6 +64,10 @@ export function getTableUIState<DataType>({
 
     if (isLoading && isPolling && data) {
         return { type: 'POLLING', data };
+    }
+
+    if (isLoading && data) {
+        return { type: 'UPDATING', data };
     }
 
     if (isLoading) {

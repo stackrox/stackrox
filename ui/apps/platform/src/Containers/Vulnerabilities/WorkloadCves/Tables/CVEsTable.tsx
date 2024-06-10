@@ -24,6 +24,7 @@ import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
 import { TableUIState } from 'utils/getTableUIState';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import LiveTr from 'Components/PatternFly/LiveRegion/components/LiveTr';
 import { VulnerabilitySeverityLabel } from '../../types';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
@@ -204,7 +205,8 @@ function CVEsTable({
                             },
                             rowIndex
                         ) => {
-                            const isExpanded = expandedRowSet.has(cve);
+                            const isExpanded =
+                                expandedRowSet.has(cve) && tableState.type === 'COMPLETE';
                             const criticalCount = affectedImageCountBySeverity.critical.total;
                             const importantCount = affectedImageCountBySeverity.important.total;
                             const moderateCount = affectedImageCountBySeverity.moderate.total;
@@ -223,7 +225,7 @@ function CVEsTable({
                                     }}
                                     isExpanded={isExpanded}
                                 >
-                                    <Tr>
+                                    <LiveTr>
                                         <Td
                                             expand={{
                                                 rowIndex,
@@ -240,6 +242,7 @@ function CVEsTable({
                                                     summary,
                                                     numAffectedImages: affectedImageCount,
                                                 }}
+                                                isDisabled={tableState.type !== 'COMPLETE'}
                                             />
                                         )}
                                         <Td dataLabel="CVE" modifier="nowrap">
@@ -303,7 +306,7 @@ function CVEsTable({
                                                 />
                                             </Td>
                                         )}
-                                    </Tr>
+                                    </LiveTr>
                                     <Tr isExpanded={isExpanded}>
                                         <Td />
                                         <Td colSpan={colSpan - 1}>
