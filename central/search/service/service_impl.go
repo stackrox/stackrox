@@ -199,7 +199,8 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 	}
 
 	if len(categories) == 0 {
-		categories = autocompleteCategories.AsSlice()
+		// categories = autocompleteCategories.AsSlice()
+		return nil, errors.Wrap(errox.InvalidArgs, "categories cannot be empty")
 	}
 	var autocompleteResults []autocompleteResult
 	for _, category := range categories {
