@@ -9,7 +9,7 @@ import (
 	"net"
 	"testing"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -65,7 +65,7 @@ func (s *servicePostgresTestSuite) TearDownTest() {
 
 // authInterceptor overrides the server context to make sure all calls are authenticated.
 func (s *servicePostgresTestSuite) authInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	return handler(srv, &grpc_middleware.WrappedServerStream{
+	return handler(srv, &grpcMiddleware.WrappedServerStream{
 		ServerStream:   ss,
 		WrappedContext: s.ctx,
 	})
@@ -110,10 +110,10 @@ func (s *servicePostgresTestSuite) upsertDeployments(deployments []*storage.Depl
 	for _, deployment := range deployments {
 		err := s.deployments.UpsertDeployment(upsertCtx, deployment)
 		s.Require().NoError(err)
-		for _, image := range fixtures.DeploymentImages() {
-			err = s.images.UpsertImage(upsertCtx, image)
-			s.Require().NoError(err)
-		}
+	}
+	for _, image := range fixtures.DeploymentImages() {
+		err := s.images.UpsertImage(upsertCtx, image)
+		s.Require().NoError(err)
 	}
 }
 
@@ -197,10 +197,12 @@ func (s *servicePostgresTestSuite) TestExport() {
 			s.Require().Len(results, len(c.expected))
 			for i := range results {
 				s.Assert().Contains(c.deployments, results[i].Deployment)
-				s.Require().Len(results[i].Images, len(expectedImages))
-				for j := range results[i].Images {
-					s.Assert().Contains(expectedImageIDs, results[i].Images[j].GetId())
+
+				var imageIDs []string
+				for _, image := range results[i].Images {
+					imageIDs = append(imageIDs, image.GetId())
 				}
+				s.Assert().ElementsMatch(expectedImageIDs, imageIDs)
 			}
 		})
 	}
