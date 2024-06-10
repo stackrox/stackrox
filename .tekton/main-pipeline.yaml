@@ -206,7 +206,7 @@ spec:
       # TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available.
       - name: smuggle-activation-key
         image: registry.access.redhat.com/ubi8/ubi:latest
-        script: exec "$(workspaces.source.path)/source/scripts/konflux/subscription-manager/subscription-manager-bro.sh" smuggle
+        script: exec "$(workspaces.source.path)/source/.konflux/scripts/subscription-manager/subscription-manager-bro.sh" smuggle
 
   - name: fetch-external-networks
     runAfter:
