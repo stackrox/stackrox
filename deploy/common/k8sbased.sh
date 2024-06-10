@@ -759,6 +759,11 @@ function launch_sensor {
         helm_chart="${SENSOR_CHART_DIR_OVERRIDE}"
       fi
 
+      if [[ "${FORCE_COLLECTION_METHOD:-false}" == "true" ]]; then
+        echo "Forcing collection method"
+        extra_helm_config+=(--set "collector.forceCollectionMethod=true")
+      fi
+
       if [[ -n "$CI" ]]; then
         helm lint "${helm_chart}"
         helm lint "${helm_chart}" -n "${sensor_namespace}"
