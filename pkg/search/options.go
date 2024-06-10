@@ -211,6 +211,7 @@ var (
 
 	ComplianceOperatorIntegrationID          = newFieldLabel("Compliance Operator Integration ID")
 	ComplianceOperatorVersion                = newFieldLabel("Compliance Operator Version")
+	ComplianceOperatorScanName               = newFieldLabel("Compliance Scan Name")
 	ComplianceOperatorInstalled              = newFieldLabel("Compliance Operator Installed")
 	ComplianceOperatorSeverity               = newFieldLabel("Compliance Rule Severity")
 	ComplianceOperatorStatus                 = newFieldLabel("Compliance Operator Status")
