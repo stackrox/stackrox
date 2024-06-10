@@ -27,7 +27,7 @@ import (
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
-	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
+	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/request/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
