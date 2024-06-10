@@ -203,6 +203,60 @@ function AuthProviders(): ReactElement {
                             )
                         }
                     />
+                    <PageSection variant="light">
+                        <Alert
+                            isInline
+                            variant="info"
+                            title="Consider using short-lived tokens for machine-to-machine communications
+                            such as CI/CD pipelines, scripts, and other automation."
+                        >
+                            <Flex
+                                direction={{ default: 'column' }}
+                                spaceItems={{ default: 'spaceItemsMd' }}
+                            >
+                                <Flex direction={{ default: 'row' }}>
+                                    <ExternalLink>
+                                        <a
+                                            href={getVersionedDocs(
+                                                version,
+                                                'operating/manage-user-access/configure-short-lived-access.html#configure-short-lived-access'
+                                            )}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            How to configure short-lived access
+                                        </a>
+                                    </ExternalLink>
+                                    {hasWriteAccessForPage && (
+                                        <Link
+                                            to={`${integrationsPath}/authProviders/machineAccess/create`}
+                                        >
+                                            Create a machine access configuration
+                                        </Link>
+                                    )}
+                                </Flex>
+                                <ExpandableSection
+                                    toggleText="More resources"
+                                    onToggle={(_event, _isExpanded: boolean) =>
+                                        onToggle(_isExpanded)
+                                    }
+                                    isExpanded={isInfoExpanded}
+                                >
+                                    <Flex direction={{ default: 'column' }}>
+                                        <ExternalLink>
+                                            <a
+                                                href="https://github.com/stackrox/central-login"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                GitHub Action for short-lived access
+                                            </a>
+                                        </ExternalLink>
+                                    </Flex>
+                                </ExpandableSection>
+                            </Flex>
+                        </Alert>
+                    </PageSection>
                 </>
             ) : (
                 <AccessControlBreadcrumbs
@@ -214,56 +268,6 @@ function AuthProviders(): ReactElement {
                     }
                 />
             )}
-            <PageSection>
-                <Alert
-                    isInline
-                    variant="info"
-                    title="Consider using short-lived tokens for machine-to-machine communications
-                            such as CI/CD pipelines, scripts, and other automation."
-                >
-                    <Flex
-                        direction={{ default: 'column' }}
-                        spaceItems={{ default: 'spaceItemsMd' }}
-                    >
-                        <Flex direction={{ default: 'row' }}>
-                            <ExternalLink>
-                                <a
-                                    href={getVersionedDocs(
-                                        version,
-                                        'operating/manage-user-access/configure-short-lived-access.html#configure-short-lived-access'
-                                    )}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    How to configure short-lived access
-                                </a>
-                            </ExternalLink>
-                            {hasWriteAccessForPage && (
-                                <Link to={`${integrationsPath}/authProviders/machineAccess/create`}>
-                                    Create a machine access configuration
-                                </Link>
-                            )}
-                        </Flex>
-                        <ExpandableSection
-                            toggleText="More resources"
-                            onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
-                            isExpanded={isInfoExpanded}
-                        >
-                            <Flex direction={{ default: 'column' }}>
-                                <ExternalLink>
-                                    <a
-                                        href="https://github.com/stackrox/central-login"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        GitHub Action for short-lived access
-                                    </a>
-                                </ExternalLink>
-                            </Flex>
-                        </ExpandableSection>
-                    </Flex>
-                </Alert>
-            </PageSection>
             <PageSection variant={isList ? 'default' : 'light'}>
                 {isFetchingAuthProviders || isFetchingRoles ? (
                     <Bullseye>
