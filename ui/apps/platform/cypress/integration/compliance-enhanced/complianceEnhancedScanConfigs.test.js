@@ -78,7 +78,7 @@ describe('Compliance Schedules', () => {
         getInputByLabel('On day(s)').click();
         cy.get('.pf-v5-c-select.pf-m-expanded .pf-v5-c-check__label:contains("Tuesday")').click();
         cy.get('input[aria-label="Time picker"]').click(); // PF Datepicker doesn't follow pattern used by helper function
-        cy.get('.pf-v5-c-menu.pf-m-scrollable button:contains("12:30 AM")').click();
+        cy.get('.pf-v5-c-menu.pf-m-scrollable button:contains("00:30")').click();
 
         cy.get('.pf-v5-c-wizard__footer button:contains("Next")').click();
     });
