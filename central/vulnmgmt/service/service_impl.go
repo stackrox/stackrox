@@ -36,7 +36,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// serviceImpl provides APIs for workload vulnerabilities.
+// serviceImpl provides APIs for vulnerability management.
 type serviceImpl struct {
 	v1.UnimplementedVulnMgmtServiceServer
 

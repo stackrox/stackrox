@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc"
 )
 
-// Service provides the interface to the vulnerability management workload service.
+// Service provides the interface to the vulnerability management service.
 type Service interface {
 	grpc.APIService
 
@@ -18,7 +18,7 @@ type Service interface {
 	v1.VulnMgmtServiceServer
 }
 
-// New returns a new vulnerability management workload service instance.
+// New returns a new vulnerability management service instance.
 func New(deployments deploymentDS.DataStore, images imageDS.DataStore) Service {
 	return &serviceImpl{
 		deployments: deployments,
