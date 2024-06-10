@@ -23,6 +23,7 @@ import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
 import TooltipTh from 'Components/TooltipTh';
 import DateDistance from 'Components/DateDistance';
+import ExpandRowTh from 'Components/ExpandRowTh';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { TableUIState } from 'utils/getTableUIState';
 import { getIsSomeVulnerabilityFixable } from '../../utils/vulnerabilityUtils';
@@ -108,7 +109,7 @@ function ImageVulnerabilitiesTable({
         <Table variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <Th>{/* Header for expanded column */}</Th>
+                    <ExpandRowTh />
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams('CVE')}>CVE</Th>
                     <Th sort={getSortParams('Severity')}>CVE severity</Th>

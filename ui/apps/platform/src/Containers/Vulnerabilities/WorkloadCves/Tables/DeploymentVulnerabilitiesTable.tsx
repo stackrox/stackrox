@@ -11,6 +11,7 @@ import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/Vulnera
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import ExpandRowTh from 'Components/ExpandRowTh';
 import { TableUIState } from 'utils/getTableUIState';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 
@@ -65,7 +66,7 @@ function DeploymentVulnerabilitiesTable({
         <Table variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <Th>{/* Header for expanded column */}</Th>
+                    <ExpandRowTh />
                     <Th sort={getSortParams('CVE')}>CVE</Th>
                     <Th>OS</Th>
                     <Th>CVE severity</Th>
