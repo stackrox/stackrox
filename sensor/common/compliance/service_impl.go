@@ -12,8 +12,10 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -38,6 +40,7 @@ type serviceImpl struct {
 	connectionManager *connectionManager
 
 	offlineMode *atomic.Bool
+	stopper     set.Set[concurrency.Stopper]
 }
 
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
@@ -53,7 +56,12 @@ func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(_ error) {}
+func (s *serviceImpl) Stop(_ error) {
+	for _, stopper := range s.stopper.AsSlice() {
+		stopper.Client().Stop()
+		_ = stopper.Client().Stopped().Wait()
+	}
+}
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
@@ -116,26 +124,36 @@ func (s *serviceImpl) GetScrapeConfig(_ context.Context, nodeName string) (*sens
 	}, nil
 }
 
-func (s *serviceImpl) startSendingLoop() {
-	for msg := range s.complianceC {
-		if msg.Broadcast {
-			s.connectionManager.forEach(func(node string, server sensor.ComplianceService_CommunicateServer) {
-				err := server.Send(msg.Msg)
-				if err != nil {
-					log.Errorf("Error sending broadcast MessageToComplianceWithAddress to node %q: %v", node, err)
-					return
-				}
-			})
-		} else {
-			con, ok := s.connectionManager.connectionMap[msg.Hostname]
+func (s *serviceImpl) startSendingLoop(stopper concurrency.Stopper) {
+	defer stopper.Flow().ReportStopped()
+	for {
+		select {
+		case <-stopper.Flow().StopRequested():
+			return
+		case msg, ok := <-s.complianceC:
 			if !ok {
-				log.Errorf("Unable to find connection to compliance: %q", msg.Hostname)
+				log.Error("the complianceC was closed unexpectedly")
 				return
 			}
-			err := con.Send(msg.Msg)
-			if err != nil {
-				log.Errorf("Error sending MessageToComplianceWithAddress to node %q: %v", msg.Hostname, err)
-				return
+			if msg.Broadcast {
+				s.connectionManager.forEach(func(node string, server sensor.ComplianceService_CommunicateServer) {
+					err := server.Send(msg.Msg)
+					if err != nil {
+						log.Errorf("Error sending broadcast MessageToComplianceWithAddress to node %q: %v", node, err)
+						return
+					}
+				})
+			} else {
+				con, ok := s.connectionManager.connectionMap[msg.Hostname]
+				if !ok {
+					log.Errorf("Unable to find connection to compliance: %q", msg.Hostname)
+					return
+				}
+				err := con.Send(msg.Msg)
+				if err != nil {
+					log.Errorf("Error sending MessageToComplianceWithAddress to node %q: %v", msg.Hostname, err)
+					return
+				}
 			}
 		}
 	}
@@ -191,12 +209,16 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		defer s.auditLogCollectionManager.RemoveEligibleComplianceNode(hostname)
 	}
 
-	go s.startSendingLoop()
+	stopper := concurrency.NewStopper()
+	s.stopper.Add(stopper)
+	go s.startSendingLoop(stopper)
 
 	for {
 		msg, err := server.Recv()
 		if err != nil {
 			log.Errorf("receiving from compliance %q: %v", hostname, err)
+			// Make sure the stopper stops if there is an error with the connection
+			stopper.Client().Stop()
 			return err
 		}
 		switch t := msg.Msg.(type) {
