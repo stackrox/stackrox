@@ -24,7 +24,7 @@ func SlicesEqual[T proto.Message](t *testing.T, expected, actual []T, msgAndArgs
 	areEqual := assert.Len(t, actual, len(expected), msgAndArgs)
 	for i, e := range expected {
 		a := actual[i]
-		areEqual = areEqual && assert.Equal(t, a, e, msgAndArgs)
+		areEqual = areEqual && Equal(t, a, e, msgAndArgs)
 	}
 	return areEqual
 }
