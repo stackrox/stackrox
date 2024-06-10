@@ -127,6 +127,7 @@ export_test_environment() {
     ci_export ADMISSION_CONTROLLER_UPDATES "${ADMISSION_CONTROLLER_UPDATES:-true}"
     ci_export ADMISSION_CONTROLLER "${ADMISSION_CONTROLLER:-true}"
     ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-core_bpf}"
+    ci_export FORCE_COLLECTION_METHOD "${FORCE_COLLECTION_METHOD:-true}"
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "${DEPLOY_STACKROX_VIA_OPERATOR:-false}"
     ci_export INSTALL_COMPLIANCE_OPERATOR "${INSTALL_COMPLIANCE_OPERATOR:-false}"
     ci_export LOAD_BALANCER "${LOAD_BALANCER:-lb}"
@@ -360,7 +361,15 @@ deploy_sensor_via_operator() {
     if [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
         secured_cluster_yaml_path="tests/e2e/yaml/secured-cluster-cr-with-scanner-v4.envsubst.yaml"
     fi
+
     upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
+
+    # forceCollection only has an impact when the collection method is EBPF
+    # but upgrade tests can fail if forceCollection is used for 4.3 or older.
+    if [[ "${upper_case_collection_method}" == "CORE_BPF" ]]; then
+      sed -i.bak '/forceCollection/d' "${secured_cluster_yaml_path}"
+    fi
+
     env - \
       collection_method="$upper_case_collection_method" \
       scanner_component_setting="$scanner_component_setting" \
