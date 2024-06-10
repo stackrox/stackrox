@@ -41,8 +41,8 @@ var (
 	}
 
 	bannedEqualFunctions = set.NewFrozenStringSet(
-	//"github.com/google/go-cmp/cmp.Equal",
-	//"reflect.DeepEqual",
+		"github.com/google/go-cmp/cmp.Equal",
+		"reflect.DeepEqual",
 	)
 
 	bannedAssertFunctions = set.NewFrozenStringSet(
