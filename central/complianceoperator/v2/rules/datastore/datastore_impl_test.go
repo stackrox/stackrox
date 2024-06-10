@@ -172,14 +172,6 @@ func (s *complianceRuleDataStoreTestSuite) TestGetControl() {
 	}
 }
 
-func (s *complianceRuleDataStoreTestSuite) getAllRuleControls(rules []*storage.ComplianceOperatorRuleV2) []*storage.RuleControls {
-	var controls []*storage.RuleControls
-	for _, rule := range rules {
-		controls = append(controls, rule.Controls...)
-	}
-	return controls
-}
-
 func (s *complianceRuleDataStoreTestSuite) TestUpsertRule() {
 	// make sure we have nothing
 	ruleIDs, err := s.storage.GetIDs(s.hasReadCtx)
