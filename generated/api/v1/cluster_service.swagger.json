@@ -234,7 +234,7 @@
         "SENSOR_VERSION_HIGHER"
       ],
       "default": "UNSET",
-      "description": " - SENSOR_VERSION_HIGHER: SENSOR_VERSION_HIGHER occurs when we detect that the sensor\nis running a newer version than this Central. This is unexpected,\nbut can occur depending on the patches a customer does.\nIn this case, we will NOT automatically \"upgrade\" the sensor,\nsince that would be a downgrade, even if the autoupgrade setting is\non. The user will be allowed to manually trigger the upgrade, but they are\nstrongly discouraged from doing so without upgrading Central first, since this\nis an unsupported configuration."
+      "description": " - SENSOR_VERSION_HIGHER: SENSOR_VERSION_HIGHER occurs when we detect that the sensor\nis running a newer version than this Central. This is unexpected,\nbut can occur depending on the patches a customer does.\nIn this case, we will NOT automatically \"upgrade\" the sensor,\nsince that would be a downgrade, even if the autoupgrade setting is\non. The user will be allowed to manually trigger the upgrade, but they\nare strongly discouraged from doing so without upgrading Central first,\nsince this is an unsupported configuration."
     },
     "ClusterUpgradeStatusUpgradeProcessStatus": {
       "type": "object",
@@ -270,7 +270,7 @@
         "CERT_ROTATION"
       ],
       "default": "UPGRADE",
-      "description": " - UPGRADE: UPGRADE represents a sensor version upgrade.\n - CERT_ROTATION: CERT_ROTATION represents an upgrade process that only rotates the TLS certs\nused by the cluster, without changing anything else."
+      "description": " - UPGRADE: UPGRADE represents a sensor version upgrade.\n - CERT_ROTATION: CERT_ROTATION represents an upgrade process that only rotates the TLS\ncerts used by the cluster, without changing anything else."
     },
     "UpgradeProgressUpgradeState": {
       "type": "string",
@@ -352,10 +352,10 @@
           "items": {
             "type": "string"
           },
-          "description": "Collection of errors that occurred while trying to obtain admission control health info."
+          "description": "Collection of errors that occurred while trying to obtain admission control\nhealth info."
         }
       },
-      "description": "AdmissionControlHealthInfo carries data about admission control deployment but does not include admission control health status\nderived from this data.\nAggregated admission control health status is not included because it is derived in central and not in the component that\nfirst reports AdmissionControlHealthInfo (sensor)."
+      "description": "AdmissionControlHealthInfo carries data about admission control deployment\nbut does not include admission control health status derived from this data.\nAggregated admission control health status is not included because it is\nderived in central and not in the component that first reports\nAdmissionControlHealthInfo (sensor)."
     },
     "storageAdmissionControllerConfig": {
       "type": "object",
@@ -389,7 +389,7 @@
           "type": "string"
         }
       },
-      "title": "AuditLogFileState tracks the last audit log event timestamp and ID that was collected by Compliance\nFor internal use only"
+      "title": "AuditLogFileState tracks the last audit log event timestamp and ID that was\ncollected by Compliance For internal use only"
     },
     "storageAzureProviderMetadata": {
       "type": "object",
@@ -462,11 +462,11 @@
         },
         "helmConfig": {
           "$ref": "#/definitions/storageCompleteClusterConfig",
-          "description": "The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed."
+          "description": "The Helm configuration of a cluster is only present in case the cluster is\nHelm- or Operator-managed."
         },
         "mostRecentSensorId": {
           "$ref": "#/definitions/storageSensorDeploymentIdentification",
-          "description": "most_recent_sensor_id is the current or most recent identification of a successfully connected sensor (if any)."
+          "description": "most_recent_sensor_id is the current or most recent identification of a\nsuccessfully connected sensor (if any)."
         },
         "auditLogState": {
           "type": "object",
@@ -510,11 +510,11 @@
         },
         "scannerHealthInfo": {
           "$ref": "#/definitions/storageScannerHealthInfo",
-          "description": "scanner_health_info is filled when the scanner is deployed on a secured cluster (so called \"local scanner\").\nPlease do not confuse this with the default scanner deployment on a central cluster."
+          "description": "scanner_health_info is filled when the scanner is deployed on a secured\ncluster (so called \"local scanner\"). Please do not confuse this with the\ndefault scanner deployment on a central cluster."
         },
         "sensorHealthStatus": {
           "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel",
-          "description": "The following _health_status fields provide aggregated health status of the respective components and are assigned by central."
+          "description": "The following _health_status fields provide aggregated health status of the\nrespective components and are assigned by central."
         },
         "collectorHealthStatus": {
           "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel"
@@ -531,11 +531,11 @@
         "lastContact": {
           "type": "string",
           "format": "date-time",
-          "title": "For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,\nthis timestamp will be updated by central pipeline when message is processed"
+          "title": "For sensors not having health capability, this will be filled with gRPC\nconnection poll. Otherwise, this timestamp will be updated by central\npipeline when message is processed"
         },
         "healthInfoComplete": {
           "type": "boolean",
-          "title": "To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version"
+          "title": "To track cases such as when sensor is healthy, but collector status data is\nunavailable because the sensor is on an old version"
         }
       }
     },
@@ -554,7 +554,7 @@
           "description": "Id represents a unique ID under which the cluster is registered with the\ncloud provider. Not all cluster types have an id. For all OpenShift\nclusters, this is the Red Hat `cluster_id` registered with OCM."
         }
       },
-      "description": "ClusterMetadata contains metadata information about the cluster infrastructure."
+      "description": "ClusterMetadata contains metadata information about the cluster\ninfrastructure."
     },
     "storageClusterMetadataType": {
       "type": "string",
@@ -579,7 +579,7 @@
         "DEPRECATEDLastContact": {
           "type": "string",
           "format": "date-time",
-          "description": "This field has been deprecated starting release 49.0. Use healthStatus.lastContact instead."
+          "description": "This field has been deprecated starting release 49.0. Use\nhealthStatus.lastContact instead."
         },
         "providerMetadata": {
           "$ref": "#/definitions/storageProviderMetadata"
@@ -655,10 +655,10 @@
           "items": {
             "type": "string"
           },
-          "description": "Collection of errors that occurred while trying to obtain collector health info."
+          "description": "Collection of errors that occurred while trying to obtain collector health\ninfo."
         }
       },
-      "description": "CollectorHealthInfo carries data about collector deployment but does not include collector health status derived from this data.\nAggregated collector health status is not included because it is derived in central and not in the component that\nfirst reports CollectorHealthInfo (sensor)."
+      "description": "CollectorHealthInfo carries data about collector deployment but does not\ninclude collector health status derived from this data. Aggregated collector\nhealth status is not included because it is derived in central and not in the\ncomponent that first reports CollectorHealthInfo (sensor)."
     },
     "storageCompleteClusterConfig": {
       "type": "object",
@@ -694,7 +694,7 @@
           "type": "boolean"
         }
       },
-      "description": "The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for \"hot reloading\" of values without restarting Secured cluster components."
+      "description": "The difference between Static and Dynamic cluster config is that Dynamic\nvalues are sent over the Central to Sensor gRPC connection. This has the\nbenefit of allowing for \"hot reloading\" of values without restarting Secured\ncluster components."
     },
     "storageGoogleProviderMetadata": {
       "type": "object",
@@ -789,10 +789,10 @@
           "items": {
             "type": "string"
           },
-          "description": "Collection of errors that occurred while trying to obtain scanner health info."
+          "description": "Collection of errors that occurred while trying to obtain scanner health\ninfo."
         }
       },
-      "description": "ScannerHealthInfo represents health info of a scanner instance that is deployed on a secured cluster (so called \"local scanner\").\nWhen the scanner is deployed on a central cluster, the following message is NOT used.\nScannerHealthInfo carries data about scanner deployment but does not include scanner health status\nderived from this data.\nAggregated scanner health status is not included because it is derived in central and not in the component that\nfirst reports ScannerHealthInfo (sensor)."
+      "description": "ScannerHealthInfo represents health info of a scanner instance that is\ndeployed on a secured cluster (so called \"local scanner\"). When the scanner\nis deployed on a central cluster, the following message is NOT used.\nScannerHealthInfo carries data about scanner deployment but does not include\nscanner health status derived from this data. Aggregated scanner health\nstatus is not included because it is derived in central and not in the\ncomponent that first reports ScannerHealthInfo (sensor)."
     },
     "storageSensorDeploymentIdentification": {
       "type": "object",
@@ -816,7 +816,7 @@
           "type": "string"
         }
       },
-      "description": "StackRoxDeploymentIdentification aims at uniquely identifying a StackRox Sensor deployment. It is used to determine\nwhether a sensor connection comes from a sensor pod that has restarted or was recreated (possibly after a network\npartition), or from a deployment in a different namespace or cluster."
+      "description": "StackRoxDeploymentIdentification aims at uniquely identifying a StackRox\nSensor deployment. It is used to determine whether a sensor connection comes\nfrom a sensor pod that has restarted or was recreated (possibly after a\nnetwork partition), or from a deployment in a different namespace or cluster."
     },
     "storageStaticClusterConfig": {
       "type": "object",
@@ -852,7 +852,7 @@
           "type": "boolean"
         }
       },
-      "description": "The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded."
+      "description": "The difference between Static and Dynamic cluster config is that Static\nvalues are not sent over the Central to Sensor gRPC connection. They are\nused, for example, to generate manifests that can be used to set up the\nSecured Cluster's k8s components. They are *not* dynamically reloaded."
     },
     "storageTolerationsConfig": {
       "type": "object",
