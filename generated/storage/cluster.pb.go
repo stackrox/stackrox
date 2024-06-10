@@ -174,9 +174,9 @@ const (
 	// but can occur depending on the patches a customer does.
 	// In this case, we will NOT automatically "upgrade" the sensor,
 	// since that would be a downgrade, even if the autoupgrade setting is
-	// on. The user will be allowed to manually trigger the upgrade, but they
-	// are strongly discouraged from doing so without upgrading Central first,
-	// since this is an unsupported configuration.
+	// on. The user will be allowed to manually trigger the upgrade, but they are
+	// strongly discouraged from doing so without upgrading Central first, since this
+	// is an unsupported configuration.
 	ClusterUpgradeStatus_SENSOR_VERSION_HIGHER ClusterUpgradeStatus_Upgradability = 4
 )
 
@@ -209,8 +209,8 @@ type ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType int32
 const (
 	// UPGRADE represents a sensor version upgrade.
 	ClusterUpgradeStatus_UpgradeProcessStatus_UPGRADE ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType = 0
-	// CERT_ROTATION represents an upgrade process that only rotates the TLS
-	// certs used by the cluster, without changing anything else.
+	// CERT_ROTATION represents an upgrade process that only rotates the TLS certs
+	// used by the cluster, without changing anything else.
 	ClusterUpgradeStatus_UpgradeProcessStatus_CERT_ROTATION ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType = 1
 )
 
@@ -330,8 +330,7 @@ func (ClusterHealthStatus_HealthStatusLabel) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{18, 0}
 }
 
-// ClusterMetadata contains metadata information about the cluster
-// infrastructure.
+// ClusterMetadata contains metadata information about the cluster infrastructure.
 type ClusterMetadata struct {
 	Type ClusterMetadata_Type `protobuf:"varint,1,opt,name=type,proto3,enum=storage.ClusterMetadata_Type" json:"type,omitempty" search:"Cluster Type"` // @gotags: search:"Cluster Type"
 	// Name represents the name under which the cluster is registered with the
@@ -1067,10 +1066,7 @@ func (m *TolerationsConfig) Clone() *TolerationsConfig {
 	return cloned
 }
 
-// The difference between Static and Dynamic cluster config is that Static
-// values are not sent over the Central to Sensor gRPC connection. They are
-// used, for example, to generate manifests that can be used to set up the
-// Secured Cluster's k8s components. They are *not* dynamically reloaded.
+// The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded.
 type StaticClusterConfig struct {
 	Type                       ClusterType        `protobuf:"varint,1,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty"`
 	MainImage                  string             `protobuf:"bytes,2,opt,name=main_image,json=mainImage,proto3" json:"main_image,omitempty"`
@@ -1204,10 +1200,7 @@ func (m *StaticClusterConfig) Clone() *StaticClusterConfig {
 	return cloned
 }
 
-// The difference between Static and Dynamic cluster config is that Dynamic
-// values are sent over the Central to Sensor gRPC connection. This has the
-// benefit of allowing for "hot reloading" of values without restarting Secured
-// cluster components.
+// The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for "hot reloading" of values without restarting Secured cluster components.
 type DynamicClusterConfig struct {
 	AdmissionControllerConfig *AdmissionControllerConfig `protobuf:"bytes,1,opt,name=admission_controller_config,json=admissionControllerConfig,proto3" json:"admission_controller_config,omitempty"`
 	RegistryOverride          string                     `protobuf:"bytes,2,opt,name=registry_override,json=registryOverride,proto3" json:"registry_override,omitempty"`
@@ -1379,10 +1372,9 @@ func (m *CompleteClusterConfig) Clone() *CompleteClusterConfig {
 	return cloned
 }
 
-// StackRoxDeploymentIdentification aims at uniquely identifying a StackRox
-// Sensor deployment. It is used to determine whether a sensor connection comes
-// from a sensor pod that has restarted or was recreated (possibly after a
-// network partition), or from a deployment in a different namespace or cluster.
+// StackRoxDeploymentIdentification aims at uniquely identifying a StackRox Sensor deployment. It is used to determine
+// whether a sensor connection comes from a sensor pod that has restarted or was recreated (possibly after a network
+// partition), or from a deployment in a different namespace or cluster.
 type SensorDeploymentIdentification struct {
 	SystemNamespaceId    string   `protobuf:"bytes,1,opt,name=system_namespace_id,json=systemNamespaceId,proto3" json:"system_namespace_id,omitempty"`
 	DefaultNamespaceId   string   `protobuf:"bytes,2,opt,name=default_namespace_id,json=defaultNamespaceId,proto3" json:"default_namespace_id,omitempty"`
@@ -1502,11 +1494,9 @@ type Cluster struct {
 	Priority                   int64                 `protobuf:"varint,20,opt,name=priority,proto3" json:"priority,omitempty"`
 	HealthStatus               *ClusterHealthStatus  `protobuf:"bytes,22,opt,name=health_status,json=healthStatus,proto3" json:"health_status,omitempty" sql:"-"` // @gotags: sql:"-"
 	SlimCollector              bool                  `protobuf:"varint,23,opt,name=slim_collector,json=slimCollector,proto3" json:"slim_collector,omitempty"`
-	// The Helm configuration of a cluster is only present in case the cluster is
-	// Helm- or Operator-managed.
+	// The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed.
 	HelmConfig *CompleteClusterConfig `protobuf:"bytes,24,opt,name=helm_config,json=helmConfig,proto3" json:"helm_config,omitempty"`
-	// most_recent_sensor_id is the current or most recent identification of a
-	// successfully connected sensor (if any).
+	// most_recent_sensor_id is the current or most recent identification of a successfully connected sensor (if any).
 	MostRecentSensorId *SensorDeploymentIdentification `protobuf:"bytes,26,opt,name=most_recent_sensor_id,json=mostRecentSensorId,proto3" json:"most_recent_sensor_id,omitempty"`
 	// For internal use only.
 	AuditLogState        map[string]*AuditLogFileState `protobuf:"bytes,28,rep,name=audit_log_state,json=auditLogState,proto3" json:"audit_log_state,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
@@ -1815,8 +1805,7 @@ func (m *ClusterCertExpiryStatus) Clone() *ClusterCertExpiryStatus {
 
 type ClusterStatus struct {
 	SensorVersion string `protobuf:"bytes,1,opt,name=sensor_version,json=sensorVersion,proto3" json:"sensor_version,omitempty"`
-	// This field has been deprecated starting release 49.0. Use
-	// healthStatus.lastContact instead.
+	// This field has been deprecated starting release 49.0. Use healthStatus.lastContact instead.
 	DEPRECATEDLastContact *types.Timestamp         `protobuf:"bytes,2,opt,name=DEPRECATED_last_contact,json=DEPRECATEDLastContact,proto3" json:"DEPRECATED_last_contact,omitempty"`
 	ProviderMetadata      *ProviderMetadata        `protobuf:"bytes,3,opt,name=provider_metadata,json=providerMetadata,proto3" json:"provider_metadata,omitempty"`
 	OrchestratorMetadata  *OrchestratorMetadata    `protobuf:"bytes,4,opt,name=orchestrator_metadata,json=orchestratorMetadata,proto3" json:"orchestrator_metadata,omitempty"`
@@ -2192,8 +2181,8 @@ func (m *UpgradeProgress) Clone() *UpgradeProgress {
 	return cloned
 }
 
-// AuditLogFileState tracks the last audit log event timestamp and ID that was
-// collected by Compliance For internal use only
+// AuditLogFileState tracks the last audit log event timestamp and ID that was collected by Compliance
+// For internal use only
 type AuditLogFileState struct {
 	CollectLogsSince     *types.Timestamp `protobuf:"bytes,1,opt,name=collect_logs_since,json=collectLogsSince,proto3" json:"collect_logs_since,omitempty"`
 	LastAuditId          string           `protobuf:"bytes,2,opt,name=last_audit_id,json=lastAuditId,proto3" json:"last_audit_id,omitempty"` // Previously received audit id. May be empty
@@ -2267,23 +2256,19 @@ type ClusterHealthStatus struct {
 	Id                         string                      `protobuf:"bytes,9,opt,name=id,proto3" json:"id,omitempty" sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"` // @gotags: sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"
 	CollectorHealthInfo        *CollectorHealthInfo        `protobuf:"bytes,1,opt,name=collector_health_info,json=collectorHealthInfo,proto3" json:"collector_health_info,omitempty"`
 	AdmissionControlHealthInfo *AdmissionControlHealthInfo `protobuf:"bytes,8,opt,name=admission_control_health_info,json=admissionControlHealthInfo,proto3" json:"admission_control_health_info,omitempty"`
-	// scanner_health_info is filled when the scanner is deployed on a secured
-	// cluster (so called "local scanner"). Please do not confuse this with the
-	// default scanner deployment on a central cluster.
+	// scanner_health_info is filled when the scanner is deployed on a secured cluster (so called "local scanner").
+	// Please do not confuse this with the default scanner deployment on a central cluster.
 	ScannerHealthInfo *ScannerHealthInfo `protobuf:"bytes,10,opt,name=scanner_health_info,json=scannerHealthInfo,proto3" json:"scanner_health_info,omitempty"`
-	// The following _health_status fields provide aggregated health status of the
-	// respective components and are assigned by central.
+	// The following _health_status fields provide aggregated health status of the respective components and are assigned by central.
 	SensorHealthStatus           ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,2,opt,name=sensor_health_status,json=sensorHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"sensor_health_status,omitempty" search:"Sensor Status,store"`                                 // @gotags: search:"Sensor Status,store"
 	CollectorHealthStatus        ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,3,opt,name=collector_health_status,json=collectorHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"collector_health_status,omitempty" search:"Collector Status,store"`                        // @gotags: search:"Collector Status,store"
 	OverallHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,4,opt,name=overall_health_status,json=overallHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"overall_health_status,omitempty" search:"Cluster Status,store"`                              // @gotags: search:"Cluster Status,store"
 	AdmissionControlHealthStatus ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,7,opt,name=admission_control_health_status,json=admissionControlHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"admission_control_health_status,omitempty" search:"Admission Control Status,store"` // @gotags: search:"Admission Control Status,store"
 	ScannerHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,11,opt,name=scanner_health_status,json=scannerHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"scanner_health_status,omitempty" search:"Scanner Status,store"`                             // @gotags: search:"Scanner Status,store"
-	// For sensors not having health capability, this will be filled with gRPC
-	// connection poll. Otherwise, this timestamp will be updated by central
-	// pipeline when message is processed
+	// For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
+	// this timestamp will be updated by central pipeline when message is processed
 	LastContact *types.Timestamp `protobuf:"bytes,5,opt,name=last_contact,json=lastContact,proto3" json:"last_contact,omitempty" search:"Last Contact,store"` // @gotags: search:"Last Contact,store"
-	// To track cases such as when sensor is healthy, but collector status data is
-	// unavailable because the sensor is on an old version
+	// To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
 	HealthInfoComplete   bool     `protobuf:"varint,6,opt,name=health_info_complete,json=healthInfoComplete,proto3" json:"health_info_complete,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2417,10 +2402,9 @@ func (m *ClusterHealthStatus) Clone() *ClusterHealthStatus {
 	return cloned
 }
 
-// CollectorHealthInfo carries data about collector deployment but does not
-// include collector health status derived from this data. Aggregated collector
-// health status is not included because it is derived in central and not in the
-// component that first reports CollectorHealthInfo (sensor).
+// CollectorHealthInfo carries data about collector deployment but does not include collector health status derived from this data.
+// Aggregated collector health status is not included because it is derived in central and not in the component that
+// first reports CollectorHealthInfo (sensor).
 type CollectorHealthInfo struct {
 	// This is the version of the collector deamonset as returned by k8s API
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
@@ -2436,8 +2420,7 @@ type CollectorHealthInfo struct {
 	//
 	//	*CollectorHealthInfo_TotalRegisteredNodes
 	TotalRegisteredNodesOpt isCollectorHealthInfo_TotalRegisteredNodesOpt `protobuf_oneof:"total_registered_nodes_opt"`
-	// Collection of errors that occurred while trying to obtain collector health
-	// info.
+	// Collection of errors that occurred while trying to obtain collector health info.
 	StatusErrors         []string `protobuf:"bytes,5,rep,name=status_errors,json=statusErrors,proto3" json:"status_errors,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2626,11 +2609,10 @@ func (m *CollectorHealthInfo) Clone() *CollectorHealthInfo {
 	return cloned
 }
 
-// AdmissionControlHealthInfo carries data about admission control deployment
-// but does not include admission control health status derived from this data.
-// Aggregated admission control health status is not included because it is
-// derived in central and not in the component that first reports
-// AdmissionControlHealthInfo (sensor).
+// AdmissionControlHealthInfo carries data about admission control deployment but does not include admission control health status
+// derived from this data.
+// Aggregated admission control health status is not included because it is derived in central and not in the component that
+// first reports AdmissionControlHealthInfo (sensor).
 type AdmissionControlHealthInfo struct {
 	// Types that are valid to be assigned to TotalDesiredPodsOpt:
 	//
@@ -2640,8 +2622,7 @@ type AdmissionControlHealthInfo struct {
 	//
 	//	*AdmissionControlHealthInfo_TotalReadyPods
 	TotalReadyPodsOpt isAdmissionControlHealthInfo_TotalReadyPodsOpt `protobuf_oneof:"total_ready_pods_opt"`
-	// Collection of errors that occurred while trying to obtain admission control
-	// health info.
+	// Collection of errors that occurred while trying to obtain admission control health info.
 	StatusErrors         []string `protobuf:"bytes,3,rep,name=status_errors,json=statusErrors,proto3" json:"status_errors,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2788,13 +2769,12 @@ func (m *AdmissionControlHealthInfo) Clone() *AdmissionControlHealthInfo {
 	return cloned
 }
 
-// ScannerHealthInfo represents health info of a scanner instance that is
-// deployed on a secured cluster (so called "local scanner"). When the scanner
-// is deployed on a central cluster, the following message is NOT used.
-// ScannerHealthInfo carries data about scanner deployment but does not include
-// scanner health status derived from this data. Aggregated scanner health
-// status is not included because it is derived in central and not in the
-// component that first reports ScannerHealthInfo (sensor).
+// ScannerHealthInfo represents health info of a scanner instance that is deployed on a secured cluster (so called "local scanner").
+// When the scanner is deployed on a central cluster, the following message is NOT used.
+// ScannerHealthInfo carries data about scanner deployment but does not include scanner health status
+// derived from this data.
+// Aggregated scanner health status is not included because it is derived in central and not in the component that
+// first reports ScannerHealthInfo (sensor).
 type ScannerHealthInfo struct {
 	// Types that are valid to be assigned to TotalDesiredAnalyzerPodsOpt:
 	//
@@ -2812,8 +2792,7 @@ type ScannerHealthInfo struct {
 	//
 	//	*ScannerHealthInfo_TotalReadyDbPods
 	TotalReadyDbPodsOpt isScannerHealthInfo_TotalReadyDbPodsOpt `protobuf_oneof:"total_ready_db_pods_opt"`
-	// Collection of errors that occurred while trying to obtain scanner health
-	// info.
+	// Collection of errors that occurred while trying to obtain scanner health info.
 	StatusErrors         []string `protobuf:"bytes,5,rep,name=status_errors,json=statusErrors,proto3" json:"status_errors,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
