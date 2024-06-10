@@ -791,6 +791,7 @@ func getConfigValues(config *storage.PrivateConfig) (pruneResolvedDeployAfter, p
 }
 
 func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
+	log.Infof("SHREWS -- collectAlerts")
 	alertRetention := config.GetAlertRetention()
 	if alertRetention == nil {
 		log.Info("[Alert pruning] Alert pruning has been disabled.")
@@ -871,6 +872,7 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 			log.Error(err)
 		}
 	}
+	log.Infof("SHREWS -- end collectAlerts")
 }
 
 func (g *garbageCollectorImpl) removeOrphanedRisks() {
