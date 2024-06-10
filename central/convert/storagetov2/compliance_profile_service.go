@@ -6,7 +6,7 @@ import (
 )
 
 // ComplianceV2Profile converts V2 storage objects to V2 API objects
-func ComplianceV2Profile(incoming *storage.ComplianceOperatorProfileV2) *v2.ComplianceProfile {
+func ComplianceV2Profile(incoming *storage.ComplianceOperatorProfileV2, benchmarks []*storage.ComplianceOperatorBenchmarkV2) *v2.ComplianceProfile {
 	rules := make([]*v2.ComplianceRule, 0, len(incoming.GetRules()))
 	for _, rule := range incoming.GetRules() {
 		rules = append(rules, &v2.ComplianceRule{
@@ -14,12 +14,17 @@ func ComplianceV2Profile(incoming *storage.ComplianceOperatorProfileV2) *v2.Comp
 		})
 	}
 
+	benchmarkNames := make([]string, 0, len(benchmarks))
+	for _, benchmark := range benchmarks {
+		benchmarkNames = append(benchmarkNames, benchmark.GetName())
+	}
+
 	return &v2.ComplianceProfile{
 		Id:             incoming.GetId(),
 		Name:           incoming.GetName(),
 		ProfileVersion: incoming.GetProfileVersion(),
 		ProductType:    incoming.GetProductType(),
-		Standard:       incoming.GetStandard(),
+		Standards:      benchmarkNames,
 		Description:    incoming.GetDescription(),
 		Rules:          rules,
 		Product:        incoming.GetProduct(),
@@ -29,21 +34,30 @@ func ComplianceV2Profile(incoming *storage.ComplianceOperatorProfileV2) *v2.Comp
 }
 
 // ComplianceV2Profiles converts V2 storage objects to V2 API objects
-func ComplianceV2Profiles(incoming []*storage.ComplianceOperatorProfileV2) []*v2.ComplianceProfile {
+func ComplianceV2Profiles(incoming []*storage.ComplianceOperatorProfileV2, benchmarkProfileMap map[string][]*storage.ComplianceOperatorBenchmarkV2) []*v2.ComplianceProfile {
 	v2Profiles := make([]*v2.ComplianceProfile, 0, len(incoming))
 	for _, profile := range incoming {
-		v2Profiles = append(v2Profiles, ComplianceV2Profile(profile))
+		v2Profiles = append(v2Profiles, ComplianceV2Profile(profile, benchmarkProfileMap[profile.GetName()]))
 	}
 
 	return v2Profiles
 }
 
 // ComplianceProfileSummary converts summary object to V2 API summary object
-func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, clusterIDs []string) []*v2.ComplianceProfileSummary {
+func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, benchmarkProfileMap map[string][]*storage.ComplianceOperatorBenchmarkV2) []*v2.ComplianceProfileSummary {
 	// incoming will contain all the profiles matching the clusters.  This is a non-distinct
 	// list that needs to be reduced to a summary and only include profiles that match all profiles.
 	profileClusterMap := make(map[string][]string, len(incoming))
 	profileSummaryMap := make(map[string]*v2.ComplianceProfileSummary)
+	profileBenchmarkNameMap := make(map[string][]string)
+
+	for profileName, benchmarks := range benchmarkProfileMap {
+		benchmarkNames := make([]string, 0, len(benchmarks))
+		for _, benchmark := range benchmarks {
+			benchmarkNames = append(benchmarkNames, benchmark.GetName())
+		}
+		profileBenchmarkNameMap[profileName] = benchmarkNames
+	}
 
 	// Used to maintain sort order from the query since maps are unordered.
 	var orderedProfiles []string
@@ -66,6 +80,7 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, c
 				Title:          summary.Title,
 				RuleCount:      int32(len(summary.Rules)),
 				ProfileVersion: summary.ProfileVersion,
+				Standards:      profileBenchmarkNameMap[summary.GetName()],
 			}
 			orderedProfiles = append(orderedProfiles, summary.GetName())
 		}
