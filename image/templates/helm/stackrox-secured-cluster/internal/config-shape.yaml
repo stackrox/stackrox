@@ -132,6 +132,12 @@ collector:
   hostAliases: null # [dict]
   disableSELinuxOptions: null # bool
   seLinuxOptionsType: null # string
+  containerd:
+    enabled: null # bool
+  crio:
+    enabled: null # bool
+  runtime_config:
+    enabled: null # bool
 auditLogs:
   disableCollection: null # bool
 customize:
