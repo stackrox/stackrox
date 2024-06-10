@@ -188,8 +188,10 @@ func (s *fullStoreImpl) readRows(
 		}
 
 		var procMsg storage.ProcessIndicator
-		if err := protocompat.Unmarshal(procSerialized, &procMsg); err != nil {
-			return nil, err
+		if procSerialized != nil {
+			if err := protocompat.Unmarshal(procSerialized, &procMsg); err != nil {
+				return nil, err
+			}
 		}
 
 		podUID = msg.GetPodUid()
