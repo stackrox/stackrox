@@ -1,0 +1,15 @@
+{{- include "srox.init" . -}}
+
+{{- if eq ._rox.env.openshift 4 }}
+{{ $injectedCABundleName := printf "injected-cabundle-%s" .Release.Name }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $injectedCABundleName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "configmap" $injectedCABundleName) | nindent 4 }}
+    "config.openshift.io/inject-trusted-cabundle": "true"
+  annotations:
+    {{- include "srox.annotations" (list . "configmap" $injectedCABundleName) | nindent 4 }}
+{{- end }}

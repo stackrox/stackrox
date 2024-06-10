@@ -1,0 +1,224 @@
+# StackRox Kubernetes Security Platform - Central Services Chart
+# PRIVATE configuration file.
+#
+# This file contains sensitive values relevant for the deployment of the
+# StackRox Kubernetes Platform Central Services components.
+#
+# Apart from image pull secrets (see below), all the values in this file are
+# optional or can be automatically generated at deployment time.
+# Moreover, this file does not need to be provided (e.g., via `-f`) to a `helm upgrade`
+# command, even if custom values are used - the previously set values
+# will simply be preserved.
+#
+# The following values typically require user input, as they cannot be automatically generated
+# (though each of them can be omitted):
+# - `imagePullSecrets.username` and `imagePullSecrets.password`
+# - `env.proxyConfig`
+# - `central.defaultTLS`
+#
+# If you do choose to use this file (either by manually filling in values, or by
+# generating it via the `roxctl central generate` command family), you must store
+# it in a safe and secure place, such as a secrets management system.
+#
+
+# # BEGIN CONFIGURATION VALUES SECTION
+
+# # Image pull credentials. If you do not specify these, you need to specify one of
+# # the following:
+# # - `imagePullSecrets.allowNone=true`: in case your registry allows pulling images without
+# #   credentials.
+# # - `imagePullSecrets.useExisting="secret1;secret2;..."`: in case you have pre-existing image
+# #   pull secrets with the given name already created in the target namespace.
+# # - `imagePullSecrets.useFromDefaultServiceAccount=true`: in case the default service account
+# #   in the target namespace is configured with sufficiently scoped image pull secrets.
+# # If you do not know if any of the above applies to your situation, your best course of
+# # action is probably to enter your image pull credentials here.
+# imagePullSecrets:
+#   username: <StackRox image pull user>
+#   password: <StackRox image pull password>
+#
+# # Proxy configuration. This will only be required if you are running in an environment
+# # where internet access is not possible by default.
+# # Since this configuration may contain a proxy password, it is treated as a sensitive
+# # piece of configuration.
+# # The following example is a stripped-down one. For a full documentation, see the file
+# # `config/proxy-config.yaml.default` that is shipped with this chart.
+# env:
+#   proxyConfig: |
+#     url: http://proxy.name:port
+#     username: username
+#     password: password
+#     excludes:
+#     - some.domain
+#
+#
+# # TLS Certificate Configuration.
+# # Most of the following values are not typically required to be populated manually. You can
+# # either omit them, in which case they will be auto-generated upon initial installation,
+# # or they are populated when you invoke `roxctl central generate` to generate deployment
+# # files.
+#
+# # Certificate Authority (CA) certificate for TLS certificates used internally
+# # by StackRox services.
+# ca:
+#   cert: |
+#     -----BEGIN CERTIFICATE-----
+#     <PEM-encoded CA certificate>
+#     -----END CERTIFICATE-----
+#   key: |
+#     -----BEGIN RSA PRIVATE KEY-----
+#     <PEM-encoded CA private key>
+#     -----END RSA PRIVATE KEY-----
+#
+# # Secret configuration options for the StackRox Central deployment.
+# central:
+#   # Private key to use for signing JSON web tokens (JWTs), which are used
+#   # for authentication. Omit to auto-generate (initial deployment) or use existing
+#   # (upgrade).
+#   jwtSigner:
+#     key: |
+#       -----BEGIN RSA PRIVATE KEY-----
+#       <PEM-encoded JWT signer private key>
+#       -----END RSA PRIVATE KEY-----
+#   # Internal "central.stackrox" service TLS certificate for the Central deployment.
+#   # Omit to auto-generate (initial deployment) or use existing (upgrade).
+#   serviceTLS:
+#     cert: |
+#       -----BEGIN CERTIFICATE-----
+#       <PEM-encoded Central service certificate>
+#       -----END CERTIFICATE-----
+#     key: |
+#       -----BEGIN RSA PRIVATE KEY-----
+#       <PEM-encoded Central service cert private key>
+#       -----END RSA PRIVATE KEY-----
+#
+#   # Default (user-facing) TLS certificate.
+#   # NOTE: In contrast to almost all other configuration options, this IS expected
+#   #       to be manually populated. While any existing default TLS certificate secret
+#   #       will be re-used on upgrade if this is omitted, nothing will be created on
+#   #       initial deployment if this is not populated.
+#   defaultTLS:
+#     cert: |
+#       -----BEGIN CERTIFICATE-----
+#       <PEM-encoded default TLS certificate>
+#       -----END CERTIFICATE-----
+#     key: |
+#       -----BEGIN RSA PRIVATE KEY-----
+#       <PEM-encoded default TLS cert private key>
+#       -----END RSA PRIVATE KEY-----
+#
+#   # Administrator password for logging in to the StackRox portal.
+#   # You can either specify a plaintext password here, or an htpasswd file with a
+#   # bcrypt-encrypted password.
+#   # If you omit this setting, a password will be automatically generated upon initial
+#   # installation, and the existing administrator password secret will be re-used upon
+#   # upgrades.
+#   adminPassword:
+#     # The plaintext value of the administrator password. If you specify a password here,
+#     # you must omit the `htpasswd` setting.
+#     value: <pre-configured administrator password>
+#     # The htpasswd contents of the administrator login credentials. If you specify a
+#     # value here, you must omit the `value` setting.
+#     # The password hash MUST be bcrypt.
+#     htpasswd: |
+#       admin:<bcrypt hash>
+#
+#   # Secret configuration options for the StackRox Central DB deployment.
+#   db:
+#     # The password to be used for authenticating central database access IF USING POSTGRES.
+#     # This is not user-relevant and only serves to properly secure the database with a
+#     # pre-shared secret. If this setting is omitted, a password will be automatically generated
+#     # upon initial deployment, and the existing password will be used upon upgrades.
+#     password:
+#       # The plaintext value of the administrator password.
+#       value: <central database password value>
+#     # Internal "central-db.stackrox.svc" service TLS certificate for the Central DB deployment.
+#     # Omit to auto-generate (initial deployment) or use existing (upgrade).
+#     serviceTLS:
+#       cert: |
+#         -----BEGIN CERTIFICATE-----
+#         <PEM-encoded Central DB certificate>
+#         -----END CERTIFICATE-----
+#       key: |
+#         -----BEGIN RSA PRIVATE KEY-----
+#         <PEM-encoded Central DB cert private key>
+#         -----END RSA PRIVATE KEY-----
+#
+# # Secret configuration options for the StackRox Scanner deployment.
+# scanner:
+#   # The password to be used for authenticating database access. This is not user-relevant
+#   # and only serves to properly secure the database with a pre-shared secret. If this
+#   # setting is omitted, a password will be automatically generated upon initial deployment,
+#   # and the existing password will be used upon upgrades.
+#   dbPassword:
+#     value: <scanner database password value>
+#
+#   # Internal "scanner.stackrox.svc" service TLS certificate for the Scanner deployment.
+#   # Omit to auto-generate (initial deployment) or use existing (upgrade).
+#   serviceTLS:
+#     cert: |
+#       -----BEGIN CERTIFICATE-----
+#       <PEM-encoded Scanner service certificate>
+#       -----END CERTIFICATE-----
+#     key: |
+#       -----BEGIN RSA PRIVATE KEY-----
+#       <PEM-encoded Scanner service cert private key>
+#       -----END RSA PRIVATE KEY-----
+#
+#   # Internal "scanner-db.stackrox" service TLS certificate for the Scanner DB deployment.
+#   # Omit to auto-generate (initial deployment) or use existing (upgrade).
+#   dbServiceTLS:
+#     cert: |
+#       -----BEGIN CERTIFICATE-----
+#       <PEM-encoded Scanner DB service certificate>
+#       -----END CERTIFICATE-----
+#     key: |
+#       -----BEGIN RSA PRIVATE KEY-----
+#       <PEM-encoded Scanner DB service cert private key>
+#       -----END RSA PRIVATE KEY-----
+#
+# # Secret configuration options for the Scanner V4 deployment.
+# scannerV4:
+#   indexer:
+#     # Internal "scanner-v4-indexer.<namespace>.svc" service TLS certificate for the Scanner V4 indexer deployment.
+#     # Omit to auto-generate (initial deployment) or use existing (upgrade).
+#     serviceTLS:
+#       cert: |
+#         -----BEGIN CERTIFICATE-----
+#         <PEM-encoded Scanner V4 indexer service certificate>
+#         -----END CERTIFICATE-----
+#       key: |
+#         -----BEGIN RSA PRIVATE KEY-----
+#         <PEM-encoded Scanner V4 indexer service cert private key>
+#         -----END RSA PRIVATE KEY-----
+#
+#   matcher:
+#     # Internal "scanner-v4-matcher.<namespace>.svc" service TLS certificate for the Scanner V4 matcher deployment.
+#     # Omit to auto-generate (initial deployment) or use existing (upgrade).
+#     serviceTLS:
+#       cert: |
+#         -----BEGIN CERTIFICATE-----
+#         <PEM-encoded Scanner V4 matcher service certificate>
+#         -----END CERTIFICATE-----
+#       key: |
+#         -----BEGIN RSA PRIVATE KEY-----
+#         <PEM-encoded Scanner V4 matcher service cert private key>
+#         -----END RSA PRIVATE KEY-----
+#
+#   db:
+#     # The password to be used for authenticating database access. If this setting is omitted, a password will be
+#     # automatically generated upon initial deployment and the existing password will be used upon upgrades.
+#     password:
+#       value: <scanner database password value>
+#
+#     # Internal "scanner-v4-db.<namespace>.svc" service TLS certificate for the Scanner V4 db deployment.
+#     # Omit to auto-generate (initial deployment) or use existing (upgrade).
+#     serviceTLS:
+#       cert: |
+#         -----BEGIN CERTIFICATE-----
+#         <PEM-encoded Scanner V4 db service certificate>
+#         -----END CERTIFICATE-----
+#       key: |
+#         -----BEGIN RSA PRIVATE KEY-----
+#         <PEM-encoded Scanner V4 db service cert private key>
+#         -----END RSA PRIVATE KEY-----

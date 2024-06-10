@@ -1,0 +1,16 @@
+{{- include "srox.init" . -}}
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: collector
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "serviceaccount" "collector") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "serviceaccount" "collector") | nindent 4 }}
+imagePullSecrets:
+{{- range $secretName := concat ._rox.collectorImagePullSecrets._names ._rox.mainImagePullSecrets._names | uniq }}
+- name: {{ quote $secretName }}
+{{- end }}

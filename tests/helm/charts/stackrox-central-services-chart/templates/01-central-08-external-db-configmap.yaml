@@ -1,0 +1,29 @@
+{{- include "srox.init" . -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: central-external-db
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "configmap" "central-external-db") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "configmap" "central-external-db") | nindent 4 }}
+data:
+  central-external-db.yaml: |
+    centralDB:
+      {{- if ._rox.central.db.external }}
+      external: true
+      source: {{ ._rox.central.db.source.connectionString }} pool_min_conns={{ ._rox.central.db.source.minConns }} pool_max_conns={{ ._rox.central.db.source.maxConns }}
+      {{- else }}
+      external: false
+      source: >
+        host=central-db.{{ .Release.Namespace }}.svc
+        port=5432
+        user=postgres
+        sslmode={{- if eq .Release.Namespace "stackrox" }}verify-full{{- else }}verify-ca{{- end }}
+        sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
+        statement_timeout={{ ._rox.central.db.source.statementTimeoutMs }}
+        pool_min_conns={{ ._rox.central.db.source.minConns }}
+        pool_max_conns={{ ._rox.central.db.source.maxConns }}
+        client_encoding=UTF8
+      {{- end }}

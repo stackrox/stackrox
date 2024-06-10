@@ -1,0 +1,44 @@
+{{- $_ := include "srox.init" . -}}
+
+StackRox Secured Cluster Services {{.Chart.AppVersion}} has been installed.
+
+
+Secured Cluster Configuration Summary:
+
+  Name:                                        {{ ._rox.clusterName }}
+  Kubernetes Namespace:                        {{ ._rox._namespace }}{{ if ne .Release.Namespace ._rox._namespace }} [NOTE: Helm release is attached to namespace {{ .Release.Namespace }}]{{ end }}
+  Helm Release Name:                           {{ .Release.Name }}
+  Central Endpoint:                            {{ ._rox.centralEndpoint }}
+  OpenShift Cluster:                           {{ if eq ._rox.env.openshift 0 -}} false {{ else -}} {{ ._rox.env.openshift }} {{ end }}
+  Admission Control Webhooks deployed:         {{ or ._rox.admissionControl.dynamic.listenOnCreates ._rox.admissionControl.dynamic.listenOnUpdates ._rox.admissionControl.dynamic.listenOnEvents}}
+  Admission Control Creates/Updates enforced:  {{ or ._rox.admissionControl.dynamic.enforceOnCreates ._rox.admissionControl.dynamic.enforceOnUpdates }}
+  Scanner V4:                                  {{ if ._rox._scannerV4Enabled -}} enabled {{- else -}} disabled {{- end }}
+{{- if and ._rox._scannerV4Enabled ._rox._scannerV4Volume }}
+  Scanner V4 DB Volume:                        {{ ._rox._scannerV4Volume }}
+{{- end }}
+
+{{ if ._rox._state.notes -}}
+Please take note of the following:
+{{ range ._rox._state.notes }}
+- {{ . | wrapWith 98 "\n  " -}}
+{{ end }}
+
+{{ end -}}
+
+{{ if ._rox._state.warnings -}}
+During installation, the following warnings were encountered:
+{{ range ._rox._state.warnings }}
+- WARNING: {{ . | wrapWith 98 "\n  " -}}
+{{ end }}
+
+{{ end -}}
+
+{{ if ._rox.env.openshift -}}
+IMPORTANT: You have deployed into an OpenShift-enabled cluster. If you see that your pods
+           are not scheduling, run
+
+             oc annotate namespace/{{ ._rox._namespace }} --overwrite openshift.io/node-selector=""
+{{ end -}}
+
+
+Thank you for using StackRox!

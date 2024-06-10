@@ -1,0 +1,18 @@
+{{- include "srox.init" . -}}
+
+{{- if not ._rox.scanner.disable -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scanner-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "configmap" "scanner-config") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "configmap" "scanner-config") | nindent 4 }}
+data:
+  config.yaml: |
+    {{- tpl (.Files.Get "config-templates/scanner/config.yaml.tpl") . | nindent 4 }}
+
+{{ end -}}
