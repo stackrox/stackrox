@@ -431,7 +431,7 @@ pause_stackrox_operator_reconcile() {
 }
 
 export_central_basic_auth_creds() {
-    if [[ -f "${DEPLOY_DIR}/central-deploy/password" ]]; then
+    if [[ -n ${DEPLOY_DIR:-} && -f "${DEPLOY_DIR}/central-deploy/password" ]]; then
         info "Getting central basic auth creds from central-deploy/password"
         ROX_PASSWORD="$(cat "${DEPLOY_DIR}"/central-deploy/password)"
     elif [[ -n "${ROX_PASSWORD:-}" ]]; then
