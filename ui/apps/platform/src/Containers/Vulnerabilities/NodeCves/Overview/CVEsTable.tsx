@@ -26,6 +26,7 @@ import useMap from 'hooks/useMap';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { ApiSortOption } from 'types/search';
 
+import ExpandRowTh from 'Components/ExpandRowTh';
 import {
     CVE_SORT_FIELD,
     NODE_COUNT_SORT_FIELD,
@@ -103,7 +104,7 @@ function CVEsTable({
         >
             <Thead noWrap>
                 <Tr>
-                    <Th aria-label="Expand row" />
+                    <ExpandRowTh />
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
                     <TooltipTh tooltip="The number of nodes affected by this CVE, grouped by the severity of the CVE on each node">
