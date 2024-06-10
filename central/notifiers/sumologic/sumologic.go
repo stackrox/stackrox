@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -56,11 +55,12 @@ func (s *sumologic) AlertNotify(ctx context.Context, alert *storage.Alert) error
 }
 
 func (s *sumologic) sendProtoPayload(ctx context.Context, msg protocompat.Message) error {
-	var buf bytes.Buffer
-	if err := new(jsonpb.Marshaler).Marshal(&buf, msg); err != nil {
+	jsonBytes, err := protocompat.MarshalToProtoJSONBytes(msg)
+	if err != nil {
 		return err
 	}
-	return s.sendPayload(ctx, &buf)
+	buf := bytes.NewBuffer(jsonBytes)
+	return s.sendPayload(ctx, buf)
 }
 
 func (s *sumologic) sendPayload(ctx context.Context, buf io.Reader) error {

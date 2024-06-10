@@ -6,11 +6,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protocompat"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -96,8 +96,12 @@ func streamAuthzTraces(cliEnvironment environment.Environment, timeout time.Dura
 			return recvErr
 		}
 
-		if err := (&jsonpb.Marshaler{}).Marshal(traceOutput, trace); err != nil {
+		jsonBytes, err := protocompat.MarshalToProtoJSONBytes(trace)
+		if err != nil {
 			return errors.Wrap(err, "marshaling a trace to JSON")
+		}
+		if _, err := traceOutput.Write(jsonBytes); err != nil {
+			return errors.Wrap(err, "writing the marshaled JSON trace to output")
 		}
 		if _, err := traceOutput.Write([]byte{'\n'}); err != nil {
 			return err

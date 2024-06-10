@@ -89,7 +89,10 @@ var (
 			replacement: "a logger",
 		},
 		"github.com/gogo/protobuf/jsonpb": {
-			replacement: "github.com/golang/protobuf/jsonpb",
+			replacement: "github.com/stackrox/rox/pkg/protocompat",
+		},
+		"github.com/golang/protobuf/jsonpb": {
+			replacement: "github.com/stackrox/rox/pkg/protocompat",
 		},
 		"k8s.io/helm/...": {
 			replacement: "package from helm.sh/v3",

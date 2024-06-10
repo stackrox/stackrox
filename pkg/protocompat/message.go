@@ -1,7 +1,11 @@
 package protocompat
 
 import (
+	"io"
+
 	"github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/protoadapt"
 )
 
 // Message is implemented by generated protocol buffer messages.
@@ -42,6 +46,44 @@ func MarshalTextString(msg proto.Message) string {
 	return proto.MarshalTextString(msg)
 }
 
+// MarshalToProtoJSONBytes writes a given protocol buffer in JSON format,
+// returning the data as byte array.
+func MarshalToProtoJSONBytes(msg proto.Message) ([]byte, error) {
+	msg2 := protoadapt.MessageV2Of(msg)
+	m := protojson.MarshalOptions{}
+	return m.Marshal(msg2)
+}
+
+// MarshalToIndentedProtoJSONBytes writes a given protocol buffer in JSON format,
+// returning the data as byte array.
+func MarshalToIndentedProtoJSONBytes(msg proto.Message) ([]byte, error) {
+	msg2 := protoadapt.MessageV2Of(msg)
+	m := protojson.MarshalOptions{
+		Indent: "  ",
+	}
+	return m.Marshal(msg2)
+}
+
+// MarshalToProtoJSONString writes a given protocol buffer in JSON format,
+// returning the data as a string.
+func MarshalToProtoJSONString(msg proto.Message) (string, error) {
+	jsonBytes, err := MarshalToProtoJSONBytes(msg)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
+}
+
+// MarshalToIndentedProtoJSONString writes a given protocol buffer in JSON format,
+// returning the data as a string.
+func MarshalToIndentedProtoJSONString(msg proto.Message) (string, error) {
+	jsonBytes, err := MarshalToIndentedProtoJSONBytes(msg)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
+}
+
 // Unmarshal parses the protocol buffer representation in buf and places
 // the decoded result in pb. If the struct underlying pb does not match
 // the data in buf, the results can be unpredictable.
@@ -50,6 +92,18 @@ func MarshalTextString(msg proto.Message) string {
 // in pb is always removed.
 func Unmarshal(dAtA []byte, msg proto.Message) error {
 	return proto.Unmarshal(dAtA, msg)
+}
+
+// UnmarshalProtoJSON parses the json representation in reader and places
+// the decoded result in msg.
+func UnmarshalProtoJSON(reader io.Reader, msg proto.Message) error {
+	x, err := io.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+	unmarshaler := protojson.UnmarshalOptions{}
+	msg2 := protoadapt.MessageV2Of(msg)
+	return unmarshaler.Unmarshal(x, msg2)
 }
 
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.

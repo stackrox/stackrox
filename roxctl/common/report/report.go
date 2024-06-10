@@ -4,10 +4,10 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -60,12 +60,15 @@ func JSON(output io.Writer, alerts []*storage.Alert) error {
 	bdr := &v1.BuildDetectionResponse{
 		Alerts: alerts,
 	}
-	marshaler := jsonpb.Marshaler{Indent: "  "}
-	if err := marshaler.Marshal(output, bdr); err != nil {
+	jsonBytes, err := protocompat.MarshalToIndentedProtoJSONBytes(bdr)
+	if err != nil {
 		return errors.Wrap(err, "could not marshal alerts")
 	}
-	if _, err := output.Write([]byte{'\n'}); err != nil {
+	if _, err := output.Write(jsonBytes); err != nil {
 		return errors.Wrap(err, "could not write alerts")
+	}
+	if _, err := output.Write([]byte{'\n'}); err != nil {
+		return errors.Wrap(err, "could not write final newline for alerts")
 	}
 	return nil
 }
@@ -78,9 +81,12 @@ func JSONWithRemarks(output io.Writer, alerts []*storage.Alert, remarks []*v1.De
 		Alerts:  alerts,
 		Remarks: remarks,
 	}
-	marshaler := jsonpb.Marshaler{Indent: "  "}
-	if err := marshaler.Marshal(output, bdr); err != nil {
+	jsonBytes, err := protocompat.MarshalToIndentedProtoJSONBytes(bdr)
+	if err != nil {
 		return errors.Wrap(err, "could not marshal alerts")
+	}
+	if _, err := output.Write(jsonBytes); err != nil {
+		return errors.Wrap(err, "could not write alerts")
 	}
 	if _, err := output.Write([]byte{'\n'}); err != nil {
 		return errors.Wrap(err, "could not write final newline for alerts")

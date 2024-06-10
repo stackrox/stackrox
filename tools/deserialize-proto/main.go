@@ -14,12 +14,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	flag "github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"k8s.io/utils/env"
@@ -105,8 +105,7 @@ func readFromDatabase(msg proto.Message) {
 			utils.Should(err)
 		}
 
-		m := jsonpb.Marshaler{Indent: "  "}
-		json, err := m.MarshalToString(msg)
+		json, err := protocompat.MarshalToIndentedProtoJSONString(msg)
 		if err != nil {
 			utils.Should(err)
 		}
@@ -140,8 +139,7 @@ func printProtoMessagesFromStdin(in io.Reader, out io.Writer, msg proto.Message)
 			return fmt.Errorf("%w: %w", errUnmarshal, err)
 		}
 
-		m := jsonpb.Marshaler{Indent: "  "}
-		json, err := m.MarshalToString(msg)
+		json, err := protocompat.MarshalToIndentedProtoJSONString(msg)
 		if err != nil {
 			return fmt.Errorf("failed marshalling the proto to JSON (msg=%+v): %w", msg, err)
 		}

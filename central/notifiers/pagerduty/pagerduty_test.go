@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -92,4 +93,60 @@ func TestMarshalingAlert(t *testing.T) {
 			require.True(t, reflect.DeepEqual(alert, unmarshaledAlert))
 		})
 	}
+}
+
+func TestMarshalAlert(t *testing.T) {
+	alert := &marshalableAlert{
+		Id: fixtureconsts.Alert1,
+		Violations: []*storage.Alert_Violation{
+			{
+				Message: "Deployment is affected by 'CVE-2017-15670'",
+			},
+			{
+				Message: "This is a kube event violation",
+				MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+					KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+						Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+							{Key: "pod", Value: "nginx"},
+							{Key: "container", Value: "nginx"},
+						},
+					},
+				},
+			},
+		},
+		ProcessViolation: &storage.Alert_ProcessViolation{
+			Message: "This is a process violation",
+		},
+		ClusterId:   fixtureconsts.Cluster1,
+		ClusterName: "prod cluster",
+		Namespace:   "stackrox",
+	}
+
+	expectedMarshaledAlert := `{
+	"id": "aeaaaaaa-bbbb-4011-0000-111111111111",
+	"clusterId": "caaaaaaa-bbbb-4011-0000-111111111111",
+	"clusterName": "prod cluster",
+	"namespace": "stackrox",
+	"processViolation": {
+		"message": "This is a process violation"
+	},
+	"violations": [
+		{
+			"message": "Deployment is affected by 'CVE-2017-15670'"
+		},
+		{
+			"message": "This is a kube event violation",
+			"keyValueAttrs": {
+				"attrs": [
+					{"key": "pod", "value": "nginx"},
+					{"key": "container", "value": "nginx"}
+				]
+			}
+		}
+	]
+}`
+	marshaledAlert, err := alert.MarshalJSON()
+	require.NoError(t, err)
+	assert.JSONEq(t, expectedMarshaledAlert, string(marshaledAlert))
+
 }

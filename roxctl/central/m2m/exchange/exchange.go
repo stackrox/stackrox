@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -89,11 +89,11 @@ func (e *exchangeCommand) exchange() error {
 	req := &v1.ExchangeAuthMachineToMachineTokenRequest{
 		IdToken: e.token,
 	}
-	buf := &bytes.Buffer{}
-	m := jsonpb.Marshaler{}
-	if err := m.Marshal(buf, req); err != nil {
+	jsonBytes, err := protocompat.MarshalToProtoJSONBytes(req)
+	if err != nil {
 		return errors.Wrap(err, "creating request body")
 	}
+	buf := bytes.NewBuffer(jsonBytes)
 
 	// Exchange the OIDC token for a short-lived access token.
 
@@ -103,7 +103,7 @@ func (e *exchangeCommand) exchange() error {
 		return errors.Wrap(err, "exchange request failed")
 	}
 	var exchangeResp v1.ExchangeAuthMachineToMachineTokenResponse
-	if err := jsonpb.Unmarshal(resp.Body, &exchangeResp); err != nil {
+	if err := protocompat.UnmarshalProtoJSON(resp.Body, &exchangeResp); err != nil {
 		return errors.Wrap(err, "unmarshalling exchange request response")
 	}
 

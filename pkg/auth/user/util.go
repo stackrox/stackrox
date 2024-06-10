@@ -1,6 +1,8 @@
 package user
 
 import (
+	"bytes"
+	"encoding/json"
 	"sort"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -44,7 +46,13 @@ func protoToJSON(message protocompat.Message) string {
 		log.Error("Failed to convert proto to JSON: ", err)
 		return ""
 	}
-	return result
+	var compact bytes.Buffer
+	err = json.Compact(&compact, []byte(result))
+	if err != nil {
+		log.Error("Failed to compact proto JSON: ", err)
+		return ""
+	}
+	return compact.String()
 }
 
 // LogSuccessfulUserLogin logs user attributes in the specified logger instance.

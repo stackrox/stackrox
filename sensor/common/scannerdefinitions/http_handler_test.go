@@ -22,6 +22,7 @@ func TestServeHTTP_Responses(t *testing.T) {
 		name             string
 		args             args
 		responseBody     string
+		jsonResponse     bool
 		statusCode       int
 		centralReachable bool
 	}{
@@ -29,6 +30,7 @@ func TestServeHTTP_Responses(t *testing.T) {
 			name:             "when central is not reachable then return internal error",
 			statusCode:       http.StatusServiceUnavailable,
 			responseBody:     "{\"code\":14,\"message\":\"central not reachable\"}",
+			jsonResponse:     true,
 			centralReachable: false,
 		},
 		{
@@ -109,7 +111,11 @@ func TestServeHTTP_Responses(t *testing.T) {
 				}
 				h.centralReachable.Store(tt.centralReachable)
 				h.ServeHTTP(tt.args.writer, tt.args.request)
-				assert.Equal(t, tt.responseBody, tt.args.writer.Data.String())
+				if tt.jsonResponse {
+					assert.JSONEq(t, tt.responseBody, tt.args.writer.Data.String())
+				} else {
+					assert.Equal(t, tt.responseBody, tt.args.writer.Data.String())
+				}
 				assert.Equal(t, tt.statusCode, tt.args.writer.Code)
 			}
 		})

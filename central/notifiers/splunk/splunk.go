@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -164,17 +163,17 @@ func (s *splunk) sendEvent(ctx context.Context, msg protocompat.Message, sourceT
 		return err
 	}
 
-	var data bytes.Buffer
-	err = new(jsonpb.Marshaler).Marshal(&data, splunkEvent)
+	jsonBytes, err := protocompat.MarshalToProtoJSONBytes(splunkEvent)
 	if err != nil {
 		return err
 	}
+	data := bytes.NewBuffer(jsonBytes)
 
 	if data.Len() > int(s.conf.GetTruncate()) {
 		return fmt.Errorf("Splunk HEC truncate data limit (%d bytes) exceeded: %d", s.conf.GetTruncate(), data.Len())
 	}
 
-	return s.sendHTTPPayload(ctx, http.MethodPost, s.eventEndpoint, &data)
+	return s.sendHTTPPayload(ctx, http.MethodPost, s.eventEndpoint, data)
 }
 
 func (s *splunk) sendHTTPPayload(ctx context.Context, method, path string, data io.Reader) error {

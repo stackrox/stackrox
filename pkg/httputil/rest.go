@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
@@ -37,7 +36,12 @@ func RESTHandler(endpointFunc func(*http.Request) (interface{}, error)) http.Han
 		if resp == nil {
 			_, err = fmt.Fprint(w, "{}")
 		} else if protoMsg, _ := resp.(protocompat.Message); protoMsg != nil {
-			err = (&jsonpb.Marshaler{}).Marshal(w, protoMsg)
+			jsonBytes, encodeErr := protocompat.MarshalToProtoJSONBytes(protoMsg)
+			if encodeErr != nil {
+				err = encodeErr
+			} else {
+				_, err = w.Write(jsonBytes)
+			}
 		} else {
 			err = json.NewEncoder(w).Encode(resp)
 		}
