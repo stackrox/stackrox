@@ -33,7 +33,7 @@ func MapSliceEqual[K comparable, T proto.Message](t *testing.T, expected, actual
 	t.Helper()
 	ek := maps.Keys(expected)
 	ea := maps.Keys(actual)
-	if !assert.EqualValues(t, ek, ea, msgAndArgs) {
+	if !assert.ElementMatch(t, ek, ea, msgAndArgs) {
 		return false
 	}
 	for k, v := range expected {
