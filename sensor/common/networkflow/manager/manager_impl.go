@@ -317,7 +317,7 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	if !features.SensorCapturesIntermediateEvents.Enabled() {
 		log.Info(common.LogSensorComponentEvent(e))
 		switch e {
-		case common.SensorComponentEventCentralReachable:
+		case common.SensorComponentEventSyncFinished:
 			m.resetContext()
 			m.resetLastSentState()
 			m.centralReady.Signal()
