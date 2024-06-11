@@ -25,6 +25,13 @@ import {
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
+import {
+    imageComponentSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageSearchFilterConfig,
+} from '../../searchFilterConfig';
 import {
     SearchOption,
     COMPONENT_SEARCH_OPTION,
@@ -93,6 +100,12 @@ const searchOptions: SearchOption[] = [
     COMPONENT_SOURCE_SEARCH_OPTION,
 ];
 
+const searchFilterConfig = {
+    Image: imageSearchFilterConfig,
+    'Image CVE': imageCVESearchFilterConfig,
+    ImageComponent: imageComponentSearchFilterConfig,
+};
+
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;
     pagination: UseURLPaginationResult;
@@ -102,6 +115,8 @@ function DeploymentPageVulnerabilities({
     deploymentId,
     pagination,
 }: DeploymentPageVulnerabilitiesProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -211,13 +226,29 @@ function DeploymentPageVulnerabilities({
             >
                 <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
                 <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
-                    <WorkloadCveFilterToolbar
-                        autocompleteSearchContext={{
-                            'Deployment ID': deploymentId,
-                        }}
-                        searchOptions={searchOptions}
-                        onFilterChange={() => setPage(1)}
-                    />
+                    {isAdvancedFiltersEnabled ? (
+                        <AdvancedFiltersToolbar
+                            className="pf-v5-u-pt-lg pf-v5-u-pb-0"
+                            searchFilterConfig={searchFilterConfig}
+                            searchFilter={searchFilter}
+                            onFilterChange={(newFilter, { action }) => {
+                                setSearchFilter(newFilter);
+                                setPage(1, 'replace');
+
+                                if (action === 'ADD') {
+                                    // TODO - Add analytics tracking ROX-24532
+                                }
+                            }}
+                        />
+                    ) : (
+                        <WorkloadCveFilterToolbar
+                            autocompleteSearchContext={{
+                                'Deployment ID': deploymentId,
+                            }}
+                            searchOptions={searchOptions}
+                            onFilterChange={() => setPage(1)}
+                        />
+                    )}
                 </div>
                 <SummaryCardLayout error={summaryRequest.error} isLoading={summaryRequest.loading}>
                     <SummaryCard
