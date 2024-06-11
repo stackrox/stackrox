@@ -784,6 +784,11 @@ spec:
                     name:
                       description: Name of resource.
                       type: string
+                    optional:
+                      description: |-
+                        Optional marks the overlay as optional.
+                        If the resource does not exist, the overlay is skipped.
+                      type: boolean
                     patches:
                       description: List of patches to apply to resource.
                       items:
