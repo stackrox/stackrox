@@ -10,7 +10,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "support-packages",
-		Short: "Commands to upload support packages for Collector.",
+		Short: "[Deprecated] Commands to upload support packages for Collector.",
 	}
 
 	c.AddCommand(
