@@ -75,12 +75,12 @@ func (s *serviceImpl) ListComplianceIntegrations(ctx context.Context, req *v2.Ra
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, req.GetPagination(), maxPaginationLimit)
 
-	integrations, err := s.complianceMetaDataStore.GetComplianceIntegrations(ctx, parsedQuery)
+	integrations, err := s.complianceMetaDataStore.GetComplianceIntegrationsView(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve compliance integrations.")
 	}
 
-	apiIntegrations, err := convertStorageProtos(ctx, integrations, s.clusterDS)
+	apiIntegrations, err := convertStorageProtos(ctx, integrations, s.complianceMetaDataStore)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert compliance integrations.")
 	}

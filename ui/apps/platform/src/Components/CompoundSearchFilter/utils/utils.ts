@@ -1,12 +1,14 @@
+import { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
+
 import {
-    CompoundSearchFilterConfig,
+    PartialCompoundSearchFilterConfig,
     SearchFilterAttribute,
     SearchFilterAttributeName,
     SearchFilterEntityName,
     compoundSearchEntityNames,
 } from '../types';
 
-export function getEntities(config: Partial<CompoundSearchFilterConfig>): SearchFilterEntityName[] {
+export function getEntities(config: PartialCompoundSearchFilterConfig): SearchFilterEntityName[] {
     const entities = Object.keys(config) as SearchFilterEntityName[];
     return entities;
 }
@@ -16,7 +18,7 @@ function isSearchFilterEntity(key: string): key is SearchFilterEntityName {
 }
 
 export function getDefaultEntity(
-    config: Partial<CompoundSearchFilterConfig>
+    config: PartialCompoundSearchFilterConfig
 ): SearchFilterEntityName | undefined {
     const entities = Object.keys(config).filter(isSearchFilterEntity);
     return entities[0];
@@ -24,7 +26,7 @@ export function getDefaultEntity(
 
 export function getEntityAttributes(
     entity: SearchFilterEntityName,
-    config: Partial<CompoundSearchFilterConfig>
+    config: PartialCompoundSearchFilterConfig
 ): SearchFilterAttribute[] {
     const entityConfig = config[entity];
     if (entityConfig && entityConfig.attributes) {
@@ -36,7 +38,7 @@ export function getEntityAttributes(
 
 export function getDefaultAttribute(
     entity: SearchFilterEntityName,
-    config: Partial<CompoundSearchFilterConfig>
+    config: PartialCompoundSearchFilterConfig
 ): SearchFilterAttributeName | undefined {
     const entityConfig = config[entity];
     if (entityConfig && entityConfig.attributes) {
@@ -49,6 +51,9 @@ export function getDefaultAttribute(
 export function ensureStringArray(value: unknown): string[] {
     if (Array.isArray(value) && value.every((element) => typeof element === 'string')) {
         return value as string[];
+    }
+    if (value === 'string') {
+        return [value];
     }
     return [];
 }
@@ -78,4 +83,22 @@ export function ensureConditionNumber(value: unknown): { condition: string; numb
         condition: '',
         number: 0,
     };
+}
+
+/**
+ * Helper function to convert a search filter config object into an
+ * array of FilterChipGroupDescriptor objects for use in the SearchFilterChips component
+ *
+ * @param searchFilterConfig Config object for the search filter
+ * @returns An array of FilterChipGroupDescriptor objects
+ */
+export function makeFilterChipDescriptors(
+    searchFilterConfig: PartialCompoundSearchFilterConfig
+): FilterChipGroupDescriptor[] {
+    return Object.values(searchFilterConfig).flatMap(({ attributes = {} }) =>
+        Object.values(attributes).map((attributeConfig) => ({
+            displayName: attributeConfig.filterChipLabel,
+            searchFilterName: attributeConfig.searchTerm,
+        }))
+    );
 }

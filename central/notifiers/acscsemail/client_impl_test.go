@@ -159,7 +159,7 @@ func TestTransportWithAdditonalCA(t *testing.T) {
 	tlsServ.StartTLS()
 	defer tlsServ.Close()
 
-	transport := transportWithAdditonalCA(filePath)
+	transport := transportWithAdditionalCA(filePath)
 	httpClient := http.Client{Transport: transport}
 	err = retry.WithRetry(
 		// there's a chance the first call fails on tests depending on

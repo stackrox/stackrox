@@ -5,6 +5,7 @@ ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=latest
 
+
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.21 as builder
 
 ENV GOFLAGS=""
@@ -18,11 +19,14 @@ ENV CI=1
 COPY . /src
 WORKDIR /src
 
-RUN scripts/konflux/fail-build-if-git-is-dirty.sh
+RUN .konflux/scripts/fail-build-if-git-is-dirty.sh
 
 RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-scripts
 
+
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
+
+ARG MAIN_IMAGE_TAG
 
 LABEL \
     com.redhat.component="rhacs-scanner-v4-container" \
@@ -37,8 +41,10 @@ LABEL \
     summary="The image scanner v4 for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     # We must set version label to prevent inheriting value set in the base stage.
-    # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
-    version="0.0.1-todo"
+    version="${MAIN_IMAGE_TAG}" \
+    # Release label is required by EC although has no practical semantics.
+    # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
+    release="1"
 
 COPY --from=builder \
     /src/scanner/image/scanner/scripts/entrypoint.sh \
@@ -53,7 +59,7 @@ COPY --from=builder \
 # files.  If the file does not exist, the indexer raises an error during bootstrap.
 # (Note that the file is downloaded from Central after initial seeding.)
 
-COPY .konflux/repository-to-cpe.json .konflux/container-name-repos-map.json /run/mappings/
+COPY .konflux/scanner-data/repository-to-cpe.json .konflux/scanner-data/container-name-repos-map.json /run/mappings/
 
 RUN microdnf upgrade --nobest && \
     microdnf clean all && \

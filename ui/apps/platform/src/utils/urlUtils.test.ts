@@ -1,4 +1,4 @@
-import { isValidURL, isValidCidrBlock } from './urlUtils';
+import { isValidURL, isValidCidrBlock, safeGeneratePath } from './urlUtils';
 
 describe('urlUtils', () => {
     describe('isValidURL', () => {
@@ -76,6 +76,24 @@ describe('urlUtils', () => {
             const testUrl = '1200::AB00:1234::2552:7777:1313';
 
             expect(isValidCidrBlock(testUrl)).toEqual(false);
+        });
+    });
+
+    describe('safeGeneratePath', () => {
+        it('should return an interpolated path when pattern and object are valid', () => {
+            const pathPattern = '/:id/:name';
+            const pathObject = { id: 'test', name: 'stackrox' };
+            const fallback = '/home';
+
+            expect(safeGeneratePath(pathPattern, pathObject, fallback)).toEqual('/test/stackrox');
+        });
+
+        it('should return the fallback value for a path pattern without valid object match', () => {
+            const pathPattern = '/:id';
+            const pathObject = {};
+            const fallback = '/home';
+
+            expect(safeGeneratePath(pathPattern, pathObject, fallback)).toEqual(fallback);
         });
     });
 });

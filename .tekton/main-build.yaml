@@ -5,15 +5,17 @@ metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch == "master"
+    # TODO(ROX-21073): re-enable for all PR branches
+    pipelinesascode.tekton.dev/on-cel-expression: (event == "push" && target_branch == "master") || (event == "pull_request" && (source_branch.contains("rhtap") || source_branch.contains("konflux")))
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: main
     pipelines.appstudio.openshift.io/type: build
-  name: main-on-push
+  name: main-build
   namespace: rh-acs-tenant
 
 spec:
@@ -24,7 +26,8 @@ spec:
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
-    value: '13w'
+    # TODO(ROX-24530): return expiration for non-released images to 13w
+    value: '52w'
   - name: output-image-repo
     value: quay.io/rhacs-eng/main
   - name: path-context
@@ -39,7 +42,7 @@ spec:
   - name: prefetch-input
     value: |
       [
-        { "type": "npm", "path": "scripts/konflux/bootstrap-yarn" },
+        { "type": "npm", "path": ".konflux/bootstrap-yarn" },
         { "type": "gomod", "path": "." }
       ]
   - name: build-source-image

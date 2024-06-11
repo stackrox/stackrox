@@ -9,9 +9,10 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import TooltipTh from 'Components/TooltipTh';
 import DateDistance from 'Components/DateDistance';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { TableUIState } from 'utils/getTableUIState';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import EmptyTableResults from '../components/EmptyTableResults';
 import { VulnerabilitySeverityLabel } from '../../types';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
@@ -34,7 +35,6 @@ export const deploymentListQuery = gql`
                     total
                 }
             }
-            priority
             clusterName
             namespace
             imageCount(query: $query)
@@ -52,7 +52,6 @@ export type Deployment = {
         moderate: { total: number };
         low: { total: number };
     };
-    priority: number;
     clusterName: string;
     namespace: string;
     imageCount: number;
@@ -60,30 +59,30 @@ export type Deployment = {
 };
 
 type DeploymentsTableProps = {
-    deployments: Deployment[];
+    tableState: TableUIState<Deployment>;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];
     showCveDetailFields: boolean;
+    onClearFilters: () => void;
 };
 
 function DeploymentsTable({
-    deployments,
+    tableState,
     getSortParams,
     isFiltered,
     filteredSeverities,
     showCveDetailFields,
+    onClearFilters,
 }: DeploymentsTableProps) {
     const vulnerabilityState = useVulnerabilityState();
+    const colSpan = showCveDetailFields ? 6 : 5;
     return (
         <Table borders={false} variant="compact">
             <Thead noWrap>
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Deployment')}>Deployment</Th>
-                    {showCveDetailFields && (
-                        <Th sort={getSortParams('Deployment Risk Priority')}>Risk priority</Th>
-                    )}
                     {showCveDetailFields && (
                         <TooltipTh tooltip="CVEs by severity across this deployment">
                             CVEs by severity
@@ -99,76 +98,73 @@ function DeploymentsTable({
                     <Th sort={getSortParams('Created')}>First discovered</Th>
                 </Tr>
             </Thead>
-            {deployments.length === 0 && <EmptyTableResults colSpan={6} />}
-            {deployments.map(
-                ({
-                    id,
-                    name,
-                    imageCVECountBySeverity,
-                    priority,
-                    clusterName,
-                    namespace,
-                    imageCount,
-                    created,
-                }) => {
-                    const criticalCount = imageCVECountBySeverity.critical.total;
-                    const importantCount = imageCVECountBySeverity.important.total;
-                    const moderateCount = imageCVECountBySeverity.moderate.total;
-                    const lowCount = imageCVECountBySeverity.low.total;
-                    return (
-                        <Tbody
-                            key={id}
-                            style={{
-                                borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                            }}
-                        >
-                            <Tr>
-                                <Td dataLabel="Deployment">
-                                    <Link
-                                        to={getWorkloadEntityPagePath(
-                                            'Deployment',
-                                            id,
-                                            vulnerabilityState
-                                        )}
-                                    >
-                                        <Truncate position="middle" content={name} />
-                                    </Link>
-                                </Td>
-                                {showCveDetailFields && (
-                                    <Td
-                                        dataLabel="Risk priority"
-                                        className="pf-v5-u-pr-2xl pf-v5-u-text-align-center-on-md"
-                                    >
-                                        {priority}
+            <TbodyUnified
+                tableState={tableState}
+                colSpan={colSpan}
+                filteredEmptyProps={{ onClearFilters }}
+                emptyProps={{ message: 'No deployments with CVEs were observed in the system' }}
+                renderer={({ data }) =>
+                    data.map((deployment) => {
+                        const {
+                            id,
+                            name,
+                            imageCVECountBySeverity,
+                            clusterName,
+                            namespace,
+                            imageCount,
+                            created,
+                        } = deployment;
+                        const criticalCount = imageCVECountBySeverity.critical.total;
+                        const importantCount = imageCVECountBySeverity.important.total;
+                        const moderateCount = imageCVECountBySeverity.moderate.total;
+                        const lowCount = imageCVECountBySeverity.low.total;
+                        return (
+                            <Tbody
+                                key={id}
+                                style={{
+                                    borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
+                                }}
+                            >
+                                <Tr>
+                                    <Td dataLabel="Deployment">
+                                        <Link
+                                            to={getWorkloadEntityPagePath(
+                                                'Deployment',
+                                                id,
+                                                vulnerabilityState
+                                            )}
+                                        >
+                                            <Truncate position="middle" content={name} />
+                                        </Link>
                                     </Td>
-                                )}
-                                {showCveDetailFields && (
+                                    {showCveDetailFields && (
+                                        <Td>
+                                            <SeverityCountLabels
+                                                criticalCount={criticalCount}
+                                                importantCount={importantCount}
+                                                moderateCount={moderateCount}
+                                                lowCount={lowCount}
+                                                entity="deployment"
+                                                filteredSeverities={filteredSeverities}
+                                            />
+                                        </Td>
+                                    )}
+                                    <Td>{clusterName}</Td>
+                                    <Td>{namespace}</Td>
                                     <Td>
-                                        <SeverityCountLabels
-                                            criticalCount={criticalCount}
-                                            importantCount={importantCount}
-                                            moderateCount={moderateCount}
-                                            lowCount={lowCount}
-                                            entity="deployment"
-                                            filteredSeverities={filteredSeverities}
-                                        />
+                                        <>
+                                            {imageCount} {pluralize('image', imageCount)}
+                                        </>
                                     </Td>
-                                )}
-                                <Td>{clusterName}</Td>
-                                <Td>{namespace}</Td>
-                                <Td>
-                                    <>
-                                        {imageCount} {pluralize('image', imageCount)}
-                                    </>
-                                </Td>
-                                <Td>
-                                    <DateDistance date={created} />
-                                </Td>
-                            </Tr>
-                        </Tbody>
-                    );
+                                    <Td>
+                                        <DateDistance date={created} />
+                                    </Td>
+                                </Tr>
+                            </Tbody>
+                        );
+                    })
                 }
-            )}
+            />
         </Table>
     );
 }

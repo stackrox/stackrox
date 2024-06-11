@@ -25,12 +25,40 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Next Tag: 15.
 type AuthProvider struct {
-	Id         string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name       string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
-	Type       string            `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
-	UiEndpoint string            `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint,proto3" json:"ui_endpoint,omitempty"`
-	Enabled    bool              `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	Config     map[string]string `protobuf:"bytes,6,rep,name=config,proto3" json:"config,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" scrub:"map-values"` // @gotags: scrub:"map-values"
+	Id         string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
+	Name       string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Type       string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	UiEndpoint string `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint,proto3" json:"ui_endpoint,omitempty"`
+	Enabled    bool   `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// Config holds auth provider specific configuration. Each configuration options
+	// are different based on the given auth provider type.
+	// OIDC:
+	// - "issuer": the OIDC issuer according to https://openid.net/specs/openid-connect-core-1_0.html#IssuerIdentifier.
+	// - "client_id": the client ID according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.2.
+	// - "client_secret": the client secret according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.3.1.
+	// - "do_not_use_client_secret": set to "true" if you want to create a configuration with only
+	//   a client ID and no client secret.
+	// - "mode": the OIDC callback mode, choosing from "fragment", "post", or "query".
+	// - "disable_offline_access_scope": set to "true" if no offline tokens shall be issued.
+	// - "extra_scopes": a space-delimited string of additional scopes to request in addition to "openid profile email"
+	//   according to https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3.
+	//
+	// OpenShift Auth: supports no extra configuration options.
+	//
+	// User PKI:
+	// - "keys": the trusted certificates PEM encoded.
+	//
+	// SAML:
+	// - "sp_issuer": the service provider issuer according to https://datatracker.ietf.org/doc/html/rfc7522#section-3.
+	// - "idp_metadata_url": the metadata URL according to https://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf.
+	// - "idp_issuer": the IdP issuer.
+	// - "idp_cert_pem": the cert PEM encoded for the IdP endpoint.
+	// - "idp_sso_url": the IdP SSO URL.
+	// - "idp_nameid_format": the IdP name ID format.
+	//
+	// IAP:
+	// - "audience": the audience to use.
+	Config map[string]string `protobuf:"bytes,6,rep,name=config,proto3" json:"config,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" scrub:"map-values"` // @gotags: scrub:"map-values"
 	// The login URL will be provided by the backend, and may not be specified in a request.
 	LoginUrl  string `protobuf:"bytes,7,opt,name=login_url,json=loginUrl,proto3" json:"login_url,omitempty"`
 	Validated bool   `protobuf:"varint,8,opt,name=validated,proto3" json:"validated,omitempty"` // Deprecated: Do not use.

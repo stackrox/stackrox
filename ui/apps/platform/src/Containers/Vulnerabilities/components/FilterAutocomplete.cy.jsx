@@ -1,3 +1,4 @@
+/* TODO - This file should be deleted once ROX_VULN_MGMT_ADVANCED_FILTERS is deleted */
 import React from 'react';
 
 import ComponentTestProviders from 'test-utils/ComponentProviders';

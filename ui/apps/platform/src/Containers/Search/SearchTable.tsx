@@ -5,6 +5,7 @@ import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import { SearchResult, SearchResultCategory } from 'services/SearchService';
 import { SearchFilter } from 'types/search';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import FilterLinks from './FilterLinks';
 import ViewLinks from './ViewLinks';
 import {
@@ -29,7 +30,11 @@ type SearchTableProps = {
 
 function SearchTable({ navCategory, searchFilter, searchResults }: SearchTableProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
-    const searchResultCategoryMap = searchResultCategoryMapFilteredIsRouteEnabled(isRouteEnabled);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const searchResultCategoryMap = searchResultCategoryMapFilteredIsRouteEnabled(
+        isRouteEnabled,
+        isFeatureFlagEnabled
+    );
 
     const firstColumnHeading = searchNavMap[navCategory];
     const hasLocationColumn =
@@ -84,7 +89,9 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                 </Tr>
             </Thead>
             <Tbody>
-                {searchResultsFilteredAndSorted.map(({ category, id, location, name }) => {
+                {searchResultsFilteredAndSorted.map((searchResult) => {
+                    const { category, id, location, name } = searchResult;
+                    const locationTextForCategory = getLocationTextForCategory(location, category);
                     return (
                         <Tr key={id}>
                             <Td dataLabel={firstColumnHeading} modifier="breakWord">
@@ -97,13 +104,13 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                                             aria-label={getLocationLabelForCategory(category)}
                                             className="pf-v5-u-color-200"
                                         >
-                                            {getLocationTextForCategory(location, category)}
+                                            {locationTextForCategory}
                                         </div>
                                     )}
                             </Td>
                             {hasLocationColumn && (
                                 <Td dataLabel={locationColumnHeading} className="pf-v5-u-color-200">
-                                    {getLocationTextForCategory(location, category)}
+                                    {locationTextForCategory}
                                 </Td>
                             )}
                             {hasCategoryColumn && (
@@ -114,8 +121,10 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                             {hasViewLinkColumn && (
                                 <Td dataLabel="View on">
                                     <ViewLinks
-                                        id={id}
-                                        resultCategory={category}
+                                        searchResult={{
+                                            ...searchResult,
+                                            locationTextForCategory,
+                                        }}
                                         searchResultCategoryMap={searchResultCategoryMap}
                                     />
                                 </Td>

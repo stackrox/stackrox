@@ -14,7 +14,7 @@ spec:
       - name: name
         value: show-sbom
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-show-sbom:0.1@sha256:1f1504c5d8b135864111a993ac6f9ab1212907fa0c609223714cdd7bd825e2ca
+        value: quay.io/redhat-appstudio-tekton-catalog/task-show-sbom:0.1@sha256:9cd4bf015b18621834f40ed02c8dccda1f7834c7d989521a8314bdb3a596e96b
       - name: kind
         value: task
       resolver: bundles
@@ -36,7 +36,7 @@ spec:
       - name: name
         value: summary
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-summary:0.2@sha256:c718319bd57c4f0ab1843cf98d813d0a26a73e0c8ce66218079c3c865508b0fb
+        value: quay.io/redhat-appstudio-tekton-catalog/task-summary:0.2@sha256:51d5aaa4e13e9fb4303f667e38d07e758820040032ed9fb3ab5f6afaaffc60d8
       - name: kind
         value: task
       resolver: bundles
@@ -53,7 +53,7 @@ spec:
     name: output-image-repo
     type: string
   - default: "-fast"
-    description: Suffix that will be appended to the output image tag and embedded version strings.
+    description: Suffix that will be appended to the output image tag and embedded in version strings.
     name: output-tag-suffix
     type: string
   - default: .
@@ -130,11 +130,10 @@ spec:
   - name: init
     params:
     - name: image-url
-      # We can't provide a real tag because it is not known at this time.
-      # We still provide a fake tag to the task to comply with the expected input.
-      # Because 'rebuild' is set to true, this has no effect.
-      # TODO(ROX-24116): Apply both Konflux-style and StackRox-style tags to containers
-      value: $(params.output-image-repo):fake-tag
+      # We can't provide a StackRox-style tag because it is not known at this time (requires cloning source, etc.)
+      # As a workaround, we still provide a unique tag that's based on a revision to this task to comply with its
+      # expected input. We later actually add this tag on a built image with apply-tags task.
+      value: $(params.output-image-repo):konflux-$(params.revision)
     - name: rebuild
       value: $(params.rebuild)
     - name: skip-checks
@@ -200,7 +199,7 @@ spec:
       steps:
       - name: fetch-vuln-mappings
         image: registry.access.redhat.com/ubi8-minimal:latest
-        script: '"$(workspaces.source.path)/source/scanner/image/scanner/download-mappings.sh" "$(workspaces.source.path)/source/.konflux"'
+        script: '"$(workspaces.source.path)/source/scanner/image/scanner/download-mappings.sh" "$(workspaces.source.path)/source/.konflux/scanner-data"'
     workspaces:
     - name: source
       workspace: workspace
@@ -243,6 +242,7 @@ spec:
     - name: BUILD_ARGS
       value:
       - VERSIONS_SUFFIX=$(params.output-tag-suffix)
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.image-tag)
     runAfter:
     - prefetch-dependencies
     - fetch-vuln-mappings
@@ -251,7 +251,7 @@ spec:
       - name: name
         value: buildah
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:b8d50716c01160be5deb27dd30f79ae33cc89c72952285cd850323fa0a88b8db
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:17e2d819edcc3806cc463fc28f29cfa2ebd77ca634ee526e41aa95299a9d2e13
       - name: kind
         value: task
       resolver: bundles
@@ -262,6 +262,25 @@ spec:
     workspaces:
     - name: source
       workspace: workspace
+
+  - name: apply-tags
+    params:
+    - name: IMAGE
+      value: $(tasks.build-container.results.IMAGE_URL)
+    - name: ADDITIONAL_TAGS
+      value:
+      - konflux-$(params.revision)
+    runAfter:
+    - build-container
+    taskRef:
+      params:
+      - name: name
+        value: apply-tags
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-apply-tags:0.1@sha256:29add9a49a2281a3755a9b580d2b9c5cb110231b14cccf8ade2fd7895a9b4b4a
+      - name: kind
+        value: task
+      resolver: bundles
 
   - name: build-source-image
     params:

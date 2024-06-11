@@ -20,6 +20,8 @@ type DataStore interface {
 	GetComplianceIntegrationByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceIntegration, error)
 	// GetComplianceIntegrations retrieves all the compliance integrations from the store
 	GetComplianceIntegrations(ctx context.Context, query *v1.Query) ([]*storage.ComplianceIntegration, error)
+	// GetComplianceIntegrationsView provides an in memory layer on top of the underlying DB based storage.
+	GetComplianceIntegrationsView(ctx context.Context, query *v1.Query) ([]*IntegrationDetails, error)
 	// AddComplianceIntegration adds a compliance integration to the store
 	AddComplianceIntegration(ctx context.Context, integration *storage.ComplianceIntegration) (string, error)
 	// UpdateComplianceIntegration updates a compliance integration to the store
@@ -33,9 +35,10 @@ type DataStore interface {
 }
 
 // New returns an instance of DataStore.
-func New(complianceIntegrationStorage pgStore.Store) DataStore {
+func New(complianceIntegrationStorage pgStore.Store, pool postgres.DB) DataStore {
 	ds := &datastoreImpl{
 		storage: complianceIntegrationStorage,
+		db:      pool,
 	}
 	return ds
 }
@@ -43,5 +46,5 @@ func New(complianceIntegrationStorage pgStore.Store) DataStore {
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
-	return New(store)
+	return New(store, pool)
 }

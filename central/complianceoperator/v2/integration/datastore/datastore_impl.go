@@ -4,13 +4,17 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/complianceoperator/v2/integration/store/postgres"
+	store "github.com/stackrox/rox/central/complianceoperator/v2/integration/store/postgres"
+	complianceUtils "github.com/stackrox/rox/central/complianceoperator/v2/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -19,7 +23,8 @@ var (
 )
 
 type datastoreImpl struct {
-	storage postgres.Store
+	storage store.Store
+	db      postgres.DB
 }
 
 // GetComplianceIntegration is pass-through to the underlying store.
@@ -36,6 +41,34 @@ func (ds *datastoreImpl) GetComplianceIntegrationByCluster(ctx context.Context, 
 // GetComplianceIntegrations provides an in memory layer on top of the underlying DB based storage.
 func (ds *datastoreImpl) GetComplianceIntegrations(ctx context.Context, query *v1.Query) ([]*storage.ComplianceIntegration, error) {
 	return ds.storage.GetByQuery(ctx, query)
+}
+
+// GetComplianceIntegrationsView provides an in memory layer on top of the underlying DB based storage.
+func (ds *datastoreImpl) GetComplianceIntegrationsView(ctx context.Context, query *v1.Query) ([]*IntegrationDetails, error) {
+	var err error
+	query, err = complianceUtils.WithSACFilter(ctx, resources.Compliance, query)
+	if err != nil {
+		return nil, err
+	}
+
+	cloned := query.Clone()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.Cluster).Proto(),
+		search.NewQuerySelect(search.ClusterID).Proto(),
+		search.NewQuerySelect(search.ClusterType).Proto(),
+		search.NewQuerySelect(search.ClusterPlatformType).Proto(),
+		search.NewQuerySelect(search.ComplianceOperatorInstalled).Proto(),
+		search.NewQuerySelect(search.ComplianceOperatorVersion).Proto(),
+		search.NewQuerySelect(search.ComplianceOperatorStatus).Proto(),
+		search.NewQuerySelect(search.ComplianceOperatorIntegrationID).Proto(),
+	}
+
+	results, err := pgSearch.RunSelectRequestForSchema[IntegrationDetails](ctx, ds.db, schema.ComplianceIntegrationsSchema, cloned)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 // AddComplianceIntegration is pass-through to the underlying store.

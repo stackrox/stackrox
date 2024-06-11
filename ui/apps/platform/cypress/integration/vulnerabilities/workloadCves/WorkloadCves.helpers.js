@@ -235,8 +235,11 @@ export function visitAnyImageSinglePage() {
     selectEntityTab('Image');
     cy.get('tbody tr td[data-label="Image"] a').first().click();
 
+    waitForTableLoadCompleteIndicator();
+
     return cy.get('h1').then(($h1) => {
-        return $h1.text().split(':');
+        // Remove the SHA and/or tag from the image name
+        return $h1.text().replace(/(@sha256)?:.*/, '');
     });
 }
 
@@ -414,4 +417,9 @@ export function interactAndWaitForDeploymentList(callback) {
     const deploymentListRouteMatcherMap = getRouteMatcherMapForGraphQL([deploymentListOpname]);
     deploymentListRouteMatcherMap[deploymentListOpname].times = 1;
     return interactAndWaitForResponses(callback, deploymentListRouteMatcherMap);
+}
+
+export function waitForTableLoadCompleteIndicator() {
+    cy.get(selectors.loadingSpinner);
+    cy.get(selectors.loadingSpinner).should('not.exist');
 }

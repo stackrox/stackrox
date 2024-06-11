@@ -3,8 +3,19 @@ import React, { ReactElement, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
-import { Bullseye, Button, PageSection, pluralize, Spinner, Title } from '@patternfly/react-core';
+import { useHistory, useLocation, useParams, Link } from 'react-router-dom';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import {
+    Alert,
+    Bullseye,
+    Button,
+    ExpandableSection,
+    Flex,
+    PageSection,
+    pluralize,
+    Spinner,
+    Title,
+} from '@patternfly/react-core';
 import {
     Dropdown,
     DropdownItem,
@@ -21,7 +32,10 @@ import { actions as groupActions } from 'reducers/groups';
 import { actions as inviteActions } from 'reducers/invite';
 import { actions as roleActions, types as roleActionTypes } from 'reducers/roles';
 import { AuthProvider } from 'services/AuthService';
-
+import usePermissions from 'hooks/usePermissions';
+import { integrationsPath } from 'routePaths';
+import { getVersionedDocs } from 'utils/versioning';
+import useMetadata from 'hooks/useMetadata';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 import { mergeGroupsWithAuthProviders } from './authProviders.utils';
 
@@ -33,7 +47,6 @@ import AuthProvidersList from './AuthProvidersList';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
-import usePermissions from '../../../hooks/usePermissions';
 
 const entityType = 'AUTH_PROVIDER';
 
@@ -69,8 +82,10 @@ function AuthProviders(): ReactElement {
     const { entityId } = useParams();
     const dispatch = useDispatch();
     const { analyticsTrack } = useAnalytics();
+    const { version } = useMetadata();
 
     const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
+    const [isInfoExpanded, setIsInfoExpanded] = useState(false);
     const {
         authProviders,
         groups,
@@ -125,6 +140,10 @@ function AuthProviders(): ReactElement {
         const provider = availableProviderTypes.find(({ value }) => value === type) ?? {};
         return (provider.label as string) ?? 'auth';
     }
+
+    const onToggle = (_isExpanded: boolean) => {
+        setIsInfoExpanded(_isExpanded);
+    };
 
     const selectedAuthProvider = authProviders.find(({ id }) => id === entityId);
     const hasAction = Boolean(action);
@@ -184,6 +203,60 @@ function AuthProviders(): ReactElement {
                             )
                         }
                     />
+                    <PageSection variant="light">
+                        <Alert
+                            isInline
+                            variant="info"
+                            title="Consider using short-lived tokens for machine-to-machine communications
+                            such as CI/CD pipelines, scripts, and other automation."
+                        >
+                            <Flex
+                                direction={{ default: 'column' }}
+                                spaceItems={{ default: 'spaceItemsMd' }}
+                            >
+                                <Flex direction={{ default: 'row' }}>
+                                    <ExternalLink>
+                                        <a
+                                            href={getVersionedDocs(
+                                                version,
+                                                'operating/manage-user-access/configure-short-lived-access.html#configure-short-lived-access'
+                                            )}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            How to configure short-lived access
+                                        </a>
+                                    </ExternalLink>
+                                    {hasWriteAccessForPage && (
+                                        <Link
+                                            to={`${integrationsPath}/authProviders/machineAccess/create`}
+                                        >
+                                            Create a machine access configuration
+                                        </Link>
+                                    )}
+                                </Flex>
+                                <ExpandableSection
+                                    toggleText="More resources"
+                                    onToggle={(_event, _isExpanded: boolean) =>
+                                        onToggle(_isExpanded)
+                                    }
+                                    isExpanded={isInfoExpanded}
+                                >
+                                    <Flex direction={{ default: 'column' }}>
+                                        <ExternalLink>
+                                            <a
+                                                href="https://github.com/stackrox/central-login"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                GitHub Action for short-lived access
+                                            </a>
+                                        </ExternalLink>
+                                    </Flex>
+                                </ExpandableSection>
+                            </Flex>
+                        </Alert>
+                    </PageSection>
                 </>
             ) : (
                 <AccessControlBreadcrumbs

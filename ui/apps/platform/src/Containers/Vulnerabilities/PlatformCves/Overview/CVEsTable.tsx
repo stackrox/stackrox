@@ -28,6 +28,7 @@ import CvssFormatted from 'Components/CvssFormatted';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 
+import ExpandRowTh from 'Components/ExpandRowTh';
 import {
     CLUSTER_CVE_STATUS_SORT_FIELD,
     CVE_SORT_FIELD,
@@ -113,7 +114,7 @@ function CVEsTable({
         >
             <Thead noWrap>
                 <Tr>
-                    <Th aria-label="Expand row" />
+                    <ExpandRowTh />
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
                     <Th sort={getSortParams(CLUSTER_CVE_STATUS_SORT_FIELD)}>CVE status</Th>
