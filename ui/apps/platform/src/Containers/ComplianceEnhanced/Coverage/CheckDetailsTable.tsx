@@ -1,8 +1,6 @@
 import React from 'react';
 import { generatePath, Link } from 'react-router-dom';
 import {
-    Button,
-    ButtonVariant,
     Pagination,
     Toolbar,
     ToolbarContent,
@@ -157,12 +155,10 @@ function CheckDetailsTable({
                                         <Td dataLabel="Last scanned">{firstDiscoveredAsPhrase}</Td>
                                         <Td dataLabel="Compliance status">
                                             <Tooltip content={clusterStatusObject.tooltipText}>
-                                                <Button isInline variant={ButtonVariant.link}>
-                                                    <IconText
-                                                        icon={clusterStatusObject.icon}
-                                                        text={clusterStatusObject.statusText}
-                                                    />
-                                                </Button>
+                                                <IconText
+                                                    icon={clusterStatusObject.icon}
+                                                    text={clusterStatusObject.statusText}
+                                                />
                                             </Tooltip>
                                         </Td>
                                     </Tr>

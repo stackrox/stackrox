@@ -185,7 +185,6 @@ function ClusterDetailsPage() {
             <PageSection>
                 <ClusterDetailsTable
                     checkResultsCount={checkResultsResponse?.totalCount ?? 0}
-                    clusterId={clusterId}
                     profileName={profileName}
                     tableState={tableState}
                     pagination={pagination}
