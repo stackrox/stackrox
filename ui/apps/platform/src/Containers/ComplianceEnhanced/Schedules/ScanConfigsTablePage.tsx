@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useCallback } from 'react';
 import { generatePath, Link, useHistory } from 'react-router-dom';
-import { format } from 'date-fns';
 import pluralize from 'pluralize';
 
 import {
@@ -49,11 +48,14 @@ import { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
-import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../../compliance.constants';
-import { SCAN_CONFIG_NAME_QUERY } from '../compliance.scanConfigs.constants';
-import { scanConfigDetailsPath } from '../compliance.scanConfigs.routes';
-import { formatScanSchedule } from '../compliance.scanConfigs.utils';
-import ScanConfigActionsColumn from '../ScanConfigActionsColumn';
+import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
+import { SCAN_CONFIG_NAME_QUERY } from './compliance.scanConfigs.constants';
+import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
+import {
+    formatScanSchedule,
+    getTimeWithHourMinuteFromISO8601,
+} from './compliance.scanConfigs.utils';
+import ScanConfigActionsColumn from './ScanConfigActionsColumn';
 
 type ScanConfigsTablePageProps = {
     hasWriteAccessForCompliance: boolean;
@@ -193,7 +195,7 @@ function ScanConfigsTablePage({
                     <Td dataLabel="Schedule">{formatScanSchedule(scanConfig.scanSchedule)}</Td>
                     <Td dataLabel="Last run">
                         {lastExecutedTime
-                            ? format(lastExecutedTime, 'DD MMM YYYY, h:mm:ss A')
+                            ? getTimeWithHourMinuteFromISO8601(lastExecutedTime)
                             : 'Scanning now'}
                     </Td>
                     <Td dataLabel="Clusters">
