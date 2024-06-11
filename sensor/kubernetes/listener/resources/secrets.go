@@ -396,6 +396,8 @@ func (s *secretDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 	}
 
 	parsedID := string(secret.GetUID())
+	log.Debugf("ROX-24163 processing secret event %q for ID %q (parsed from %q) type %q",
+		action.String(), parsedID, secret.GetUID(), string(secret.Type))
 	switch action {
 	case central.ResourceAction_SYNC_RESOURCE, central.ResourceAction_CREATE_RESOURCE:
 		s.regStore.AddSecretID(parsedID)

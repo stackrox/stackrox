@@ -206,7 +206,7 @@ type metricDispatcher struct {
 
 func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
 	comp := env.InformerTraceLogs.Setting()
-	if action == central.ResourceAction_SYNC_RESOURCE {
+	if action == central.ResourceAction_SYNC_RESOURCE || action == central.ResourceAction_REMOVE_RESOURCE {
 		switch v := obj.(type) {
 		case *v1rbac.Role:
 			if comp == "all" || comp == "role" {
