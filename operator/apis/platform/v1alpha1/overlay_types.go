@@ -92,7 +92,7 @@ type K8sObjectOverlay struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Optional",order=4
 	Optional bool `json:"optional,omitempty"`
 	// List of patches to apply to resource.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Patches",order=4
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Patches",order=5
 	Patches []*K8sObjectOverlayPatch `json:"patches,omitempty"`
 }
 
