@@ -471,11 +471,12 @@ func GetComplianceClusterScanV2Count(_ *testing.T, clusterID string) *v2.Complia
 }
 
 // GetComplianceProfileScanV2Count returns V2 count matching that from GetComplianceStorageProfileScanCount
-func GetComplianceProfileScanV2Count(_ *testing.T, profileName string) *v2.ComplianceProfileScanStats {
+func GetComplianceProfileScanV2Count(_ *testing.T, profileName string, benchmarks []*v2.ComplianceBenchmark) *v2.ComplianceProfileScanStats {
 	return &v2.ComplianceProfileScanStats{
 		ProfileName: profileName,
 		Title:       fmt.Sprintf("test_title_%s", profileName),
 		Version:     fmt.Sprintf("test_version_%s", profileName),
+		Benchmarks:  benchmarks,
 		CheckStats: []*v2.ComplianceCheckStatusCount{
 			{
 				Count:  failCount,

@@ -24,6 +24,7 @@ message ComplianceProfileScanStats {
   string profile_name = 2;
   string title = 3;
   string version = 4;
+  repeated ComplianceBenchmark benchmarks = 5;
 }
 
 // ComplianceClusterScanStats provides scan stats overview based on cluster

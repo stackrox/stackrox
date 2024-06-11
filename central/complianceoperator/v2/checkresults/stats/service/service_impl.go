@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
@@ -48,7 +49,7 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore, scanDS complianceScanDS.DataStore, clusterDS clusterDatastore.DataStore) Service {
+func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore, scanDS complianceScanDS.DataStore, benchmarkDS benchmarksDS.DataStore, clusterDS clusterDatastore.DataStore) Service {
 	return &serviceImpl{
 		complianceResultsDS: complianceResultsDS,
 		scanConfigDS:        scanConfigDS,
@@ -56,6 +57,7 @@ func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConf
 		profileDS:           profileDS,
 		scanDS:              scanDS,
 		clusterDS:           clusterDS,
+		benchmarkDS:         benchmarkDS,
 	}
 }
 
@@ -68,6 +70,7 @@ type serviceImpl struct {
 	profileDS           profileDatastore.DataStore
 	scanDS              complianceScanDS.DataStore
 	clusterDS           clusterDatastore.DataStore
+	benchmarkDS         benchmarksDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -189,6 +192,7 @@ func (s *serviceImpl) getProfileStats(ctx context.Context, parsedQuery *v1.Query
 		return nil, 0, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for request %v", countQuery)
 	}
 	profileMap := map[string]*storage.ComplianceOperatorProfileV2{}
+	profileBenchmarksMap := map[string][]*storage.ComplianceOperatorBenchmarkV2{}
 	for _, scan := range scanResults {
 		profileResults, err := s.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
 			AddExactMatches(search.ComplianceOperatorProfileName, scan.ProfileName).ProtoQuery())
@@ -200,9 +204,18 @@ func (s *serviceImpl) getProfileStats(ctx context.Context, parsedQuery *v1.Query
 		}
 
 		profileMap[scan.ProfileName] = profileResults[0]
+
+		// Get the benchmarks
+		if _, found := profileBenchmarksMap[scan.ProfileName]; !found {
+			benchmarks, err := s.benchmarkDS.GetBenchmarksByProfileName(ctx, scan.ProfileName)
+			if err != nil {
+				return nil, 0, errors.Wrapf(err, "failed to retrieve benchmarks for profile %q.", scan.ProfileName)
+			}
+			profileBenchmarksMap[scan.ProfileName] = benchmarks
+		}
 	}
 
-	return storagetov2.ComplianceV2ProfileStats(scanResults, profileMap), count, nil
+	return storagetov2.ComplianceV2ProfileStats(scanResults, profileMap, profileBenchmarksMap), count, nil
 }
 
 // GetComplianceClusterScanStats lists current scan stats for a cluster for each scan configuration
@@ -336,7 +349,7 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 	clusterErrors := make(map[string][]string, len(scanResults))
 	for _, result := range scanResults {
 		// Get the integrations if we can.  If we cannot, it could be an externally configured
-		// scan and thus we will not have a matching integration.
+		// scan, and thus we will not have a matching integration.
 		integrations, err := s.integrationDS.GetComplianceIntegrationByCluster(ctx, result.ClusterID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Unable to retrieve configuration for cluster %q", result.ClusterID)
