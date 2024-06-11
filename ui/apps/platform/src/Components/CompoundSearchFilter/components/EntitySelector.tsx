@@ -33,7 +33,6 @@ function EntitySelector({ selectedEntity, onChange, config }: EntitySelectorProp
             onChange={onChange}
             ariaLabelMenu="compound search filter entity selector menu"
             ariaLabelToggle="compound search filter entity selector toggle"
-            isDisabled={entities.length === 1}
         >
             {entities.map((entity) => {
                 const displayName = config[entity]?.displayName;
