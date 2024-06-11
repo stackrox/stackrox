@@ -46,6 +46,22 @@ func migrate(database *types.Databases) error {
 	return nil
 }
 
+func migrateProfiles(database *types.Databases) error {
+	return nil
+}
+
+func migrateRules(database *types.Databases) error {
+	return nil
+}
+
+func migrateScans(database *types.Databases) error {
+	return nil
+}
+
+func migrateResults(database *types.Databases) error {
+	return nil
+}
+
 // TODO(dont-merge): Write the additional code to support the migration
 
 // TODO(dont-merge): remove any pending TODO
