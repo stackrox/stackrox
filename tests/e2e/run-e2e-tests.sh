@@ -290,20 +290,6 @@ _EOVAULTHELP_
         fi
     fi
 
-    context="$(kubectl config current-context)"
-    cat <<_EOWARNING_
-WARNING! This script can be destructive. Depending on how it is invoked,
-it may tear down resources, install ACS and dependencies and run tests.
-Current cluster context is: '$context'.
-_EOWARNING_
-    if [[ "$PROMPT" == "true" ]]; then
-        read -p "Are you sure? " -r
-        if [[ ! $REPLY =~ ^[Yy]e?s?$ ]]; then
-            echo "Quit."
-            exit 1
-        fi
-    fi
-
     echo "Importing KV from vault. The following keys will be ignored because they do not match: ^[A-Z]."
     vault kv get -format=json kv/selfservice/stackrox-stackrox-e2e-tests/credentials \
     | jq -r '.data.data | to_entries[] | select( .key|test("^[A-Z]")|not ) | .key'
@@ -317,6 +303,20 @@ _EOWARNING_
 
     # GCP login using the CI service account is required to access infra GKE clusters.
     setup_gcp
+
+    context="$(kubectl config current-context)"
+    cat <<_EOWARNING_
+WARNING! This script can be destructive. Depending on how it is invoked,
+it may tear down resources, install ACS and dependencies and run tests.
+Current cluster context is: '$context'.
+_EOWARNING_
+    if [[ "$PROMPT" == "true" ]]; then
+        read -p "Are you sure? " -r
+        if [[ ! $REPLY =~ ^[Yy]e?s?$ ]]; then
+            echo "Quit."
+            exit 1
+        fi
+    fi
 
     if ! kubectl get nodes > /dev/null; then
         die "ERROR: Cannot access a cluster in your environment. Check KUBECONFIG, etc"
