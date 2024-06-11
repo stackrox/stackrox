@@ -109,7 +109,7 @@ require (
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
 	github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2
 	github.com/stackrox/helmtest v0.0.1
-	github.com/stackrox/k8s-overlay-patch v0.0.0-20230704092804-d66fa79cb2d1
+	github.com/stackrox/k8s-overlay-patch v0.0.0-20240610103501-74a2a4fd2bae
 	github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d
 	github.com/stackrox/scanner v0.0.0-20240418215726-f850fe61bb97
 	github.com/stretchr/testify v1.9.0
@@ -129,7 +129,7 @@ require (
 	golang.org/x/sys v0.21.0
 	golang.org/x/text v0.16.0
 	golang.org/x/time v0.5.0
-	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d
+	golang.org/x/tools v0.22.0
 	golang.stackrox.io/grpc-http1 v0.3.11
 	google.golang.org/api v0.183.0
 	google.golang.org/genproto v0.0.0-20240528184218-531527333157
@@ -218,7 +218,7 @@ require (
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/evanphx/json-patch v5.7.0+incompatible // indirect
-	github.com/evanphx/json-patch/v5 v5.8.0 // indirect
+	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/facebookincubator/flog v0.0.0-20190930132826-d2511d0ce33c // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
@@ -333,7 +333,7 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/operator-framework/operator-lib v0.11.1-0.20230607132417-ecb9be488378 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
-	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
@@ -399,7 +399,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
 	go.starlark.net v0.0.0-20230612165344-9532f5667272 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/mod v0.17.0 // indirect
+	golang.org/x/mod v0.18.0 // indirect
 	golang.org/x/term v0.21.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240521202816-d264139d666e // indirect
