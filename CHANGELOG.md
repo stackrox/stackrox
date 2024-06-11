@@ -34,8 +34,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - ROX-23155: Slim/Full Collector images have been deprecated and will be removed in a
   future release. The two image flavors are now functionally identical (neither contain any kernel drivers.)
-- ROX-23155: Kernel support packages have been deprecated. CORE_BPF collection does not require kernel-specific drivers.
-  As a result, the roxctl collector support-packages command has also been deprecated.
+- ROX-23155: Kernel support packages and driver download functionality have been deprecated and will be removed in ACS 4.7 or later.
 - The field `error` returned for failed API calls has been deprecated, and it will be removed in a future release. Instead of using the `error` field, use the `message` field. The `message` field contains the same information as the `error` field.
 - The `/v1/summary/counts` API has been deprecated in 4.5 and will be removed in the future.
 
