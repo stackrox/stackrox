@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/env"
 	metricsPkg "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
@@ -17,6 +18,8 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
+	v1 "k8s.io/api/core/v1"
+	v1rbac "k8s.io/api/rbac/v1"
 	"k8s.io/client-go/kubernetes"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
@@ -202,6 +205,40 @@ type metricDispatcher struct {
 }
 
 func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
+	comp := env.InformerTraceLogs.Setting()
+	if action == central.ResourceAction_SYNC_RESOURCE {
+		switch v := obj.(type) {
+		case *v1rbac.Role:
+			if comp == "all" || comp == "role" {
+				log.Infof("Processing action %s for Role: %s", action.String(), v.UID)
+			}
+		case *v1rbac.RoleBinding:
+			if comp == "all" || comp == "rolebinding" {
+				log.Infof("Processing action %s for RoleBinding: %s", action.String(), v.UID)
+			}
+		case *v1rbac.ClusterRole:
+			if comp == "all" || comp == "clusterrole" {
+				log.Infof("Processing action %s for ClusterRole: %s", action.String(), v.UID)
+			}
+		case *v1rbac.ClusterRoleBinding:
+			if comp == "all" || comp == "clusterrolebinding" {
+				log.Infof("Processing action %s for ClusterRolebinding: %s", action.String(), v.UID)
+			}
+		case *v1.ServiceAccount:
+			if comp == "all" || comp == "serviceaccount" {
+				log.Infof("Processing action %s for ServiceAccount: %s", action.String(), v.UID)
+			}
+		case *v1.Secret:
+			if comp == "all" || comp == "secret" {
+				log.Infof("Processing action %s for Secret: %s", action.String(), v.UID)
+			}
+		default:
+			if comp == "all" || comp == "misc" {
+				log.Infof("Processing action %s for event: %T", action.String(), obj)
+			}
+		}
+	}
+
 	start := time.Now().UnixNano()
 	dispatcher := strings.Trim(fmt.Sprintf("%T", obj), "*")
 

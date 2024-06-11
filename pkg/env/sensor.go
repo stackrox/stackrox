@@ -73,4 +73,9 @@ var (
 	// DiagnosticDataCollectionTimeout defines the timeout for the diagnostic data collection on Sensor side.
 	DiagnosticDataCollectionTimeout = registerDurationSetting("ROX_DIAGNOSTIC_DATA_COLLECTION_TIMEOUT",
 		2*time.Minute)
+
+	// InformerTraceLogs enable the trace logs for Kubernetes informer SYNC messages.
+	// You can choose between "all" for everything, or one of the following:
+	// role, rolebinding, clusterrole, clusterrolebinding, serviceaccount, secret, misc
+	InformerTraceLogs = RegisterSetting("ROX_INFORMER_TRACE_LOGS", WithDefault(""))
 )

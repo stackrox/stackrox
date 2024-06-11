@@ -44,3 +44,8 @@ func (n *OrchestratorNamespaces) IsOrchestratorNamespace(ns string) bool {
 	}
 	return kubernetes.IsSystemNamespace(ns)
 }
+
+// All returns all Namespaces
+func (n *OrchestratorNamespaces) All() []string {
+	return n.nsSet.AsSlice()
+}

@@ -6,6 +6,8 @@ on:
     - '*-nightly-*'
     branches:
     - master
+    - 'maple/customer-support'
+    - 'maple/ROX-24163-debug-server'
   pull_request:
     types:
     - opened

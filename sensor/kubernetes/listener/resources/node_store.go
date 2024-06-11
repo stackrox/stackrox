@@ -118,3 +118,7 @@ func (s *nodeStoreImpl) getNodes() []*nodeWrap {
 	}
 	return result
 }
+
+func (s *nodeStoreImpl) GetNodes() map[string]*nodeWrap {
+	return s.nodes
+}

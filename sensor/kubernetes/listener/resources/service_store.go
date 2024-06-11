@@ -182,3 +182,11 @@ func (ss *serviceStore) getService(namespace string, name string) *serviceWrap {
 
 	return ss.services[namespace][name]
 }
+
+func (ss *serviceStore) getServiceCount() int {
+	count := 0
+	for _, namespace := range ss.services {
+		count = count + len(namespace)
+	}
+	return count
+}

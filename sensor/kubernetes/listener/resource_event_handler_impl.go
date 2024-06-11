@@ -19,6 +19,7 @@ import (
 // resourceEventHandlerImpl processes OnAdd, OnUpdate, and OnDelete events, and joins the results to an output
 // channel
 type resourceEventHandlerImpl struct {
+	name       string
 	context    context.Context
 	eventLock  *sync.Mutex
 	dispatcher resources.Dispatcher

@@ -627,7 +627,7 @@ type networkEntityDetails struct {
 func (d *detectorImpl) getNetworkFlowEntityDetails(info *storage.NetworkEntityInfo) (networkEntityDetails, error) {
 	switch info.GetType() {
 	case storage.NetworkEntityInfo_DEPLOYMENT:
-		deployment := d.deploymentStore.Get(info.GetId())
+		deployment := d.deploymentStore.GetSnapshot(info.GetId())
 		if deployment == nil {
 			// Maybe the deployment is already removed. Don't run the flow through policy anymore
 			return networkEntityDetails{}, errors.Wrapf(deploymentNotFoundErr, "Deployment with ID: %q not found while trying to run network flow policy", info.GetId())

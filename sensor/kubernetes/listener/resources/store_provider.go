@@ -1,6 +1,12 @@
 package resources
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -61,6 +67,9 @@ func InitializeStore() *StoreProvider {
 		registryMirrorStore:    registrymirror.NewFileStore(),
 		nsStore:                newNamespaceStore(),
 	}
+
+	// FIXME: Conditional start
+	p.startDebugServer()
 
 	p.cleanableStores = []CleanableStore{
 		p.deploymentStore,
@@ -140,4 +149,223 @@ func (p *StoreProvider) Nodes() store.NodeStore {
 // RegistryMirrors returns the RegistryMirror store public interface.
 func (p *StoreProvider) RegistryMirrors() registrymirror.Store {
 	return p.registryMirrorStore
+}
+
+func (p *StoreProvider) startDebugServer() *http.Server {
+	handler := http.NewServeMux()
+
+	handler.HandleFunc("/debug/stats", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		stats := make(map[string]int)
+		stats["deployments"] = len(p.deploymentStore.GetAll())
+		stats["pods"] = len(p.podStore.GetAll())
+		stats["services"] = p.serviceStore.getServiceCount()
+		stats["networkpolicies"] = len(p.networkPolicyStore.All())
+		stats["rbac.roles"] = len(p.rbacStore.GetAllRoles())
+		stats["rbac.bindings"] = len(p.rbacStore.GetAllBindings())
+		stats["serviceaccounts"] = len(p.serviceAccountStore.GetAllServiceAccountIDs())
+		stats["nodes"] = len(p.nodeStore.getNodes())
+		stats["orchestratornamespaces"] = len(p.orchestratorNamespaces.All())
+		stats["imagesecrets"] = len(p.registryStore.GetAllSecretIDs())
+
+		mar, err := json.Marshal(stats)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(mar)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler.HandleFunc("/debug/all", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		d := make(map[string]interface{})
+
+		d["time_created"] = time.Now().UTC().String()
+		d["deployments"] = formatDeployments(p.deploymentStore.GetAll())
+		d["pods"] = formatPods(p.podStore.GetAll())
+		d["nodes"] = formatNodes(p.nodeStore.GetNodes())
+		d["secrets"] = p.registryStore.GetAllSecretIDs()
+		d["serviceaccounts"] = p.serviceAccountStore.GetAllServiceAccountIDs()
+
+		roles := p.rbacStore.GetAllRoles()
+		var roleRefs []string
+		for _, role := range roles {
+			roleRefs = append(roleRefs, role.UID())
+		}
+		d["rbacroles"] = roleRefs
+
+		bindings := p.rbacStore.GetAllBindings()
+		var bindingRefs []string
+		for _, binding := range bindings {
+			bindingRefs = append(bindingRefs, binding.GetID())
+		}
+		d["rbacbindings"] = bindingRefs
+
+		mar, err := json.Marshal(d)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(mar)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler.HandleFunc("/debug/deployments", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		mar, err := json.Marshal(formatDeployments(p.deploymentStore.GetAll()))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(mar)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler.HandleFunc("/debug/pods", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		mar, err := json.Marshal(formatPods(p.podStore.GetAll()))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(mar)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler.HandleFunc("/debug/nodes", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		mar, err := json.Marshal(formatNodes(p.nodeStore.GetNodes()))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(mar)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler.HandleFunc("/debug/secrets", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		mar, err := json.Marshal(p.registryStore.GetAllSecretIDs())
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(mar)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler.HandleFunc("/debug/serviceaccounts", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		mar, err := json.Marshal(p.serviceAccountStore.GetAllServiceAccountIDs())
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(mar)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler.HandleFunc("/debug/rbacroles", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		roles := p.rbacStore.GetAllRoles()
+		var roleRefs []string
+		for _, role := range roles {
+			roleRefs = append(roleRefs, role.UID())
+		}
+		mar, err := json.Marshal(roleRefs)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(mar)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler.HandleFunc("/debug/rbacbindings", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		bindings := p.rbacStore.GetAllBindings()
+		var bindingRefs []string
+		for _, binding := range bindings {
+			bindingRefs = append(bindingRefs, binding.GetID())
+		}
+		mar, err := json.Marshal(bindingRefs)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(mar)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	srv := &http.Server{Addr: "0.0.0.0:6066", Handler: handler}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			log.Warnf("Closing debugging server: %v", err)
+		}
+	}()
+	return srv
+}
+
+func formatPods(pods []*storage.Pod) map[string]string {
+	result := make(map[string]string, len(pods))
+	for _, p := range pods {
+		k := fmt.Sprintf("%s/%s", p.GetNamespace(), p.GetName())
+		result[k] = p.GetId()
+	}
+	return result
+}
+
+func formatNodes(wraps map[string]*nodeWrap) map[string]string {
+	result := make(map[string]string, len(wraps))
+	for k, w := range wraps {
+		//nolint:gosimple
+		result[k] = fmt.Sprintf("%s", w.ObjectMeta.UID)
+	}
+	return result
+}
+
+func formatDeployments(wraps []*storage.Deployment) map[string]string {
+	result := make(map[string]string, len(wraps))
+	for _, w := range wraps {
+		k := fmt.Sprintf("%s/%s", w.GetNamespace(), w.GetName())
+		result[k] = w.GetId()
+	}
+	return result
 }

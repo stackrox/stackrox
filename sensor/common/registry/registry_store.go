@@ -194,6 +194,11 @@ func (rs *Store) RemoveSecretID(id string) bool {
 	return rs.knownSecretIDs.Remove(id)
 }
 
+// GetAllSecretIDs returns array of all secret IDs
+func (rs *Store) GetAllSecretIDs() []string {
+	return rs.knownSecretIDs.AsSlice()
+}
+
 // UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
 func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string, dce config.DockerConfigEntry) error {
 	secure, skip, err := rs.checkTLS(ctx, registry)
@@ -228,6 +233,16 @@ func (rs *Store) getRegistriesInNamespace(namespace string) registries.Set {
 	defer rs.mutex.RUnlock()
 
 	return rs.store[namespace]
+}
+
+// GetAllImageRegistries returns all image registries
+func (rs *Store) GetAllImageRegistries() []types.ImageRegistry {
+	var reg []types.ImageRegistry
+	for _, ns := range rs.store {
+		reg = append(reg, ns.GetAll()...)
+	}
+	reg = append(reg, rs.globalRegistries.GetAll()...)
+	return reg
 }
 
 // GetRegistryForImageInNamespace returns the stored registry that matches image.Registry

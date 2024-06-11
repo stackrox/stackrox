@@ -65,3 +65,8 @@ func (sas *ServiceAccountStore) Remove(sa *storage.ServiceAccount) {
 	delete(sas.serviceAccountToPullSecrets, key(sa.GetNamespace(), sa.GetName()))
 	sas.serviceAccountIDs.Remove(sa.Id)
 }
+
+// GetAllServiceAccountIDs returns all SA IDs
+func (sas *ServiceAccountStore) GetAllServiceAccountIDs() []string {
+	return sas.serviceAccountIDs.AsSlice()
+}

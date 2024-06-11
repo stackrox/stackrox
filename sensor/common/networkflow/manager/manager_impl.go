@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -238,22 +239,22 @@ func NewManager(
 ) Manager {
 	enricherTicker := time.NewTicker(tickerTime)
 	mgr := &networkFlowManager{
-		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
 		clusterEntities:   clusterEntities,
 		publicIPs:         newPublicIPsManager(),
 		externalSrcs:      externalSrcs,
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
-		finished:          &sync.WaitGroup{},
+		initialSync:       &atomic.Bool{},
 		activeConnections: make(map[connection]*networkConnIndicator),
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
+		stopper:           concurrency.NewStopper(),
 	}
 
+	enricherTicker.Stop()
 	if features.SensorCapturesIntermediateEvents.Enabled() {
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage, env.NetworkFlowBufferSize.IntegerSetting())
 	} else {
-		enricherTicker.Stop()
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage)
 	}
 
@@ -275,13 +276,13 @@ type networkFlowManager struct {
 	activeConnections map[connection]*networkConnIndicator
 	activeEndpoints   map[containerEndpoint]*containerEndpointIndicator
 
-	done          concurrency.Signal
 	sensorUpdates chan *message.ExpiringMessage
 	centralReady  concurrency.Signal
 
 	ctxMutex    sync.Mutex
 	cancelCtx   context.CancelFunc
 	pipelineCtx context.Context
+	initialSync *atomic.Bool
 
 	enricherTicker *time.Ticker
 
@@ -289,7 +290,7 @@ type networkFlowManager struct {
 
 	policyDetector detector.Detector
 
-	finished *sync.WaitGroup
+	stopper concurrency.Stopper
 }
 
 func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
@@ -298,13 +299,17 @@ func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (m *networkFlowManager) Start() error {
 	go m.enrichConnections(m.enricherTicker.C)
-	go m.publicIPs.Run(&m.done, m.clusterEntities)
+	go m.publicIPs.Run(m.stopper.LowLevel().GetStopRequestSignal(), m.clusterEntities)
 	return nil
 }
 
 func (m *networkFlowManager) Stop(_ error) {
-	m.done.Signal()
-	m.finished.Wait()
+	if !m.stopper.Client().Stopped().IsDone() {
+		defer func() {
+			_ = m.stopper.Client().Stopped().Wait()
+		}()
+	}
+	m.stopper.Client().Stop()
 }
 
 func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
@@ -312,18 +317,25 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
-	if !features.SensorCapturesIntermediateEvents.Enabled() {
-		log.Info(common.LogSensorComponentEvent(e))
-		switch e {
-		case common.SensorComponentEventCentralReachable:
-			m.resetContext()
-			m.resetLastSentState()
-			m.centralReady.Signal()
-			m.enricherTicker.Reset(tickerTime)
-		case common.SensorComponentEventOfflineMode:
-			m.centralReady.Reset()
-			m.enricherTicker.Stop()
+	log.Info(common.LogSensorComponentEvent(e))
+	switch e {
+	case common.SensorComponentEventSyncFinished:
+		if features.SensorCapturesIntermediateEvents.Enabled() {
+			if m.initialSync.CompareAndSwap(false, true) {
+				m.enricherTicker.Reset(tickerTime)
+			}
+			return
 		}
+		m.resetContext()
+		m.resetLastSentState()
+		m.centralReady.Signal()
+		m.enricherTicker.Reset(tickerTime)
+	case common.SensorComponentEventOfflineMode:
+		if features.SensorCapturesIntermediateEvents.Enabled() {
+			return
+		}
+		m.centralReady.Reset()
+		m.enricherTicker.Stop()
 	}
 }
 
@@ -343,7 +355,7 @@ func (m *networkFlowManager) resetContext() {
 func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 	if features.SensorCapturesIntermediateEvents.Enabled() {
 		select {
-		case <-m.done.Done():
+		case <-m.stopper.Flow().StopRequested():
 			return false
 		case m.sensorUpdates <- message.New(msg):
 			return true
@@ -356,7 +368,7 @@ func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 	} else {
 		ctx := m.getCurrentContext()
 		select {
-		case <-m.done.Done():
+		case <-m.stopper.Flow().StopRequested():
 			return false
 		case m.sensorUpdates <- message.NewExpiring(ctx, msg):
 			return true
@@ -387,11 +399,10 @@ func (m *networkFlowManager) updateProcessesState(newProcesses map[processListen
 }
 
 func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
-	m.finished.Add(1)
-	defer m.finished.Done()
+	defer m.stopper.Flow().ReportStopped()
 	for {
 		select {
-		case <-m.done.WaitC():
+		case <-m.stopper.Flow().StopRequested():
 			return
 		case <-tickerC:
 			if !features.SensorCapturesIntermediateEvents.Enabled() && !m.centralReady.IsDone() {

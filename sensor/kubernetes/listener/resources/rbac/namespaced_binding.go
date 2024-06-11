@@ -18,6 +18,10 @@ type namespacedBinding struct {
 	subjects  []namespacedSubject // The subjects that are bound to the referenced role.
 }
 
+func (b *namespacedBinding) GetID() string {
+	return b.bindingID
+}
+
 func (b *namespacedBindingID) IsClusterBinding() bool {
 	return len(b.namespace) == 0
 }

@@ -29,6 +29,10 @@ type namespacedRole struct {
 	permissionLevel rolePermissionLevel
 }
 
+func (n *namespacedRole) UID() string {
+	return n.latestUID
+}
+
 func ruleToRolePermissionLevel(rule *v1.PolicyRule) rolePermissionLevel {
 	// Note that this will have references to the v1.PolicyRule, so we need to not take
 	// ownership or hold onto the reference beyond the end of this method. This avoids

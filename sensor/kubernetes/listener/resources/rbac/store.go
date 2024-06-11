@@ -9,6 +9,8 @@ import (
 // Store handles correlating updates to K8s rbac types and generates events from them.
 type Store interface {
 	GetNamespacedRoleIDOrEmpty(roleRef namespacedRoleRef) string
+	GetAllBindings() []*namespacedBinding
+	GetAllRoles() []namespacedRole
 
 	UpsertRole(role *v1.Role)
 	RemoveRole(role *v1.Role)

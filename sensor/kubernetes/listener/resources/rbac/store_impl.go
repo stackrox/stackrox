@@ -22,6 +22,22 @@ type storeImpl struct {
 	dirty           bool
 }
 
+func (rs *storeImpl) GetAllBindings() []*namespacedBinding {
+	var bindings []*namespacedBinding
+	for _, ns := range rs.bindings {
+		bindings = append(bindings, ns)
+	}
+	return bindings
+}
+
+func (rs *storeImpl) GetAllRoles() []namespacedRole {
+	var roles []namespacedRole
+	for _, ns := range rs.roles {
+		roles = append(roles, ns)
+	}
+	return roles
+}
+
 // Cleanup deletes all entries from store
 func (rs *storeImpl) Cleanup() {
 	rs.lock.Lock()
