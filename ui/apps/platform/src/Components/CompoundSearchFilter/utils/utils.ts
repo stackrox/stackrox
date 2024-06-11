@@ -1,6 +1,9 @@
 import { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 
+import { SearchFilter } from 'types/search';
+import { SetSearchFilter } from 'hooks/useURLSearch';
 import {
+    OnSearchPayload,
     PartialCompoundSearchFilterConfig,
     SearchFilterAttribute,
     SearchFilterAttributeName,
@@ -102,3 +105,25 @@ export function makeFilterChipDescriptors(
         }))
     );
 }
+
+// Function to take a compound search "onSearch" payload and update the URL
+export const onURLSearch = (
+    searchFilter: SearchFilter,
+    setSearchFilter: SetSearchFilter,
+    payload: OnSearchPayload
+) => {
+    const { action, category, value } = payload;
+    const currentSelection = searchFilter[category] || [];
+    let newSelection = !Array.isArray(currentSelection) ? [currentSelection] : currentSelection;
+    if (action === 'ADD') {
+        newSelection = [...newSelection, value];
+    } else if (action === 'REMOVE') {
+        newSelection = newSelection.filter((datum) => datum !== value);
+    } else {
+        // Do nothing
+    }
+    setSearchFilter({
+        ...searchFilter,
+        [category]: newSelection,
+    });
+};

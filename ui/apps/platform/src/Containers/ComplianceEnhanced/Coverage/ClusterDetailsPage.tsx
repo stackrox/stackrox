@@ -29,6 +29,7 @@ import {
     profileCheckSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
 
+import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import ClusterDetailsTable from './ClusterDetailsTable';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
@@ -95,22 +96,8 @@ function ClusterDetailsPage() {
         history.push(path);
     }
 
-    // @TODO: Consider making a function to make this more reusable
     const onSearch = (payload: OnSearchPayload) => {
-        const { action, category, value } = payload;
-        const currentSelection = searchFilter[category] || [];
-        let newSelection = !Array.isArray(currentSelection) ? [currentSelection] : currentSelection;
-        if (action === 'ADD') {
-            newSelection.push(value);
-        } else if (action === 'REMOVE') {
-            newSelection = newSelection.filter((datum) => datum !== value);
-        } else {
-            // Do nothing
-        }
-        setSearchFilter({
-            ...searchFilter,
-            [category]: newSelection,
-        });
+        onURLSearch(searchFilter, setSearchFilter, payload);
     };
 
     const onCheckStatusSelect = (
