@@ -9,6 +9,9 @@ export ELASTICSEARCH_URL=https://${ELASTIC_USERNAME}:${ELASTIC_PASSWORD}@search-
 export ARTIFACTS_DIR="${HOME}/artifacts"
 
 git clone https://github.com/stackrox/stackrox.git
+cd stackrox
+git checkout jv-automate-perf-tests
+cd ..
 
 export KUBE_BURNER_VERSION=1.4.3
 
@@ -21,11 +24,12 @@ export KUBE_BURNER_PATH="$(pwd)/kube-burner/kube-burner"
 
 export KUBECONFIG="${ARTIFACTS_DIR}/kubeconfig"
 
-wget https://github.com/openshift/origin/releases/download/v3.10.0/openshift-origin-client-tools-v3.10.0-dd10d17-linux-64bit.tar.gz
+#wget https://github.com/openshift/origin/releases/download/v3.10.0/openshift-origin-client-tools-v3.10.0-dd10d17-linux-64bit.tar.gz
+#
+#tar -xzf openshift-origin-client-tools-v3.10.0-dd10d17-linux-64bit.tar.gz
 
-tar -xzf openshift-origin-client-tools-v3.10.0-dd10d17-linux-64bit.tar.gz
-
-export PATH="$HOME/openshift-origin-client-tools-v3.10.0-dd10d17-linux-64bit":$PATH
+#export PATH="$HOME/openshift-origin-client-tools-v3.10.0-dd10d17-linux-64bit":$PATH
+sudo cp "${HOME}/oc" /usr/bin
 
 export KUBECONFIG=$HOME/artifacts/kubeconfig
 
@@ -44,13 +48,18 @@ sudo cp roxctl /usr/local/bin
 
 sudo apt-get install jq -y
 
+# Set number of pods per node
+#oc create --filename=$HOME/stackrox/tests/performance/scale/utilities/examples/set-max-pods.yml
+
 cd ${HOME}/stackrox/tests/performance/scale/utilities
 ./start-central-and-scanner.sh "${ARTIFACTS_DIR}"
 ./wait-for-pods.sh "${ARTIFACTS_DIR}"
 ./get-bundle.sh "${ARTIFACTS_DIR}"
 ./start-secured-cluster.sh $ARTIFACTS_DIR
 
-cd ../tests/cluster-density
+sudo snap install go --channel=1.21/stable --classic
+
+cd ${HOME}/stackrox/tests/performance/scale/tests/kube-burner/cluster-density
 
 ./run-workload.sh --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces 1250 --num-deployments 20 --num-pods 1
 ./run-workload.sh --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces 1000 --num-deployments 6 --num-pods 4
