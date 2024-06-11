@@ -7,16 +7,17 @@ import (
 )
 
 const (
-	warningDeprecatedSupportPkg = `WARNING: support-packages has been deprecated
-and will be removed in a future release`
+	supportPkgHelpLong = `Commands to upload support packages for Collector.
+Note: uploaded support packages will only affect Secured Clusters on versions
+less than 4.5. Newer versions do not require support packages.`
 )
 
 // Command defines the central command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use:        "support-packages",
-		Short:      "Commands to upload support packages for Collector.",
-		Deprecated: warningDeprecatedSupportPkg,
+		Use:   "support-packages",
+		Short: "Commands to upload support packages for Collector.",
+		Long:  supportPkgHelpLong,
 	}
 
 	c.AddCommand(

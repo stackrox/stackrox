@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	warningDeprecatedUpload = `WARNING: support package uploads have been deprecated
-and will be removed in a future release`
+	uploadHelpLong = `Upload files from a collector support package to Central.
+Note: uploaded support packages will only affect Secured Clusters on versions
+less than 4.5. Newer versions do not require support packages.`
 )
 
 type collectorSPUploadCommand struct {
@@ -29,9 +30,9 @@ type collectorSPUploadCommand struct {
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	collectorSPUploadCmd := &collectorSPUploadCommand{env: cliEnvironment}
 	c := &cobra.Command{
-		Use:        "upload <package-file>",
-		Short:      "Upload files from a collector support package to Central.",
-		Deprecated: warningDeprecatedUpload,
+		Use:   "upload <package-file>",
+		Short: "Upload files from a collector support package to Central.",
+		Long:  uploadHelpLong,
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := validate(args); err != nil {
 				return err
