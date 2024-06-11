@@ -139,7 +139,7 @@ message ComplianceOperatorClusterScanConfigStatus {
 message ComplianceOperatorBenchmarkV2 {
   string id = 1; // @gotags: sql:"pk,id,type(uuid)"
   string name = 2; // @gotags: search:"Compliance Benchmark Name,hidden"
-  string version = 3;
+  string version = 3; // @gotags: search:"Compliance Benchmark Version,hidden"
   string description = 4;
   string provider = 5;
   // This is extracted from the annotation.
