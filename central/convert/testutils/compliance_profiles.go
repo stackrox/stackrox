@@ -170,9 +170,13 @@ func GetProfileV2Api(_ *testing.T) *v2.ComplianceProfile {
 		Rules:          v2ApiRules,
 		Title:          "Openshift CIS testing",
 		ProductType:    "",
-		Standards:      []string{"CIS"},
-		Product:        "",
-		Values:         values,
+		Standards: []*v2.ComplianceBenchmark{{
+			Name:      "CIS",
+			ShortName: "OCP_CIS",
+			Version:   "1-5",
+		}},
+		Product: "",
+		Values:  values,
 	}
 }
 
@@ -187,9 +191,13 @@ func GetProfilesV2Api(_ *testing.T) []*v2.ComplianceProfile {
 			Rules:          v2ApiRules,
 			Title:          "Openshift CIS testing",
 			ProductType:    "",
-			Standards:      []string{"CIS"},
-			Product:        "",
-			Values:         values,
+			Standards: []*v2.ComplianceBenchmark{{
+				Name:      "CIS",
+				ShortName: "OCP_CIS",
+				Version:   "1-5",
+			}},
+			Product: "",
+			Values:  values,
 		},
 		{
 			Id:             profileUID2,
@@ -199,9 +207,13 @@ func GetProfilesV2Api(_ *testing.T) []*v2.ComplianceProfile {
 			Rules:          v2ApiRules,
 			Title:          "Openshift CIS testing",
 			ProductType:    "",
-			Standards:      []string{"CIS"},
-			Product:        "",
-			Values:         values,
+			Standards: []*v2.ComplianceBenchmark{{
+				Name:      "CIS",
+				ShortName: "OCP_CIS",
+				Version:   "1-5",
+			}},
+			Product: "",
+			Values:  values,
 		},
 	}
 }

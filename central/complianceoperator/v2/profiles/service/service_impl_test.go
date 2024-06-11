@@ -69,9 +69,10 @@ func (s *ComplianceProfilesServiceTestSuite) TestGetComplianceProfile() {
 	s.profileDatastore.EXPECT().GetProfile(s.ctx, profileID).Return(testProfile, true, nil)
 
 	s.benchmarkDatastore.EXPECT().GetBenchmarksByProfileName(s.ctx, testProfile.GetName()).Return([]*storage.ComplianceOperatorBenchmarkV2{{
-		Id:      uuid.NewV4().String(),
-		Name:    "CIS",
-		Version: "1-5",
+		Id:        uuid.NewV4().String(),
+		Name:      "CIS",
+		ShortName: "OCP_CIS",
+		Version:   "1-5",
 	}}, nil).Times(1)
 
 	profile, err := s.service.GetComplianceProfile(s.ctx, &apiV2.ResourceByID{Id: profileID})
@@ -128,9 +129,10 @@ func (s *ComplianceProfilesServiceTestSuite) TestListComplianceProfiles() {
 
 				for _, profile := range profiles {
 					s.benchmarkDatastore.EXPECT().GetBenchmarksByProfileName(s.ctx, profile.GetName()).Return([]*storage.ComplianceOperatorBenchmarkV2{{
-						Id:      uuid.NewV4().String(),
-						Name:    "CIS",
-						Version: "1-5",
+						Id:        uuid.NewV4().String(),
+						Name:      "CIS",
+						ShortName: "OCP_CIS",
+						Version:   "1-5",
 					}}, nil).Times(1)
 				}
 			},
@@ -185,7 +187,11 @@ func (s *ComplianceProfilesServiceTestSuite) TestListProfileSummaries() {
 					Title:          "A Title",
 					ProfileVersion: "version 1",
 					RuleCount:      5,
-					Standards:      []string{"CIS"},
+					Standards: []*apiV2.ComplianceBenchmark{{
+						Name:      "CIS",
+						ShortName: "OCP_CIS",
+						Version:   "1-5",
+					}},
 				},
 			},
 			found: true,
@@ -235,9 +241,10 @@ func (s *ComplianceProfilesServiceTestSuite) TestListProfileSummaries() {
 
 				for _, profile := range profiles {
 					s.benchmarkDatastore.EXPECT().GetBenchmarksByProfileName(s.ctx, profile.GetName()).Return([]*storage.ComplianceOperatorBenchmarkV2{{
-						Id:      uuid.NewV4().String(),
-						Name:    "CIS",
-						Version: "1-5",
+						Id:        uuid.NewV4().String(),
+						Name:      "CIS",
+						ShortName: "OCP_CIS",
+						Version:   "1-5",
 					}}, nil).Times(1)
 				}
 			},

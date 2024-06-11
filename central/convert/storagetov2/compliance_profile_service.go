@@ -14,9 +14,15 @@ func ComplianceV2Profile(incoming *storage.ComplianceOperatorProfileV2, benchmar
 		})
 	}
 
-	benchmarkNames := make([]string, 0, len(benchmarks))
+	convertedBenchmarks := make([]*v2.ComplianceBenchmark, 0, len(benchmarks))
 	for _, benchmark := range benchmarks {
-		benchmarkNames = append(benchmarkNames, benchmark.GetName())
+		convertedBenchmarks = append(convertedBenchmarks, &v2.ComplianceBenchmark{
+			Name:        benchmark.GetName(),
+			Version:     benchmark.GetVersion(),
+			Description: benchmark.GetDescription(),
+			Provider:    benchmark.GetProvider(),
+			ShortName:   benchmark.GetShortName(),
+		})
 	}
 
 	return &v2.ComplianceProfile{
@@ -24,7 +30,7 @@ func ComplianceV2Profile(incoming *storage.ComplianceOperatorProfileV2, benchmar
 		Name:           incoming.GetName(),
 		ProfileVersion: incoming.GetProfileVersion(),
 		ProductType:    incoming.GetProductType(),
-		Standards:      benchmarkNames,
+		Standards:      convertedBenchmarks,
 		Description:    incoming.GetDescription(),
 		Rules:          rules,
 		Product:        incoming.GetProduct(),
@@ -49,12 +55,18 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, b
 	// list that needs to be reduced to a summary and only include profiles that match all profiles.
 	profileClusterMap := make(map[string][]string, len(incoming))
 	profileSummaryMap := make(map[string]*v2.ComplianceProfileSummary)
-	profileBenchmarkNameMap := make(map[string][]string)
+	profileBenchmarkNameMap := make(map[string][]*v2.ComplianceBenchmark)
 
 	for profileName, benchmarks := range benchmarkProfileMap {
-		benchmarkNames := make([]string, 0, len(benchmarks))
+		benchmarkNames := make([]*v2.ComplianceBenchmark, 0, len(benchmarks))
 		for _, benchmark := range benchmarks {
-			benchmarkNames = append(benchmarkNames, benchmark.GetName())
+			benchmarkNames = append(benchmarkNames, &v2.ComplianceBenchmark{
+				Name:        benchmark.GetName(),
+				Version:     benchmark.GetVersion(),
+				Description: benchmark.GetDescription(),
+				Provider:    benchmark.GetProvider(),
+				ShortName:   benchmark.GetShortName(),
+			})
 		}
 		profileBenchmarkNameMap[profileName] = benchmarkNames
 	}
