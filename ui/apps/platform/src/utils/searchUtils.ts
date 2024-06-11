@@ -1,8 +1,9 @@
 import qs from 'qs';
-import { generatePath } from 'react-router-dom';
+
 import { SearchEntry, ApiSortOption, GraphQLSortOption, SearchFilter } from 'types/search';
 import { Pagination } from 'services/types';
 import { ValueOf } from './type.utils';
+import { safeGeneratePath } from './urlUtils';
 
 /**
  *  Checks if the modifier exists in the searchOptions
@@ -314,7 +315,7 @@ export function addRegexPrefixToFilters(
 
 // Uses the generatePath function from react-router in addition to adding the query params
 export const generatePathWithQuery = (pathTemplate, params, queryParams) => {
-    const path = generatePath(pathTemplate, params);
+    const path = safeGeneratePath(pathTemplate, params, pathTemplate);
     const searchParams = new URLSearchParams(queryParams).toString();
     return `${path}?${searchParams}`;
 };
