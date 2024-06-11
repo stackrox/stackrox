@@ -107,7 +107,7 @@ jobs:
           make -C scanner CGO_ENABLED=1 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} image/scanner/bin/scanner
         fi
 
-    - name: Archive Go binary
+    - name: Archive Go binary to preserve permissions
       run: tar -cvzf go-binary.tgz scanner/image/scanner/bin/scanner
 
     - uses: ./.github/actions/upload-artifact-with-retry
@@ -159,7 +159,7 @@ jobs:
       with:
         name: go-binary-${{ matrix.name }}-${{ matrix.goos }}-${{ matrix.goarch }}
 
-    - name: Unpack Go binaries build
+    - name: Unpack Go binary
       run: tar xvzf go-binary.tgz
 
     - name: Set build tag for prerelease images
