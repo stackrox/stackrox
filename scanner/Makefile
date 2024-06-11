@@ -186,7 +186,7 @@ copy-scripts: $(image-scripts-t)
 	@echo "+ $@"
 
 .PHONY: image-scanner
-image-scanner:  $(if $(CI),,image/scanner/bin/scanner) \
+image-scanner: $(if $(CI),,image/scanner/bin/scanner) \
                $(image-scripts-t) \
                ossls-notice
 	@echo "+ $@"
