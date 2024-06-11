@@ -24,7 +24,7 @@ func SlicesEqual[T proto.Message](t *testing.T, expected, actual []T, msgAndArgs
 	areEqual := assert.Len(t, actual, len(expected), msgAndArgs)
 	for i, e := range expected {
 		a := actual[i]
-		areEqual = areEqual && Equal(t, a, e, msgAndArgs)
+		areEqual = Equal(t, a, e, msgAndArgs) && areEqual
 	}
 	return areEqual
 }
@@ -33,32 +33,24 @@ func MapSliceEqual[K comparable, T proto.Message](t *testing.T, expected, actual
 	t.Helper()
 	ek := maps.Keys(expected)
 	ea := maps.Keys(actual)
-	if !assert.ElementsMatch(t, ek, ea, msgAndArgs) {
-		return false
-	}
+	areEqual := !assert.ElementsMatch(t, ek, ea, msgAndArgs)
 	for k, v := range expected {
 		a := actual[k]
-		if !SlicesEqual(t, v, a, msgAndArgs) {
-			return false
-		}
+		areEqual = SlicesEqual(t, v, a, msgAndArgs) && areEqual
 	}
-	return true
+	return areEqual
 }
 
 func MapEqual[K comparable, T proto.Message](t *testing.T, expected, actual map[K]T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	ek := maps.Keys(expected)
 	ea := maps.Keys(actual)
-	if !assert.ElementsMatch(t, ek, ea, msgAndArgs) {
-		return false
-	}
+	areEqual := !assert.ElementsMatch(t, ek, ea, msgAndArgs)
 	for k, v := range expected {
 		a := actual[k]
-		if !Equal(t, v, a, msgAndArgs) {
-			return false
-		}
+		areEqual = Equal(t, v, a, msgAndArgs) && areEqual
 	}
-	return true
+	return areEqual
 }
 
 func toJson(m proto.Message) (string, error) {
