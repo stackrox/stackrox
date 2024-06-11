@@ -119,4 +119,9 @@ var (
 	// DelegateWatchedImageReprocessing when set to true reprocessing of watched images may be delegated to secured clusters based
 	// on the delegated scanning config.
 	DelegateWatchedImageReprocessing = registerFeature("Enables delegating scans for watched images during reprocessing", "ROX_DELEGATE_WATCHED_IMAGE_REPROCESSING", true)
+
+	// SensorSingleScanPerImage when set to true forces Sensor to allow only a single scan per image to be active at any given
+	// time. Will only have an affect if UnqualifiedSearchRegistries is also enabled.
+	// TODO(ROX-24641): Remove dependency on the UnqualifiedSearchRegistries feature so that this is enabled by default.
+	SensorSingleScanPerImage = registerFeature("Sensor will only allow a single active scan per image", "ROX_SENSOR_SINGLE_SCAN", true)
 )

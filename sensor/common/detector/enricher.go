@@ -143,11 +143,8 @@ outer:
 }
 
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
-	if features.UnqualifiedSearchRegistries.Enabled() {
-		// Guarding this with a feature flag because it's planned to be introduced in a
-		// patch release. This is intended to address an issue where many scan requests
-		// are sent for the same image in quick succession. This would occur
-		// when one image was referenced by multiple names in a cluster.
+	if features.UnqualifiedSearchRegistries.Enabled() && features.SensorSingleScanPerImage.Enabled() {
+		// TODO(ROX-24641): Remove dependency on the UnqualifiedSearchRegistries feature so that this is enabled by default.
 		c.scanAndSetWithLock(ctx, svc, req)
 		return
 	}
@@ -183,7 +180,7 @@ func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageService
 	defer c.signal.Signal()
 
 	// A cacheValue is unique per image, obtain the lock before scanning to avoid sending multiple
-	// scan requests for the same image name at the same time.
+	// scan requests for the same image at the same time.
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -207,25 +204,29 @@ func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageService
 		// Ignore the error and set the image to something basic,
 		// so alerting can progress.
 		log.Errorf("Scan request failed for image %q: %s", req.containerImage.GetName().GetFullName(), err)
-		existingNames := c.image.GetNames()
-		c.image = types.ToImage(req.containerImage)
-		updateNames(c.image, existingNames)
+		c.updateImageNoLock(types.ToImage(req.containerImage))
 		return
 	}
 
 	log.Debugf("Successful image scan for image %s: %d components returned by scanner", req.containerImage.GetName().GetFullName(), len(scannedImage.GetImage().GetScan().GetComponents()))
-	existingNames := c.image.GetNames()
-	c.image = scannedImage.GetImage()
-	updateNames(c.image, existingNames)
+	c.updateImageNoLock(scannedImage.GetImage())
 }
 
-// updateNames ensures existing names are present in image.Names.
-func updateNames(image *storage.Image, existingNames []*storage.ImageName) {
-	if image == nil || len(existingNames) == 0 {
+// updateImageNoLock will replace the internal image with the new image
+// while ensuring any existing image names are kept.
+func (c *cacheValue) updateImageNoLock(image *storage.Image) {
+	if c == nil || image == nil {
 		return
 	}
 
-	image.Names = protoutils.SliceUnique(append(image.GetNames(), existingNames...))
+	existingNames := c.image.GetNames()
+	c.image = image
+
+	if len(existingNames) == 0 {
+		return
+	}
+
+	c.image.Names = protoutils.SliceUnique(append(c.image.GetNames(), existingNames...))
 }
 
 func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {

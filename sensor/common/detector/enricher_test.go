@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/utils"
@@ -156,6 +157,7 @@ func (m *mockImageServiceServer) ScanImageInternal(_ context.Context, req *v1.Sc
 
 func (s *enricherSuite) TestScanAndSetWithLock() {
 	testutils.MustUpdateFeature(s.T(), features.UnqualifiedSearchRegistries, true)
+	testutils.MustUpdateFeature(s.T(), features.SensorSingleScanPerImage, true)
 
 	req := createScanImageRequest(0, "nginx-id", "nginx:latest", false)
 	req2 := createScanImageRequest(0, "nginx-id", "quay.io/nginx:latest", false)
@@ -214,4 +216,82 @@ func runAsyncScans(e *enricher, reqs []*scanImageRequest) *sync.WaitGroup {
 	}
 
 	return waitGroup
+}
+
+func (s *enricherSuite) TestUpdateImageNoLock() {
+	name1, _, err := imageUtils.GenerateImageNameFromString("nginx:latest")
+	require.NoError(s.T(), err)
+
+	name2, _, err := imageUtils.GenerateImageNameFromString("nginx:1.0")
+	require.NoError(s.T(), err)
+
+	name3, _, err := imageUtils.GenerateImageNameFromString("nginx:1.14.2")
+	require.NoError(s.T(), err)
+
+	s.T().Run("no panics on nils", func(t *testing.T) {
+		var cValue *cacheValue
+		assert.NotPanics(t, func() { cValue.updateImageNoLock(nil) })
+
+		cValue = new(cacheValue)
+		assert.NotPanics(t, func() { cValue.updateImageNoLock(nil) })
+	})
+
+	s.T().Run("do not update cache value on nil image", func(t *testing.T) {
+		genCacheValue := func() *cacheValue { return &cacheValue{image: &storage.Image{Name: name1}} }
+		cValue := genCacheValue()
+		cValue.updateImageNoLock(nil)
+		assert.Equal(t, genCacheValue(), cValue)
+	})
+
+	s.T().Run("keep existing names when name removed", func(t *testing.T) {
+		cValue := &cacheValue{image: &storage.Image{
+			Name:  name1,
+			Names: []*storage.ImageName{name1, name2},
+		}}
+
+		updatedImage := &storage.Image{
+			Name:  name2,
+			Names: []*storage.ImageName{name2},
+		}
+
+		cValue.updateImageNoLock(updatedImage)
+		assert.Len(t, cValue.image.Names, 2)
+		assert.Contains(t, cValue.image.Names, name1)
+		assert.Contains(t, cValue.image.Names, name2)
+	})
+
+	s.T().Run("append to names when new one added", func(t *testing.T) {
+		cValue := &cacheValue{image: &storage.Image{
+			Name:  name1,
+			Names: []*storage.ImageName{name1},
+		}}
+
+		updatedImage := &storage.Image{
+			Name:  name2,
+			Names: []*storage.ImageName{name1, name2},
+		}
+
+		cValue.updateImageNoLock(updatedImage)
+		assert.Len(t, cValue.image.Names, 2)
+		assert.Contains(t, cValue.image.Names, name1)
+		assert.Contains(t, cValue.image.Names, name2)
+	})
+
+	s.T().Run("append to names when new one added and one removed", func(t *testing.T) {
+		cValue := &cacheValue{image: &storage.Image{
+			Name:  name1,
+			Names: []*storage.ImageName{name1, name2},
+		}}
+
+		updatedImage := &storage.Image{
+			Name:  name2,
+			Names: []*storage.ImageName{name1, name3},
+		}
+
+		cValue.updateImageNoLock(updatedImage)
+		assert.Len(t, cValue.image.Names, 3)
+		assert.Contains(t, cValue.image.Names, name1)
+		assert.Contains(t, cValue.image.Names, name2)
+		assert.Contains(t, cValue.image.Names, name3)
+	})
 }
