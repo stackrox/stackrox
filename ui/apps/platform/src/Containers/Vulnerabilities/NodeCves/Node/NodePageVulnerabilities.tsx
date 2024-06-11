@@ -17,7 +17,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { getTableUIState } from 'utils/getTableUIState';
-import { getUrlQueryStringForSearchFilter, getHasSearchApplied } from 'utils/searchUtils';
+import { getHasSearchApplied } from 'utils/searchUtils';
 
 import BySeveritySummaryCard from 'Containers/Vulnerabilities/components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from 'Containers/Vulnerabilities/WorkloadCves/SummaryCards/CvesByStatusSummaryCard';
@@ -28,6 +28,7 @@ import {
 import {
     getHiddenSeverities,
     getHiddenStatuses,
+    getRegexScopedQueryString,
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
 
@@ -51,7 +52,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const query = getUrlQueryStringForSearchFilter(querySearchFilter);
+    const query = getRegexScopedQueryString(querySearchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
