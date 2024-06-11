@@ -17,9 +17,11 @@ import {
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
-import { getTimeHoursMinutes } from 'utils/dateUtils';
 
-import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import {
+    ScanConfigFormValues,
+    getHourMinuteStringFromScheduleBase,
+} from '../compliance.scanConfigs.utils';
 
 function ScanConfigOptions(): ReactElement {
     const formik: FormikContextType<ScanConfigFormValues> = useFormikContext();
@@ -38,9 +40,7 @@ function ScanConfigOptions(): ReactElement {
         isValid?: boolean
     ): void {
         if (isValid && hour !== undefined) {
-            const date = new Date();
-            date.setHours(hour, minute, 0, 0);
-            const timeString = getTimeHoursMinutes(date);
+            const timeString = getHourMinuteStringFromScheduleBase({ hour, minute: minute ?? 0 });
             formik.setFieldValue('parameters.time', timeString);
         } else {
             formik.setFieldValue('parameters.time', time);
@@ -196,9 +196,11 @@ function ScanConfigOptions(): ReactElement {
                                             errors={formik.errors}
                                             isRequired
                                             touched={formik.touched}
+                                            helperText="Select scan time in UTC"
                                         >
                                             <TimePicker
                                                 time={formik.values.parameters.time}
+                                                is24Hour
                                                 onChange={handleTimeChange}
                                                 inputProps={{
                                                     onBlur: formik.handleBlur,

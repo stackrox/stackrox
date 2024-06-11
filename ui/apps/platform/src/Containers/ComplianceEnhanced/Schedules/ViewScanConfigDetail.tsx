@@ -16,7 +16,6 @@ import {
     FlexItem,
     PageSection,
     Spinner,
-    Timestamp,
     Title,
 } from '@patternfly/react-core';
 
@@ -33,7 +32,11 @@ import {
 } from 'services/ComplianceScanConfigurationService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import { customBodyDefault, getSubjectDefault } from './compliance.scanConfigs.utils';
+import {
+    customBodyDefault,
+    getSubjectDefault,
+    getTimeWithHourMinuteFromISO8601,
+} from './compliance.scanConfigs.utils';
 import ScanConfigParametersView from './components/ScanConfigParametersView';
 import ScanConfigProfilesView from './components/ScanConfigProfilesView';
 import ScanConfigClustersTable from './components/ScanConfigClustersTable';
@@ -189,27 +192,19 @@ function ViewScanConfigDetail({
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Last run</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            {scanConfig.lastExecutedTime ? (
-                                                <Timestamp
-                                                    date={new Date(scanConfig.lastExecutedTime)}
-                                                    dateFormat="short"
-                                                    timeFormat="long"
-                                                    className="pf-v5-u-color-100 pf-v5-u-font-size-md"
-                                                />
-                                            ) : (
-                                                'Scan is in progress'
-                                            )}
+                                            {scanConfig.lastExecutedTime
+                                                ? getTimeWithHourMinuteFromISO8601(
+                                                      scanConfig.lastExecutedTime
+                                                  )
+                                                : 'Scan is in progress'}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Last updated</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Timestamp
-                                                date={new Date(scanConfig.lastUpdatedTime)}
-                                                dateFormat="short"
-                                                timeFormat="long"
-                                                className="pf-v5-u-color-100 pf-v5-u-font-size-md"
-                                            />
+                                            {getTimeWithHourMinuteFromISO8601(
+                                                scanConfig.lastUpdatedTime
+                                            )}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                 </ScanConfigParametersView>
