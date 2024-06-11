@@ -9,6 +9,11 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
+const (
+	warningDeprecatedUpload = `WARNING: support package uploads have been deprecated
+and will be removed in a future release`
+)
+
 type collectorSPUploadCommand struct {
 	// Properties that are bound to cobra flags.
 	overwrite    bool
@@ -24,8 +29,9 @@ type collectorSPUploadCommand struct {
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	collectorSPUploadCmd := &collectorSPUploadCommand{env: cliEnvironment}
 	c := &cobra.Command{
-		Use:   "upload <package-file>",
-		Short: "[Deprecated] Upload files from a collector support package to Central.",
+		Use:        "upload <package-file>",
+		Short:      "Upload files from a collector support package to Central.",
+		Deprecated: warningDeprecatedUpload,
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := validate(args); err != nil {
 				return err
