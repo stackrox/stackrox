@@ -323,10 +323,10 @@ export const nodeCVESearchFilterConfig = {
     displayName: 'Node CVE',
     searchCategory: 'NODE_VULNERABILITIES',
     attributes: {
-        ID: {
-            displayName: 'ID',
-            filterChipLabel: 'Node CVE ID',
-            searchTerm: 'CVE ID',
+        Name: {
+            displayName: 'Name',
+            filterChipLabel: 'Node CVE',
+            searchTerm: 'CVE',
             inputType: 'autocomplete',
         },
         'Discovered Time': {
