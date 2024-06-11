@@ -58,9 +58,9 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, b
 	profileBenchmarkNameMap := make(map[string][]*v2.ComplianceBenchmark)
 
 	for profileName, benchmarks := range benchmarkProfileMap {
-		benchmarkNames := make([]*v2.ComplianceBenchmark, 0, len(benchmarks))
+		convertedBenchmarks := make([]*v2.ComplianceBenchmark, 0, len(benchmarks))
 		for _, benchmark := range benchmarks {
-			benchmarkNames = append(benchmarkNames, &v2.ComplianceBenchmark{
+			convertedBenchmarks = append(convertedBenchmarks, &v2.ComplianceBenchmark{
 				Name:        benchmark.GetName(),
 				Version:     benchmark.GetVersion(),
 				Description: benchmark.GetDescription(),
@@ -68,7 +68,7 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, b
 				ShortName:   benchmark.GetShortName(),
 			})
 		}
-		profileBenchmarkNameMap[profileName] = benchmarkNames
+		profileBenchmarkNameMap[profileName] = convertedBenchmarks
 	}
 
 	// Used to maintain sort order from the query since maps are unordered.
