@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    Divider,
     Flex,
     PageSection,
     Pagination,
@@ -21,6 +22,10 @@ import { getUrlQueryStringForSearchFilter, getHasSearchApplied } from 'utils/sea
 import BySeveritySummaryCard from 'Containers/Vulnerabilities/components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from 'Containers/Vulnerabilities/WorkloadCves/SummaryCards/CvesByStatusSummaryCard';
 import {
+    nodeCVESearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+} from 'Components/CompoundSearchFilter/types';
+import {
     getHiddenSeverities,
     getHiddenStatuses,
     parseQuerySearchFilter,
@@ -31,13 +36,19 @@ import useNodeVulnerabilities from './useNodeVulnerabilities';
 import useNodeSummaryData from './useNodeSummaryData';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
+import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
+
+const searchFilterConfig = {
+    NodeCVE: nodeCVESearchFilterConfig,
+    'Node Component': nodeComponentSearchFilterConfig,
+};
 
 export type NodePageVulnerabilitiesProps = {
     nodeId: string;
 };
 
 function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
-    const { searchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
 
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const query = getUrlQueryStringForSearchFilter(querySearchFilter);
@@ -74,6 +85,18 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                 <Text>Review and triage vulnerability data scanned on this node</Text>
             </PageSection>
             <PageSection isFilled className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
+                <AdvancedFiltersToolbar
+                    className="pf-v5-u-px-sm pf-v5-u-pb-0"
+                    searchFilter={searchFilter}
+                    searchFilterConfig={searchFilterConfig}
+                    onFilterChange={(newFilter, { action }) => {
+                        setSearchFilter(newFilter);
+
+                        if (action === 'ADD') {
+                            // TODO - Add analytics tracking ROX-24509
+                        }
+                    }}
+                />
                 <SummaryCardLayout isLoading={summaryRequest.loading} error={summaryRequest.error}>
                     <SummaryCard
                         loadingText={'Loading node CVEs by severity summary'}
@@ -98,11 +121,12 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                         )}
                     />
                 </SummaryCardLayout>
+                <Divider component="div" />
                 <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100 pf-v5-u-p-lg">
                     <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                                <Title headingLevel="h2" className="pf-v5-u-w-50">
+                                <Title headingLevel="h2">
                                     {data ? (
                                         `${pluralize(
                                             data.node.nodeVulnerabilityCount,
