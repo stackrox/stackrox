@@ -26,15 +26,14 @@ type auditLogCollectionManagerImpl struct {
 	receivedInitialStateFromCentral concurrency.Flag
 	fileStates                      map[string]*storage.AuditLogFileState
 	eligibleComplianceNodes         map[string]sensor.ComplianceService_CommunicateServer
+	updaterTicker                   *time.Ticker
 
 	auditEventMsgs   chan *sensor.MsgFromCompliance
 	fileStateUpdates chan *message.ExpiringMessage
 
-	stopSig        concurrency.Signal
+	stopper        concurrency.Stopper
 	forceUpdateSig concurrency.Signal
 	centralReady   concurrency.Signal
-
-	updateInterval time.Duration
 
 	fileStateLock  sync.RWMutex
 	connectionLock sync.RWMutex
@@ -42,12 +41,17 @@ type auditLogCollectionManagerImpl struct {
 
 func (a *auditLogCollectionManagerImpl) Start() error {
 	go a.runStateSaver()
-	go a.runUpdater()
+	go a.runUpdater(a.updaterTicker.C)
 	return nil
 }
 
 func (a *auditLogCollectionManagerImpl) Stop(_ error) {
-	a.stopSig.Signal()
+	if !a.stopper.Client().Stopped().IsDone() {
+		defer func() {
+			_ = a.stopper.Client().Stopped().Wait()
+		}()
+	}
+	a.stopper.Client().Stop()
 }
 
 func (a *auditLogCollectionManagerImpl) Notify(e common.SensorComponentEvent) {
@@ -86,7 +90,7 @@ func (a *auditLogCollectionManagerImpl) ForceUpdate() {
 func (a *auditLogCollectionManagerImpl) runStateSaver() {
 	for {
 		select {
-		case <-a.stopSig.Done():
+		case <-a.stopper.Flow().StopRequested():
 			return
 		case msg := <-a.auditEventMsgs:
 			node := msg.GetNode()
@@ -116,18 +120,18 @@ func (a *auditLogCollectionManagerImpl) updateFileState(node string, latestEvent
 	}
 }
 
-func (a *auditLogCollectionManagerImpl) runUpdater() {
-	ticker := time.NewTicker(a.updateInterval)
-	defer ticker.Stop()
+func (a *auditLogCollectionManagerImpl) runUpdater(tickerC <-chan time.Time) {
+	defer a.stopper.Flow().ReportStopped()
+	defer a.updaterTicker.Stop()
 
-	for !a.stopSig.IsDone() {
+	for {
 		select {
-		case <-a.stopSig.Done():
+		case <-a.stopper.Flow().StopRequested():
 			return
 		case <-a.forceUpdateSig.Done():
 			a.sendUpdate()
 			a.forceUpdateSig.Reset()
-		case <-ticker.C:
+		case <-tickerC:
 			a.sendUpdate()
 		}
 	}
@@ -139,7 +143,7 @@ func (a *auditLogCollectionManagerImpl) sendUpdate() {
 	if a.shouldSendUpdateToCentral(fileStates) {
 		select {
 		case a.fileStateUpdates <- a.getCentralUpdateMsg(fileStates):
-		case <-a.stopSig.Done():
+		case <-a.stopper.Flow().StopRequested():
 		}
 	}
 }
