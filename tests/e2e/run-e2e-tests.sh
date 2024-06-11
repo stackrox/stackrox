@@ -125,6 +125,7 @@ get_initial_options() {
 }
 
 if [[ ! -f "/i-am-rox-ci-image" ]]; then
+    cd "${ROOT}"
     handle_tag_requirements "$@"
     kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
     mkdir -p "$QA_TEST_DEBUG_LOGS"
