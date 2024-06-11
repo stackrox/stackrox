@@ -738,7 +738,7 @@ func (b *sendNetflowsSuite) SetupTest() {
 }
 
 func (b *sendNetflowsSuite) TeardownTest() {
-	b.m.done.Signal()
+	b.m.stopper.Client().Stop()
 }
 
 func (b *sendNetflowsSuite) updateConn(pair *connectionPair) {
