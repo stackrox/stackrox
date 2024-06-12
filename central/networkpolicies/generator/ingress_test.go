@@ -432,7 +432,7 @@ func TestGenerateIngressRule_ScopeAlienDeployment(t *testing.T) {
 		},
 	}
 	rule := generateIngressRule(tgtDeployment, portDesc{}, nss)
-	assert.Equal(t, expectedPeers, rule.From)
+	protoassert.SlicesEqual(t, expectedPeers, rule.From)
 }
 
 func TestGenerateIngressRule_ScopeAlienNSOnly(t *testing.T) {

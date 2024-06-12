@@ -482,5 +482,5 @@ func TestConvertFeatures(t *testing.T) {
 	}
 
 	converted := convertFeatures(metadata, features, "")
-	assert.Equal(t, expectedFeatures, converted)
+	protoassert.SlicesEqual(t, expectedFeatures, converted)
 }

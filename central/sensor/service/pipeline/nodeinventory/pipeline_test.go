@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -145,7 +146,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 			}
 			if tt.wantInjectorContain != nil {
 				inj := tt.args.injector.(*recordingInjector)
-				assert.Equal(t, tt.wantInjectorContain, inj.getSentACKs())
+				protoassert.SlicesEqual(t, tt.wantInjectorContain, inj.getSentACKs())
 			}
 		})
 	}

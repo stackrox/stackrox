@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -102,7 +103,7 @@ func TestFilterProcesses(t *testing.T) {
 			for _, p := range c.processes {
 				cleanProcessIndicator(p)
 			}
-			assert.Equal(t, c.processes[:c.expectedNumber], filterProcesses(c.processes, c.maxSize, &c.currSize))
+			protoassert.SlicesEqual(t, c.processes[:c.expectedNumber], filterProcesses(c.processes, c.maxSize, &c.currSize))
 		})
 	}
 }
@@ -159,7 +160,7 @@ func TestFilterViolations(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.violations[:c.expectedNumber], filterViolations(c.violations, c.maxSize, &c.currSize))
+			protoassert.SlicesEqual(t, c.violations[:c.expectedNumber], filterViolations(c.violations, c.maxSize, &c.currSize))
 		})
 	}
 }
