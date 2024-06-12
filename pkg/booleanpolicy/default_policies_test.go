@@ -1859,7 +1859,7 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 			for _, v := range c.expectedViolations {
 				expectedMessages = append(expectedMessages, &storage.Alert_Violation{Message: v})
 			}
-			suite.Equal(matched.AlertViolations, expectedMessages)
+			protoassert.SlicesEqual(suite.T(), matched.AlertViolations, expectedMessages)
 		})
 	}
 }
@@ -2625,7 +2625,7 @@ func (suite *DefaultPoliciesTestSuite) TestAutomountServiceAccountToken() {
 			violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 			suite.NoError(err, "deployment matcher run must succeed")
 			suite.Empty(violations.ProcessViolation)
-			suite.Equal(c.ExpectedAlerts, violations.AlertViolations)
+			protoassert.SlicesEqual(suite.T(), c.ExpectedAlerts, violations.AlertViolations)
 		})
 	}
 }
@@ -3290,7 +3290,7 @@ func (suite *DefaultPoliciesTestSuite) TestReplicasPolicyCriteria() {
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
-			suite.Equal(violations.AlertViolations, testCase.alerts)
+			protoassert.SlicesEqual(suite.T(), violations.AlertViolations, testCase.alerts)
 		})
 	}
 }
@@ -3373,7 +3373,7 @@ func (suite *DefaultPoliciesTestSuite) TestLivenessProbePolicyCriteria() {
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
-			suite.Equal(violations.AlertViolations, testCase.alerts)
+			protoassert.SlicesEqual(suite.T(), violations.AlertViolations, testCase.alerts)
 		})
 	}
 }
@@ -3561,7 +3561,7 @@ func (suite *DefaultPoliciesTestSuite) TestReadinessProbePolicyCriteria() {
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
-			suite.Equal(violations.AlertViolations, testCase.alerts)
+			protoassert.SlicesEqual(suite.T(), violations.AlertViolations, testCase.alerts)
 		})
 	}
 }

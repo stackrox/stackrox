@@ -84,7 +84,7 @@ func (suite *NodeComponentLoaderTestSuite) TestFromIDs() {
 	// Get preloaded components from ids.
 	components, err := loader.FromIDs(suite.ctx, []string{nodeComponent1, nodeComponent2})
 	suite.NoError(err)
-	suite.Equal([]*storage.NodeComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.NodeComponent{
 		loader.loaded[nodeComponent1],
 		loader.loaded[nodeComponent2],
 	}, components)
@@ -96,7 +96,7 @@ func (suite *NodeComponentLoaderTestSuite) TestFromIDs() {
 
 	components, err = loader.FromIDs(suite.ctx, []string{nodeComponent1, nodeComponent2, nodeComponent3})
 	suite.NoError(err)
-	suite.Equal([]*storage.NodeComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.NodeComponent{
 		loader.loaded[nodeComponent1],
 		loader.loaded[nodeComponent2],
 		thirdComponent,
@@ -105,7 +105,7 @@ func (suite *NodeComponentLoaderTestSuite) TestFromIDs() {
 	// Above call should now be preloaded.
 	components, err = loader.FromIDs(suite.ctx, []string{nodeComponent1, nodeComponent2, nodeComponent3})
 	suite.NoError(err)
-	suite.Equal([]*storage.NodeComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.NodeComponent{
 		loader.loaded[nodeComponent1],
 		loader.loaded[nodeComponent2],
 		loader.loaded[nodeComponent3],
@@ -134,7 +134,7 @@ func (suite *NodeComponentLoaderTestSuite) TestFromQuery() {
 
 	components, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.NodeComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.NodeComponent{
 		loader.loaded[nodeComponent1],
 		loader.loaded[nodeComponent2],
 	}, components)
@@ -159,7 +159,7 @@ func (suite *NodeComponentLoaderTestSuite) TestFromQuery() {
 
 	components, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.NodeComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.NodeComponent{
 		loader.loaded[nodeComponent1],
 		loader.loaded[nodeComponent2],
 		thirdComponent,
@@ -181,7 +181,7 @@ func (suite *NodeComponentLoaderTestSuite) TestFromQuery() {
 
 	components, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.NodeComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.NodeComponent{
 		loader.loaded[nodeComponent1],
 		loader.loaded[nodeComponent2],
 		loader.loaded[nodeComponent3],

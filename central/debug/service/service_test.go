@@ -90,9 +90,10 @@ func (s *debugServiceTestSuite) TestGetGroups() {
 	}
 	s.groupsMock.EXPECT().GetAll(gomock.Any()).Return(expectedGroups, nil)
 	actualGroups, err := s.service.getGroups(s.noneCtx)
-
+	ag, ok := actualGroups.([]*storage.Group)
+	s.Require().True(ok)
 	s.NoError(err)
-	s.Equal(expectedGroups, actualGroups)
+	protoassert.SlicesEqual(s.T(), expectedGroups, ag)
 }
 
 func (s *debugServiceTestSuite) TestGetRoles() {

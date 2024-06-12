@@ -8,6 +8,7 @@ import (
 	mockStore "github.com/stackrox/rox/central/processbaseline/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -93,5 +94,5 @@ func (suite *ProcessBaselineSearchTestSuite) TestSearchForAll() {
 	suite.store.EXPECT().GetMany(suite.allowAllCtx, search.ResultsToIDs(indexResults)).Return(dbResults, nil, nil)
 	results, err = suite.searcher.SearchRawProcessBaselines(suite.allowAllCtx, q)
 	suite.NoError(err)
-	suite.Equal(dbResults, results)
+	protoassert.SlicesEqual(suite.T(), dbResults, results)
 }

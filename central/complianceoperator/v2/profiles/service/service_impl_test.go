@@ -152,7 +152,7 @@ func (s *ComplianceProfilesServiceTestSuite) TestListComplianceProfiles() {
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetProfiles())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetProfiles())
 			}
 		})
 	}
@@ -264,7 +264,7 @@ func (s *ComplianceProfilesServiceTestSuite) TestListProfileSummaries() {
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetProfiles())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetProfiles())
 			}
 		})
 	}

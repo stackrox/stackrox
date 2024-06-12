@@ -86,7 +86,7 @@ func (suite *ComponentLoaderTestSuite) TestFromIDs() {
 	// Get a preloaded component from id.
 	components, err := loader.FromIDs(suite.ctx, []string{component1, component2})
 	suite.NoError(err)
-	suite.Equal([]*storage.ImageComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.ImageComponent{
 		loader.loaded[component1],
 		loader.loaded[component2],
 	}, components)
@@ -98,7 +98,7 @@ func (suite *ComponentLoaderTestSuite) TestFromIDs() {
 
 	components, err = loader.FromIDs(suite.ctx, []string{component1, component2, component3})
 	suite.NoError(err)
-	suite.Equal([]*storage.ImageComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.ImageComponent{
 		loader.loaded[component1],
 		loader.loaded[component2],
 		thirdComponent,
@@ -107,7 +107,7 @@ func (suite *ComponentLoaderTestSuite) TestFromIDs() {
 	// Above call should now be preloaded.
 	components, err = loader.FromIDs(suite.ctx, []string{component1, component2, component3})
 	suite.NoError(err)
-	suite.Equal([]*storage.ImageComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.ImageComponent{
 		loader.loaded[component1],
 		loader.loaded[component2],
 		loader.loaded[component3],
@@ -138,7 +138,7 @@ func (suite *ComponentLoaderTestSuite) TestFromQuery() {
 
 	components, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ImageComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.ImageComponent{
 		loader.loaded[component1],
 		loader.loaded[component2],
 	}, components)
@@ -163,7 +163,7 @@ func (suite *ComponentLoaderTestSuite) TestFromQuery() {
 
 	components, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ImageComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.ImageComponent{
 		loader.loaded[component1],
 		loader.loaded[component2],
 		thirdComponent,
@@ -185,7 +185,7 @@ func (suite *ComponentLoaderTestSuite) TestFromQuery() {
 
 	components, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ImageComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.ImageComponent{
 		loader.loaded[component1],
 		loader.loaded[component2],
 		loader.loaded[component3],

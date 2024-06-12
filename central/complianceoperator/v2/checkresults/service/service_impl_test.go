@@ -213,7 +213,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(convertUtils.GetConvertedComplianceData(s.T()), results.GetScanResults())
+				protoassert.SlicesEqual(s.T(), convertUtils.GetConvertedComplianceData(s.T()), results.GetScanResults())
 			}
 		})
 	}

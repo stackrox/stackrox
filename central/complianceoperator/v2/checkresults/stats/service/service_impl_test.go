@@ -205,7 +205,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanSta
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -292,7 +292,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceOverallCluster
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -391,7 +391,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats()
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -652,7 +652,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -776,7 +776,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesCluste
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
