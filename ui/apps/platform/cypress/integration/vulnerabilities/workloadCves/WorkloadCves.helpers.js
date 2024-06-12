@@ -457,3 +457,11 @@ export function waitForTableLoadCompleteIndicator() {
     cy.get(selectors.loadingSpinner);
     cy.get(selectors.loadingSpinner).should('not.exist');
 }
+
+export function visitNamespaceView() {
+    const namespaceListOpname = 'getNamespaceViewNamespaces';
+    const namespaceListRouteMatcherMap = getRouteMatcherMapForGraphQL([namespaceListOpname]);
+    return interactAndWaitForResponses(() => {
+        cy.get(selectors.namespaceViewButton).click();
+    }, namespaceListRouteMatcherMap);
+}
