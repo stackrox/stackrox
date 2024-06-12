@@ -949,7 +949,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			protoassert.MapEqual(t, tt.want, got)
 		})
 	}
 }
