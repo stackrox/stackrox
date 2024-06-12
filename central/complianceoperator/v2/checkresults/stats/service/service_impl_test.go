@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	benchmarkMocks "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	resultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
@@ -97,6 +98,7 @@ type ComplianceResultsStatsServiceTestSuite struct {
 	profileDS        *profileDatastore.MockDataStore
 	scanDS           *scanMocks.MockDataStore
 	clusterDatastore *clusterDatastoreMocks.MockDataStore
+	benchmarkDS      *benchmarkMocks.MockDataStore
 }
 
 func (s *ComplianceResultsStatsServiceTestSuite) SetupSuite() {
@@ -117,8 +119,9 @@ func (s *ComplianceResultsStatsServiceTestSuite) SetupTest() {
 	s.profileDS = profileDatastore.NewMockDataStore(s.mockCtrl)
 	s.scanDS = scanMocks.NewMockDataStore(s.mockCtrl)
 	s.clusterDatastore = clusterDatastoreMocks.NewMockDataStore(s.mockCtrl)
+	s.benchmarkDS = benchmarkMocks.NewMockDataStore(s.mockCtrl)
 
-	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS, s.profileDS, s.scanDS, s.clusterDatastore)
+	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS, s.profileDS, s.scanDS, s.benchmarkDS, s.clusterDatastore)
 }
 
 func (s *ComplianceResultsStatsServiceTestSuite) TearDownTest() {
@@ -401,9 +404,18 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileScanSta
 			query:       &apiV2.RawQuery{Query: ""},
 			expectedErr: nil,
 			expectedResp: []*apiV2.ComplianceProfileScanStats{
-				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4"),
-				convertUtils.GetComplianceProfileScanV2Count(s.T(), "rhcos4-moderate"),
-				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4-node"),
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4", []*apiV2.ComplianceBenchmark{{
+					Name:      "CIS Benchmark",
+					ShortName: "OCP_CIS",
+				}}),
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "rhcos4-moderate", []*apiV2.ComplianceBenchmark{{
+					Name:      "RHSCOS Benchmark",
+					ShortName: "RHCOS",
+				}}),
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4-node", []*apiV2.ComplianceBenchmark{{
+					Name:      "CIS Benchmark",
+					ShortName: "OCP_CIS",
+				}}),
 			},
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
@@ -435,6 +447,19 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileScanSta
 				}}
 				s.profileDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-node").ProtoQuery()).Return(profiles, nil).Times(1)
+
+				benchmarksOCP := []*storage.ComplianceOperatorBenchmarkV2{{
+					Name:      "CIS Benchmark",
+					ShortName: "OCP_CIS",
+				}}
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(benchmarksOCP, nil).Times(1)
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4-node").Return(benchmarksOCP, nil).Times(1)
+
+				benchmarksRHCOS := []*storage.ComplianceOperatorBenchmarkV2{{
+					Name:      "RHSCOS Benchmark",
+					ShortName: "RHCOS",
+				}}
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "rhcos4-moderate").Return(benchmarksRHCOS, nil).Times(1)
 			},
 		},
 		{
@@ -442,7 +467,10 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileScanSta
 			query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			expectedErr: nil,
 			expectedResp: []*apiV2.ComplianceProfileScanStats{
-				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4-node"),
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4-node", []*apiV2.ComplianceBenchmark{{
+					Name:      "CIS Benchmark",
+					ShortName: "OCP_CIS",
+				}}),
 			},
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).
@@ -460,6 +488,12 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileScanSta
 					Title:          "test_title_ocp4-node",
 				}}
 				s.profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Return(profiles, nil).AnyTimes()
+
+				benchmarksOCP := []*storage.ComplianceOperatorBenchmarkV2{{
+					Name:      "CIS Benchmark",
+					ShortName: "OCP_CIS",
+				}}
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4-node").Return(benchmarksOCP, nil).Times(1)
 			},
 		},
 		{
@@ -512,7 +546,10 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 			},
 			expectedErr: nil,
 			expectedResp: []*apiV2.ComplianceProfileScanStats{
-				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4"),
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4", []*apiV2.ComplianceBenchmark{{
+					Name:      "CIS Benchmark",
+					ShortName: "OCP_CIS",
+				}}),
 			},
 			setMocks: func() {
 
@@ -535,6 +572,12 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 				}}
 				s.profileDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery()).Return(profilesOcp, nil).Times(1)
+
+				benchmarksOCP := []*storage.ComplianceOperatorBenchmarkV2{{
+					Name:      "CIS Benchmark",
+					ShortName: "OCP_CIS",
+				}}
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(benchmarksOCP, nil).Times(1)
 			},
 		},
 		{
@@ -545,7 +588,10 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 			},
 			expectedErr: nil,
 			expectedResp: []*apiV2.ComplianceProfileScanStats{
-				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4-node"),
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4-node", []*apiV2.ComplianceBenchmark{{
+					Name:      "CIS Benchmark",
+					ShortName: "OCP_CIS",
+				}}),
 			},
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery()
@@ -568,6 +614,12 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 				}}
 				s.profileDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-node").ProtoQuery()).Return(profiles, nil).Times(1)
+
+				benchmarksOCP := []*storage.ComplianceOperatorBenchmarkV2{{
+					Name:      "CIS Benchmark",
+					ShortName: "OCP_CIS",
+				}}
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4-node").Return(benchmarksOCP, nil).Times(1)
 			},
 		},
 		{
@@ -616,7 +668,10 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesCluste
 			},
 			expectedErr: nil,
 			expectedResp: []*apiV2.ComplianceProfileScanStats{
-				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4"),
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4", []*apiV2.ComplianceBenchmark{{
+					Name:      "CIS Benchmark",
+					ShortName: "OCP_CIS",
+				}}),
 			},
 			setMocks: func() {
 
@@ -640,6 +695,12 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesCluste
 				s.profileDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery()).Return(profilesOcp, nil).Times(1)
 				s.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
+
+				benchmarksOCP := []*storage.ComplianceOperatorBenchmarkV2{{
+					Name:      "CIS Benchmark",
+					ShortName: "OCP_CIS",
+				}}
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(benchmarksOCP, nil).Times(1)
 			},
 		},
 		{
@@ -650,7 +711,10 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesCluste
 			},
 			expectedErr: nil,
 			expectedResp: []*apiV2.ComplianceProfileScanStats{
-				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4-node"),
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4-node", []*apiV2.ComplianceBenchmark{{
+					Name:      "CIS Benchmark",
+					ShortName: "OCP_CIS",
+				}}),
 			},
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ComplianceOperatorProfileName, "ocp4-node").ProtoQuery()
@@ -674,6 +738,12 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesCluste
 				s.profileDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-node").ProtoQuery()).Return(profiles, nil).Times(1)
 				s.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
+
+				benchmarksOCP := []*storage.ComplianceOperatorBenchmarkV2{{
+					Name:      "CIS Benchmark",
+					ShortName: "OCP_CIS",
+				}}
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4-node").Return(benchmarksOCP, nil).Times(1)
 			},
 		},
 		{
