@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/exp/maps"
 )
 
 func TestComplianceResolver(t *testing.T) {
@@ -64,7 +65,7 @@ func (s *ComplianceResolverTestSuite) TestDoesNotTruncateUnknownCollapseBy() {
 	truncatedResults, truncatedDomainMap, errorMessage := truncateResults(testResults, testDomainMap, testCollapseBy)
 	s.Empty(errorMessage)
 	protoassert.SlicesEqual(s.T(), testResults, truncatedResults)
-	s.Equal(testDomainMap, truncatedDomainMap)
+	compareResults(s.T(), testDomainMap, truncatedDomainMap)
 }
 
 func (s *ComplianceResolverTestSuite) TestDoesNotTruncateInvalidCollapseBy() {
@@ -74,7 +75,7 @@ func (s *ComplianceResolverTestSuite) TestDoesNotTruncateInvalidCollapseBy() {
 	truncatedResults, truncatedDomainMap, errorMessage := truncateResults(testResults, testDomainMap, storage.ComplianceAggregation_NAMESPACE)
 	s.Empty(errorMessage)
 	protoassert.SlicesEqual(s.T(), testResults, truncatedResults)
-	s.Equal(testDomainMap, truncatedDomainMap)
+	compareResults(s.T(), testDomainMap, truncatedDomainMap)
 }
 
 func (s *ComplianceResolverTestSuite) TestDoesNotTruncateShortResults() {
@@ -85,7 +86,7 @@ func (s *ComplianceResolverTestSuite) TestDoesNotTruncateShortResults() {
 	truncatedResults, truncatedDomainMap, errorMessage := truncateResults(testResults, testDomainMap, testCollapseBy)
 	s.Empty(errorMessage)
 	protoassert.SlicesEqual(s.T(), testResults, truncatedResults)
-	s.Equal(testDomainMap, truncatedDomainMap)
+	compareResults(s.T(), testDomainMap, truncatedDomainMap)
 }
 
 func (s *ComplianceResolverTestSuite) TestTruncateEmptyResults() {
@@ -95,5 +96,15 @@ func (s *ComplianceResolverTestSuite) TestTruncateEmptyResults() {
 	truncatedResults, truncatedDomainMap, errorMessage := truncateResults(testResults, testDomainMap, testCollapseBy)
 	s.Empty(errorMessage)
 	protoassert.SlicesEqual(s.T(), testResults, truncatedResults)
-	s.Equal(testDomainMap, truncatedDomainMap)
+	compareResults(s.T(), testDomainMap, truncatedDomainMap)
+}
+
+func compareResults(t *testing.T, expected, actual map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain) {
+	t.Helper()
+	expectedKeys := maps.Keys(expected)
+	actualKeys := maps.Keys(actual)
+	protoassert.SlicesEqual(t, expectedKeys, actualKeys)
+	for key, value := range expected {
+		protoassert.Equal(t, value, actual[key], key)
+	}
 }
