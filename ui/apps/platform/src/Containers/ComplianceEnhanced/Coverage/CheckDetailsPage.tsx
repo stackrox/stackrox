@@ -15,6 +15,7 @@ import { getTableUIState } from 'utils/getTableUIState';
 import useURLSearch from 'hooks/useURLSearch';
 import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import { OnSearchPayload, clusterSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
+import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import CheckDetailsTable from './CheckDetailsTable';
 import DetailsPageHeader, { PageHeaderLabel } from './components/DetailsPageHeader';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
@@ -107,22 +108,8 @@ function CheckDetails() {
         }
     }, [checkResultsResponse]);
 
-    // @TODO: Consider making a function to make this more reusable
     const onSearch = (payload: OnSearchPayload) => {
-        const { action, category, value } = payload;
-        const currentSelection = searchFilter[category] || [];
-        let newSelection = !Array.isArray(currentSelection) ? [currentSelection] : currentSelection;
-        if (action === 'ADD') {
-            newSelection.push(value);
-        } else if (action === 'REMOVE') {
-            newSelection = newSelection.filter((datum) => datum !== value);
-        } else {
-            // Do nothing
-        }
-        setSearchFilter({
-            ...searchFilter,
-            [category]: newSelection,
-        });
+        onURLSearch(searchFilter, setSearchFilter, payload);
     };
 
     const onCheckStatusSelect = (
