@@ -2,6 +2,7 @@ import React from 'react';
 import { DatePicker, SearchInput, SelectOption } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
+import { formatDate } from 'utils/dateUtils';
 import { SelectedEntity } from './EntitySelector';
 import { SelectedAttribute } from './AttributeSelector';
 import {
@@ -68,13 +69,14 @@ function CompoundSearchFilterInputField({
                 placeholder={textLabel}
                 value={ensureString(value)}
                 onChange={(_event, _value) => onChange(_value)}
-                onSearch={(_event, _value) =>
+                onSearch={(_event, _value) => {
                     onSearch({
                         action: 'ADD',
                         category: attributeObject.searchTerm,
                         value: _value,
-                    })
-                }
+                    });
+                    onChange('');
+                }}
                 onClear={() => onChange('')}
                 submitSearchButtonLabel="Apply text input to search"
             />
@@ -87,13 +89,16 @@ function CompoundSearchFilterInputField({
                 buttonAriaLabel="Filter by date toggle"
                 value={ensureString(value)}
                 onChange={(_event, _value) => {
+                    const formattedValue = _value ? formatDate(new Date(_value)) : '';
                     onChange(_value);
                     onSearch({
                         action: 'ADD',
                         category: attributeObject.searchTerm,
-                        value: _value,
+                        value: formattedValue,
                     });
                 }}
+                dateFormat={formatDate}
+                placeholder="MM/DD/YYYY"
             />
         );
     }
@@ -133,12 +138,12 @@ function CompoundSearchFilterInputField({
                     onChange(newValue);
                 }}
                 onSearch={(newValue) => {
-                    onChange(newValue);
                     onSearch({
                         action: 'ADD',
                         category: attributeObject.searchTerm,
                         value: newValue,
                     });
+                    onChange('');
                 }}
                 textLabel={textLabel}
             />

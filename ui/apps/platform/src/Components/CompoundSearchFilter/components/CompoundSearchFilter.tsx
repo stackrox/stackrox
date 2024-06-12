@@ -96,12 +96,11 @@ function CompoundSearchFilter({
                 onSearch={(payload) => {
                     // If the search value is non-empty and not in the searchFilter, trigger onSearch
                     if (
-                        !searchFilter[payload.category]?.includes(payload.value) &&
+                        !searchFilter?.[payload.category]?.includes(payload.value) &&
                         payload.value !== ''
                     ) {
                         onSearch(payload);
                     }
-                    setInputValue('');
                 }}
                 config={config}
             />
