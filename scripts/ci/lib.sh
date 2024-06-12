@@ -157,8 +157,9 @@ get_central_debug_dump() {
 }
 
 get_prometheus_metrics_parser() {
-    make prometheus-metric-parser -C "$ROOT"
-    export PATH="$ROOT/.gotools/bin":$PATH
+    local parserBin
+    parserBin=$(make prometheus-metric-parser -C "$ROOT" --silent)
+    export PATH="$(dirname "${parserBin}")":$PATH
     prometheus-metric-parser help
 }
 

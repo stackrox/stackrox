@@ -830,4 +830,4 @@ image-prefetcher-await:
 
 .PHONY: prometheus-metric-parser
 prometheus-metric-parser: $(PROMETHEUS_METRIC_PARSER_BIN)
-	echo $(PROMETHEUS_METRIC_PARSER_BIN)
+	@echo $(PROMETHEUS_METRIC_PARSER_BIN)
