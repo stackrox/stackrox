@@ -431,7 +431,7 @@ pause_stackrox_operator_reconcile() {
 }
 
 export_central_basic_auth_creds() {
-    if [[ -f "${DEPLOY_DIR}/central-deploy/password" ]]; then
+    if [[ -n ${DEPLOY_DIR:-} && -f "${DEPLOY_DIR}/central-deploy/password" ]]; then
         info "Getting central basic auth creds from central-deploy/password"
         ROX_PASSWORD="$(cat "${DEPLOY_DIR}"/central-deploy/password)"
     elif [[ -n "${ROX_PASSWORD:-}" ]]; then
@@ -573,6 +573,7 @@ patch_resources_for_test() {
     kubectl -n "${central_namespace}" patch svc central-loadbalancer --patch "$(cat "$TEST_ROOT"/tests/e2e/yaml/endpoints-test-lb-patch.yaml)"
     kubectl -n "${central_namespace}" apply -f "$TEST_ROOT/tests/e2e/yaml/endpoints-test-netpol.yaml"
 
+    info "Checking port availability..."
     for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
         check_endpoint_availability "$target_port"
     done
@@ -586,11 +587,12 @@ check_endpoint_availability() {
     # shellcheck disable=SC2034
     for i in $(seq 1 20); do
         if echo "Endpoint check" 2>/dev/null > /dev/tcp/"${API_HOSTNAME}"/"${target_port}"; then
+            info "Port ${target_port} on ${API_HOSTNAME} is reachable."
             return
         fi
         sleep 1
     done
-    die "Port ${target_port} did not become reachable in time"
+    die "Port ${target_port} on ${API_HOSTNAME} did not become reachable in time"
 }
 
 check_stackrox_logs() {
