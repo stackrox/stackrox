@@ -8,9 +8,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -209,7 +209,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 			if actual != nil {
 				actual.StateTimestamp = 0
 			}
-			assert.Equal(t, base.expectedDeployment, actual)
+			protoassert.Equal(t, base.expectedDeployment, actual)
 		})
 	}
 }

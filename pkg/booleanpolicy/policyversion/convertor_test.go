@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -60,7 +61,7 @@ func TestCloneAndEnsureConverted(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			got, err := CloneAndEnsureConverted(tc.policy)
 			assert.Equal(t, tc.hasError, err != nil)
-			assert.Equal(t, tc.expected, got)
+			protoassert.Equal(t, tc.expected, got)
 		})
 	}
 }
