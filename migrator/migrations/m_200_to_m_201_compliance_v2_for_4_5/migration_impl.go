@@ -1,9 +1,10 @@
 package m200tom201
 
 import (
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5/schema"
+	newSchema "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5/schema/new"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -14,6 +15,11 @@ import (
 var (
 	batchSize = 2000
 	log       = logging.LoggerForModule()
+
+	scanTypeToString = map[storage.ScanType]string{
+		storage.ScanType_NODE_SCAN:     "Node",
+		storage.ScanType_PLATFORM_SCAN: "Platform",
+	}
 )
 
 // TODO(dont-merge): generate/write and import any store required for the migration (skip any unnecessary step):
@@ -65,33 +71,33 @@ func migrateProfiles(database *types.Databases) error {
 	// We are simply promoting a field to a column so the serialized object is unchanged.  Thus, we
 	// have no need to worry about the old schema and can simply perform all our work on the new one.
 	db := database.GormDB
-	pgutils.CreateTableFromModel(database.DBCtx, db, schema.CreateTableComplianceOperatorProfileV2Stmt)
-	db = db.WithContext(database.DBCtx).Table(schema.ComplianceOperatorProfileV2TableName)
-	query := db.WithContext(database.DBCtx).Table(schema.ComplianceOperatorProfileV2TableName).Select("serialized")
+	pgutils.CreateTableFromModel(database.DBCtx, db, newSchema.CreateTableComplianceOperatorProfileV2Stmt)
+	db = db.WithContext(database.DBCtx).Table(newSchema.ComplianceOperatorProfileV2TableName)
+	query := db.WithContext(database.DBCtx).Table(newSchema.ComplianceOperatorProfileV2TableName).Select("serialized")
 
 	rows, err := query.Rows()
 	if err != nil {
-		return errors.Wrapf(err, "failed to iterate table %s", schema.ComplianceOperatorProfileV2TableName)
+		return errors.Wrapf(err, "failed to iterate table %s", newSchema.ComplianceOperatorProfileV2TableName)
 	}
 	defer func() { _ = rows.Close() }()
 
-	var convertedProfiles []*schema.ComplianceOperatorProfileV2
+	var convertedProfiles []*newSchema.ComplianceOperatorProfileV2
 	var count int
 	for rows.Next() {
-		var profile *schema.ComplianceOperatorProfileV2
+		var profile *newSchema.ComplianceOperatorProfileV2
 		if err = query.ScanRows(rows, &profile); err != nil {
 			return errors.Wrap(err, "failed to scan rows")
 		}
 
-		profileProto, err := schema.ConvertComplianceOperatorProfileV2ToProto(profile)
+		profileProto, err := newSchema.ConvertComplianceOperatorProfileV2ToProto(profile)
 		if err != nil {
 			return errors.Wrapf(err, "failed to convert %+v to proto", profile)
 		}
 
 		// Add the profile ref id
-		profileProto.ProfileRefId = createProfileRefID(profileProto)
+		profileProto.ProfileRefId = createProfileRefID(profileProto.GetClusterId(), profileProto.GetProfileId(), profileProto.GetProductType())
 
-		converted, err := schema.ConvertComplianceOperatorProfileV2FromProto(profileProto)
+		converted, err := newSchema.ConvertComplianceOperatorProfileV2FromProto(profileProto)
 		if err != nil {
 			return errors.Wrapf(err, "failed to convert from proto %+v", profileProto)
 		}
@@ -99,8 +105,8 @@ func migrateProfiles(database *types.Databases) error {
 		count++
 
 		if len(convertedProfiles) == batchSize {
-			// Upsert converted blobs
-			if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(schema.CreateTableComplianceOperatorProfileV2Stmt.GormModel).Create(&convertedProfiles).Error; err != nil {
+			// Upsert converted profiles
+			if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(newSchema.CreateTableComplianceOperatorProfileV2Stmt.GormModel).Create(&convertedProfiles).Error; err != nil {
 				return errors.Wrapf(err, "failed to upsert converted %d objects after %d upserted", len(convertedProfiles), count-len(convertedProfiles))
 			}
 			convertedProfiles = convertedProfiles[:0]
@@ -108,11 +114,11 @@ func migrateProfiles(database *types.Databases) error {
 	}
 
 	if err := rows.Err(); err != nil {
-		return errors.Wrapf(err, "failed to get rows for %s", schema.ComplianceOperatorProfileV2TableName)
+		return errors.Wrapf(err, "failed to get rows for %s", newSchema.ComplianceOperatorProfileV2TableName)
 	}
 
 	if len(convertedProfiles) > 0 {
-		if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(schema.CreateTableComplianceOperatorProfileV2Stmt.GormModel).Create(&convertedProfiles).Error; err != nil {
+		if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(newSchema.CreateTableComplianceOperatorProfileV2Stmt.GormModel).Create(&convertedProfiles).Error; err != nil {
 			return errors.Wrapf(err, "failed to upsert last %d objects", len(convertedProfiles))
 		}
 	}
@@ -128,17 +134,135 @@ func migrateRules(database *types.Databases) error {
 }
 
 func migrateScans(database *types.Databases) error {
+	// We are simply promoting a field to a column so the serialized object is unchanged.  Thus, we
+	// have no need to worry about the old schema and can simply perform all our work on the new one.
+	db := database.GormDB
+	pgutils.CreateTableFromModel(database.DBCtx, db, newSchema.CreateTableComplianceOperatorScanV2Stmt)
+	db = db.WithContext(database.DBCtx).Table(newSchema.ComplianceOperatorScanV2TableName)
+	query := db.WithContext(database.DBCtx).Table(newSchema.ComplianceOperatorScanV2TableName).Select("serialized")
+
+	rows, err := query.Rows()
+	if err != nil {
+		return errors.Wrapf(err, "failed to iterate table %s", newSchema.ComplianceOperatorScanV2TableName)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var convertedScans []*newSchema.ComplianceOperatorScanV2
+	var count int
+	for rows.Next() {
+		var scan *newSchema.ComplianceOperatorScanV2
+		if err = query.ScanRows(rows, &scan); err != nil {
+			return errors.Wrap(err, "failed to scan rows")
+		}
+
+		scanProto, err := newSchema.ConvertComplianceOperatorScanV2ToProto(scan)
+		if err != nil {
+			return errors.Wrapf(err, "failed to convert %+v to proto", scan)
+		}
+
+		// Add the profile ref id and scan ref id
+		scanProto.ProductType = scanTypeToString[scanProto.GetScanType()]
+		scanProto.ScanRefId = buildDeterministicID(scanProto.GetClusterId(), scanProto.GetScanName())
+		if scanProto.Profile == nil {
+			return errors.Wrapf(err, "failed to set profile %+v to proto", scan)
+		}
+		scanProto.Profile.ProfileId = createProfileRefID(scanProto.GetClusterId(), scanProto.Profile.ProfileId, scanProto.GetProductType())
+
+		converted, err := newSchema.ConvertComplianceOperatorScanV2FromProto(scanProto)
+		if err != nil {
+			return errors.Wrapf(err, "failed to convert from proto %+v", scanProto)
+		}
+		convertedScans = append(convertedScans, converted)
+		count++
+
+		if len(convertedScans) == batchSize {
+			// Upsert converted scans
+			if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(newSchema.CreateTableComplianceOperatorScanV2Stmt.GormModel).Create(&convertedScans).Error; err != nil {
+				return errors.Wrapf(err, "failed to upsert converted %d objects after %d upserted", len(convertedScans), count-len(convertedScans))
+			}
+			convertedScans = convertedScans[:0]
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return errors.Wrapf(err, "failed to get rows for %s", newSchema.ComplianceOperatorScanV2TableName)
+	}
+
+	if len(convertedScans) > 0 {
+		if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(newSchema.CreateTableComplianceOperatorScanV2Stmt.GormModel).Create(&convertedScans).Error; err != nil {
+			return errors.Wrapf(err, "failed to upsert last %d objects", len(convertedScans))
+		}
+	}
+	log.Infof("Converted %d scan records", count)
+
 	return nil
 }
 
 func migrateResults(database *types.Databases) error {
+	// We are simply promoting a field to a column so the serialized object is unchanged.  Thus, we
+	// have no need to worry about the old schema and can simply perform all our work on the new one.
+	db := database.GormDB
+	pgutils.CreateTableFromModel(database.DBCtx, db, newSchema.CreateTableComplianceOperatorCheckResultV2Stmt)
+	db = db.WithContext(database.DBCtx).Table(newSchema.ComplianceOperatorCheckResultV2TableName)
+	query := db.WithContext(database.DBCtx).Table(newSchema.ComplianceOperatorCheckResultV2TableName).Select("serialized")
+
+	rows, err := query.Rows()
+	if err != nil {
+		return errors.Wrapf(err, "failed to iterate table %s", newSchema.ComplianceOperatorCheckResultV2TableName)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var convertedResults []*newSchema.ComplianceOperatorCheckResultV2
+	var count int
+	for rows.Next() {
+		var result *newSchema.ComplianceOperatorCheckResultV2
+		if err = query.ScanRows(rows, &result); err != nil {
+			return errors.Wrap(err, "failed to scan rows")
+		}
+
+		resultProto, err := newSchema.ConvertComplianceOperatorCheckResultV2ToProto(result)
+		if err != nil {
+			return errors.Wrapf(err, "failed to convert %+v to proto", result)
+		}
+
+		// Add the scan_ref_id and rule_ref_id
+		resultProto.ScanRefId = buildDeterministicID(resultProto.GetClusterId(), resultProto.GetScanName())
+		resultProto.RuleRefId = buildDeterministicID(resultProto.GetClusterId(), resultProto.GetAnnotations()[v1alpha1.RuleIDAnnotationKey])
+
+		converted, err := newSchema.ConvertComplianceOperatorCheckResultV2FromProto(resultProto)
+		if err != nil {
+			return errors.Wrapf(err, "failed to convert from proto %+v", resultProto)
+		}
+		convertedResults = append(convertedResults, converted)
+		count++
+
+		if len(convertedResults) == batchSize {
+			// Upsert converted check results
+			if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(newSchema.CreateTableComplianceOperatorCheckResultV2Stmt.GormModel).Create(&convertedResults).Error; err != nil {
+				return errors.Wrapf(err, "failed to upsert converted %d objects after %d upserted", len(convertedResults), count-len(convertedResults))
+			}
+			convertedResults = convertedResults[:0]
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return errors.Wrapf(err, "failed to get rows for %s", newSchema.ComplianceOperatorCheckResultV2TableName)
+	}
+
+	if len(convertedResults) > 0 {
+		if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(newSchema.CreateTableComplianceOperatorCheckResultV2Stmt.GormModel).Create(&convertedResults).Error; err != nil {
+			return errors.Wrapf(err, "failed to upsert last %d objects", len(convertedResults))
+		}
+	}
+	log.Infof("Converted %d check result records", count)
+
 	return nil
 }
 
-func createProfileRefID(profile *storage.ComplianceOperatorProfileV2) string {
-	interimUUID := buildDeterministicID(profile.GetClusterId(), profile.GetProfileId())
+func createProfileRefID(clusterID, profileID, productType string) string {
+	interimUUID := buildDeterministicID(clusterID, profileID)
 
-	return buildDeterministicID(interimUUID, profile.GetProductType())
+	return buildDeterministicID(interimUUID, productType)
 }
 
 func buildDeterministicID(part1 string, part2 string) string {
