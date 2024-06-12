@@ -34,12 +34,12 @@ func SlicesEqual[T proto.Message](t *testing.T, expected, actual []T, msgAndArgs
 
 func MapSliceEqual[K comparable, T proto.Message](t *testing.T, expected, actual map[K][]T, msgAndArgs ...interface{}) bool {
 	t.Helper()
-	ek := maps.Keys(expected)
-	ea := maps.Keys(actual)
-	areEqual := !assert.ElementsMatch(t, ek, ea)
-	for k, v := range expected {
-		a := actual[k]
-		areEqual = SlicesEqual(t, v, a) && areEqual
+	expectedKeys := maps.Keys(expected)
+	actualKeys := maps.Keys(actual)
+	areEqual := !assert.ElementsMatch(t, expectedKeys, actualKeys)
+	for expectedKey, expectedValue := range expected {
+		a := actual[expectedKey]
+		areEqual = SlicesEqual(t, expectedValue, a) && areEqual
 	}
 	if !areEqual {
 		t.Log(msgAndArgs...)
@@ -49,12 +49,12 @@ func MapSliceEqual[K comparable, T proto.Message](t *testing.T, expected, actual
 
 func MapEqual[K comparable, T proto.Message](t *testing.T, expected, actual map[K]T, msgAndArgs ...interface{}) bool {
 	t.Helper()
-	ek := maps.Keys(expected)
-	ea := maps.Keys(actual)
-	areEqual := !assert.ElementsMatch(t, ek, ea)
-	for k, v := range expected {
-		a := actual[k]
-		areEqual = Equal(t, v, a, k) && areEqual
+	expectedKeys := maps.Keys(expected)
+	actualKeys := maps.Keys(actual)
+	areEqual := !assert.ElementsMatch(t, expectedKeys, actualKeys)
+	for expectedKey, expectedValue := range expected {
+		actualValue := actual[expectedKey]
+		areEqual = Equal(t, expectedValue, actualValue, expectedKey) && areEqual
 	}
 	if !areEqual {
 		t.Log(msgAndArgs...)
