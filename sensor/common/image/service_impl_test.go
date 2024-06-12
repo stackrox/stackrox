@@ -148,7 +148,7 @@ func (s *imageServiceSuite) TestGetImage() {
 			} else {
 				s.Assert().NoError(err)
 			}
-			protoassert.Equal(s.Assert().T(), c.expectedResponse, res)
+			protoassert.Equal(s.T(), c.expectedResponse, res)
 		})
 	}
 }
