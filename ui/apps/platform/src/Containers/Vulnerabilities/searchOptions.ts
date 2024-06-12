@@ -65,18 +65,6 @@ export const IMAGE_CVE_SEARCH_OPTION = {
     category: 'IMAGE_VULNERABILITIES',
 } as const;
 
-export const NODE_CVE_SEARCH_OPTION = {
-    label: 'CVE',
-    value: 'CVE',
-    category: 'NODE_VULNERABILITIES',
-} as const;
-
-export const SNOOZED_NODE_CVE_SEARCH_OPTION = {
-    label: 'CVE Snoozed',
-    value: 'CVE Snoozed',
-    category: 'NODE_VULNERABILITIES',
-} as const;
-
 export const IMAGE_SEARCH_OPTION = {
     label: 'Image',
     value: 'IMAGE',
