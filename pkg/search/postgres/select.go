@@ -67,7 +67,7 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 		return nil, nil
 	}
 
-	if env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
+	if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
 		innerJoins, err = handleImageCveEdgesTableInJoins(schema, innerJoins)
 		if err != nil {
 			return nil, err

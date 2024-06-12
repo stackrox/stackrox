@@ -965,9 +965,9 @@ func standardizeImages(images ...*storage.Image) {
 }
 
 func TestImageCVEEdgeIsJoinedLast(t *testing.T) {
-	t.Setenv(env.ImageCVEEdgeJoinWorkaround.EnvVar(), "true")
-	if !env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
-		t.Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
+	t.Setenv(env.ImageCVEEdgeCustomJoin.EnvVar(), "true")
+	if !env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+		t.Skip("Skip tests when ROX_IMAGE_CVE_EDGE_CUSTOM_JOIN disabled")
 		t.SkipNow()
 	}
 	ctx := sac.WithAllAccess(context.Background())

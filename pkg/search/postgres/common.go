@@ -278,7 +278,7 @@ func (q *query) AsSQL() string {
 		querySB.WriteString(innerJoin.rightTable)
 		querySB.WriteString(" on")
 
-		if env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
+		if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
 			if (i == len(q.InnerJoins)-1) && (innerJoin.rightTable == pkgSchema.ImageCveEdgesTableName) {
 				// Step 4: Join image_cve_edges table such that both its ImageID and ImageCveId columns are matched with the joins so far
 				imageIDTable := findImageIDTableAndField(q.InnerJoins)
@@ -406,7 +406,7 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	innerJoins, dbFields := getJoinsAndFields(schema, q)
 
 	var err error
-	if env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
+	if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
 		innerJoins, err = handleImageCveEdgesTableInJoins(schema, innerJoins)
 		if err != nil {
 			return nil, err

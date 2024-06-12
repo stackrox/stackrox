@@ -141,7 +141,7 @@ type searchFieldMetadata struct {
 func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string]searchFieldMetadata) {
 	unreachedFields := collectFields(q)
 
-	if env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
+	if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
 		// Step 1: If ImageCveEdgesSchema is going to be a part of joins, we want to ensure that we are able to join on both
 		//  ImageId and ImageCveId fields
 		if src != schema.ImageCveEdgesSchema &&
@@ -171,7 +171,7 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string
 		currElem := queue[0]
 		queue = queue[1:]
 
-		if env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
+		if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
 			// Step 2: Avoid using ImageCveEdgesSchema unless there is no other way to get to the required fields.
 			// If ImageCveEdgesSchema is root schema, then it is unavoidable.
 			if currElem.schema == schema.ImageCveEdgesSchema && currElem.schema != src {
@@ -226,7 +226,7 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string
 				}
 			}
 
-			if env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
+			if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
 				// We want to make sure ImageCveEdgesSchema gets added only once to queue. If there are multiple copies of
 				// ImageCveEdgesSchema in the queue, then we can enter an infinite loop trying to push one copy after another
 				// to the end of queue.

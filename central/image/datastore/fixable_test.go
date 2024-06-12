@@ -34,7 +34,7 @@ type FixableSearchTestSuite struct {
 }
 
 func (s *FixableSearchTestSuite) SetupSuite() {
-	s.T().Setenv(env.ImageCVEEdgeJoinWorkaround.EnvVar(), "true")
+	s.T().Setenv(env.ImageCVEEdgeCustomJoin.EnvVar(), "true")
 	s.testDB = pgtest.ForT(s.T())
 
 	s.imageDataStore = GetTestPostgresDataStore(s.T(), s.testDB)
@@ -145,8 +145,8 @@ func (s *FixableSearchTestSuite) TestImageSearch() {
 	} {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			if tc.skipWhenWorkaroundDisabled {
-				if !env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
-					t.Skip("Skip test case when ROX_IMAGE_CVE_EDGE_JOIN_WORKAROUND is disabled")
+				if !env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+					t.Skip("Skip test case when ROX_IMAGE_CVE_EDGE_CUSTOM_JOIN is disabled")
 					t.SkipNow()
 				}
 			}
@@ -259,8 +259,8 @@ func (s *FixableSearchTestSuite) TestCVESearch() {
 	} {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			if tc.skipWhenWorkaroundDisabled {
-				if !env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
-					t.Skip("Skip test case when ROX_IMAGE_CVE_EDGE_JOIN_WORKAROUND is disabled")
+				if !env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+					t.Skip("Skip test case when ROX_IMAGE_CVE_EDGE_CUSTOM_JOIN is disabled")
 					t.SkipNow()
 				}
 			}
@@ -273,8 +273,8 @@ func (s *FixableSearchTestSuite) TestCVESearch() {
 }
 
 func (s *FixableSearchTestSuite) TestImageComponentSearch() {
-	if !env.ImageCVEEdgeJoinWorkaround.BooleanSetting() {
-		s.T().Skip("Skip tests when ROX_IMAGE_CVE_EDGE_JOIN_WORKAROUND is disabled")
+	if !env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+		s.T().Skip("Skip tests when ROX_IMAGE_CVE_EDGE_CUSTOM_JOIN is disabled")
 		s.T().SkipNow()
 	}
 	for _, tc := range []struct {
