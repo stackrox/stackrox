@@ -2,6 +2,8 @@ package resolvers
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -103,8 +105,14 @@ func compareResults(t *testing.T, expected, actual map[*storage.ComplianceAggreg
 	t.Helper()
 	expectedKeys := maps.Keys(expected)
 	actualKeys := maps.Keys(actual)
+	slices.SortFunc(expectedKeys, cmp)
+	slices.SortFunc(actualKeys, cmp)
 	protoassert.SlicesEqual(t, expectedKeys, actualKeys)
 	for key, value := range expected {
 		protoassert.Equal(t, value, actual[key], key)
 	}
+}
+
+func cmp(a *storage.ComplianceAggregation_Result, b *storage.ComplianceAggregation_Result) int {
+	return strings.Compare(a.String(), b.String())
 }
