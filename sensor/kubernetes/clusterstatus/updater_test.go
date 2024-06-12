@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/suite"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -484,7 +485,7 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 			s.createUpdater(tc.getProviders, getProviderMetadataFromOpenShiftConfig, config)
 			u := s.updater.(*updaterImpl)
 			providerMetadata := u.getCloudProviderMetadata(context.Background())
-			s.Equal(tc.metadata, providerMetadata)
+			protoassert.Equal(s.T(), tc.metadata, providerMetadata)
 		})
 	}
 }

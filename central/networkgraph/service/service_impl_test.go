@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -1239,7 +1240,7 @@ func (s *NetworkGraphServiceTestSuite) TestPatchExternalNetworkEntity() {
 	actual, err := s.tested.PatchExternalNetworkEntity(ctx, patch)
 	s.NoError(err)
 	entity.Info.GetExternalSource().Name = "newcidr"
-	s.Equal(entity, actual)
+	protoassert.Equal(s.T(), entity, actual)
 
 	// Not found
 	s.entities.EXPECT().GetEntity(ctx, entity.GetInfo().GetId()).Return(nil, false, nil)

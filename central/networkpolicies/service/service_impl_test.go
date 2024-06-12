@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	grpcTestutils "github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -753,9 +754,10 @@ func (suite *ServiceTestSuite) TestGetUndoDeploymentRecord() {
 	resp, err :=
 		suite.tested.GetUndoModificationForDeployment(suite.requestContext, &v1.ResourceByID{Id: "some-deployment"})
 	suite.NoError(err)
-	suite.Equal(
+	protoassert.Equal(suite.T(),
 		&v1.GetUndoModificationForDeploymentResponse{UndoRecord: &storage.NetworkPolicyApplicationUndoRecord{}},
 		resp)
+
 }
 
 func depToInfo(dep *storage.Deployment) *storage.NetworkEntityInfo {

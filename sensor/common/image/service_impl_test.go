@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	cacheMocks "github.com/stackrox/rox/pkg/expiringcache/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
 	imageMocks "github.com/stackrox/rox/sensor/common/image/mocks"
 	"github.com/stretchr/testify/suite"
@@ -147,7 +148,7 @@ func (s *imageServiceSuite) TestGetImage() {
 			} else {
 				s.Assert().NoError(err)
 			}
-			s.Assert().Equal(c.expectedResponse, res)
+			protoassert.Equal(s.Assert().T(), c.expectedResponse, res)
 		})
 	}
 }

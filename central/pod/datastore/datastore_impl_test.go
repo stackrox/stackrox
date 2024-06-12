@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -80,7 +81,7 @@ func (suite *PodDataStoreTestSuite) TestGetPod() {
 	pod, ok, err := suite.datastore.GetPod(ctx, expectedPod.GetId())
 	suite.NoError(err)
 	suite.True(ok)
-	suite.Equal(expectedPod, pod)
+	protoassert.Equal(suite.T(), expectedPod, pod)
 
 	suite.storage.EXPECT().Get(ctx, expectedPod.GetId()).Return(nil, false, nil)
 	_, ok, err = suite.datastore.GetPod(ctx, expectedPod.GetId())
