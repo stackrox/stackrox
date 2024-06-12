@@ -1,9 +1,7 @@
 import { generatePath } from 'react-router-dom';
-import qs from 'qs';
 
 import axios from 'services/instance';
 import { SearchQueryOptions } from 'types/search';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import {
     buildNestedRawQueryParams,
@@ -28,24 +26,31 @@ export type ListComplianceProfileScanStatsResponse = {
     totalCount: number;
 };
 
+export type ListComplianceClusterProfileStatsResponse = {
+    scanStats: ComplianceProfileScanStats[];
+    totalCount: number;
+    clusterId: string;
+    clusterName: string;
+};
+
 /**
  * Fetches the scan stats grouped by profile.
  */
-export function getComplianceProfilesStats(
-    clusterId: string = ''
-): Promise<ListComplianceProfileScanStatsResponse> {
-    let params = '';
-    if (clusterId) {
-        const searchQuery = getRequestQueryStringForSearchFilter({
-            'Cluster ID': clusterId,
-        });
-
-        params = qs.stringify({ query: searchQuery }, { arrayFormat: 'repeat', allowDots: true });
-    }
-
+export function getComplianceProfilesStats(): Promise<ListComplianceProfileScanStatsResponse> {
     return axios
-        .get<ListComplianceProfileScanStatsResponse>(
-            `${complianceResultsStatsBaseUrl}/profiles?${params}`
+        .get<ListComplianceProfileScanStatsResponse>(`${complianceResultsStatsBaseUrl}/profiles`)
+        .then((response) => response.data);
+}
+
+/**
+ * Fetches the scan stats grouped by profile for a specific cluster.
+ */
+export function getComplianceProfilesClusterStats(
+    clusterId: string
+): Promise<ListComplianceClusterProfileStatsResponse> {
+    return axios
+        .get<ListComplianceClusterProfileStatsResponse>(
+            `${complianceResultsStatsBaseUrl}/profiles/clusters/${clusterId}`
         )
         .then((response) => response.data);
 }
