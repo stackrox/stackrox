@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/mock"
 	pkgmocks "github.com/stackrox/rox/pkg/mocks/github.com/jackc/pgx/v5/mocks"
 	"github.com/stackrox/rox/pkg/postgres/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
@@ -174,9 +175,11 @@ func (s *debugServiceTestSuite) TestGetConfig() {
 	}
 	s.configMock.EXPECT().GetConfig(gomock.Any()).Return(expectedConfig, nil)
 	actualConfig, err := s.service.getConfig(s.noneCtx)
+	ac, ok := actualConfig.(*storage.Config)
+	s.Require().True(ok)
 
 	s.NoError(err)
-	s.Equal(expectedConfig, actualConfig)
+	protoassert.Equal(s.T(), expectedConfig, ac)
 }
 
 func (s *debugServiceTestSuite) TestGetBundle() {

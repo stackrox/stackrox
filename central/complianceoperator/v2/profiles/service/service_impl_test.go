@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -77,7 +78,7 @@ func (s *ComplianceProfilesServiceTestSuite) TestGetComplianceProfile() {
 
 	profile, err := s.service.GetComplianceProfile(s.ctx, &apiV2.ResourceByID{Id: profileID})
 	s.Require().NoError(err)
-	s.Require().Equal(convertUtils.GetProfileV2Api(s.T()), profile)
+	protoassert.Equal(s.T(), convertUtils.GetProfileV2Api(s.T()), profile)
 }
 
 func (s *ComplianceProfilesServiceTestSuite) TestGetComplianceProfileNotFound() {
