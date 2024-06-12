@@ -142,7 +142,24 @@ func (k *listenerImpl) handleAllEvents() {
 	//cache.WaitForNamedCacheSync("clusterroles", stopSignal.Done(), clusterRoleInformer.HasSynced)
 	log.Info("Successfully synced clusterroles")
 
-	cache.WaitForNamedCacheSync("first group of informers", stopSignal.Done(), namespaceInformer.HasSynced, clusterRoleInformer.HasSynced, roleInformer.HasSynced, saInformer.HasSynced, secretInformer.HasSynced)
+	firstGroup := map[string]cache.InformerSynced{
+		"namespace":   namespaceInformer.HasSynced,
+		"clusterrole": clusterRoleInformer.HasSynced,
+		"role":        roleInformer.HasSynced,
+		"sa":          saInformer.HasSynced,
+		"secret":      secretInformer.HasSynced}
+	wg1 := sync.WaitGroup{}
+	for name, inf := range firstGroup {
+		go func(name string, i cache.InformerSynced) {
+			wg1.Add(1)
+			defer wg1.Done()
+			result := cache.WaitForNamedCacheSync(name, stopSignal.Done(), i)
+			log.Infof("ROX-24163: Successfully synced %s = %t", name, result)
+		}(name, inf)
+	}
+	log.Infof("ROX-24163: Waiting for the first group of informers to sync")
+	wg1.Wait()
+	log.Infof("ROX-24163: the first group of informers has synced")
 
 	// For openshift clusters only
 	var osConfigFactory osConfigExtVersions.SharedInformerFactory
@@ -345,7 +362,7 @@ func handle(
 	wg.Add(1)
 	go func() {
 		defer func() {
-			wg.Add(-1)
+			wg.Done()
 			log.Debugf("ROX-24163 (defer) for %q has synced: hReg=%t informer=%t", name, handlerRegistration.HasSynced(), informer.HasSynced())
 		}()
 		log.Debugf("ROX-24163 (go func) for %q has synced: hReg=%t informer=%t", name, handlerRegistration.HasSynced(), informer.HasSynced())
