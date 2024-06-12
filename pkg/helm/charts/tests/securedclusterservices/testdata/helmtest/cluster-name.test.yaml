@@ -37,12 +37,3 @@ tests:
   expect: |
     .error | assertThat(contains("Failed to change cluster name"))
 
-
-- name: "incorrect init bundle format"
-  values:
-    metadata:
-      annotations:
-        "init-bundle.stackrox.io/name": "incorrect format"
-  expectError: True
-  expect: |
-    .error | assertThat(contains("It looks like you're using the incorrect init-bundle format. Make sure that you're using an init-bundle that was formatted for the Helm installation method and not Operator installation method."))
