@@ -21,10 +21,10 @@ func Equal(t *testing.T, expected, actual proto.Message, msgAndArgs ...interface
 
 func SlicesEqual[T proto.Message](t *testing.T, expected, actual []T, msgAndArgs ...interface{}) bool {
 	t.Helper()
-	areEqual := assert.Len(t, actual, len(expected), msgAndArgs)
+	areEqual := assert.Len(t, actual, len(expected))
 	for i, e := range expected {
 		a := actual[i]
-		areEqual = Equal(t, a, e, msgAndArgs) && areEqual
+		areEqual = Equal(t, a, e) && areEqual
 	}
 	if !areEqual {
 		t.Log(msgAndArgs...)
@@ -39,7 +39,7 @@ func MapSliceEqual[K comparable, T proto.Message](t *testing.T, expected, actual
 	areEqual := !assert.ElementsMatch(t, expectedKeys, actualKeys)
 	for expectedKey, expectedValue := range expected {
 		a := actual[expectedKey]
-		areEqual = SlicesEqual(t, expectedValue, a) && areEqual
+		areEqual = SlicesEqual(t, expectedValue, a, expectedKey) && areEqual
 	}
 	if !areEqual {
 		t.Log(msgAndArgs...)
