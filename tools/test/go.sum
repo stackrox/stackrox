@@ -3,5 +3,5 @@ github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/jstemmer/go-junit-report/v2 v2.1.0 h1:X3+hPYlSczH9IMIpSC9CQSZA0L+BipYafciZUWHEmsc=
 github.com/jstemmer/go-junit-report/v2 v2.1.0/go.mod h1:mgHVr7VUo5Tn8OLVr1cKnLuEy0M92wdRntM99h7RkgQ=
-github.com/stackrox/image-prefetcher/deploy v0.2.0 h1:8Mpkv9KoUy1L0QIymycgxOkGn77BsNwoQ5HVof4+SQY=
-github.com/stackrox/image-prefetcher/deploy v0.2.0/go.mod h1:bAhl/GuKJnAchWpAYkEaoqfaJHqCkbBKhLDWHm1GXLs=
+github.com/stackrox/image-prefetcher/deploy v0.2.1 h1:xuXQxwY4iMeB5Ej+gEGw+ceiGY/qj+Eg4zeNXRA8WWg=
+github.com/stackrox/image-prefetcher/deploy v0.2.1/go.mod h1:bAhl/GuKJnAchWpAYkEaoqfaJHqCkbBKhLDWHm1GXLs=
