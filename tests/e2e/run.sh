@@ -58,7 +58,7 @@ test_e2e() {
     store_test_results "tests/all-tests-results" "all-tests-results"
     [[ ! -f FAIL ]] || die "e2e API tests failed"
 
-    if [[ ${ORCHESTRATOR_FLAVOR:-} = openshift ]]; then
+    if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
         info "Temporarily skipping proxy test on OCP. TODO(ROX-24688)"
     else
         # Give some time for previous tests to finish up
@@ -72,7 +72,7 @@ test_e2e() {
 
     collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_tests"
 
-    if [[ ${ORCHESTRATOR_FLAVOR:-} = openshift ]]; then
+    if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
         info "Temporarily skipping E2E destructive tests on OCP. TODO(ROX-24688)"
     else
         # Give some time for previous tests to finish up
@@ -84,7 +84,7 @@ test_e2e() {
         [[ ! -f FAIL ]] || die "destructive e2e tests failed"
     fi
 
-    if [[ ${ORCHESTRATOR_FLAVOR:-} = openshift ]]; then
+    if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
         info "Temporarily skipping postgres backup restoration test on OCP. TODO(ROX-24688)"
     else
         # Give some time for previous tests to finish up
@@ -92,7 +92,7 @@ test_e2e() {
         restore_4_1_postgres_backup
     fi
 
-    if [[ ${ORCHESTRATOR_FLAVOR:-} = openshift ]]; then
+    if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
         info "Temporarily skipping E2E external backup tests on OCP. TODO(ROX-24688)"
     else
         wait_for_api
@@ -121,7 +121,7 @@ prepare_for_endpoints_test() {
     gencerts_dir="$(mktemp -d)"
     setup_client_CA_auth_provider
     setup_generated_certs_for_test "$gencerts_dir"
-    if [[ ${ORCHESTRATOR_FLAVOR:-} = openshift ]]; then
+    if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
         info "Skipping resource patching for skipped endpoints_test.go. TODO(ROX-24688)"
     else
         patch_resources_for_test
