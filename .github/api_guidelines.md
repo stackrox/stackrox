@@ -462,20 +462,20 @@ This section only applies for General Available (GA) features. For Technology Pr
 and only need to be announced in release notes.
 
 Before deprecating APIs, clarify with relevant stakeholders (e.g. product team, solution engineering) the deprecation.
-In addition, if available for your API, the analytics we collect may also be used to gage whether deprecation is an
+In addition, if available for your API, the analytics we collect may also be used to gauge whether deprecation is an
 option or not.
 
-While there is no strict guidelines from Red Hat about announcing deprecations, we historically have announced
+While there are no strict guidelines from Red Hat about announcing deprecations, historically we have announced
 deprecations **two** releases in advance. This gives users enough time to adjust potential usages of the deprecated API.
 
 The deprecation announcement **must** be done _at least_ within the release notes within the `Deprecated Features`
-section.
+section and the associated service proto (i.e. the API documentation).
 
 In addition, there are other forms of announcement that have been used historically.
 Use these with your best judgement:
 - Within the UI
-  - This can be a banner or other hints where the API is being used announcing the deprecation.
-  - As an example, the SAC resource consolidation efforts led to a banner being created in the UI where resources where
+  - This can be a banner or other hints announcing the deprecation close to places where the respective API is being used.
+  - As an example, the SAC resource consolidation efforts led to a banner being created in the UI where resources were
     being used.
 - Within Central logs
   - This can be done during Central startup or during API calls, informing the user that the API service will be
@@ -483,4 +483,4 @@ Use these with your best judgement:
   - Be aware that high-cardinality APIs are not an ideal candidate for logging per API call.
 
 Once the deprecation time has been met after **two** releases, the API can safely be fully removed (i.e. removing the
-service associated with the API).
+service associated with the API), but it is up to your discretion to postpone or not to go through with the deprecation.
