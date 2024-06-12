@@ -8,7 +8,7 @@ from runners import ClusterTestRunner
 from clusters import AutomationFlavorsCluster
 from ci_tests import ScannerV4Test
 from pre_tests import PreSystemTests
-from post_tests import NullPostTest, FinalPost
+from post_tests import PostClusterTest, FinalPost
 
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["STORE_METRICS"] = "true"
@@ -21,6 +21,10 @@ ClusterTestRunner(
     cluster=AutomationFlavorsCluster(),
     pre_test=PreSystemTests(),
     test=ScannerV4Test(),
-    post_test=NullPostTest(),
+    post_test=PostClusterTest(
+        collect_collector_metrics=False,
+        collect_central_artifacts=False,
+        check_stackrox_logs=False,
+    ),
     final_post=FinalPost(),
 ).run()
