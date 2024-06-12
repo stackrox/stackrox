@@ -12,6 +12,9 @@ import (
 
 func Equal(t *testing.T, expected, actual proto.Message, msgAndArgs ...interface{}) bool {
 	t.Helper()
+	if expected == actual {
+		return true
+	}
 	e, err := toJson(expected)
 	require.NoError(t, err)
 	a, err := toJson(actual)
