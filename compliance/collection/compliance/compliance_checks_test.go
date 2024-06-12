@@ -13,6 +13,7 @@ import (
 	complianceCompress "github.com/stackrox/rox/pkg/compliance/compress"
 	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/orchestrators"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 )
@@ -95,7 +96,7 @@ func (s *ComplianceResultsBuilderTestSuite) getMockData() (map[string]*complianc
 
 	testResults := map[string]*compliance.ComplianceStandardResult{}
 	addCheckResultsToResponse(testResults, standardID, checkNameOne, framework.NodeKind, evidenceOne)
-	s.Equal(mockData.ResultMap, testResults)
+	protoassert.MapEqual(s.T(), mockData.ResultMap, testResults)
 
 	return testResults, client, mockData
 }
@@ -118,7 +119,7 @@ func (s *ComplianceResultsBuilderTestSuite) TestAddEvidence() {
 		OverallState: 0,
 	}
 	addCheckResultsToResponse(testResults, standardID, checkNameTwo, framework.NodeKind, evidenceTwo)
-	s.Equal(mockData.ResultMap, testResults)
+	protoassert.MapEqual(s.T(), mockData.ResultMap, testResults)
 
 	// Add a result from a different standard
 	standardIDTwo := "abababab"
@@ -139,7 +140,7 @@ func (s *ComplianceResultsBuilderTestSuite) TestAddEvidence() {
 		ClusterCheckResults: map[string]*storage.ComplianceResultValue{},
 	}
 	addCheckResultsToResponse(testResults, standardIDTwo, checkNameThree, framework.NodeKind, evidenceThree)
-	s.Equal(mockData.ResultMap, testResults)
+	protoassert.MapEqual(s.T(), mockData.ResultMap, testResults)
 
 	// Add a cluster-level result
 	checkNameFour := "jkdfdjk"
@@ -156,7 +157,7 @@ func (s *ComplianceResultsBuilderTestSuite) TestAddEvidence() {
 		},
 	}
 	addCheckResultsToResponse(testResults, standardIDTwo, checkNameFour, framework.ClusterKind, evidenceFour)
-	s.Equal(mockData.ResultMap, testResults)
+	protoassert.MapEqual(s.T(), mockData.ResultMap, testResults)
 }
 
 func (s *ComplianceResultsBuilderTestSuite) TestSend() {

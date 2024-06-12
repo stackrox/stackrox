@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
@@ -278,7 +279,7 @@ func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
 
 	for _, msg := range server.sentList {
 		if syncMsg := msg.GetAuditLogSync(); syncMsg != nil {
-			s.Equal(auditLogState, syncMsg.GetNodeAuditLogFileStates())
+			protoassert.MapEqual(s.T(), auditLogState, syncMsg.GetNodeAuditLogFileStates())
 			return
 		}
 	}
