@@ -107,7 +107,7 @@ func (m *matcherMetadataStore) GCVulnerabilityUpdates(ctx context.Context, activ
 		}
 		deletedRows = append(deletedRows, deletedRow)
 	}
-	if rows.Err() != nil {
+	if err := rows.Err(); err != nil {
 		zlog.Warn(ctx).Err(err).Msg("reading deleted rows")
 	}
 	if len(deletedRows) > 0 {
