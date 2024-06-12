@@ -3,12 +3,16 @@ import { useApolloClient } from '@apollo/client';
 import { Alert } from '@patternfly/react-core';
 
 import Button from 'Components/Button';
+import ComplianceUsageDisclaimer, {
+    COMPLIANCE_DISCLAIMER_KEY,
+} from 'Components/ComplianceUsageDisclaimer';
 import ExportButton from 'Components/ExportButton';
 import PageHeader from 'Components/PageHeader';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { resourceTypes } from 'constants/entityTypes';
 import useCaseTypes from 'constants/useCaseTypes';
 import { useTheme } from 'Containers/ThemeProvider';
+import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
 import usePermissions from 'hooks/usePermissions';
 import {
     ComplianceStandardMetadata,
@@ -47,6 +51,10 @@ const queriesToRefetchOnPollingComplete = [
 ];
 
 function ComplianceDashboardPage(): ReactElement {
+    const [disclaimerAccepted, setDisclaimerAccepted] = useBooleanLocalStorage(
+        COMPLIANCE_DISCLAIMER_KEY,
+        false
+    );
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
 
@@ -151,6 +159,12 @@ function ComplianceDashboardPage(): ReactElement {
                 </div>
             </PageHeader>
             <div className="flex-1 relative p-6 xxxl:p-8 bg-base-200" id="capture-dashboard">
+                {!disclaimerAccepted && (
+                    <ComplianceUsageDisclaimer
+                        onAccept={() => setDisclaimerAccepted(true)}
+                        className="pf-v5-u-mb-lg"
+                    />
+                )}
                 {(inProgressScanDetected || !!error) && (
                     <div className="pf-v5-u-pb-lg">
                         {error ? (

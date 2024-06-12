@@ -11,10 +11,9 @@ import {
 } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
-import useRestQuery from 'hooks/useRestQuery';
-import useURLPagination from 'hooks/useURLPagination';
-import useURLSort from 'hooks/useURLSort';
-import { getComplianceProfileResults } from 'services/ComplianceResultsService';
+import ComplianceUsageDisclaimer, {
+    COMPLIANCE_DISCLAIMER_KEY,
+} from 'Components/ComplianceUsageDisclaimer';
 import {
     OnSearchPayload,
     clusterSearchFilterConfig,
@@ -22,8 +21,14 @@ import {
 } from 'Components/CompoundSearchFilter/types';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
-import useURLSearch from 'hooks/useURLSearch';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
+import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSort from 'hooks/useURLSort';
+import useURLSearch from 'hooks/useURLSearch';
+import { getComplianceProfileResults } from 'services/ComplianceResultsService';
+
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
@@ -33,6 +38,10 @@ import CoveragesPageHeader from './CoveragesPageHeader';
 import ProfileChecksTable from './ProfileChecksTable';
 
 function ProfileChecksPage() {
+    const [disclaimerAccepted, setDisclaimerAccepted] = useBooleanLocalStorage(
+        COMPLIANCE_DISCLAIMER_KEY,
+        false
+    );
     const { profileName } = useParams();
     const history = useHistory();
     const { profileScanStats } = useContext(ComplianceProfilesContext);
@@ -86,13 +95,19 @@ function ProfileChecksPage() {
             <PageTitle title="Compliance coverage - Profile checks" />
             <CoveragesPageHeader />
             <PageSection>
+                {!disclaimerAccepted && (
+                    <ComplianceUsageDisclaimer
+                        onAccept={() => setDisclaimerAccepted(true)}
+                        className="pf-v5-u-mb-lg"
+                    />
+                )}
                 <ProfilesToggleGroup
                     profiles={profileScanStats.scanStats}
                     handleToggleChange={handleProfilesToggleChange}
                 />
             </PageSection>
             <PageSection variant="default" className="pf-v5-u-py-0">
-                <PageSection variant="light" className="pf-v5-u-p-0">
+                <PageSection variant="light" className="pf-v5-u-p-0" component="div">
                     <Toolbar>
                         <ToolbarContent>
                             <ToolbarGroup className="pf-v5-u-w-100">
