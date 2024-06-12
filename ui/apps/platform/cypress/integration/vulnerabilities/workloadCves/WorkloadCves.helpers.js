@@ -462,6 +462,6 @@ export function visitNamespaceView() {
     const namespaceListOpname = 'getNamespaceViewNamespaces';
     const namespaceListRouteMatcherMap = getRouteMatcherMapForGraphQL([namespaceListOpname]);
     return interactAndWaitForResponses(() => {
-        cy.get(selectors.namespaceViewButton).click();
+        cy.get('button:contains("Prioritize by namespace view")').click();
     }, namespaceListRouteMatcherMap);
 }
