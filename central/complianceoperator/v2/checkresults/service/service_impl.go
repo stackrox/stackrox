@@ -458,6 +458,11 @@ func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, requ
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for query %v", parsedQuery)
 	}
+	// Since we are using the `RuleRefId` of the first result to find the underlying rule, there can only be 1 rule.
+	// The first result will have a specific cluster and the `RuleRefId` is built from rule_name and cluster_id so to
+	// get the rule name associated with this result we only need to check one as the profile version is in the check
+	// result name and as such should match across clusters.  Later it would be good to abstract some of this to the
+	// datastore by getting distinct information.
 	if len(rules) != 1 {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
 	}
