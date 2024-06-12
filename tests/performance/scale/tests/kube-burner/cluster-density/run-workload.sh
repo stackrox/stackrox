@@ -103,7 +103,7 @@ function run_workload() {
     local run_uuid
     run_uuid="node-${num_nodes}--${node_type}--run-$(date +%s)"
 
-    local metadata_path="user-metadata-${run_uuid}.yml"
+    local metadata_path="${script_dir}/user-metadata-${run_uuid}.yml"
 
     go run ../../metadata-collector/main.go \
         --namespaces-count "${num_namespaces}" \
