@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 // ErrorList is a wrapper around many errors
@@ -34,16 +35,13 @@ func (e *ErrorList) AddError(err error) {
 	if err == nil {
 		return
 	}
-	e.errors = append(e.errors, err)
+	e.errors = append(e.errors, errox.ConsealSensitive(err))
 }
 
 // AddErrors adds the non-nil errors in the given slice to the list of errors.
 func (e *ErrorList) AddErrors(errs ...error) {
 	for _, err := range errs {
-		if err == nil {
-			continue
-		}
-		e.errors = append(e.errors, err)
+		e.AddError(err)
 	}
 }
 
@@ -116,4 +114,14 @@ func (e *ErrorList) Errors() []error {
 // Empty returns whether the list of error strings is empty.
 func (e *ErrorList) Empty() bool {
 	return len(e.errors) == 0
+}
+
+// As enables the errors.As feature.
+func (e *ErrorList) As(target any) bool {
+	for _, err := range e.errors {
+		if errors.As(err, target) {
+			return true
+		}
+	}
+	return false
 }
