@@ -391,6 +391,7 @@ cli-install:
 	# Workaround a bug on MacOS
 	rm -f $(GOPATH)/bin/roxctl
 	# Copy the user's specific OS into gopath
+	mkdir -p $(GOPATH)/bin
 	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
 
