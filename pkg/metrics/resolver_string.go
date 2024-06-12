@@ -36,11 +36,12 @@ func _() {
 	_ = x[ClusterCVEs-25]
 	_ = x[NodeComponents-26]
 	_ = x[ImageCVECore-27]
+	_ = x[PlatformCVECore-28]
 }
 
-const _Resolver_name = "ClusterComplianceComlianceControlCVEsDeploymentsGroupsImagesImageComponentsK8sRolesNamespacesNodesNotifiersPermissionSetsPoliciesRolesRootSecretsServiceAccountsSubjectsTokensViolationsPodsContainerInstancesImageCVEsNodeCVEsClusterCVEsNodeComponentsImageCVECore"
+const _Resolver_name = "ClusterComplianceComlianceControlCVEsDeploymentsGroupsImagesImageComponentsK8sRolesNamespacesNodesNotifiersPermissionSetsPoliciesRolesRootSecretsServiceAccountsSubjectsTokensViolationsPodsContainerInstancesImageCVEsNodeCVEsClusterCVEsNodeComponentsImageCVECorePlatformCVECore"
 
-var _Resolver_index = [...]uint16{0, 7, 17, 33, 37, 48, 54, 60, 75, 83, 93, 98, 107, 121, 129, 134, 138, 145, 160, 168, 174, 184, 188, 206, 215, 223, 234, 248, 260}
+var _Resolver_index = [...]uint16{0, 7, 17, 33, 37, 48, 54, 60, 75, 83, 93, 98, 107, 121, 129, 134, 138, 145, 160, 168, 174, 184, 188, 206, 215, 223, 234, 248, 260, 275}
 
 func (i Resolver) String() string {
 	if i < 0 || i >= Resolver(len(_Resolver_index)-1) {

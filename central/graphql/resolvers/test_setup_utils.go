@@ -52,6 +52,7 @@ import (
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/central/views/imagecve"
+	"github.com/stackrox/rox/central/views/platformcve"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/cache"
 	vulnReqDatastore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -115,6 +116,8 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 
 		case imagecve.CveView:
 			resolver.ImageCVEView = ds
+		case platformcve.CveView:
+			resolver.PlatformCVEView = ds
 		}
 	}
 
