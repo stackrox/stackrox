@@ -448,6 +448,12 @@ func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, requ
 		return nil, nil
 	}
 
+	// The goal of this API is to return the details of a check result in a normalized manner.  A view of the check
+	// result details that should match across the clusters as the profile version is part of the check result name.
+	// Since the data is denormalized and our goal is to look up the rule that matches the result, we only need to
+	// grab the rule from a single result as all the rules across the clusters will match the same thing.  As the name
+	// of the check result contains the profile version in it, the rule the result maps to will be the same
+	// across all clusters.
 	rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, scanResults[0].GetRuleRefId()).ProtoQuery())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for query %v", parsedQuery)
@@ -463,9 +469,10 @@ func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, requ
 		return nil, errors.Wrapf(err, "Unable to retrieve profiles for result %v", parsedQuery)
 	}
 	var convertedControls []*v2.ComplianceControl
-	if len(profiles) != 0 {
+	if len(profiles) == 0 {
 		// TODO(ROX-22362): implement tailored profiles
 		log.Warnf("Unable to find profiles for result %v.  It is possible results match a tailored profile which have not been implemented in Compliance V2", parsedQuery)
+	} else {
 		controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, []string{rules[0].GetName()}, profiles[0].GetName(), s.benchmarkDS)
 		if err != nil {
 			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", parsedQuery)
