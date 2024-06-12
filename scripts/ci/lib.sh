@@ -158,8 +158,10 @@ get_central_debug_dump() {
 
 get_prometheus_metrics_parser() {
     local parserBin
+    local parserDir
     parserBin=$(make prometheus-metric-parser -C "$ROOT" --silent)
-    export PATH="$(dirname "${parserBin}")":$PATH
+    parserDir=$(dirname "${parserBin}")
+    export PATH="$parserDir":$PATH
     prometheus-metric-parser help
 }
 
