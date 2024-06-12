@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { generatePath, Link } from 'react-router-dom';
 import {
-    Button,
-    ButtonVariant,
     Pagination,
     Text,
     TextVariants,
@@ -14,29 +12,28 @@ import {
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import {
+    OnSearchPayload,
+    PartialCompoundSearchFilterConfig,
+} from 'Components/CompoundSearchFilter/types';
 import IconText from 'Components/PatternFly/IconText/IconText';
+import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { ComplianceCheckResult } from 'services/ComplianceResultsService';
 import { TableUIState } from 'utils/getTableUIState';
-
-import {
-    OnSearchPayload,
-    PartialCompoundSearchFilterConfig,
-} from 'Components/CompoundSearchFilter/types';
 import { SearchFilter } from 'types/search';
-import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+
+import { DETAILS_TAB, TAB_NAV_QUERY } from './CheckDetailsPage';
 import { CHECK_NAME_QUERY, CHECK_STATUS_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
-import CheckStatusModal from './components/CheckStatusModal';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
 
 export type ClusterDetailsTableProps = {
     checkResultsCount: number;
-    clusterId: string;
     profileName: string;
     tableState: TableUIState<ComplianceCheckResult>;
     pagination: UseURLPaginationResult;
@@ -53,7 +50,6 @@ export type ClusterDetailsTableProps = {
 
 function ClusterDetailsTable({
     checkResultsCount,
-    clusterId,
     profileName,
     tableState,
     pagination,
@@ -63,9 +59,6 @@ function ClusterDetailsTable({
     onSearch,
     onCheckStatusSelect,
 }: ClusterDetailsTableProps) {
-    const [selectedCheckResult, setSelectedCheckResult] = useState<ComplianceCheckResult | null>(
-        null
-    );
     const { page, perPage, setPage, setPerPage } = pagination;
     return (
         <>
@@ -146,10 +139,10 @@ function ClusterDetailsTable({
                                     <Tr key={checkName}>
                                         <Td dataLabel="Check">
                                             <Link
-                                                to={generatePath(coverageCheckDetailsPath, {
+                                                to={`${generatePath(coverageCheckDetailsPath, {
                                                     checkName,
                                                     profileName,
-                                                })}
+                                                })}?${TAB_NAV_QUERY}=${DETAILS_TAB}`}
                                             >
                                                 {checkName}
                                             </Link>
@@ -170,18 +163,10 @@ function ClusterDetailsTable({
                                         <Td dataLabel="Controls">placeholder</Td>
                                         <Td dataLabel="Compliance status" modifier="fitContent">
                                             <Tooltip content={clusterStatusObject.tooltipText}>
-                                                <Button
-                                                    isInline
-                                                    variant={ButtonVariant.link}
-                                                    onClick={() =>
-                                                        setSelectedCheckResult(checkResult)
-                                                    }
-                                                >
-                                                    <IconText
-                                                        icon={clusterStatusObject.icon}
-                                                        text={clusterStatusObject.statusText}
-                                                    />
-                                                </Button>
+                                                <IconText
+                                                    icon={clusterStatusObject.icon}
+                                                    text={clusterStatusObject.statusText}
+                                                />
                                             </Tooltip>
                                         </Td>
                                     </Tr>
@@ -191,14 +176,6 @@ function ClusterDetailsTable({
                     )}
                 />
             </Table>
-            {selectedCheckResult && (
-                <CheckStatusModal
-                    checkResult={selectedCheckResult}
-                    clusterName={clusterId}
-                    isOpen
-                    handleClose={() => setSelectedCheckResult(null)}
-                />
-            )}
         </>
     );
 }
