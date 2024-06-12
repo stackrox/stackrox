@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	types "github.com/stackrox/rox/pkg/protocompat"
@@ -28,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -811,7 +811,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 				}
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).Times(1)
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).Times(1)
 				s.ruleDatastore.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
@@ -838,7 +838,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 				}
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).Times(1)
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).Times(1)
 
 				s.ruleDatastore.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
@@ -886,22 +886,6 @@ func getExpectedControlResults() []*ruleDS.ControlResult {
 		{RuleName: "rule-name", Standard: "OCP-CIS", Control: "1.2.2"},
 		{RuleName: "rule-name", Standard: "OCP-CIS", Control: "1.3.3"},
 		{RuleName: "rule-name", Standard: "OCP-CIS", Control: "1.4.4"},
-	}
-}
-
-func getExpectedBenchmark() []*storage.ComplianceOperatorBenchmarkV2 {
-	return []*storage.ComplianceOperatorBenchmarkV2{
-		{
-			Id:          uuid.NewV4().String(),
-			Name:        "CIS Benchmark",
-			Version:     "1.5",
-			Description: "blah",
-			Provider:    "",
-			ShortName:   "OCP_CIS",
-			Profiles: []*storage.ComplianceOperatorBenchmarkV2_Profile{
-				{ProfileName: "ocp4", ProfileVersion: "1.5"},
-			},
-		},
 	}
 }
 

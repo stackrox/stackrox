@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	types "github.com/stackrox/rox/pkg/protocompat"
@@ -121,7 +122,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 				}}
 				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorScanRef, "test-ref").ProtoQuery()).Return(profilesOcp, nil).AnyTimes()
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).AnyTimes()
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).AnyTimes()
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).AnyTimes()
 			},
 		},
@@ -147,7 +148,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 				}}
 				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorScanRef, "test-ref").ProtoQuery()).Return(profilesOcp, nil).AnyTimes()
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).AnyTimes()
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).AnyTimes()
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).AnyTimes()
 			},
 		},
@@ -178,7 +179,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 				}}
 				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorScanRef, "test-ref").ProtoQuery()).Return(profilesOcp, nil).AnyTimes()
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).AnyTimes()
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).AnyTimes()
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).AnyTimes()
 			},
 		},
@@ -248,7 +249,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResult() {
 					AddExactMatches(search.ComplianceOperatorScanRef, "test-ref").ProtoQuery()).Return(profilesOcp, nil).Times(1)
 				ruleQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, "test-ref-id").ProtoQuery()
 				s.ruleDS.EXPECT().SearchRules(gomock.Any(), ruleQuery).Return([]*storage.ComplianceOperatorRuleV2{{Name: "rule-name"}}, nil).Times(1)
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).Times(1)
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
@@ -317,7 +318,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 				}}
 				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorScanRef, "test-ref").ProtoQuery()).Return(profilesOcp, nil).AnyTimes()
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).AnyTimes()
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).AnyTimes()
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).AnyTimes()
 			},
 		},
@@ -427,7 +428,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 				}
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorCheckName).Return(1, nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).Times(1)
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
@@ -454,7 +455,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorCheckName).Return(1, nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).Times(1)
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
@@ -540,7 +541,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult(
 
 				ruleQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, "test-ref-id").ProtoQuery()
 				s.ruleDS.EXPECT().SearchRules(gomock.Any(), ruleQuery).Return([]*storage.ComplianceOperatorRuleV2{{Name: "rule-name"}}, nil).Times(1)
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).Times(1)
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
@@ -583,7 +584,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult(
 
 				ruleQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, "test-ref-id").ProtoQuery()
 				s.ruleDS.EXPECT().SearchRules(gomock.Any(), ruleQuery).Return([]*storage.ComplianceOperatorRuleV2{{Name: "rule-name"}}, nil).Times(1)
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).Times(1)
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
@@ -668,7 +669,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 				scanQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").AddExactMatches(search.ClusterID, testconsts.Cluster1).ProtoQuery()
 				s.scanDS.EXPECT().SearchScans(gomock.Any(), scanQuery).Return([]*storage.ComplianceOperatorScanV2{scan1}, nil).Times(1)
 
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).Times(1)
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
@@ -708,7 +709,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 				scanQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").AddExactMatches(search.ClusterID, testconsts.Cluster1).ProtoQuery()
 				s.scanDS.EXPECT().SearchScans(gomock.Any(), scanQuery).Return([]*storage.ComplianceOperatorScanV2{scan1}, nil).Times(1)
 
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).Times(1)
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
@@ -787,7 +788,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckDetails
 				}}
 				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorScanRef, "test-ref").ProtoQuery()).Return(profilesOcp, nil).Times(1)
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).Times(1)
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
@@ -821,7 +822,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckDetails
 				}}
 				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorScanRef, "test-ref").ProtoQuery()).Return(profilesOcp, nil).Times(1)
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(getExpectedBenchmark(), nil).Times(1)
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), "ocp4").Return(fixtures.GetExpectedBenchmark(), nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"OCP_CIS"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
@@ -880,21 +881,5 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckDetails
 				s.Require().Equal(convertUtils.GetConvertedComplianceResult(s.T(), nil), result)
 			}
 		})
-	}
-}
-
-func getExpectedBenchmark() []*storage.ComplianceOperatorBenchmarkV2 {
-	return []*storage.ComplianceOperatorBenchmarkV2{
-		{
-			Id:          uuid.NewV4().String(),
-			Name:        "CIS Benchmark",
-			Version:     "1.5",
-			Description: "blah",
-			Provider:    "",
-			ShortName:   "OCP_CIS",
-			Profiles: []*storage.ComplianceOperatorBenchmarkV2_Profile{
-				{ProfileName: "ocp4", ProfileVersion: "1.5"},
-			},
-		},
 	}
 }
