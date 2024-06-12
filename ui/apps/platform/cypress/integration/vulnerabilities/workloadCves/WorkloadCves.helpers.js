@@ -127,6 +127,16 @@ export function typeAndSelectCustomSearchFilterValue(searchOption, value) {
     cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
 }
 
+export function typeAndEnterSearchFilterValue(entity, searchTerm, value) {
+    selectEntitySearchOption(entity);
+    selectAttributeSearchOption(searchTerm);
+    cy.get(selectors.searchValueTypeahead).click();
+    cy.get(selectors.searchValueTypeahead).type(value);
+    cy.get(selectors.searchValueMenuItem)
+        .contains(new RegExp(`^${value}$`))
+        .click();
+}
+
 /**
  * Type and enter custom text into the search filter typeahead
  * @param {string} entity
