@@ -29,7 +29,7 @@ function AttributeSelector({
 
     const entityAttributes = getEntityAttributes(selectedEntity, config);
 
-    if (entityAttributes.length === 0) {
+    if (entityAttributes.length <= 1) {
         return null;
     }
 
