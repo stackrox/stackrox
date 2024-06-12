@@ -7,6 +7,7 @@ import {
     selectEntityTab,
     visitWorkloadCveOverview,
     typeAndSelectCustomSearchFilterValue,
+    typeAndEnterCustomSearchFilterValue,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 
@@ -27,7 +28,11 @@ describe('Workload CVE Image Single page', () => {
         // If unified deferrals are not enabled, there is a good chance none of the visible images will
         // have CVEs, so we apply a wildcard filter to ensure only images with CVEs are visible
         if (!hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')) {
-            typeAndSelectCustomSearchFilterValue('CVE', '.*');
+            if (hasFeatureFlag('ROX_VULN_MGMT_ADVANCED_FILTERS')) {
+                typeAndEnterCustomSearchFilterValue('Image CVE', 'Name', '.*');
+            } else {
+                typeAndSelectCustomSearchFilterValue('CVE', '.*');
+            }
         }
 
         // Ensure the data in the table has settled

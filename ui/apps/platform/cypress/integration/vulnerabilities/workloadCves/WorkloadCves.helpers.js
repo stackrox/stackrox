@@ -82,6 +82,23 @@ export function selectSearchOption(searchOption) {
     cy.get(selectors.searchOptionsDropdown).click();
 }
 
+export function selectEntitySearchOption(entity) {
+    cy.get(selectors.searchEntityDropdown).click();
+    cy.get(selectors.searchEntityMenuItem)
+        .contains(new RegExp(`^${entity}$`))
+        .click();
+
+    cy.get(selectors.searchEntityDropdown).click();
+}
+
+export function selectAttributeSearchOption(searchAttribute) {
+    cy.get(selectors.searchAttributeDropdown).click();
+    cy.get(selectors.searchAttributeMenuItem)
+        .contains(new RegExp(`^${searchAttribute}$`))
+        .click();
+    cy.get(selectors.searchAttributeDropdown).click();
+}
+
 /**
  * Type a value into the filter autocomplete typeahead and select the first matching value.
  * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
@@ -108,6 +125,23 @@ export function typeAndSelectCustomSearchFilterValue(searchOption, value) {
     cy.get(selectors.searchOptionsValueTypeahead(searchOption)).type(value);
     cy.get(selectors.searchOptionsValueMenuItem(searchOption)).contains(`Add "${value}"`).click();
     cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
+}
+
+/**
+ * Type and enter custom text into the search filter typeahead
+ * @param {string} entity
+ * @param {string} searchTerm
+ * @param {string} value
+ */
+export function typeAndEnterCustomSearchFilterValue(entity, searchTerm, value) {
+    selectEntitySearchOption(entity);
+    selectAttributeSearchOption(searchTerm);
+    cy.get(selectors.searchValueTypeahead).click();
+    cy.get(selectors.searchValueTypeahead).type(value);
+    cy.get(selectors.searchValueApplyButton).click();
+    // TODO Needs implementation
+    // cy.get(selectors.searchValueMenuItem).contains(`Add "${value}"`).click();
+    cy.get(selectors.searchValueTypeahead).click();
 }
 
 /**
