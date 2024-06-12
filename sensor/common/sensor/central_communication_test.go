@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sensor/hash"
 	"github.com/stackrox/rox/sensor/common"
 	configMocks "github.com/stackrox/rox/sensor/common/config/mocks"
@@ -374,7 +374,7 @@ func newMessagesMatcher(errorMsg string, msgs ...*central.MsgFromSensor) *messag
 			if x.GetEvent() == nil || y.GetEvent() == nil {
 				return false
 			}
-			return x.GetEvent().GetId() == y.GetEvent().GetId() && cmp.Equal(x.GetEvent().GetDeployment(), y.GetEvent().GetDeployment())
+			return x.GetEvent().GetId() == y.GetEvent().GetId() && protocompat.Equal(x.GetEvent().GetDeployment(), y.GetEvent().GetDeployment())
 		},
 	}
 	for _, m := range msgs {

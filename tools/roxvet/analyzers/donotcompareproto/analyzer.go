@@ -36,9 +36,7 @@ var (
 		"map[string]":   "MapEqual",
 	}
 
-	allowedCallerPackages = []string{
-		"github.com/stackrox/rox",
-	}
+	allowedCallerPackages []string
 
 	bannedEqualFunctions = set.NewFrozenStringSet(
 		"github.com/google/go-cmp/cmp.Equal",
