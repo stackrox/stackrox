@@ -8,7 +8,7 @@ from runners import ClusterTestRunner
 from clusters import GKECluster
 from pre_tests import PreSystemTests
 from ci_tests import ScannerV4Test
-from post_tests import NullPostTest, FinalPost
+from post_tests import PostClusterTest, FinalPost
 
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["STORE_METRICS"] = "true"
@@ -27,6 +27,10 @@ ClusterTestRunner(
     cluster=GKECluster("scanner-v4-test", machine_type="e2-standard-8"),
     pre_test=PreSystemTests(),
     test=ScannerV4Test(),
-    post_test=NullPostTest(),
+    post_test=PostClusterTest(
+        collect_collector_metrics=False,
+        collect_central_artifacts=False,
+        check_stackrox_logs=False,
+    ),
     final_post=FinalPost(),
 ).run()
