@@ -233,7 +233,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedResp, actualResp, "response should be output from graph generation")
+	protoassert.Equal(suite.T(), expectedResp, actualResp, "response should be output from graph generation")
 }
 
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
@@ -274,7 +274,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 1)
 	suite.Equal("first-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_MODIFIED, actualResp.GetPolicies()[0].GetStatus())
@@ -314,7 +314,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 2)
 	suite.Equal("second-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_UNCHANGED, actualResp.GetPolicies()[0].GetStatus())
@@ -358,7 +358,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 
-	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 2)
 	suite.Equal("first-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_MODIFIED, actualResp.GetPolicies()[0].GetStatus())
@@ -407,7 +407,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 
-	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 1)
 	suite.Equal("first-policy", actualResp.GetPolicies()[0].GetOldPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_DELETED, actualResp.GetPolicies()[0].GetStatus())
@@ -453,7 +453,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 2)
 	suite.Equal("second-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_MODIFIED, actualResp.GetPolicies()[0].GetStatus())
@@ -495,7 +495,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 2)
 	suite.Equal("first-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_ADDED, actualResp.GetPolicies()[0].GetStatus())

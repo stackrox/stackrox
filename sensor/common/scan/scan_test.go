@@ -108,7 +108,7 @@ func (suite *scanTestSuite) TestLocalEnrichment() {
 
 	suite.Require().NoError(err, "unexpected error when enriching image")
 
-	suite.Assert().Equal(img, resultImg, "resulting image is not equal to expected one")
+	protoassert.Equal(suite.T(), img, resultImg, "resulting image is not equal to expected one")
 
 	suite.Assert().True(imageServiceClient.enrichTriggered, "enrichment on central was not triggered")
 
@@ -218,7 +218,7 @@ func (suite *scanTestSuite) TestMetadataBeingSet() {
 
 	suite.Require().NoError(err, "unexpected error when enriching image")
 
-	suite.Assert().Equal(img, resultImg, "resulting image is not equal to expected one")
+	protoassert.Equal(suite.Assert().T(), img, resultImg, "resulting image is not equal to expected one")
 
 	suite.Assert().True(imageServiceClient.enrichTriggered, "enrichment on central was not triggered")
 }
