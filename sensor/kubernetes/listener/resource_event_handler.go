@@ -122,44 +122,20 @@ func (k *listenerImpl) handleAllEvents() {
 
 	// Informers that need to be synced initially
 	handle(k.context, namespaceInformer, dispatchers.ForNamespaces(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, "namespace")
-	//cache.WaitForNamedCacheSync("namespaces", stopSignal.Done(), namespaceInformer.HasSynced)
 	log.Info("Successfully synced namespaces")
 
 	handle(k.context, secretInformer, dispatchers.ForSecrets(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, "secret")
-	//cache.WaitForNamedCacheSync("secrets", stopSignal.Done(), secretInformer.HasSynced)
 	log.Info("Successfully synced secrets")
 
 	handle(k.context, saInformer, dispatchers.ForServiceAccounts(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, "sa")
-	//cache.WaitForNamedCacheSync("sas", stopSignal.Done(), saInformer.HasSynced)
 	log.Info("Successfully synced service accounts")
 
 	// Roles need to be synced before role bindings because role bindings have a reference
 	handle(k.context, roleInformer, dispatchers.ForRBAC(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, "role")
-	//cache.WaitForNamedCacheSync("roles", stopSignal.Done(), roleInformer.HasSynced)
 	log.Info("Successfully synced roles")
 
 	handle(k.context, clusterRoleInformer, dispatchers.ForRBAC(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, "clusterrole")
-	//cache.WaitForNamedCacheSync("clusterroles", stopSignal.Done(), clusterRoleInformer.HasSynced)
 	log.Info("Successfully synced clusterroles")
-
-	firstGroup := map[string]cache.InformerSynced{
-		"namespace":   namespaceInformer.HasSynced,
-		"clusterrole": clusterRoleInformer.HasSynced,
-		"role":        roleInformer.HasSynced,
-		"sa":          saInformer.HasSynced,
-		"secret":      secretInformer.HasSynced}
-	wg1 := sync.WaitGroup{}
-	for name, inf := range firstGroup {
-		go func(name string, i cache.InformerSynced) {
-			wg1.Add(1)
-			defer wg1.Done()
-			result := cache.WaitForNamedCacheSync(name, stopSignal.Done(), i)
-			log.Infof("ROX-24163: Successfully synced %s = %t", name, result)
-		}(name, inf)
-	}
-	log.Infof("ROX-24163: Waiting for the first group of informers to sync")
-	wg1.Wait()
-	log.Infof("ROX-24163: the first group of informers has synced")
 
 	// For openshift clusters only
 	var osConfigFactory osConfigExtVersions.SharedInformerFactory
@@ -213,9 +189,31 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, complianceSuiteInformer, dispatchers.ForComplianceOperatorSuites(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, "coSuites")
 	}
 
+	log.Infof("ROX-24163: calling startAndWait for sif")
 	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
+		log.Infof("ROX-24163: startAndWait for sif returned false")
 		return
 	}
+
+	firstGroup := map[string]cache.InformerSynced{
+		"namespace":   namespaceInformer.HasSynced,
+		"clusterrole": clusterRoleInformer.HasSynced,
+		"role":        roleInformer.HasSynced,
+		"sa":          saInformer.HasSynced,
+		"secret":      secretInformer.HasSynced}
+	wg1 := &concurrency.WaitGroup{}
+	for name, inf := range firstGroup {
+		go func(name string, i cache.InformerSynced) {
+			wg1.Add(1)
+			defer wg1.Add(-1)
+			result := cache.WaitForNamedCacheSync(name, stopSignal.Done(), i)
+			log.Infof("ROX-24163: Successfully synced %s = %t", name, result)
+		}(name, inf)
+	}
+	log.Infof("ROX-24163: Waiting for the first group of informers to sync")
+	<-wg1.Done()
+	log.Infof("ROX-24163: the first group of informers has synced")
+
 	log.Info("Successfully synced secrets, service accounts and roles")
 
 	// prePodWaitGroup
