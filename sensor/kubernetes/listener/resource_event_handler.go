@@ -360,7 +360,7 @@ func handle(
 	wg.Add(1)
 	go func() {
 		defer func() {
-			wg.Done()
+			wg.Add(-1)
 			log.Debugf("ROX-24163 (defer) for %q has synced: hReg=%t informer=%t", name, handlerRegistration.HasSynced(), informer.HasSynced())
 		}()
 		log.Debugf("ROX-24163 (go func) for %q has synced: hReg=%t informer=%t", name, handlerRegistration.HasSynced(), informer.HasSynced())
