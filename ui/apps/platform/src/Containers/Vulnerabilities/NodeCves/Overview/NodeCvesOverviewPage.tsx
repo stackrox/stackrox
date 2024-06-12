@@ -21,6 +21,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
+import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
 import useSnoozeCveModal from '../../components/SnoozeCvesModal/useSnoozeCveModal';
@@ -57,8 +58,7 @@ function NodeCvesOverviewPage() {
         onSort: () => pagination.setPage(1, 'replace'),
     });
 
-    // TODO - Need an equivalent function implementation for filter sanitization for Node CVEs
-    const querySearchFilter = searchFilter;
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const isViewingSnoozedCves = querySearchFilter['CVE Snoozed']?.[0] === 'true';

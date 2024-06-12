@@ -78,7 +78,10 @@ function FilterAutocompleteSelect({
     // 1. The typeahead is not empty
     // 2. The search option supports regex matching
     autocompleteSearchFilter[searchOption.value] =
-        typeahead !== '' && regexSearchOptions.some((option) => option === searchOption.value)
+        typeahead !== '' &&
+        regexSearchOptions.some(
+            (option) => option.toLowerCase() === searchOption.value.toLowerCase()
+        )
             ? [`r/${typeahead}`]
             : [typeahead];
 

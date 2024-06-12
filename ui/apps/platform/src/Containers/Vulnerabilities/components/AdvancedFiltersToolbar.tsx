@@ -52,12 +52,6 @@ function makeDefaultFilterDescriptor(
     };
 }
 
-export type FilterChangeDiff = {
-    action: 'add' | 'remove';
-    category: string;
-    value: string;
-};
-
 const emptyDefaultFilters = {
     SEVERITY: [],
     FIXABLE: [],
@@ -67,6 +61,7 @@ type AdvancedFiltersToolbarProps = {
     searchFilterConfig: CompoundSearchFilterProps['config'];
     searchFilter: SearchFilter;
     onFilterChange: (searchFilter: SearchFilter, payload: OnSearchPayload) => void;
+    className?: string;
     defaultFilters?: DefaultFilters;
     includeCveFilters?: boolean;
     // TODO We need to be able to apply the autocomplete search context to the advanced filters component @see FilterAutocomplete.tsx
@@ -77,6 +72,7 @@ function AdvancedFiltersToolbar({
     searchFilterConfig,
     searchFilter,
     onFilterChange,
+    className = '',
     defaultFilters = emptyDefaultFilters,
     includeCveFilters = true,
     // TODO We need to be able to apply the autocomplete search context to the advanced filters component
@@ -117,7 +113,7 @@ function AdvancedFiltersToolbar({
     }
 
     return (
-        <Toolbar className="advanced-filters-toolbar pf-v5-u-pb-0 pf-v5-u-px-sm">
+        <Toolbar className={`advanced-filters-toolbar ${className}`}>
             <ToolbarContent>
                 <ToolbarGroup
                     variant="filter-group"
