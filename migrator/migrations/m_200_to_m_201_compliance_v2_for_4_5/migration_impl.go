@@ -34,16 +34,19 @@ import (
 // to a software version that can no longer be supported by the database.
 
 func migrate(database *types.Databases) error {
-	_ = database // TODO(dont-merge): remove this line, it is there to make the compiler happy while the migration code is being written.
-	// Use databases.DBCtx to take advantage of the transaction wrapping present in the migration initiator
+	if err := migrateProfiles(database); err != nil {
+		return err
+	}
 
-	// TODO(dont-merge): Migration code comes here
-	// TODO(dont-merge): When using gorm, make sure you use a separate handle for the updates and the query.  Such as:
-	// TODO(dont-merge): db = db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName)
-	// TODO(dont-merge): query := db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName).Select("serialized")
-	// TODO(dont-merge): See README for more details
+	if err := migrateRules(database); err != nil {
+		return err
+	}
 
-	return nil
+	if err := migrateScans(database); err != nil {
+		return err
+	}
+
+	return migrateResults(database)
 }
 
 func migrateProfiles(database *types.Databases) error {
