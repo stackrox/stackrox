@@ -18,7 +18,7 @@ import PageTitle from 'Components/PageTitle';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import { getComplianceProfilesStats } from 'services/ComplianceResultsStatsService';
+import { getComplianceProfilesClusterStats } from 'services/ComplianceResultsStatsService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getComplianceProfileClusterResults } from 'services/ComplianceResultsService';
@@ -52,7 +52,7 @@ function ClusterDetailsPage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const fetchProfilesStats = useCallback(
-        () => getComplianceProfilesStats(clusterId),
+        () => getComplianceProfilesClusterStats(clusterId),
         [clusterId]
     );
     const {
@@ -141,8 +141,7 @@ function ClusterDetailsPage() {
                         {isLoadingClusterProfileData ? (
                             <Skeleton screenreaderText="Loading cluster name" width="150px" />
                         ) : (
-                            // TODO: placeholder until we get cluster name
-                            clusterId
+                            clusterProfileData?.clusterName
                         )}
                     </BreadcrumbItem>
                 </Breadcrumb>
@@ -157,8 +156,7 @@ function ClusterDetailsPage() {
                         {isLoadingClusterProfileData ? (
                             <Skeleton fontSize="2xl" screenreaderText="Loading cluster name" />
                         ) : (
-                            // TODO: placeholder until we get cluster name
-                            clusterId
+                            clusterProfileData?.clusterName
                         )}
                     </Title>
                     <LabelGroup numLabels={1}>
