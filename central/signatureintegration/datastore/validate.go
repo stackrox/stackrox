@@ -2,10 +2,12 @@ package datastore
 
 import (
 	"encoding/pem"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -28,12 +30,13 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 		err := errors.New("name field must be set")
 		multiErr = multierror.Append(multiErr, err)
 	}
-	if integration.GetCosign() == nil {
-		err := errors.New("integration must have at least one signature verification config")
-		multiErr = multierror.Append(multiErr, err)
+	if len(integration.GetCosign().GetPublicKeys()) == 0 && len(integration.GetCosignCertificates()) == 0 {
+		multiErr = multierror.Append(multiErr, errors.New("integration must have at least one signature verification config"))
 	} else {
-		err := validateCosignVerification(integration.GetCosign())
-		if err != nil {
+		if err := validateCosignKeyVerification(integration.GetCosign()); err != nil {
+			multiErr = multierror.Append(multiErr, err)
+		}
+		if err := validateCosignCertificateVerification(integration.GetCosignCertificates()); err != nil {
 			multiErr = multierror.Append(multiErr, err)
 		}
 	}
@@ -41,14 +44,10 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 	return multiErr
 }
 
-func validateCosignVerification(config *storage.CosignPublicKeyVerification) error {
+func validateCosignKeyVerification(config *storage.CosignPublicKeyVerification) error {
 	var multiErr error
 
 	publicKeys := config.GetPublicKeys()
-	if len(publicKeys) == 0 {
-		err := errors.New("cosign verification must have at least one public key configured")
-		multiErr = multierror.Append(multiErr, err)
-	}
 	for _, publicKey := range publicKeys {
 		if publicKey.GetName() == "" {
 			err := errors.New("public key name should be filled")
@@ -59,6 +58,37 @@ func validateCosignVerification(config *storage.CosignPublicKeyVerification) err
 		if !signatures.IsValidPublicKeyPEMBlock(keyBlock, rest) {
 			err := errors.Errorf("failed to decode PEM block containing public key %q", publicKey.GetName())
 			multiErr = multierror.Append(multiErr, err)
+		}
+	}
+
+	return multiErr
+}
+
+func validateCosignCertificateVerification(configs []*storage.CosignCertificateVerification) error {
+	var multiErr error
+
+	for _, config := range configs {
+		if config.GetCertificateIdentity() == "" {
+			multiErr = multierror.Append(multiErr, errors.New("certificate identity should be filled"))
+		}
+
+		if _, err := regexp.Compile(config.GetCertificateIdentity()); err != nil {
+			multiErr = multierror.Append(multiErr, err)
+		}
+
+		if config.GetCertificateOidcIssuer() == "" {
+			multiErr = multierror.Append(multiErr, errors.New("certificate issuer should be filled"))
+		}
+
+		if _, err := regexp.Compile(config.GetCertificateOidcIssuer()); err != nil {
+			multiErr = multierror.Append(multiErr, err)
+		}
+
+		if _, err := cryptoutils.UnmarshalCertificatesFromPEM([]byte(config.GetCertificateChainsPemEnc())); err != nil {
+			multiErr = multierror.Append(multiErr, errors.Wrap(err, "unmarshalling certificate chain PEM"))
+		}
+		if _, err := cryptoutils.UnmarshalCertificatesFromPEM([]byte(config.GetCertificatePemEnc())); err != nil {
+			multiErr = multierror.Append(multiErr, errors.Wrap(err, "unmarshalling certificate PEM"))
 		}
 	}
 
