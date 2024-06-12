@@ -11,7 +11,6 @@ import {
     imageSearchFilterConfig,
     nodeComponentSearchFilterConfig,
 } from '../types';
-import { getFilteredConfig } from '../utils/searchFilterConfig';
 
 const selectors = {
     entitySelectToggle: 'button[aria-label="compound search filter entity selector toggle"]',
@@ -78,20 +77,6 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.entitySelectToggle).should('not.exist');
     });
 
-    it('should disable the entity selector when only one entity is present', () => {
-        const config = {
-            Image: imageSearchFilterConfig,
-        };
-        const onSearch = cy.stub().as('onSearch');
-        const searchFilter = {};
-
-        setup(config, searchFilter, onSearch);
-
-        cy.get(selectors.entitySelectToggle).should('contain.text', 'Image');
-
-        cy.get(selectors.entitySelectToggle).should('be.disabled');
-    });
-
     it('should display Image and Deployment entities in the entity selector', () => {
         const config = {
             Image: imageSearchFilterConfig,
@@ -130,21 +115,6 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.entitySelectItems).eq(0).should('have.text', 'Image');
         cy.get(selectors.entitySelectItems).eq(1).should('have.text', 'Deployment');
         cy.get(selectors.entitySelectItems).eq(2).should('have.text', 'Cluster');
-    });
-
-    it('should disable the attribute selector when only one attribute is present', () => {
-        const config = {
-            Image: getFilteredConfig(imageSearchFilterConfig, ['Name']),
-        };
-        const onSearch = cy.stub().as('onSearch');
-        const searchFilter = {};
-
-        setup(config, searchFilter, onSearch);
-
-        cy.get(selectors.entitySelectToggle).should('contain.text', 'Image');
-        cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
-
-        cy.get(selectors.attributeSelectToggle).should('be.disabled');
     });
 
     it('should display Image attributes in the attribute selector', () => {

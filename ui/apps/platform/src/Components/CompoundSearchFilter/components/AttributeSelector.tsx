@@ -29,7 +29,7 @@ function AttributeSelector({
 
     const entityAttributes = getEntityAttributes(selectedEntity, config);
 
-    if (entityAttributes.length === 0) {
+    if (entityAttributes.length <= 1) {
         return null;
     }
 
@@ -39,7 +39,6 @@ function AttributeSelector({
             onChange={onChange}
             ariaLabelMenu="compound search filter attribute selector menu"
             ariaLabelToggle="compound search filter attribute selector toggle"
-            isDisabled={entityAttributes.length === 1}
         >
             {entityAttributes.map((attribute) => {
                 return (
