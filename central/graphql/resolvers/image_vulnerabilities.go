@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/vulnmgmt/request/common"
+	"github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"

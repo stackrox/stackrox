@@ -20,7 +20,7 @@ import (
 	snapshotDataStore "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
-	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/request/datastore"
+	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 

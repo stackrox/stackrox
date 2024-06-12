@@ -7,8 +7,8 @@ import (
 	"time"
 
 	configDS "github.com/stackrox/rox/central/config/datastore"
-	"github.com/stackrox/rox/central/vulnmgmt/request/cache"
-	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/request/datastore"
+	"github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/cache"
+	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protocompat"
