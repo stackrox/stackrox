@@ -22,6 +22,9 @@ ClusterTestRunner(
     pre_test=PreSystemTests(),
     test=ScannerV4Test(),
     post_test=PostClusterTest(
+        # Stackrox is torn down as part of each test execution so data
+        # collection and standard log checks are skipped in this post suite
+        # step. The scanner-v4 test teardown() handles debug collection.
         collect_collector_metrics=False,
         collect_central_artifacts=False,
         check_stackrox_logs=False,
