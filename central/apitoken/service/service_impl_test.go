@@ -16,7 +16,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestSomethingIsSorted(t *testing.T) {
+func TestServiceImpl_ListAllowedRoles_SortsRoleAlphabetically(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
