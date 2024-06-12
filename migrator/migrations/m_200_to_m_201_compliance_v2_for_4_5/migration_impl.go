@@ -1,7 +1,19 @@
 package m200tom201
 
 import (
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5/schema"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/uuid"
+	"gorm.io/gorm/clause"
+)
+
+var (
+	batchSize = 2000
+	log       = logging.LoggerForModule()
 )
 
 // TODO(dont-merge): generate/write and import any store required for the migration (skip any unnecessary step):
@@ -50,10 +62,68 @@ func migrate(database *types.Databases) error {
 }
 
 func migrateProfiles(database *types.Databases) error {
+	// We are simply promoting a field to a column so the serialized object is unchanged.  Thus, we
+	// have no need to worry about the old schema and can simply perform all our work on the new one.
+	db := database.GormDB
+	pgutils.CreateTableFromModel(database.DBCtx, db, schema.CreateTableComplianceOperatorProfileV2Stmt)
+	db = db.WithContext(database.DBCtx).Table(schema.ComplianceOperatorProfileV2TableName)
+	query := db.WithContext(database.DBCtx).Table(schema.ComplianceOperatorProfileV2TableName).Select("serialized")
+
+	rows, err := query.Rows()
+	if err != nil {
+		return errors.Wrapf(err, "failed to iterate table %s", schema.ComplianceOperatorProfileV2TableName)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var convertedProfiles []*schema.ComplianceOperatorProfileV2
+	var count int
+	for rows.Next() {
+		var profile *schema.ComplianceOperatorProfileV2
+		if err = query.ScanRows(rows, &profile); err != nil {
+			return errors.Wrap(err, "failed to scan rows")
+		}
+
+		profileProto, err := schema.ConvertComplianceOperatorProfileV2ToProto(profile)
+		if err != nil {
+			return errors.Wrapf(err, "failed to convert %+v to proto", profile)
+		}
+
+		// Add the profile ref id
+		profileProto.ProfileRefId = createProfileRefID(profileProto)
+
+		converted, err := schema.ConvertComplianceOperatorProfileV2FromProto(profileProto)
+		if err != nil {
+			return errors.Wrapf(err, "failed to convert from proto %+v", profileProto)
+		}
+		convertedProfiles = append(convertedProfiles, converted)
+		count++
+
+		if len(convertedProfiles) == batchSize {
+			// Upsert converted blobs
+			if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(schema.CreateTableComplianceOperatorProfileV2Stmt.GormModel).Create(&convertedProfiles).Error; err != nil {
+				return errors.Wrapf(err, "failed to upsert converted %d objects after %d upserted", len(convertedProfiles), count-len(convertedProfiles))
+			}
+			convertedProfiles = convertedProfiles[:0]
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return errors.Wrapf(err, "failed to get rows for %s", schema.ComplianceOperatorProfileV2TableName)
+	}
+
+	if len(convertedProfiles) > 0 {
+		if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(schema.CreateTableComplianceOperatorProfileV2Stmt.GormModel).Create(&convertedProfiles).Error; err != nil {
+			return errors.Wrapf(err, "failed to upsert last %d objects", len(convertedProfiles))
+		}
+	}
+	log.Infof("Converted %d profile records", count)
+
 	return nil
 }
 
 func migrateRules(database *types.Databases) error {
+	// Need to use store because of `RuleControls`
+
 	return nil
 }
 
@@ -65,6 +135,17 @@ func migrateResults(database *types.Databases) error {
 	return nil
 }
 
-// TODO(dont-merge): Write the additional code to support the migration
+func createProfileRefID(profile *storage.ComplianceOperatorProfileV2) string {
+	interimUUID := buildDeterministicID(profile.GetClusterId(), profile.GetProfileId())
 
-// TODO(dont-merge): remove any pending TODO
+	return buildDeterministicID(interimUUID, profile.GetProductType())
+}
+
+func buildDeterministicID(part1 string, part2 string) string {
+	baseUUID, err := uuid.FromString(part1)
+	if err != nil {
+		log.Error(err)
+		return ""
+	}
+	return uuid.NewV5(baseUUID, part2).String()
+}
