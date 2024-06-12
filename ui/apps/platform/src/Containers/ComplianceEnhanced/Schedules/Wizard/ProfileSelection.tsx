@@ -184,8 +184,8 @@ function ProfileSelection({
                 <Table>
                     <Thead noWrap>
                         <Tr>
-                            <Th />
-                            <Th />
+                            <Td />
+                            <Td />
                             <Th>Profile</Th>
                             <Th>Rule set</Th>
                             <Th>Applicability</Th>
