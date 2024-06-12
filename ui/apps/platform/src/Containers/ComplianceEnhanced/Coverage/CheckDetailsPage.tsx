@@ -189,13 +189,12 @@ function CheckDetails() {
                     setActiveTabKey(key);
                 }}
                 component={TabsComponent.nav}
-                className="pf-v5-u-pl-md pf-v5-u-background-color-100"
+                className="pf-v5-u-pl-md pf-v5-u-background-color-100 pf-v5-u-flex-shrink-0"
                 role="region"
             >
                 <Tab eventKey={RESULTS_TAB} title={RESULTS_TAB} />
                 <Tab eventKey={DETAILS_TAB} title={DETAILS_TAB} />
             </Tabs>
-            <Divider component="div" />
             <PageSection>
                 {activeTabKey === RESULTS_TAB && (
                     <CheckDetailsTable

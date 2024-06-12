@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    Alert,
     Bullseye,
     DescriptionList,
     DescriptionListDescription,
@@ -14,6 +15,7 @@ import {
     ComplianceCheckResult,
     ComplianceClusterCheckStatus,
 } from 'services/ComplianceResultsService';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import './CheckDetailsInfo.css';
 
@@ -25,7 +27,11 @@ type CheckDetailsInfoProps = {
 
 function CheckDetailsInfo({ checkDetails, isLoading, error }: CheckDetailsInfoProps) {
     if (error) {
-        return <div>Error: {error.message}</div>;
+        return (
+            <Alert title="Unable to fetch check details" isInline variant="danger">
+                {getAxiosErrorMessage(error)}
+            </Alert>
+        );
     }
 
     if (isLoading && !checkDetails) {
