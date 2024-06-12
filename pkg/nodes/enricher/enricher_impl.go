@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -110,6 +111,7 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, nodeInventory *
 
 	scanStartTime := time.Now()
 	scan, err := scanner.GetNodeInventoryScan(node, nodeInventory)
+	err = errox.ConsealSensitive(err)
 
 	e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
 	e.metrics.SetNodeInventoryNumberComponents(len(nodeInventory.GetComponents().GetRhelComponents()), node.GetClusterName(), node.GetName())

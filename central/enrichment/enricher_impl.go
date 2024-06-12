@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/sac"
@@ -47,7 +48,7 @@ func (e *enricherImpl) EnrichDeployment(ctx context.Context, enrichCtx enricher.
 		}
 		enrichmentResult, err := e.imageEnricher.EnrichImage(ctx, enrichCtx, imgToProcess)
 		if err != nil {
-			log.Error(err)
+			log.Error(errox.GetSensitiveError(err))
 		}
 		if enrichmentResult.ImageUpdated {
 			updatedIndices = append(updatedIndices, i)
