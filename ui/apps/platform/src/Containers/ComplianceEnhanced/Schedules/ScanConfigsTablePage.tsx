@@ -39,7 +39,6 @@ import useURLSort from 'hooks/useURLSort';
 import {
     ComplianceScanConfigurationStatus,
     deleteComplianceScanConfiguration,
-    getComplianceScanConfigurationsCount,
     listComplianceScanConfigurations,
     runComplianceReport,
     runComplianceScanConfiguration,
@@ -95,10 +94,7 @@ function ScanConfigsTablePage({
         () => listComplianceScanConfigurations(sortOption, page - 1, perPage),
         [sortOption, page, perPage]
     );
-    const { data: scanSchedules, loading: isLoading, error, refetch } = useRestQuery(listQuery);
-
-    const countQuery = useCallback(() => getComplianceScanConfigurationsCount(), []);
-    const { data: scanSchedulesCount } = useRestQuery(countQuery);
+    const { data: listData, loading: isLoading, error, refetch } = useRestQuery(listQuery);
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
 
@@ -181,7 +177,7 @@ function ScanConfigsTablePage({
     }
 
     const renderTableContent = () => {
-        return scanSchedules?.map((scanSchedule) => {
+        return listData?.configurations?.map((scanSchedule) => {
             const { id, scanName, scanConfig, lastExecutedTime, clusterStatus } = scanSchedule;
             const scanConfigUrl = generatePath(scanConfigDetailsPath, {
                 scanConfigId: id,
@@ -261,7 +257,7 @@ function ScanConfigsTablePage({
         if (isLoading) {
             return renderLoadingContent();
         }
-        if (scanSchedules && scanSchedules.length > 0) {
+        if (Array.isArray(listData?.configurations) && listData.configurations.length > 0) {
             return renderTableContent();
         }
         return renderEmptyContent();
@@ -312,7 +308,7 @@ function ScanConfigsTablePage({
                         <ToolbarContent>
                             <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                                 <Pagination
-                                    itemCount={scanSchedulesCount ?? 0}
+                                    itemCount={listData?.totalCount ?? 0}
                                     page={page}
                                     perPage={perPage}
                                     onSetPage={(_, newPage) => setPage(newPage)}
