@@ -151,7 +151,6 @@ export function typeAndEnterCustomSearchFilterValue(entity, searchTerm, value) {
     cy.get(selectors.searchValueApplyButton).click();
     // TODO Needs implementation
     // cy.get(selectors.searchValueMenuItem).contains(`Add "${value}"`).click();
-    cy.get(selectors.searchValueTypeahead).click();
 }
 
 /**
