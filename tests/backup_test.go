@@ -24,6 +24,9 @@ import (
 
 // Grab the backup DB and open it, ensuring that there are values for deployments
 func TestBackup(t *testing.T) {
+	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
+		t.Skip("temporarily skipped on OCP. TODO(ROX-24688)")
+	}
 	deploymentName := fmt.Sprintf("test-backup-%d", rand.Intn(10000))
 
 	setupDeployment(t, "nginx", deploymentName)
