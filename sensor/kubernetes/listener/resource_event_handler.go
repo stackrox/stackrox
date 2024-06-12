@@ -122,25 +122,27 @@ func (k *listenerImpl) handleAllEvents() {
 
 	// Informers that need to be synced initially
 	handle(k.context, namespaceInformer, dispatchers.ForNamespaces(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, "namespace")
-	cache.WaitForNamedCacheSync("namespaces", stopSignal.Done(), namespaceInformer.HasSynced)
+	//cache.WaitForNamedCacheSync("namespaces", stopSignal.Done(), namespaceInformer.HasSynced)
 	log.Info("Successfully synced namespaces")
 
 	handle(k.context, secretInformer, dispatchers.ForSecrets(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, "secret")
-	cache.WaitForNamedCacheSync("secrets", stopSignal.Done(), secretInformer.HasSynced)
+	//cache.WaitForNamedCacheSync("secrets", stopSignal.Done(), secretInformer.HasSynced)
 	log.Info("Successfully synced secrets")
 
 	handle(k.context, saInformer, dispatchers.ForServiceAccounts(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, "sa")
-	cache.WaitForNamedCacheSync("sas", stopSignal.Done(), saInformer.HasSynced)
+	//cache.WaitForNamedCacheSync("sas", stopSignal.Done(), saInformer.HasSynced)
 	log.Info("Successfully synced service accounts")
 
 	// Roles need to be synced before role bindings because role bindings have a reference
 	handle(k.context, roleInformer, dispatchers.ForRBAC(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, "role")
-	cache.WaitForNamedCacheSync("roles", stopSignal.Done(), roleInformer.HasSynced)
+	//cache.WaitForNamedCacheSync("roles", stopSignal.Done(), roleInformer.HasSynced)
 	log.Info("Successfully synced roles")
 
 	handle(k.context, clusterRoleInformer, dispatchers.ForRBAC(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, "clusterrole")
-	cache.WaitForNamedCacheSync("clusterroles", stopSignal.Done(), clusterRoleInformer.HasSynced)
+	//cache.WaitForNamedCacheSync("clusterroles", stopSignal.Done(), clusterRoleInformer.HasSynced)
 	log.Info("Successfully synced clusterroles")
+
+	cache.WaitForNamedCacheSync("first group of informers", stopSignal.Done(), namespaceInformer.HasSynced, clusterRoleInformer.HasSynced, roleInformer.HasSynced, saInformer.HasSynced, secretInformer.HasSynced)
 
 	// For openshift clusters only
 	var osConfigFactory osConfigExtVersions.SharedInformerFactory
