@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	lru "github.com/hashicorp/golang-lru/v2/expirable"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -72,7 +72,10 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 		ctx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 		defer cancel()
 	}
-	imageCache := lru.NewLRU[string, *storage.Image](cacheSize, nil, 0)
+	imageCache, err := lru.New[string, *storage.Image](cacheSize)
+	if err != nil {
+		return errors.Wrap(errox.ServerError, err.Error())
+	}
 
 	return s.deployments.WalkByQuery(ctx, parsedQuery, func(d *storage.Deployment) error {
 		containers := d.GetContainers()
