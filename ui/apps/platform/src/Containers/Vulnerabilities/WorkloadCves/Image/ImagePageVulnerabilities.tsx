@@ -29,6 +29,11 @@ import {
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
+import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
+import {
+    imageComponentSearchFilterConfig,
+    imageCVESearchFilterConfig,
+} from 'Components/CompoundSearchFilter/types';
 import {
     SearchOption,
     IMAGE_CVE_SEARCH_OPTION,
@@ -91,6 +96,11 @@ const searchOptions: SearchOption[] = [
     COMPONENT_SOURCE_SEARCH_OPTION,
 ];
 
+const searchFilterConfig = {
+    'Image CVE': imageCVESearchFilterConfig,
+    ImageComponent: imageComponentSearchFilterConfig,
+};
+
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;
     imageName: {
@@ -110,6 +120,7 @@ function ImagePageVulnerabilities({
 }: ImagePageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
+    const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
     const currentVulnerabilityState = useVulnerabilityState();
 
@@ -185,117 +196,6 @@ function ImagePageVulnerabilities({
         severityCounts?.low.total ?? 0,
     ]);
 
-    // TODO - Inline `mainContent` into the return statement
-    const mainContent = (
-        <>
-            <SummaryCardLayout error={error} isLoading={loading}>
-                <SummaryCard
-                    data={data?.image}
-                    loadingText="Loading image vulnerability summary"
-                    renderer={({ data }) => (
-                        <BySeveritySummaryCard
-                            title="CVEs by severity"
-                            severityCounts={data.imageCVECountBySeverity}
-                            hiddenSeverities={hiddenSeverities}
-                        />
-                    )}
-                />
-                <SummaryCard
-                    data={data?.image}
-                    loadingText="Loading image vulnerability summary"
-                    renderer={({ data }) => (
-                        <CvesByStatusSummaryCard
-                            cveStatusCounts={data.imageCVECountBySeverity}
-                            hiddenStatuses={hiddenStatuses}
-                            isBusy={loading}
-                        />
-                    )}
-                />
-            </SummaryCardLayout>
-            <Divider />
-            <div className="pf-v5-u-p-lg">
-                <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
-                    <SplitItem isFilled>
-                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                            <Title headingLevel="h2">
-                                {pluralize(totalVulnerabilityCount, 'result', 'results')} found
-                            </Title>
-                            {isFiltered && <DynamicTableLabel />}
-                        </Flex>
-                    </SplitItem>
-                    {canSelectRows && (
-                        <>
-                            <SplitItem>
-                                <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
-                                    <DropdownItem
-                                        key="bulk-defer-cve"
-                                        component="button"
-                                        onClick={() =>
-                                            showModal({
-                                                type: 'DEFERRAL',
-                                                cves: Array.from(selectedCves.values()),
-                                            })
-                                        }
-                                    >
-                                        Defer CVEs
-                                    </DropdownItem>
-                                    <DropdownItem
-                                        key="bulk-mark-false-positive"
-                                        component="button"
-                                        onClick={() =>
-                                            showModal({
-                                                type: 'FALSE_POSITIVE',
-                                                cves: Array.from(selectedCves.values()),
-                                            })
-                                        }
-                                    >
-                                        Mark as false positives
-                                    </DropdownItem>
-                                </BulkActionsDropdown>
-                            </SplitItem>
-                            <Divider
-                                className="pf-v5-u-px-lg"
-                                orientation={{ default: 'vertical' }}
-                            />
-                        </>
-                    )}
-                    <SplitItem>
-                        <Pagination
-                            itemCount={totalVulnerabilityCount}
-                            page={page}
-                            perPage={perPage}
-                            onSetPage={(_, newPage) => setPage(newPage)}
-                            onPerPageSelect={(_, newPerPage) => {
-                                setPerPage(newPerPage);
-                            }}
-                        />
-                    </SplitItem>
-                </Split>
-                <div
-                    className="workload-cves-table-container"
-                    role="region"
-                    aria-live="polite"
-                    aria-busy={loading ? 'true' : 'false'}
-                >
-                    <ImageVulnerabilitiesTable
-                        imageMetadata={data?.image}
-                        tableState={tableState}
-                        getSortParams={getSortParams}
-                        isFiltered={isFiltered}
-                        selectedCves={selectedCves}
-                        canSelectRows={canSelectRows}
-                        vulnerabilityState={currentVulnerabilityState}
-                        createTableActions={createTableActions}
-                        onClearFilters={() => {
-                            setSearchFilter({});
-                            setPage(1, 'replace');
-                        }}
-                    />
-                </div>
-            </div>
-        </>
-    );
-
     return (
         <>
             {exceptionRequestModalOptions && (
@@ -327,16 +227,137 @@ function ImagePageVulnerabilities({
             >
                 <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
                 <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
-                    <WorkloadCveFilterToolbar
-                        searchOptions={searchOptions}
-                        autocompleteSearchContext={{
-                            'Image SHA': imageId,
-                        }}
-                        onFilterChange={() => setPage(1)}
-                    />
+                    {isAdvancedFiltersEnabled ? (
+                        <AdvancedFiltersToolbar
+                            className="pf-v5-u-pt-lg pf-v5-u-pb-0"
+                            searchFilterConfig={searchFilterConfig}
+                            searchFilter={searchFilter}
+                            onFilterChange={(newFilter, { action }) => {
+                                setSearchFilter(newFilter);
+                                setPage(1, 'replace');
+
+                                if (action === 'ADD') {
+                                    // TODO - Add analytics tracking ROX-24532
+                                }
+                            }}
+                        />
+                    ) : (
+                        <WorkloadCveFilterToolbar
+                            searchOptions={searchOptions}
+                            autocompleteSearchContext={{
+                                'Image SHA': imageId,
+                            }}
+                            onFilterChange={() => setPage(1)}
+                        />
+                    )}
                 </div>
                 <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100">
-                    {mainContent}
+                    <SummaryCardLayout error={error} isLoading={loading}>
+                        <SummaryCard
+                            data={data?.image}
+                            loadingText="Loading image vulnerability summary"
+                            renderer={({ data }) => (
+                                <BySeveritySummaryCard
+                                    title="CVEs by severity"
+                                    severityCounts={data.imageCVECountBySeverity}
+                                    hiddenSeverities={hiddenSeverities}
+                                />
+                            )}
+                        />
+                        <SummaryCard
+                            data={data?.image}
+                            loadingText="Loading image vulnerability summary"
+                            renderer={({ data }) => (
+                                <CvesByStatusSummaryCard
+                                    cveStatusCounts={data.imageCVECountBySeverity}
+                                    hiddenStatuses={hiddenStatuses}
+                                    isBusy={loading}
+                                />
+                            )}
+                        />
+                    </SummaryCardLayout>
+                    <Divider />
+                    <div className="pf-v5-u-p-lg">
+                        <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+                            <SplitItem isFilled>
+                                <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                                    <Title headingLevel="h2">
+                                        {pluralize(totalVulnerabilityCount, 'result', 'results')}{' '}
+                                        found
+                                    </Title>
+                                    {isFiltered && <DynamicTableLabel />}
+                                </Flex>
+                            </SplitItem>
+                            {canSelectRows && (
+                                <>
+                                    <SplitItem>
+                                        <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                                            <DropdownItem
+                                                key="bulk-defer-cve"
+                                                component="button"
+                                                onClick={() =>
+                                                    showModal({
+                                                        type: 'DEFERRAL',
+                                                        cves: Array.from(selectedCves.values()),
+                                                    })
+                                                }
+                                            >
+                                                Defer CVEs
+                                            </DropdownItem>
+                                            <DropdownItem
+                                                key="bulk-mark-false-positive"
+                                                component="button"
+                                                onClick={() =>
+                                                    showModal({
+                                                        type: 'FALSE_POSITIVE',
+                                                        cves: Array.from(selectedCves.values()),
+                                                    })
+                                                }
+                                            >
+                                                Mark as false positives
+                                            </DropdownItem>
+                                        </BulkActionsDropdown>
+                                    </SplitItem>
+                                    <Divider
+                                        className="pf-v5-u-px-lg"
+                                        orientation={{ default: 'vertical' }}
+                                    />
+                                </>
+                            )}
+                            <SplitItem>
+                                <Pagination
+                                    itemCount={totalVulnerabilityCount}
+                                    page={page}
+                                    perPage={perPage}
+                                    onSetPage={(_, newPage) => setPage(newPage)}
+                                    onPerPageSelect={(_, newPerPage) => {
+                                        setPerPage(newPerPage);
+                                    }}
+                                />
+                            </SplitItem>
+                        </Split>
+                        <div
+                            className="workload-cves-table-container"
+                            role="region"
+                            aria-live="polite"
+                            aria-busy={loading ? 'true' : 'false'}
+                        >
+                            <ImageVulnerabilitiesTable
+                                imageMetadata={data?.image}
+                                tableState={tableState}
+                                getSortParams={getSortParams}
+                                isFiltered={isFiltered}
+                                selectedCves={selectedCves}
+                                canSelectRows={canSelectRows}
+                                vulnerabilityState={currentVulnerabilityState}
+                                createTableActions={createTableActions}
+                                onClearFilters={() => {
+                                    setSearchFilter({});
+                                    setPage(1, 'replace');
+                                }}
+                            />
+                        </div>
+                    </div>
                 </div>
             </PageSection>
         </>

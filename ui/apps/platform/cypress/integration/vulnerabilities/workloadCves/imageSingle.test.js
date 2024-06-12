@@ -4,6 +4,7 @@ import { hasFeatureFlag } from '../../../helpers/features';
 import {
     applyLocalSeverityFilters,
     typeAndSelectSearchFilterValue,
+    typeAndEnterSearchFilterValue,
     selectEntityTab,
     visitWorkloadCveOverview,
     typeAndSelectCustomSearchFilterValue,
@@ -12,6 +13,7 @@ import {
 import { selectors } from './WorkloadCves.selectors';
 
 describe('Workload CVE Image Single page', () => {
+    const isAdvancedFiltersEnabled = hasFeatureFlag('ROX_VULN_MGMT_ADVANCED_FILTERS');
     withAuth();
 
     before(function () {
@@ -28,7 +30,7 @@ describe('Workload CVE Image Single page', () => {
         // If unified deferrals are not enabled, there is a good chance none of the visible images will
         // have CVEs, so we apply a wildcard filter to ensure only images with CVEs are visible
         if (!hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')) {
-            if (hasFeatureFlag('ROX_VULN_MGMT_ADVANCED_FILTERS')) {
+            if (isAdvancedFiltersEnabled) {
                 typeAndEnterCustomSearchFilterValue('Image CVE', 'Name', '.*');
             } else {
                 typeAndSelectCustomSearchFilterValue('CVE', '.*');
@@ -45,13 +47,20 @@ describe('Workload CVE Image Single page', () => {
         visitFirstImage();
 
         // Check that only applicable resource menu items are present in the toolbar
-        cy.get(selectors.searchOptionsDropdown).click();
-        cy.get(selectors.searchOptionsMenuItem('CVE'));
-        cy.get(selectors.searchOptionsMenuItem('Image')).should('not.exist');
-        cy.get(selectors.searchOptionsMenuItem('Deployment')).should('not.exist');
-        cy.get(selectors.searchOptionsMenuItem('Cluster')).should('not.exist');
-        cy.get(selectors.searchOptionsMenuItem('Namespace')).should('not.exist');
-        cy.get(selectors.searchOptionsDropdown).click();
+        if (isAdvancedFiltersEnabled) {
+            cy.get(selectors.searchEntityDropdown).click();
+            cy.get(selectors.searchEntityMenuItem).contains('Image CVE');
+            cy.get(selectors.searchEntityMenuItem).contains('Image Component');
+            cy.get(selectors.searchEntityDropdown).click();
+        } else {
+            cy.get(selectors.searchOptionsDropdown).click();
+            cy.get(selectors.searchOptionsMenuItem('CVE'));
+            cy.get(selectors.searchOptionsMenuItem('Image')).should('not.exist');
+            cy.get(selectors.searchOptionsMenuItem('Deployment')).should('not.exist');
+            cy.get(selectors.searchOptionsMenuItem('Cluster')).should('not.exist');
+            cy.get(selectors.searchOptionsMenuItem('Namespace')).should('not.exist');
+            cy.get(selectors.searchOptionsDropdown).click();
+        }
     });
 
     it('should display consistent data between the cards and the table test', () => {
@@ -141,7 +150,11 @@ describe('Workload CVE Image Single page', () => {
             .then(([$cveNameCell]) => {
                 const cveName = $cveNameCell.innerText;
                 // Enter the CVE name into the CVE filter
-                typeAndSelectSearchFilterValue('CVE', cveName);
+                if (isAdvancedFiltersEnabled) {
+                    typeAndEnterSearchFilterValue('Image CVE', 'Name', cveName);
+                } else {
+                    typeAndSelectSearchFilterValue('CVE', cveName);
+                }
                 // Check that the header above the table shows only one result
                 cy.get(`*:contains("1 result found")`);
                 // Check that the only row in the table has the correct CVE name
