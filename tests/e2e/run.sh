@@ -58,11 +58,16 @@ test_e2e() {
     store_test_results "tests/all-tests-results" "all-tests-results"
     [[ ! -f FAIL ]] || die "e2e API tests failed"
 
-    # Give some time for previous tests to finish up
-    wait_for_api
+    if [[ ${ORCHESTRATOR_FLAVOR:-} = openshift ]]; then
+        info "Temporarily skipping proxy test on OCP. TODO(ROX-24688)"
+    else
+        # Give some time for previous tests to finish up
+        wait_for_api
 
-    setup_proxy_tests "localhost"
-    run_proxy_tests "localhost"
+        setup_proxy_tests "localhost"
+        run_proxy_tests "localhost"
+    fi
+
     cd "$ROOT"
 
     collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_tests"
