@@ -454,14 +454,10 @@ export function interactAndWaitForDeploymentList(callback) {
 }
 
 export function waitForTableLoadCompleteIndicator() {
-    cy.get(selectors.loadingSpinner);
-    cy.get(selectors.loadingSpinner).should('not.exist');
+    cy.get(`table ${selectors.loadingSpinner}`);
+    cy.get(`table ${selectors.loadingSpinner}`).should('not.exist');
 }
 
 export function visitNamespaceView() {
-    const namespaceListOpname = 'getNamespaceViewNamespaces';
-    const namespaceListRouteMatcherMap = getRouteMatcherMapForGraphQL([namespaceListOpname]);
-    return interactAndWaitForResponses(() => {
-        cy.get('button:contains("Prioritize by namespace view")').click();
-    }, namespaceListRouteMatcherMap);
+    cy.get('button:contains("Prioritize by namespace view")').click();
 }

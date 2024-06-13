@@ -55,7 +55,6 @@ export const selectors = {
     paginationNext: "button[aria-label='Go to next page']",
     severityIcon: (severity) => `span.pf-v5-c-icon:contains('${severity}')`,
     loadingSpinner: 'svg[role="progressbar"][aria-valuetext="Loading..."]',
-    namespaceViewButton: 'button:contains("Prioritize by namespace view")',
 
     // Image/Deployment tab selectors
     vulnerabilitiesTab: 'button[role="tab"]:contains("Vulnerabilities")',

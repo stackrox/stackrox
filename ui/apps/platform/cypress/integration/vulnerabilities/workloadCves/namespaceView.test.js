@@ -1,6 +1,10 @@
 import withAuth from '../../../helpers/basicAuth';
 
-import { visitWorkloadCveOverview, visitNamespaceView } from './WorkloadCves.helpers';
+import {
+    visitWorkloadCveOverview,
+    visitNamespaceView,
+    waitForTableLoadCompleteIndicator,
+} from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 
 describe('Workload CVE Namespace View', () => {
@@ -10,6 +14,8 @@ describe('Workload CVE Namespace View', () => {
         visitWorkloadCveOverview();
 
         visitNamespaceView();
+
+        waitForTableLoadCompleteIndicator();
 
         cy.get(selectors.firstTableRow).then(($row) => {
             const namespace = $row.find('td[data-label="Namespace"]').text();
