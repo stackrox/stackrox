@@ -85,6 +85,11 @@ function PlatformCvesOverviewPage() {
         Cluster: data?.clusterCount ?? 0,
     };
 
+    function onClearFilters() {
+        setSearchFilter({});
+        pagination.setPage(1, 'replace');
+    }
+
     const filterToolbar = (
         <AdvancedFiltersToolbar
             searchFilter={searchFilter}
@@ -192,6 +197,7 @@ function PlatformCvesOverviewPage() {
                                 )}
                                 sortOption={sortOption}
                                 getSortParams={getSortParams}
+                                onClearFilters={onClearFilters}
                             />
                         )}
                         {activeEntityTabKey === 'Cluster' && (
@@ -201,6 +207,7 @@ function PlatformCvesOverviewPage() {
                                 pagination={pagination}
                                 sortOption={sortOption}
                                 getSortParams={getSortParams}
+                                onClearFilters={onClearFilters}
                             />
                         )}
                     </CardBody>
