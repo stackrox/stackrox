@@ -64,7 +64,7 @@ func GetScanV2Storage(_ *testing.T) *storage.ComplianceOperatorScanV2 {
 		Errors:         "",
 		Warnings:       "",
 		Profile: &storage.ProfileShim{
-			ProfileId: internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""),
+			ProfileRefId: internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""),
 		},
 		Labels:       map[string]string{v1alpha1.SuiteLabel: "ocp-cis"},
 		Annotations:  nil,

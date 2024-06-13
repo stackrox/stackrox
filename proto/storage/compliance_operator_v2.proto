@@ -35,7 +35,8 @@ enum RuleSeverity {
 }
 
 message ProfileShim {
-  string profile_id = 1; // @gotags: search:"Profile Ref ID,hidden" sql:"fk(ComplianceOperatorProfileV2:profile_ref_id),no-fk-constraint,type(uuid)"
+  string profile_id = 1 [deprecated = true];
+  string profile_ref_id = 2; // @gotags: search:"Profile Ref ID,hidden" sql:"fk(ComplianceOperatorProfileV2:profile_ref_id),no-fk-constraint,type(uuid)"
 }
 
 // Next Tag: 15
