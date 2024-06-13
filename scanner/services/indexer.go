@@ -16,7 +16,9 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	pkgversion "github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/mappers"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
@@ -171,8 +173,8 @@ func (s *indexerService) RegisterServiceServer(grpcServer *grpc.Server) {
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *indexerService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	auth := indexerAuth
-	// If this a dev build, allow anonymous traffic for testing purposes.
-	if !buildinfo.ReleaseBuild {
+	// If this a dev build or nightly version, allow anonymous traffic for testing purposes.
+	if !buildinfo.ReleaseBuild || pkgversion.GetVersionKind(version.Version) == pkgversion.NightlyKind {
 		auth = allow.Anonymous()
 	}
 	return ctx, auth.Authorized(ctx, fullMethodName)
