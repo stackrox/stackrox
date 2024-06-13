@@ -47,7 +47,7 @@ describe('Compliance Schedules', () => {
     it('should have have a form to add a new scan config', () => {
         visitComplianceEnhancedScanConfigs();
 
-        cy.get('.pf-v5-c-toolbar__content a:contains("Create scan schedule")').click();
+        cy.get('.pf-v5-l-flex.pf-m-row a:contains("Create scan schedule")').click();
 
         cy.get(`h1:contains("Create scan schedule")`);
 
@@ -78,7 +78,7 @@ describe('Compliance Schedules', () => {
         getInputByLabel('On day(s)').click();
         cy.get('.pf-v5-c-select.pf-m-expanded .pf-v5-c-check__label:contains("Tuesday")').click();
         cy.get('input[aria-label="Time picker"]').click(); // PF Datepicker doesn't follow pattern used by helper function
-        cy.get('.pf-v5-c-menu.pf-m-scrollable button:contains("12:30 AM")').click();
+        cy.get('.pf-v5-c-menu.pf-m-scrollable button:contains("00:30")').click();
 
         cy.get('.pf-v5-c-wizard__footer button:contains("Next")').click();
     });

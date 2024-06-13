@@ -1,36 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { Split } from '@patternfly/react-core';
 
+import { SearchFilter } from 'types/search';
 import {
-    CompoundSearchFilterConfig,
-    SearchFilterAttribute,
+    OnSearchPayload,
+    PartialCompoundSearchFilterConfig,
     SearchFilterAttributeName,
     SearchFilterEntityName,
 } from '../types';
-import {
-    ensureConditionNumber,
-    ensureString,
-    ensureStringArray,
-    getDefaultAttribute,
-    getDefaultEntity,
-} from '../utils/utils';
+import { getDefaultAttribute, getDefaultEntity } from '../utils/utils';
 
-import { conditionMap } from './ConditionNumber';
 import EntitySelector, { SelectedEntity } from './EntitySelector';
 import AttributeSelector, { SelectedAttribute } from './AttributeSelector';
 import CompoundSearchFilterInputField, { InputFieldValue } from './CompoundSearchFilterInputField';
 
 export type CompoundSearchFilterProps = {
-    config: Partial<CompoundSearchFilterConfig>;
+    config: PartialCompoundSearchFilterConfig;
     defaultEntity?: SearchFilterEntityName;
     defaultAttribute?: SearchFilterAttributeName;
-    onSearch: (searchKey: string, searchValue: string | string[]) => void;
+    searchFilter: SearchFilter;
+    onSearch: ({ action, category, value }: OnSearchPayload) => void;
 };
 
 function CompoundSearchFilter({
     config,
     defaultEntity,
     defaultAttribute,
+    searchFilter,
     onSearch,
 }: CompoundSearchFilterProps) {
     const [selectedEntity, setSelectedEntity] = useState<SelectedEntity>(() => {
@@ -96,33 +92,14 @@ function CompoundSearchFilter({
                 onChange={(value) => {
                     setInputValue(value);
                 }}
-                onSearch={(value) => {
-                    if (selectedEntity && selectedAttribute) {
-                        const entityObject = config[selectedEntity];
-                        const attributeObject: SearchFilterAttribute =
-                            entityObject?.attributes[selectedAttribute];
-                        const { inputType } = attributeObject;
-
-                        let result: string | string[] = '';
-
-                        if (inputType === 'text') {
-                            result = ensureString(value);
-                        } else if (inputType === 'condition-number') {
-                            const { condition, number } = ensureConditionNumber(value);
-                            result = `${conditionMap[condition]}${number}`;
-                        } else if (inputType === 'autocomplete') {
-                            result = ensureString(value);
-                        } else if (inputType === 'date-picker') {
-                            result = ensureString(value);
-                        } else if (inputType === 'select') {
-                            const selection = ensureStringArray(value);
-                            result = selection;
-                        }
-
-                        if ((Array.isArray(result) && result.length > 0) || result !== '') {
-                            // eslint-disable-next-line no-alert
-                            onSearch(attributeObject.searchTerm, result);
-                        }
+                searchFilter={searchFilter}
+                onSearch={(payload) => {
+                    // If the search value is non-empty and not in the searchFilter, trigger onSearch
+                    if (
+                        !searchFilter?.[payload.category]?.includes(payload.value) &&
+                        payload.value !== ''
+                    ) {
+                        onSearch(payload);
                     }
                 }}
                 config={config}

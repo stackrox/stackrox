@@ -47,6 +47,7 @@ import {
 } from 'Containers/Vulnerabilities/searchOptions';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
+import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import {
     DefaultFilters,
     WorkloadEntityTab,
@@ -57,7 +58,7 @@ import {
     ObservedCveMode,
 } from '../../types';
 import {
-    parseWorkloadQuerySearchFilter,
+    parseQuerySearchFilter,
     getVulnStateScopedQueryString,
     getZeroCveScopedQueryString,
 } from '../../utils/searchUtils';
@@ -75,6 +76,14 @@ import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import ObservedCveModeSelect from './ObservedCveModeSelect';
 import { getViewStateDescription, getViewStateTitle } from './string.utils';
+import {
+    clusterSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    imageSearchFilterConfig,
+    namespaceSearchFilterConfig,
+} from '../../searchFilterConfig';
 
 const searchOptions: SearchOption[] = [
     IMAGE_SEARCH_OPTION,
@@ -119,6 +128,15 @@ function mergeDefaultAndLocalFilters(
     return { ...filter, SEVERITY, FIXABLE };
 }
 
+const searchFilterConfig = {
+    Image: imageSearchFilterConfig,
+    ImageCVE: imageCVESearchFilterConfig,
+    ImageComponent: imageComponentSearchFilterConfig,
+    Deployment: deploymentSearchFilterConfig,
+    Namespace: namespaceSearchFilterConfig,
+    Cluster: clusterSearchFilterConfig,
+};
+
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
 
@@ -129,13 +147,14 @@ function WorkloadCvesOverviewPage() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
     const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
+    const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
     const { analyticsTrack } = useAnalytics();
 
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
-    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const [activeEntityTabKey, setActiveEntityTabKey] = useURLStringUnion(
         'entityTab',
         workloadEntityTabValues
@@ -289,7 +308,23 @@ function WorkloadCvesOverviewPage() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
     }
 
-    const filterToolbar = (
+    const filterToolbar = isAdvancedFiltersEnabled ? (
+        <AdvancedFiltersToolbar
+            className="pf-v5-u-py-md"
+            searchFilterConfig={searchFilterConfig}
+            searchFilter={searchFilter}
+            defaultFilters={localStorageValue.preferences.defaultFilters}
+            onFilterChange={(newFilter, { action }) => {
+                setSearchFilter(newFilter);
+                pagination.setPage(1, 'replace');
+
+                if (action === 'ADD') {
+                    // TODO - Add analytics tracking ROX-24532
+                }
+            }}
+            includeCveFilters={isViewingWithCves}
+        />
+    ) : (
         <WorkloadCveFilterToolbar
             defaultFilters={localStorageValue.preferences.defaultFilters}
             onFilterChange={() => pagination.setPage(1, 'replace')}

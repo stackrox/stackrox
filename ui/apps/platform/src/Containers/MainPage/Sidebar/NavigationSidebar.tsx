@@ -56,8 +56,7 @@ type TitleCallback = (navDescriptionFiltered: NavDescription[]) => string | Reac
 // Parent conditional title finds key to decide presence or absence of counterpart parent.
 const keyForNetwork = 'Network';
 const keyForPlatformConfiguration = 'Platform Configuration';
-const keyForVulnerabilityManagement1 = 'Vulnerability Management (1.0)';
-const keyForVulnerabilityManagement2 = 'Vulnerability Management (2.0)';
+const keyForVulnerabilities = 'Vulnerabilities';
 const keyForCompliance2 = 'Compliance (2.0)';
 type IsActiveCallback = (pathname: string) => boolean;
 
@@ -217,8 +216,8 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
     */
         {
             type: 'parent',
-            title: 'Vulnerability Management (2.0)',
-            key: keyForVulnerabilityManagement2,
+            title: 'Vulnerabilities',
+            key: keyForVulnerabilities,
             children: [
                 {
                     type: 'link',
@@ -229,6 +228,22 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                     ),
                     path: vulnerabilitiesWorkloadCvesPath,
                     routeKey: 'workload-cves',
+                },
+                {
+                    type: 'link',
+                    content: 'Exception Management',
+                    path: exceptionManagementPath,
+                    routeKey: 'exception-management',
+                },
+                {
+                    type: 'link',
+                    content: 'Vulnerability Reporting',
+                    path: vulnerabilityReportsPath,
+                    routeKey: 'vulnerabilities/reports',
+                },
+                {
+                    type: 'separator',
+                    key: 'following-workload-cves',
                 },
                 {
                     type: 'link',
@@ -252,36 +267,15 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                 },
                 {
                     type: 'separator',
-                    key: 'following-cves',
+                    key: 'following-node-cves',
                 },
                 {
                     type: 'link',
-                    content: 'Exception Management',
-                    path: exceptionManagementPath,
-                    routeKey: 'exception-management',
-                },
-                {
-                    type: 'link',
-                    content: 'Vulnerability Reporting',
-                    path: vulnerabilityReportsPath,
-                    routeKey: 'vulnerabilities/reports',
-                },
-            ],
-        },
-        {
-            type: 'parent',
-            key: keyForVulnerabilityManagement1,
-            title: isVulnMgmt2GAEnabled ? (
-                <NavigationContent variant="Deprecated">
-                    Vulnerability Management (1.0)
-                </NavigationContent>
-            ) : (
-                'Vulnerability Management (1.0)'
-            ),
-            children: [
-                {
-                    type: 'link',
-                    content: 'Dashboard',
+                    content: isVulnMgmt2GAEnabled ? (
+                        <NavigationContent variant="Deprecated">Dashboard</NavigationContent>
+                    ) : (
+                        'Dashboard'
+                    ),
                     path: vulnManagementPath,
                     routeKey: 'vulnerability-management',
                     isActive: (pathname) =>

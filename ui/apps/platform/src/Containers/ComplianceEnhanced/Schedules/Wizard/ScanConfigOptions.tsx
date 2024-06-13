@@ -17,9 +17,11 @@ import {
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
-import { getTimeHoursMinutes } from 'utils/dateUtils';
 
-import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import {
+    ScanConfigFormValues,
+    getHourMinuteStringFromScheduleBase,
+} from '../compliance.scanConfigs.utils';
 
 function ScanConfigOptions(): ReactElement {
     const formik: FormikContextType<ScanConfigFormValues> = useFormikContext();
@@ -38,9 +40,7 @@ function ScanConfigOptions(): ReactElement {
         isValid?: boolean
     ): void {
         if (isValid && hour !== undefined) {
-            const date = new Date();
-            date.setHours(hour, minute, 0, 0);
-            const timeString = getTimeHoursMinutes(date);
+            const timeString = getHourMinuteStringFromScheduleBase({ hour, minute: minute ?? 0 });
             formik.setFieldValue('parameters.time', timeString);
         } else {
             formik.setFieldValue('parameters.time', time);
@@ -56,9 +56,9 @@ function ScanConfigOptions(): ReactElement {
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
-                        <Title headingLevel="h2">Configuration options</Title>
+                        <Title headingLevel="h2">Parameters</Title>
                     </FlexItem>
-                    <FlexItem>Set up name, schedule, and options</FlexItem>
+                    <FlexItem>Set name and schedule to scan on a recurring basis</FlexItem>
                 </Flex>
             </PageSection>
             <Divider component="div" />
@@ -111,10 +111,7 @@ function ScanConfigOptions(): ReactElement {
                     <StackItem>
                         <Flex direction={{ default: 'column' }}>
                             <FlexItem>
-                                <Title headingLevel="h3">Configure schedule</Title>
-                            </FlexItem>
-                            <FlexItem>
-                                Configure or setup a schedule to scan on a recurring basis.
+                                <Title headingLevel="h3">Schedule</Title>
                             </FlexItem>
                             <FlexItem flex={{ default: 'flexNone' }}>
                                 <Flex direction={{ default: 'column' }}>
@@ -199,9 +196,11 @@ function ScanConfigOptions(): ReactElement {
                                             errors={formik.errors}
                                             isRequired
                                             touched={formik.touched}
+                                            helperText="Select scan time in UTC"
                                         >
                                             <TimePicker
                                                 time={formik.values.parameters.time}
+                                                is24Hour
                                                 onChange={handleTimeChange}
                                                 inputProps={{
                                                     onBlur: formik.handleBlur,

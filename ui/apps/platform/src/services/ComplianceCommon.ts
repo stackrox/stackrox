@@ -1,7 +1,7 @@
 import qs from 'qs';
 
 import { SearchQueryOptions } from 'types/search';
-import { getPaginationParams } from 'utils/searchUtils';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 export const complianceV2Url = '/v2/compliance';
 
@@ -64,10 +64,14 @@ export function buildNestedRawQueryParams({
     page,
     perPage,
     sortOption,
+    searchFilter = {},
 }: SearchQueryOptions): string {
+    const query = getRequestQueryStringForSearchFilter(searchFilter);
+    const pagination = getPaginationParams({ page, perPage, sortOption });
     const queryParameters = {
         query: {
-            pagination: getPaginationParams({ page, perPage, sortOption }),
+            query,
+            pagination,
         },
     };
     return qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });

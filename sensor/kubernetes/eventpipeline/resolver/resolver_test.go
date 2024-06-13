@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
@@ -593,7 +594,7 @@ func (m *deploymentMatcher) Matches(target interface{}) bool {
 			return m.acceptableNumberOfMismatches >= 0
 		}
 
-		if !cmp.Equal(m.expectedExposureInfos, deployment.GetPorts()[0].GetExposureInfos()) {
+		if !protoutils.SlicesEqual(m.expectedExposureInfos, deployment.GetPorts()[0].GetExposureInfos()) {
 			diff := cmp.Diff(m.expectedExposureInfos, deployment.GetPorts()[0].GetExposureInfos())
 			m.error = fmt.Sprintf("Exposure info differs: %s", diff)
 			m.acceptableNumberOfMismatches--

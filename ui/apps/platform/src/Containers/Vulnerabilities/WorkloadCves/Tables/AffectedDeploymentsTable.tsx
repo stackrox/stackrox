@@ -9,8 +9,10 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { VulnerabilityState } from 'types/cve.proto';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import DateDistance from 'Components/DateDistance';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { TableUIState } from 'utils/getTableUIState';
+import ExpandRowTh from 'Components/ExpandRowTh';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
-import EmptyTableResults from '../components/EmptyTableResults';
 import DeploymentComponentVulnerabilitiesTable, {
     DeploymentComponentVulnerability,
     ImageMetadataContext,
@@ -56,30 +58,30 @@ export const deploymentsForCveFragment = gql`
 `;
 
 export type AffectedDeploymentsTableProps = {
-    deployments: DeploymentForCve[];
+    tableState: TableUIState<DeploymentForCve>;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     cve: string;
     vulnerabilityState: VulnerabilityState | undefined; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     filteredSeverities?: VulnerabilitySeverityLabel[];
+    onClearFilters: () => void;
 };
 
 function AffectedDeploymentsTable({
-    deployments,
+    tableState,
     getSortParams,
     isFiltered,
     cve,
     vulnerabilityState,
     filteredSeverities,
+    onClearFilters,
 }: AffectedDeploymentsTableProps) {
     const expandedRowSet = useSet<string>();
     return (
-        // TODO UX question - Collapse to cards, or allow headers to overflow?
-        // <TableComposable gridBreakPoint="grid-xl">
         <Table variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <Th>{/* Header for expanded column */}</Th>
+                    <ExpandRowTh />
                     <Th sort={getSortParams('Deployment')}>Deployment</Th>
                     <Th>
                         Images by severity
@@ -94,87 +96,94 @@ function AffectedDeploymentsTable({
                     <Th>First discovered</Th>
                 </Tr>
             </Thead>
-            {deployments.length === 0 && <EmptyTableResults colSpan={7} />}
-            {deployments.map((deployment, rowIndex) => {
-                const {
-                    id,
-                    name,
-                    namespace,
-                    clusterName,
-                    lowImageCount,
-                    moderateImageCount,
-                    importantImageCount,
-                    criticalImageCount,
-                    created,
-                    images,
-                } = deployment;
-                const isExpanded = expandedRowSet.has(id);
+            <TbodyUnified
+                tableState={tableState}
+                colSpan={8}
+                emptyProps={{ message: 'No deployments were found that are affected by this CVE' }}
+                filteredEmptyProps={{ onClearFilters }}
+                renderer={({ data }) =>
+                    data.map((deployment, rowIndex) => {
+                        const {
+                            id,
+                            name,
+                            namespace,
+                            clusterName,
+                            lowImageCount,
+                            moderateImageCount,
+                            importantImageCount,
+                            criticalImageCount,
+                            created,
+                            images,
+                        } = deployment;
+                        const isExpanded = expandedRowSet.has(id);
 
-                const imageComponentVulns = images.map((image) => ({
-                    imageMetadataContext: image,
-                    componentVulnerabilities: image.imageComponents,
-                }));
+                        const imageComponentVulns = images.map((image) => ({
+                            imageMetadataContext: image,
+                            componentVulnerabilities: image.imageComponents,
+                        }));
 
-                return (
-                    <Tbody key={id} isExpanded={isExpanded}>
-                        <Tr>
-                            <Td
-                                expand={{
-                                    rowIndex,
-                                    isExpanded,
-                                    onToggle: () => expandedRowSet.toggle(id),
-                                }}
-                            />
-                            <Td dataLabel="Deployment">
-                                <Flex
-                                    direction={{ default: 'column' }}
-                                    spaceItems={{ default: 'spaceItemsNone' }}
-                                >
-                                    <Link
-                                        to={getWorkloadEntityPagePath(
-                                            'Deployment',
-                                            id,
-                                            vulnerabilityState
-                                        )}
-                                    >
-                                        <Truncate position="middle" content={name} />
-                                    </Link>
-                                </Flex>
-                            </Td>
-                            <Td modifier="nowrap" dataLabel="Images by severity">
-                                <SeverityCountLabels
-                                    criticalCount={criticalImageCount}
-                                    importantCount={importantImageCount}
-                                    moderateCount={moderateImageCount}
-                                    lowCount={lowImageCount}
-                                    filteredSeverities={filteredSeverities}
-                                />
-                            </Td>
-                            <Td dataLabel="Cluster">{clusterName}</Td>
-                            <Td dataLabel="Namespace">{namespace}</Td>
-                            <Td modifier="nowrap" dataLabel="Images">
-                                {pluralize(images.length, 'image')}
-                            </Td>
-
-                            <Td modifier="nowrap" dataLabel="First discovered">
-                                <DateDistance date={created} />
-                            </Td>
-                        </Tr>
-                        <Tr isExpanded={isExpanded}>
-                            <Td />
-                            <Td colSpan={6}>
-                                <ExpandableRowContent>
-                                    <DeploymentComponentVulnerabilitiesTable
-                                        images={imageComponentVulns}
-                                        cve={cve}
-                                        vulnerabilityState={vulnerabilityState}
+                        return (
+                            <Tbody key={id} isExpanded={isExpanded}>
+                                <Tr>
+                                    <Td
+                                        expand={{
+                                            rowIndex,
+                                            isExpanded,
+                                            onToggle: () => expandedRowSet.toggle(id),
+                                        }}
                                     />
-                                </ExpandableRowContent>
-                            </Td>
-                        </Tr>
-                    </Tbody>
-                );
-            })}
+                                    <Td dataLabel="Deployment">
+                                        <Flex
+                                            direction={{ default: 'column' }}
+                                            spaceItems={{ default: 'spaceItemsNone' }}
+                                        >
+                                            <Link
+                                                to={getWorkloadEntityPagePath(
+                                                    'Deployment',
+                                                    id,
+                                                    vulnerabilityState
+                                                )}
+                                            >
+                                                <Truncate position="middle" content={name} />
+                                            </Link>
+                                        </Flex>
+                                    </Td>
+                                    <Td modifier="nowrap" dataLabel="Images by severity">
+                                        <SeverityCountLabels
+                                            criticalCount={criticalImageCount}
+                                            importantCount={importantImageCount}
+                                            moderateCount={moderateImageCount}
+                                            lowCount={lowImageCount}
+                                            filteredSeverities={filteredSeverities}
+                                        />
+                                    </Td>
+                                    <Td dataLabel="Cluster">{clusterName}</Td>
+                                    <Td dataLabel="Namespace">{namespace}</Td>
+                                    <Td modifier="nowrap" dataLabel="Images">
+                                        {pluralize(images.length, 'image')}
+                                    </Td>
+
+                                    <Td modifier="nowrap" dataLabel="First discovered">
+                                        <DateDistance date={created} />
+                                    </Td>
+                                </Tr>
+                                <Tr isExpanded={isExpanded}>
+                                    <Td />
+                                    <Td colSpan={6}>
+                                        <ExpandableRowContent>
+                                            <DeploymentComponentVulnerabilitiesTable
+                                                images={imageComponentVulns}
+                                                cve={cve}
+                                                vulnerabilityState={vulnerabilityState}
+                                            />
+                                        </ExpandableRowContent>
+                                    </Td>
+                                </Tr>
+                            </Tbody>
+                        );
+                    })
+                }
+            />
         </Table>
     );
 }

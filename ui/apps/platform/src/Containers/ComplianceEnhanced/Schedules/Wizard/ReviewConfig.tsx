@@ -54,7 +54,7 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                     <FlexItem>
                         <Title headingLevel="h2">Review</Title>
                     </FlexItem>
-                    <FlexItem>Review and create your scan configuration</FlexItem>
+                    <FlexItem>Review the scan schedule before you save changes</FlexItem>
                     {errorMessage && (
                         <Alert
                             title={'Scan configuration request failure'}

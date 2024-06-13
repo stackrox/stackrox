@@ -52,6 +52,7 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/central/views/imagecve"
+	"github.com/stackrox/rox/central/views/platformcve"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/manager/querymgr"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
@@ -119,7 +120,8 @@ type Resolver struct {
 	AuditLogger                   auditPkg.Auditor
 
 	// Views
-	ImageCVEView imagecve.CveView
+	ImageCVEView    imagecve.CveView
+	PlatformCVEView platformcve.CveView
 }
 
 // New returns a Resolver wired into the relevant data stores
@@ -178,6 +180,12 @@ func New() *Resolver {
 		ImageCVEView: func() imagecve.CveView {
 			if features.VulnMgmtWorkloadCVEs.Enabled() {
 				return imagecve.Singleton()
+			}
+			return nil
+		}(),
+		PlatformCVEView: func() platformcve.CveView {
+			if features.VulnMgmtNodePlatformCVEs.Enabled() {
+				return platformcve.Singleton()
 			}
 			return nil
 		}(),

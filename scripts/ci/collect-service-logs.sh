@@ -63,7 +63,8 @@ main() {
     echo
     set +e
 
-    for object in daemonsets deployments services pods secrets serviceaccounts validatingwebhookconfigurations catalogsources subscriptions clusterserviceversions nodes; do
+    for object in daemonsets deployments services pods secrets serviceaccounts validatingwebhookconfigurations \
+      catalogsources subscriptions clusterserviceversions central securedclusters nodes; do
         # A feel good command before pulling logs
         echo ">>> ${object} <<<"
         out="$(mktemp)"

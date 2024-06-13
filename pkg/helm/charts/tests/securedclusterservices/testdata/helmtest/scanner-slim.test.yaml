@@ -65,9 +65,19 @@ tests:
     imagePullSecrets.allowNone: true
     scanner.disable: false
     scanner.mode: "slim"
+    system.enableNetworkPolicies: true
   expect: |
     .networkpolicys["scanner"].spec.ingress | assertThat(length == 2)
     .networkpolicys["scanner"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
+
+- name: "Network policies are disabled"
+  set:
+    imagePullSecrets.allowNone: true
+    scanner.disable: false
+    scanner.mode: "slim"
+    system.enableNetworkPolicies: false
+  expect: |
+    .networkpolicys["scanner"] | assertThat(. == null)
 
 - name: "scanner slim service account can access image pull secrets"
   server:

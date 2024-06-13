@@ -22,14 +22,33 @@ export type ClusterCheckStatus = {
 export type ComplianceCheckResult = {
     checkId: string;
     checkName: string;
+    checkUid: string;
+    description: string;
+    instructions: string;
+    standard: string;
+    control: string[];
+    rationale: string;
+    valuesUsed: string[];
+    warnings: string[];
+    status: ComplianceCheckStatus;
+    ruleName: string;
+    labels: { [key: string]: string };
+    annotations: { [key: string]: string };
+};
+
+export type ComplianceClusterCheckStatus = {
+    checkId: string;
+    checkName: string;
     clusters: ClusterCheckStatus[];
     description: string;
     instructions: string;
     standard: string;
-    control: string;
+    control: string[];
     rationale: string;
     valuesUsed: string[];
     warnings: string[];
+    labels: { [key: string]: string };
+    annotations: { [key: string]: string };
 };
 
 export type ListComplianceCheckClusterResponse = {
@@ -39,15 +58,23 @@ export type ListComplianceCheckClusterResponse = {
     totalCount: number;
 };
 
+export type ListComplianceCheckResultResponse = {
+    checkResults: ComplianceCheckResult[];
+    profileName: string;
+    clusterId: string;
+    totalCount: number;
+    lastScanTime: string; // ISO 8601 date string
+};
+
 /**
  * Fetches statuses per cluster based off a single check.
  */
 export function getComplianceProfileCheckResult(
     profileName: string,
     checkName: string,
-    { sortOption, page, perPage }: SearchQueryOptions
+    { sortOption, page, perPage, searchFilter }: SearchQueryOptions
 ): Promise<ListComplianceCheckClusterResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
     return axios
         .get<ListComplianceCheckClusterResponse>(
             `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks/${checkName}?${params}`
@@ -60,12 +87,42 @@ export function getComplianceProfileCheckResult(
  */
 export function getComplianceProfileResults(
     profileName: string,
-    { sortOption, page, perPage }: SearchQueryOptions
+    { sortOption, page, perPage, searchFilter }: SearchQueryOptions
 ): Promise<ListComplianceProfileResults> {
-    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
     return axios
         .get<ListComplianceProfileResults>(
             `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks?${params}`
+        )
+        .then((response) => response.data);
+}
+
+/**
+ * Fetches check results based off a cluster and profile.
+ */
+export function getComplianceProfileClusterResults(
+    profileName: string,
+    clusterId: string,
+    { sortOption, page, perPage, searchFilter }: SearchQueryOptions
+): Promise<ListComplianceCheckResultResponse> {
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
+    return axios
+        .get<ListComplianceCheckResultResponse>(
+            `${complianceResultsBaseUrl}/results/profiles/${profileName}/clusters/${clusterId}?${params}`
+        )
+        .then((response) => response.data);
+}
+
+/**
+ * Fetches check details.
+ */
+export function getComplianceProfileCheckDetails(
+    profileName: string,
+    checkName: string
+): Promise<ComplianceClusterCheckStatus> {
+    return axios
+        .get<ComplianceClusterCheckStatus>(
+            `${complianceResultsBaseUrl}/results/profiles/${profileName}/checks/${checkName}/details`
         )
         .then((response) => response.data);
 }

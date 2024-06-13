@@ -288,6 +288,94 @@
         ]
       }
     },
+    "/v2/compliance/scan/results/profiles/{profileName}/checks/{checkName}/details": {
+      "get": {
+        "summary": "GetComplianceProfileCheckDetails",
+        "operationId": "ComplianceResultsService_GetComplianceProfileCheckDetails",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceClusterCheckStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "profileName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "checkName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
     "/v2/compliance/scan/results/profiles/{profileName}/clusters/{clusterId}": {
       "get": {
         "summary": "GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster",
@@ -569,15 +657,6 @@
         "instructions": {
           "type": "string"
         },
-        "standard": {
-          "type": "string"
-        },
-        "control": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
         "rationale": {
           "type": "string"
         },
@@ -598,6 +677,24 @@
         },
         "ruleName": {
           "type": "string"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceControl"
+          }
         }
       },
       "title": "ComplianceCheckResult details of an instance of a compliance check result"
@@ -618,6 +715,12 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/v2ComplianceCheckStatusCount"
+          }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceControl"
           }
         }
       },
@@ -671,15 +774,6 @@
         "instructions": {
           "type": "string"
         },
-        "standard": {
-          "type": "string"
-        },
-        "control": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
         "rationale": {
           "type": "string"
         },
@@ -694,9 +788,38 @@
           "items": {
             "type": "string"
           }
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceControl"
+          }
         }
       },
       "title": "ComplianceClusterCheckStatus provides the status of a compliance check result across clusters"
+    },
+    "v2ComplianceControl": {
+      "type": "object",
+      "properties": {
+        "standard": {
+          "type": "string"
+        },
+        "control": {
+          "type": "string"
+        }
+      }
     },
     "v2ComplianceScanCluster": {
       "type": "object",
@@ -727,6 +850,12 @@
         "totalCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceControl"
+          }
         }
       },
       "title": "ListComplianceCheckClusterResponse provides stats per cluster"

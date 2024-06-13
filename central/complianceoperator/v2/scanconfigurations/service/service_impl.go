@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"regexp"
+	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -11,6 +12,7 @@ import (
 	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanSettingBindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
@@ -23,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
+	"k8s.io/utils/strings/slices"
 )
 
 const (
@@ -46,17 +49,20 @@ var (
 	})
 
 	configNameRegexp = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]*[a-z0-9]?$`)
+
+	reservedConfigNames = []string{"default", "default-auto-apply"}
 )
 
 // New returns a service object for registering with grpc.
 func New(scanConfigDS scanConfigDS.DataStore, scanSettingBindingsDS scanSettingBindingsDS.DataStore,
-	suiteDS suiteDS.DataStore, manager compliancemanager.Manager, reportManager complianceReportManager.Manager) Service {
+	suiteDS suiteDS.DataStore, manager compliancemanager.Manager, reportManager complianceReportManager.Manager, notifierDS notifierDS.DataStore) Service {
 	return &serviceImpl{
 		scanConfigDS:                    scanConfigDS,
 		complianceScanSettingBindingsDS: scanSettingBindingsDS,
 		suiteDS:                         suiteDS,
 		manager:                         manager,
 		reportManager:                   reportManager,
+		notifierDS:                      notifierDS,
 	}
 }
 
@@ -68,6 +74,7 @@ type serviceImpl struct {
 	suiteDS                         suiteDS.DataStore
 	manager                         compliancemanager.Manager
 	reportManager                   complianceReportManager.Manager
+	notifierDS                      notifierDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -88,6 +95,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req *v2.ComplianceScanConfiguration) (*v2.ComplianceScanConfiguration, error) {
 	if req.GetScanName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
+	}
+
+	if slices.Contains(reservedConfigNames, strings.ToLower(req.GetScanName())) {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name %q cannot be used as it is reserved by the Compliance Operator", req.GetScanName())
 	}
 
 	validName := configNameRegexp.MatchString(req.GetScanName())
@@ -172,7 +183,7 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve scan configurations for query %v", query)
 	}
 
-	scanStatuses, err := convertStorageScanConfigToV2ScanStatuses(ctx, scanConfigs, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS)
+	scanStatuses, err := convertStorageScanConfigToV2ScanStatuses(ctx, scanConfigs, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS)
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "failed to convert compliance scan configurations.")
 	}
@@ -201,7 +212,7 @@ func (s *serviceImpl) GetComplianceScanConfiguration(ctx context.Context, req *v
 		return nil, errors.Errorf("failed to retrieve compliance scan configuration with id %q.", req.GetId())
 	}
 
-	return convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS)
+	return convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS)
 }
 
 func (s *serviceImpl) GetComplianceScanConfigurationsCount(ctx context.Context, request *v2.RawQuery) (*v2.ComplianceScanConfigurationsCount, error) {

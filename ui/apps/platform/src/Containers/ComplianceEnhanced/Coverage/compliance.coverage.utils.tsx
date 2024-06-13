@@ -116,12 +116,12 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
     [ComplianceCheckStatusEnum.PASS]: {
         icon: (
             <Icon>
-                <CheckCircleIcon color="var(--pf-v5-global--success-color--100)" />
+                <CheckCircleIcon color="var(--pf-v5-global--primary-color--100)" />
             </Icon>
         ),
         statusText: 'Pass',
         tooltipText: 'Check was successful',
-        color: 'green',
+        color: 'blue',
     },
     [ComplianceCheckStatusEnum.FAIL]: {
         icon: (

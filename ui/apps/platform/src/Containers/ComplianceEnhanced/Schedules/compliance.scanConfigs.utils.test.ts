@@ -13,7 +13,7 @@ describe('compliance.scanConfigs.utils', () => {
                 name: 'ok-ok.ok',
                 description: 'Needles and Pins',
                 intervalType: 'DAILY',
-                time: '3:00 AM',
+                time: '03:00',
                 daysOfWeek: [],
                 daysOfMonth: [],
             };
@@ -33,7 +33,7 @@ describe('compliance.scanConfigs.utils', () => {
                 description:
                     'Several Species of Small Furry Animals Gathered Together in a Cave and Grooving with a Pict',
                 intervalType: 'WEEKLY',
-                time: '13:00 PM',
+                time: '13:00',
                 daysOfWeek: ['1'],
                 daysOfMonth: [],
             };
@@ -56,7 +56,7 @@ describe('compliance.scanConfigs.utils', () => {
                 description:
                     'Several Species of Small Furry Animals Gathered Together in a Cave and Grooving with a Pict',
                 intervalType: 'MONTHLY',
-                time: '11:00 PM',
+                time: '23:00',
                 daysOfWeek: [],
                 daysOfMonth: ['1', '15'],
             };
@@ -86,7 +86,7 @@ describe('compliance.scanConfigs.utils', () => {
 
             expect(formValues).toEqual({
                 intervalType: 'DAILY',
-                time: '10:00 PM',
+                time: '22:00',
                 daysOfWeek: [],
                 daysOfMonth: [],
             });
@@ -106,7 +106,7 @@ describe('compliance.scanConfigs.utils', () => {
 
             expect(formValues).toEqual({
                 intervalType: 'WEEKLY',
-                time: '3:00 PM',
+                time: '15:00',
                 daysOfWeek: ['1'],
                 daysOfMonth: [],
             });
@@ -126,7 +126,7 @@ describe('compliance.scanConfigs.utils', () => {
 
             expect(formValues).toEqual({
                 intervalType: 'MONTHLY',
-                time: '5:00 AM',
+                time: '05:00',
                 daysOfWeek: [],
                 daysOfMonth: ['15'],
             });
