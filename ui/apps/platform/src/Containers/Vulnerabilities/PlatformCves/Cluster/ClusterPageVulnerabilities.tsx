@@ -14,7 +14,7 @@ import {
 
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
-import { getHasSearchApplied, getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
@@ -42,7 +42,7 @@ export type ClusterPageVulnerabilitiesProps = {
 function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const query = getUrlQueryStringForSearchFilter(querySearchFilter);
+    const query = getRequestQueryStringForSearchFilter(querySearchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
@@ -137,7 +137,14 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                             />
                         </SplitItem>
                     </Split>
-                    <CVEsTable tableState={tableState} getSortParams={getSortParams} />
+                    <CVEsTable
+                        tableState={tableState}
+                        getSortParams={getSortParams}
+                        onClearFilters={() => {
+                            setSearchFilter({});
+                            setPage(1, 'replace');
+                        }}
+                    />
                 </div>
             </PageSection>
         </>
