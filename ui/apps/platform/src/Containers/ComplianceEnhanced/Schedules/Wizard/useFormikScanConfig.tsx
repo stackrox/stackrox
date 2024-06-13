@@ -45,6 +45,7 @@ const validationSchema = yup.object().shape({
     parameters: yup.object().shape({
         name: yup
             .string()
+            // omit trim because confusion when RegExp matches trimmed string
             .required('Name is required')
             .matches(/^[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]$/, helperTextForName),
         description: yup.string(),
