@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { generatePath, useHistory, useParams } from 'react-router-dom';
 import {
     Divider,
+    Flex,
     PageSection,
     Title,
     Toolbar,
@@ -10,22 +11,26 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import PageTitle from 'Components/PageTitle';
-import useRestQuery from 'hooks/useRestQuery';
-import useURLPagination from 'hooks/useURLPagination';
-import useURLSort from 'hooks/useURLSort';
-import { getComplianceClusterStats } from 'services/ComplianceResultsStatsService';
-import { getTableUIState } from 'utils/getTableUIState';
-
+import ComplianceUsageDisclaimer, {
+    COMPLIANCE_DISCLAIMER_KEY,
+} from 'Components/ComplianceUsageDisclaimer';
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import {
     OnSearchPayload,
     clusterSearchFilterConfig,
     profileCheckSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
-import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
-import useURLSearch from 'hooks/useURLSearch';
+import PageTitle from 'Components/PageTitle';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
+import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
+import { getComplianceClusterStats } from 'services/ComplianceResultsStatsService';
+import { getTableUIState } from 'utils/getTableUIState';
+
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import { coverageProfileClustersPath } from './compliance.coverage.routes';
@@ -35,6 +40,10 @@ import ProfilesToggleGroup from './ProfilesToggleGroup';
 import ProfileClustersTable from './ProfileClustersTable';
 
 function ProfileClustersPage() {
+    const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useBooleanLocalStorage(
+        COMPLIANCE_DISCLAIMER_KEY,
+        false
+    );
     const { profileName } = useParams();
     const history = useHistory();
     const { profileScanStats } = useContext(ComplianceProfilesContext);
@@ -103,13 +112,18 @@ function ProfileClustersPage() {
             <PageTitle title="Compliance coverage - Profile clusters" />
             <CoveragesPageHeader />
             <PageSection>
-                <ProfilesToggleGroup
-                    profiles={profileScanStats.scanStats}
-                    handleToggleChange={handleProfilesToggleChange}
-                />
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                    {!isDisclaimerAccepted && (
+                        <ComplianceUsageDisclaimer onAccept={() => setIsDisclaimerAccepted(true)} />
+                    )}
+                    <ProfilesToggleGroup
+                        profiles={profileScanStats.scanStats}
+                        handleToggleChange={handleProfilesToggleChange}
+                    />
+                </Flex>
             </PageSection>
             <PageSection variant="default" className="pf-v5-u-py-0">
-                <PageSection variant="light" className="pf-v5-u-p-0">
+                <PageSection variant="light" className="pf-v5-u-p-0" component="div">
                     <Toolbar>
                         <ToolbarContent>
                             <ToolbarGroup className="pf-v5-u-w-100">
