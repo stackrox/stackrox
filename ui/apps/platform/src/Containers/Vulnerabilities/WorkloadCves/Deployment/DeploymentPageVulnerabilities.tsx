@@ -1,12 +1,10 @@
 import React from 'react';
 import {
-    Bullseye,
     Divider,
     Flex,
     PageSection,
     Pagination,
     pluralize,
-    Spinner,
     Split,
     SplitItem,
     Text,
@@ -20,13 +18,20 @@ import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
-import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
     SummaryCardLayout,
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
+import { getTableUIState } from 'utils/getTableUIState';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
+import {
+    imageComponentSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageSearchFilterConfig,
+} from '../../searchFilterConfig';
 import {
     SearchOption,
     COMPONENT_SEARCH_OPTION,
@@ -41,16 +46,19 @@ import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,
 } from '../SummaryCards/CvesByStatusSummaryCard';
 import {
-    parseWorkloadQuerySearchFilter,
+    parseQuerySearchFilter,
     getHiddenSeverities,
     getHiddenStatuses,
     getVulnStateScopedQueryString,
     getStatusesForExceptionCount,
 } from '../../utils/searchUtils';
-import { imageMetadataContextFragment } from '../Tables/table.utils';
+import {
+    DeploymentWithVulnerabilities,
+    formatVulnerabilityData,
+    imageMetadataContextFragment,
+} from '../Tables/table.utils';
 import DeploymentVulnerabilitiesTable, {
     deploymentWithVulnerabilitiesFragment,
-    DeploymentWithVulnerabilities,
 } from '../Tables/DeploymentVulnerabilitiesTable';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
@@ -92,6 +100,12 @@ const searchOptions: SearchOption[] = [
     COMPONENT_SOURCE_SEARCH_OPTION,
 ];
 
+const searchFilterConfig = {
+    Image: imageSearchFilterConfig,
+    'Image CVE': imageCVESearchFilterConfig,
+    ImageComponent: imageComponentSearchFilterConfig,
+};
+
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;
     pagination: UseURLPaginationResult;
@@ -101,10 +115,12 @@ function DeploymentPageVulnerabilities({
     deploymentId,
     pagination,
 }: DeploymentPageVulnerabilitiesProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
     const currentVulnerabilityState = useVulnerabilityState();
 
-    const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
     const { page, setPage, perPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
@@ -113,7 +129,7 @@ function DeploymentPageVulnerabilities({
             field: 'CVE',
             direction: 'desc',
         },
-        onSort: () => setPage(1),
+        onSort: () => setPage(1, 'replace'),
     });
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
@@ -187,6 +203,15 @@ function DeploymentPageVulnerabilities({
         );
     }
 
+    const tableState = getTableUIState({
+        isLoading: vulnerabilityRequest.loading,
+        data: vulnerabilityRequest?.data?.deployment
+            ? formatVulnerabilityData(vulnerabilityRequest.data.deployment)
+            : undefined,
+        error: vulnerabilityRequest.error,
+        searchFilter,
+    });
+
     return (
         <>
             <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
@@ -201,13 +226,29 @@ function DeploymentPageVulnerabilities({
             >
                 <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
                 <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
-                    <WorkloadCveFilterToolbar
-                        autocompleteSearchContext={{
-                            'Deployment ID': deploymentId,
-                        }}
-                        searchOptions={searchOptions}
-                        onFilterChange={() => setPage(1)}
-                    />
+                    {isAdvancedFiltersEnabled ? (
+                        <AdvancedFiltersToolbar
+                            className="pf-v5-u-pt-lg pf-v5-u-pb-0"
+                            searchFilterConfig={searchFilterConfig}
+                            searchFilter={searchFilter}
+                            onFilterChange={(newFilter, { action }) => {
+                                setSearchFilter(newFilter);
+                                setPage(1, 'replace');
+
+                                if (action === 'ADD') {
+                                    // TODO - Add analytics tracking ROX-24532
+                                }
+                            }}
+                        />
+                    ) : (
+                        <WorkloadCveFilterToolbar
+                            autocompleteSearchContext={{
+                                'Deployment ID': deploymentId,
+                            }}
+                            searchOptions={searchOptions}
+                            onFilterChange={() => setPage(1)}
+                        />
+                    )}
                 </div>
                 <SummaryCardLayout error={summaryRequest.error} isLoading={summaryRequest.loading}>
                     <SummaryCard
@@ -259,27 +300,18 @@ function DeploymentPageVulnerabilities({
                                 />
                             </SplitItem>
                         </Split>
-                        {vulnerabilityRequest.error && (
-                            <TableErrorComponent
-                                error={vulnerabilityRequest.error}
-                                message="Adjust your filters and try again"
+                        <div className="workload-cves-table-container">
+                            <DeploymentVulnerabilitiesTable
+                                tableState={tableState}
+                                getSortParams={getSortParams}
+                                isFiltered={isFiltered}
+                                vulnerabilityState={currentVulnerabilityState}
+                                onClearFilters={() => {
+                                    setSearchFilter({});
+                                    setPage(1, 'replace');
+                                }}
                             />
-                        )}
-                        {vulnerabilityRequest.loading && !vulnerabilityData && (
-                            <Bullseye>
-                                <Spinner />
-                            </Bullseye>
-                        )}
-                        {vulnerabilityData && vulnerabilityData.deployment && (
-                            <div className="workload-cves-table-container">
-                                <DeploymentVulnerabilitiesTable
-                                    deployment={vulnerabilityData.deployment}
-                                    getSortParams={getSortParams}
-                                    isFiltered={isFiltered}
-                                    vulnerabilityState={currentVulnerabilityState}
-                                />
-                            </div>
-                        )}
+                        </div>
                     </div>
                 </div>
             </PageSection>

@@ -23,6 +23,9 @@ import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
 import TooltipTh from 'Components/TooltipTh';
 import DateDistance from 'Components/DateDistance';
+import ExpandRowTh from 'Components/ExpandRowTh';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { TableUIState } from 'utils/getTableUIState';
 import { getIsSomeVulnerabilityFixable } from '../../utils/vulnerabilityUtils';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import ImageComponentVulnerabilitiesTable, {
@@ -31,7 +34,6 @@ import ImageComponentVulnerabilitiesTable, {
     imageComponentVulnerabilitiesFragment,
 } from './ImageComponentVulnerabilitiesTable';
 
-import EmptyTableResults from '../components/EmptyTableResults';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../../components/CVESelectionTh';
@@ -68,9 +70,8 @@ export type ImageVulnerability = {
 };
 
 export type ImageVulnerabilitiesTableProps = {
-    image: ImageMetadataContext & {
-        imageVulnerabilities: ImageVulnerability[];
-    };
+    imageMetadata: ImageMetadataContext | undefined;
+    tableState: TableUIState<ImageVulnerability>;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     canSelectRows: boolean;
@@ -81,16 +82,19 @@ export type ImageVulnerabilitiesTableProps = {
         summary: string;
         numAffectedImages: number;
     }) => IAction[];
+    onClearFilters: () => void;
 };
 
 function ImageVulnerabilitiesTable({
-    image,
+    imageMetadata,
+    tableState,
     getSortParams,
     isFiltered,
     canSelectRows,
     selectedCves,
     vulnerabilityState,
     createTableActions,
+    onClearFilters,
 }: ImageVulnerabilitiesTableProps) {
     const expandedRowSet = useSet<string>();
     const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
@@ -105,7 +109,7 @@ function ImageVulnerabilitiesTable({
         <Table variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <Th>{/* Header for expanded column */}</Th>
+                    <ExpandRowTh />
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams('CVE')}>CVE</Th>
                     <Th sort={getSortParams('Severity')}>CVE severity</Th>
@@ -127,121 +131,126 @@ function ImageVulnerabilitiesTable({
                     {createTableActions && <Th aria-label="CVE actions" />}
                 </Tr>
             </Thead>
-            {image.imageVulnerabilities.length === 0 && <EmptyTableResults colSpan={7} />}
-            {image.imageVulnerabilities.map(
-                (
-                    {
-                        cve,
-                        severity,
-                        summary,
-                        cvss,
-                        scoreVersion,
-                        imageComponents,
-                        discoveredAtImage,
-                        pendingExceptionCount,
-                    },
-                    rowIndex
-                ) => {
-                    const vulnerabilities = imageComponents.flatMap(
-                        (imageComponent) => imageComponent.imageVulnerabilities
-                    );
-                    const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
-                    const isExpanded = expandedRowSet.has(cve);
+            <TbodyUnified
+                tableState={tableState}
+                colSpan={colSpan}
+                emptyProps={{ message: 'There were no CVEs detected for this image' }}
+                filteredEmptyProps={{ onClearFilters }}
+                renderer={({ data }) =>
+                    data.map((vulnerability, rowIndex) => {
+                        const {
+                            cve,
+                            severity,
+                            summary,
+                            cvss,
+                            scoreVersion,
+                            imageComponents,
+                            discoveredAtImage,
+                            pendingExceptionCount,
+                        } = vulnerability;
+                        const vulnerabilities = imageComponents.flatMap(
+                            (imageComponent) => imageComponent.imageVulnerabilities
+                        );
+                        const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
+                        const isExpanded = expandedRowSet.has(cve);
 
-                    return (
-                        <Tbody key={cve} isExpanded={isExpanded}>
-                            <Tr>
-                                <Td
-                                    expand={{
-                                        rowIndex,
-                                        isExpanded,
-                                        onToggle: () => expandedRowSet.toggle(cve),
-                                    }}
-                                />
-                                {canSelectRows && (
-                                    <CVESelectionTd
-                                        selectedCves={selectedCves}
-                                        rowIndex={rowIndex}
-                                        item={{ cve, summary, numAffectedImages: 1 }}
+                        return (
+                            <Tbody key={cve} isExpanded={isExpanded}>
+                                <Tr>
+                                    <Td
+                                        expand={{
+                                            rowIndex,
+                                            isExpanded,
+                                            onToggle: () => expandedRowSet.toggle(cve),
+                                        }}
                                     />
-                                )}
-                                <Td dataLabel="CVE" modifier="nowrap">
-                                    <PendingExceptionLabelLayout
-                                        hasPendingException={pendingExceptionCount > 0}
-                                        cve={cve}
-                                        vulnerabilityState={vulnerabilityState}
-                                    >
-                                        <Link
-                                            to={getWorkloadEntityPagePath(
-                                                'CVE',
-                                                cve,
-                                                vulnerabilityState
-                                            )}
-                                        >
-                                            {cve}
-                                        </Link>
-                                    </PendingExceptionLabelLayout>
-                                </Td>
-                                <Td modifier="nowrap" dataLabel="CVE severity">
-                                    {isVulnerabilitySeverity(severity) && (
-                                        <VulnerabilitySeverityIconText severity={severity} />
+                                    {canSelectRows && (
+                                        <CVESelectionTd
+                                            selectedCves={selectedCves}
+                                            rowIndex={rowIndex}
+                                            item={{ cve, summary, numAffectedImages: 1 }}
+                                        />
                                     )}
-                                </Td>
-                                <Td modifier="nowrap" dataLabel="CVE status">
-                                    <VulnerabilityFixableIconText isFixable={isFixableInImage} />
-                                </Td>
-                                <Td modifier="nowrap" dataLabel="CVSS">
-                                    <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
-                                </Td>
-                                <Td dataLabel="Affected components">
-                                    {imageComponents.length === 1
-                                        ? imageComponents[0].name
-                                        : `${imageComponents.length} components`}
-                                </Td>
-                                <Td dataLabel="First discovered">
-                                    <DateDistance date={discoveredAtImage} />
-                                </Td>
-                                {showExceptionDetailsLink && (
-                                    <ExceptionDetailsCell
-                                        cve={cve}
-                                        vulnerabilityState={vulnerabilityState}
-                                    />
-                                )}
-                                {createTableActions && (
-                                    <Td className="pf-v5-u-px-0">
-                                        <ActionsColumn
-                                            // menuAppendTo={() => document.body}
-                                            items={createTableActions({
-                                                cve,
-                                                summary,
-                                                numAffectedImages: 1,
-                                            })}
+                                    <Td dataLabel="CVE" modifier="nowrap">
+                                        <PendingExceptionLabelLayout
+                                            hasPendingException={pendingExceptionCount > 0}
+                                            cve={cve}
+                                            vulnerabilityState={vulnerabilityState}
+                                        >
+                                            <Link
+                                                to={getWorkloadEntityPagePath(
+                                                    'CVE',
+                                                    cve,
+                                                    vulnerabilityState
+                                                )}
+                                            >
+                                                {cve}
+                                            </Link>
+                                        </PendingExceptionLabelLayout>
+                                    </Td>
+                                    <Td modifier="nowrap" dataLabel="CVE severity">
+                                        {isVulnerabilitySeverity(severity) && (
+                                            <VulnerabilitySeverityIconText severity={severity} />
+                                        )}
+                                    </Td>
+                                    <Td modifier="nowrap" dataLabel="CVE status">
+                                        <VulnerabilityFixableIconText
+                                            isFixable={isFixableInImage}
                                         />
                                     </Td>
-                                )}
-                            </Tr>
-                            <Tr isExpanded={isExpanded}>
-                                <Td />
-                                <Td colSpan={colSpan}>
-                                    <ExpandableRowContent>
-                                        {summary && image ? (
-                                            <>
-                                                <p className="pf-v5-u-mb-md">{summary}</p>
-                                                <ImageComponentVulnerabilitiesTable
-                                                    imageMetadataContext={image}
-                                                    componentVulnerabilities={imageComponents}
-                                                />
-                                            </>
-                                        ) : (
-                                            <PartialCVEDataAlert />
-                                        )}
-                                    </ExpandableRowContent>
-                                </Td>
-                            </Tr>
-                        </Tbody>
-                    );
+                                    <Td modifier="nowrap" dataLabel="CVSS">
+                                        <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
+                                    </Td>
+                                    <Td dataLabel="Affected components">
+                                        {imageComponents.length === 1
+                                            ? imageComponents[0].name
+                                            : `${imageComponents.length} components`}
+                                    </Td>
+                                    <Td dataLabel="First discovered">
+                                        <DateDistance date={discoveredAtImage} />
+                                    </Td>
+                                    {showExceptionDetailsLink && (
+                                        <ExceptionDetailsCell
+                                            cve={cve}
+                                            vulnerabilityState={vulnerabilityState}
+                                        />
+                                    )}
+                                    {createTableActions && (
+                                        <Td className="pf-v5-u-px-0">
+                                            <ActionsColumn
+                                                // menuAppendTo={() => document.body}
+                                                items={createTableActions({
+                                                    cve,
+                                                    summary,
+                                                    numAffectedImages: 1,
+                                                })}
+                                            />
+                                        </Td>
+                                    )}
+                                </Tr>
+                                <Tr isExpanded={isExpanded}>
+                                    <Td />
+                                    <Td colSpan={colSpan}>
+                                        <ExpandableRowContent>
+                                            {summary && imageMetadata ? (
+                                                <>
+                                                    <p className="pf-v5-u-mb-md">{summary}</p>
+                                                    <ImageComponentVulnerabilitiesTable
+                                                        imageMetadataContext={imageMetadata}
+                                                        componentVulnerabilities={imageComponents}
+                                                    />
+                                                </>
+                                            ) : (
+                                                <PartialCVEDataAlert />
+                                            )}
+                                        </ExpandableRowContent>
+                                    </Td>
+                                </Tr>
+                            </Tbody>
+                        );
+                    })
                 }
-            )}
+            />
         </Table>
     );
 }

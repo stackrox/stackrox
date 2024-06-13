@@ -1,33 +1,113 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { generatePath, Link } from 'react-router-dom';
-import { Button, ButtonVariant, Text, TextVariants, Tooltip } from '@patternfly/react-core';
+import {
+    Pagination,
+    Text,
+    TextVariants,
+    Toolbar,
+    ToolbarContent,
+    ToolbarGroup,
+    ToolbarItem,
+    Tooltip,
+} from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import {
+    OnSearchPayload,
+    PartialCompoundSearchFilterConfig,
+} from 'Components/CompoundSearchFilter/types';
 import IconText from 'Components/PatternFly/IconText/IconText';
+import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseURLSortResult } from 'hooks/useURLSort';
 import { ComplianceCheckResult } from 'services/ComplianceResultsService';
 import { TableUIState } from 'utils/getTableUIState';
+import { SearchFilter } from 'types/search';
 
+import { DETAILS_TAB, TAB_NAV_QUERY } from './CheckDetailsPage';
+import { CHECK_NAME_QUERY, CHECK_STATUS_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
-import CheckStatusModal from './components/CheckStatusModal';
+import CheckStatusDropdown from './components/CheckStatusDropdown';
 
 export type ClusterDetailsTableProps = {
-    clusterId: string;
+    checkResultsCount: number;
     profileName: string;
     tableState: TableUIState<ComplianceCheckResult>;
+    pagination: UseURLPaginationResult;
+    getSortParams: UseURLSortResult['getSortParams'];
+    searchFilterConfig: PartialCompoundSearchFilterConfig;
+    searchFilter: SearchFilter;
+    onSearch: (payload: OnSearchPayload) => void;
+    onCheckStatusSelect: (
+        filterType: 'Compliance Check Status',
+        checked: boolean,
+        selection: string
+    ) => void;
 };
 
-function ClusterDetailsTable({ clusterId, profileName, tableState }: ClusterDetailsTableProps) {
-    const [selectedCheckResult, setSelectedCheckResult] = useState<ComplianceCheckResult | null>(
-        null
-    );
+function ClusterDetailsTable({
+    checkResultsCount,
+    profileName,
+    tableState,
+    pagination,
+    getSortParams,
+    searchFilterConfig,
+    searchFilter,
+    onSearch,
+    onCheckStatusSelect,
+}: ClusterDetailsTableProps) {
+    const { page, perPage, setPage, setPerPage } = pagination;
     return (
         <>
+            <Toolbar>
+                <ToolbarContent>
+                    <ToolbarGroup className="pf-v5-u-w-100">
+                        <ToolbarItem className="pf-v5-u-flex-1">
+                            <CompoundSearchFilter
+                                config={searchFilterConfig}
+                                searchFilter={searchFilter}
+                                onSearch={onSearch}
+                            />
+                        </ToolbarItem>
+                        <ToolbarItem>
+                            <CheckStatusDropdown
+                                searchFilter={searchFilter}
+                                onSelect={onCheckStatusSelect}
+                            />
+                        </ToolbarItem>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                            <Pagination
+                                itemCount={checkResultsCount}
+                                page={page}
+                                perPage={perPage}
+                                onSetPage={(_, newPage) => setPage(newPage)}
+                                onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
+                            />
+                        </ToolbarItem>
+                    </ToolbarGroup>
+                    <ToolbarGroup className="pf-v5-u-w-100">
+                        <SearchFilterChips
+                            filterChipGroupDescriptors={[
+                                {
+                                    displayName: 'Profile Check',
+                                    searchFilterName: CHECK_NAME_QUERY,
+                                },
+                                {
+                                    displayName: 'Compliance Status',
+                                    searchFilterName: CHECK_STATUS_QUERY,
+                                },
+                            ]}
+                        />
+                    </ToolbarGroup>
+                </ToolbarContent>
+            </Toolbar>
             <Table>
                 <Thead>
                     <Tr>
-                        <Th>Check</Th>
+                        <Th sort={getSortParams(CHECK_NAME_QUERY)}>Check</Th>
                         <Td modifier="fitContent" width={10}>
                             Controls
                         </Td>
@@ -59,10 +139,10 @@ function ClusterDetailsTable({ clusterId, profileName, tableState }: ClusterDeta
                                     <Tr key={checkName}>
                                         <Td dataLabel="Check">
                                             <Link
-                                                to={generatePath(coverageCheckDetailsPath, {
+                                                to={`${generatePath(coverageCheckDetailsPath, {
                                                     checkName,
                                                     profileName,
-                                                })}
+                                                })}?${TAB_NAV_QUERY}=${DETAILS_TAB}`}
                                             >
                                                 {checkName}
                                             </Link>
@@ -83,18 +163,10 @@ function ClusterDetailsTable({ clusterId, profileName, tableState }: ClusterDeta
                                         <Td dataLabel="Controls">placeholder</Td>
                                         <Td dataLabel="Compliance status" modifier="fitContent">
                                             <Tooltip content={clusterStatusObject.tooltipText}>
-                                                <Button
-                                                    isInline
-                                                    variant={ButtonVariant.link}
-                                                    onClick={() =>
-                                                        setSelectedCheckResult(checkResult)
-                                                    }
-                                                >
-                                                    <IconText
-                                                        icon={clusterStatusObject.icon}
-                                                        text={clusterStatusObject.statusText}
-                                                    />
-                                                </Button>
+                                                <IconText
+                                                    icon={clusterStatusObject.icon}
+                                                    text={clusterStatusObject.statusText}
+                                                />
                                             </Tooltip>
                                         </Td>
                                     </Tr>
@@ -104,14 +176,6 @@ function ClusterDetailsTable({ clusterId, profileName, tableState }: ClusterDeta
                     )}
                 />
             </Table>
-            {selectedCheckResult && (
-                <CheckStatusModal
-                    checkResult={selectedCheckResult}
-                    clusterName={clusterId}
-                    isOpen
-                    handleClose={() => setSelectedCheckResult(null)}
-                />
-            )}
         </>
     );
 }

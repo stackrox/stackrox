@@ -5,11 +5,15 @@ import {
     typeAndSelectSearchFilterValue,
     typeAndSelectCustomSearchFilterValue as typeAndCreateResourceFilterValue,
     visitWorkloadCveOverview,
+    typeAndEnterSearchFilterValue,
+    typeAndEnterCustomSearchFilterValue,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE Image CVE Single page', () => {
+    const isAdvancedFiltersEnabled = hasFeatureFlag('ROX_VULN_MGMT_ADVANCED_FILTERS');
+
     withAuth();
 
     before(function () {
@@ -28,13 +32,24 @@ describe('Workload CVE Image CVE Single page', () => {
         visitFirstCve();
 
         // Check that only applicable resource menu items are present in the toolbar
-        cy.get(selectors.searchOptionsDropdown).click();
-        cy.get(selectors.searchOptionsMenuItem('CVE')).should('not.exist');
-        cy.get(selectors.searchOptionsMenuItem('Image'));
-        cy.get(selectors.searchOptionsMenuItem('Deployment'));
-        cy.get(selectors.searchOptionsMenuItem('Cluster'));
-        cy.get(selectors.searchOptionsMenuItem('Namespace'));
-        cy.get(selectors.searchOptionsDropdown).click();
+        if (isAdvancedFiltersEnabled) {
+            cy.get(selectors.searchEntityDropdown).click();
+            cy.get(selectors.searchEntityMenuItem).contains('CVE').should('not.exist');
+            cy.get(selectors.searchEntityMenuItem).contains('Image');
+            cy.get(selectors.searchEntityMenuItem).contains('Image Component');
+            cy.get(selectors.searchEntityMenuItem).contains('Deployment');
+            cy.get(selectors.searchEntityMenuItem).contains('Cluster');
+            cy.get(selectors.searchEntityMenuItem).contains('Namespace');
+            cy.get(selectors.searchEntityDropdown).click();
+        } else {
+            cy.get(selectors.searchOptionsDropdown).click();
+            cy.get(selectors.searchOptionsMenuItem('CVE')).should('not.exist');
+            cy.get(selectors.searchOptionsMenuItem('Image'));
+            cy.get(selectors.searchOptionsMenuItem('Deployment'));
+            cy.get(selectors.searchOptionsMenuItem('Cluster'));
+            cy.get(selectors.searchOptionsMenuItem('Namespace'));
+            cy.get(selectors.searchOptionsDropdown).click();
+        }
     });
 
     it('should correctly handle local filters on the images tab', () => {
@@ -90,7 +105,11 @@ describe('Workload CVE Image CVE Single page', () => {
         cy.get(`${selectors.firstTableRow} td[data-label="Namespace"]`).then(([$namespace]) => {
             const namespace = $namespace.innerText;
 
-            typeAndCreateResourceFilterValue('Namespace', `bogus-${namespace}`);
+            if (isAdvancedFiltersEnabled) {
+                typeAndEnterCustomSearchFilterValue('Namespace', 'Name', `bogus-${namespace}`);
+            } else {
+                typeAndCreateResourceFilterValue('Namespace', `bogus-${namespace}`);
+            }
 
             cy.get(`table tbody tr td[data-label="Namespace"]:contains("${namespace}")`).should(
                 'not.exist'
@@ -98,7 +117,11 @@ describe('Workload CVE Image CVE Single page', () => {
 
             cy.get(vulnSelectors.clearFiltersButton).click();
 
-            typeAndSelectSearchFilterValue('Namespace', namespace);
+            if (isAdvancedFiltersEnabled) {
+                typeAndEnterSearchFilterValue('Namespace', 'Name', namespace);
+            } else {
+                typeAndSelectSearchFilterValue('Namespace', namespace);
+            }
 
             cy.get(
                 `table tbody tr td[data-label="Namespace"]:not(:contains("${namespace}"))`

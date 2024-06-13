@@ -353,6 +353,27 @@
       ],
       "default": "UNSET"
     },
+    "v2ComplianceBenchmark": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "shortName": {
+          "type": "string",
+          "title": "This is extracted from the annotation.\nExample: from https://control.compliance.openshift.io/CIS-OCP we should have CIS-OCP"
+        }
+      }
+    },
     "v2ComplianceProfile": {
       "type": "object",
       "properties": {
@@ -366,9 +387,6 @@
           "type": "string"
         },
         "productType": {
-          "type": "string"
-        },
-        "standard": {
           "type": "string"
         },
         "description": {
@@ -391,9 +409,15 @@
           "items": {
             "type": "string"
           }
+        },
+        "standards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceBenchmark"
+          }
         }
       },
-      "title": "Next Tag: 11"
+      "title": "Next Tag: 12"
     },
     "v2ComplianceProfileSummary": {
       "type": "object",
@@ -416,9 +440,15 @@
         },
         "profileVersion": {
           "type": "string"
+        },
+        "standards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceBenchmark"
+          }
         }
       },
-      "title": "Next Tag: 7"
+      "title": "Next Tag: 8"
     },
     "v2ComplianceRule": {
       "type": "object",

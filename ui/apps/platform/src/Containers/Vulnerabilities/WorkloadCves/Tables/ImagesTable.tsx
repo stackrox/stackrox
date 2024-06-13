@@ -3,15 +3,16 @@ import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Flex, Label } from '@patternfly/react-core';
+import { EyeIcon } from '@patternfly/react-icons';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
-import { EyeIcon } from '@patternfly/react-icons';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import TooltipTh from 'Components/TooltipTh';
 import DateDistance from 'Components/DateDistance';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { TableUIState } from 'utils/getTableUIState';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import EmptyTableResults from '../components/EmptyTableResults';
 import { VulnerabilitySeverityLabel, WatchStatus } from '../../types';
 import ImageScanningErrorLabel from '../components/ImageScanningErrorLabelLayout';
 
@@ -38,7 +39,6 @@ export const imageListQuery = gql`
                     total
                 }
             }
-            priority
             operatingSystem
             deploymentCount(query: $query)
             watchStatus
@@ -54,7 +54,7 @@ export const imageListQuery = gql`
     }
 `;
 
-type Image = {
+export type Image = {
     id: string;
     name: {
         registry: string;
@@ -67,7 +67,6 @@ type Image = {
         moderate: { total: number };
         low: { total: number };
     };
-    priority: number;
     operatingSystem: string;
     deploymentCount: number;
     watchStatus: WatchStatus;
@@ -82,7 +81,7 @@ type Image = {
 };
 
 export type ImagesTableProps = {
-    images: Image[];
+    tableState: TableUIState<Image>;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];
@@ -90,10 +89,11 @@ export type ImagesTableProps = {
     onWatchImage: (imageName: string) => void;
     onUnwatchImage: (imageName: string) => void;
     showCveDetailFields: boolean;
+    onClearFilters: () => void;
 };
 
 function ImagesTable({
-    images,
+    tableState,
     getSortParams,
     isFiltered,
     filteredSeverities,
@@ -101,8 +101,9 @@ function ImagesTable({
     onWatchImage,
     onUnwatchImage,
     showCveDetailFields,
+    onClearFilters,
 }: ImagesTableProps) {
-    const colSpan = 5 + (hasWriteAccessForWatchedImage ? 1 : 0) + (showCveDetailFields ? 2 : 0);
+    const colSpan = 5 + (hasWriteAccessForWatchedImage ? 1 : 0) + (showCveDetailFields ? 1 : 0);
 
     return (
         <Table borders={false} variant="compact">
@@ -110,9 +111,6 @@ function ImagesTable({
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Image')}>Image</Th>
-                    {showCveDetailFields && (
-                        <Th sort={getSortParams('Image Risk Priority')}>Risk priority</Th>
-                    )}
                     {showCveDetailFields && (
                         <TooltipTh tooltip="CVEs by severity across this image">
                             CVEs by severity
@@ -129,125 +127,125 @@ function ImagesTable({
                     {hasWriteAccessForWatchedImage && <Th aria-label="Image action menu" />}
                 </Tr>
             </Thead>
-            {images.length === 0 && <EmptyTableResults colSpan={colSpan} />}
-            {images.map(
-                ({
-                    id,
-                    name,
-                    imageCVECountBySeverity,
-                    priority,
-                    operatingSystem,
-                    deploymentCount,
-                    metadata,
-                    watchStatus,
-                    scanTime,
-                    scanNotes,
-                    notes,
-                }) => {
-                    const criticalCount = imageCVECountBySeverity.critical.total;
-                    const importantCount = imageCVECountBySeverity.important.total;
-                    const moderateCount = imageCVECountBySeverity.moderate.total;
-                    const lowCount = imageCVECountBySeverity.low.total;
+            <TbodyUnified
+                colSpan={colSpan}
+                tableState={tableState}
+                filteredEmptyProps={{ onClearFilters }}
+                emptyProps={{ message: 'No images with observed CVEs were found in the system' }}
+                renderer={({ data }) =>
+                    data.map((image) => {
+                        const {
+                            id,
+                            name,
+                            imageCVECountBySeverity,
+                            operatingSystem,
+                            deploymentCount,
+                            metadata,
+                            watchStatus,
+                            scanTime,
+                            scanNotes,
+                            notes,
+                        } = image;
+                        const criticalCount = imageCVECountBySeverity.critical.total;
+                        const importantCount = imageCVECountBySeverity.important.total;
+                        const moderateCount = imageCVECountBySeverity.moderate.total;
+                        const lowCount = imageCVECountBySeverity.low.total;
 
-                    const isWatchedImage = watchStatus === 'WATCHED';
-                    const watchImageMenuText = isWatchedImage ? 'Unwatch image' : 'Watch image';
-                    const watchImageMenuAction = isWatchedImage ? onUnwatchImage : onWatchImage;
+                        const isWatchedImage = watchStatus === 'WATCHED';
+                        const watchImageMenuText = isWatchedImage ? 'Unwatch image' : 'Watch image';
+                        const watchImageMenuAction = isWatchedImage ? onUnwatchImage : onWatchImage;
 
-                    return (
-                        <Tbody
-                            key={id}
-                            style={{
-                                borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                            }}
-                        >
-                            <Tr>
-                                <Td dataLabel="Image">
-                                    {name ? (
-                                        <ImageNameLink name={name} id={id}>
-                                            {isWatchedImage && (
-                                                <Label
-                                                    isCompact
-                                                    variant="outline"
-                                                    color="grey"
-                                                    className="pf-v5-u-mt-xs"
-                                                    icon={<EyeIcon />}
-                                                >
-                                                    Watched image
-                                                </Label>
-                                            )}
-                                            {(notes.length !== 0 || scanNotes.length !== 0) && (
-                                                <ImageScanningErrorLabel
-                                                    imageNotes={notes}
-                                                    scanNotes={scanNotes}
-                                                />
-                                            )}
-                                        </ImageNameLink>
-                                    ) : (
-                                        'Image name not available'
-                                    )}
-                                </Td>
-                                {showCveDetailFields && (
-                                    <Td
-                                        dataLabel="Risk priority"
-                                        className="pf-v5-u-pr-2xl pf-v5-u-text-align-center-on-md"
-                                    >
-                                        {priority}
-                                    </Td>
-                                )}
-                                {showCveDetailFields && (
-                                    <Td dataLabel="CVEs by severity">
-                                        <SeverityCountLabels
-                                            criticalCount={criticalCount}
-                                            importantCount={importantCount}
-                                            moderateCount={moderateCount}
-                                            lowCount={lowCount}
-                                            entity="image"
-                                            filteredSeverities={filteredSeverities}
-                                        />
-                                    </Td>
-                                )}
-                                <Td>{operatingSystem}</Td>
-                                <Td modifier="nowrap">
-                                    {deploymentCount > 0 ? (
-                                        <>
-                                            {deploymentCount}{' '}
-                                            {pluralize('deployment', deploymentCount)}
-                                        </>
-                                    ) : (
-                                        <Flex>
-                                            <div>0 deployments</div>
-                                        </Flex>
-                                    )}
-                                </Td>
-                                <Td>
-                                    <DateDistance date={metadata?.v1?.created} asPhrase={false} />
-                                </Td>
-                                <Td>
-                                    <DateDistance date={scanTime} />
-                                </Td>
-                                {hasWriteAccessForWatchedImage && (
-                                    <Td isActionCell>
-                                        {name?.tag && (
-                                            <ActionsColumn
-                                                // menuAppendTo={() => document.body}
-                                                items={[
-                                                    {
-                                                        title: watchImageMenuText,
-                                                        onClick: () =>
-                                                            watchImageMenuAction(
-                                                                `${name.registry}/${name.remote}:${name.tag}`
-                                                            ),
-                                                    },
-                                                ]}
-                                            />
+                        return (
+                            <Tbody
+                                key={id}
+                                style={{
+                                    borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
+                                }}
+                            >
+                                <Tr>
+                                    <Td dataLabel="Image">
+                                        {name ? (
+                                            <ImageNameLink name={name} id={id}>
+                                                {isWatchedImage && (
+                                                    <Label
+                                                        isCompact
+                                                        variant="outline"
+                                                        color="grey"
+                                                        className="pf-v5-u-mt-xs"
+                                                        icon={<EyeIcon />}
+                                                    >
+                                                        Watched image
+                                                    </Label>
+                                                )}
+                                                {(notes.length !== 0 || scanNotes.length !== 0) && (
+                                                    <ImageScanningErrorLabel
+                                                        imageNotes={notes}
+                                                        scanNotes={scanNotes}
+                                                    />
+                                                )}
+                                            </ImageNameLink>
+                                        ) : (
+                                            'Image name not available'
                                         )}
                                     </Td>
-                                )}
-                            </Tr>
-                        </Tbody>
-                    );
+                                    {showCveDetailFields && (
+                                        <Td dataLabel="CVEs by severity">
+                                            <SeverityCountLabels
+                                                criticalCount={criticalCount}
+                                                importantCount={importantCount}
+                                                moderateCount={moderateCount}
+                                                lowCount={lowCount}
+                                                entity="image"
+                                                filteredSeverities={filteredSeverities}
+                                            />
+                                        </Td>
+                                    )}
+                                    <Td>{operatingSystem}</Td>
+                                    <Td modifier="nowrap">
+                                        {deploymentCount > 0 ? (
+                                            <>
+                                                {deploymentCount}{' '}
+                                                {pluralize('deployment', deploymentCount)}
+                                            </>
+                                        ) : (
+                                            <Flex>
+                                                <div>0 deployments</div>
+                                            </Flex>
+                                        )}
+                                    </Td>
+                                    <Td>
+                                        <DateDistance
+                                            date={metadata?.v1?.created}
+                                            asPhrase={false}
+                                        />
+                                    </Td>
+                                    <Td>
+                                        <DateDistance date={scanTime} />
+                                    </Td>
+                                    {hasWriteAccessForWatchedImage && (
+                                        <Td isActionCell>
+                                            {name?.tag && (
+                                                <ActionsColumn
+                                                    // menuAppendTo={() => document.body}
+                                                    items={[
+                                                        {
+                                                            title: watchImageMenuText,
+                                                            onClick: () =>
+                                                                watchImageMenuAction(
+                                                                    `${name.registry}/${name.remote}:${name.tag}`
+                                                                ),
+                                                        },
+                                                    ]}
+                                                />
+                                            )}
+                                        </Td>
+                                    )}
+                                </Tr>
+                            </Tbody>
+                        );
+                    })
                 }
-            )}
+            />
         </Table>
     );
 }

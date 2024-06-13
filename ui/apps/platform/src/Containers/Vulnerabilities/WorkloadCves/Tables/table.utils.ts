@@ -1,8 +1,14 @@
 import { gql } from '@apollo/client';
+import { min } from 'date-fns';
 import sortBy from 'lodash/sortBy';
 import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
 import { SourceType } from 'types/image.proto';
 import { ApiSortOption } from 'types/search';
+
+import {
+    getHighestVulnerabilitySeverity,
+    getIsSomeVulnerabilityFixable,
+} from '../../utils/vulnerabilityUtils';
 
 export type ImageMetadataContext = {
     id: string;
@@ -205,4 +211,93 @@ export function sortTableData<TableRowType extends TableDataRow>(
         sortedRows.reverse();
     }
     return sortedRows;
+}
+
+export type DeploymentWithVulnerabilities = {
+    id: string;
+    images: ImageMetadataContext[];
+    imageVulnerabilities: {
+        vulnerabilityId: string;
+        cve: string;
+        operatingSystem: string;
+        summary: string;
+        pendingExceptionCount: number;
+        images: {
+            imageId: string;
+            imageComponents: DeploymentComponentVulnerability[];
+        }[];
+    }[];
+};
+
+type DeploymentVulnerabilityImageMapping = {
+    imageMetadataContext: ImageMetadataContext;
+    componentVulnerabilities: DeploymentComponentVulnerability[];
+};
+
+export type FormattedDeploymentVulnerability = {
+    vulnerabilityId: string;
+    cve: string;
+    operatingSystem: string;
+    severity: VulnerabilitySeverity;
+    isFixable: boolean;
+    discoveredAtImage: Date | null;
+    summary: string;
+    affectedComponentsText: string;
+    images: DeploymentVulnerabilityImageMapping[];
+    pendingExceptionCount: number;
+};
+
+export function formatVulnerabilityData(
+    deployment: DeploymentWithVulnerabilities
+): FormattedDeploymentVulnerability[] {
+    // Create a map of image ID to image metadata for easy lookup
+    // We use 'Partial' here because there is no guarantee that the image will be found
+    const imageMap: Partial<Record<string, ImageMetadataContext>> = {};
+    deployment.images.forEach((image) => {
+        imageMap[image.id] = image;
+    });
+
+    return deployment.imageVulnerabilities.map((vulnerability) => {
+        const { vulnerabilityId, cve, operatingSystem, summary, images, pendingExceptionCount } =
+            vulnerability;
+        // Severity, Fixability, and Discovered date are all based on the aggregate value of all components
+        const allVulnerableComponents = vulnerability.images.flatMap((img) => img.imageComponents);
+        const allVulnerabilities = allVulnerableComponents.flatMap((c) => c.imageVulnerabilities);
+        const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerabilities);
+        const isFixableInDeployment = getIsSomeVulnerabilityFixable(allVulnerabilities);
+        const allDiscoveredDates = allVulnerableComponents
+            .flatMap((c) => c.imageVulnerabilities.map((v) => v.discoveredAtImage))
+            .filter((d): d is string => d !== null);
+        const oldestDiscoveredVulnDate = min(...allDiscoveredDates);
+        // TODO This logic is used in many places, could extract to a util
+        const uniqueComponents = new Set(allVulnerableComponents.map((c) => c.name));
+        const affectedComponentsText =
+            uniqueComponents.size === 1
+                ? uniqueComponents.values().next().value
+                : `${uniqueComponents.size} components`;
+
+        const vulnerabilityImages = images
+            .map((img) => ({
+                imageMetadataContext: imageMap[img.imageId],
+                componentVulnerabilities: img.imageComponents,
+            }))
+            // filter out values where the vulnerability->image mapping is missing
+            .filter(
+                (vulnImageMap): vulnImageMap is DeploymentVulnerabilityImageMapping =>
+                    !!vulnImageMap.imageMetadataContext
+            );
+
+        return {
+            vulnerabilityId,
+            cve,
+            operatingSystem,
+            severity: highestVulnSeverity,
+            isFixable: isFixableInDeployment,
+            discoveredAtImage: oldestDiscoveredVulnDate,
+            summary,
+            affectedComponentsText,
+            images: vulnerabilityImages,
+            pendingExceptionCount,
+        };
+    });
 }

@@ -11,6 +11,7 @@ import (
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scanSettingBindingMocks "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore/mocks"
 	suiteMocks "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore/mocks"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	v2 "github.com/stackrox/rox/generated/api/v2"
@@ -85,6 +86,7 @@ type ComplianceScanConfigServiceTestSuite struct {
 	scanConfigDatastore         *scanConfigMocks.MockDataStore
 	scanSettingBindingDatastore *scanSettingBindingMocks.MockDataStore
 	suiteDataStore              *suiteMocks.MockDataStore
+	notifierDS                  *notifierDS.MockDataStore
 	service                     Service
 }
 
@@ -105,7 +107,7 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.scanConfigDatastore = scanConfigMocks.NewMockDataStore(s.mockCtrl)
 	s.scanSettingBindingDatastore = scanSettingBindingMocks.NewMockDataStore(s.mockCtrl)
 	s.suiteDataStore = suiteMocks.NewMockDataStore(s.mockCtrl)
-	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager)
+	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager, s.notifierDS)
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TearDownTest() {
@@ -597,6 +599,7 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.Complian
 			Profiles:     []string{"ocp4-cis"},
 			ScanSchedule: defaultAPISchedule,
 			Description:  "test-description",
+			Notifiers:    []*v2.NotifierConfiguration{},
 		},
 		ClusterStatus: []*apiV2.ClusterScanStatus{
 			{

@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 
 import {
     eventAlias,
@@ -60,12 +59,6 @@ const staticResponseMapForEvents0 = {
 
 describe('Administration Events table', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_ADMINISTRATION_EVENTS')) {
-            this.skip();
-        }
-    });
 
     it('displays table head cells', () => {
         visitAdministrationEvents(staticResponseMapForEvents);

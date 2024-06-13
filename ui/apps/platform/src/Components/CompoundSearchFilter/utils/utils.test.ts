@@ -4,7 +4,13 @@ import {
     imageCVESearchFilterConfig,
     imageSearchFilterConfig,
 } from '../types';
-import { getEntities, getEntityAttributes, getDefaultEntity, getDefaultAttribute } from './utils';
+import {
+    getEntities,
+    getEntityAttributes,
+    getDefaultEntity,
+    getDefaultAttribute,
+    makeFilterChipDescriptors,
+} from './utils';
 
 describe('utils', () => {
     describe('getEntities', () => {
@@ -33,9 +39,9 @@ describe('utils', () => {
 
             expect(result).toStrictEqual([
                 {
-                    displayName: 'ID',
-                    filterChipLabel: 'Image CVE ID',
-                    searchTerm: 'CVE ID',
+                    displayName: 'Name',
+                    filterChipLabel: 'Image CVE',
+                    searchTerm: 'CVE',
                     inputType: 'autocomplete',
                 },
                 {
@@ -49,15 +55,6 @@ describe('utils', () => {
                     filterChipLabel: 'Image CVE CVSS',
                     searchTerm: 'CVSS',
                     inputType: 'condition-number',
-                },
-                {
-                    displayName: 'Type',
-                    filterChipLabel: 'Image CVE Type',
-                    searchTerm: 'CVE Type',
-                    inputType: 'select',
-                    inputProps: {
-                        options: [{ label: 'Image CVE', value: 'IMAGE_CVE' }],
-                    },
                 },
             ]);
         });
@@ -101,7 +98,32 @@ describe('utils', () => {
 
             const result = getDefaultAttribute('Image CVE', config);
 
-            expect(result).toStrictEqual('ID');
+            expect(result).toStrictEqual('Name');
+        });
+    });
+
+    describe('makeFilterChipDescriptors', () => {
+        it('should create an array of FilterChipGroupDescriptor objects from a config object', () => {
+            const config: Partial<CompoundSearchFilterConfig> = {
+                'Image CVE': imageCVESearchFilterConfig,
+            };
+
+            const result = makeFilterChipDescriptors(config);
+
+            expect(result).toStrictEqual([
+                {
+                    displayName: 'Image CVE',
+                    searchFilterName: 'CVE',
+                },
+                {
+                    displayName: 'Image CVE Discovered Time',
+                    searchFilterName: 'CVE Created Time',
+                },
+                {
+                    displayName: 'Image CVE CVSS',
+                    searchFilterName: 'CVSS',
+                },
+            ]);
         });
     });
 });

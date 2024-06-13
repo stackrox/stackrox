@@ -52,3 +52,11 @@ export function tupleTypeGuard<const T extends readonly string[]>(
 }
 
 export type UnionFrom<T extends readonly string[]> = T[number];
+
+export type DeepPartialByKey<T, K extends string> = {
+    [P in keyof T]: P extends K
+        ? Partial<T[P]>
+        : T[P] extends object
+          ? DeepPartialByKey<T[P], K>
+          : T[P];
+};

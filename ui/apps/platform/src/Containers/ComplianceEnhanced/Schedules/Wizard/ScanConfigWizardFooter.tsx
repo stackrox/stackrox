@@ -6,7 +6,6 @@ import useModal from 'hooks/useModal';
 export type ScanConfigWizardFooterProps = {
     wizardSteps: WizardStep[];
     onSave: () => void;
-    isEditing: boolean;
     isSaving: boolean;
     proceedToNextStepIfValid: (nextFunction: () => void, stepId: string) => void;
 };
@@ -14,7 +13,6 @@ export type ScanConfigWizardFooterProps = {
 function ScanConfigWizardFooter({
     wizardSteps,
     onSave,
-    isEditing,
     isSaving,
     proceedToNextStepIfValid,
 }: ScanConfigWizardFooterProps) {
@@ -41,7 +39,7 @@ function ScanConfigWizardFooter({
                         onClick={onSave}
                         isLoading={isSaving}
                     >
-                        {isEditing ? 'Save' : 'Create'}
+                        Save
                     </Button>
                 )}
                 <Button

@@ -1,12 +1,12 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { Bullseye, Spinner, Divider } from '@patternfly/react-core';
+import { Divider } from '@patternfly/react-core';
 
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
+import { getTableUIState } from 'utils/getTableUIState';
 import DeploymentsTable, { Deployment, deploymentListQuery } from '../Tables/DeploymentsTable';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import { VulnerabilitySeverityLabel } from '../../types';
@@ -32,11 +32,11 @@ function DeploymentsTableContainer({
     isFiltered,
     showCveDetailFields,
 }: DeploymentsTableContainerProps) {
-    const { searchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
     const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data, previousData } = useQuery<{
+    const { error, loading, data } = useQuery<{
         deployments: Deployment[];
     }>(deploymentListQuery, {
         variables: {
@@ -49,7 +49,13 @@ function DeploymentsTableContainer({
         },
     });
 
-    const tableData = data ?? previousData;
+    const tableState = getTableUIState({
+        isLoading: loading,
+        error,
+        data: data?.deployments,
+        searchFilter,
+    });
+
     return (
         <>
             <TableEntityToolbar
@@ -60,30 +66,24 @@ function DeploymentsTableContainer({
                 isFiltered={isFiltered}
             />
             <Divider component="div" />
-            {loading && !tableData && (
-                <Bullseye>
-                    <Spinner />
-                </Bullseye>
-            )}
-            {error && (
-                <TableErrorComponent error={error} message="Adjust your filters and try again" />
-            )}
-            {!error && tableData && (
-                <div
-                    className="workload-cves-table-container"
-                    role="region"
-                    aria-live="polite"
-                    aria-busy={loading ? 'true' : 'false'}
-                >
-                    <DeploymentsTable
-                        deployments={tableData.deployments}
-                        getSortParams={getSortParams}
-                        isFiltered={isFiltered}
-                        filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
-                        showCveDetailFields={showCveDetailFields}
-                    />
-                </div>
-            )}
+            <div
+                className="workload-cves-table-container"
+                role="region"
+                aria-live="polite"
+                aria-busy={loading ? 'true' : 'false'}
+            >
+                <DeploymentsTable
+                    tableState={tableState}
+                    getSortParams={getSortParams}
+                    isFiltered={isFiltered}
+                    filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
+                    showCveDetailFields={showCveDetailFields}
+                    onClearFilters={() => {
+                        setSearchFilter({});
+                        pagination.setPage(1, 'replace');
+                    }}
+                />
+            </div>
         </>
     );
 }

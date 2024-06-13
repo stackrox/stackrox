@@ -115,6 +115,28 @@ func TestConvertTimeToTimestampOrNil(t *testing.T) {
 	assert.Nil(t, protoTSInvalid)
 }
 
+func TestConvertTimestampToGraphqlTimeOrError(t *testing.T) {
+	gqlTime, err := ConvertTimestampToGraphqlTimeOrError(nil)
+	assert.NoError(t, err)
+	assert.Nil(t, gqlTime)
+
+	protoTime := &types.Timestamp{
+		Seconds: 2345678901,
+		Nanos:   234567891,
+	}
+	gqlTime, err = ConvertTimestampToGraphqlTimeOrError(protoTime)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(2345678901234567891), gqlTime.UnixNano())
+
+	// Negative Nanos is not valid for Timestamp.
+	invalidProtoTime := &types.Timestamp{
+		Nanos: -1,
+	}
+	gqlTime, err = ConvertTimestampToGraphqlTimeOrError(invalidProtoTime)
+	assert.Error(t, err)
+	assert.NotNil(t, gqlTime)
+}
+
 func TestGetProtoTimestampFromRFC3339NanoString(t *testing.T) {
 	timeString := "2017-11-16T19:35:32.012345678Z"
 
@@ -208,6 +230,15 @@ func TestDurationFromProto(t *testing.T) {
 	timeDuration, err := DurationFromProto(protoDuration)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedDuration, timeDuration)
+
+	// Positive duration with negative Nanos is not valid.
+	protoInvalidDuration := &types.Duration{
+		Seconds: 1,
+		Nanos:   -1,
+	}
+	timeDuration, err = DurationFromProto(protoInvalidDuration)
+	assert.Error(t, err)
+	assert.Equal(t, time.Duration(0), timeDuration)
 }
 
 func TestDurationProto(t *testing.T) {

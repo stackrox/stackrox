@@ -57,7 +57,7 @@ function EditScanConfigDetail({
                         className="pf-v5-u-py-lg pf-v5-u-px-lg"
                     >
                         <FlexItem flex={{ default: 'flex_1' }}>
-                            <Title headingLevel="h1">{scanConfig.scanName}</Title>
+                            <Title headingLevel="h1">Edit {scanConfig.scanName}</Title>
                         </FlexItem>
                     </Flex>
                 )}
