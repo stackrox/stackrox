@@ -26,6 +26,7 @@ type RoxSensitiveError struct {
 	sensitive error
 
 	unprotectedGoRoutineID int
+	protectionMux          sync.Mutex
 	idMux                  sync.Mutex
 }
 
@@ -52,12 +53,16 @@ func getGoroutineID() int {
 }
 
 func (e *RoxSensitiveError) protect() {
+	e.idMux.Lock()
+	defer e.idMux.Unlock()
 	e.unprotectedGoRoutineID = -1
-	e.idMux.Unlock()
+	e.protectionMux.Unlock()
 }
 
 func (e *RoxSensitiveError) unprotect() {
 	e.idMux.Lock()
+	defer e.idMux.Unlock()
+	e.protectionMux.Lock()
 	e.unprotectedGoRoutineID = getGoroutineID()
 }
 
@@ -81,6 +86,8 @@ func GetSensitiveError(err error) string {
 
 // isProtected tells whether the error is proteced in the current goroutine.
 func (e *RoxSensitiveError) isProtected() bool {
+	e.idMux.Lock()
+	defer e.idMux.Unlock()
 	return e.unprotectedGoRoutineID != getGoroutineID()
 }
 
@@ -110,14 +117,14 @@ func (e *RoxSensitiveError) Error() string {
 //	GetSensitiveError(err) // full error text
 func ConsealSensitive(err error) error {
 	if e := (*net.DNSError)(nil); errors.As(err, &e) {
-		return MakeSensitive("lookup: "+e.Err, err)
+		return MakeSensitive("lookup (consealed): "+e.Err, err)
 	}
 	if e := (*net.OpError)(nil); errors.As(err, &e) {
 		s := e.Op
 		if e.Net != "" {
 			s += " " + e.Net
 		}
-		s += ": " + e.Err.Error()
+		s += " (consealed): " + e.Err.Error()
 		return MakeSensitive(s, err)
 	}
 	return err
