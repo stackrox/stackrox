@@ -296,6 +296,9 @@ jobs:
             echo "GO_BINARIES_BUILD_ARTIFACT=go-binaries-build-${{ matrix.arch }}-${go_binaries}"
             echo "ROX_PRODUCT_BRANDING=${brand}"
           } >> "$GITHUB_ENV"
+          if [[ "${GITHUB_HEAD_REF}" =~ -debug ]]; then
+            echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
+          fi
 
       - name: Checkout
         uses: actions/checkout@v4
