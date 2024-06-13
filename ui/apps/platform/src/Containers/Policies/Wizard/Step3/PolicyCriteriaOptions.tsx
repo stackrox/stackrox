@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Button,
     Divider,
@@ -77,7 +77,7 @@ function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCrit
 
     const selectedSection = values.policySections[selectedSectionIndex];
 
-    const treeDataItems = useMemo(() => getPolicyFieldsAsTree([], descriptors), [descriptors]);
+    const treeDataItems = getPolicyFieldsAsTree([], descriptors);
 
     useEffect(() => {
         setFilteredItems(treeDataItems);
