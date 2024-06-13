@@ -56,15 +56,6 @@ describe('utils', () => {
                     searchTerm: 'CVSS',
                     inputType: 'condition-number',
                 },
-                {
-                    displayName: 'Type',
-                    filterChipLabel: 'Image CVE Type',
-                    searchTerm: 'CVE Type',
-                    inputType: 'select',
-                    inputProps: {
-                        options: [{ label: 'Image CVE', value: 'IMAGE_CVE' }],
-                    },
-                },
             ]);
         });
     });
@@ -131,10 +122,6 @@ describe('utils', () => {
                 {
                     displayName: 'Image CVE CVSS',
                     searchFilterName: 'CVSS',
-                },
-                {
-                    displayName: 'Image CVE Type',
-                    searchFilterName: 'CVE Type',
                 },
             ]);
         });

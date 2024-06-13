@@ -273,9 +273,9 @@ describe(Cypress.spec.relative, () => {
         cy.get('@onSearch').should('have.been.calledWithExactly', {
             action: 'ADD',
             category: 'Image Created Time',
-            value: '2034-01-15',
+            value: '01/15/2034',
         });
-        cy.get('input[aria-label="Filter by date"]').should('have.value', '2034-01-15');
+        cy.get('input[aria-label="Filter by date"]').should('have.value', '01/15/2034');
     });
 
     it('should display the condition-number input and correctly search for image cvss', () => {
@@ -364,8 +364,6 @@ describe(Cypress.spec.relative, () => {
             'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Menu toggle"]';
         const autocompleteMenuItems = 'div[aria-label="Filter results select menu"] ul li';
         const autocompleteInput = 'input[aria-label="Filter results by image name"]';
-        const autocompleteClearInputButton =
-            'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Clear input value"]';
         const autocompleteSearchButton = 'button[aria-label="Apply autocomplete input to search"]';
 
         setup(config, searchFilter, onSearch);
@@ -386,9 +384,6 @@ describe(Cypress.spec.relative, () => {
             category: 'Image',
             value: 'docker.io/library/centos:7',
         });
-        cy.get(autocompleteInput).should('have.value', 'docker.io/library/centos:7');
-
-        cy.get(autocompleteClearInputButton).click();
 
         cy.get(autocompleteInput).should('have.value', '');
 

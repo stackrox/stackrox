@@ -293,15 +293,6 @@ export const imageCVESearchFilterConfig = {
             searchTerm: 'CVSS',
             inputType: 'condition-number',
         },
-        Type: {
-            displayName: 'Type',
-            filterChipLabel: 'Image CVE Type',
-            searchTerm: 'CVE Type',
-            inputType: 'select',
-            inputProps: {
-                options: [{ label: 'Image CVE', value: 'IMAGE_CVE' }],
-            },
-        },
     },
 } as const;
 
