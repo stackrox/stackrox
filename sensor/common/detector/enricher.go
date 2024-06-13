@@ -3,6 +3,7 @@ package detector
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -17,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
