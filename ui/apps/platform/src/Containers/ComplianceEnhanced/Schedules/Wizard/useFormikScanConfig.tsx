@@ -24,19 +24,35 @@ export const defaultScanConfigFormValues: ScanConfigFormValues = {
     },
 };
 
+export const helperTextForName =
+    "Name can contain only lowercase alphanumeric characters, hyphen '-' or period '.', and start and end with an alphanumeric character.";
+export const helperTextForTime = 'Select or enter scan time between 00:00 and 23:59 UTC';
+
+const timeRegExp = /\d\d:\d\d/;
+
+function timeValidator(value: string) {
+    if (!timeRegExp.test(value)) {
+        return false;
+    }
+
+    const [hourString, minuteString] = value.split(':');
+    const hour = parseInt(hourString);
+    const minute = parseInt(minuteString);
+    return hour >= 0 && hour < 24 && minute >= 0 && minute < 60;
+}
+
 const validationSchema = yup.object().shape({
     parameters: yup.object().shape({
         name: yup
             .string()
-            .trim()
-            .required('Scan name is required')
-            .matches(
-                /^[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]$/,
-                "Name can contain only lowercase alphanumeric characters, '-' or '.', and start and end with an alphanumeric character."
-            ),
+            .required('Name is required')
+            .matches(/^[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]$/, helperTextForName),
         description: yup.string(),
         intervalType: yup.string().required('Frequency is required'),
-        time: yup.string().required('Time is required'),
+        time: yup
+            .string()
+            .required('Time is required')
+            .test('time', helperTextForTime, timeValidator),
         daysOfWeek: yup
             .array()
             .when('intervalType', (intervalType, schema) =>

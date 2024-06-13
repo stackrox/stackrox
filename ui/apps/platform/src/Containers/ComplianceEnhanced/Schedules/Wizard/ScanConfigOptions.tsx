@@ -18,10 +18,9 @@ import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 
-import {
-    ScanConfigFormValues,
-    getHourMinuteStringFromScheduleBase,
-} from '../compliance.scanConfigs.utils';
+import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+
+import { helperTextForName, helperTextForTime } from './useFormikScanConfig';
 
 function ScanConfigOptions(): ReactElement {
     const formik: FormikContextType<ScanConfigFormValues> = useFormikContext();
@@ -31,20 +30,8 @@ function ScanConfigOptions(): ReactElement {
         formik.setFieldValue(id, value);
     }
 
-    function handleTimeChange(
-        _event: React.FormEvent<HTMLInputElement>,
-        time: string,
-        hour?: number,
-        minute?: number,
-        _seconds?: number,
-        isValid?: boolean
-    ): void {
-        if (isValid && hour !== undefined) {
-            const timeString = getHourMinuteStringFromScheduleBase({ hour, minute: minute ?? 0 });
-            formik.setFieldValue('parameters.time', timeString);
-        } else {
-            formik.setFieldValue('parameters.time', time);
-        }
+    function handleTimeChange(_event: React.FormEvent<HTMLInputElement>, time: string): void {
+        formik.setFieldValue('parameters.time', time);
     }
 
     function onScheduledDaysChange(id: string, selection: string[]) {
@@ -73,7 +60,7 @@ function ScanConfigOptions(): ReactElement {
                                     fieldId="parameters.name"
                                     errors={formik.errors}
                                     touched={formik.touched}
-                                    helperText="Name can contain only lowercase alphanumeric characters, '-' or '.', and start and end with an alphanumeric character."
+                                    helperText={helperTextForName}
                                 >
                                     <TextInput
                                         isRequired
@@ -81,6 +68,12 @@ function ScanConfigOptions(): ReactElement {
                                         id="parameters.name"
                                         name="parameters.name"
                                         value={formik.values.parameters.name}
+                                        validated={
+                                            formik.errors?.parameters?.name &&
+                                            formik.touched?.parameters?.name
+                                                ? 'error'
+                                                : 'default'
+                                        }
                                         onChange={(event) => formik.handleChange(event)}
                                         onBlur={formik.handleBlur}
                                     />
@@ -196,7 +189,7 @@ function ScanConfigOptions(): ReactElement {
                                             errors={formik.errors}
                                             isRequired
                                             touched={formik.touched}
-                                            helperText="Select scan time in UTC"
+                                            helperText={helperTextForTime}
                                         >
                                             <TimePicker
                                                 time={formik.values.parameters.time}
