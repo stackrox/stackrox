@@ -1,6 +1,8 @@
 package logging
 
 import (
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -44,6 +46,21 @@ type LoggerImpl struct {
 	InnerLogger *zap.SugaredLogger
 	module      *Module
 	opts        *options
+}
+
+// unconcealErrors exposes sensitive errors.
+func unconcealErrors(args []any) {
+	for i, arg := range args {
+		if err, isError := arg.(error); isError && err != nil {
+			args[i] = errox.GetSensitiveError(err)
+		} else if field, isField := arg.(zap.Field); isField && field.Type == zapcore.ErrorType {
+			if err, isError := field.Interface.(error); isError && err != nil {
+				// Recreate the error with expanded sensitive message.
+				field.Interface = errors.New(errox.GetSensitiveError(err))
+				args[i] = field
+			}
+		}
+	}
 }
 
 // Log logs at level.
@@ -101,49 +118,58 @@ func (l *LoggerImpl) SugaredLogger() *zap.SugaredLogger {
 
 // Panic uses fmt.Sprintf to construct and log a message, then panics.
 func (l *LoggerImpl) Panic(args ...interface{}) {
+	unconcealErrors(args)
 	l.InnerLogger.Panic(args...)
 }
 
 // Panicf uses fmt.Sprintf to log a templated message, then panics.
 func (l *LoggerImpl) Panicf(template string, args ...interface{}) {
+	unconcealErrors(args)
 	l.InnerLogger.Panicf(template, args...)
 }
 
 // Panicw logs a message with some additional context, then panics.
 // The variadic key-value pairs are treated as in zap SugaredLogger With.
 func (l *LoggerImpl) Panicw(msg string, keysAndValues ...interface{}) {
+	unconcealErrors(keysAndValues)
 	l.InnerLogger.Panicw(msg, keysAndValues...)
 }
 
 // Fatal uses fmt.Sprintf to construct and log a message, then calls os.Exit.
 func (l *LoggerImpl) Fatal(args ...interface{}) {
+	unconcealErrors(args)
 	l.InnerLogger.Fatal(args...)
 }
 
 // Fatalf uses fmt.Sprintf to log a templated message, then calls os.Exit.
 func (l *LoggerImpl) Fatalf(template string, args ...interface{}) {
+	unconcealErrors(args)
 	l.InnerLogger.Fatalf(template, args...)
 }
 
 // Fatalw logs a message with some additional context, then calls os.Exit.
 // The variadic key-value pairs are treated as in zap SugaredLogger With.
 func (l *LoggerImpl) Fatalw(msg string, keysAndValues ...interface{}) {
+	unconcealErrors(keysAndValues)
 	l.InnerLogger.Fatalw(msg, keysAndValues...)
 }
 
 // Error uses fmt.Sprintf to construct and log a message.
 func (l *LoggerImpl) Error(args ...interface{}) {
+	unconcealErrors(args)
 	l.InnerLogger.Error(args...)
 }
 
 // Errorf uses fmt.Sprintf to log a templated message.
 func (l *LoggerImpl) Errorf(template string, args ...interface{}) {
+	unconcealErrors(args)
 	l.InnerLogger.Errorf(template, args...)
 }
 
 // Errorw logs a message with some additional context.
 // The variadic key-value pairs are treated as in zap SugaredLogger With.
 func (l *LoggerImpl) Errorw(msg string, keysAndValues ...interface{}) {
+	unconcealErrors(keysAndValues)
 	l.InnerLogger.Errorw(msg, keysAndValues...)
 
 	l.createAdministrationEventFromLog(msg, "error", keysAndValues...)
@@ -151,17 +177,20 @@ func (l *LoggerImpl) Errorw(msg string, keysAndValues ...interface{}) {
 
 // Warn uses fmt.Sprintf to construct and log a message.
 func (l *LoggerImpl) Warn(args ...interface{}) {
+	unconcealErrors(args)
 	l.InnerLogger.Warn(args...)
 }
 
 // Warnf uses fmt.Sprintf to log a templated message.
 func (l *LoggerImpl) Warnf(template string, args ...interface{}) {
+	unconcealErrors(args)
 	l.InnerLogger.Warnf(template, args...)
 }
 
 // Warnw logs a message with some additional context.
 // The variadic key-value pairs are treated as in zap SugaredLogger With.
 func (l *LoggerImpl) Warnw(msg string, keysAndValues ...interface{}) {
+	unconcealErrors(keysAndValues)
 	l.InnerLogger.Warnw(msg, keysAndValues...)
 
 	l.createAdministrationEventFromLog(msg, "warn", keysAndValues...)
@@ -169,17 +198,20 @@ func (l *LoggerImpl) Warnw(msg string, keysAndValues ...interface{}) {
 
 // Info uses fmt.Sprintf to construct and log a message.
 func (l *LoggerImpl) Info(args ...interface{}) {
+	unconcealErrors(args)
 	l.InnerLogger.Info(args...)
 }
 
 // Infof uses fmt.Sprintf to log a templated message.
 func (l *LoggerImpl) Infof(template string, args ...interface{}) {
+	unconcealErrors(args)
 	l.InnerLogger.Infof(template, args...)
 }
 
 // Infow logs a message with some additional context.
 // The variadic key-value pairs are treated as in zap SugaredLogger With.
 func (l *LoggerImpl) Infow(msg string, keysAndValues ...interface{}) {
+	unconcealErrors(keysAndValues)
 	l.InnerLogger.Infow(msg, keysAndValues...)
 
 	l.createAdministrationEventFromLog(msg, "info", keysAndValues...)
@@ -187,17 +219,20 @@ func (l *LoggerImpl) Infow(msg string, keysAndValues ...interface{}) {
 
 // Debug uses fmt.Sprintf to construct and log a message.
 func (l *LoggerImpl) Debug(args ...interface{}) {
+	unconcealErrors(args)
 	l.InnerLogger.Debug(args...)
 }
 
 // Debugf uses fmt.Sprintf to log a templated message.
 func (l *LoggerImpl) Debugf(template string, args ...interface{}) {
+	unconcealErrors(args)
 	l.InnerLogger.Debugf(template, args...)
 }
 
 // Debugw logs a message with some additional context.
 // The variadic key-value pairs are treated as in zap SugaredLogger With.
 func (l *LoggerImpl) Debugw(msg string, keysAndValues ...interface{}) {
+	unconcealErrors(keysAndValues)
 	l.InnerLogger.Debugw(msg, keysAndValues...)
 }
 
