@@ -1,15 +1,22 @@
 package m200tom201
 
 import (
+	"strings"
+
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	newSchema "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5/schema/new"
+	rulesStore "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5/stores/updated/rules"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm/clause"
+)
+
+const (
+	controlAnnotationBase = "control.compliance.openshift.io/"
 )
 
 var (
@@ -129,6 +136,45 @@ func migrateProfiles(database *types.Databases) error {
 
 func migrateRules(database *types.Databases) error {
 	// Need to use store because of `RuleControls`
+	ruleStore := rulesStore.New(database.PostgresDB)
+
+	rules := make([]*storage.ComplianceOperatorRuleV2, 0)
+	err := ruleStore.Walk(database.DBCtx, func(obj *storage.ComplianceOperatorRuleV2) error {
+		obj.ParentRule = obj.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]
+		obj.RuleRefId = buildDeterministicID(obj.GetClusterId(), obj.GetParentRule())
+
+		var newControls []*storage.RuleControls
+		for _, control := range obj.GetControls() {
+			controlAnnotationValues := strings.Split(obj.GetAnnotations()[controlAnnotationBase+control.GetStandard()], ";")
+
+			// Add a control entry for each Control + Standard. This data is intentionally denormalized for easier querying.
+			for _, controlValue := range controlAnnotationValues {
+				newControls = append(newControls, &storage.RuleControls{
+					Standard: control.GetStandard(),
+					Control:  controlValue,
+				})
+			}
+		}
+		obj.Controls = newControls
+
+		rules = append(rules, obj)
+		if len(rules) >= batchSize {
+			err := ruleStore.UpsertMany(database.DBCtx, rules)
+			if err != nil {
+				return err
+			}
+			rules = rules[:0]
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(rules) > 0 {
+		return ruleStore.UpsertMany(database.DBCtx, rules)
+	}
 
 	return nil
 }
