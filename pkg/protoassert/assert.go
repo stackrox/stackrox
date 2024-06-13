@@ -5,7 +5,6 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
@@ -13,7 +12,7 @@ import (
 
 func Equal(t *testing.T, expected, actual proto.Message, msgAndArgs ...interface{}) bool {
 	t.Helper()
-	if protocompat.Equal(expected, actual) {
+	if proto.Equal(expected, actual) {
 		return true
 	}
 	e, err := toJson(expected)
