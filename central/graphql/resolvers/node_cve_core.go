@@ -114,30 +114,15 @@ func (resolver *nodeCVECoreResolver) Nodes(ctx context.Context, args struct{ Pag
 		return nil, err
 	}
 
-	// Get full query for nodes
-	query := search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCVE()).ProtoQuery()
+	nodeQ := search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCVE()).ProtoQuery()
 	if resolver.subFieldQuery != nil {
-		query = search.ConjunctionQuery(query, resolver.subFieldQuery)
+		nodeQ = search.ConjunctionQuery(nodeQ, resolver.subFieldQuery)
 	}
 	if args.Pagination != nil {
-		paginated.FillPagination(query, args.Pagination.AsV1Pagination(), maxNodes)
+		paginated.FillPagination(nodeQ, args.Pagination.AsV1Pagination(), maxNodes)
 	}
-
-	// ROX-17254: Because of the incompatibility between
-	// the data model and search framework, run the query through on CVE datastore through SQF.
-	nodeIDs, err := resolver.root.NodeCVEView.GetNodeIDs(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	if len(nodeIDs) == 0 {
-		return nil, nil
-	}
-
-	nodeQ := search.NewQueryBuilder().AddExactMatches(search.NodeID, nodeIDs...).Query()
-	return resolver.root.Nodes(ctx, PaginatedQuery{
-		Query:      pointers.String(nodeQ),
-		Pagination: args.Pagination,
-	})
+	nodes, err := resolver.root.NodeDataStore.SearchRawNodes(ctx, nodeQ)
+	return resolver.root.wrapNodes(nodes, err)
 }
 
 func (resolver *nodeCVECoreResolver) OperatingSystemCount(_ context.Context) int32 {

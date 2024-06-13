@@ -4,12 +4,17 @@ import (
 	"context"
 	"math"
 	"testing"
+	time2 "time"
 
+	nodeCVEMocks "github.com/stackrox/rox/central/cve/node/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
+	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	"github.com/stackrox/rox/central/views/nodecve"
 	nodeCVEViewMock "github.com/stackrox/rox/central/views/nodecve/mocks"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
@@ -27,7 +32,9 @@ type NodeCVECoreResolverTestSuite struct {
 	mockCtrl *gomock.Controller
 	ctx      context.Context
 
-	nodeCVEView *nodeCVEViewMock.MockCveView
+	nodeCVEDatastore *nodeCVEMocks.MockDataStore
+	nodeDatastore    *nodeMocks.MockDataStore
+	nodeCVEView      *nodeCVEViewMock.MockCveView
 
 	resolver *Resolver
 }
@@ -43,7 +50,9 @@ func (s *NodeCVECoreResolverTestSuite) SetupSuite() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = contextWithNodePerm(s.T(), s.mockCtrl)
 	s.nodeCVEView = nodeCVEViewMock.NewMockCveView(s.mockCtrl)
-	s.resolver, _ = SetupTestResolver(s.T(), s.nodeCVEView)
+	s.nodeCVEDatastore = nodeCVEMocks.NewMockDataStore(s.mockCtrl)
+	s.nodeDatastore = nodeMocks.NewMockDataStore(s.mockCtrl)
+	s.resolver, _ = SetupTestResolver(s.T(), s.nodeCVEView, s.nodeCVEDatastore, s.nodeDatastore)
 }
 
 func (s *NodeCVECoreResolverTestSuite) TearDownSuite() {}
@@ -251,4 +260,111 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVENonEmpty() {
 	)
 	s.NoError(err)
 	s.NotNil(response.data)
+}
+
+func (s *NodeCVECoreResolverTestSuite) TestNodeCVESubResolvers() {
+	// without filter
+	cve := "cve-xyz"
+	expectedQ := search.NewQueryBuilder().AddExactMatches(search.CVE, cve).ProtoQuery()
+	cveCoreMock := nodeCVEViewMock.NewMockCveCore(s.mockCtrl)
+	expected := []nodecve.CveCore{
+		cveCoreMock,
+	}
+
+	s.nodeCVEView.EXPECT().Get(s.ctx, expectedQ).Return(expected, nil)
+	response, err := s.resolver.NodeCVE(
+		s.ctx, struct {
+			Cve                *string
+			SubfieldScopeQuery *string
+		}{
+			Cve: pointers.String("cve-xyz"),
+		},
+	)
+	s.NoError(err)
+	s.NotNil(response.data)
+
+	// CVE
+	cveCoreMock.EXPECT().GetCVE().Return(cve).AnyTimes()
+	s.Equal(cve, response.CVE(s.ctx))
+
+	// NodeCount
+	cveCoreMock.EXPECT().GetNodeCount().Return(3)
+	s.Equal(int32(3), response.AffectedNodeCount(s.ctx))
+
+	// OperatingSystemCount
+	cveCoreMock.EXPECT().GetOperatingSystemCount().Return(1)
+	s.Equal(1, cveCoreMock.GetOperatingSystemCount())
+
+	// TopCVSS
+	cveCoreMock.EXPECT().GetTopCVSS().Return(float32(5.5))
+	s.Equal(5.5, response.TopCVSS(s.ctx))
+
+	// FirstDiscoveredInSystem
+	ts := time2.Now()
+	cveCoreMock.EXPECT().GetFirstDiscoveredInSystem().Return(&ts)
+	s.Equal(ts, response.FirstDiscoveredInSystem(s.ctx).Time)
+
+	// CountByNodeCVESeverity
+	sev := nodecve.NewCountByNodeCVESeverity(1, 2, 3, 4)
+	cveCoreMock.EXPECT().GetNodeCountBySeverity().Return(sev)
+	sevResolver, err := response.AffectedNodeCountBySeverity(s.ctx)
+	s.Nil(err)
+	s.Equal(int32(sev.GetCriticalSeverityCount().GetTotal()), sevResolver.Critical(s.ctx))
+	s.Equal(int32(sev.GetImportantSeverityCount().GetTotal()), sevResolver.Important(s.ctx))
+	s.Equal(int32(sev.GetModerateSeverityCount().GetTotal()), sevResolver.Moderate(s.ctx))
+	s.Equal(int32(sev.GetLowSeverityCount().GetTotal()), sevResolver.Low(s.ctx))
+
+	// DistroTuples
+	cveIDsToTest := []string{"11", "22"}
+	cveResults := []search.Result{
+		{
+			ID: cveIDsToTest[0],
+		},
+		{
+			ID: cveIDsToTest[1],
+		},
+	}
+	nodeCVEs := []*storage.NodeCVE{
+		{
+			Id:          cveIDsToTest[0],
+			CveBaseInfo: &storage.CVEInfo{Cve: cve},
+		},
+		{
+			Id:          "22",
+			CveBaseInfo: &storage.CVEInfo{Cve: cve},
+		},
+	}
+	cveCoreMock.EXPECT().GetCVEIDs().Return(cveIDsToTest)
+	expectedQ = search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDsToTest...).
+		AddBools(search.CVESuppressed, true, false).
+		WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
+
+	s.nodeCVEDatastore.EXPECT().Search(s.ctx, expectedQ).Return(cveResults, nil)
+	s.nodeCVEDatastore.EXPECT().GetBatch(s.ctx, cveIDsToTest).Return(nodeCVEs, nil)
+	vulns, err := response.DistroTuples(s.ctx)
+	s.Nil(err)
+	s.Len(vulns, 2)
+	for _, vuln := range vulns {
+		s.Contains(cveIDsToTest, string(vuln.Id(s.ctx)))
+		s.Equal(cve, vuln.CVE(s.ctx))
+	}
+
+	// Nodes
+	nodeIDsToTest := []string{fixtureconsts.Node1, fixtureconsts.Node2}
+	expectedNodes := []*storage.Node{
+		{
+			Id: nodeIDsToTest[0],
+		},
+		{
+			Id: nodeIDsToTest[1],
+		},
+	}
+
+	expectedQ = search.NewQueryBuilder().AddExactMatches(search.CVE, cve).ProtoQuery()
+	expectedQ = search.ConjunctionQuery(expectedQ, response.subFieldQuery)
+	s.nodeDatastore.EXPECT().SearchRawNodes(s.ctx, expectedQ).Return(expectedNodes, nil)
+	nodes, err := response.Nodes(s.ctx, struct{ Pagination *inputtypes.Pagination }{})
+	s.Nil(err)
+	s.Len(nodes, 2)
+	s.Contains(nodeIDsToTest, string(nodes[0].Id(s.ctx)), string(nodes[1].Id(s.ctx)))
 }
