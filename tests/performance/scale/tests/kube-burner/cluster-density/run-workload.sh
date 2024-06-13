@@ -113,6 +113,9 @@ function run_workload() {
         --test-workload-type "${template}" \
         --output-file "${metadata_path}"
 
+    echo "-- Fix k8sVersion"
+    yq --inplace '.k8sVersion = 1.28' "${metadata_path}"
+
     echo "--- Starting kube-burner"
     "${kube_burner_path}" init \
         --uuid="${run_uuid}" \
