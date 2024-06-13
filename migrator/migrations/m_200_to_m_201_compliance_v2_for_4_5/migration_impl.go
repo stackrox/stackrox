@@ -108,7 +108,7 @@ func migrateProfiles(database *types.Databases) error {
 func migrateRules(database *types.Databases) error {
 	db := database.GormDB
 	pgutils.CreateTableFromModel(database.DBCtx, db, newSchema.CreateTableComplianceOperatorRuleV2Stmt)
-	db = db.WithContext(database.DBCtx).Table(newSchema.ComplianceOperatorRuleV2TableName)
+	db.WithContext(database.DBCtx).Table(newSchema.ComplianceOperatorRuleV2TableName)
 
 	// Need to use store because of `RuleControls`
 	ruleStore := rulesStore.New(database.PostgresDB)
