@@ -68,6 +68,22 @@ tests:
     .rolebindings["stackrox-scanner-psp"] | assertThat(. != null)
     .clusterroles["stackrox-scanner-psp"] | assertThat(. != null)
 
+- name: "scanner with network policies enabled"
+  values:
+    system:
+      enableNetworkPolicies: true
+  expect: |
+    .networkpolicys["scanner"] | assertThat(. != null)
+    .networkpolicys["scanner-db"] | assertThat(. != null)
+
+- name: "scanner with network policies disabled"
+  values:
+    system:
+      enableNetworkPolicies: false
+  expect: |
+    .networkpolicys["scanner"] | assertThat(. == null)
+    .networkpolicys["scanner-db"] | assertThat(. == null)
+
 #TODO: Add istio tests
 - name: "configured scanner"
   values:

@@ -194,3 +194,4 @@ meta:
     extraAPIResources: null # [string]
 system:
   enablePodSecurityPolicies: null # bool
+  enableNetworkPolicies: null # bool
