@@ -283,7 +283,7 @@ teardown_file() {
 
     _deploy_stackrox
 
-    verify_scannerV2_deployed "stackroxer"
+    verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
