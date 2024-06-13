@@ -8,8 +8,10 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+	ruleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	complianceConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	complianceScanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov2"
@@ -49,13 +51,14 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore, scanDS complianceScanDS.DataStore, benchmarkDS benchmarksDS.DataStore, clusterDS clusterDatastore.DataStore) Service {
+func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore, scanDS complianceScanDS.DataStore, benchmarkDS benchmarksDS.DataStore, ruleDS ruleDS.DataStore, clusterDS clusterDatastore.DataStore) Service {
 	return &serviceImpl{
 		complianceResultsDS: complianceResultsDS,
 		scanConfigDS:        scanConfigDS,
 		integrationDS:       integrationDS,
 		profileDS:           profileDS,
 		scanDS:              scanDS,
+		ruleDS:              ruleDS,
 		clusterDS:           clusterDS,
 		benchmarkDS:         benchmarkDS,
 	}
@@ -69,6 +72,7 @@ type serviceImpl struct {
 	integrationDS       complianceIntegrationDS.DataStore
 	profileDS           profileDatastore.DataStore
 	scanDS              complianceScanDS.DataStore
+	ruleDS              ruleDS.DataStore
 	clusterDS           clusterDatastore.DataStore
 	benchmarkDS         benchmarksDS.DataStore
 }
@@ -403,8 +407,18 @@ func (s *serviceImpl) GetComplianceProfileCheckStats(ctx context.Context, reques
 		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile check stats for %+v", request)
 	}
 
+	ruleNames := make([]string, 0, len(scanResults))
+	for _, result := range scanResults {
+		ruleNames = append(ruleNames, result.RuleName)
+	}
+
+	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName(), s.benchmarkDS)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve controls for compliance profile check stats for %+v", request)
+	}
+
 	return &v2.ListComplianceProfileResults{
-		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults),
+		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults, controls),
 		ProfileName:    request.GetProfileName(),
 		TotalCount:     int32(1),
 	}, nil
