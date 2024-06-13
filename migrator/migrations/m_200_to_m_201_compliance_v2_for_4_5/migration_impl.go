@@ -114,7 +114,7 @@ func migrateProfiles(database *types.Databases) error {
 		if len(convertedProfiles) == batchSize {
 			// Upsert converted profiles
 			if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(newSchema.CreateTableComplianceOperatorProfileV2Stmt.GormModel).Create(&convertedProfiles).Error; err != nil {
-				return errors.Wrapf(err, "failed to upsert converted %d objects after %d upserted", len(convertedProfiles), count-len(convertedProfiles))
+				return errors.Wrapf(err, "failed to upsert converted %d profiles after %d upserted", len(convertedProfiles), count-len(convertedProfiles))
 			}
 			convertedProfiles = convertedProfiles[:0]
 		}
@@ -126,7 +126,7 @@ func migrateProfiles(database *types.Databases) error {
 
 	if len(convertedProfiles) > 0 {
 		if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(newSchema.CreateTableComplianceOperatorProfileV2Stmt.GormModel).Create(&convertedProfiles).Error; err != nil {
-			return errors.Wrapf(err, "failed to upsert last %d objects", len(convertedProfiles))
+			return errors.Wrapf(err, "failed to upsert last %d profiles", len(convertedProfiles))
 		}
 	}
 	log.Infof("Converted %d profile records", count)
@@ -142,6 +142,7 @@ func migrateRules(database *types.Databases) error {
 	// Need to use store because of `RuleControls`
 	ruleStore := rulesStore.New(database.PostgresDB)
 
+	ruleCount := 0
 	rules := make([]*storage.ComplianceOperatorRuleV2, 0)
 	err := ruleStore.Walk(database.DBCtx, func(obj *storage.ComplianceOperatorRuleV2) error {
 		obj.ParentRule = obj.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]
@@ -165,8 +166,9 @@ func migrateRules(database *types.Databases) error {
 		if len(rules) >= batchSize {
 			err := ruleStore.UpsertMany(database.DBCtx, rules)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "failed to convert %+v to proto", rules)
 			}
+			ruleCount = ruleCount + len(rules)
 			rules = rules[:0]
 		}
 
@@ -177,9 +179,13 @@ func migrateRules(database *types.Databases) error {
 	}
 
 	if len(rules) > 0 {
-		return ruleStore.UpsertMany(database.DBCtx, rules)
+		ruleCount = ruleCount + len(rules)
+		if err := ruleStore.UpsertMany(database.DBCtx, rules); err != nil {
+			return errors.Wrapf(err, "failed to convert %+v to proto", rules)
+		}
 	}
 
+	log.Infof("Converted %d rule records", ruleCount)
 	return nil
 }
 
@@ -216,7 +222,7 @@ func migrateScans(database *types.Databases) error {
 		if scanProto.Profile == nil {
 			return errors.Wrapf(err, "failed to set profile %+v to proto", scan)
 		}
-		scanProto.Profile.ProfileId = createProfileRefID(scanProto.GetClusterId(), scanProto.Profile.ProfileId, scanProto.GetProductType())
+		scanProto.Profile.ProfileRefId = createProfileRefID(scanProto.GetClusterId(), scanProto.Profile.ProfileId, scanProto.GetProductType())
 
 		converted, err := newSchema.ConvertComplianceOperatorScanV2FromProto(scanProto)
 		if err != nil {
@@ -228,7 +234,7 @@ func migrateScans(database *types.Databases) error {
 		if len(convertedScans) == batchSize {
 			// Upsert converted scans
 			if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(newSchema.CreateTableComplianceOperatorScanV2Stmt.GormModel).Create(&convertedScans).Error; err != nil {
-				return errors.Wrapf(err, "failed to upsert converted %d objects after %d upserted", len(convertedScans), count-len(convertedScans))
+				return errors.Wrapf(err, "failed to upsert converted %d scans after %d upserted", len(convertedScans), count-len(convertedScans))
 			}
 			convertedScans = convertedScans[:0]
 		}
@@ -240,7 +246,7 @@ func migrateScans(database *types.Databases) error {
 
 	if len(convertedScans) > 0 {
 		if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(newSchema.CreateTableComplianceOperatorScanV2Stmt.GormModel).Create(&convertedScans).Error; err != nil {
-			return errors.Wrapf(err, "failed to upsert last %d objects", len(convertedScans))
+			return errors.Wrapf(err, "failed to upsert last %d scans", len(convertedScans))
 		}
 	}
 	log.Infof("Converted %d scan records", count)
@@ -289,7 +295,7 @@ func migrateResults(database *types.Databases) error {
 		if len(convertedResults) == batchSize {
 			// Upsert converted check results
 			if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(newSchema.CreateTableComplianceOperatorCheckResultV2Stmt.GormModel).Create(&convertedResults).Error; err != nil {
-				return errors.Wrapf(err, "failed to upsert converted %d objects after %d upserted", len(convertedResults), count-len(convertedResults))
+				return errors.Wrapf(err, "failed to upsert converted %d check results after %d upserted", len(convertedResults), count-len(convertedResults))
 			}
 			convertedResults = convertedResults[:0]
 		}
@@ -301,7 +307,7 @@ func migrateResults(database *types.Databases) error {
 
 	if len(convertedResults) > 0 {
 		if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(newSchema.CreateTableComplianceOperatorCheckResultV2Stmt.GormModel).Create(&convertedResults).Error; err != nil {
-			return errors.Wrapf(err, "failed to upsert last %d objects", len(convertedResults))
+			return errors.Wrapf(err, "failed to upsert last %d check results", len(convertedResults))
 		}
 	}
 	log.Infof("Converted %d check result records", count)
