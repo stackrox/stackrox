@@ -21,11 +21,11 @@ function ReportConfiguration(): ReactElement {
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
-                        <Title headingLevel="h2">Report configuration</Title>
+                        <Title headingLevel="h2">Report</Title>
                     </FlexItem>
                     <FlexItem>
                         Optionally configure e-mail delivery destinations for manually triggered
-                        reports.
+                        reports
                     </FlexItem>
                 </Flex>
             </PageSection>

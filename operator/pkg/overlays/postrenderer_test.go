@@ -3,6 +3,7 @@ package overlays
 import (
 	"bytes"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
@@ -22,7 +23,6 @@ type DummySpec struct {
 }
 
 var manifestBase = `
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -43,6 +43,7 @@ spec:
         image: test
         ports:
         - containerPort: 8080
+---
 `
 
 var manifestBytes []byte
@@ -53,11 +54,15 @@ func init() {
 
 func TestPostRenderer(t *testing.T) {
 
-	cr := &dummy{
-		APIVersion: "blah.com/v1",
-		Kind:       "dummy",
-		Spec: DummySpec{
-			Overlays: []*v1alpha1.K8sObjectOverlay{
+	tests := []struct {
+		name     string
+		overlays []*v1alpha1.K8sObjectOverlay
+		want     string
+		wantErr  bool
+	}{
+		{
+			name: "add annotation",
+			overlays: []*v1alpha1.K8sObjectOverlay{
 				{
 					Kind:       "Deployment",
 					Name:       "test",
@@ -70,25 +75,8 @@ func TestPostRenderer(t *testing.T) {
 					},
 				},
 			},
-		},
-	}
-
-	jsonBytes, err := json.Marshal(cr)
-	require.NoError(t, err)
-
-	obj := &unstructured.Unstructured{}
-	require.NoError(t, err)
-	require.NoError(t, obj.UnmarshalJSON(jsonBytes))
-
-	r := OverlayPostRenderer{
-		obj:              obj,
-		defaultNamespace: "test",
-	}
-
-	got, err := r.Run(bytes.NewBuffer(manifestBytes))
-	require.NoError(t, err)
-
-	want := `apiVersion: apps/v1
+			want: `
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
@@ -112,7 +100,79 @@ spec:
             - containerPort: 8080
 
 ---
-`
-	assert.Equal(t, want, got.String())
+`,
+		}, {
+			name: "optional patch with non-existing resource",
+			overlays: []*v1alpha1.K8sObjectOverlay{
+				{
+					Kind:       "Snip",
+					Name:       "test",
+					APIVersion: "apps/v1",
+					Optional:   true,
+					Patches: []*v1alpha1.K8sObjectOverlayPatch{
+						{
+							Path:  "metadata.annotations",
+							Value: `test: test`,
+						},
+					},
+				},
+			},
+			want: manifestBase,
+		}, {
+			name: "non-optional patch with non-existing resource",
+			overlays: []*v1alpha1.K8sObjectOverlay{
+				{
+					Kind:       "Snip",
+					Name:       "test",
+					APIVersion: "apps/v1",
+					Patches: []*v1alpha1.K8sObjectOverlayPatch{
+						{
+							Path:  "metadata.annotations",
+							Value: `test: test`,
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+
+			cr := &dummy{
+				APIVersion: "blah.com/v1",
+				Kind:       "dummy",
+				Spec: DummySpec{
+					Overlays: tt.overlays,
+				},
+			}
+
+			jsonBytes, err := json.Marshal(cr)
+			require.NoError(t, err)
+
+			obj := &unstructured.Unstructured{}
+			require.NoError(t, err)
+			require.NoError(t, obj.UnmarshalJSON(jsonBytes))
+
+			r := OverlayPostRenderer{
+				obj:              obj,
+				defaultNamespace: "test",
+			}
+
+			got, err := r.Run(bytes.NewBuffer(manifestBytes))
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				gotString := got.String()
+				gotString = strings.Trim(gotString, "\n")
+				assert.Equal(t, strings.Trim(tt.want, "\n"), gotString)
+			}
+
+		})
+	}
 
 }

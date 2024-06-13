@@ -12,6 +12,7 @@ import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { TableUIState } from 'utils/getTableUIState';
+import ExpandRowTh from 'Components/ExpandRowTh';
 import {
     getIsSomeVulnerabilityFixable,
     getHighestCvssScore,
@@ -96,7 +97,7 @@ function AffectedImagesTable({
         <Table variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <Th>{/* Header for expanded column */}</Th>
+                    <ExpandRowTh />
                     <Th sort={getSortParams('Image')}>Image</Th>
                     <Th>CVE severity</Th>
                     <Th>CVSS</Th>

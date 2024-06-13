@@ -35,4 +35,5 @@ const (
 	ClusterCVEs
 	NodeComponents
 	ImageCVECore
+	PlatformCVECore
 )

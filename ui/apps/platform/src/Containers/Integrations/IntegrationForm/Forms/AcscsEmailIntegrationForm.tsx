@@ -20,41 +20,35 @@ export type ACSCSEmailIntegration = {
     type: 'acscsEmail';
 } & NotifierIntegrationBase;
 
-export type ACSCSEmailIntegrationFormValues = {
-    notifier: ACSCSEmailIntegration;
-};
+export type ACSCSEmailIntegrationFormValues = ACSCSEmailIntegration;
 
 export const validationSchema = yup.object().shape({
-    notifier: yup.object().shape({
-        name: yup.string().trim().required('Email integration name is required'),
-        labelDefault: yup
-            .string()
-            .trim()
-            .required('A default recipient email address is required')
-            .email('Must be a valid default recipient email address'),
-        labelKey: yup.string(),
-    }),
+    name: yup.string().trim().required('Email integration name is required'),
+    labelDefault: yup
+        .string()
+        .trim()
+        .required('A default recipient email address is required')
+        .email('Must be a valid default recipient email address'),
+    labelKey: yup.string(),
 });
 
 export const defaultValues: ACSCSEmailIntegrationFormValues = {
-    notifier: {
-        id: '',
-        name: '',
-        type: 'acscsEmail',
-        labelDefault: '',
-        labelKey: '',
-        uiEndpoint: window.location.origin,
-    },
+    id: '',
+    name: '',
+    type: 'acscsEmail',
+    labelDefault: '',
+    labelKey: '',
+    uiEndpoint: window.location.origin,
 };
 
 function EmailIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ACSCSEmailIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    let formInitialValues = { ...defaultValues, ...initialValues };
     if (initialValues) {
-        formInitialValues.notifier = {
-            ...formInitialValues.notifier,
+        formInitialValues = {
+            ...formInitialValues,
             ...initialValues,
         };
     }
@@ -89,15 +83,15 @@ function EmailIntegrationForm({
                     <FormLabelGroup
                         label="Integration name"
                         isRequired
-                        fieldId="notifier.name"
+                        fieldId="name"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
-                            id="notifier.name"
-                            value={values.notifier.name}
+                            id="name"
+                            value={values.name}
                             placeholder="(example, Email Integration)"
                             onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
@@ -107,15 +101,15 @@ function EmailIntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Default recipient"
-                        fieldId="notifier.labelDefault"
+                        fieldId="labelDefault"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
-                            id="notifier.labelDefault"
-                            value={values.notifier.labelDefault}
+                            id="labelDefault"
+                            value={values.labelDefault}
                             placeholder="example, security-alerts-recipients@example.com"
                             onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
@@ -125,14 +119,14 @@ function EmailIntegrationForm({
                     <FormLabelGroup
                         label="Annotation key for recipient"
                         labelIcon={<AnnotationKeyLabelIcon />}
-                        fieldId="notifier.labelKey"
+                        fieldId="labelKey"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             type="text"
-                            id="notifier.labelKey"
-                            value={values.notifier.labelKey}
+                            id="labelKey"
+                            value={values.labelKey}
                             onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}

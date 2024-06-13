@@ -30,3 +30,20 @@ func GetComplianceCheckResult(name, clusterID, clusterName, scanName, scanConfig
 		ScanRefId:      scanRefID,
 	}
 }
+
+// GetExpectedBenchmark returns a test benchmark
+func GetExpectedBenchmark() []*storage.ComplianceOperatorBenchmarkV2 {
+	return []*storage.ComplianceOperatorBenchmarkV2{
+		{
+			Id:          uuid.NewV4().String(),
+			Name:        "CIS Benchmark",
+			Version:     "1.5",
+			Description: "blah",
+			Provider:    "",
+			ShortName:   "OCP_CIS",
+			Profiles: []*storage.ComplianceOperatorBenchmarkV2_Profile{
+				{ProfileName: "ocp4", ProfileVersion: "1.5"},
+			},
+		},
+	}
+}

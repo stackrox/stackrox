@@ -19,7 +19,6 @@ import { PrivateConfig } from 'types/config.proto';
 import { clustersBasePath } from 'routePaths';
 
 import { HelpIcon } from '@patternfly/react-icons';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
 
 type DataRetentionValueProps = {
@@ -57,7 +56,6 @@ const PrivateConfigDataRetentionDetails = ({
     isClustersRoutePathRendered,
     privateConfig,
 }: PrivateConfigDataRetentionDetailsProps): ReactElement => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
     return (
         <Grid hasGutter md={6}>
             <GridItem>
@@ -238,22 +236,18 @@ const PrivateConfigDataRetentionDetails = ({
                     </CardBody>
                 </Card>
             </GridItem>
-            {isFeatureFlagEnabled('ROX_ADMINISTRATION_EVENTS') && (
-                <GridItem>
-                    <Card isFlat>
-                        <CardTitle>Administration events retention days</CardTitle>
-                        <CardBody>
-                            <DataRetentionValue
-                                value={
-                                    privateConfig?.administrationEventsConfig?.retentionDurationDays
-                                }
-                                suffix="day"
-                                canRetainForever={false}
-                            />
-                        </CardBody>
-                    </Card>
-                </GridItem>
-            )}
+            <GridItem>
+                <Card isFlat>
+                    <CardTitle>Administration events retention days</CardTitle>
+                    <CardBody>
+                        <DataRetentionValue
+                            value={privateConfig?.administrationEventsConfig?.retentionDurationDays}
+                            suffix="day"
+                            canRetainForever={false}
+                        />
+                    </CardBody>
+                </Card>
+            </GridItem>
             <GridItem sm={12}>
                 <Title headingLevel="h3" id="cluster-deletion">
                     Cluster deletion

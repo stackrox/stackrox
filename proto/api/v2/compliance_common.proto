@@ -58,6 +58,22 @@ message ComplianceCheckResultStatusCount {
   string rationale = 2;
   string rule_name = 3;
   repeated ComplianceCheckStatusCount check_stats = 4;
+  repeated ComplianceControl controls = 5;
+}
+
+message ComplianceControl {
+  string standard = 1;
+  string control = 2;
+}
+
+message ComplianceBenchmark {
+  string name = 1;
+  string version = 2;
+  string description = 3;
+  string provider = 4;
+  // This is extracted from the annotation.
+  // Example: from https://control.compliance.openshift.io/CIS-OCP we should have CIS-OCP
+  string short_name = 5;
 }
 
 // ListComplianceProfileResults provides scan stats overview based on profile

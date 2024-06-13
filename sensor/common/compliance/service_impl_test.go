@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	mocksCompliance "github.com/stackrox/rox/sensor/common/compliance/mocks"
@@ -62,14 +64,17 @@ func (s *complianceServiceSuite) SetupTest() {
 		auditLogCollectionManager: s.mockAuditLogManager,
 		connectionManager:         newConnectionManager(),
 		offlineMode:               offlineMode,
+		stopper:                   set.NewSet[concurrency.Stopper](),
 	}
 	s.createMockService()
 }
 
 func (s *complianceServiceSuite) TearDownTest() {
+	s.srv.Stop(nil)
 	if s.stopServerFn != nil {
 		s.stopServerFn()
 	}
+	assertNoGoroutineLeaks(s.T())
 }
 
 func (s *complianceServiceSuite) TestServiceOfflineMode() {
@@ -197,6 +202,7 @@ func (s *complianceServiceSuite) createMockService() {
 	s.stopServerFn = func() {
 		cancel()
 		utils.IgnoreError(listener.Close)
+		utils.IgnoreError(conn.Close)
 		grpcServer.Stop()
 	}
 }

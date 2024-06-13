@@ -11,6 +11,7 @@ import { TableUIState } from 'utils/getTableUIState';
 import useSet from 'hooks/useSet';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
+import ExpandRowTh from 'Components/ExpandRowTh';
 import {
     CLUSTER_CVE_STATUS_SORT_FIELD,
     CVE_SORT_FIELD,
@@ -81,7 +82,7 @@ function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
         >
             <Thead noWrap>
                 <Tr>
-                    <Th aria-label="Expand row" />
+                    <ExpandRowTh />
                     <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
                     <Th sort={getSortParams(CLUSTER_CVE_STATUS_SORT_FIELD)}>CVE status</Th>
                     <Th sort={getSortParams(CVE_TYPE_SORT_FIELD)}>CVE type</Th>

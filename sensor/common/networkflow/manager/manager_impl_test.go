@@ -537,7 +537,7 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 		},
 		{
 			testName: "In online mode we should enrich and send the previously received connection",
-			notify:   common.SensorComponentEventCentralReachable,
+			notify:   common.SensorComponentEventSyncFinished,
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntity, 1, clusterentities.ContainerMetadata{
 				DeploymentID: srcID,
 			}, true),
@@ -560,7 +560,7 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 		},
 		{
 			testName: "In online mode we should enrich and send the previously received connections",
-			notify:   common.SensorComponentEventCentralReachable,
+			notify:   common.SensorComponentEventSyncFinished,
 			expectEntityLookupContainer: func() {
 				gomock.InOrder(
 					mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
@@ -607,7 +607,7 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 		},
 		{
 			testName: "In online mode we should enrich and send the previously received endpoints",
-			notify:   common.SensorComponentEventCentralReachable,
+			notify:   common.SensorComponentEventSyncFinished,
 			expectEntityLookupContainer: func() {
 				gomock.InOrder(
 					mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
@@ -696,7 +696,7 @@ func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
 	mockDetector.EXPECT().ProcessNetworkFlow(gomock.Any(), gomock.Any()).Times(1)
 	mockEntity.EXPECT().RecordTick().AnyTimes()
 	addHostConnection(m, createHostnameConnections(hostname).withConnectionPair(createConnectionPair()))
-	m.Notify(common.SensorComponentEventCentralReachable)
+	m.Notify(common.SensorComponentEventSyncFinished)
 	fakeTicker <- time.Now()
 	select {
 	case <-time.After(10 * time.Second):
@@ -704,7 +704,7 @@ func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
 	case msg, ok := <-m.sensorUpdates:
 		s.Require().True(ok, "the sensorUpdates channel should not be closed")
 		m.Notify(common.SensorComponentEventOfflineMode)
-		m.Notify(common.SensorComponentEventCentralReachable)
+		m.Notify(common.SensorComponentEventSyncFinished)
 		s.Assert().True(msg.IsExpired(), "the message should be expired")
 	}
 	m.Stop(nil)
@@ -738,7 +738,7 @@ func (b *sendNetflowsSuite) SetupTest() {
 }
 
 func (b *sendNetflowsSuite) TeardownTest() {
-	b.m.done.Signal()
+	b.m.stopper.Client().Stop()
 }
 
 func (b *sendNetflowsSuite) updateConn(pair *connectionPair) {

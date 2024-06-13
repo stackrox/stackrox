@@ -7,7 +7,9 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 )
@@ -44,5 +46,6 @@ func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *s
 		auditLogCollectionManager: auditLogCollectionManager,
 		connectionManager:         newConnectionManager(),
 		offlineMode:               offlineMode,
+		stopper:                   set.NewSet[concurrency.Stopper](),
 	}
 }

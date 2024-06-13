@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
@@ -27,15 +26,14 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 		clusterEntities:   mockEntityStore,
 		externalSrcs:      mockExternalStore,
 		policyDetector:    mockDetector,
-		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
 		sensorUpdates:     make(chan *message.ExpiringMessage, 5),
 		publicIPs:         newPublicIPsManager(),
 		centralReady:      concurrency.NewSignal(),
 		enricherTicker:    ticker,
-		finished:          &sync.WaitGroup{},
 		activeConnections: make(map[connection]*networkConnIndicator),
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
+		stopper:           concurrency.NewStopper(),
 	}
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
 }

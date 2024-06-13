@@ -21,14 +21,20 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
+import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
+import {
+    nodeSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    nodeCVESearchFilterConfig,
+    clusterSearchFilterConfig,
+} from 'Components/CompoundSearchFilter/types';
+import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
 import useSnoozeCveModal from '../../components/SnoozeCvesModal/useSnoozeCveModal';
 import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
 import TableEntityToolbar from '../../components/TableEntityToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
-import NodeCveFilterToolbar from '../components/NodeCveFilterToolbar';
-import { NODE_CVE_SEARCH_OPTION, SNOOZED_NODE_CVE_SEARCH_OPTION } from '../../searchOptions';
 import { nodeEntityTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
@@ -42,7 +48,12 @@ import NodesTable, {
 } from './NodesTable';
 import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
 
-const searchOptions = [NODE_CVE_SEARCH_OPTION, SNOOZED_NODE_CVE_SEARCH_OPTION];
+const searchFilterConfig = {
+    Node: nodeSearchFilterConfig,
+    NodeCVE: nodeCVESearchFilterConfig,
+    'Node Component': nodeComponentSearchFilterConfig,
+    Cluster: clusterSearchFilterConfig,
+};
 
 function NodeCvesOverviewPage() {
     const apolloClient = useApolloClient();
@@ -57,8 +68,7 @@ function NodeCvesOverviewPage() {
         onSort: () => pagination.setPage(1, 'replace'),
     });
 
-    // TODO - Need an equivalent function implementation for filter sanitization for Node CVEs
-    const querySearchFilter = searchFilter;
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const isViewingSnoozedCves = querySearchFilter['CVE Snoozed']?.[0] === 'true';
@@ -82,9 +92,16 @@ function NodeCvesOverviewPage() {
     };
 
     const filterToolbar = (
-        <NodeCveFilterToolbar
-            searchOptions={searchOptions}
-            onFilterChange={() => pagination.setPage(1)}
+        <AdvancedFiltersToolbar
+            searchFilter={searchFilter}
+            searchFilterConfig={searchFilterConfig}
+            onFilterChange={(newFilter, { action }) => {
+                setSearchFilter(newFilter);
+
+                if (action === 'ADD') {
+                    // TODO - Add analytics tracking ROX-24509
+                }
+            }}
         />
     );
 

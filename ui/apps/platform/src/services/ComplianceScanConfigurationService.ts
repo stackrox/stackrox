@@ -78,6 +78,11 @@ export type ComplianceScanConfigurationStatus = {
     lastExecutedTime: string | null; // either ISO 8601 date string or null when scan is in progress
 };
 
+export type ListComplianceScanConfigurationsResponse = {
+    configurations: ComplianceScanConfigurationStatus[];
+    totalCount: number; // int32
+};
+
 /*
  * Fetches a list of scan configurations.
  */
@@ -85,7 +90,7 @@ export function listComplianceScanConfigurations(
     sortOption: ApiSortOption,
     page?: number,
     pageSize?: number
-): Promise<ComplianceScanConfigurationStatus[]> {
+): Promise<ListComplianceScanConfigurationsResponse> {
     let offset: number | undefined;
     if (typeof page === 'number' && typeof pageSize === 'number') {
         offset = page > 0 ? page * pageSize : 0;
@@ -95,11 +100,9 @@ export function listComplianceScanConfigurations(
     };
     const params = qs.stringify(query, { arrayFormat: 'repeat', allowDots: true });
     return axios
-        .get<{
-            configurations: ComplianceScanConfigurationStatus[];
-        }>(`${complianceScanConfigBaseUrl}?${params}`)
+        .get<ListComplianceScanConfigurationsResponse>(`${complianceScanConfigBaseUrl}?${params}`)
         .then((response) => {
-            return response?.data?.configurations ?? [];
+            return response?.data ?? { configurations: [], totalCount: 0 };
         });
 }
 
@@ -152,24 +155,32 @@ export function deleteComplianceScanConfiguration(scanConfigId: string) {
 }
 
 /*
- * Returns the count of scan configurations.
- */
-export function getComplianceScanConfigurationsCount(): Promise<number> {
-    return axios
-        .get<{
-            count: number;
-        }>(`${complianceV2Url}/scan/count/configurations`)
-        .then((response) => {
-            return response?.data?.count ?? 0;
-        });
-}
-
-/*
  * Initiates a compliance scan for a give configuration ID.
  */
 export function runComplianceScanConfiguration(scanConfigId: string) {
     return axios
         .post<Empty>(`${complianceScanConfigBaseUrl}/${scanConfigId}/run`)
+        .then((response) => {
+            return response.data;
+        });
+}
+
+export type ComplianceReportRunState = 'SUBMITTED' | 'ERROR';
+
+export type ComplianceRunReportResponse = {
+    runState: ComplianceReportRunState;
+    submittedAt: string; // ISO 8601 date string
+    errorMsg: string;
+};
+
+/*
+ * Run an on demand compliance report for the scan configuration ID.
+ */
+export function runComplianceReport(scanConfigId: string): Promise<ComplianceRunReportResponse> {
+    return axios
+        .put<ComplianceRunReportResponse>(`${complianceScanConfigBaseUrl}/reports/run`, {
+            scanConfigId,
+        })
         .then((response) => {
             return response.data;
         });

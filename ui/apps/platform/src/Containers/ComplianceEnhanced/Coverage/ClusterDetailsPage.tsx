@@ -18,11 +18,18 @@ import PageTitle from 'Components/PageTitle';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import { getComplianceProfilesStats } from 'services/ComplianceResultsStatsService';
+import { getComplianceProfilesClusterStats } from 'services/ComplianceResultsStatsService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getComplianceProfileClusterResults } from 'services/ComplianceResultsService';
+import useURLSearch from 'hooks/useURLSearch';
+import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
+import {
+    OnSearchPayload,
+    profileCheckSearchFilterConfig,
+} from 'Components/CompoundSearchFilter/types';
 
+import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import ClusterDetailsTable from './ClusterDetailsTable';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
@@ -40,11 +47,12 @@ function ClusterDetailsPage() {
     const { sortOption, getSortParams } = useURLSort({
         sortFields: [CHECK_NAME_QUERY],
         defaultSortOption: { field: CHECK_NAME_QUERY, direction: 'asc' },
-        onSort: () => setPage(1),
+        onSort: () => setPage(1, 'replace'),
     });
+    const { searchFilter, setSearchFilter } = useURLSearch();
 
     const fetchProfilesStats = useCallback(
-        () => getComplianceProfilesStats(clusterId),
+        () => getComplianceProfilesClusterStats(clusterId),
         [clusterId]
     );
     const {
@@ -59,14 +67,19 @@ function ClusterDetailsPage() {
                 page,
                 perPage,
                 sortOption,
+                searchFilter,
             }),
-        [clusterId, page, perPage, profileName, sortOption]
+        [clusterId, page, perPage, profileName, sortOption, searchFilter]
     );
     const {
         data: checkResultsResponse,
         loading: isLoadingCheckResults,
         error: checkResultsError,
     } = useRestQuery(fetchCheckResults);
+
+    const searchFilterConfig = {
+        'Profile Check': getFilteredConfig(profileCheckSearchFilterConfig, ['Name']),
+    };
 
     const tableState = getTableUIState({
         isLoading: isLoadingCheckResults,
@@ -82,6 +95,21 @@ function ClusterDetailsPage() {
         });
         history.push(path);
     }
+
+    const onSearch = (payload: OnSearchPayload) => {
+        onURLSearch(searchFilter, setSearchFilter, payload);
+    };
+
+    const onCheckStatusSelect = (
+        filterType: 'Compliance Check Status',
+        checked: boolean,
+        selection: string
+    ) => {
+        const action = checked ? 'ADD' : 'REMOVE';
+        const category = filterType;
+        const value = selection;
+        onSearch({ action, category, value });
+    };
 
     if (clusterProfileDataError) {
         return (
@@ -113,8 +141,7 @@ function ClusterDetailsPage() {
                         {isLoadingClusterProfileData ? (
                             <Skeleton screenreaderText="Loading cluster name" width="150px" />
                         ) : (
-                            // TODO: placeholder until we get cluster name
-                            clusterId
+                            clusterProfileData?.clusterName
                         )}
                     </BreadcrumbItem>
                 </Breadcrumb>
@@ -129,8 +156,7 @@ function ClusterDetailsPage() {
                         {isLoadingClusterProfileData ? (
                             <Skeleton fontSize="2xl" screenreaderText="Loading cluster name" />
                         ) : (
-                            // TODO: placeholder until we get cluster name
-                            clusterId
+                            clusterProfileData?.clusterName
                         )}
                     </Title>
                     <LabelGroup numLabels={1}>
@@ -157,11 +183,14 @@ function ClusterDetailsPage() {
             <PageSection>
                 <ClusterDetailsTable
                     checkResultsCount={checkResultsResponse?.totalCount ?? 0}
-                    clusterId={clusterId}
                     profileName={profileName}
                     tableState={tableState}
                     pagination={pagination}
                     getSortParams={getSortParams}
+                    searchFilterConfig={searchFilterConfig}
+                    searchFilter={searchFilter}
+                    onSearch={onSearch}
+                    onCheckStatusSelect={onCheckStatusSelect}
                 />
             </PageSection>
         </>

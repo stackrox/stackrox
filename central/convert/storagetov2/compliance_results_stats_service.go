@@ -109,7 +109,7 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 }
 
 // ComplianceV2ProfileStats converts the counts to the v2 stats
-func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByProfile, profileMap map[string]*storage.ComplianceOperatorProfileV2) []*v2.ComplianceProfileScanStats {
+func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByProfile, profileMap map[string]*storage.ComplianceOperatorProfileV2, profileBenchmarkMap map[string][]*storage.ComplianceOperatorBenchmarkV2) []*v2.ComplianceProfileScanStats {
 	var convertedResults []*v2.ComplianceProfileScanStats
 
 	for _, resultCount := range resultCounts {
@@ -117,6 +117,7 @@ func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByPro
 			ProfileName: resultCount.ProfileName,
 			Title:       profileMap[resultCount.ProfileName].GetTitle(),
 			Version:     profileMap[resultCount.ProfileName].GetProfileVersion(),
+			Benchmarks:  convertBenchmarks(profileBenchmarkMap[resultCount.ProfileName]),
 			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  int32(resultCount.FailCount),
@@ -150,4 +151,19 @@ func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByPro
 		})
 	}
 	return convertedResults
+}
+
+func convertBenchmarks(incoming []*storage.ComplianceOperatorBenchmarkV2) []*v2.ComplianceBenchmark {
+	var convertedBenchmarks []*v2.ComplianceBenchmark
+	for _, benchmark := range incoming {
+		convertedBenchmarks = append(convertedBenchmarks, &v2.ComplianceBenchmark{
+			Name:        benchmark.GetName(),
+			Version:     benchmark.GetVersion(),
+			Description: benchmark.GetDescription(),
+			Provider:    benchmark.GetProvider(),
+			ShortName:   benchmark.GetShortName(),
+		})
+	}
+
+	return convertedBenchmarks
 }

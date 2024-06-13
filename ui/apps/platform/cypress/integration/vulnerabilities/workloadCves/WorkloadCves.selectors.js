@@ -30,6 +30,19 @@ export const selectors = {
     filterChipGroupItemRemove: (category, item) =>
         `${selectors.filterChipGroupItem(category, item)} button[aria-label="close"]`,
 
+    searchEntityDropdown:
+        '.pf-v5-c-toolbar button[aria-label="compound search filter entity selector toggle"]',
+    searchEntityMenuItem:
+        '.pf-v5-c-toolbar div[aria-label="compound search filter entity selector menu"] button',
+    searchAttributeDropdown:
+        '.pf-v5-c-toolbar button[aria-label="compound search filter attribute selector toggle"]',
+    searchAttributeMenuItem:
+        '.pf-v5-c-toolbar div[aria-label="compound search filter attribute selector menu"] button',
+    searchValueTypeahead: '.pf-v5-c-toolbar input[aria-label^="Filter results by"]',
+    searchValueMenuItem: '.pf-v5-c-toolbar div[aria-label="Filter results select menu"] button',
+    searchValueApplyButton:
+        '.pf-v5-c-toolbar button[aria-label="Apply autocomplete input to search"]',
+
     // General selectors
     filteredViewLabel: '.pf-v5-c-label:contains("Filtered view")',
     entityTypeToggleItem: (entityType) =>
@@ -49,6 +62,7 @@ export const selectors = {
 
     // Data table selectors
     isUpdatingTable: '*[aria-busy="true"] table',
+    tableWithLoadingSpinner: 'table tbody svg[aria-label="Loading table data"]',
     nthTableRow: (n) =>
         `.workload-cves-table-container > table > tbody:nth-of-type(${n}) > tr:nth-of-type(1)`,
     firstTableRow: 'table tbody:nth-of-type(1) tr:nth-of-type(1)',

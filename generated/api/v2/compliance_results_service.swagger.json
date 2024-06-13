@@ -657,15 +657,6 @@
         "instructions": {
           "type": "string"
         },
-        "standard": {
-          "type": "string"
-        },
-        "control": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
         "rationale": {
           "type": "string"
         },
@@ -698,6 +689,12 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceControl"
+          }
         }
       },
       "title": "ComplianceCheckResult details of an instance of a compliance check result"
@@ -718,6 +715,12 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/v2ComplianceCheckStatusCount"
+          }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceControl"
           }
         }
       },
@@ -771,15 +774,6 @@
         "instructions": {
           "type": "string"
         },
-        "standard": {
-          "type": "string"
-        },
-        "control": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
         "rationale": {
           "type": "string"
         },
@@ -806,9 +800,26 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceControl"
+          }
         }
       },
       "title": "ComplianceClusterCheckStatus provides the status of a compliance check result across clusters"
+    },
+    "v2ComplianceControl": {
+      "type": "object",
+      "properties": {
+        "standard": {
+          "type": "string"
+        },
+        "control": {
+          "type": "string"
+        }
+      }
     },
     "v2ComplianceScanCluster": {
       "type": "object",
@@ -839,6 +850,12 @@
         "totalCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceControl"
+          }
         }
       },
       "title": "ListComplianceCheckClusterResponse provides stats per cluster"

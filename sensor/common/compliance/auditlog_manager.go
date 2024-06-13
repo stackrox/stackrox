@@ -1,6 +1,8 @@
 package compliance
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -50,9 +52,9 @@ func NewAuditLogCollectionManager() AuditLogCollectionManager {
 		fileStates:              make(map[string]*storage.AuditLogFileState),
 		auditEventMsgs:          make(chan *sensor.MsgFromCompliance),
 		fileStateUpdates:        make(chan *message.ExpiringMessage),
-		stopSig:                 concurrency.NewSignal(),
+		stopper:                 concurrency.NewStopper(),
 		forceUpdateSig:          concurrency.NewSignal(),
 		centralReady:            concurrency.NewSignal(),
-		updateInterval:          defaultInterval,
+		updaterTicker:           time.NewTicker(defaultInterval),
 	}
 }

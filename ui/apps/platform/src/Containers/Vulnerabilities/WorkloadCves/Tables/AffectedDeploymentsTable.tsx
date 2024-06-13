@@ -11,6 +11,7 @@ import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { TableUIState } from 'utils/getTableUIState';
+import ExpandRowTh from 'Components/ExpandRowTh';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import DeploymentComponentVulnerabilitiesTable, {
     DeploymentComponentVulnerability,
@@ -77,12 +78,10 @@ function AffectedDeploymentsTable({
 }: AffectedDeploymentsTableProps) {
     const expandedRowSet = useSet<string>();
     return (
-        // TODO UX question - Collapse to cards, or allow headers to overflow?
-        // <TableComposable gridBreakPoint="grid-xl">
         <Table variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <Th>{/* Header for expanded column */}</Th>
+                    <ExpandRowTh />
                     <Th sort={getSortParams('Deployment')}>Deployment</Th>
                     <Th>
                         Images by severity

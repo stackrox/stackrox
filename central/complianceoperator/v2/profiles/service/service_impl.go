@@ -5,10 +5,12 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	v2ComplianceBenchmark "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -36,9 +38,10 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceProfilesDS profileDS.DataStore) Service {
+func New(complianceProfilesDS profileDS.DataStore, benchmarkDS v2ComplianceBenchmark.DataStore) Service {
 	return &serviceImpl{
 		complianceProfilesDS: complianceProfilesDS,
+		benchmarkDS:          benchmarkDS,
 	}
 }
 
@@ -46,6 +49,7 @@ type serviceImpl struct {
 	v2.UnimplementedComplianceProfileServiceServer
 
 	complianceProfilesDS profileDS.DataStore
+	benchmarkDS          v2ComplianceBenchmark.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -77,7 +81,13 @@ func (s *serviceImpl) GetComplianceProfile(ctx context.Context, req *v2.Resource
 		return nil, errors.Wrapf(errox.NotFound, "compliance profile with id %q does not exist", req.GetId())
 	}
 
-	return storagetov2.ComplianceV2Profile(profile), nil
+	// Get the benchmarks
+	benchmarks, err := s.benchmarkDS.GetBenchmarksByProfileName(ctx, profile.GetName())
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve benchmarks for profile %q.", profile.GetName())
+	}
+
+	return storagetov2.ComplianceV2Profile(profile, benchmarks), nil
 }
 
 // ListComplianceProfiles returns profiles matching given query
@@ -109,13 +119,19 @@ func (s *serviceImpl) ListComplianceProfiles(ctx context.Context, request *v2.Pr
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for cluster %v", request.GetClusterId())
 	}
 
+	// Get the benchmarks
+	benchmarkMap, err := s.getBenchmarks(ctx, profiles)
+	if err != nil {
+		return nil, err
+	}
+
 	totalCount, err := s.complianceProfilesDS.CountProfiles(ctx, countQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles counts for %v", request)
 	}
 
 	return &v2.ListComplianceProfilesResponse{
-		Profiles:   storagetov2.ComplianceV2Profiles(profiles),
+		Profiles:   storagetov2.ComplianceV2Profiles(profiles, benchmarkMap),
 		TotalCount: int32(totalCount),
 	}, nil
 }
@@ -162,13 +178,19 @@ func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.Clus
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for %v", request)
 	}
 
+	// Get the benchmarks
+	benchmarkMap, err := s.getBenchmarks(ctx, profiles)
+	if err != nil {
+		return nil, err
+	}
+
 	totalCount, err := s.complianceProfilesDS.CountDistinctProfiles(ctx, countQuery, request.GetClusterIds())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles counts for %v", request)
 	}
 
 	return &v2.ListComplianceProfileSummaryResponse{
-		Profiles:   storagetov2.ComplianceProfileSummary(profiles, request.GetClusterIds()),
+		Profiles:   storagetov2.ComplianceProfileSummary(profiles, benchmarkMap),
 		TotalCount: int32(totalCount),
 	}, nil
 }
@@ -187,4 +209,20 @@ func (s *serviceImpl) GetComplianceProfileCount(ctx context.Context, request *v2
 	return &v2.CountComplianceProfilesResponse{
 		Count: int32(profileCount),
 	}, nil
+}
+
+func (s *serviceImpl) getBenchmarks(ctx context.Context, profiles []*storage.ComplianceOperatorProfileV2) (map[string][]*storage.ComplianceOperatorBenchmarkV2, error) {
+	// Get the benchmarks
+	benchmarkMap := make(map[string][]*storage.ComplianceOperatorBenchmarkV2, len(profiles))
+	for _, profile := range profiles {
+		if _, found := benchmarkMap[profile.GetName()]; !found {
+			benchmarks, err := s.benchmarkDS.GetBenchmarksByProfileName(ctx, profile.GetName())
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to retrieve benchmarks for profile %q.", profile.GetName())
+			}
+			benchmarkMap[profile.GetName()] = benchmarks
+		}
+	}
+
+	return benchmarkMap, nil
 }
