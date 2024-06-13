@@ -72,35 +72,23 @@ test_e2e() {
 
     collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_tests"
 
-    if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
-        info "Temporarily skipping E2E destructive tests on OCP. TODO(ROX-24688)"
-    else
-        # Give some time for previous tests to finish up
-        wait_for_api
+    # Give some time for previous tests to finish up
+    wait_for_api
 
-        info "E2E destructive tests"
-        make -C tests destructive-tests || touch FAIL
-        store_test_results "tests/destructive-tests-results" "destructive-tests-results"
-        [[ ! -f FAIL ]] || die "destructive e2e tests failed"
-    fi
+    info "E2E destructive tests"
+    make -C tests destructive-tests || touch FAIL
+    store_test_results "tests/destructive-tests-results" "destructive-tests-results"
+    [[ ! -f FAIL ]] || die "destructive e2e tests failed"
 
-    if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
-        info "Temporarily skipping postgres backup restoration test on OCP. TODO(ROX-24688)"
-    else
-        # Give some time for previous tests to finish up
-        wait_for_api
-        restore_4_1_postgres_backup
-    fi
+    # Give some time for previous tests to finish up
+    wait_for_api
+    restore_4_1_postgres_backup
 
-    if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
-        info "Temporarily skipping E2E external backup tests on OCP. TODO(ROX-24688)"
-    else
-        wait_for_api
-        info "E2E external backup tests"
-        make -C tests external-backup-tests || touch FAIL
-        store_test_results "tests/external-backup-tests-results" "external-backup-tests-results"
-        [[ ! -f FAIL ]] || die "external backup e2e tests failed"
-    fi
+    wait_for_api
+    info "E2E external backup tests"
+    make -C tests external-backup-tests || touch FAIL
+    store_test_results "tests/external-backup-tests-results" "external-backup-tests-results"
+    [[ ! -f FAIL ]] || die "external backup e2e tests failed"
 }
 
 test_preamble() {
