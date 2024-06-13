@@ -51,7 +51,7 @@ const queriesToRefetchOnPollingComplete = [
 ];
 
 function ComplianceDashboardPage(): ReactElement {
-    const [disclaimerAccepted, setDisclaimerAccepted] = useBooleanLocalStorage(
+    const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useBooleanLocalStorage(
         COMPLIANCE_DISCLAIMER_KEY,
         false
     );
@@ -159,9 +159,9 @@ function ComplianceDashboardPage(): ReactElement {
                 </div>
             </PageHeader>
             <div className="flex-1 relative p-6 xxxl:p-8 bg-base-200" id="capture-dashboard">
-                {!disclaimerAccepted && (
+                {!isDisclaimerAccepted && (
                     <ComplianceUsageDisclaimer
-                        onAccept={() => setDisclaimerAccepted(true)}
+                        onAccept={() => setIsDisclaimerAccepted(true)}
                         className="pf-v5-u-mb-lg"
                     />
                 )}

@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { generatePath, useHistory, useParams } from 'react-router-dom';
 import {
     Divider,
+    Flex,
     PageSection,
     Title,
     Toolbar,
@@ -39,7 +40,7 @@ import ProfilesToggleGroup from './ProfilesToggleGroup';
 import ProfileClustersTable from './ProfileClustersTable';
 
 function ProfileClustersPage() {
-    const [disclaimerAccepted, setDisclaimerAccepted] = useBooleanLocalStorage(
+    const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useBooleanLocalStorage(
         COMPLIANCE_DISCLAIMER_KEY,
         false
     );
@@ -111,16 +112,15 @@ function ProfileClustersPage() {
             <PageTitle title="Compliance coverage - Profile clusters" />
             <CoveragesPageHeader />
             <PageSection>
-                {!disclaimerAccepted && (
-                    <ComplianceUsageDisclaimer
-                        onAccept={() => setDisclaimerAccepted(true)}
-                        className="pf-v5-u-mb-lg"
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                    {!isDisclaimerAccepted && (
+                        <ComplianceUsageDisclaimer onAccept={() => setIsDisclaimerAccepted(true)} />
+                    )}
+                    <ProfilesToggleGroup
+                        profiles={profileScanStats.scanStats}
+                        handleToggleChange={handleProfilesToggleChange}
                     />
-                )}
-                <ProfilesToggleGroup
-                    profiles={profileScanStats.scanStats}
-                    handleToggleChange={handleProfilesToggleChange}
-                />
+                </Flex>
             </PageSection>
             <PageSection variant="default" className="pf-v5-u-py-0">
                 <PageSection variant="light" className="pf-v5-u-p-0" component="div">
