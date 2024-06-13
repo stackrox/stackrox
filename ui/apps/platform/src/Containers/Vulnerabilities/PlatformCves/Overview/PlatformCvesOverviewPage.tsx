@@ -26,6 +26,8 @@ import SnoozeCvesModal from 'Containers/Vulnerabilities/components/SnoozeCvesMod
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 
 import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
+import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
+import { clusterSearchFilterConfig, platformCVESearchFilterConfig } from '../../searchFilterConfig';
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
@@ -41,6 +43,11 @@ import CVEsTable, {
     sortFields as cveSortFields,
 } from './CVEsTable';
 import { usePlatformCveEntityCounts } from './usePlatformCveEntityCounts';
+
+const searchFilterConfig = {
+    Cluster: clusterSearchFilterConfig,
+    PlatformCVE: platformCVESearchFilterConfig,
+};
 
 function PlatformCvesOverviewPage() {
     const apolloClient = useApolloClient();
@@ -78,7 +85,20 @@ function PlatformCvesOverviewPage() {
         Cluster: data?.clusterCount ?? 0,
     };
 
-    const filterToolbar = <></>;
+    const filterToolbar = (
+        <AdvancedFiltersToolbar
+            searchFilter={searchFilter}
+            searchFilterConfig={searchFilterConfig}
+            onFilterChange={(newFilter, { action }) => {
+                setSearchFilter(newFilter);
+
+                if (action === 'ADD') {
+                    // TODO - Add analytics tracking ROX-24509
+                }
+            }}
+            includeCveSeverityFilters={false}
+        />
+    );
 
     const entityToggleGroup = (
         <EntityTypeToggleGroup
