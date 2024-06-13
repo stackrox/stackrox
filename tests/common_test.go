@@ -38,6 +38,12 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// testContext returns a context for the given test with a timeout.
+func testContext(t *testing.T, name string, timeout time.Duration) (ctx context.Context, cancel func()) {
+	err := fmt.Errorf("overall %s test timeout of %s reached", name, timeout)
+	return context.WithTimeoutCause(context.Background(), timeout, err)
+}
+
 //lint:ignore U1000 Ignore unused code check since this function could be useful in future.
 func assumeFeatureFlagHasValue(t *testing.T, featureFlag features.FeatureFlag, assumedValue bool) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
