@@ -20,10 +20,13 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	autoscalingV1 "k8s.io/api/autoscaling/v1"
 	extscheme "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	cached "k8s.io/client-go/discovery/cached"
+	"k8s.io/client-go/kubernetes"
 	cgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/restmapper"
 	dynclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,6 +35,24 @@ import (
 const (
 	coNamespace = "openshift-compliance"
 )
+
+func scaleToN(ctx context.Context, client kubernetes.Interface, deploymentName string, namespace string, replicas int32) (err error) {
+	scaleRequest := &autoscalingV1.Scale{
+		Spec: autoscalingV1.ScaleSpec{
+			Replicas: replicas,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentName,
+			Namespace: namespace,
+		},
+	}
+
+	_, err = client.AppsV1().Deployments(namespace).UpdateScale(ctx, deploymentName, scaleRequest, metav1.UpdateOptions{})
+	if err != nil {
+		return retry.MakeRetryable(err)
+	}
+	return nil
+}
 
 func createDynamicClient(t *testing.T) dynclient.Client {
 	restCfg := getConfig(t)
@@ -147,6 +168,79 @@ func assertScanSettingBinding(t *testing.T, scanConfig v2.ComplianceScanConfigur
 	assert.Equal(t, scanSettingBinding.Labels["app.kubernetes.io/name"], "stackrox")
 	assert.Contains(t, scanSettingBinding.Annotations, "owner")
 	assert.Equal(t, scanSettingBinding.Annotations["owner"], "stackrox")
+}
+
+func assertNameDescriptionAndProfilesMatch(t *testing.T, expected *v2.ComplianceScanConfiguration, actual *v2.ComplianceScanConfigurationStatus) {
+	assert.Equal(t, expected.GetScanName(), actual.GetScanName())
+	assert.Equal(t, expected.GetScanConfig().GetDescription(), actual.GetScanConfig().GetDescription())
+	assert.Equal(t, expected.GetScanConfig().GetProfiles(), actual.GetScanConfig().GetProfiles())
+}
+
+func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
+	ctx := context.Background()
+	k8sClient := createK8sClient(t)
+
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v2.NewComplianceScanConfigurationServiceClient(conn)
+	serviceCluster := v1.NewClustersServiceClient(conn)
+	clusters, err := serviceCluster.GetClusters(ctx, &v1.GetClustersRequest{})
+	assert.NoError(t, err)
+	clusterID := clusters.GetClusters()[0].GetId()
+
+	scanName := fmt.Sprintf("test-%s", uuid.NewV4().String())
+
+	scanConfig := v2.ComplianceScanConfiguration{
+		ScanName: scanName,
+		Id:       "",
+		Clusters: []string{clusterID},
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			Description: "test123",
+			OneTimeScan: false,
+			Profiles:    []string{"ocp4-cis-1-4"},
+			ScanSchedule: &v2.Schedule{
+				Hour:         2,
+				Minute:       0,
+				IntervalType: v2.Schedule_WEEKLY,
+				Interval: &v2.Schedule_DaysOfWeek_{
+					DaysOfWeek: &v2.Schedule_DaysOfWeek{
+						Days: []int32{4, 3},
+					},
+				},
+			},
+		},
+	}
+
+	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
+
+	_, err = service.CreateComplianceScanConfiguration(ctx, &scanConfig)
+	assert.NoError(t, err)
+
+	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 1)
+
+	query := &v2.RawQuery{Query: ""}
+	scanConfigs, err := service.ListComplianceScanConfigurations(ctx, query)
+	assert.NoError(t, err)
+	matchingConfig := getScanConfig(scanName, scanConfigs.GetConfigurations())
+	assert.NotNil(t, matchingConfig)
+	require.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
+
+	assertNameDescriptionAndProfilesMatch(t, &scanConfig, matchingConfig)
+
+	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
+
+	reqDelete := &v2.ResourceByID{
+		Id: matchingConfig.GetId(),
+	}
+	_, err = service.DeleteComplianceScanConfiguration(ctx, reqDelete)
+	assert.NoError(t, err)
+
+	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 1)
+
+	query = &v2.RawQuery{Query: ""}
+	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
+	assert.NoError(t, err)
+	matchingConfig = getScanConfig(scanName, scanConfigs.GetConfigurations())
+	assert.Nil(t, matchingConfig)
 }
 
 // ACS API test suite for integration testing for the Compliance Operator.
@@ -558,6 +652,17 @@ func getscanConfigID(configName string, scanConfigs []*v2.ComplianceScanConfigur
 
 	}
 	return configID
+}
+
+func getScanConfig(configName string, scanConfigs []*v2.ComplianceScanConfigurationStatus) *v2.ComplianceScanConfigurationStatus {
+	var config *v2.ComplianceScanConfigurationStatus
+	config = nil
+	for i := 0; i < len(scanConfigs); i++ {
+		if scanConfigs[i].GetScanName() == configName {
+			config = scanConfigs[i]
+		}
+	}
+	return config
 }
 
 func TestComplianceV2ScheduleRescan(t *testing.T) {
