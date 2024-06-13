@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
@@ -61,13 +62,30 @@ func (h *resourceEventHandlerImpl) PopulateInitialObjects(initialObjs []interfac
 }
 
 func (h *resourceEventHandlerImpl) populateInitialObjects(initialObjs []interface{}) {
+	var isSecret bool
+	if len(initialObjs) > 0 {
+		for i, obj := range initialObjs {
+			if secret, ok := obj.(*corev1.Secret); ok {
+				isSecret = true
+				log.Debugf("ROX-24163 populateInitialObjects processes secret no %d ID=%q type=%q",
+					i, secret.GetUID(), secret.Type)
+			}
+		}
+	}
+
 	if h.hasSeenAllInitialIDsSignal.IsDone() {
+		if isSecret {
+			log.Debugf("ROX-24163 populateInitialObjects hasSeenAllInitialIDsSignal is done")
+		}
 		return
 	}
 
 	h.syncLock.Lock()
 	defer h.syncLock.Unlock()
 	if h.seenIDs == nil {
+		if isSecret {
+			log.Debugf("ROX-24163 populateInitialObjects seenIDs is nil")
+		}
 		return
 	}
 	h.missingInitialIDs = make(map[types.UID]struct{})
@@ -78,6 +96,10 @@ func (h *resourceEventHandlerImpl) populateInitialObjects(initialObjs []interfac
 		}
 	}
 	h.seenIDs = nil
+	if isSecret {
+		log.Debug("ROX-24163 populateInitialObjects calling checkHasSeenAllInitialIDsNoLock")
+		defer log.Debug("ROX-24163 populateInitialObjects finished processesing secret")
+	}
 	h.checkHasSeenAllInitialIDsNoLock()
 }
 
@@ -86,14 +108,32 @@ func (h *resourceEventHandlerImpl) registerObject(newObj interface{}) {
 		return
 	}
 
+	secret, isSecret := newObj.(*corev1.Secret)
+	if isSecret {
+		log.Debugf("ROX-24163 registerObject processes secret ID=%q type=%q", secret.GetUID(), secret.Type)
+	}
+
 	newUID := getObjUID(newObj)
 	h.syncLock.Lock()
 	defer h.syncLock.Unlock()
 	if h.seenIDs != nil {
 		h.seenIDs[newUID] = struct{}{}
 	} else if h.missingInitialIDs != nil {
+		if isSecret {
+			log.Debugf("ROX-24163 registerObject deleting secret (ID=%q type=%q) form missingInitialIDs",
+				secret.GetUID(), secret.Type)
+		}
 		delete(h.missingInitialIDs, newUID)
 		h.checkHasSeenAllInitialIDsNoLock()
+	} else {
+		if isSecret {
+			log.Debugf("ROX-24163 registerObject else-case secret (ID=%q type=%q)",
+				secret.GetUID(), secret.Type)
+		}
+	}
+	if isSecret {
+		log.Debugf("ROX-24163 registerObject done processing secret (ID=%q type=%q). len(h.missingInitialIDs)=%d",
+			secret.GetUID(), secret.Type, len(h.missingInitialIDs))
 	}
 }
 
