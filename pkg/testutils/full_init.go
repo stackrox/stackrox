@@ -16,17 +16,17 @@ import (
 
 // BasicTypeInitializer prescribes how to initialize a struct field with a given type.
 type BasicTypeInitializer interface {
-	Value(kind reflect.Kind) interface{}
+	Value(kind reflect.Kind, fieldPath []reflect.StructField) interface{}
 }
 
 // UniqueTypeInitializer prescribes how to initialize a struct field with a given type.
 type UniqueTypeInitializer interface {
-	ValueUnique(kind reflect.Kind) interface{}
+	ValueUnique(kind reflect.Kind, fieldPath []reflect.StructField) interface{}
 }
 
 type simpleInitializer struct{}
 
-func (simpleInitializer) Value(kind reflect.Kind) interface{} {
+func (simpleInitializer) Value(kind reflect.Kind, _ []reflect.StructField) interface{} {
 	switch kind {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return int32(1)
@@ -44,7 +44,7 @@ func (simpleInitializer) Value(kind reflect.Kind) interface{} {
 
 type uniqueInitializer struct{}
 
-func (uniqueInitializer) Value(kind reflect.Kind) interface{} {
+func (uniqueInitializer) Value(kind reflect.Kind, _ []reflect.StructField) interface{} {
 	// seed rand
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
@@ -83,7 +83,7 @@ func UniqueInitializer() BasicTypeInitializer {
 type FieldFilter func(field reflect.StructField, ancestors []reflect.StructField) bool
 
 // JSONFieldsFilter is a field filter that includes only JSON fields.
-func JSONFieldsFilter(field reflect.StructField) bool {
+func JSONFieldsFilter(field reflect.StructField, _ []reflect.StructField) bool {
 	if field.Name != "" && unicode.IsLower([]rune(field.Name)[0]) {
 		return false
 	}
@@ -153,13 +153,13 @@ func fullInitRecursive(val reflect.Value, init BasicTypeInitializer, fieldFilter
 		fullInitStruct(val, init, fieldFilter, fieldPath, seenTypes)
 
 	default:
-		val.Set(reflect.ValueOf(init.Value(val.Type().Kind())).Convert(val.Type()))
+		val.Set(reflect.ValueOf(init.Value(val.Type().Kind(), fieldPath)).Convert(val.Type()))
 	}
 }
 
 func initTime(val reflect.Value, init BasicTypeInitializer) {
 	t := time.Unix(1, 0)
-	duration := init.Value(reflect.Int).(int32)
+	duration := init.Value(reflect.Int, nil).(int32)
 	t = t.Add(time.Duration(duration))
 	now, err := types.ConvertTimeToTimestampOrError(t)
 	utils.Must(err)
