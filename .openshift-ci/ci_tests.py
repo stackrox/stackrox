@@ -108,13 +108,15 @@ class OperatorE2eTest(BaseTest):
             )
             print("Removing unused catalog source(s)")
             self.run_with_graceful_kill(
-                ["kubectl", "delete", "catalogsource.operators.coreos.com", "--namespace=olm", "--all"],
+                ["kubectl", "delete", "catalogsource.operators.coreos.com",
+                    "--namespace=olm", "--all"],
                 OperatorE2eTest.OLM_SETUP_TIMEOUT_SEC,
             )
             olm_ns = "olm"
         print("Bouncing catalog operator pod to clear its cache")
         self.run_with_graceful_kill(
-            ["kubectl", "delete", "pods", f"--namespace={olm_ns}", "--selector", "app=catalog-operator", "--now=true"],
+            ["kubectl", "delete", "pods",
+                f"--namespace={olm_ns}", "--selector", "app=catalog-operator", "--now=true"],
             OperatorE2eTest.OLM_SETUP_TIMEOUT_SEC,
         )
 
@@ -284,7 +286,6 @@ class ScannerV4Test(BaseTest):
         def set_dirs_after_start():
             # let post test know where results are
             self.test_outputs = [ScannerV4Test.TEST_OUTPUT_DIR]
-
 
         self.run_with_graceful_kill(
             ["tests/e2e/run-scanner-v4.sh", ScannerV4Test.TEST_OUTPUT_DIR],
