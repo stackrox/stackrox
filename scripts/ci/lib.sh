@@ -562,7 +562,7 @@ _image_prefetcher_prebuilt_start() {
 
 _image_prefetcher_system_start() {
     case "$CI_JOB_NAME" in
-    *-operator-e2e-tests)
+    *-operator-e2e-tests|*ocp*qa-e2e-tests)
         image_prefetcher_start_set stackrox-images
         ;;
     *)
@@ -662,7 +662,7 @@ _image_prefetcher_prebuilt_await() {
 
 _image_prefetcher_system_await() {
     case "$CI_JOB_NAME" in
-    *-operator-e2e-tests)
+    *-operator-e2e-tests|*ocp*qa-e2e-tests)
         image_prefetcher_await_set stackrox-images
         ;;
     *)
