@@ -36,5 +36,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_198_to_m_199_policy_description_and_criteria_updates"
 	_ "github.com/stackrox/rox/migrator/migrations/m_199_to_m_200_policy_updates_for_4_5"
 	_ "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5"
-	_ "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_vuln_request_global_scope"
+	_ "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_vuln_request_v1_to_v2"
 )

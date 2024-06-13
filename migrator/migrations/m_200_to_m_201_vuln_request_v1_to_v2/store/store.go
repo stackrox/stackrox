@@ -8,18 +8,13 @@ import (
 	"github.com/jackc/pgx/v5"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	migrationSchema "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_vuln_request_global_scope/schema"
+	migrationSchema "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_vuln_request_v1_to_v2/schema"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-)
-
-const (
-	baseTable = "vulnerability_requests"
-	storeName = "VulnerabilityRequest"
 )
 
 var (
