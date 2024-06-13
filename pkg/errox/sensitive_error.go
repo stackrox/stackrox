@@ -1,14 +1,18 @@
 package errox
 
 import (
+	"math"
 	"net"
 	"runtime"
 	"strconv"
 	"strings"
+	"sync/atomic"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/sync"
 )
+
+const unsetID uint64 = math.MaxUint64
 
 // SensitiveError defines an interface for sensitive errors.
 // protect() prevents the Error() method to print sensitive data, and
@@ -25,9 +29,8 @@ type RoxSensitiveError struct {
 	public    error
 	sensitive error
 
-	unprotectedGoRoutineID int
+	unprotectedGoRoutineID atomic.Uint64
 	protectionMux          sync.Mutex
-	idMux                  sync.Mutex
 }
 
 // Ensure RoxSensitiveError implements errox.SensitiveError.
@@ -36,34 +39,35 @@ var _ SensitiveError = (*RoxSensitiveError)(nil)
 // MakeSensitive wraps an error with sensitive message, by providing
 // a public replacement message, and the API to expose the original one.
 func MakeSensitive(public string, err error) *RoxSensitiveError {
-	return &RoxSensitiveError{
-		public:                 errors.New(public),
-		sensitive:              err,
-		unprotectedGoRoutineID: -1}
+	result := &RoxSensitiveError{
+		public:    errors.New(public),
+		sensitive: err}
+	result.unprotectedGoRoutineID.Store(unsetID)
+	return result
 }
 
 // getGoroutineID() returns the number of the current goroutine. It parses the
 // first line of the stack, which should look like "goroutine 1 [running]:".
 func getGoroutineID() int {
-	const n = len("goroutine ")
-	var buffer [31]byte
+	const goroutine = len("goroutine ")
+	const maxLenght = len("goroutine 18446744073709551615 ")
+	var buffer [maxLenght]byte
 	_ = runtime.Stack(buffer[:], false)
-	id, _ := strconv.Atoi(strings.SplitN(string(buffer[n:]), " ", 2)[0])
+	id, _ := strconv.Atoi(strings.SplitN(string(buffer[goroutine:]), " ", 2)[0])
 	return id
 }
 
+// Disable Error() to write sensitive data.
 func (e *RoxSensitiveError) protect() {
-	e.idMux.Lock()
-	defer e.idMux.Unlock()
-	e.unprotectedGoRoutineID = -1
+	e.unprotectedGoRoutineID.Store(unsetID)
 	e.protectionMux.Unlock()
 }
 
+// Enable Error() to write sensitive data in the current goroutine.
 func (e *RoxSensitiveError) unprotect() {
-	e.idMux.Lock()
-	defer e.idMux.Unlock()
+	// Lock during the period without protection.
 	e.protectionMux.Lock()
-	e.unprotectedGoRoutineID = getGoroutineID()
+	e.unprotectedGoRoutineID.Store(uint64(getGoroutineID()))
 }
 
 // Unwrap supports the errors.Unwrap() feature.
@@ -86,9 +90,7 @@ func GetSensitiveError(err error) string {
 
 // isProtected tells whether the error is proteced in the current goroutine.
 func (e *RoxSensitiveError) isProtected() bool {
-	e.idMux.Lock()
-	defer e.idMux.Unlock()
-	return e.unprotectedGoRoutineID != getGoroutineID()
+	return e.unprotectedGoRoutineID.Load() != uint64(getGoroutineID())
 }
 
 // Error implements the error interface.
@@ -117,14 +119,14 @@ func (e *RoxSensitiveError) Error() string {
 //	GetSensitiveError(err) // full error text
 func ConsealSensitive(err error) error {
 	if e := (*net.DNSError)(nil); errors.As(err, &e) {
-		return MakeSensitive("lookup (consealed): "+e.Err, err)
+		return MakeSensitive("lookup: "+e.Err, err)
 	}
 	if e := (*net.OpError)(nil); errors.As(err, &e) {
 		s := e.Op
 		if e.Net != "" {
 			s += " " + e.Net
 		}
-		s += " (consealed): " + e.Err.Error()
+		s += ": " + e.Err.Error()
 		return MakeSensitive(s, err)
 	}
 	return err
