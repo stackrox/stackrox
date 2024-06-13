@@ -1528,6 +1528,13 @@ spec:
                       type: object
                     type: array
                 type: object
+              system:
+                description: System configuration.
+                properties:
+                  enableNetworkPolicies:
+                    default: true
+                    type: boolean
+                type: object
               tls:
                 description: Allows you to specify additional trusted Root CAs.
                 properties:

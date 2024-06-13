@@ -93,11 +93,11 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 
 	monitoring := c.Spec.Monitoring
 	v.AddChild("monitoring", translation.GetGlobalMonitoring(monitoring))
+
 	central, err := getCentralComponentValues(centralSpec, checker, obsoletePVC)
 	if err != nil {
 		return nil, err
 	}
-
 	v.AddChild("central", central)
 
 	if c.Spec.Scanner != nil {
@@ -109,6 +109,10 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	}
 
 	v.AddChild("customize", &customize)
+
+	if c.Spec.System != nil {
+		v.AddChild("system", getSystemComponentValues(c.Spec.System))
+	}
 
 	return v.Build()
 }
@@ -385,5 +389,11 @@ func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.Scanner
 		sv.SetBoolValue("exposeMonitoring", s.Monitoring.IsEnabled())
 	}
 
+	return &sv
+}
+
+func getSystemComponentValues(s *platform.GlobalSystemSpec) *translation.ValuesBuilder {
+	sv := translation.NewValuesBuilder()
+	translation.SetEnableNetworkPolicies(&sv, s.EnableNetworkPolicies)
 	return &sv
 }

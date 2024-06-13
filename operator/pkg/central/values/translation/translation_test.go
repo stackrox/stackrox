@@ -1123,6 +1123,48 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 		},
+		"disabled network policies": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						System: &platform.GlobalSystemSpec{
+							EnableNetworkPolicies: false,
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"system": map[string]interface{}{
+						"enableNetworkPolicies": false,
+					},
+				},
+			},
+		},
+		"enabled network policies": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						System: &platform.GlobalSystemSpec{
+							EnableNetworkPolicies: true,
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"system": map[string]interface{}{
+						"enableNetworkPolicies": true,
+					},
+				},
+			},
+		},
 	}
 
 	for name, tt := range tests {

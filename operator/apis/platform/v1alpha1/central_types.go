@@ -71,6 +71,10 @@ type CentralSpec struct {
 	// Monitoring configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Monitoring *GlobalMonitoring `json:"monitoring,omitempty"`
+
+	// System configuration.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=10,xDescription={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	System *GlobalSystemSpec `json:"system,omitempty"`
 }
 
 // Egress defines settings related to outgoing network traffic.
