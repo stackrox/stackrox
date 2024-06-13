@@ -4,6 +4,7 @@ package tests
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -64,6 +65,9 @@ func getAllCounts(t *testing.T) allCounts {
 }
 
 func TestClusterDeletion(t *testing.T) {
+	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
+		t.Skip("temporarily skipped on OCP. TODO(ROX-24688)")
+	}
 	counts := getAllCounts(t)
 	assert.NotZero(t, counts.ClusterCount)
 	// ROX-6391: NodeCount starts at zero
