@@ -67,7 +67,8 @@ func (s *alertHandlerSuite) TestProcessAlert() {
 					if !ok {
 						s.T().Error("ResponsesC should not be closed")
 					}
-					protoassert.Equal(s.T(), createAlertResultsMsg(admissionControlAlerts.AlertResults[0]), res)
+					expected := createAlertResultsMsg(admissionControlAlerts.AlertResults[0])
+					protoassert.Equal(s.T(), expected.MsgFromSensor, res.MsgFromSensor)
 				}
 			}
 		})
