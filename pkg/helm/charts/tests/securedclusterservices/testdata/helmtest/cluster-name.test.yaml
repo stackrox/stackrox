@@ -36,4 +36,3 @@ tests:
   expectError: true
   expect: |
     .error | assertThat(contains("Failed to change cluster name"))
-
