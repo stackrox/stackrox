@@ -19,12 +19,56 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	extscheme "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme"
+	apiMetaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	cached "k8s.io/client-go/discovery/cached"
+	"k8s.io/client-go/dynamic"
 	cgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/restmapper"
 	dynclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+var (
+	coNamespace = "openshift-compliance"
+	scanConfig1 = v2.ComplianceScanConfiguration{
+		ScanName: "testConfig1",
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			Description: "test123",
+			OneTimeScan: false,
+			Profiles:    []string{"ocp4-e8"},
+			ScanSchedule: &v2.Schedule{
+				Hour:         2,
+				Minute:       0,
+				IntervalType: v2.Schedule_WEEKLY,
+				Interval: &v2.Schedule_DaysOfWeek_{
+					DaysOfWeek: &v2.Schedule_DaysOfWeek{
+						Days: []int32{4, 3},
+					},
+				},
+			},
+		},
+	}
+	modifiedScanConfig1 = v2.ComplianceScanConfiguration{
+		ScanName: "testConfig1",
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			Description: "test456",
+			OneTimeScan: false,
+			Profiles:    []string{"rhcos4-e8"},
+			ScanSchedule: &v2.Schedule{
+				Hour:         2,
+				Minute:       0,
+				IntervalType: v2.Schedule_WEEKLY,
+				Interval: &v2.Schedule_DaysOfWeek_{
+					DaysOfWeek: &v2.Schedule_DaysOfWeek{
+						Days: []int32{1, 5},
+					},
+				},
+			},
+		},
+	}
 )
 
 func createDynamicClient(t *testing.T) dynclient.Client {
@@ -60,6 +104,30 @@ func createDynamicClient(t *testing.T) dynclient.Client {
 	return client
 }
 
+func getGVR(api apiMetaV1.APIResource) schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    api.Group,
+		Version:  api.Version,
+		Resource: api.Name,
+	}
+}
+
+// AssertResourceDoesExist asserts whether the given resource exits in the cluster
+func AssertResourceDoesExist(ctx context.Context, t *testing.T, client *dynamic.DynamicClient, resourceName string, namespace string, api apiMetaV1.APIResource) *unstructured.Unstructured {
+	var cli dynamic.ResourceInterface
+	var obj *unstructured.Unstructured
+	var err error
+	require.Eventually(t, func() bool {
+		cli = client.Resource(getGVR(api))
+		if namespace != "" {
+			cli = client.Resource(getGVR(api)).Namespace(namespace)
+		}
+		obj, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
+		return err == nil
+	}, 30*time.Second, 10*time.Millisecond)
+	return obj
+}
+
 func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, timeout time.Duration) {
 	client := createDynamicClient(t)
 
@@ -86,6 +154,81 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 			t.Fatalf("Timed out waiting for ComplianceSuite to complete")
 		}
 	}
+}
+
+func TestCentralSendsScanConfiguration(t *testing.T) {
+	// TODO
+	// connect to central
+	// create config
+	// send config
+	// connect central to sensor
+	// check that scan configuration arrived at sensors
+
+	ctx := context.Background()
+
+	// k8sClient := createDynamicClient(t)
+
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v2.NewComplianceScanConfigurationServiceClient(conn)
+
+	// Get the clusters
+	resp := getIntegrations(t)
+	assert.Len(t, resp.Integrations, 1, "failed to assert there is only a single compliance integration")
+
+	// Get the profiles for the cluster
+	// clusterID := resp.Integrations[0].GetId()
+
+	/*
+		expectedScanConfig := &central.ApplyComplianceScanConfigRequest{
+			ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
+				UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
+					ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
+						ScanName: "testConfig1",
+						Profiles: []string{"ocp4-e8"},
+					},
+					Cron: "0 1 * * *",
+				},
+			},
+		}
+	*/
+
+	req, err := service.CreateComplianceScanConfiguration(ctx, &scanConfig1)
+	assert.NoError(t, err)
+
+	query := &v2.RawQuery{Query: ""}
+	scanConfigs, err := service.ListComplianceScanConfigurations(ctx, query)
+	assert.NoError(t, err)
+	assert.Equal(t, len(scanConfigs.GetConfigurations()), 1)
+
+	assert.Equal(t, req, scanConfigs.GetConfigurations()[0])
+
+	conn.Close()
+
+	req, err = service.CreateComplianceScanConfiguration(ctx, &modifiedScanConfig1)
+	assert.NoError(t, err)
+
+	conn.Connect()
+
+	query = &v2.RawQuery{Query: ""}
+	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
+	assert.NoError(t, err)
+	assert.Equal(t, len(scanConfigs.GetConfigurations()), 1)
+	assert.Equal(t, req, scanConfigs.GetConfigurations()[0])
+
+	conn.Close()
+
+	reqDelete := &v2.ResourceByID{
+		Id: "testConfig1",
+	}
+	_, err = service.DeleteComplianceScanConfiguration(ctx, reqDelete)
+	assert.NoError(t, err)
+
+	conn.Connect()
+
+	query = &v2.RawQuery{Query: ""}
+	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
+	assert.NoError(t, err)
+	assert.Equal(t, len(scanConfigs.GetConfigurations()), 0)
 }
 
 // ACS API test suite for integration testing for the Compliance Operator.
