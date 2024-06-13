@@ -2,7 +2,8 @@ import React from 'react';
 import { DatePicker, SearchInput, SelectOption } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
-import { formatDate } from 'utils/dateUtils';
+import { getDate } from 'utils/dateUtils';
+import { dateFormat } from 'constants/dateTimeFormat';
 import { SelectedEntity } from './EntitySelector';
 import { SelectedAttribute } from './AttributeSelector';
 import {
@@ -89,7 +90,7 @@ function CompoundSearchFilterInputField({
                 buttonAriaLabel="Filter by date toggle"
                 value={ensureString(value)}
                 onChange={(_event, _value) => {
-                    const formattedValue = _value ? formatDate(new Date(_value)) : '';
+                    const formattedValue = _value ? getDate(_value) : '';
                     onChange(_value);
                     onSearch({
                         action: 'ADD',
@@ -97,8 +98,8 @@ function CompoundSearchFilterInputField({
                         value: formattedValue,
                     });
                 }}
-                dateFormat={formatDate}
-                placeholder="MM/DD/YYYY"
+                dateFormat={getDate}
+                placeholder={dateFormat}
             />
         );
     }
