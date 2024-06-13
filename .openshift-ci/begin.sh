@@ -24,9 +24,6 @@ if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
     info "Setting worker node type and count for OCP 4 jobs"
     set_ci_shared_export WORKER_NODE_COUNT 2
     set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
-    # Repeated timeouts on wait_for_api on OCP 4.16 rc.2 (ROX-24291)
-    # Increase default wait for all tests on *-ocp-*
-    set_ci_shared_export MAX_WAIT_SECONDS "${MAX_WAIT_SECONDS:-600}"
 fi
 
 if [[ "${JOB_NAME:-}" =~ -gke-perf-scale- ]]; then
