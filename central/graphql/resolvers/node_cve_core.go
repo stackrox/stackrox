@@ -42,6 +42,7 @@ func init() {
 		// `subfieldScopeQuery` applies the scope query to all the subfields of the NodeCVE resolver.
 		// This eliminates the need to pass queries to individual resolvers.
 		schema.AddQuery("nodeCVE(cve: String, subfieldScopeQuery: String): NodeCVECore"),
+		schema.AddQuery("nodeCVECountBySeverity(query: String): ResourceTotalCountByCVESeverity!"),
 	)
 }
 
@@ -228,4 +229,27 @@ func (resolver *Resolver) NodeCVEs(ctx context.Context, q PaginatedQuery) ([]*no
 	}
 
 	return ret, nil
+}
+
+// NodeCVECountBySeverity returns the count of node cves satisfying the specified query by severity.
+// Note: Client must explicitly pass observed/deferred CVEs.
+func (resolver *Resolver) NodeCVECountBySeverity(ctx context.Context, q RawQuery) (*resourceTotalCountBySeverityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeCVECountBySeverity")
+
+	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
+		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtNodePlatformCVEs.Name(), features.VulnMgmtNodePlatformCVEs.Name())
+	}
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+	query, err := q.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := resolver.NodeCVEView.CountBySeverity(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.wrapResourceTotalCountBySeverityContext(ctx, response, nil)
 }

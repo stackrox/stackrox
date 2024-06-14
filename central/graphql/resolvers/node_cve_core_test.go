@@ -4,7 +4,7 @@ import (
 	"context"
 	"math"
 	"testing"
-	time2 "time"
+	"time"
 
 	nodeCVEMocks "github.com/stackrox/rox/central/cve/node/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
@@ -262,6 +262,54 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVENonEmpty() {
 	s.NotNil(response.data)
 }
 
+func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverity() {
+	q := &RawQuery{}
+	expectedQ, err := q.AsV1QueryOrEmpty()
+	s.Require().NoError(err)
+	cbs := nodecve.NewCountByNodeCVESeverity(7, 6, 5, 4)
+
+	s.nodeCVEView.EXPECT().CountBySeverity(s.ctx, expectedQ).Return(cbs, nil)
+	response, err := s.resolver.NodeCVECountBySeverity(s.ctx, *q)
+	s.NoError(err)
+	s.Equal(response.Critical(s.ctx), int32(7))
+	s.Equal(response.Important(s.ctx), int32(6))
+	s.Equal(response.Moderate(s.ctx), int32(5))
+	s.Equal(response.Low(s.ctx), int32(4))
+}
+
+func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverityWithQuery() {
+	q := &RawQuery{
+		Query: pointers.String("Node:node"),
+	}
+	expectedQ := search.NewQueryBuilder().AddStrings(search.Node, "node").ProtoQuery()
+	cbs := nodecve.NewCountByNodeCVESeverity(7, 6, 5, 4)
+
+	s.nodeCVEView.EXPECT().CountBySeverity(s.ctx, expectedQ).Return(cbs, nil)
+	response, err := s.resolver.NodeCVECountBySeverity(s.ctx, *q)
+	s.NoError(err)
+	s.Equal(response.Critical(s.ctx), int32(7))
+	s.Equal(response.Important(s.ctx), int32(6))
+	s.Equal(response.Moderate(s.ctx), int32(5))
+	s.Equal(response.Low(s.ctx), int32(4))
+}
+
+func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverityWithInternalError() {
+	q := &RawQuery{}
+	expectedQ, err := q.AsV1QueryOrEmpty()
+	s.Require().NoError(err)
+
+	s.nodeCVEView.EXPECT().CountBySeverity(s.ctx, expectedQ).Return(nil, errox.ServerError)
+	response, err := s.resolver.NodeCVECountBySeverity(s.ctx, *q)
+	s.ErrorIs(err, errox.ServerError)
+	s.Nil(response)
+}
+
+func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverityNoNodePerm() {
+	response, err := s.resolver.NodeCVECountBySeverity(context.Background(), RawQuery{})
+	s.Error(err)
+	s.Nil(response)
+}
+
 func (s *NodeCVECoreResolverTestSuite) TestNodeCVESubResolvers() {
 	// without filter
 	cve := "cve-xyz"
@@ -300,7 +348,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVESubResolvers() {
 	s.Equal(5.5, response.TopCVSS(s.ctx))
 
 	// FirstDiscoveredInSystem
-	ts := time2.Now()
+	ts := time.Now()
 	cveCoreMock.EXPECT().GetFirstDiscoveredInSystem().Return(&ts)
 	s.Equal(ts, response.FirstDiscoveredInSystem(s.ctx).Time)
 
