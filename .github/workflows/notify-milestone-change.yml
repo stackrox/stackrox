@@ -2,6 +2,12 @@ name: "Release: Notify when PR is added or removed from milestone"
 on:
   pull_request:
     types: [milestoned, demilestoned]
+
+env:
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
+
 jobs:
   properties:
     name: Read repository properties
