@@ -404,6 +404,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 				},
 			},
 		),
+		runtime.WithErrorHandler(errorHandler),
 	)
 	if localConn != nil {
 		for _, service := range a.apiServices {
