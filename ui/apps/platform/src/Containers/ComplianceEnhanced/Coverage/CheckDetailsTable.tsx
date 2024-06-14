@@ -30,6 +30,8 @@ import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import { CHECK_STATUS_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
 
+export const tabContentIdForResults = 'check-details-Results-tab-section';
+
 export type CheckDetailsTableProps = {
     checkResultsCount: number;
     currentDatetime: Date;
@@ -62,7 +64,7 @@ function CheckDetailsTable({
     const { page, perPage, setPage, setPerPage } = pagination;
 
     return (
-        <>
+        <div id={tabContentIdForResults}>
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarGroup className="pf-v5-u-w-100">
@@ -168,7 +170,7 @@ function CheckDetailsTable({
                     )}
                 />
             </Table>
-        </>
+        </div>
     );
 }
 
