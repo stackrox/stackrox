@@ -11,6 +11,16 @@ import {
     compoundSearchEntityNames,
 } from '../types';
 
+export const conditionMap = {
+    'Is greater than': '>',
+    'Is greater than or equal to': '>=',
+    'Is equal to': '=',
+    'Is less than or equal to': '<=',
+    'Is less than': '<',
+};
+
+export const conditions = Object.keys(conditionMap);
+
 export function getEntities(config: PartialCompoundSearchFilterConfig): SearchFilterEntityName[] {
     const entities = Object.keys(config) as SearchFilterEntityName[];
     return entities;
@@ -83,7 +93,7 @@ export function ensureConditionNumber(value: unknown): { condition: string; numb
         };
     }
     return {
-        condition: '',
+        condition: conditions[0],
         number: 0,
     };
 }
