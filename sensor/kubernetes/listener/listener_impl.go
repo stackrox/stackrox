@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
@@ -39,6 +40,7 @@ type listenerImpl struct {
 	storeProvider      *resources.StoreProvider
 	mayCreateHandlers  concurrency.Signal
 	context            context.Context
+	pubSub             *internalmessage.MessageSubscriber
 }
 
 func (k *listenerImpl) StartWithContext(ctx context.Context) error {
