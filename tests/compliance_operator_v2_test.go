@@ -154,12 +154,6 @@ func TestCentralSendsScanConfiguration(t *testing.T) {
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v2.NewComplianceScanConfigurationServiceClient(conn)
-	/*
-		serviceCluster := v1.NewClustersServiceClient(conn)
-		clusters, err := serviceCluster.GetClusters(ctx, &v1.GetClustersRequest{})
-		assert.NoError(t, err)
-		clusterID := clusters.GetClusters()[0].GetId()
-	*/
 
 	resp, err := service.CreateComplianceScanConfiguration(ctx, &scanConfig1)
 	assert.NoError(t, err)
