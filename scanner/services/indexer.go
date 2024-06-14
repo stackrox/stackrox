@@ -9,16 +9,14 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
-	pkgversion "github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/scanner/indexer"
-	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/mappers"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
@@ -38,13 +36,17 @@ var indexerAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 
 type indexerService struct {
 	v4.UnimplementedIndexerServer
+	// indexer is used to retrieve index reports.
 	indexer indexer.Indexer
+	// anonymousAuthEnabled specifies if the service should allow for traffic from anonymous users.
+	anonymousAuthEnabled bool
 }
 
 // NewIndexerService creates a new indexer service.
 func NewIndexerService(indexer indexer.Indexer) *indexerService {
 	return &indexerService{
 		indexer: indexer,
+		anonymousAuthEnabled: env.ScannerV4AnonymousAuth.BooleanSetting(),
 	}
 }
 
@@ -173,8 +175,7 @@ func (s *indexerService) RegisterServiceServer(grpcServer *grpc.Server) {
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *indexerService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	auth := indexerAuth
-	// If this a dev build or nightly version, allow anonymous traffic for testing purposes.
-	if !buildinfo.ReleaseBuild || pkgversion.GetVersionKind(version.Version) == pkgversion.NightlyKind {
+	if s.anonymousAuthEnabled {
 		auth = allow.Anonymous()
 	}
 	return ctx, auth.Authorized(ctx, fullMethodName)
