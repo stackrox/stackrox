@@ -11,6 +11,7 @@ import TooltipTh from 'Components/TooltipTh';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { TableUIState } from 'utils/getTableUIState';
+import { ACTION_COLUMN_POPPER_PROPS } from 'constants/tables';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel, WatchStatus } from '../../types';
@@ -226,7 +227,7 @@ function ImagesTable({
                                         <Td isActionCell>
                                             {name?.tag && (
                                                 <ActionsColumn
-                                                    // menuAppendTo={() => document.body}
+                                                    popperProps={ACTION_COLUMN_POPPER_PROPS}
                                                     items={[
                                                         {
                                                             title: watchImageMenuText,
