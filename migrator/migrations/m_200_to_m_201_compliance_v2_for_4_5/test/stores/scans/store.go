@@ -16,11 +16,6 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
-const (
-	baseTable = "compliance_operator_scan_v2"
-	storeName = "ComplianceOperatorScanV2"
-)
-
 var (
 	log            = logging.LoggerForModule()
 	schema         = oldSchema.ComplianceOperatorScanV2Schema
