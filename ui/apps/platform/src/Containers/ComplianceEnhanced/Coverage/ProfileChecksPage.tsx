@@ -26,9 +26,10 @@ import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
-import useURLSort from 'hooks/useURLSort';
 import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
 import { getComplianceProfileResults } from 'services/ComplianceResultsService';
+import { getTableUIState } from 'utils/getTableUIState';
 
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
@@ -65,6 +66,13 @@ function ProfileChecksPage() {
         'Profile Check': profileCheckSearchFilterConfig,
         Cluster: getFilteredConfig(clusterSearchFilterConfig, ['Name']),
     };
+
+    const tableState = getTableUIState({
+        isLoading,
+        data: profileChecks?.profileResults,
+        error,
+        searchFilter: {},
+    });
 
     // @TODO: Consider making a function to make this more reusable
     const onSearch = (payload: OnSearchPayload) => {
@@ -142,12 +150,10 @@ function ProfileChecksPage() {
                     </Toolbar>
                     <Divider />
                     <ProfileChecksTable
-                        isLoading={isLoading}
-                        error={error}
-                        profileChecksResults={profileChecks?.profileResults ?? []}
                         profileChecksResultsCount={profileChecks?.totalCount ?? 0}
                         profileName={profileName}
                         pagination={pagination}
+                        tableState={tableState}
                         getSortParams={getSortParams}
                     />
                 </PageSection>
