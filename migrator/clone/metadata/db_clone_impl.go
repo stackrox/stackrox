@@ -11,8 +11,8 @@ const (
 	// ErrNoPreviousInDevEnv -- Downgrade is not supported in dev
 	ErrNoPreviousInDevEnv = `
 Downgrade is not supported.
-We compare dev builds by their release tags. For example, 3.0.58.x-58-g848e7365da is greater than
-3.0.58.x-57-g848e7365da. However if the dev builds are on diverged branches, the sequence could be wrong.
+We compare dev builds by their release tags. For example, 3.0.58.0-58-g848e7365da is greater than
+3.0.58.0-57-g848e7365da. However if the dev builds are on diverged branches, the sequence could be wrong.
 These builds are not comparable.
 
 To address this:

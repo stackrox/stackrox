@@ -1,6 +1,7 @@
 package version
 
 import (
+	"fmt"
 	"math"
 	"os"
 	"regexp"
@@ -113,8 +114,17 @@ func CompareVersionsOr(versionA, versionB string, incomparableRes int) int {
 	// Because we always bump release and rc version before release date, dev and nightly version is greater than
 	// release and rc version.
 	// for example: 3.0.58.x-1 > 3.0.58.0-rc.1
-	versionA = strings.Replace(versionA, "x", strconv.Itoa(math.MaxInt32), 1)
-	versionB = strings.Replace(versionB, "x", strconv.Itoa(math.MaxInt32), 1)
+	maxInt := strconv.Itoa(math.MaxInt32)
+
+	if kindA == NightlyKind || kindA == DevelopmentKind {
+		versionA = strings.Replace(versionA, "x", maxInt, 1)
+		versionA = strings.Replace(versionA, ".0-", fmt.Sprintf(".%s-", maxInt), 1)
+	}
+	if kindB == NightlyKind || kindB == DevelopmentKind {
+		versionB = strings.Replace(versionB, "x", maxInt, 1)
+		versionB = strings.Replace(versionB, ".0-", fmt.Sprintf(".%s-", maxInt), 1)
+	}
+
 	result := CompareReleaseVersionsOr(strings.Split(versionA, "-")[0], strings.Split(versionB, "-")[0], incomparableRes)
 	if result != 0 {
 		return result
@@ -140,6 +150,8 @@ func getEffectVersion(version string) string {
 	version = strings.Replace(version, "-nightly", "", 1)
 	// 3.0.58.x-189-dirty -> 3.0.58.2147483647-189-dirty to make dev build greater than release and rc build
 	version = strings.Replace(version, "x", strconv.Itoa(math.MaxInt32), 1)
+	// 3.0.58.0-189-dirty -> 3.0.58.2147483647-189-dirty to make dev build greater than release and rc build
+	version = strings.Replace(version, ".0-", fmt.Sprintf(".%s-", strconv.Itoa(math.MaxInt32)), 1)
 	// 3.0.58.2147483647-189-dirty -> 3.0.58.2147483647.189.dirty
 	version = strings.ReplaceAll(version, "-", ".")
 	// 3.0.58.2147483647.189.dirty -> 3.0.58.2147483647.189.1, dirty version is greater than its base dev build
