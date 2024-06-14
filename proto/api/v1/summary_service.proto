@@ -19,6 +19,7 @@ message SummaryCountsResponse {
 }
 
 service SummaryService {
+  // Deprecated starting 4.5.0 release, scheduled for removal starting 4.7.0.
   rpc GetSummaryCounts(Empty) returns (SummaryCountsResponse) {
     option (google.api.http) = {get: "/v1/summary/counts"};
   }

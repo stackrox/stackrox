@@ -28,6 +28,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SummaryServiceClient interface {
+	// Deprecated starting 4.5.0 release, scheduled for removal starting 4.7.0.
 	GetSummaryCounts(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SummaryCountsResponse, error)
 }
 
@@ -52,6 +53,7 @@ func (c *summaryServiceClient) GetSummaryCounts(ctx context.Context, in *Empty, 
 // All implementations should embed UnimplementedSummaryServiceServer
 // for forward compatibility
 type SummaryServiceServer interface {
+	// Deprecated starting 4.5.0 release, scheduled for removal starting 4.7.0.
 	GetSummaryCounts(context.Context, *Empty) (*SummaryCountsResponse, error)
 }
 

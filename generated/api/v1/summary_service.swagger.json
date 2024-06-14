@@ -13,6 +13,7 @@
   "paths": {
     "/v1/summary/counts": {
       "get": {
+        "summary": "Deprecated starting 4.5.0 release, scheduled for removal starting 4.7.0.",
         "operationId": "SummaryService_GetSummaryCounts",
         "responses": {
           "200": {
