@@ -23,6 +23,9 @@ const (
 
 	// SensorComponentEventSyncFinished denotes that Sensor finished initial sync.
 	SensorComponentEventSyncFinished SensorComponentEvent = "sync-finished"
+
+	// SensorComponentEventResourceSyncFinished denotes that Sensor finished the k8s resource sync
+	SensorComponentEventResourceSyncFinished SensorComponentEvent = "resource-sync-finished"
 )
 
 // LogSensorComponentEvent returns a unified string for logging the transition between component states/
@@ -42,6 +45,8 @@ func LogSensorComponentEvent(e SensorComponentEvent, optComponentName ...string)
 		mode = "Offline"
 	case SensorComponentEventSyncFinished:
 		return fmt.Sprintf("%s has received the SyncFinished notification", name)
+	case SensorComponentEventResourceSyncFinished:
+		return fmt.Sprintf("%s has received the ResourceSyncFinished notification", name)
 	}
 	return fmt.Sprintf("%s runs now in %s mode", name, mode)
 
