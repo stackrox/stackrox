@@ -20,7 +20,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-4-g0ce75fe6ac
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-5-gb7de6f4351
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -46,7 +46,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-4-g0ce75fe6ac
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-5-gb7de6f4351
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -78,7 +78,7 @@ jobs:
   style-check:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-4-g0ce75fe6ac
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-5-gb7de6f4351
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -109,7 +109,7 @@ jobs:
     timeout-minutes: 240
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-4-g0ce75fe6ac
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-5-gb7de6f4351
     steps:
     - name: Checkout
       uses: actions/checkout@v4
