@@ -27,6 +27,10 @@ type storeType = storage.ComplianceOperatorRuleV2
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
+
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
+
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
