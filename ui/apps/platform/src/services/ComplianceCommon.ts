@@ -33,6 +33,8 @@ export type ComplianceBenchmark = {
     version: string;
     description: string;
     provider: string;
+    // shortName is extracted from the annotation.
+    // Example: from https://control.compliance.openshift.io/CIS-OCP we should have CIS-OCP
     shortName: string;
 };
 

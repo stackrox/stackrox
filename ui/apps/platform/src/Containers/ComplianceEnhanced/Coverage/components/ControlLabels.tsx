@@ -12,7 +12,7 @@ function ControlLabels({ controls, numLabels = Infinity }: ControlLabelsProps): 
     return (
         <LabelGroup numLabels={numLabels}>
             {controls.map(({ control, standard }) => (
-                <Label key={standard}>{`${standard} ${control}`}</Label>
+                <Label key={control}>{`${standard} ${control}`}</Label>
             ))}
         </LabelGroup>
     );

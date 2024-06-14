@@ -117,13 +117,14 @@ export function sortCheckStats(items: ComplianceCheckStatusCount[]): ComplianceC
         'INFO',
         'NOT_APPLICABLE',
         'INCONSISTENT',
+        'UNSET_CHECK_STATUS',
     ];
     return [...items].sort((a, b) => {
         return order.indexOf(a.status) - order.indexOf(b.status);
     });
 }
 
-const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject } = {
+const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
     PASS: {
         icon: (
             <Icon>
