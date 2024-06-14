@@ -14,7 +14,7 @@ jobs:
   report-e2e-failures-to-slack:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-4-g0ce75fe6ac
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-5-gb7de6f4351
     steps:
     - name: Checkout
       uses: actions/checkout@v4
