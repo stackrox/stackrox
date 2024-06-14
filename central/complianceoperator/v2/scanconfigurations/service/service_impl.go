@@ -37,7 +37,6 @@ var (
 		user.With(permissions.View(resources.Compliance)): {
 			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigurations",
 			"/v2.ComplianceScanConfigurationService/GetComplianceScanConfiguration",
-			"/v2.ComplianceScanConfigurationService/GetComplianceScanConfigurationsCount",
 		},
 		user.With(permissions.Modify(resources.Compliance)): {
 			"/v2.ComplianceScanConfigurationService/CreateComplianceScanConfiguration",
@@ -213,20 +212,6 @@ func (s *serviceImpl) GetComplianceScanConfiguration(ctx context.Context, req *v
 	}
 
 	return convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS)
-}
-
-func (s *serviceImpl) GetComplianceScanConfigurationsCount(ctx context.Context, request *v2.RawQuery) (*v2.ComplianceScanConfigurationsCount, error) {
-	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-	}
-	scanConfigs, err := s.scanConfigDS.CountScanConfigurations(ctx, parsedQuery)
-	if err != nil {
-		return nil, errors.Wrap(errox.NotFound, err.Error())
-	}
-	return &v2.ComplianceScanConfigurationsCount{
-		Count: int32(scanConfigs),
-	}, nil
 }
 
 func (s *serviceImpl) RunComplianceScanConfiguration(ctx context.Context, request *v2.ResourceByID) (*v2.Empty, error) {
