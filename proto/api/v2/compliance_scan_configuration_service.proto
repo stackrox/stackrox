@@ -3,6 +3,7 @@ syntax = "proto3";
 package v2;
 
 import "api/v2/common.proto";
+import "api/v2/compliance_common.proto";
 import "api/v2/report_service.proto";
 import "api/v2/search_query.proto";
 import "api/v2/user.proto";
@@ -61,6 +62,11 @@ message ComplianceScanConfigurationStatus {
   google.protobuf.Timestamp last_executed_time = 8;
 }
 
+message ComplianceConfigClusterProfileRequest {
+  string cluster_id = 1;
+  RawQuery query = 2;
+}
+
 message ListComplianceScanConfigurationsResponse {
   repeated ComplianceScanConfigurationStatus configurations = 1;
   int32 total_count = 2;
@@ -78,6 +84,18 @@ message ComplianceRunReportResponse {
   RunState run_state = 1;
   google.protobuf.Timestamp submitted_at = 2;
   string error_msg = 3;
+}
+
+message ListComplianceScanConfigsProfileResponse {
+  repeated ComplianceProfileSummary profiles = 1;
+  int32 total_count = 2;
+}
+
+message ListComplianceScanConfigsClusterProfileResponse {
+  string cluster_id = 1;
+  string cluster_name = 2;
+  repeated ComplianceProfileSummary profiles = 3;
+  int32 total_count = 4;
 }
 
 service ComplianceScanConfigurationService {
@@ -125,5 +143,15 @@ service ComplianceScanConfigurationService {
       put: "/v2/compliance/scan/configurations/reports/run"
       body: "*"
     };
+  }
+
+  // ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
+  rpc ListComplianceScanConfigProfiles(RawQuery) returns (ListComplianceScanConfigsProfileResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/configurations/profiles/collection"};
+  }
+
+  // GetComplianceScanConfiguration retrieves the specified compliance scan configurations
+  rpc ListComplianceScanConfigClusterProfiles(ComplianceConfigClusterProfileRequest) returns (ListComplianceScanConfigsClusterProfileResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/configurations/clusters/{cluster_id}/profiles/collection"};
   }
 }
