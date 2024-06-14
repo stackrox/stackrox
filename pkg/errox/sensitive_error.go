@@ -118,6 +118,12 @@ func (e *RoxSensitiveError) Error() string {
 //	err.Error() // no secret_ip in the text
 //	GetSensitiveError(err) // full error text
 func ConsealSensitive(err error) error {
+	if err == nil {
+		return nil
+	}
+	if e := (*net.AddrError)(nil); errors.As(err, &e) {
+		return MakeSensitive("address: "+e.Err, err)
+	}
 	if e := (*net.DNSError)(nil); errors.As(err, &e) {
 		return MakeSensitive("lookup: "+e.Err, err)
 	}
