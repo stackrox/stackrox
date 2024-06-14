@@ -263,7 +263,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	for registry, dce := range dockerConfig {
 		if fromDefaultSA {
 			// Store the registry credentials so Sensor can reach it.
-			log.Debug("ROX-24163 calling UpsertRegisty for docker config from secret %q", secret.UID)
+			log.Debugf("ROX-24163 calling UpsertRegisty for docker config from secret %q", secret.UID)
 			err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
 			if err != nil {
 				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
@@ -305,10 +305,10 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				// as namespace + secret name + registry.
 				var err error
 				if isGlobalPullSecret {
-					log.Debug("ROX-24163 calling UpsertGlobalRegistry for docker config from secret %q", secret.UID)
+					log.Debugf("ROX-24163 calling UpsertGlobalRegistry for docker config from secret %q", secret.UID)
 					err = s.regStore.UpsertGlobalRegistry(context.Background(), registry, dce)
 				} else {
-					log.Debug("ROX-24163 calling UpsertRegisty (!isGlobalPullSecret) for docker config from secret %q", secret.UID)
+					log.Debugf("ROX-24163 calling UpsertRegisty (!isGlobalPullSecret) for docker config from secret %q", secret.UID)
 					err = s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
 				}
 				if err != nil {
