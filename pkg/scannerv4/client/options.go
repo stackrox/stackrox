@@ -70,6 +70,9 @@ func SkipTLSVerification(o *options) {
 }
 
 // WithAddress specifies the gRPC address to connect.
+//
+// The address will be used for both Indexer service and Matcher service calls. To use different
+// addresses for each service, use With{Indexer,Matcher}Address.
 func WithAddress(address string) Option {
 	return func(o *options) {
 		WithIndexerAddress(address)(o)
@@ -98,9 +101,9 @@ func SkipIndexerTLSVerification(o *options) {
 }
 
 // WithIndexerAddress specifies the gRPC address to connect.
-// This should be used when the client wants to reach out to both the Indexer and Matcher,
-// but they live at different addresses. When the client only wants to reach the Indexer or
-// both the Indexer and Matcher are at the same address, then use WithAddress.
+//
+// Use this to direct the client to perform Indexer service calls to a different address from the default.
+// Matcher service calls will be directed to the default address unless WithMatcherAddress is specified.
 func WithIndexerAddress(address string) Option {
 	return func(o *options) {
 		o.indexerOpts.address = address
@@ -128,9 +131,9 @@ func SkipMatcherTLSVerification(o *options) {
 }
 
 // WithMatcherAddress specifies the gRPC address to connect.
-// This should be used when the client wants to reach out to both the Indexer and Matcher,
-// but they live at different addresses. When the client only wants to reach the Matcher or
-// both the Indexer and Matcher are at the same address, then use WithAddress.
+//
+// Use this to direct the client to perform Matcher service calls to a different address from the default.
+// Indexer service calls will be directed to the default address unless WithIndexerAddress is specified.
 func WithMatcherAddress(address string) Option {
 	return func(o *options) {
 		o.matcherOpts.address = address
