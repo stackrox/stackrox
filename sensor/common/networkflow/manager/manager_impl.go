@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
+	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
@@ -236,6 +237,7 @@ func NewManager(
 	clusterEntities EntityStore,
 	externalSrcs externalsrcs.Store,
 	policyDetector detector.Detector,
+	pubSub *internalmessage.MessageSubscriber,
 ) Manager {
 	enricherTicker := time.NewTicker(tickerTime)
 	mgr := &networkFlowManager{
@@ -249,6 +251,7 @@ func NewManager(
 		activeConnections: make(map[connection]*networkConnIndicator),
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
 		stopper:           concurrency.NewStopper(),
+		pubSub:            pubSub,
 	}
 
 	enricherTicker.Stop()
@@ -256,6 +259,17 @@ func NewManager(
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage, env.NetworkFlowBufferSize.IntegerSetting())
 	} else {
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage)
+	}
+
+	if err := mgr.pubSub.Subscribe(internalmessage.SensorMessageResourceSyncFinished, func(msg *internalmessage.SensorInternalMessage) {
+		if msg.IsExpired() {
+			return
+		}
+		// Since we need to have the logic to transition to offline mode if `SensorCapturesIntermediateEvents` is disabled.
+		// We call `Notify` here to keep the logic to transition offline/online in the same place.
+		mgr.Notify(common.SensorComponentEventResourceSyncFinished)
+	}); err != nil {
+		log.Errorf("unable to subscribe to %s: %+v", internalmessage.SensorMessageResourceSyncFinished, err)
 	}
 
 	return mgr
@@ -291,6 +305,7 @@ type networkFlowManager struct {
 	policyDetector detector.Detector
 
 	stopper concurrency.Stopper
+	pubSub  *internalmessage.MessageSubscriber
 }
 
 func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
@@ -319,7 +334,7 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
-	case common.SensorComponentEventSyncFinished:
+	case common.SensorComponentEventResourceSyncFinished:
 		if features.SensorCapturesIntermediateEvents.Enabled() {
 			if m.initialSync.CompareAndSwap(false, true) {
 				m.enricherTicker.Reset(tickerTime)
