@@ -61,10 +61,6 @@ message ComplianceScanConfigurationStatus {
   google.protobuf.Timestamp last_executed_time = 8;
 }
 
-message ComplianceScanConfigurationsCount {
-  int32 count = 1;
-}
-
 message ListComplianceScanConfigurationsResponse {
   repeated ComplianceScanConfigurationStatus configurations = 1;
   int32 total_count = 2;
@@ -121,10 +117,6 @@ service ComplianceScanConfigurationService {
   // profiles across the configured clusters.
   rpc RunComplianceScanConfiguration(ResourceByID) returns (Empty) {
     option (google.api.http) = {post: "/v2/compliance/scan/configurations/{id}/run"};
-  }
-
-  rpc GetComplianceScanConfigurationsCount(RawQuery) returns (ComplianceScanConfigurationsCount) {
-    option (google.api.http) = {get: "/v2/compliance/scan/count/configurations"};
   }
 
   // RunReport runs an on demand compliance report for the scan configuration

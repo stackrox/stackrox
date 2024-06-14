@@ -19,8 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ComplianceIntegrationService_ListComplianceIntegrations_FullMethodName     = "/v2.ComplianceIntegrationService/ListComplianceIntegrations"
-	ComplianceIntegrationService_GetComplianceIntegrationsCount_FullMethodName = "/v2.ComplianceIntegrationService/GetComplianceIntegrationsCount"
+	ComplianceIntegrationService_ListComplianceIntegrations_FullMethodName = "/v2.ComplianceIntegrationService/ListComplianceIntegrations"
 )
 
 // ComplianceIntegrationServiceClient is the client API for ComplianceIntegrationService service.
@@ -29,9 +28,6 @@ const (
 type ComplianceIntegrationServiceClient interface {
 	// ListComplianceIntegrations lists all the compliance operator metadata for the secured clusters
 	ListComplianceIntegrations(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceIntegrationsResponse, error)
-	// GetComplianceIntegrationsCount returns the number of compliance operator integrations
-	// matching the given query
-	GetComplianceIntegrationsCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountComplianceIntegrationsResponse, error)
 }
 
 type complianceIntegrationServiceClient struct {
@@ -51,24 +47,12 @@ func (c *complianceIntegrationServiceClient) ListComplianceIntegrations(ctx cont
 	return out, nil
 }
 
-func (c *complianceIntegrationServiceClient) GetComplianceIntegrationsCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountComplianceIntegrationsResponse, error) {
-	out := new(CountComplianceIntegrationsResponse)
-	err := c.cc.Invoke(ctx, ComplianceIntegrationService_GetComplianceIntegrationsCount_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // ComplianceIntegrationServiceServer is the server API for ComplianceIntegrationService service.
 // All implementations should embed UnimplementedComplianceIntegrationServiceServer
 // for forward compatibility
 type ComplianceIntegrationServiceServer interface {
 	// ListComplianceIntegrations lists all the compliance operator metadata for the secured clusters
 	ListComplianceIntegrations(context.Context, *RawQuery) (*ListComplianceIntegrationsResponse, error)
-	// GetComplianceIntegrationsCount returns the number of compliance operator integrations
-	// matching the given query
-	GetComplianceIntegrationsCount(context.Context, *RawQuery) (*CountComplianceIntegrationsResponse, error)
 }
 
 // UnimplementedComplianceIntegrationServiceServer should be embedded to have forward compatible implementations.
@@ -77,9 +61,6 @@ type UnimplementedComplianceIntegrationServiceServer struct {
 
 func (UnimplementedComplianceIntegrationServiceServer) ListComplianceIntegrations(context.Context, *RawQuery) (*ListComplianceIntegrationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListComplianceIntegrations not implemented")
-}
-func (UnimplementedComplianceIntegrationServiceServer) GetComplianceIntegrationsCount(context.Context, *RawQuery) (*CountComplianceIntegrationsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceIntegrationsCount not implemented")
 }
 
 // UnsafeComplianceIntegrationServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -111,24 +92,6 @@ func _ComplianceIntegrationService_ListComplianceIntegrations_Handler(srv interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceIntegrationService_GetComplianceIntegrationsCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RawQuery)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ComplianceIntegrationServiceServer).GetComplianceIntegrationsCount(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ComplianceIntegrationService_GetComplianceIntegrationsCount_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceIntegrationServiceServer).GetComplianceIntegrationsCount(ctx, req.(*RawQuery))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // ComplianceIntegrationService_ServiceDesc is the grpc.ServiceDesc for ComplianceIntegrationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -139,10 +102,6 @@ var ComplianceIntegrationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListComplianceIntegrations",
 			Handler:    _ComplianceIntegrationService_ListComplianceIntegrations_Handler,
-		},
-		{
-			MethodName: "GetComplianceIntegrationsCount",
-			Handler:    _ComplianceIntegrationService_GetComplianceIntegrationsCount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
