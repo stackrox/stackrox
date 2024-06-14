@@ -38,13 +38,11 @@ def get_metric_for_test(test_uuid, metric_name, limit=500):
 
   return df
 
-#uuid = 'node-56--n1-standard-8--run-1718317396'
 
-perf_test1 = PerfTest(10, 5, 1, 'node-56--n1-standard-8--run-1718317396')
-perf_test2 = PerfTest(100, 5, 1, 'node-56--n1-standard-8--run-1718317963')
-perf_test3 = PerfTest(200, 5, 1, 'node-56--n1-standard-8--run-1718318383')
-perf_test4 = PerfTest(500, 5, 1, 'node-56--n1-standard-8--run-1718318945')
-#perf_test5 = PerfTest(1250, 20, 1, 'node-56--n1-standard-8--run-1718319905')
+perf_test1 = PerfTest(10, 5, 1, '')
+perf_test2 = PerfTest(100, 5, 1, '')
+perf_test3 = PerfTest(200, 5, 1, '')
+perf_test4 = PerfTest(500, 5, 1, '')
 
 perf_tests = [perf_test1, perf_test2, perf_test3, perf_test4]
 
