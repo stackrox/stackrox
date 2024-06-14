@@ -354,7 +354,7 @@ func handle(
 			log.Debugf("ROX-24163 handle(%q): WaitForCacheSync failed", name)
 			return
 		}
-		log.Debugf("ROX-24163 handle(%q): calling PopulateInitialObjects for %q", name)
+		log.Debugf("ROX-24163 handle(%q): calling PopulateInitialObjects", name)
 		doneChannel := handlerImpl.PopulateInitialObjects(informer.GetIndexer().List())
 
 		select {
