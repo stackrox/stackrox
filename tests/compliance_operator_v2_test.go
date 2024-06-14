@@ -18,21 +18,19 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	autoscalingV1 "k8s.io/api/autoscaling/v1"
 	extscheme "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme"
-	apiMetaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	cached "k8s.io/client-go/discovery/cached"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	cgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/restmapper"
 	dynclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
-	coNamespace = "openshift-compliance"
 	scanConfig1 = v2.ComplianceScanConfiguration{
 		ScanName: "testConfig1",
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
@@ -71,6 +69,24 @@ var (
 	}
 )
 
+func scaleToN(ctx context.Context, client kubernetes.Interface, deploymentName string, namespace string, replicas int32) (err error) {
+	scaleRequest := &autoscalingV1.Scale{
+		Spec: autoscalingV1.ScaleSpec{
+			Replicas: replicas,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentName,
+			Namespace: namespace,
+		},
+	}
+
+	_, err = client.AppsV1().Deployments(namespace).UpdateScale(ctx, deploymentName, scaleRequest, metav1.UpdateOptions{})
+	if err != nil {
+		return retry.MakeRetryable(err)
+	}
+	return nil
+}
+
 func createDynamicClient(t *testing.T) dynclient.Client {
 	restCfg := getConfig(t)
 	k8sClient := createK8sClient(t)
@@ -104,30 +120,6 @@ func createDynamicClient(t *testing.T) dynclient.Client {
 	return client
 }
 
-func getGVR(api apiMetaV1.APIResource) schema.GroupVersionResource {
-	return schema.GroupVersionResource{
-		Group:    api.Group,
-		Version:  api.Version,
-		Resource: api.Name,
-	}
-}
-
-// AssertResourceDoesExist asserts whether the given resource exits in the cluster
-func AssertResourceDoesExist(ctx context.Context, t *testing.T, client *dynamic.DynamicClient, resourceName string, namespace string, api apiMetaV1.APIResource) *unstructured.Unstructured {
-	var cli dynamic.ResourceInterface
-	var obj *unstructured.Unstructured
-	var err error
-	require.Eventually(t, func() bool {
-		cli = client.Resource(getGVR(api))
-		if namespace != "" {
-			cli = client.Resource(getGVR(api)).Namespace(namespace)
-		}
-		obj, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
-		return err == nil
-	}, 30*time.Second, 10*time.Millisecond)
-	return obj
-}
-
 func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, timeout time.Duration) {
 	client := createDynamicClient(t)
 
@@ -157,42 +149,19 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 }
 
 func TestCentralSendsScanConfiguration(t *testing.T) {
-	// TODO
-	// connect to central
-	// create config
-	// send config
-	// connect central to sensor
-	// check that scan configuration arrived at sensors
-
 	ctx := context.Background()
-
-	// k8sClient := createDynamicClient(t)
+	k8sClient := createK8sClient(t)
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v2.NewComplianceScanConfigurationServiceClient(conn)
-
-	// Get the clusters
-	resp := getIntegrations(t)
-	assert.Len(t, resp.Integrations, 1, "failed to assert there is only a single compliance integration")
-
-	// Get the profiles for the cluster
-	// clusterID := resp.Integrations[0].GetId()
-
 	/*
-		expectedScanConfig := &central.ApplyComplianceScanConfigRequest{
-			ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
-				UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
-					ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-						ScanName: "testConfig1",
-						Profiles: []string{"ocp4-e8"},
-					},
-					Cron: "0 1 * * *",
-				},
-			},
-		}
+		serviceCluster := v1.NewClustersServiceClient(conn)
+		clusters, err := serviceCluster.GetClusters(ctx, &v1.GetClustersRequest{})
+		assert.NoError(t, err)
+		clusterID := clusters.GetClusters()[0].GetId()
 	*/
 
-	req, err := service.CreateComplianceScanConfiguration(ctx, &scanConfig1)
+	resp, err := service.CreateComplianceScanConfiguration(ctx, &scanConfig1)
 	assert.NoError(t, err)
 
 	query := &v2.RawQuery{Query: ""}
@@ -200,22 +169,24 @@ func TestCentralSendsScanConfiguration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, len(scanConfigs.GetConfigurations()), 1)
 
-	assert.Equal(t, req, scanConfigs.GetConfigurations()[0])
+	assert.Equal(t, resp, scanConfigs.GetConfigurations()[0])
 
-	conn.Close()
+	k8sClient.AutoscalingV1()
 
-	req, err = service.CreateComplianceScanConfiguration(ctx, &modifiedScanConfig1)
+	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
+
+	resp, err = service.CreateComplianceScanConfiguration(ctx, &modifiedScanConfig1)
 	assert.NoError(t, err)
 
-	conn.Connect()
+	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 1)
 
 	query = &v2.RawQuery{Query: ""}
 	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
 	assert.NoError(t, err)
 	assert.Equal(t, len(scanConfigs.GetConfigurations()), 1)
-	assert.Equal(t, req, scanConfigs.GetConfigurations()[0])
+	assert.Equal(t, resp, scanConfigs.GetConfigurations()[0])
 
-	conn.Close()
+	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
 
 	reqDelete := &v2.ResourceByID{
 		Id: "testConfig1",
@@ -223,7 +194,7 @@ func TestCentralSendsScanConfiguration(t *testing.T) {
 	_, err = service.DeleteComplianceScanConfiguration(ctx, reqDelete)
 	assert.NoError(t, err)
 
-	conn.Connect()
+	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 1)
 
 	query = &v2.RawQuery{Query: ""}
 	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
