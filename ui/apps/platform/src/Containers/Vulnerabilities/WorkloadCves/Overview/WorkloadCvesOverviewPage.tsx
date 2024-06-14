@@ -322,7 +322,8 @@ function WorkloadCvesOverviewPage() {
                     // TODO - Add analytics tracking ROX-24532
                 }
             }}
-            includeCveFilters={isViewingWithCves}
+            includeCveSeverityFilters={isViewingWithCves}
+            includeCveStatusFilters={isViewingWithCves}
         />
     ) : (
         <WorkloadCveFilterToolbar

@@ -66,6 +66,7 @@ export type ClustersTableProps = {
     pagination: ReturnType<typeof useURLPagination>;
     sortOption: ApiSortOption;
     getSortParams: UseURLSortResult['getSortParams'];
+    onClearFilters: () => void;
 };
 
 function ClustersTable({
@@ -74,6 +75,7 @@ function ClustersTable({
     pagination,
     sortOption,
     getSortParams,
+    onClearFilters,
 }: ClustersTableProps) {
     const { page, perPage } = pagination;
     const { data, previousData, error, loading } = useQuery<
@@ -129,6 +131,7 @@ function ClustersTable({
                 tableState={tableState}
                 colSpan={colSpan}
                 emptyProps={{ message: 'No secured clusters have been detected' }}
+                filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
                     data.map(({ id, name, clusterVulnerabilityCount, type, status }) => (
                         <Tbody key={id}>
