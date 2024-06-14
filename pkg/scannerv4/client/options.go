@@ -22,8 +22,7 @@ var (
 			serverName:    fmt.Sprintf("scanner-v4-matcher.%s.svc", env.Namespace.Setting()),
 			skipTLSVerify: false,
 		},
-		comboMode:   false,
-		indexerOnly: false,
+		comboMode: false,
 	}
 )
 
@@ -41,7 +40,6 @@ type options struct {
 	indexerOpts connOptions
 	matcherOpts connOptions
 	comboMode   bool
-	indexerOnly bool
 }
 
 type ImageRegistryOpt struct {
@@ -79,15 +77,6 @@ func WithAddress(address string) Option {
 	}
 }
 
-// IndexerOnly specifies the client should only create a connection with the Indexer.
-// Setting this is effectively equivalent to setting exactly matching Indexer and Matcher options,
-// but this offers users a simpler alternative.
-func IndexerOnly() Option {
-	return func(o *options) {
-		o.indexerOnly = true
-	}
-}
-
 // WithIndexerSubject specifies the mTLS subject to use.
 func WithIndexerSubject(subject mtls.Subject) Option {
 	return func(o *options) {
@@ -109,6 +98,9 @@ func SkipIndexerTLSVerification(o *options) {
 }
 
 // WithIndexerAddress specifies the gRPC address to connect.
+// This should be used when the client wants to reach out to both the Indexer and Matcher,
+// but they live at different addresses. When the client only wants to reach the Indexer or
+// both the Indexer and Matcher are at the same address, then use WithAddress.
 func WithIndexerAddress(address string) Option {
 	return func(o *options) {
 		o.indexerOpts.address = address
@@ -136,6 +128,9 @@ func SkipMatcherTLSVerification(o *options) {
 }
 
 // WithMatcherAddress specifies the gRPC address to connect.
+// This should be used when the client wants to reach out to both the Indexer and Matcher,
+// but they live at different addresses. When the client only wants to reach the Matcher or
+// both the Indexer and Matcher are at the same address, then use WithAddress.
 func WithMatcherAddress(address string) Option {
 	return func(o *options) {
 		o.matcherOpts.address = address
@@ -157,9 +152,6 @@ func validateOptions(o options) error {
 	// If this check is removed, make sure we still properly use the DNS name resolver.
 	if _, _, err := net.SplitHostPort(o.indexerOpts.address); err != nil {
 		return fmt.Errorf("invalid indexer address (want [host]:port): %w", err)
-	}
-	if o.indexerOnly {
-		return nil
 	}
 	// If this check is removed, make sure we still properly use the DNS name resolver.
 	if _, _, err := net.SplitHostPort(o.matcherOpts.address); err != nil {
