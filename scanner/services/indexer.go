@@ -45,7 +45,7 @@ type indexerService struct {
 // NewIndexerService creates a new indexer service.
 func NewIndexerService(indexer indexer.Indexer) *indexerService {
 	return &indexerService{
-		indexer: indexer,
+		indexer:              indexer,
 		anonymousAuthEnabled: env.ScannerV4AnonymousAuth.BooleanSetting(),
 	}
 }
