@@ -868,8 +868,7 @@ OUTER:
 //
 // The goal of this function is to make it clear those two CVE-2019-12900 findings are exactly the same.
 func vulnsEqual(a, b *claircore.Vulnerability) bool {
-	return a.Updater == b.Updater &&
-		a.Name == b.Name &&
+	return a.Name == b.Name &&
 		a.Description == b.Description &&
 		a.Issued == b.Issued &&
 		a.Links == b.Links &&
