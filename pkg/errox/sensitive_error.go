@@ -60,7 +60,7 @@ func getGoroutineID() int {
 // Disable Error() to write sensitive data.
 func (e *RoxSensitiveError) protect() {
 	e.unprotectedGoRoutineID.Store(unsetID)
-	e.protectionMux.Unlock()
+	defer e.protectionMux.Unlock()
 }
 
 // Enable Error() to write sensitive data in the current goroutine.
