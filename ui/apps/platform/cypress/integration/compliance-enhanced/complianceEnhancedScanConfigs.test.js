@@ -63,7 +63,7 @@ describe('Compliance Schedules', () => {
             .type('Mare eats oats, and does eat oats, and little lambs eat ivy.')
             .blur();
 
-        getHelperElementByLabel('Name').contains('Scan name is required');
+        getHelperElementByLabel('Name').contains('Name is required');
         getHelperElementByLabel('Time').contains('Time is required');
 
         getInputByLabel('Frequency').click();
