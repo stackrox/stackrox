@@ -70,6 +70,13 @@ spec:
     secret:
       secretName: subscription-manager-activation-key
 
+  # The pipeline regularly takes >1h to finish.
+  timeouts:
+    pipeline: 1h30m0s
+
+  pipelineRef:
+    name: main-pipeline
+
   taskRunSpecs:
   - pipelineTaskName: build-container
     stepSpecs:
@@ -97,10 +104,3 @@ spec:
       computeResources:
         requests:
           cpu: 1
-
-  # The pipeline regularly takes >1h to finish.
-  timeouts:
-    pipeline: 1h30m0s
-
-  pipelineRef:
-    name: main-pipeline
