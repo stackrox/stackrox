@@ -1,4 +1,4 @@
-package old
+package schema
 
 import (
 	"reflect"

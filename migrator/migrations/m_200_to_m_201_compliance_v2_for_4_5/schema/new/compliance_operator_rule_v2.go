@@ -14,7 +14,7 @@ var (
 	CreateTableComplianceOperatorRuleV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ComplianceOperatorRuleV2)(nil),
 		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
+			{
 				GormModel: (*ComplianceOperatorRuleV2Controls)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},

@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	newSchema "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5/schema/new"
-	rulesStore "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5/stores/updated/rules"
+	rulesStore "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5/stores/rules"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -111,6 +111,7 @@ func migrateRules(database *types.Databases) error {
 	db.WithContext(database.DBCtx).Table(newSchema.ComplianceOperatorRuleV2TableName)
 
 	// Need to use store because of `RuleControls`
+	// Since we are only using the walk to retrieve data, we can used the updated store to retrieve the data and update it.
 	ruleStore := rulesStore.New(database.PostgresDB)
 
 	ruleCount := 0
