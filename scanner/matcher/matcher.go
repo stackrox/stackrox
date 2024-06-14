@@ -16,40 +16,31 @@ import (
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
-	"github.com/stackrox/rox/scanner/enricher/partial"
 	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/matcher/updater/distribution"
 	"github.com/stackrox/rox/scanner/matcher/updater/vuln"
 )
 
-var (
-	// matcherNames specifies the ClairCore matchers to use.
-	matcherNames = []string{
-		"alpine-matcher",
-		"aws-matcher",
-		"debian-matcher",
-		"gobin",
-		"java-maven",
-		"oracle",
-		"photon",
-		"python",
-		"rhel-container-matcher",
-		"rhel",
-		"ruby-gem",
-		"suse",
-		"ubuntu-matcher",
-	}
-
-	enrichers = []driver.Enricher{
-		&nvd.Enricher{},
-		&fixedby.Enricher{},
-	}
-)
+// matcherNames specifies the ClairCore matchers to use.
+var matcherNames = []string{
+	"alpine-matcher",
+	"aws-matcher",
+	"debian-matcher",
+	"gobin",
+	"java-maven",
+	"oracle",
+	"photon",
+	"python",
+	"rhel-container-matcher",
+	"rhel",
+	"ruby-gem",
+	"suse",
+	"ubuntu-matcher",
+}
 
 func init() {
 	// ClairCore does not register the Node.js factory by default.
@@ -57,10 +48,6 @@ func init() {
 	mf := driver.MatcherStatic(&m)
 	registry.Register(m.Name(), mf)
 	matcherNames = append(matcherNames, m.Name())
-
-	if env.ScannerV4PartialNodeJSSupport.BooleanSetting() {
-		enrichers = append(enrichers, &partial.Enricher{})
-	}
 }
 
 // Matcher represents a vulnerability matcher.
