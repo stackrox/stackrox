@@ -1072,7 +1072,7 @@ func (m *ComplianceOperatorScanConfigurationV2) Clone() *ComplianceOperatorScanC
 }
 
 type ComplianceOperatorScanConfigurationV2_ProfileName struct {
-	ProfileName          string   `protobuf:"bytes,1,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty" search:"-" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"` // @gotags: search:"-" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
+	ProfileName          string   `protobuf:"bytes,1,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty" search:"Compliance Config Profile Name,hidden" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"` // @gotags: search:"Compliance Config Profile Name,hidden" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
