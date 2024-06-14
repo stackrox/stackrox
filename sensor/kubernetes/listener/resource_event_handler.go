@@ -336,10 +336,10 @@ func handle(
 	handlerRegistration, err := informer.AddEventHandler(handlerImpl)
 	should(err, stopSignal)
 
-	log.Debugf("ROX-24163 (start) for %q has synced: hReg=%t informer=%t", name, handlerRegistration.HasSynced(), informer.HasSynced())
+	log.Debugf("ROX-24163 handle(%q): start. Has synced: hReg=%t informer=%t", name, handlerRegistration.HasSynced(), informer.HasSynced())
 
 	if !informer.HasSynced() {
-		log.Debugf("ROX-24163 Informer for %q has not synced. Applying transformation", name)
+		log.Debugf("ROX-24163 handle(%q): Informer has not synced. Applying transformation", name)
 		err := informer.SetTransform(managedFieldsTransformer)
 		should(err, stopSignal)
 	}
@@ -347,20 +347,22 @@ func handle(
 	go func() {
 		defer func() {
 			wg.Add(-1)
-			log.Debugf("ROX-24163 (defer) for %q has synced: hReg=%t informer=%t", name, handlerRegistration.HasSynced(), informer.HasSynced())
+			log.Debugf("ROX-24163 handle(%q): exiting. Has synced: hReg=%t informer=%t", name, handlerRegistration.HasSynced(), informer.HasSynced())
 		}()
-		log.Debugf("ROX-24163 (go func) for %q has synced: hReg=%t informer=%t", name, handlerRegistration.HasSynced(), informer.HasSynced())
+		log.Debugf("ROX-24163 handle(%q): waiting for cache sync", name)
 		if !cache.WaitForCacheSync(stopSignal.Done(), informer.HasSynced) {
+			log.Debugf("ROX-24163 handle(%q): WaitForCacheSync failed", name)
 			return
 		}
-		log.Debugf("ROX-24163 calling PopulateInitialObjects for %q", name)
+		log.Debugf("ROX-24163 handle(%q): calling PopulateInitialObjects for %q", name)
 		doneChannel := handlerImpl.PopulateInitialObjects(informer.GetIndexer().List())
 
 		select {
 		case <-stopSignal.Done():
-			log.Debugf("ROX-24163 handle for %q received stop signal", name)
+
+			log.Debugf("ROX-24163 handle(%q): received stop signal", name)
 		case <-doneChannel:
-			log.Debugf("ROX-24163 done populating InitialObjects for %q", name)
+			log.Debugf("ROX-24163 handle(%q): done populating InitialObjects", name)
 		}
 	}()
 }
