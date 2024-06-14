@@ -201,7 +201,7 @@ function ImagesTable({
                                             />
                                         </Td>
                                     )}
-                                    <Td>{operatingSystem}</Td>
+                                    <Td>{operatingSystem || 'unknown'}</Td>
                                     <Td modifier="nowrap">
                                         {deploymentCount > 0 ? (
                                             <>
@@ -215,13 +215,17 @@ function ImagesTable({
                                         )}
                                     </Td>
                                     <Td>
-                                        <DateDistance
-                                            date={metadata?.v1?.created}
-                                            asPhrase={false}
-                                        />
+                                        {metadata?.v1?.created ? (
+                                            <DateDistance
+                                                date={metadata.v1.created}
+                                                asPhrase={false}
+                                            />
+                                        ) : (
+                                            'unknown'
+                                        )}
                                     </Td>
                                     <Td>
-                                        <DateDistance date={scanTime} />
+                                        {scanTime ? <DateDistance date={scanTime} /> : 'unknown'}
                                     </Td>
                                     {hasWriteAccessForWatchedImage && (
                                         <Td isActionCell>
