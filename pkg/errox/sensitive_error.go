@@ -78,9 +78,9 @@ func (e *RoxSensitiveError) Unwrap() error {
 	return e.public
 }
 
-// GetSensitiveError returns the full error message with all data from
+// UnconcealSensitive returns the full error message with all data from
 // occasional sensitive errors exposed.
-func GetSensitiveError(err error) string {
+func UnconcealSensitive(err error) string {
 	if sensitive := (SensitiveError)(nil); errors.As(err, &sensitive) {
 		sensitive.unprotect()
 		defer sensitive.protect()
@@ -99,7 +99,7 @@ func (e *RoxSensitiveError) Error() string {
 		return ""
 	}
 	if !e.isProtected() {
-		return GetSensitiveError(e.sensitive)
+		return UnconcealSensitive(e.sensitive)
 	}
 	// If there is another sensitive error in the chain, add its public message.
 	if serr := (SensitiveError)(nil); errors.As(e.sensitive, &serr) {
@@ -108,16 +108,16 @@ func (e *RoxSensitiveError) Error() string {
 	return e.public.Error()
 }
 
-// ConsealSensitive converts the given error, if it matches one of the known
+// ConcealSensitive converts the given error, if it matches one of the known
 // error types, to a sensitive error. Otherwise returns the given error.
 //
 // Example:
 //
 //	conn, err := connect(secret_ip)
-//	err = ConsealSensitive(err)
+//	err = ConcealSensitive(err)
 //	err.Error() // no secret_ip in the text
 //	GetSensitiveError(err) // full error text
-func ConsealSensitive(err error) error {
+func ConcealSensitive(err error) error {
 	if err == nil {
 		return nil
 	}

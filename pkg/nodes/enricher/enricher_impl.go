@@ -111,7 +111,7 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, nodeInventory *
 
 	scanStartTime := time.Now()
 	scan, err := scanner.GetNodeInventoryScan(node, nodeInventory)
-	err = errox.ConsealSensitive(err)
+	err = errox.ConcealSensitive(err)
 
 	e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
 	e.metrics.SetNodeInventoryNumberComponents(len(nodeInventory.GetComponents().GetRhelComponents()), node.GetClusterName(), node.GetName())

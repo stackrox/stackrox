@@ -52,11 +52,11 @@ type LoggerImpl struct {
 func unconcealErrors(args []any) {
 	for i, arg := range args {
 		if err, isError := arg.(error); isError && err != nil {
-			args[i] = errox.GetSensitiveError(err)
+			args[i] = errox.UnconcealSensitive(err)
 		} else if field, isField := arg.(zap.Field); isField && field.Type == zapcore.ErrorType {
 			if err, isError := field.Interface.(error); isError && err != nil {
 				// Recreate the error with expanded sensitive message.
-				field.Interface = errors.New(errox.GetSensitiveError(err))
+				field.Interface = errors.New(errox.UnconcealSensitive(err))
 				args[i] = field
 			}
 		}

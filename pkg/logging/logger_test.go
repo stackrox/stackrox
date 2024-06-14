@@ -23,7 +23,7 @@ func TestLogging(_ *testing.T) {
 
 func TestLoggingSensitiveErrors(t *testing.T) {
 	err := errox.MakeSensitive("public", errors.New("SECRET"))
-	t.Run("unconseal errors in args", func(t *testing.T) {
+	t.Run("unconceal errors in args", func(t *testing.T) {
 		assert.Implements(t, (*error)(nil), err)
 		testLogf := func(template string, args ...any) {
 			assert.Equal(t, "public 42", fmt.Sprintf(template, args...))
@@ -33,7 +33,7 @@ func TestLoggingSensitiveErrors(t *testing.T) {
 		}
 		testLogf("%v %d", err, 42)
 	})
-	t.Run("unconseal errors in zap fields", func(t *testing.T) {
+	t.Run("unconceal errors in zap fields", func(t *testing.T) {
 		testLogw := func(keysAndValues ...any) {
 			enc := &stringObjectEncoder{
 				m: make(map[string]string, 1),

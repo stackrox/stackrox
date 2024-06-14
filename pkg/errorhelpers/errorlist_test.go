@@ -24,5 +24,5 @@ func TestAs(t *testing.T) {
 
 	require.True(t, errors.As(el, &serr))
 	assert.Equal(t, "start errors: [wrapped: ******, already exists]", el.Error())
-	assert.Equal(t, "start errors: [wrapped: SECRET, already exists]", errox.GetSensitiveError(el))
+	assert.Equal(t, "start errors: [wrapped: SECRET, already exists]", errox.UnconcealSensitive(el))
 }

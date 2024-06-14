@@ -23,9 +23,9 @@ func TestSensitiveError(t *testing.T) {
 		var sensitive error = MakeSensitive("******", secret)
 		wrapped := errors.Wrap(sensitive, "message")
 
-		assert.Contains(t, GetSensitiveError(sensitive), "SECRET")
+		assert.Contains(t, UnconcealSensitive(sensitive), "SECRET")
 		assert.Equal(t, "message: ******", wrapped.Error())
-		assert.Equal(t, "message: SECRET", GetSensitiveError(wrapped))
+		assert.Equal(t, "message: SECRET", UnconcealSensitive(wrapped))
 	})
 	t.Run("triple wrap", func(t *testing.T) {
 		err := errors.New("subsecret")
@@ -33,7 +33,7 @@ func TestSensitiveError(t *testing.T) {
 		wrapped := errors.Wrap(sensitive, "message")
 
 		assert.Equal(t, "message: ******", wrapped.Error())
-		assert.Equal(t, "message: SECRET: subsecret", GetSensitiveError(wrapped))
+		assert.Equal(t, "message: SECRET: subsecret", UnconcealSensitive(wrapped))
 	})
 	t.Run("triple wrap WithMessage", func(t *testing.T) {
 		err := errors.New("subsecret")
@@ -41,7 +41,7 @@ func TestSensitiveError(t *testing.T) {
 		wrapped := errors.WithMessage(sensitive, "message")
 
 		assert.Equal(t, "message: ******", wrapped.Error())
-		assert.Equal(t, "message: SECRET: subsecret", GetSensitiveError(wrapped))
+		assert.Equal(t, "message: SECRET: subsecret", UnconcealSensitive(wrapped))
 	})
 	t.Run("two sensitives in a chain", func(t *testing.T) {
 		wrapped := errors.WithMessage(
@@ -57,7 +57,7 @@ func TestSensitiveError(t *testing.T) {
 			"message")
 
 		assert.Equal(t, "message: ******: !!!!!!", wrapped.Error())
-		assert.Equal(t, "message: FIRST: subsecret: SECOND: subsecret again", GetSensitiveError(wrapped))
+		assert.Equal(t, "message: FIRST: subsecret: SECOND: subsecret again", UnconcealSensitive(wrapped))
 	})
 	t.Run("nil", func(t *testing.T) {
 		var sensitive error = MakeSensitive("******", nil)
@@ -68,8 +68,8 @@ func TestSensitiveError(t *testing.T) {
 		assert.NotNil(t, serr)
 	})
 	t.Run("not sensitive", func(t *testing.T) {
-		assert.Equal(t, "SECRET", GetSensitiveError(secret))
-		assert.Equal(t, "message: SECRET", GetSensitiveError(errors.Wrap(secret, "message")))
+		assert.Equal(t, "SECRET", UnconcealSensitive(secret))
+		assert.Equal(t, "message: SECRET", UnconcealSensitive(errors.Wrap(secret, "message")))
 	})
 	t.Run("async", func(t *testing.T) {
 		sensitive := MakeSensitive("******", secret)
@@ -84,33 +84,33 @@ func TestSensitiveError(t *testing.T) {
 		sensitive.protect()
 		wg.Wait()
 		assert.NotContains(t, message, "SECRET")
-		assert.Contains(t, GetSensitiveError(sensitive), "SECRET")
+		assert.Contains(t, UnconcealSensitive(sensitive), "SECRET")
 		assert.Contains(t, message, "******")
 	})
 }
 
-func TestConsealSensitive(t *testing.T) {
+func TestConcealSensitive(t *testing.T) {
 	t.Run("nil", func(t *testing.T) {
-		err := ConsealSensitive(nil)
+		err := ConcealSensitive(nil)
 		assert.Nil(t, err)
 	})
 	t.Run("not sensitive", func(t *testing.T) {
 		err := errors.New("non-sensitive")
-		assert.Equal(t, err, ConsealSensitive(err))
+		assert.Equal(t, err, ConcealSensitive(err))
 	})
 	t.Run("DNSError", func(t *testing.T) {
 		err := errors.Wrap(&net.DNSError{Name: "hehe", Server: "1.2.3.4", Err: "oops"}, "message")
-		err = ConsealSensitive(err)
+		err = ConcealSensitive(err)
 		assert.Equal(t, "lookup: oops", err.Error())
-		assert.Equal(t, "message: lookup hehe on 1.2.3.4: oops", GetSensitiveError(err))
+		assert.Equal(t, "message: lookup hehe on 1.2.3.4: oops", UnconcealSensitive(err))
 	})
 	t.Run("OpError", func(t *testing.T) {
 		err := errors.Wrap(&net.OpError{Op: "dial", Net: "tcp",
 			Source: &net.TCPAddr{IP: net.IPv4(1, 2, 3, 4)}, Addr: &net.TCPAddr{IP: net.IPv4(5, 6, 7, 8)},
 			Err: errors.New("oops")}, "message")
-		err = ConsealSensitive(err)
+		err = ConcealSensitive(err)
 		assert.Equal(t, "dial tcp: oops", err.Error())
-		assert.Equal(t, "message: dial tcp 1.2.3.4:0->5.6.7.8:0: oops", GetSensitiveError(err))
+		assert.Equal(t, "message: dial tcp 1.2.3.4:0->5.6.7.8:0: oops", UnconcealSensitive(err))
 	})
 }
 

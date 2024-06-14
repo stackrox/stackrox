@@ -35,7 +35,7 @@ func (e *ErrorList) AddError(err error) {
 	if err == nil {
 		return
 	}
-	e.errors = append(e.errors, errox.ConsealSensitive(err))
+	e.errors = append(e.errors, errox.ConcealSensitive(err))
 }
 
 // AddErrors adds the non-nil errors in the given slice to the list of errors.
