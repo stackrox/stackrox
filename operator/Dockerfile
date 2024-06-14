@@ -1,7 +1,8 @@
 # We have to emulate directory layout as in the repo so that imports in go files work fine.
 ARG roxpath=/workspace/src/github.com/stackrox/rox
 
-FROM quay.io/stackrox-io/apollo-ci:${BUILD_IMAGE_VERSION} as builder
+FROM --platform=$BUILDPLATFORM quay.io/stackrox-io/apollo-ci:${BUILD_IMAGE_VERSION} as builder
+ARG TARGETOS TARGETARCH
 
 # Build the manager binary
 ARG roxpath
