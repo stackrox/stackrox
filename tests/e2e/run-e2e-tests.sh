@@ -55,7 +55,7 @@ Options:
   -h - show this help.
 
 E2e flavor:
-  one of qa|e2e, defaults to qa
+  one of qa|e2e|ui, defaults to qa
 
 Examples:
 # Configure a cluster to run qa-tests-backend/ tests.
@@ -148,7 +148,7 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
       --platform linux/amd64 \
       --rm -it \
       --entrypoint="$0" \
-      quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-4-g0ce75fe6ac "$@"
+      quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-5-gb7de6f4351 "$@"
     exit 0
 fi
 
@@ -219,7 +219,7 @@ get_options() {
 
     export FLAVOR="${1:-qa}"
     case "$FLAVOR" in
-        qa|e2e)
+        qa|e2e|ui)
             ;;
         *)
             die "flavor $FLAVOR not supported"
@@ -234,12 +234,12 @@ get_options() {
         die "--config-only and --test-only are mutually exclusive"
     fi
 
-    if [[ "$FLAVOR" == "e2e" ]]; then
+    if [[ "$FLAVOR" == "e2e" || "$FLAVOR" == "ui" ]]; then
         if [[ -n "${TASK_OR_SUITE}" || -n "${CASE}" ]]; then
-            die "ERROR: Target, Suite and Case are not supported with e2e flavor"
+            die "ERROR: Target, Suite and Case are not supported with e2e or ui flavors"
         fi
         if [[ "${CONFIG_ONLY}" == "true" || "${TEST_ONLY}" == "true" ]]; then
-            die "--config-only and --test-only are not supported with e2e flavor"
+            die "--config-only and --test-only are not supported with e2e or ui flavors"
         fi
     fi
 }
@@ -336,6 +336,9 @@ _EOWARNING_
         e2e)
             run_e2e_flavor
             ;;
+        ui)
+            run_ui_e2e_flavor
+            ;;
         *)
             die "flavor $FLAVOR not supported"
             ;;
@@ -382,6 +385,10 @@ run_qa_flavor() {
 
 run_e2e_flavor() {
     "$ROOT/tests/e2e/run.sh" 2>&1 | sed -e 's/^/test output: /'
+}
+
+run_ui_e2e_flavor() {
+    "$ROOT/tests/e2e/run-ui-e2e.sh" 2>&1 | sed -e 's/^/test output: /'
 }
 
 spin() {
