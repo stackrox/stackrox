@@ -504,13 +504,10 @@ docker-push-index: ## Push docker image with the index.
 PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
 .PHONY: docker-buildx
 docker-buildx: smuggled-status-sh test build/Dockerfile.gen ## Build and push docker image for the manager for cross-platform support
-	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
-	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' build/Dockerfile.gen > build/Dockerfile.cross
 	- docker buildx create --name project-v3-builder
 	docker buildx use project-v3-builder
-	- docker buildx build --platform=$(PLATFORMS) --push --tag ${IMG} -f build/Dockerfile.cross ..
+	- docker buildx build --platform=$(PLATFORMS) --push --tag ${IMG} -f build/Dockerfile.gen ..
 	- docker buildx rm project-v3-builder
-	rm build/Dockerfile.cross
 
 .PHONY: index-buildx
 index-buildx: bundle-post-process yq ## Build Index (a.k.a. Catalog) image with the bundles. Bundle image must be pushed beforehand.
