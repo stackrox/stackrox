@@ -168,6 +168,12 @@ jobs:
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
 
+      - name: Setup build env for debugging support
+        run: |
+          if [[ "${GITHUB_HEAD_REF}" =~ -debug ]]; then
+            echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
+          fi
+
       - name: Setup Go build environment for release
         if: |
           contains(github.event.pull_request.labels.*.name, 'ci-release-build')
