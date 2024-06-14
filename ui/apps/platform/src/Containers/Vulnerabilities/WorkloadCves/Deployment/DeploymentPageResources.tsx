@@ -86,7 +86,7 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
                 {deploymentResourcesData && (
                     <ExpandableSection
                         toggleText={`Images (${imageCount})`}
-                        onToggle={() => imageTableToggle.onToggle}
+                        onToggle={() => imageTableToggle.onToggle(!imageTableToggle.isOpen)}
                         isExpanded={imageTableToggle.isOpen}
                         style={
                             {
