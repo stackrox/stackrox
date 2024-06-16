@@ -40,3 +40,39 @@ func TestAddressPort(t *testing.T) {
 		})
 	}
 }
+
+func TestCentralEndpointDefaulting(t *testing.T) {
+	testCases := []struct {
+		provided string
+		expected string
+	}{
+		{
+			provided: "http://localhost:8080",
+			expected: "localhost:8080",
+		},
+		{
+			provided: "http://localhost",
+			expected: "localhost:80",
+		},
+		{
+			provided: "https://localhost:8443",
+			expected: "localhost:8443",
+		},
+		{
+			provided: "https://localhost",
+			expected: "localhost:443",
+		},
+		{
+			provided: "192.168.1.0",
+			expected: "192.168.1.0",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.provided, func(t *testing.T) {
+			initCentralEndpoint(tc.provided)
+			assert.Equal(t, tc.expected, CentralEndpoint)
+		})
+	}
+}

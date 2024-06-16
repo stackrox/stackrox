@@ -35,8 +35,8 @@ func ensureHasPort(addr string, port int) (string, error) {
 	return addr, nil
 }
 
-func initCentralEndpoint() {
-	CentralEndpoint = env.CentralEndpoint.Setting()
+func initCentralEndpoint(endpoint string) {
+	CentralEndpoint = endpoint
 	if strings.HasPrefix(CentralEndpoint, "https://") {
 		CentralEndpoint = strings.TrimPrefix(CentralEndpoint, "https://")
 		if addr, err := ensureHasPort(CentralEndpoint, defaultHttpsPort); err == nil {
@@ -51,5 +51,5 @@ func initCentralEndpoint() {
 }
 
 func init() {
-	initCentralEndpoint()
+	initCentralEndpoint(env.CentralEndpoint.Setting())
 }
