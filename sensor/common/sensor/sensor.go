@@ -97,6 +97,7 @@ func NewSensor(
 	certLoader centralclient.CertLoader,
 	components ...common.SensorComponent,
 ) *Sensor {
+	conf.Reinit()
 	return &Sensor{
 		centralEndpoint:    conf.CentralEndpoint,
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),

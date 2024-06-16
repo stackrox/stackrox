@@ -47,9 +47,17 @@ func initCentralEndpoint(endpoint string) {
 		if addr, err := ensureHasPort(CentralEndpoint, defaultHttpPort); err == nil {
 			CentralEndpoint = addr
 		}
+	} else {
+		if addr, err := ensureHasPort(CentralEndpoint, defaultHttpsPort); err == nil {
+			CentralEndpoint = addr
+		}
 	}
 }
 
 func init() {
+	initCentralEndpoint(env.CentralEndpoint.Setting())
+}
+
+func Reinit() {
 	initCentralEndpoint(env.CentralEndpoint.Setting())
 }
