@@ -7,12 +7,12 @@ import (
 	"github.com/stackrox/rox/pkg/admissioncontrol"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	pkgPolicies "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/rox/sensor/common/sensor/conf"
 	"github.com/stackrox/rox/sensor/common/store"
 )
 
@@ -33,7 +33,7 @@ func NewSettingsManager(deployments store.DeploymentStore, pods store.PodStore) 
 	return &settingsManager{
 		settingsStream:     concurrency.NewValueStream[*sensor.AdmissionControlSettings](nil),
 		sensorEventsStream: concurrency.NewValueStream[*sensor.AdmCtrlUpdateResourceRequest](nil),
-		centralEndpoint:    env.CentralEndpoint.Setting(),
+		centralEndpoint:    conf.CentralEndpoint,
 
 		deployments: deployments,
 		pods:        pods,

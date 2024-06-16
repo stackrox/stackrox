@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/sensor/common/sensor/conf"
 )
 
 // CentralConnectionFactory is responsible for establishing a gRPC connection between sensor
@@ -108,7 +109,7 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 	}
 	opts = append(opts, clientconn.MaxMsgReceiveSize(maxGRPCSize))
 
-	centralConnection, err := clientconn.AuthenticatedGRPCConnection(context.Background(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
+	centralConnection, err := clientconn.AuthenticatedGRPCConnection(context.Background(), conf.CentralEndpoint, mtls.CentralSubject, opts...)
 	if err != nil {
 		f.stopSignal.SignalWithErrorWrap(err, "Error connecting to central")
 		return

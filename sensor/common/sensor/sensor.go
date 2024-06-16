@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
+	"github.com/stackrox/rox/sensor/common/sensor/conf"
 )
 
 const (
@@ -97,7 +98,7 @@ func NewSensor(
 	components ...common.SensorComponent,
 ) *Sensor {
 	return &Sensor{
-		centralEndpoint:    env.CentralEndpoint.Setting(),
+		centralEndpoint:    conf.CentralEndpoint,
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 
 		pubSub:        pubSub,

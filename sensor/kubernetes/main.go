@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/devmode"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
+	"github.com/stackrox/rox/sensor/common/sensor/conf"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
@@ -53,9 +53,9 @@ func main() {
 		sharedClientInterface = client.MustCreateInterface()
 	}
 	clientconn.SetUserAgent(clientconn.Sensor)
-	centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())
+	centralClient, err := centralclient.NewClient(conf.CentralEndpoint)
 	if err != nil {
-		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing central HTTP client for endpoint %s", env.CentralEndpoint.Setting()))
+		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing central HTTP client for endpoint %s", conf.CentralEndpoint))
 	}
 	centralConnFactory := centralclient.NewCentralConnectionFactory(centralClient)
 	certLoader := centralclient.RemoteCertLoader(centralClient)

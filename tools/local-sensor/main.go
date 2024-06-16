@@ -22,12 +22,12 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	commonSensor "github.com/stackrox/rox/sensor/common/sensor"
+	"github.com/stackrox/rox/sensor/common/sensor/conf"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/certs"
 	"github.com/stackrox/rox/sensor/debugger/collector"
@@ -422,9 +422,9 @@ func setupCentralWithRealConnection(cli client.Interface, localConfig localSenso
 
 	clientconn.SetUserAgent(clientconn.Sensor)
 
-	centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())
+	centralClient, err := centralclient.NewClient(conf.CentralEndpoint)
 	if err != nil {
-		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing HTTP client to endpoint %s", env.CentralEndpoint.Setting()))
+		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing HTTP client to endpoint %s", conf.CentralEndpoint))
 	}
 	centralConnFactory := centralclient.NewCentralConnectionFactory(centralClient)
 	centralCertLoader := centralclient.RemoteCertLoader(centralClient)
