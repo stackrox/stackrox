@@ -39,8 +39,10 @@ type SecuredClusterSpec struct {
 	ClusterLabels map[string]string `json:"clusterLabels,omitempty"`
 
 	// The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to,
-	// including the port number. If using a non-gRPC capable load balancer, use the WebSocket protocol by
-	// prefixing the endpoint address with wss://.
+	// including the port number. If no port is specified and the endpoint contains an https://
+	// protocol specification, then the port 443 is implicitly assumed.
+	// If using a non-gRPC capable load balancer, use the WebSocket protocol by prefixing the endpoint
+	// address with wss://.
 	// Note: when leaving this blank, Sensor will attempt to connect to a Central instance running in the same
 	// namespace.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
