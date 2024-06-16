@@ -2,7 +2,11 @@
 set -eoux pipefail
 
 # Set number of pods per node
-#oc create --filename=$HOME/stackrox/tests/performance/scale/utilities/examples/set-max-pods.yml
+
+max_pods_set="$(oc get KubeletConfig set-max-pods)"
+if [[ -n "$max_pods_set" ]]; then
+  oc create --filename=$HOME/stackrox/tests/performance/scale/utilities/examples/set-max-pods.yml
+fi
 
 cd ${HOME}/stackrox/tests/performance/scale/utilities
 ./start-central-and-scanner.sh "${ARTIFACTS_DIR}"

@@ -28,6 +28,6 @@ chmod +x roxctl
 sudo cp roxctl /usr/local/bin
 
 sudo apt-get install jq -y
-sudo apt-get install yq -y
+sudo snap install yq
 
 sudo snap install go --channel=1.21/stable --classic
