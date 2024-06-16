@@ -23,6 +23,12 @@ tests:
     expect: |
       verifySensorEndpoint("sensor.stackrox.svc:443")
       verifyCentralEndpoint("stackrox-central.example.com:8443")
+  - name: central endpoint without explicit port
+    set:
+      centralEndpoint: "https://stackrox-central.example.com"
+    expect: |
+      verifyCentralEndpoint("https://stackrox-central.example.com:443")
+      .notes | assertThat(contains("WARNING: Specified centralEndpoint https://stackrox-central.example.com is missing a port"))
 
 - name: different namespace
   release:
