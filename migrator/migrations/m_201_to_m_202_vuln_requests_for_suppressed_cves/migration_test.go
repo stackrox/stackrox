@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package m201tom202
 
 import (
