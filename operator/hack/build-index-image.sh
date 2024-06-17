@@ -158,7 +158,7 @@ if (( RUN_BUILD )); then
   else
     docker buildx create --name project-v3-builder
     docker buildx use project-v3-builder
-    docker buildx build --platform="${PLATFORM}" --push --tag ${INDEX_TAG} -f "${BUILD_INDEX_DIR}.Dockerfile" "${BUILD_INDEX_DIR}/.."
+    docker buildx build --platform="${PLATFORM}" --push --tag "${INDEX_TAG}" -f "${BUILD_INDEX_DIR}.Dockerfile" "${BUILD_INDEX_DIR}/.."
     docker buildx rm project-v3-builder
   fi
 
