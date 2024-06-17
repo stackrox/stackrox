@@ -5,19 +5,18 @@ import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils
 
 export const complianceV2Url = '/v2/compliance';
 
-export const ComplianceCheckStatusEnum = {
-    UNSET_CHECK_STATUS: 'UNSET_CHECK_STATUS',
-    PASS: 'PASS',
-    FAIL: 'FAIL',
-    ERROR: 'ERROR',
-    INFO: 'INFO',
-    MANUAL: 'MANUAL',
-    NOT_APPLICABLE: 'NOT_APPLICABLE',
-    INCONSISTENT: 'INCONSISTENT',
-} as const;
+export const ComplianceCheckStatusValues = [
+    'UNSET_CHECK_STATUS',
+    'PASS',
+    'FAIL',
+    'ERROR',
+    'INFO',
+    'MANUAL',
+    'NOT_APPLICABLE',
+    'INCONSISTENT',
+] as const;
 
-export type ComplianceCheckStatus =
-    (typeof ComplianceCheckStatusEnum)[keyof typeof ComplianceCheckStatusEnum];
+export type ComplianceCheckStatus = (typeof ComplianceCheckStatusValues)[number];
 
 export type ComplianceScanCluster = {
     clusterId: string;
@@ -29,11 +28,27 @@ export type ComplianceCheckStatusCount = {
     status: ComplianceCheckStatus;
 };
 
+export type ComplianceBenchmark = {
+    name: string;
+    version: string;
+    description: string;
+    provider: string;
+    // shortName is extracted from the annotation.
+    // Example: from https://control.compliance.openshift.io/CIS-OCP we should have CIS-OCP
+    shortName: string;
+};
+
+export type ComplianceControl = {
+    standard: string;
+    control: string;
+};
+
 export type ComplianceCheckResultStatusCount = {
     checkName: string;
     rationale: string;
     ruleName: string;
     checkStats: ComplianceCheckStatusCount[];
+    controls: ComplianceControl[];
 };
 
 export type ListComplianceProfileResults = {
