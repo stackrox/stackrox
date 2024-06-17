@@ -833,12 +833,12 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 	}
 
 	if pruneDeletedRuntimeAfter > 0 && pruneAllRuntimeAfter != pruneDeletedRuntimeAfter {
-		qTest := search.NewQueryBuilder().
+		q := search.NewQueryBuilder().
 			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
 			AddDays(search.ViolationTime, int64(pruneDeletedRuntimeAfter)).
 			AddBools(search.Inactive, true).
 			ProtoQuery()
-		queryMap[pruneDeletedRuntimeAfterKey] = qTest
+		queryMap[pruneDeletedRuntimeAfterKey] = q
 	}
 
 	if pruneAttemptedDeployAfter > 0 {
