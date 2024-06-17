@@ -19,9 +19,8 @@ func DialContext(ctx context.Context, network, addr string, tlsConfig *tls.Confi
 	}
 	conn, err := dialer.DialContext(ctx, network, addr)
 	if err != nil {
-		err = errox.ConcealSensitive(err)
 		log.Debugw("tls dial failed", logging.Err(err))
-		return nil, err //nolint:wrapcheck
+		return nil, errox.ConcealSensitive(err)
 	}
 	return conn.(*tls.Conn), nil
 }
