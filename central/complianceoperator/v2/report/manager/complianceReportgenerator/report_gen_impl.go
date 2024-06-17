@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"text/template"
 	"time"
@@ -277,9 +278,10 @@ func retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailing
 func format(results map[string][]*ResultRow) (*bytes.Buffer, error) {
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
-	for cluster, res := range results {
-		log.Infof("Creating csv for cluster %s", cluster)
-		err := createCSVInZip(zipWriter, cluster, res)
+	for clusterID, res := range results {
+		log.Infof("Creating csv for cluster %s", clusterID)
+		fileName := fmt.Sprintf("cluster_%s.csv", clusterID)
+		err := createCSVInZip(zipWriter, fileName, res)
 		if err != nil {
 			return nil, errors.Wrap(err, "error creating csv report")
 		}
