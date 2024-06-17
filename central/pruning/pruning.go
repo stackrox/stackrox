@@ -885,7 +885,7 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 			return nil
 		})
 		if err != nil {
-			log.Error("Unable to prune alerts for query %v", query)
+			log.Errorf("Unable to prune alerts for query %v", query)
 			continue
 		}
 
