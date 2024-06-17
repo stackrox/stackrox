@@ -366,10 +366,10 @@ export const platformCVESearchFilterConfig = {
     displayName: 'Platform CVE',
     searchCategory: 'CLUSTER_VULNERABILITIES',
     attributes: {
-        ID: {
-            displayName: 'ID',
-            filterChipLabel: 'Platform CVE ID',
-            searchTerm: 'CVE ID',
+        Name: {
+            displayName: 'Name',
+            filterChipLabel: 'Platform CVE',
+            searchTerm: 'CVE',
             inputType: 'autocomplete',
         },
         'Discovered Time': {
