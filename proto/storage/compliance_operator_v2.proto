@@ -104,7 +104,7 @@ message ComplianceOperatorScanConfigurationV2 {
   map<string, string> labels = 6;
   map<string, string> annotations = 7;
   message ProfileName {
-    string profile_name = 1; // @gotags: search:"-" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
+    string profile_name = 1; // @gotags: search:"Compliance Config Profile Name,hidden" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
   }
   repeated ProfileName profiles = 8;
   repeated NodeRole node_roles = 9;
