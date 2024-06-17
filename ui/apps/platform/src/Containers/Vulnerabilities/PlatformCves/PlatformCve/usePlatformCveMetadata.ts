@@ -1,23 +1,17 @@
 import { gql, useQuery } from '@apollo/client';
 
-import { getPaginationParams } from 'utils/searchUtils';
-
-import { ClientPagination } from 'services/types';
 import { ClustersByType, clustersByTypeFragment } from './ClustersByTypeSummaryCard';
 
 const platformCveMetadataQuery = gql`
     ${clustersByTypeFragment}
-    query getPlatformCVEMetadata($cve: String!, $query: String!) {
-        totalClusterCount: clusterCount
-        clusterCount(query: $query)
-        platformCVE(cve: $cve, subfieldScopeQuery: $query) {
+    query getPlatformCVEMetadata($cveID: String!) {
+        platformCVE(cveID: $cveID) {
             cve
-            distroTuples {
+            clusterVulnerability {
                 link
                 summary
-                operatingSystem
             }
-            firstDiscoveredInSystem
+            firstDiscoveredTime
             ...ClustersByType
         }
     }
@@ -25,29 +19,17 @@ const platformCveMetadataQuery = gql`
 
 export type PlatformCveMetadata = {
     cve: string;
-    distroTuples: {
+    clusterVulnerability: {
         link: string;
         summary: string;
-        operatingSystem: string;
-    }[];
-    firstDiscoveredInSystem: string;
+    };
+    firstDiscoveredTime: string; // iso8601
 };
 
-export default function usePlatformCveMetadata({
-    cve,
-    query,
-    page,
-    perPage,
-}: { cve: string; query: string } & ClientPagination) {
+export default function usePlatformCveMetadata(cveId: string) {
     return useQuery<{
-        totalClusterCount: number;
-        clusterCount: number;
-        platformCVE: PlatformCveMetadata & ClustersByType;
+        platformCVE?: PlatformCveMetadata & ClustersByType;
     }>(platformCveMetadataQuery, {
-        variables: {
-            cve,
-            query,
-            pagination: getPaginationParams({ page, perPage }),
-        },
+        variables: { cveID: cveId },
     });
 }
