@@ -145,6 +145,7 @@ function CVEsTable({
                 renderer={({ data }) =>
                     data.map((platformCve, rowIndex) => {
                         const {
+                            id,
                             cve,
                             isFixable,
                             cveType,
@@ -158,7 +159,7 @@ function CVEsTable({
                         const affectedClusterCount = generic + kubernetes + openshift + openshift4;
 
                         return (
-                            <Tbody key={cve} isExpanded={isExpanded}>
+                            <Tbody key={id} isExpanded={isExpanded}>
                                 <Tr>
                                     <Td
                                         expand={{
@@ -175,9 +176,7 @@ function CVEsTable({
                                         />
                                     )}
                                     <Td dataLabel="CVE" modifier="nowrap">
-                                        <Link to={getPlatformEntityPagePath('CVE', cve)}>
-                                            {cve}
-                                        </Link>
+                                        <Link to={getPlatformEntityPagePath('CVE', id)}>{cve}</Link>
                                     </Td>
                                     <Td dataLabel="CVE status">
                                         <VulnerabilityFixableIconText isFixable={isFixable} />
