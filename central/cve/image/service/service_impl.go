@@ -7,7 +7,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/image/datastore"
-	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
+	vulnReqMgr "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
