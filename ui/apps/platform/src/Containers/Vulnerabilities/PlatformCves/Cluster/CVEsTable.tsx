@@ -20,19 +20,7 @@ import {
 } from '../../utils/sortFields';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import { getPlatformEntityPagePath } from '../../utils/searchUtils';
-
-function displayCveType(cveType: string): string {
-    switch (cveType) {
-        case 'K8S_CVE':
-            return 'Kubernetes';
-        case 'ISTIO_CVE':
-            return 'Istio';
-        case 'OPENSHIFT_CVE':
-            return 'Openshift';
-        default:
-            return cveType;
-    }
-}
+import { displayCveType } from '../utils/stringUtils';
 
 export const sortFields = [
     CVE_SORT_FIELD,

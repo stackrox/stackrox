@@ -63,6 +63,7 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
             variant="small"
             actions={[
                 <Button
+                    key="perform-modal-action"
                     className="pf-v5-u-display-flex pf-v5-u-align-items-center"
                     isLoading={isSubmitting}
                     isDisabled={isSubmitting || isSuccess}
@@ -71,7 +72,12 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
                 >
                     <span>{action === 'SNOOZE' ? 'Snooze CVEs' : 'Unsnooze CVEs'}</span>
                 </Button>,
-                <Button isDisabled={isSubmitting} variant="link" onClick={onClose}>
+                <Button
+                    key="close-modal"
+                    isDisabled={isSubmitting}
+                    variant="link"
+                    onClick={onClose}
+                >
                     {isSuccess ? 'Close' : 'Cancel'}
                 </Button>,
             ]}
@@ -100,6 +106,7 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
                                 {durationOptions.map((option) => (
                                     <Radio
                                         id={`snooze-duration-${option}`}
+                                        key={option}
                                         isDisabled={isSubmitting || isSuccess}
                                         isChecked={values.duration === durations[option]}
                                         name={option}
