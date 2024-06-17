@@ -78,6 +78,16 @@ type countByNodeCVESeverity struct {
 	LowSeverityCount       int `db:"low_severity_count"`
 }
 
+// NewCountByNodeCVESeverity creates and returns a node resource count by CVE severity.
+func NewCountByNodeCVESeverity(critical, important, moderate, low int) common.ResourceCountByCVESeverity {
+	return &countByNodeCVESeverity{
+		CriticalSeverityCount:  critical,
+		ImportantSeverityCount: important,
+		ModerateSeverityCount:  moderate,
+		LowSeverityCount:       low,
+	}
+}
+
 func (c *countByNodeCVESeverity) GetCriticalSeverityCount() common.ResourceCountByFixability {
 	return &resourceCountByFixability{
 		total: c.CriticalSeverityCount,

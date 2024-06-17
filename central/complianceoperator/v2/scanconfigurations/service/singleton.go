@@ -1,7 +1,10 @@
 package service
 
 import (
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	benchmarkDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
+	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	reportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	scanSettingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanSettingBindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
@@ -28,7 +31,7 @@ func Singleton() Service {
 
 	serviceInstanceInit.Do(func() {
 		serviceInstance = New(scanSettingsDS.Singleton(), scanSettingBindingsDS.Singleton(), suiteDS.Singleton(),
-			compliancemanager.Singleton(), reportManager.Singleton(), notifierDS.Singleton())
+			compliancemanager.Singleton(), reportManager.Singleton(), notifierDS.Singleton(), profileDS.Singleton(), benchmarkDS.Singleton(), clusterDatastore.Singleton())
 	})
 	return serviceInstance
 }

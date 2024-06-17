@@ -268,37 +268,3 @@ func (s *ComplianceProfilesServiceTestSuite) TestListProfileSummaries() {
 		})
 	}
 }
-
-func (s *ComplianceProfilesServiceTestSuite) TestCountComplianceProfiles() {
-	allAccessContext := sac.WithAllAccess(context.Background())
-
-	testCases := []struct {
-		desc      string
-		query     *apiV2.RawQuery
-		expectedQ *apiV1.Query
-	}{
-		{
-			desc:      "Empty query",
-			query:     &apiV2.RawQuery{Query: ""},
-			expectedQ: search.NewQueryBuilder().ProtoQuery(),
-		},
-		{
-			desc:      "Query with search field",
-			query:     &apiV2.RawQuery{Query: "Compliance Profile Name:ocp-4"},
-			expectedQ: search.NewQueryBuilder().AddStrings(search.ComplianceOperatorProfileName, "ocp-4").ProtoQuery(),
-		},
-	}
-
-	for _, tc := range testCases {
-		s.T().Run(tc.desc, func(t *testing.T) {
-
-			s.profileDatastore.EXPECT().CountProfiles(allAccessContext, tc.expectedQ).
-				Return(1, nil).Times(1)
-
-			profiles, err := s.service.GetComplianceProfileCount(allAccessContext, tc.query)
-			s.Require().NoError(err)
-			s.Require().Equal(int32(1), profiles.Count)
-		})
-	}
-
-}

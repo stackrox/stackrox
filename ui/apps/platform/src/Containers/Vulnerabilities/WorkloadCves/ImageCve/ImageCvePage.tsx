@@ -58,7 +58,6 @@ import {
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
-import { getDefaultWorkloadSortOption } from '../../utils/sortUtils';
 import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
@@ -148,8 +147,8 @@ export const imageCveAffectedDeploymentsQuery = gql`
     }
 `;
 
-const imageSortFields = ['Image', 'Operating System'];
-const imageDefaultSort = { field: 'Image', direction: 'desc' } as const;
+const imageSortFields = ['Image', 'Severity', 'Operating System'];
+const imageDefaultSort = { field: 'Severity', direction: 'desc' } as const;
 
 const deploymentSortFields = ['Deployment', 'Cluster', 'Namespace'];
 const deploymentDefaultSort = { field: 'Deployment', direction: 'desc' } as const;
@@ -218,7 +217,7 @@ function ImageCvePage() {
     const { sortOption, setSortOption, getSortParams } = useURLSort({
         sortFields: getSortFields(entityTab),
         defaultSortOption: getDefaultSortOption(entityTab),
-        onSort: () => setPage(1),
+        onSort: () => setPage(1, 'replace'),
     });
 
     const metadataRequest = useQuery<{ imageCVE: CveMetadata | null }, { cve: string }>(
@@ -312,8 +311,10 @@ function ImageCvePage() {
     }
 
     function onEntityTypeChange(entityTab: WorkloadEntityTab) {
-        setSortOption(getDefaultWorkloadSortOption(entityTab));
         setPage(1);
+        if (entityTab !== 'CVE') {
+            setSortOption(getDefaultSortOption(entityTab), 'replace');
+        }
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
             properties: {

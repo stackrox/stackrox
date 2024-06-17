@@ -96,17 +96,6 @@ func TestComplianceV2Integration(t *testing.T) {
 	assert.Equal(t, resp.Integrations[0].Namespace, "openshift-compliance", "failed to find integration for \"openshift-compliance\" namespace")
 }
 
-func TestComplianceV2ProfileCount(t *testing.T) {
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	client := v2.NewComplianceProfileServiceClient(conn)
-
-	profileCount, err := client.GetComplianceProfileCount(context.TODO(), &v2.RawQuery{Query: ""})
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Greater(t, profileCount.Count, int32(0), "unable to verify any compliance profiles were ingested")
-}
-
 func TestComplianceV2ProfileGet(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	client := v2.NewComplianceProfileServiceClient(conn)
@@ -196,13 +185,11 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 	scanConfigs, err := service.ListComplianceScanConfigurations(ctx, query)
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
+	assert.GreaterOrEqual(t, scanConfigs.TotalCount, int32(1))
 
 	configs := scanConfigs.GetConfigurations()
 	scanconfigID := getscanConfigID(testName, configs)
 	defer deleteScanConfig(ctx, scanconfigID, service)
-	count, err := service.GetComplianceScanConfigurationsCount(ctx, query)
-	assert.NoError(t, err)
-	assert.GreaterOrEqual(t, count.GetCount(), int32(1))
 
 	serviceResult := v2.NewComplianceResultsServiceClient(conn)
 	query = &v2.RawQuery{Query: ""}

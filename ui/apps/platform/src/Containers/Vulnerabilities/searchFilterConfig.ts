@@ -7,4 +7,5 @@ export {
     deploymentSearchFilterConfig,
     namespaceSearchFilterConfig,
     clusterSearchFilterConfig,
+    platformCVESearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';

@@ -9,36 +9,27 @@ import (
 	"unicode"
 	"unsafe"
 
+	types "github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // BasicTypeInitializer prescribes how to initialize a struct field with a given type.
 type BasicTypeInitializer interface {
-	Value(ty reflect.Type, fieldPath []reflect.StructField) interface{}
+	Value(kind reflect.Kind, fieldPath []reflect.StructField) interface{}
 }
 
 // UniqueTypeInitializer prescribes how to initialize a struct field with a given type.
 type UniqueTypeInitializer interface {
-	ValueUnique(ty reflect.Type, fieldPath []reflect.StructField) interface{}
-}
-
-type zeroInitializer struct{}
-
-func (zeroInitializer) Value(ty reflect.Type, _ []reflect.StructField) interface{} {
-	return reflect.Zero(ty).Interface()
-}
-
-// ZeroInitializer returns a BasicTypeInitializer that initializes all fields of basic types with their zero value
-func ZeroInitializer() BasicTypeInitializer {
-	return zeroInitializer{}
+	ValueUnique(kind reflect.Kind, fieldPath []reflect.StructField) interface{}
 }
 
 type simpleInitializer struct{}
 
-func (simpleInitializer) Value(ty reflect.Type, _ []reflect.StructField) interface{} {
-	switch ty.Kind() {
+func (simpleInitializer) Value(kind reflect.Kind, _ []reflect.StructField) interface{} {
+	switch kind {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return 1
+		return int32(1)
 	case reflect.Float32, reflect.Float64:
 		return 1.0
 	case reflect.Complex64, reflect.Complex128:
@@ -53,11 +44,11 @@ func (simpleInitializer) Value(ty reflect.Type, _ []reflect.StructField) interfa
 
 type uniqueInitializer struct{}
 
-func (uniqueInitializer) Value(ty reflect.Type, _ []reflect.StructField) interface{} {
+func (uniqueInitializer) Value(kind reflect.Kind, _ []reflect.StructField) interface{} {
 	// seed rand
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-	switch ty.Kind() {
+	switch kind {
 	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return r.Int31()
 	case reflect.Int8, reflect.Uint8:
@@ -128,8 +119,12 @@ func fullInitRecursive(val reflect.Value, init BasicTypeInitializer, fieldFilter
 
 	case reflect.Ptr:
 		if _, ok := seenTypes[val.Type().Elem()]; !ok {
-			val.Set(reflect.New(val.Type().Elem()))
-			fullInitRecursive(val.Elem(), init, fieldFilter, fieldPath, seenTypes)
+			if val.Type().String() == "*types.Timestamp" {
+				initTime(val, init)
+			} else {
+				val.Set(reflect.New(val.Type().Elem()))
+				fullInitRecursive(val.Elem(), init, fieldFilter, fieldPath, seenTypes)
+			}
 		}
 
 	case reflect.Slice:
@@ -158,8 +153,18 @@ func fullInitRecursive(val reflect.Value, init BasicTypeInitializer, fieldFilter
 		fullInitStruct(val, init, fieldFilter, fieldPath, seenTypes)
 
 	default:
-		val.Set(reflect.ValueOf(init.Value(val.Type(), fieldPath)).Convert(val.Type()))
+		val.Set(reflect.ValueOf(init.Value(val.Type().Kind(), fieldPath)).Convert(val.Type()))
 	}
+}
+
+func initTime(val reflect.Value, init BasicTypeInitializer) {
+	t := time.Unix(1, 0)
+	duration := init.Value(reflect.Int, nil).(int32)
+	t = t.Add(time.Duration(duration))
+	now, err := types.ConvertTimeToTimestampOrError(t)
+	utils.Must(err)
+	v := reflect.ValueOf(now)
+	val.Set(v)
 }
 
 func fullInitStruct(structVal reflect.Value, init BasicTypeInitializer, fieldFilter FieldFilter, fieldPath []reflect.StructField, seenTypes map[reflect.Type]struct{}) {

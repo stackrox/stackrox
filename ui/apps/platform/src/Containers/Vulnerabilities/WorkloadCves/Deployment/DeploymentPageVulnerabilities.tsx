@@ -289,7 +289,6 @@ function DeploymentPageVulnerabilities({
                             </SplitItem>
                             <SplitItem>
                                 <Pagination
-                                    isCompact
                                     itemCount={totalVulnerabilityCount}
                                     page={page}
                                     perPage={perPage}

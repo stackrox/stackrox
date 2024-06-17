@@ -19,14 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ComplianceScanConfigurationService_ListComplianceScanConfigurations_FullMethodName     = "/v2.ComplianceScanConfigurationService/ListComplianceScanConfigurations"
-	ComplianceScanConfigurationService_GetComplianceScanConfiguration_FullMethodName       = "/v2.ComplianceScanConfigurationService/GetComplianceScanConfiguration"
-	ComplianceScanConfigurationService_CreateComplianceScanConfiguration_FullMethodName    = "/v2.ComplianceScanConfigurationService/CreateComplianceScanConfiguration"
-	ComplianceScanConfigurationService_UpdateComplianceScanConfiguration_FullMethodName    = "/v2.ComplianceScanConfigurationService/UpdateComplianceScanConfiguration"
-	ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_FullMethodName    = "/v2.ComplianceScanConfigurationService/DeleteComplianceScanConfiguration"
-	ComplianceScanConfigurationService_RunComplianceScanConfiguration_FullMethodName       = "/v2.ComplianceScanConfigurationService/RunComplianceScanConfiguration"
-	ComplianceScanConfigurationService_GetComplianceScanConfigurationsCount_FullMethodName = "/v2.ComplianceScanConfigurationService/GetComplianceScanConfigurationsCount"
-	ComplianceScanConfigurationService_RunReport_FullMethodName                            = "/v2.ComplianceScanConfigurationService/RunReport"
+	ComplianceScanConfigurationService_ListComplianceScanConfigurations_FullMethodName        = "/v2.ComplianceScanConfigurationService/ListComplianceScanConfigurations"
+	ComplianceScanConfigurationService_GetComplianceScanConfiguration_FullMethodName          = "/v2.ComplianceScanConfigurationService/GetComplianceScanConfiguration"
+	ComplianceScanConfigurationService_CreateComplianceScanConfiguration_FullMethodName       = "/v2.ComplianceScanConfigurationService/CreateComplianceScanConfiguration"
+	ComplianceScanConfigurationService_UpdateComplianceScanConfiguration_FullMethodName       = "/v2.ComplianceScanConfigurationService/UpdateComplianceScanConfiguration"
+	ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_FullMethodName       = "/v2.ComplianceScanConfigurationService/DeleteComplianceScanConfiguration"
+	ComplianceScanConfigurationService_RunComplianceScanConfiguration_FullMethodName          = "/v2.ComplianceScanConfigurationService/RunComplianceScanConfiguration"
+	ComplianceScanConfigurationService_RunReport_FullMethodName                               = "/v2.ComplianceScanConfigurationService/RunReport"
+	ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_FullMethodName        = "/v2.ComplianceScanConfigurationService/ListComplianceScanConfigProfiles"
+	ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_FullMethodName = "/v2.ComplianceScanConfigurationService/ListComplianceScanConfigClusterProfiles"
 )
 
 // ComplianceScanConfigurationServiceClient is the client API for ComplianceScanConfigurationService service.
@@ -47,9 +48,12 @@ type ComplianceScanConfigurationServiceClient interface {
 	// configuration, which will invoke scans to run for the applicable
 	// profiles across the configured clusters.
 	RunComplianceScanConfiguration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
-	GetComplianceScanConfigurationsCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ComplianceScanConfigurationsCount, error)
 	// RunReport runs an on demand compliance report for the scan configuration
 	RunReport(ctx context.Context, in *ComplianceRunReportRequest, opts ...grpc.CallOption) (*ComplianceRunReportResponse, error)
+	// ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
+	ListComplianceScanConfigProfiles(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanConfigsProfileResponse, error)
+	// GetComplianceScanConfiguration retrieves the specified compliance scan configurations
+	ListComplianceScanConfigClusterProfiles(ctx context.Context, in *ComplianceConfigClusterProfileRequest, opts ...grpc.CallOption) (*ListComplianceScanConfigsClusterProfileResponse, error)
 }
 
 type complianceScanConfigurationServiceClient struct {
@@ -114,18 +118,27 @@ func (c *complianceScanConfigurationServiceClient) RunComplianceScanConfiguratio
 	return out, nil
 }
 
-func (c *complianceScanConfigurationServiceClient) GetComplianceScanConfigurationsCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ComplianceScanConfigurationsCount, error) {
-	out := new(ComplianceScanConfigurationsCount)
-	err := c.cc.Invoke(ctx, ComplianceScanConfigurationService_GetComplianceScanConfigurationsCount_FullMethodName, in, out, opts...)
+func (c *complianceScanConfigurationServiceClient) RunReport(ctx context.Context, in *ComplianceRunReportRequest, opts ...grpc.CallOption) (*ComplianceRunReportResponse, error) {
+	out := new(ComplianceRunReportResponse)
+	err := c.cc.Invoke(ctx, ComplianceScanConfigurationService_RunReport_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *complianceScanConfigurationServiceClient) RunReport(ctx context.Context, in *ComplianceRunReportRequest, opts ...grpc.CallOption) (*ComplianceRunReportResponse, error) {
-	out := new(ComplianceRunReportResponse)
-	err := c.cc.Invoke(ctx, ComplianceScanConfigurationService_RunReport_FullMethodName, in, out, opts...)
+func (c *complianceScanConfigurationServiceClient) ListComplianceScanConfigProfiles(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanConfigsProfileResponse, error) {
+	out := new(ListComplianceScanConfigsProfileResponse)
+	err := c.cc.Invoke(ctx, ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *complianceScanConfigurationServiceClient) ListComplianceScanConfigClusterProfiles(ctx context.Context, in *ComplianceConfigClusterProfileRequest, opts ...grpc.CallOption) (*ListComplianceScanConfigsClusterProfileResponse, error) {
+	out := new(ListComplianceScanConfigsClusterProfileResponse)
+	err := c.cc.Invoke(ctx, ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -150,9 +163,12 @@ type ComplianceScanConfigurationServiceServer interface {
 	// configuration, which will invoke scans to run for the applicable
 	// profiles across the configured clusters.
 	RunComplianceScanConfiguration(context.Context, *ResourceByID) (*Empty, error)
-	GetComplianceScanConfigurationsCount(context.Context, *RawQuery) (*ComplianceScanConfigurationsCount, error)
 	// RunReport runs an on demand compliance report for the scan configuration
 	RunReport(context.Context, *ComplianceRunReportRequest) (*ComplianceRunReportResponse, error)
+	// ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
+	ListComplianceScanConfigProfiles(context.Context, *RawQuery) (*ListComplianceScanConfigsProfileResponse, error)
+	// GetComplianceScanConfiguration retrieves the specified compliance scan configurations
+	ListComplianceScanConfigClusterProfiles(context.Context, *ComplianceConfigClusterProfileRequest) (*ListComplianceScanConfigsClusterProfileResponse, error)
 }
 
 // UnimplementedComplianceScanConfigurationServiceServer should be embedded to have forward compatible implementations.
@@ -177,11 +193,14 @@ func (UnimplementedComplianceScanConfigurationServiceServer) DeleteComplianceSca
 func (UnimplementedComplianceScanConfigurationServiceServer) RunComplianceScanConfiguration(context.Context, *ResourceByID) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunComplianceScanConfiguration not implemented")
 }
-func (UnimplementedComplianceScanConfigurationServiceServer) GetComplianceScanConfigurationsCount(context.Context, *RawQuery) (*ComplianceScanConfigurationsCount, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceScanConfigurationsCount not implemented")
-}
 func (UnimplementedComplianceScanConfigurationServiceServer) RunReport(context.Context, *ComplianceRunReportRequest) (*ComplianceRunReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunReport not implemented")
+}
+func (UnimplementedComplianceScanConfigurationServiceServer) ListComplianceScanConfigProfiles(context.Context, *RawQuery) (*ListComplianceScanConfigsProfileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListComplianceScanConfigProfiles not implemented")
+}
+func (UnimplementedComplianceScanConfigurationServiceServer) ListComplianceScanConfigClusterProfiles(context.Context, *ComplianceConfigClusterProfileRequest) (*ListComplianceScanConfigsClusterProfileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListComplianceScanConfigClusterProfiles not implemented")
 }
 
 // UnsafeComplianceScanConfigurationServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -303,24 +322,6 @@ func _ComplianceScanConfigurationService_RunComplianceScanConfiguration_Handler(
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceScanConfigurationService_GetComplianceScanConfigurationsCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RawQuery)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ComplianceScanConfigurationServiceServer).GetComplianceScanConfigurationsCount(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ComplianceScanConfigurationService_GetComplianceScanConfigurationsCount_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceScanConfigurationServiceServer).GetComplianceScanConfigurationsCount(ctx, req.(*RawQuery))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ComplianceScanConfigurationService_RunReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComplianceRunReportRequest)
 	if err := dec(in); err != nil {
@@ -335,6 +336,42 @@ func _ComplianceScanConfigurationService_RunReport_Handler(srv interface{}, ctx 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceScanConfigurationServiceServer).RunReport(ctx, req.(*ComplianceRunReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RawQuery)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComplianceScanConfigurationServiceServer).ListComplianceScanConfigProfiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComplianceScanConfigurationServiceServer).ListComplianceScanConfigProfiles(ctx, req.(*RawQuery))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ComplianceConfigClusterProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComplianceScanConfigurationServiceServer).ListComplianceScanConfigClusterProfiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComplianceScanConfigurationServiceServer).ListComplianceScanConfigClusterProfiles(ctx, req.(*ComplianceConfigClusterProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -371,12 +408,16 @@ var ComplianceScanConfigurationService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ComplianceScanConfigurationService_RunComplianceScanConfiguration_Handler,
 		},
 		{
-			MethodName: "GetComplianceScanConfigurationsCount",
-			Handler:    _ComplianceScanConfigurationService_GetComplianceScanConfigurationsCount_Handler,
-		},
-		{
 			MethodName: "RunReport",
 			Handler:    _ComplianceScanConfigurationService_RunReport_Handler,
+		},
+		{
+			MethodName: "ListComplianceScanConfigProfiles",
+			Handler:    _ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_Handler,
+		},
+		{
+			MethodName: "ListComplianceScanConfigClusterProfiles",
+			Handler:    _ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

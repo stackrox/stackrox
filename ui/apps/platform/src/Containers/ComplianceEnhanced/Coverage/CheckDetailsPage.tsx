@@ -28,7 +28,7 @@ import {
 } from 'services/ComplianceResultsService';
 import { getTableUIState } from 'utils/getTableUIState';
 
-import CheckDetailsTable from './CheckDetailsTable';
+import CheckDetailsTable, { tabContentIdForResults } from './CheckDetailsTable';
 import CheckDetailsInfo from './components/CheckDetailsInfo';
 import DetailsPageHeader, { PageHeaderLabel } from './components/DetailsPageHeader';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
@@ -38,6 +38,8 @@ import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 
 export const DETAILS_TAB = 'Details';
 const RESULTS_TAB = 'Results';
+
+const tabContentIdForDetails = 'check-details-Details-tab-section';
 
 export const TAB_NAV_QUERY = 'detailsTab';
 const TAB_NAV_VALUES = [RESULTS_TAB, DETAILS_TAB] as const;
@@ -190,10 +192,17 @@ function CheckDetails() {
                 }}
                 component={TabsComponent.nav}
                 className="pf-v5-u-pl-md pf-v5-u-background-color-100 pf-v5-u-flex-shrink-0"
-                role="region"
             >
-                <Tab eventKey={RESULTS_TAB} title={RESULTS_TAB} />
-                <Tab eventKey={DETAILS_TAB} title={DETAILS_TAB} />
+                <Tab
+                    eventKey={RESULTS_TAB}
+                    title={RESULTS_TAB}
+                    tabContentId={tabContentIdForResults}
+                />
+                <Tab
+                    eventKey={DETAILS_TAB}
+                    title={DETAILS_TAB}
+                    tabContentId={tabContentIdForDetails}
+                />
             </Tabs>
             <PageSection>
                 {activeTabKey === RESULTS_TAB && (
@@ -211,7 +220,7 @@ function CheckDetails() {
                     />
                 )}
                 {activeTabKey === DETAILS_TAB && (
-                    <PageSection variant="light" component="div">
+                    <PageSection variant="light" component="div" id={tabContentIdForDetails}>
                         <CheckDetailsInfo
                             checkDetails={checkDetailsResponse}
                             isLoading={isLoadingCheckDetails}
