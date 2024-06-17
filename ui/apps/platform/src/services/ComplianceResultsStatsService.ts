@@ -1,5 +1,3 @@
-import { generatePath } from 'react-router-dom';
-
 import axios from 'services/instance';
 import { SearchQueryOptions } from 'types/search';
 
@@ -77,11 +75,9 @@ export function getComplianceProfileCheckStats(
     profileName: string,
     checkName: string
 ): Promise<ComplianceCheckResultStatusCount> {
-    const url = generatePath(
-        `${complianceV2Url}/scan/stats/profiles/:profileName/checks/:checkName`,
-        { profileName, checkName }
-    );
     return axios
-        .get<ListComplianceProfileResults>(url)
+        .get<ListComplianceProfileResults>(
+            `${complianceResultsStatsBaseUrl}/profiles/${profileName}/checks/${checkName}`
+        )
         .then((response) => response.data?.profileResults?.[0]);
 }
