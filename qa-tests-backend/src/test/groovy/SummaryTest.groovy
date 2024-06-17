@@ -48,8 +48,8 @@ class SummaryTest extends BaseSpecification {
             // Openshift has: 'kube-rbac-proxy-crio-piotr-06-11-cigna-gtnb7-master-2.c.acs-team-temp-dev.internal' (for each node)
 
             if (stackroxSummaryCounts.numDeployments != orchestratorResourceNames.size()) {
-                log.info "The summary count for deployments does not equal the orchestrator count."
-                log.info "Stackrox count: ${stackroxSummaryCounts.numDeployments}, " +
+                log.info "The summary count for deployments in ACS does not equal the orchestrator count."
+                log.info "ACS count: ${stackroxSummaryCounts.numDeployments}, " +
                         "orchestrator count ${orchestratorResourceNames.size()}"
                 log.info "This diff may help with debug, however deployment names may be different between APIs"
                 log.info "In this diff, 'removed' means 'missing in orchestrator but given in ACS', whereas 'added' the other way round"
@@ -60,15 +60,15 @@ class SummaryTest extends BaseSpecification {
                 log.info javers.compare(stackroxDeploymentNames.sort(), orchestratorResourceNames.sort()).prettyPrint()
 
                 log.info "Use the full set of deployments to compare manually if diff isn't helpful"
-                log.info "Stackrox deployments: " + stackroxDeploymentNames.sort().join(",")
+                log.info "ACS deployments: " + stackroxDeploymentNames.sort().join(",")
                 log.info "Orchestrator deployments: " + orchestratorResourceNames.sort().join(",")
             }
 
             assert Math.abs(stackroxSummaryCounts.numDeployments - orchestratorResourceNames.size()) <= 2
             List<String> stackroxSecretNames = Services.getSecrets()*.name
-            log.debug "Stackrox secrets: " + stackroxSecretNames.join(",")
-            assert Math.abs(stackroxSummaryCounts.numSecrets - orchestrator.getSecretCount()) <= 2
-            assert Math.abs(stackroxSummaryCounts.numNodes - orchestrator.getNodeCount()) <= 2
+            log.info "ACS secrets: " + stackroxSecretNames.join(",")
+            assert Math.abs(stackroxSummaryCounts.numSecrets - orchestrator.getSecretCount()) <= 0
+            assert Math.abs(stackroxSummaryCounts.numNodes - orchestrator.getNodeCount()) <= 0
         }
     }
 
