@@ -94,7 +94,7 @@ func (s *getAlertTests) TestGetAlertWhenTheDataAccessLayerFails() {
 	result, err := s.service.GetAlert(fakeContext, s.fakeResourceByIDRequest)
 
 	s.EqualError(err, "fake error")
-	s.Equal((*storage.Alert)(nil), result)
+	s.Nil(result)
 }
 
 func (s *getAlertTests) TestGetAlertWhenAlertIsMissing() {
@@ -105,7 +105,7 @@ func (s *getAlertTests) TestGetAlertWhenAlertIsMissing() {
 	result, err := s.service.GetAlert(fakeContext, s.fakeResourceByIDRequest)
 
 	s.EqualError(err, errors.Wrapf(errox.NotFound, "alert with id '%s' does not exist", alerttest.FakeAlertID).Error())
-	s.Equal((*storage.Alert)(nil), result)
+	s.Nil(result)
 }
 
 type listAlertsTests struct {
@@ -196,7 +196,7 @@ func (s *listAlertsTests) TestListAlertsWhenTheDataLayerFails() {
 	})
 
 	s.EqualError(err, "fake error")
-	s.Equal((*v1.ListAlertsResponse)(nil), result)
+	s.Nil(result)
 }
 
 type getAlertsGroupsTests struct {
@@ -371,7 +371,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
 	})
 
 	s.EqualError(err, "fake error")
-	s.Equal((*v1.GetAlertsGroupResponse)(nil), result)
+	s.Nil(result)
 }
 
 type getAlertsCountsTests struct {
@@ -741,7 +741,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 	}, GroupBy: unknownGroupBy})
 
 	s.EqualError(err, errors.Wrapf(errox.InvalidArgs, "unknown group by: %v", unknownGroupBy).Error())
-	s.Equal((*v1.GetAlertsCountsResponse)(nil), result)
+	s.Nil(result)
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheDataAccessLayerFails() {
@@ -753,7 +753,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheDataAccessLayerFails() 
 	}})
 
 	s.EqualError(err, "fake error")
-	s.Equal((*v1.GetAlertsCountsResponse)(nil), result)
+	s.Nil(result)
 }
 
 type getAlertTimeseriesTests struct {
@@ -884,7 +884,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFa
 	})
 
 	s.EqualError(err, "fake error")
-	s.Equal((*v1.GetAlertTimeseriesResponse)(nil), result)
+	s.Nil(result)
 }
 
 type patchAlertTests struct {
