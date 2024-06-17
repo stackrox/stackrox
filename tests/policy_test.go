@@ -184,7 +184,7 @@ func compareErrorsToExpected(t *testing.T, expectedErrors []*v1.ExportPolicyErro
 	// actual errors == expected errors ignoring order
 	require.Len(t, exportErrors.GetErrors(), len(expectedErrors))
 	for _, expected := range expectedErrors {
-		require.Contains(t, exportErrors.GetErrors(), expected)
+		protoassert.SliceContains(t, exportErrors.GetErrors(), expected)
 	}
 }
 

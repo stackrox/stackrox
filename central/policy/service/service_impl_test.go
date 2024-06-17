@@ -89,7 +89,7 @@ func (s *PolicyServiceTestSuite) compareErrorsToExpected(expectedErrors []*v1.Ex
 	// actual errors == expected errors ignoring order
 	s.Len(exportErrors.GetErrors(), len(expectedErrors))
 	for _, expected := range expectedErrors {
-		s.Contains(exportErrors.GetErrors(), expected)
+		protoassert.SliceContains(s.T(), exportErrors.GetErrors(), expected)
 	}
 }
 

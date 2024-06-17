@@ -239,6 +239,6 @@ func (s *RunTestSuite) TestMergesMultipleClusterResults() {
 	testResult := clusterResults[testName]
 	s.Equal(storage.ComplianceState_COMPLIANCE_STATE_SUCCESS, testResult.GetOverallState())
 	s.Len(testResult.GetEvidence(), 2)
-	s.Contains(testResult.GetEvidence(), evidenceOne)
-	s.Contains(testResult.GetEvidence(), evidenceTwo)
+	protoassert.SliceContains(s.T(), testResult.GetEvidence(), evidenceOne)
+	protoassert.SliceContains(s.T(), testResult.GetEvidence(), evidenceTwo)
 }
