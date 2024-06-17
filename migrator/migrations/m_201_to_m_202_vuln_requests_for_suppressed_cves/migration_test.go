@@ -150,8 +150,13 @@ func (s *migrationTestSuite) TestMigration() {
 	assert.Nil(s.T(), objs)
 
 	// Verify storage.ImageCVEEdge is updated.
-	edgeObjs, err := imageCVEEdgeStore.New(s.db).GetByQuery(s.ctx,
-		search.NewQueryBuilder().AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery())
+	var edgeObjs []*storage.ImageCVEEdge
+	err = imageCVEEdgeStore.New(s.db).Walk(s.ctx, func(obj *storage.ImageCVEEdge) error {
+		if obj.State == storage.VulnerabilityState_DEFERRED {
+			edgeObjs = append(edgeObjs, obj)
+		}
+		return nil
+	})
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), edgeObjs, 3)
 	for _, obj := range edgeObjs {

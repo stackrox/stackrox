@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	timestamp "github.com/gogo/protobuf/types"
+	gogoTimestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/m_201_to_m_202_vuln_requests_for_suppressed_cves/schema"
@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm/clause"
@@ -46,7 +47,7 @@ func migrate(database *types.Databases) error {
 	pgutils.CreateTableFromModel(ctx, database.GormDB, schema.CreateTableImageCveEdgesStmt)
 	pgutils.CreateTableFromModel(ctx, database.GormDB, schema.CreateTableVulnerabilityRequestsStmt)
 
-	now := timestamp.TimestampNow()
+	now := protocompat.TimestampNow()
 	snoozedCVEMap, err := collectSnoozedImageCVEs(ctx, database)
 	if err != nil || len(snoozedCVEMap) == 0 {
 		return err
@@ -60,7 +61,7 @@ func migrate(database *types.Databases) error {
 	return updateImageCVEEdges(ctx, database, snoozedCVEMap)
 }
 
-func collectSnoozedImageCVEs(ctx context.Context, database *types.Databases) (map[string]*timestamp.Timestamp, error) {
+func collectSnoozedImageCVEs(ctx context.Context, database *types.Databases) (map[string]*gogoTimestamp.Timestamp, error) {
 	query := database.GormDB.WithContext(ctx).Table(schema.ImageCvesTableName).
 		Select("serialized").Where("snoozed = ?", "true")
 	rows, err := query.Rows()
@@ -70,7 +71,7 @@ func collectSnoozedImageCVEs(ctx context.Context, database *types.Databases) (ma
 	defer func() { _ = rows.Close() }()
 
 	// Map of CVE to expiry.
-	cveMap := make(map[string]*timestamp.Timestamp)
+	cveMap := make(map[string]*gogoTimestamp.Timestamp)
 	var count int
 	for rows.Next() {
 		var obj schema.ImageCves
@@ -97,14 +98,14 @@ func collectSnoozedImageCVEs(ctx context.Context, database *types.Databases) (ma
 	return cveMap, nil
 }
 
-func createVulnRequests(ctx context.Context, database *types.Databases, now *timestamp.Timestamp, cveMap map[string]*timestamp.Timestamp) error {
+func createVulnRequests(ctx context.Context, database *types.Databases, now *gogoTimestamp.Timestamp, cveMap map[string]*gogoTimestamp.Timestamp) error {
 	store := vulnReqStore.New(database.PostgresDB)
 
 	var vulnReqs []*storage.VulnerabilityRequest
 	var count int
 	for cve, expiry := range cveMap {
 		// It the snooze expiry is past due, no need to create v2 exceptions since those will be reverted on Central startup anyway.
-		if expiry != nil && now.Compare(expiry) >= 0 {
+		if expiry != nil && protocompat.CompareTimestamps(now, expiry) >= 0 {
 			continue
 		}
 
@@ -141,7 +142,7 @@ func createVulnRequests(ctx context.Context, database *types.Databases, now *tim
 	return nil
 }
 
-func updateImageCVEEdges(ctx context.Context, database *types.Databases, cveMap map[string]*timestamp.Timestamp) error {
+func updateImageCVEEdges(ctx context.Context, database *types.Databases, cveMap map[string]*gogoTimestamp.Timestamp) error {
 	cves := make([]string, 0, len(cveMap))
 	for cve := range cveMap {
 		cves = append(cves, cve)
@@ -218,7 +219,7 @@ func checkMatchingRequestsExist(ctx context.Context, database *types.Databases, 
 	return count > 0, nil
 }
 
-func createVulnerabilityRequest(cve string, now, expiry *timestamp.Timestamp) *storage.VulnerabilityRequest {
+func createVulnerabilityRequest(cve string, now, expiry *gogoTimestamp.Timestamp) *storage.VulnerabilityRequest {
 	return &storage.VulnerabilityRequest{
 		Id:          exceptionID(cve),
 		Name:        exceptionName(cve),
