@@ -66,9 +66,10 @@ export type ClusterVulnerability = {
 export type CVEsTableProps = {
     tableState: TableUIState<ClusterVulnerability>;
     getSortParams: UseURLSortResult['getSortParams'];
+    onClearFilters: () => void;
 };
 
-function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
+function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps) {
     const COL_SPAN = 5;
     const expandedRowSet = useSet<string>();
 
@@ -93,6 +94,7 @@ function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
                 tableState={tableState}
                 colSpan={COL_SPAN}
                 emptyProps={{ message: 'No CVEs were detected for this cluster' }}
+                filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
                     data.map((clusterVulnerability, rowIndex) => {
                         const { cve, isFixable, vulnerabilityType, cvss, scoreVersion, summary } =
