@@ -1035,7 +1035,7 @@ func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
 	for _, rec := range recs {
 		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec))
 
-		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_v2 (id, scanconfigname, scanname, profile_profileid, clusterid, scanrefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), rec.GetScanConfigName(), rec.GetScanName(), profileCluster[rec.GetClusterId()], rec.GetClusterId(), rec.GetScanRefId())
+		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_v2 (id, scanconfigname, scanname, profile_profilerefid, clusterid, scanrefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), rec.GetScanConfigName(), rec.GetScanName(), profileCluster[rec.GetClusterId()], rec.GetClusterId(), rec.GetScanRefId())
 		s.Require().NoError(err)
 	}
 
