@@ -948,7 +948,7 @@ wait_for_api() {
 
     start_time="$(date '+%s')"
     max_seconds=${MAX_WAIT_SECONDS:-300}
-    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
         # OCP Interop tests are run on minimal instances and will take longer
         # Allow override with MAX_WAIT_SECONDS
         max_seconds=${MAX_WAIT_SECONDS:-600}
