@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/m_201_to_m_202_vuln_requests_for_suppressed_cves/schema"
 	imageCVEEdgeStore "github.com/stackrox/rox/migrator/migrations/m_201_to_m_202_vuln_requests_for_suppressed_cves/store/imagecveedges"
@@ -17,6 +16,7 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -92,7 +92,7 @@ func (s *migrationTestSuite) TestMigration() {
 		getTestImageCVEEdge("image1", "cve-2023-125"),
 	}
 
-	now := timestamp.TimestampNow()
+	now := protocompat.TimestampNow()
 	expiry := now.Clone()
 	expiry.Seconds += int64(7 * 24 * time.Hour.Seconds())
 	exceptions := []*storage.VulnerabilityRequest{
@@ -206,7 +206,7 @@ func getTestImageCVE(cve string, snoozed, expired bool) *storage.ImageCVE {
 			Cve: cve,
 		},
 		Snoozed: snoozed,
-		SnoozeExpiry: func() *timestamp.Timestamp {
+		SnoozeExpiry: func() *protocompat.Timestamp {
 			now := time.Now()
 			if expired {
 				now = now.Add(-(7 * 24 * time.Hour))

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	gogoTimestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/m_201_to_m_202_vuln_requests_for_suppressed_cves/schema"
@@ -61,7 +60,7 @@ func migrate(database *types.Databases) error {
 	return updateImageCVEEdges(ctx, database, snoozedCVEMap)
 }
 
-func collectSnoozedImageCVEs(ctx context.Context, database *types.Databases) (map[string]*gogoTimestamp.Timestamp, error) {
+func collectSnoozedImageCVEs(ctx context.Context, database *types.Databases) (map[string]*protocompat.Timestamp, error) {
 	query := database.GormDB.WithContext(ctx).Table(schema.ImageCvesTableName).
 		Select("serialized").Where("snoozed = ?", "true")
 	rows, err := query.Rows()
@@ -71,7 +70,7 @@ func collectSnoozedImageCVEs(ctx context.Context, database *types.Databases) (ma
 	defer func() { _ = rows.Close() }()
 
 	// Map of CVE to expiry.
-	cveMap := make(map[string]*gogoTimestamp.Timestamp)
+	cveMap := make(map[string]*protocompat.Timestamp)
 	var count int
 	for rows.Next() {
 		var obj schema.ImageCves
@@ -98,7 +97,7 @@ func collectSnoozedImageCVEs(ctx context.Context, database *types.Databases) (ma
 	return cveMap, nil
 }
 
-func createVulnRequests(ctx context.Context, database *types.Databases, now *gogoTimestamp.Timestamp, cveMap map[string]*gogoTimestamp.Timestamp) error {
+func createVulnRequests(ctx context.Context, database *types.Databases, now *protocompat.Timestamp, cveMap map[string]*protocompat.Timestamp) error {
 	store := vulnReqStore.New(database.PostgresDB)
 
 	var vulnReqs []*storage.VulnerabilityRequest
@@ -142,7 +141,7 @@ func createVulnRequests(ctx context.Context, database *types.Databases, now *gog
 	return nil
 }
 
-func updateImageCVEEdges(ctx context.Context, database *types.Databases, cveMap map[string]*gogoTimestamp.Timestamp) error {
+func updateImageCVEEdges(ctx context.Context, database *types.Databases, cveMap map[string]*protocompat.Timestamp) error {
 	cves := make([]string, 0, len(cveMap))
 	for cve := range cveMap {
 		cves = append(cves, cve)
@@ -219,7 +218,7 @@ func checkMatchingRequestsExist(ctx context.Context, database *types.Databases, 
 	return count > 0, nil
 }
 
-func createVulnerabilityRequest(cve string, now, expiry *gogoTimestamp.Timestamp) *storage.VulnerabilityRequest {
+func createVulnerabilityRequest(cve string, now, expiry *protocompat.Timestamp) *storage.VulnerabilityRequest {
 	return &storage.VulnerabilityRequest{
 		Id:          exceptionID(cve),
 		Name:        exceptionName(cve),
