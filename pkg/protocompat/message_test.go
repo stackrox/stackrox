@@ -27,7 +27,7 @@ func TestClone(t *testing.T) {
 	clonedNamespace, casted := cloned.(*storage.NamespaceMetadata)
 	assert.True(t, casted)
 	clonedNamespace.Name = "Namespace AA"
-	assert.NotEqual(t, m1, cloned)
+	assert.False(t, Equal(m1, cloned))
 }
 
 func TestEqual(t *testing.T) {

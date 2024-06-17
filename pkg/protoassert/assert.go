@@ -22,6 +22,11 @@ func Equal(t testing.TB, expected, actual proto.Message, msgAndArgs ...interface
 	return assert.JSONEq(t, e, a, msgAndArgs)
 }
 
+func NotEqual(t testing.TB, expected, actual proto.Message, msgAndArgs ...interface{}) bool {
+	t.Helper()
+	return assert.False(t, proto.Equal(expected, actual), msgAndArgs)
+}
+
 func SlicesEqual[T proto.Message](t testing.TB, expected, actual []T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	areEqual := assert.Len(t, actual, len(expected))
