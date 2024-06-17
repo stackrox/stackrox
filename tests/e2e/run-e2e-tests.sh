@@ -416,6 +416,9 @@ export_job_name() {
         e2e)
             job_name="nongroovy-e2e-tests-"
             ;;
+        ui)
+            job_name="ui-e2e-tests"
+            ;;
         *)
             die "flavor $FLAVOR not supported"
             ;;
