@@ -20,7 +20,7 @@ jobs:
       - name: Read workflow properties file
         id: properties
         env:
-          PROPERTIES_URL: /repos/${{ github.repository }}/contents/.github/properties?ref=${{ github.ref_name }}
+          PROPERTIES_URL: /repos/${{ github.repository }}/contents/.github/properties?ref=${{ github.event.repository.default_branch }}
         run: gh api -H "$ACCEPT_RAW" "$PROPERTIES_URL" >> "$GITHUB_OUTPUT"
 
   notify:
