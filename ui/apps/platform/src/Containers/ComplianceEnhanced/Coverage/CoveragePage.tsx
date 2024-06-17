@@ -28,7 +28,7 @@ function CoveragePage() {
 }
 
 function CoverageContent() {
-    const { profileScanStats, isLoading, error } = useContext(ComplianceProfilesContext);
+    const { scanConfigProfilesResponse, isLoading, error } = useContext(ComplianceProfilesContext);
 
     if (isLoading) {
         return (
@@ -46,7 +46,7 @@ function CoverageContent() {
         );
     }
 
-    if (profileScanStats?.scanStats.length === 0) {
+    if (scanConfigProfilesResponse.totalCount === 0) {
         // TODO: Add a message for when there are no profiles
         return <div>No profiles, create a scan schedule</div>;
     }
@@ -70,13 +70,11 @@ function CoverageContent() {
 }
 
 function ProfilesRedirectHandler() {
-    const { profileScanStats } = useContext(ComplianceProfilesContext);
-    const firstProfile = profileScanStats.scanStats[0];
+    const { scanConfigProfilesResponse } = useContext(ComplianceProfilesContext);
+    const firstProfile = scanConfigProfilesResponse.profiles[0];
 
     return (
-        <Redirect
-            to={`${complianceEnhancedCoveragePath}/profiles/${firstProfile.profileName}/checks`}
-        />
+        <Redirect to={`${complianceEnhancedCoveragePath}/profiles/${firstProfile.name}/checks`} />
     );
 }
 

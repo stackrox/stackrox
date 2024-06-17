@@ -14,24 +14,25 @@ import {
 } from '@patternfly/react-core';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import PageTitle from 'Components/PageTitle';
-import useRestQuery from 'hooks/useRestQuery';
-import useURLPagination from 'hooks/useURLPagination';
-import useURLSort from 'hooks/useURLSort';
-import { getComplianceProfilesClusterStats } from 'services/ComplianceResultsStatsService';
-import { getTableUIState } from 'utils/getTableUIState';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { getComplianceProfileClusterResults } from 'services/ComplianceResultsService';
-import useURLSearch from 'hooks/useURLSearch';
 import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
+import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import {
     OnSearchPayload,
     profileCheckSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
+import PageTitle from 'Components/PageTitle';
+import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
+import { getTableUIState } from 'utils/getTableUIState';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { getComplianceProfileClusterResults } from 'services/ComplianceResultsService';
+import { listComplianceScanConfigClusterProfiles } from 'services/ComplianceScanConfigurationService';
 
-import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import ClusterDetailsTable from './ClusterDetailsTable';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
+import ProfileDetailsHeader from './components/ProfileDetailsHeader';
 import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import {
     coverageProfileClustersPath,
@@ -52,13 +53,13 @@ function ClusterDetailsPage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const fetchProfilesStats = useCallback(
-        () => getComplianceProfilesClusterStats(clusterId),
+        () => listComplianceScanConfigClusterProfiles(clusterId),
         [clusterId]
     );
     const {
-        data: clusterProfileData,
-        loading: isLoadingClusterProfileData,
-        error: clusterProfileDataError,
+        data: scanConfigProfilesResponse,
+        loading: isLoadingScanConfigProfiles,
+        error: scanConfigProfilesError,
     } = useRestQuery(fetchProfilesStats);
 
     const fetchCheckResults = useCallback(
@@ -111,7 +112,7 @@ function ClusterDetailsPage() {
         onSearch({ action, category, value });
     };
 
-    if (clusterProfileDataError) {
+    if (scanConfigProfilesError) {
         return (
             <Alert
                 variant="warning"
@@ -119,10 +120,14 @@ function ClusterDetailsPage() {
                 component="div"
                 isInline
             >
-                {getAxiosErrorMessage(clusterProfileDataError)}
+                {getAxiosErrorMessage(scanConfigProfilesError)}
             </Alert>
         );
     }
+
+    const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(
+        (profile) => profile.name === profileName
+    );
 
     return (
         <>
@@ -138,10 +143,10 @@ function ClusterDetailsPage() {
                         Clusters
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
-                        {isLoadingClusterProfileData ? (
+                        {isLoadingScanConfigProfiles ? (
                             <Skeleton screenreaderText="Loading cluster name" width="150px" />
                         ) : (
-                            clusterProfileData?.clusterName
+                            scanConfigProfilesResponse?.clusterName
                         )}
                     </BreadcrumbItem>
                 </Breadcrumb>
@@ -153,21 +158,21 @@ function ClusterDetailsPage() {
                     alignItems={{ default: 'alignItemsFlexStart' }}
                 >
                     <Title headingLevel="h1" className="pf-v5-u-w-100">
-                        {isLoadingClusterProfileData ? (
+                        {isLoadingScanConfigProfiles ? (
                             <Skeleton fontSize="2xl" screenreaderText="Loading cluster name" />
                         ) : (
-                            clusterProfileData?.clusterName
+                            scanConfigProfilesResponse?.clusterName
                         )}
                     </Title>
                     <LabelGroup numLabels={1}>
                         <Label>
-                            {isLoadingClusterProfileData ? (
+                            {isLoadingScanConfigProfiles ? (
                                 <Skeleton
                                     screenreaderText="Loading number of profiles scanned on cluster"
                                     width="135px"
                                 />
                             ) : (
-                                `Scanned by: ${clusterProfileData?.totalCount} profiles`
+                                `Scanned by: ${scanConfigProfilesResponse?.totalCount} profiles`
                             )}
                         </Label>
                     </LabelGroup>
@@ -176,11 +181,16 @@ function ClusterDetailsPage() {
             <Divider component="div" />
             <PageSection>
                 <ProfilesToggleGroup
-                    profiles={clusterProfileData?.scanStats ?? []}
+                    profiles={scanConfigProfilesResponse?.profiles ?? []}
                     handleToggleChange={handleProfilesToggleChange}
                 />
-            </PageSection>
-            <PageSection>
+                <Divider component="div" />
+                <ProfileDetailsHeader
+                    isLoading={isLoadingScanConfigProfiles}
+                    profileName={profileName}
+                    profileDetails={selectedProfileDetails}
+                />
+                <Divider component="div" />
                 <ClusterDetailsTable
                     checkResultsCount={checkResultsResponse?.totalCount ?? 0}
                     profileName={profileName}
