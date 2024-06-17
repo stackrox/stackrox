@@ -52,7 +52,7 @@ func TestCentralEndpointDefaulting(t *testing.T) {
 		},
 		{
 			provided: "http://localhost",
-			expected: "localhost:80",
+			expected: "localhost",
 		},
 		{
 			provided: "https://localhost:8443",

@@ -14,7 +14,6 @@ var (
 
 const (
 	defaultHttpsPort = 443
-	defaultHttpPort  = 80
 	missingPortErr   = "missing port in address"
 )
 
@@ -42,15 +41,8 @@ func initCentralEndpoint(endpoint string) {
 		if addr, err := ensureHasPort(CentralEndpoint, defaultHttpsPort); err == nil {
 			CentralEndpoint = addr
 		}
-	} else if strings.HasPrefix(CentralEndpoint, "http://") {
-		CentralEndpoint = strings.TrimPrefix(CentralEndpoint, "http://")
-		if addr, err := ensureHasPort(CentralEndpoint, defaultHttpPort); err == nil {
-			CentralEndpoint = addr
-		}
 	} else {
-		if addr, err := ensureHasPort(CentralEndpoint, defaultHttpsPort); err == nil {
-			CentralEndpoint = addr
-		}
+		CentralEndpoint = strings.TrimPrefix(CentralEndpoint, "http://")
 	}
 }
 
