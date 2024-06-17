@@ -149,7 +149,7 @@ func updateImageCVEEdges(ctx context.Context, database *types.Databases, cveMap 
 
 	db := database.GormDB.WithContext(ctx).Table(schema.ImageCveEdgesTableName)
 	query := database.GormDB.WithContext(ctx).Table(schema.ImageCveEdgesTableName).
-		Exec(fmt.Sprintf("SELECT %[1]s.serialized FROM %[1]s WHERE EXISTS (SELECT 1 FROM %[2]s WHERE %[1]s.imagecveid = %[2]s.id AND %[2]s.cvebaseinfo_cve = ANY($1::text[]))", schema.ImageCveEdgesTableName, schema.ImageCvesTableName), cves)
+		Raw(fmt.Sprintf("SELECT %[1]s.serialized FROM %[1]s WHERE EXISTS (SELECT 1 FROM %[2]s WHERE %[1]s.imagecveid = %[2]s.id AND %[2]s.cvebaseinfo_cve = ANY($1::text[]))", schema.ImageCveEdgesTableName, schema.ImageCvesTableName), cves)
 	rows, err := query.Rows()
 	if err != nil {
 		return errors.Wrapf(err, "failed to query table %s", schema.ImageCvesTableName)

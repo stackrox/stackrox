@@ -90,6 +90,9 @@ func (s *migrationTestSuite) TestMigration() {
 		getTestImageCVEEdge("image1", "cve-2023-123"),
 		getTestImageCVEEdge("image1", "cve-2023-124"),
 		getTestImageCVEEdge("image1", "cve-2023-125"),
+		getTestImageCVEEdge("image1", "cve-2023-129"),
+		getTestImageCVEEdge("image1", "cve-2023-131"),
+		getTestImageCVEEdge("image1", "cve-2023-132"),
 	}
 
 	now := protocompat.TimestampNow()
