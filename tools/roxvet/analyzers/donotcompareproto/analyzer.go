@@ -45,15 +45,19 @@ var (
 
 	bannedAssertFunctions = set.NewFrozenStringSet(
 		"(*github.com/stretchr/testify/assert.Assertions).Contains",
+		"(*github.com/stretchr/testify/assert.Assertions).ElementsMatch",
 		"(*github.com/stretchr/testify/assert.Assertions).Equal",
 		"(*github.com/stretchr/testify/assert.Assertions).NotEqual",
 		"(*github.com/stretchr/testify/require.Assertions).Contains",
+		"(*github.com/stretchr/testify/require.Assertions).ElementsMatch",
 		"(*github.com/stretchr/testify/require.Assertions).Equal",
 		"(*github.com/stretchr/testify/require.Assertions).NotEqual",
 		"github.com/stretchr/testify/assert.Contains",
+		"github.com/stretchr/testify/assert.ElementsMatch",
 		"github.com/stretchr/testify/assert.Equal",
 		"github.com/stretchr/testify/assert.NotEqual",
 		"github.com/stretchr/testify/require.Contains",
+		"github.com/stretchr/testify/require.ElementsMatch",
 		"github.com/stretchr/testify/require.Equal",
 		"github.com/stretchr/testify/require.NotEqual",
 	)

@@ -109,7 +109,7 @@ func TestSubnetToSupernetAggregator(t *testing.T) {
 	aggr, err := NewSubnetToSupernetConnAggregator(tree.NewMultiNetworkTree(tree1, tree2))
 	assert.NoError(t, err)
 	actual := aggr.Aggregate(flows)
-	assert.ElementsMatch(t, expected, actual)
+	protoassert.ElementsMatch(t, expected, actual)
 }
 
 func TestHideDefaultExtSrcsAggregator(t *testing.T) {
@@ -230,7 +230,7 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 	aggr, err := NewDefaultToCustomExtSrcConnAggregator(networkTree)
 	assert.NoError(t, err)
 	actual := aggr.Aggregate(flows)
-	assert.ElementsMatch(t, expected, actual)
+	protoassert.ElementsMatch(t, expected, actual)
 }
 
 func TestAggregateExtConnsByName(t *testing.T) {
@@ -295,5 +295,5 @@ func TestAggregateExtConnsByName(t *testing.T) {
 	actual := NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
 
 	assert.Len(t, actual, len(expected))
-	assert.ElementsMatch(t, expected, actual)
+	protoassert.ElementsMatch(t, expected, actual)
 }

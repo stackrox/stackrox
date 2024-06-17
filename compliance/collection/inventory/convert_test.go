@@ -203,7 +203,7 @@ func (s *inventoryConvertTestSuite) TestConvertRHELComponents() {
 			convertedComponents := convertRHELComponents(testCase.inComponents)
 			if testCase.inComponents != nil {
 				s.Equal(len(testCase.inComponents), len(convertedComponents))
-				s.ElementsMatch(testCase.outComponents, convertedComponents)
+				protoassert.ElementsMatch(s.T(), testCase.outComponents, convertedComponents)
 			} else {
 				s.Nil(convertedComponents)
 			}

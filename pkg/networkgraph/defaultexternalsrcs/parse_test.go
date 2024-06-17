@@ -217,7 +217,7 @@ func TestParseNetworkData(t *testing.T) {
 	for _, entity := range actual {
 		actualEntities = append(actualEntities, entity.GetInfo().GetExternalSource())
 	}
-	assert.ElementsMatch(t, expectedEntities, actualEntities)
+	protoassert.ElementsMatch(t, expectedEntities, actualEntities)
 }
 
 func TestParseNetworkDataWithMissingFields(t *testing.T) {

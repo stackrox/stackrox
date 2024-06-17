@@ -1954,7 +1954,7 @@ func assertNetworkBaselineMessagesEqual(
 		cp.Time = nil
 		thatWithoutTime = append(thatWithoutTime, cp)
 	}
-	suite.ElementsMatch(thisWithoutTime, thatWithoutTime)
+	protoassert.ElementsMatch(suite.T(), thisWithoutTime, thatWithoutTime)
 }
 
 func privilegedMessage(dep *storage.Deployment) []*storage.Alert_Violation {
@@ -3028,7 +3028,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 
 			for id, violations := range c.expectedViolations {
 				assert.Contains(t, actualViolations, id)
-				assert.ElementsMatch(t, violations, actualViolations[id])
+				protoassert.ElementsMatch(t, violations, actualViolations[id])
 			}
 		})
 	}
@@ -3102,7 +3102,7 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 			if len(c.expectedViolations) == 0 {
 				assert.Nil(t, actualViolations.AlertViolations)
 			} else {
-				assert.ElementsMatch(t, c.expectedViolations, actualViolations.AlertViolations)
+				protoassert.ElementsMatch(t, c.expectedViolations, actualViolations.AlertViolations)
 			}
 		})
 	}
@@ -3178,7 +3178,7 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventDefaultPolicies() {
 
 				assert.Nil(t, actualViolations.AlertViolations)
 			} else {
-				assert.ElementsMatch(t, c.expectedViolations, actualViolations.AlertViolations)
+				protoassert.ElementsMatch(t, c.expectedViolations, actualViolations.AlertViolations)
 			}
 		})
 	}
