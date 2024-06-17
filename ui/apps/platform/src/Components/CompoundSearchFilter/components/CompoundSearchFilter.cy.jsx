@@ -134,7 +134,7 @@ describe(Cypress.spec.relative, () => {
 
         cy.get(selectors.attributeSelectItems).should('have.length', 5);
         cy.get(selectors.attributeSelectItems).eq(0).should('have.text', 'Name');
-        cy.get(selectors.attributeSelectItems).eq(1).should('have.text', 'Operating System');
+        cy.get(selectors.attributeSelectItems).eq(1).should('have.text', 'Operating system');
         cy.get(selectors.attributeSelectItems).eq(2).should('have.text', 'Tag');
         cy.get(selectors.attributeSelectItems).eq(3).should('have.text', 'Label');
         cy.get(selectors.attributeSelectItems).eq(4).should('have.text', 'Registry');
@@ -194,7 +194,7 @@ describe(Cypress.spec.relative, () => {
     it('should display the select input and correctly search for image component source', () => {
         const config = {
             Image: imageSearchFilterConfig,
-            ImageComponent: imageComponentSearchFilterConfig,
+            'Image component': imageComponentSearchFilterConfig,
         };
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
@@ -202,7 +202,7 @@ describe(Cypress.spec.relative, () => {
         setup(config, searchFilter, onSearch);
 
         cy.get(selectors.entitySelectToggle).click();
-        cy.get(selectors.entitySelectItem('Image Component')).click();
+        cy.get(selectors.entitySelectItem('Image component')).click();
 
         cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
 
@@ -253,7 +253,7 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
 
         cy.get(selectors.attributeSelectToggle).click();
-        cy.get(selectors.attributeSelectItem('Discovered Time')).click();
+        cy.get(selectors.attributeSelectItem('Discovered time')).click();
 
         // The date-picker input should be present
         cy.get('input[aria-label="Filter by date"]').should('exist');
