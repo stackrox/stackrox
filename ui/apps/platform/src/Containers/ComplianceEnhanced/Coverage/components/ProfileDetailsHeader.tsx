@@ -59,7 +59,9 @@ function ProfileDetailsHeader({
                         <FlexItem>
                             <LabelGroup numLabels={4}>
                                 {profileVersion ? (
-                                    <Label variant="filled">Version: {profileVersion}</Label>
+                                    <Label variant="filled">
+                                        Profile version: {profileVersion}
+                                    </Label>
                                 ) : null}
                                 <Label variant="filled">Applicability: {productType}</Label>
                                 <Label
