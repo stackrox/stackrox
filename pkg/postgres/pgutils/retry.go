@@ -1,6 +1,7 @@
 package pgutils
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -63,11 +64,14 @@ func Retry3[T any, U any](fn func() (T, U, error)) (T, U, error) {
 	for {
 		select {
 		case <-expirationTimer.C:
+			fmt.Println("BOOM!")
 			return ret1, ret2, err
 		case <-intervalTicker.C:
+			fmt.Print("tick, ")
 			// Uses err outside the for loop to allow for the expiration to show the last err received
 			// and provide context for the expiration
 			ret1, ret2, err = fn()
+			fmt.Print(err)
 			if err == nil || !IsTransientError(err) {
 				if err != nil && err != pgx.ErrNoRows {
 					log.Debugf("UNEXPECTED: found permanent error: %+v", err)

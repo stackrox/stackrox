@@ -300,7 +300,6 @@ func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, f
 		defer c.cacheLock.RUnlock()
 		return c.walkCacheNoLock(ctx, fn)
 	}
-
 	identifiers, err := c.underlyingStore.GetIDsByQuery(ctx, query)
 	// Fallback to the underlying store on error.
 	if err != nil {
@@ -390,8 +389,13 @@ func (c *cachedStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 }
 
 // GetIDsByQuery returns the IDs for the store matching the query.
+<<<<<<< HEAD
 func (c *cachedStore[T, PT]) GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
 	return c.underlyingStore.GetIDsByQuery(ctx, query)
+=======
+func (s *cachedStore[T, PT]) GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
+	return s.underlyingStore.GetIDsByQuery(ctx, query)
+>>>>>>> b7e576e725 (Extend scale and cover other server test)
 }
 
 // GetAll retrieves all objects from the store.

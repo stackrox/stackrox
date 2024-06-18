@@ -89,56 +89,62 @@ func (s *storeImpl) insertIntoImages(
 		cloned = parts.image.Clone()
 		cloned.Scan.Components = nil
 	}
-	serialized, marshalErr := cloned.Marshal()
-	if marshalErr != nil {
-		return marshalErr
-	}
-
-	values := []interface{}{
-		// parent primary keys start
-		cloned.GetId(),
-		cloned.GetName().GetRegistry(),
-		cloned.GetName().GetRemote(),
-		cloned.GetName().GetTag(),
-		cloned.GetName().GetFullName(),
-		protocompat.NilOrTime(cloned.GetMetadata().GetV1().GetCreated()),
-		cloned.GetMetadata().GetV1().GetUser(),
-		cloned.GetMetadata().GetV1().GetCommand(),
-		cloned.GetMetadata().GetV1().GetEntrypoint(),
-		cloned.GetMetadata().GetV1().GetVolumes(),
-		cloned.GetMetadata().GetV1().GetLabels(),
-		protocompat.NilOrTime(cloned.GetScan().GetScanTime()),
-		cloned.GetScan().GetOperatingSystem(),
-		protocompat.NilOrTime(cloned.GetSignature().GetFetched()),
-		cloned.GetComponents(),
-		cloned.GetCves(),
-		cloned.GetFixableCves(),
-		protocompat.NilOrTime(cloned.GetLastUpdated()),
-		cloned.GetPriority(),
-		cloned.GetRiskScore(),
-		cloned.GetTopCvss(),
-		serialized,
-	}
-
-	finalStr := "INSERT INTO " + imagesTable + " (Id, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Signature_Fetched, Components, Cves, FixableCves, LastUpdated, Priority, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Signature_Fetched = EXCLUDED.Signature_Fetched, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, LastUpdated = EXCLUDED.LastUpdated, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-	if metadataUpdated {
-		for childIdx, child := range cloned.GetMetadata().GetV1().GetLayers() {
-			if err := insertIntoImagesLayers(ctx, tx, child, cloned.GetId(), childIdx); err != nil {
-				return err
-			}
+	/*
+		serialized, marshalErr := cloned.Marshal()
+		if marshalErr != nil {
+			return marshalErr
 		}
 
-		query = "delete from images_Layers where images_Id = $1 AND idx >= $2"
-		_, err = tx.Exec(ctx, query, cloned.GetId(), len(cloned.GetMetadata().GetV1().GetLayers()))
+		values := []interface{}{
+			// parent primary keys start
+			cloned.GetId(),
+			cloned.GetName().GetRegistry(),
+			cloned.GetName().GetRemote(),
+			cloned.GetName().GetTag(),
+			cloned.GetName().GetFullName(),
+			protocompat.NilOrTime(cloned.GetMetadata().GetV1().GetCreated()),
+			cloned.GetMetadata().GetV1().GetUser(),
+			cloned.GetMetadata().GetV1().GetCommand(),
+			cloned.GetMetadata().GetV1().GetEntrypoint(),
+			cloned.GetMetadata().GetV1().GetVolumes(),
+			cloned.GetMetadata().GetV1().GetLabels(),
+			protocompat.NilOrTime(cloned.GetScan().GetScanTime()),
+			cloned.GetScan().GetOperatingSystem(),
+			protocompat.NilOrTime(cloned.GetSignature().GetFetched()),
+			cloned.GetComponents(),
+			cloned.GetCves(),
+			cloned.GetFixableCves(),
+			protocompat.NilOrTime(cloned.GetLastUpdated()),
+			cloned.GetPriority(),
+			cloned.GetRiskScore(),
+			cloned.GetTopCvss(),
+			serialized,
+		}
+
+		finalStr := "INSERT INTO " + imagesTable + " (Id, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Signature_Fetched, Components, Cves, FixableCves, LastUpdated, Priority, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Signature_Fetched = EXCLUDED.Signature_Fetched, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, LastUpdated = EXCLUDED.LastUpdated, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+		_, err := tx.Exec(ctx, finalStr, values...)
 		if err != nil {
 			return err
 		}
+
+		var query string
+		if metadataUpdated {
+			for childIdx, child := range cloned.GetMetadata().GetV1().GetLayers() {
+				if err := insertIntoImagesLayers(ctx, tx, child, cloned.GetId(), childIdx); err != nil {
+					return err
+				}
+			}
+
+			query = "delete from images_Layers where images_Id = $1 AND idx >= $2"
+			_, err = tx.Exec(ctx, query, cloned.GetId(), len(cloned.GetMetadata().GetV1().GetLayers()))
+			if err != nil {
+				return err
+			}
+		}
+	*/
+	err := insertIntoImageTables(ctx, tx, cloned, metadataUpdated)
+	if err != nil {
+		return err
 	}
 
 	if !scanUpdated {
@@ -192,6 +198,61 @@ func getPartsAsSlice(parts common.ImageParts) *imagePartsAsSlice {
 		componentCVEEdges:   componentCVEEdges,
 		imageCVEEdges:       imageCVEEdges,
 	}
+}
+
+func insertIntoImageTables(ctx context.Context, tx *postgres.Tx, image *storage.Image, metadataUpdated bool) error {
+	serialized, marshalErr := image.Marshal()
+	if marshalErr != nil {
+		return marshalErr
+	}
+
+	values := []interface{}{
+		// parent primary keys start
+		image.GetId(),
+		image.GetName().GetRegistry(),
+		image.GetName().GetRemote(),
+		image.GetName().GetTag(),
+		image.GetName().GetFullName(),
+		protocompat.NilOrTime(image.GetMetadata().GetV1().GetCreated()),
+		image.GetMetadata().GetV1().GetUser(),
+		image.GetMetadata().GetV1().GetCommand(),
+		image.GetMetadata().GetV1().GetEntrypoint(),
+		image.GetMetadata().GetV1().GetVolumes(),
+		image.GetMetadata().GetV1().GetLabels(),
+		protocompat.NilOrTime(image.GetScan().GetScanTime()),
+		image.GetScan().GetOperatingSystem(),
+		protocompat.NilOrTime(image.GetSignature().GetFetched()),
+		image.GetComponents(),
+		image.GetCves(),
+		image.GetFixableCves(),
+		protocompat.NilOrTime(image.GetLastUpdated()),
+		image.GetPriority(),
+		image.GetRiskScore(),
+		image.GetTopCvss(),
+		serialized,
+	}
+
+	finalStr := "INSERT INTO " + imagesTable + " (Id, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Signature_Fetched, Components, Cves, FixableCves, LastUpdated, Priority, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Signature_Fetched = EXCLUDED.Signature_Fetched, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, LastUpdated = EXCLUDED.LastUpdated, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	_, err := tx.Exec(ctx, finalStr, values...)
+	if err != nil {
+		return err
+	}
+
+	var query string
+	if metadataUpdated {
+		for childIdx, child := range image.GetMetadata().GetV1().GetLayers() {
+			if err := insertIntoImagesLayers(ctx, tx, child, image.GetId(), childIdx); err != nil {
+				return err
+			}
+		}
+
+		query = "delete from images_Layers where images_Id = $1 AND idx >= $2"
+		_, err = tx.Exec(ctx, query, image.GetId(), len(image.GetMetadata().GetV1().GetLayers()))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func insertIntoImagesLayers(ctx context.Context, tx *postgres.Tx, obj *storage.ImageLayer, imageID string, idx int) error {
