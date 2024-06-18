@@ -71,7 +71,7 @@ jobs:
   pre-build-ui:
     strategy:
       matrix:
-        branding: [ RHACS_BRANDING, STACKFOX_BRANDING ]
+        branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     runs-on: ubuntu-latest
@@ -98,7 +98,12 @@ jobs:
         run: make -C ui deps
 
       - name: Build UI
-        run: make -C ui build
+        run: |
+          if [[ ${{env.ROX_PRODUCT_BRANDING}} == "STACKROX_BRANDING" ]]; then
+            make -C ui break-build
+          else
+            make -C ui build
+          fi
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
