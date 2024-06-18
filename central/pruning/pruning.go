@@ -870,18 +870,13 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 	prunedAlertCount := 0
 	// Go through the various queries and remove those batches.
 	for key, query := range queryMap {
-		log.Infof("Pruning for key %q", key)
-		alertResults, err := g.alerts.Search(ctx, query)
-		if err != nil {
-			log.Error(err)
-			return
-		}
-
-		alertsToPrune := make([]string, 0, len(alertResults))
+		log.Debugf("Pruning for key %q", key)
+		var alertsToPrune []string
 		// The alert searcher is opinionated and adds some default query parameters.
 		// Those should not be included for pruning.  Simpler to just use `WalkByQuery`
-		err = g.alerts.WalkByQuery(ctx, query, func(alert *storage.Alert) error {
+		err := g.alerts.WalkByQuery(ctx, query, func(alert *storage.Alert) error {
 			alertsToPrune = append(alertsToPrune, alert.GetId())
+
 			return nil
 		})
 		if err != nil {
