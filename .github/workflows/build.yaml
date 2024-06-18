@@ -71,7 +71,7 @@ jobs:
   pre-build-ui:
     strategy:
       matrix:
-        branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
+        branding: [ RHACS_BRANDING, STACKFOX_BRANDING ]
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     runs-on: ubuntu-latest
