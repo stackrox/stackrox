@@ -300,6 +300,7 @@ func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, f
 		defer c.cacheLock.RUnlock()
 		return c.walkCacheNoLock(ctx, fn)
 	}
+
 	identifiers, err := c.underlyingStore.GetIDsByQuery(ctx, query)
 	// Fallback to the underlying store on error.
 	if err != nil {

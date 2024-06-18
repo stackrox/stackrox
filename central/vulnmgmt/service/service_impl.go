@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -73,29 +72,15 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 		ctx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 		defer cancel()
 	}
-	deadline, _ := ctx.Deadline()
-	fmt.Println(deadline.UTC().Unix())
 	imageCache, err := lru.New[string, *storage.Image](cacheSize)
 	if err != nil {
 		return errors.Wrap(errox.ServerError, err.Error())
 	}
 
-	i := 0
 	return s.deployments.WalkByQuery(ctx, parsedQuery, func(d *storage.Deployment) error {
 		containers := d.GetContainers()
 		images := make([]*storage.Image, 0, len(containers))
 		imageIDs := set.NewStringSet()
-		i++
-		if i%1000 == 0 {
-			fmt.Print("%")
-		} else if i%100 == 0 {
-			fmt.Print("*")
-		} else if i%10 == 0 {
-			fmt.Print("+")
-		} /* else {
-			fmt.Print(".")
-		}
-		*/
 		for _, container := range containers {
 			imgID := container.GetImage().GetId()
 			// Deduplicate images by their ID.
@@ -111,7 +96,7 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 
 			img, found, err := s.images.GetImage(ctx, imgID)
 			if err != nil {
-				log.Errorf("Error getting image for container %q (container SHA: %s - image SHA: %s): %v", d.GetName(), container.GetId(), imgID, err)
+				log.Errorf("Error getting image for container %q (SHA: %s): %v", d.GetName(), container.GetId(), err)
 				continue
 			}
 			if found {
