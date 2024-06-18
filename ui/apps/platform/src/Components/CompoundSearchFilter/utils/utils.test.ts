@@ -52,7 +52,7 @@ describe('utils', () => {
                 },
                 {
                     displayName: 'CVSS',
-                    filterChipLabel: 'Image CVE CVSS',
+                    filterChipLabel: 'CVSS',
                     searchTerm: 'CVSS',
                     inputType: 'condition-number',
                 },
@@ -120,7 +120,7 @@ describe('utils', () => {
                     searchFilterName: 'CVE Created Time',
                 },
                 {
-                    displayName: 'Image CVE CVSS',
+                    displayName: 'CVSS',
                     searchFilterName: 'CVSS',
                 },
             ]);
