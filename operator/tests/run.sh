@@ -22,12 +22,6 @@ _EO_KUTTL_HELP_
 
     local FAILED=0
 
-    info "Starting image pre-fetcher"
-    junit_wrap image-prefetcher-start \
-               "Start image pre-fetcher." \
-               "See log for error details." \
-               "make" "image-prefetcher-start"
-
     info "Fetching kuttl binary"
     junit_wrap fetch-kuttl \
                "Download kuttl binary." \
@@ -40,11 +34,7 @@ _EO_KUTTL_HELP_
                "${kuttl_help}" \
                "make" "-C" "operator" "deploy-previous-via-olm"
 
-    info "Waiting image for pre-fetcher to complete"
-    junit_wrap image-prefetcher-await \
-               "Wait for image pre-fetcher to complete." \
-               "See log for error details." \
-               "make" "image-prefetcher-await"
+    image_prefetcher_system_await
 
     info "Executing operator upgrade test"
     junit_wrap test-upgrade \
