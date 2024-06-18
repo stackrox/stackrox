@@ -15,6 +15,7 @@ runs:
       shell: bash
 
     - name: Free disk space
+      shell: bash
       # https://github.com/actions/virtual-environments/issues/709
       run: |
         echo "========= Original CI disk space"
