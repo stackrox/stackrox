@@ -20,8 +20,8 @@ runs:
       run: |
         echo "========= Original CI disk space"
         df -h
-        sudo rm -rf "/usr/local/share/boost"
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        rm -rf "/usr/local/share/boost"
+        rm -rf "$AGENT_TOOLSDIRECTORY"
         echo "========= After clean up CI disk space"
         df -h
 
