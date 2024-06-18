@@ -12,10 +12,15 @@ import {
     SearchFilterAttribute,
     SelectSearchFilterAttribute,
 } from '../types';
-import { ensureConditionNumber, ensureString, ensureStringArray } from '../utils/utils';
+import {
+    conditionMap,
+    ensureConditionNumber,
+    ensureString,
+    ensureStringArray,
+} from '../utils/utils';
 
 import CheckboxSelect from './CheckboxSelect';
-import ConditionNumber, { conditionMap } from './ConditionNumber';
+import ConditionNumber from './ConditionNumber';
 import SearchFilterAutocomplete from './SearchFilterAutocomplete';
 
 export type InputFieldValue =

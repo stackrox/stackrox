@@ -40,7 +40,7 @@ export const imageSearchFilterConfig = {
             displayName: 'Operating System',
             filterChipLabel: 'Image Operating System',
             searchTerm: 'Image OS',
-            inputType: 'text',
+            inputType: 'autocomplete',
         },
         Tag: {
             displayName: 'Tag',
@@ -48,29 +48,11 @@ export const imageSearchFilterConfig = {
             searchTerm: 'Image Tag',
             inputType: 'text',
         },
-        CVSS: {
-            displayName: 'CVSS',
-            filterChipLabel: 'Image CVSS',
-            searchTerm: 'Image Top CVSS',
-            inputType: 'condition-number',
-        },
         Label: {
             displayName: 'Label',
             filterChipLabel: 'Image Label',
             searchTerm: 'Image Label',
             inputType: 'autocomplete',
-        },
-        'Created Time': {
-            displayName: 'Created Time',
-            filterChipLabel: 'Image Created Time',
-            searchTerm: 'Image Created Time',
-            inputType: 'date-picker',
-        },
-        'Scan Time': {
-            displayName: 'Scan Time',
-            filterChipLabel: 'Image Scan Time',
-            searchTerm: 'Image Scan Time',
-            inputType: 'date-picker',
         },
         Registry: {
             displayName: 'Registry',
@@ -272,7 +254,7 @@ export type NodeAttributeInputType = ValueOf<NodeSearchFilterConfig['attributes'
 // Image CVE search filter
 
 export const imageCVESearchFilterConfig = {
-    displayName: 'Image CVE',
+    displayName: 'CVE',
     searchCategory: 'IMAGE_VULNERABILITIES',
     attributes: {
         Name: {
@@ -289,7 +271,7 @@ export const imageCVESearchFilterConfig = {
         },
         CVSS: {
             displayName: 'CVSS',
-            filterChipLabel: 'Image CVE CVSS',
+            filterChipLabel: 'CVSS',
             searchTerm: 'CVSS',
             inputType: 'condition-number',
         },
