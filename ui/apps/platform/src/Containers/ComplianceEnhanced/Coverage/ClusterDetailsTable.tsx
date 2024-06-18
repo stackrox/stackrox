@@ -8,7 +8,6 @@ import {
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
-    Tooltip,
 } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
@@ -17,7 +16,6 @@ import {
     OnSearchPayload,
     PartialCompoundSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
-import IconText from 'Components/PatternFly/IconText/IconText';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
@@ -32,6 +30,7 @@ import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
 import ControlLabels from './components/ControlLabels';
+import StatusIcon from './components/StatusIcon';
 
 export type ClusterDetailsTableProps = {
     checkResultsCount: number;
@@ -200,12 +199,9 @@ function ClusterDetailsTable({
                                                 )}
                                             </Td>
                                             <Td dataLabel="Compliance status" modifier="fitContent">
-                                                <Tooltip content={clusterStatusObject.tooltipText}>
-                                                    <IconText
-                                                        icon={clusterStatusObject.icon}
-                                                        text={clusterStatusObject.statusText}
-                                                    />
-                                                </Tooltip>
+                                                <StatusIcon
+                                                    clusterStatusObject={clusterStatusObject}
+                                                />
                                             </Td>
                                         </Tr>
                                         {isRowExpanded && (
