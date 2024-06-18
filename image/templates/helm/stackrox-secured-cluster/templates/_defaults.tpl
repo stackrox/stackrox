@@ -33,3 +33,26 @@
   {{ end }}
 {{ end }}
 {{ end }}
+
+{{/*
+  srox.ensureCentralEndpointContainsPort .
+
+  Appends a default port to the configured central endpoint based on a very simply heuristic.
+  Specifically, it only checks if the provided endpoint contains a prefix "https://" and
+  the part after that prefix does not contain a double colon.
+  This heuristic is kept simple on purpose and does not correctly add the default ports in
+  case the host part is an IPv6 address.
+*/}}
+{{ define "srox.ensureCentralEndpointContainsPort" }}
+  {{ $ := . }}
+
+  {{ $endpoint := $._rox.centralEndpoint }}
+  {{ if hasPrefix "https://" $endpoint }}
+    {{ $endpoint = trimPrefix "https://" $endpoint }}
+    {{ if not (contains ":" $endpoint) }}
+      {{ include "srox.note" (list $ (printf "Specified centralEndpoint %s does not contain a port, assuming port 443. If this is incorrect please specify the correct port." $._rox.centralEndpoint)) }}
+      {{ $_ := set $._rox "centralEndpoint" (printf "%s:443" $._rox.centralEndpoint) }}
+    {{ end }}
+  {{ end }}
+
+{{ end }}
