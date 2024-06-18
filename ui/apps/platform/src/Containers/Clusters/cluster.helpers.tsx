@@ -27,11 +27,6 @@ export const runtimeOptions = [
         tableDisplay: 'CORE BPF',
         value: 'CORE_BPF',
     },
-    {
-        label: 'eBPF Program',
-        tableDisplay: 'eBPF',
-        value: 'CORE_BPF',
-    },
 ];
 
 export const clusterTypes = {
