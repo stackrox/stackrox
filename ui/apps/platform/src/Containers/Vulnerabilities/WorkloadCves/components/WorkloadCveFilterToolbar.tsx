@@ -176,7 +176,11 @@ function WorkloadCveFilterToolbar({
                     <ToolbarGroup>
                         <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
                         {isFixabilityFiltersEnabled && (
-                            <CVEStatusDropdown searchFilter={searchFilter} onSelect={onSelect} />
+                            <CVEStatusDropdown
+                                filterField="FIXABLE"
+                                searchFilter={searchFilter}
+                                onSelect={onSelect}
+                            />
                         )}
                     </ToolbarGroup>
                 )}

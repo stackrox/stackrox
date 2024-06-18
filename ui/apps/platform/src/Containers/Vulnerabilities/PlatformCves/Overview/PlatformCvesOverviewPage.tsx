@@ -94,6 +94,7 @@ function PlatformCvesOverviewPage() {
         <AdvancedFiltersToolbar
             searchFilter={searchFilter}
             searchFilterConfig={searchFilterConfig}
+            cveStatusFilterField="CLUSTER CVE FIXABLE"
             onFilterChange={(newFilter, { action }) => {
                 setSearchFilter(newFilter);
 

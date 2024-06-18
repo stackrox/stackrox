@@ -110,6 +110,7 @@ function PlatformCvePage() {
                     className="pf-v5-u-pb-0 pf-v5-u-px-sm"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
+                    cveStatusFilterField="CLUSTER CVE FIXABLE"
                     onFilterChange={(newFilter, { action }) => {
                         setSearchFilter(newFilter);
 
