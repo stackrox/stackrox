@@ -70,6 +70,7 @@ jobs:
 
   pre-build-ui:
     strategy:
+      fail-fast: false
       matrix:
         branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
     env:
