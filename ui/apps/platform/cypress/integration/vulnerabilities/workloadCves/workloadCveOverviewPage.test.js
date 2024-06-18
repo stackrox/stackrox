@@ -163,7 +163,7 @@ describe('Workload CVE overview page tests', () => {
         it('should apply the correct filters when switching between "with cves" and "without cves" views', () => {
             const severityChip = isAdvancedFiltersEnabled ? 'CVE severity' : 'Severity';
             const cveStatusChip = 'CVE status';
-            const imageNameChip = isAdvancedFiltersEnabled ? 'Image Name' : 'Image';
+            const imageNameChip = isAdvancedFiltersEnabled ? 'Image name' : 'Image';
 
             // Since we want to test the behavior of the default filters with the two cve views, we
             // do not clear them by default in this case
