@@ -7,6 +7,17 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@master
+      with:
+        # root-reserve-mb: 512
+        # swap-size-mb: 1024
+        remove-android: 'true'
+        remove-dotnet: 'true'
+        remove-haskell: 'true'
+        remove-codeql: 'true'
+        remove-docker-images: 'true'
+
     - name: Recover docker image cache space
       run: |
         df --si /
