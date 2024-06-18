@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *PoliciesStoreSuite) TestStore() {
 	foundPolicy, exists, err = store.Get(ctx, policy.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(policy, foundPolicy)
+	protoassert.Equal(s.T(), policy, foundPolicy)
 
 	policyCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *PoliciesStoreSuite) TestStore() {
 	foundPolicy, exists, err = store.Get(ctx, policy.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(policy, foundPolicy)
+	protoassert.Equal(s.T(), policy, foundPolicy)
 
 	s.NoError(store.Delete(ctx, policy.GetId()))
 	foundPolicy, exists, err = store.Get(ctx, policy.GetId())
@@ -102,7 +103,7 @@ func (s *PoliciesStoreSuite) TestStore() {
 	s.NoError(store.UpsertMany(ctx, policys))
 	allPolicy, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch(policys, allPolicy)
+	protoassert.ElementsMatch(s.T(), policys, allPolicy)
 
 	policyCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

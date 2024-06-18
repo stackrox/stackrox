@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *CloudSourcesStoreSuite) TestStore() {
 	foundCloudSource, exists, err = store.Get(ctx, cloudSource.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(cloudSource, foundCloudSource)
+	protoassert.Equal(s.T(), cloudSource, foundCloudSource)
 
 	cloudSourceCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *CloudSourcesStoreSuite) TestStore() {
 	foundCloudSource, exists, err = store.Get(ctx, cloudSource.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(cloudSource, foundCloudSource)
+	protoassert.Equal(s.T(), cloudSource, foundCloudSource)
 
 	s.NoError(store.Delete(ctx, cloudSource.GetId()))
 	foundCloudSource, exists, err = store.Get(ctx, cloudSource.GetId())
@@ -102,7 +103,7 @@ func (s *CloudSourcesStoreSuite) TestStore() {
 	s.NoError(store.UpsertMany(ctx, cloudSources))
 	allCloudSource, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch(cloudSources, allCloudSource)
+	protoassert.ElementsMatch(s.T(), cloudSources, allCloudSource)
 
 	cloudSourceCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

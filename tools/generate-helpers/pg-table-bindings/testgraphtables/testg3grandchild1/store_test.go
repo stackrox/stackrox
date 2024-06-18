@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *TestG3GrandChild1StoreSuite) TestStore() {
 	foundTestG3GrandChild1, exists, err = store.Get(ctx, testG3GrandChild1.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(testG3GrandChild1, foundTestG3GrandChild1)
+	protoassert.Equal(s.T(), testG3GrandChild1, foundTestG3GrandChild1)
 
 	testG3GrandChild1Count, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *TestG3GrandChild1StoreSuite) TestStore() {
 	foundTestG3GrandChild1, exists, err = store.Get(ctx, testG3GrandChild1.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(testG3GrandChild1, foundTestG3GrandChild1)
+	protoassert.Equal(s.T(), testG3GrandChild1, foundTestG3GrandChild1)
 
 	s.NoError(store.Delete(ctx, testG3GrandChild1.GetId()))
 	foundTestG3GrandChild1, exists, err = store.Get(ctx, testG3GrandChild1.GetId())

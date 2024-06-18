@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	foundImageComponent, exists, err = store.Get(ctx, imageComponent.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(imageComponent, foundImageComponent)
+	protoassert.Equal(s.T(), imageComponent, foundImageComponent)
 
 	imageComponentCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	foundImageComponent, exists, err = store.Get(ctx, imageComponent.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(imageComponent, foundImageComponent)
+	protoassert.Equal(s.T(), imageComponent, foundImageComponent)
 
 	s.NoError(store.Delete(ctx, imageComponent.GetId()))
 	foundImageComponent, exists, err = store.Get(ctx, imageComponent.GetId())
