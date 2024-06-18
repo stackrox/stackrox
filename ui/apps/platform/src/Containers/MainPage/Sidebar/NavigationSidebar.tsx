@@ -57,7 +57,7 @@ type TitleCallback = (navDescriptionFiltered: NavDescription[]) => string | Reac
 const keyForNetwork = 'Network';
 const keyForPlatformConfiguration = 'Platform Configuration';
 const keyForVulnerabilities = 'Vulnerabilities';
-const keyForCompliance2 = 'Compliance (2.0)';
+const keyForCompliance = 'Compliance';
 type IsActiveCallback = (pathname: string) => boolean;
 
 type LinkDescription = {
@@ -124,96 +124,41 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
             path: violationsBasePath,
             routeKey: 'violations',
         },
-        // Compliance with divided navigation.
-        // /*
         {
             type: 'parent',
-            title: (navDescriptionsFiltered) =>
-                navDescriptionsFiltered.some(
-                    (navDescription) =>
-                        navDescription.type === 'link' && navDescription.routeKey === 'compliance'
-                )
-                    ? 'Compliance (2.0)'
-                    : 'Compliance',
-            key: keyForCompliance2,
+            title: 'Compliance',
+            key: keyForCompliance,
             children: [
                 {
                     type: 'link',
-                    content: 'Coverage',
+                    content: <NavigationContent variant="TechPreview">Coverage</NavigationContent>,
                     path: complianceEnhancedCoveragePath,
                     routeKey: 'compliance-enhanced',
                 },
                 {
                     type: 'link',
-                    content: 'Schedules',
+                    content: <NavigationContent variant="TechPreview">Schedules</NavigationContent>,
                     path: complianceEnhancedSchedulesPath,
                     routeKey: 'compliance-enhanced',
                 },
+                {
+                    type: 'separator',
+                    key: 'preceding-classic-compliance',
+                },
+                {
+                    type: 'link',
+                    content: 'Dashboard',
+                    path: complianceBasePath,
+                    routeKey: 'compliance',
+                    isActive: (pathname) =>
+                        Boolean(matchPath(pathname, complianceBasePath)) &&
+                        !matchPath(pathname, [
+                            complianceEnhancedCoveragePath,
+                            complianceEnhancedSchedulesPath,
+                        ]),
+                },
             ],
         },
-        {
-            type: 'link',
-            content: (navDescriptionsFiltered) =>
-                navDescriptionsFiltered.some(
-                    (navDescription) =>
-                        navDescription.type === 'parent' && navDescription.key === keyForCompliance2
-                )
-                    ? 'Compliance (1.0)'
-                    : 'Compliance',
-            path: complianceBasePath,
-            routeKey: 'compliance',
-            isActive: (pathname) =>
-                Boolean(matchPath(pathname, complianceBasePath)) &&
-                !matchPath(pathname, [
-                    complianceEnhancedCoveragePath,
-                    complianceEnhancedSchedulesPath,
-                ]),
-        },
-        // */
-        // Compliance with unified navigation.
-        /*
-    {
-        type: 'parent',
-        title: (navDescriptionsFiltered) =>
-            navDescriptionsFiltered.some(
-                (navDescription) =>
-                    navDescription.type === 'link' && navDescription.routeKey === 'compliance'
-            )
-                ? 'Compliance (2.0)'
-                : 'Compliance',
-        key: keyForCompliance2,
-        children: [
-            {
-                type: 'link',
-                content: 'Coverage',
-                path: complianceEnhancedCoveragePath,
-                routeKey: 'compliance-enhanced',
-            },
-            {
-                type: 'link',
-                content: 'Schedules',
-                path: complianceEnhancedSchedulesPath,
-                routeKey: 'compliance-enhanced',
-            },
-            {
-                type: 'separator',
-                key: 'preceding-classic-compliance',
-            },
-            {
-                type: 'link',
-                content: 'Workload Compliance',
-                path: complianceBasePath,
-                routeKey: 'compliance',
-                isActive: (pathname) =>
-                    Boolean(matchPath(pathname, complianceBasePath)) &&
-                    !matchPath(pathname, [
-                        complianceEnhancedCoveragePath,
-                        complianceEnhancedSchedulesPath,
-                    ]),
-            },
-        ],
-    },
-    */
         {
             type: 'parent',
             title: 'Vulnerabilities',
