@@ -8,7 +8,7 @@ const cvesListQuery = gql`
     query getNodeCVEs($query: String, $pagination: Pagination) {
         nodeCVEs(query: $query, pagination: $pagination) {
             cve
-            nodeCountBySeverity {
+            affectedNodeCountBySeverity {
                 critical {
                     total
                 }
@@ -35,10 +35,9 @@ const cvesListQuery = gql`
     }
 `;
 
-// TODO Need to verify these types with the BE implementation
 export type NodeCVE = {
     cve: string;
-    nodeCountBySeverity: {
+    affectedNodeCountBySeverity: {
         critical: { total: number };
         important: { total: number };
         moderate: { total: number };
