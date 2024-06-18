@@ -142,7 +142,10 @@ func (u *updater) Parse(ctx context.Context, rc io.ReadCloser) ([]*claircore.Vul
 
 	var clairVulns []*claircore.Vulnerability
 	for _, v := range vulnerabilities.Vulnerabilities {
-		parsedTime, _ := time.Parse(time.RFC3339, v.Issued)
+		parsedTime, err := time.Parse(time.RFC3339, v.Issued)
+		if err != nil {
+			return nil, err
+		}
 		cv := &claircore.Vulnerability{
 			Updater:            u.Name(),
 			Name:               v.Name,

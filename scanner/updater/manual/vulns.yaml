@@ -22,9 +22,9 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-22963/GHSA-6v73-fgf6-w5j7
-  # Reason: Same as previous entry but with different vulnerable range.
-  # Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-6v73-fgf6-w5j7.json
+# Vuln: CVE-2022-22963/GHSA-6v73-fgf6-w5j7
+# Reason: Same as previous entry but with different vulnerable range.
+# Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-6v73-fgf6-w5j7.json
 - Name: CVE-2022-22963
   Description: Spring Cloud Function Code Injection with a specially crafted SpEL as a routing expression
   Issued: '2022-04-03T00:00:59Z'
@@ -40,10 +40,10 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
-  # Reason: The vuln table has an entry for GHSA-36p3-wjmg-h94x, but Scanner V4
-  # may have trouble determining the groupID when pom.properties is missing.
-  # Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
+# Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
+# Reason: The vuln table has an entry for GHSA-36p3-wjmg-h94x, but Scanner V4
+# may have trouble determining the groupID when pom.properties is missing.
+# Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
 - Name: CVE-2022-22965
   Description: Remote Code Execution in Spring Framework
   Issued: '2022-03-31T18:30:50Z'
@@ -59,9 +59,9 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
-  # Reason: Same as previous entry but with different vulnerable range.
-  # Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
+# Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
+# Reason: Same as previous entry but with different vulnerable range.
+# Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
 - Name: CVE-2022-22965
   Description: Remote Code Execution in Spring Framework
   Issued: '2022-03-31T18:30:50Z'
@@ -77,9 +77,9 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
-  # Reason: Same as previous entries but with different package name.
-  # Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
+# Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
+# Reason: Same as previous entries but with different package name.
+# Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
 - Name: CVE-2022-22965
   Description: Remote Code Execution in Spring Framework
   Issued: '2022-03-31T18:30:50Z'
@@ -95,9 +95,9 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
-  # Reason: Same as previous entry but with different vulnerable range.
-  # Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
+# Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
+# Reason: Same as previous entry but with different vulnerable range.
+# Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
 - Name: CVE-2022-22965
   Description: Remote Code Execution in Spring Framework
   Issued: '2022-03-31T18:30:50Z'
@@ -113,9 +113,9 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
-  # Reason: Same as previous entries but with different package name.
-  # Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
+# Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
+# Reason: Same as previous entries but with different package name.
+# Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
 - Name: CVE-2022-22965
   Description: Remote Code Execution in Spring Framework
   Issued: '2022-03-31T18:30:50Z'
@@ -131,9 +131,9 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
-  # Reason: Same as previous entry but with different vulnerable range.
-  # Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
+# Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
+# Reason: Same as previous entry but with different vulnerable range.
+# Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
 - Name: CVE-2022-22965
   Description: Remote Code Execution in Spring Framework
   Issued: '2022-03-31T18:30:50Z'
@@ -149,9 +149,9 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
-  # Reason: Same as previous entries but with different package name.
-  # Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
+# Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
+# Reason: Same as previous entries but with different package name.
+# Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
 - Name: CVE-2022-22965
   Description: Remote Code Execution in Spring Framework
   Issued: '2022-03-31T18:30:50Z'
@@ -167,9 +167,9 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
-  # Reason: Same as previous entry but with different vulnerable range.
-  # Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
+# Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
+# Reason: Same as previous entry but with different vulnerable range.
+# Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
 - Name: CVE-2022-22965
   Description: Remote Code Execution in Spring Framework
   Issued: '2022-03-31T18:30:50Z'
@@ -185,9 +185,9 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
-  # Reason: Same as previous entries but with different package name.
-  # Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
+# Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
+# Reason: Same as previous entries but with different package name.
+# Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
 - Name: CVE-2022-22965
   Description: Remote Code Execution in Spring Framework
   Issued: '2022-03-31T18:30:50Z'
@@ -203,9 +203,9 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
-  # Reason: Same as previous entry but with different vulnerable range.
-  # Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
+# Vuln: CVE-2022-22965/GHSA-36p3-wjmg-h94x (Spring4Shell)
+# Reason: Same as previous entry but with different vulnerable range.
+# Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-36p3-wjmg-h94x.json
 - Name: CVE-2022-22965
   Description: Remote Code Execution in Spring Framework
   Issued: '2022-03-31T18:30:50Z'
@@ -221,10 +221,10 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-22978/GHSA-hh32-7344-cg2f
-  # Reason: The vuln table has an entry for GHSA-hh32-7344-cg2f, but Scanner V4
-  # may have trouble determining the groupID when pom.properties is missing.
-  # Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-hh32-7344-cg2f.json
+# Vuln: CVE-2022-22978/GHSA-hh32-7344-cg2f
+# Reason: The vuln table has an entry for GHSA-hh32-7344-cg2f, but Scanner V4
+# may have trouble determining the groupID when pom.properties is missing.
+# Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-hh32-7344-cg2f.json
 - Name: CVE-2022-22978
   Description: Authorization bypass in Spring Security
   Issued: '2022-05-20T00:00:39Z'
@@ -240,9 +240,9 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-22978/GHSA-hh32-7344-cg2f
-  # Reason: Same as previous entry but with different vulnerable range.
-  # Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-hh32-7344-cg2f.json
+# Vuln: CVE-2022-22978/GHSA-hh32-7344-cg2f
+# Reason: Same as previous entry but with different vulnerable range.
+# Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-hh32-7344-cg2f.json
 - Name: CVE-2022-22978
   Description: Authorization bypass in Spring Security
   Issued: '2022-05-20T00:00:39Z'
@@ -258,9 +258,9 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-29885
-  # Reason: osv.dev does not attribute this to Maven. See https://osv.dev/vulnerability/CVE-2022-29885.
-  # Source: https://nvd.nist.gov/vuln/detail/CVE-2022-29885 and https://osv.dev/vulnerability/CVE-2022-29885
+# Vuln: CVE-2022-29885
+# Reason: osv.dev does not attribute this to Maven. See https://osv.dev/vulnerability/CVE-2022-29885.
+# Source: https://nvd.nist.gov/vuln/detail/CVE-2022-29885 and https://osv.dev/vulnerability/CVE-2022-29885
 - Name: CVE-2022-29885
   Description: The documentation of Apache Tomcat 10.1.0-M1 to 10.1.0-M14, 10.0.0-M1 to 10.0.20, 9.0.13 to 9.0.62 and 8.5.38 to 8.5.78 for the EncryptInterceptor incorrectly stated it enabled Tomcat clustering to run over an untrusted network. This was not correct. While the EncryptInterceptor does provide confidentiality and integrity protection, it does not protect against all risks associated with running over any untrusted network, particularly DoS risks.
   Issued: '2022-05-12T08:15:07Z'
@@ -276,9 +276,9 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-29885
-  # Reason: Same as previous entry but with different vulnerable range.
-  # Source: https://nvd.nist.gov/vuln/detail/CVE-2022-29885 and https://osv.dev/vulnerability/CVE-2022-29885
+# Vuln: CVE-2022-29885
+# Reason: Same as previous entry but with different vulnerable range.
+# Source: https://nvd.nist.gov/vuln/detail/CVE-2022-29885 and https://osv.dev/vulnerability/CVE-2022-29885
 - Name: CVE-2022-29885
   Description: The documentation of Apache Tomcat 10.1.0-M1 to 10.1.0-M14, 10.0.0-M1 to 10.0.20, 9.0.13 to 9.0.62 and 8.5.38 to 8.5.78 for the EncryptInterceptor incorrectly stated it enabled Tomcat clustering to run over an untrusted network. This was not correct. While the EncryptInterceptor does provide confidentiality and integrity protection, it does not protect against all risks associated with running over any untrusted network, particularly DoS risks.
   Issued: '2022-05-12T08:15:07Z'
@@ -294,9 +294,9 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2022-29885
-  # Reason: Same as previous entry but with different vulnerable range.
-  # Source: https://nvd.nist.gov/vuln/detail/CVE-2022-29885 and https://osv.dev/vulnerability/CVE-2022-29885
+# Vuln: CVE-2022-29885
+# Reason: Same as previous entry but with different vulnerable range.
+# Source: https://nvd.nist.gov/vuln/detail/CVE-2022-29885 and https://osv.dev/vulnerability/CVE-2022-29885
 - Name: CVE-2022-29885
   Description: The documentation of Apache Tomcat 10.1.0-M1 to 10.1.0-M14, 10.0.0-M1 to 10.0.20, 9.0.13 to 9.0.62 and 8.5.38 to 8.5.78 for the EncryptInterceptor incorrectly stated it enabled Tomcat clustering to run over an untrusted network. This was not correct. While the EncryptInterceptor does provide confidentiality and integrity protection, it does not protect against all risks associated with running over any untrusted network, particularly DoS risks.
   Issued: '2022-05-12T08:15:07Z'
@@ -312,13 +312,13 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2023-28708
-  # Reason: osv.dev does not attribute this to Maven. See https://osv.dev/vulnerability/CVE-2023-28708.
-  # Source: https://nvd.nist.gov/vuln/detail/CVE-2023-28708 and https://osv.dev/vulnerability/CVE-2023-28708
+# Vuln: CVE-2023-28708
+# Reason: osv.dev does not attribute this to Maven. See https://osv.dev/vulnerability/CVE-2023-28708.
+# Source: https://nvd.nist.gov/vuln/detail/CVE-2023-28708 and https://osv.dev/vulnerability/CVE-2023-28708
 - Name: CVE-2023-28708
   Description: When using the RemoteIpFilter with requests received from a reverse proxy via HTTP that include the X-Forwarded-Proto header set to https, session cookies created by Apache Tomcat 11.0.0-M1 to 11.0.0.-M2, 10.1.0-M1 to 10.1.5, 9.0.0-M1 to 9.0.71 and 8.5.0 to 8.5.85 did not include the secure attribute. This could result in the user agent transmitting the session cookie over an insecure channel.
   Issued: '2023-03-22T11:15:10Z'
-  Links: https://nvd.nist.gov/vuln/detail/CVE-2022-29885
+  Links: https://nvd.nist.gov/vuln/detail/CVE-2023-28708
   Severity: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N
   NormalizedSeverity: Medium
   Package:
@@ -330,13 +330,13 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2023-28708
-  # Reason: Same as previous entry but with different vulnerable range.
-  # Source: https://nvd.nist.gov/vuln/detail/CVE-2023-28708 and https://osv.dev/vulnerability/CVE-2023-28708
+# Vuln: CVE-2023-28708
+# Reason: Same as previous entry but with different vulnerable range.
+# Source: https://nvd.nist.gov/vuln/detail/CVE-2023-28708 and https://osv.dev/vulnerability/CVE-2023-28708
 - Name: CVE-2023-28708
   Description: When using the RemoteIpFilter with requests received from a reverse proxy via HTTP that include the X-Forwarded-Proto header set to https, session cookies created by Apache Tomcat 11.0.0-M1 to 11.0.0.-M2, 10.1.0-M1 to 10.1.5, 9.0.0-M1 to 9.0.71 and 8.5.0 to 8.5.85 did not include the secure attribute. This could result in the user agent transmitting the session cookie over an insecure channel.
   Issued: '2023-03-22T11:15:10Z'
-  Links: https://nvd.nist.gov/vuln/detail/CVE-2022-29885
+  Links: https://nvd.nist.gov/vuln/detail/CVE-2023-28708
   Severity: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N
   NormalizedSeverity: Medium
   Package:
@@ -348,13 +348,13 @@ vulnerabilities:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
 
-  # Vuln: CVE-2023-28708
-  # Reason: Same as previous entry but with different vulnerable range.
-  # Source: https://nvd.nist.gov/vuln/detail/CVE-2023-28708 and https://osv.dev/vulnerability/CVE-2023-28708
+# Vuln: CVE-2023-28708
+# Reason: Same as previous entry but with different vulnerable range.
+# Source: https://nvd.nist.gov/vuln/detail/CVE-2023-28708 and https://osv.dev/vulnerability/CVE-2023-28708
 - Name: CVE-2023-28708
   Description: When using the RemoteIpFilter with requests received from a reverse proxy via HTTP that include the X-Forwarded-Proto header set to https, session cookies created by Apache Tomcat 11.0.0-M1 to 11.0.0.-M2, 10.1.0-M1 to 10.1.5, 9.0.0-M1 to 9.0.71 and 8.5.0 to 8.5.85 did not include the secure attribute. This could result in the user agent transmitting the session cookie over an insecure channel.
   Issued: '2023-03-22T11:15:10Z'
-  Links: https://nvd.nist.gov/vuln/detail/CVE-2022-29885
+  Links: https://nvd.nist.gov/vuln/detail/CVE-2023-28708
   Severity: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N
   NormalizedSeverity: Medium
   Package:

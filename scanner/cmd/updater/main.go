@@ -51,9 +51,6 @@ func main() {
 				return err
 			}
 			const retries = 3
-			if manualURL == "" {
-				manualURL = DefaultURL
-			}
 			for attempt := 1; attempt <= retries; attempt++ {
 				zlog.Info(ctx).
 					Int("attempt", attempt).
