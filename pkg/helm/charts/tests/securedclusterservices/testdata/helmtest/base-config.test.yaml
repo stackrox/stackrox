@@ -28,7 +28,7 @@ tests:
       centralEndpoint: "https://stackrox-central.example.com"
     expect: |
       verifyCentralEndpoint("https://stackrox-central.example.com:443")
-      .notes | assertThat(contains("WARNING: Specified centralEndpoint https://stackrox-central.example.com is missing a port"))
+      .notes | assertThat(contains("Specified centralEndpoint https://stackrox-central.example.com does not contain a port"))
 
 - name: different namespace
   release:
