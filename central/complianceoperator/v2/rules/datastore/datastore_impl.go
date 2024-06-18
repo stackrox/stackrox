@@ -55,8 +55,8 @@ type ControlResult struct {
 	RuleName string `db:"compliance_rule_name"`
 }
 
-// GetControlsByRuleNames returns controls by a list of rule names group by control, standard and rule name.
-func (d *datastoreImpl) GetControlsByRuleNames(ctx context.Context, ruleNames []string) ([]*ControlResult, error) {
+// GetControlsByRulesAndBenchmarks returns controls by a list of rule names group by control, standard and rule name.
+func (d *datastoreImpl) GetControlsByRulesAndBenchmarks(ctx context.Context, ruleNames []string, benchmarks []string) ([]*ControlResult, error) {
 	builder := search.NewQueryBuilder()
 	builder.AddSelectFields(
 		search.NewQuerySelect(search.ComplianceOperatorControl),
@@ -65,6 +65,7 @@ func (d *datastoreImpl) GetControlsByRuleNames(ctx context.Context, ruleNames []
 	)
 
 	builder.AddExactMatches(search.ComplianceOperatorRuleName, ruleNames...)
+	builder.AddExactMatches(search.ComplianceOperatorStandard, benchmarks...)
 
 	// Add a group by clause to group the rule names by name, control and standard to reduce the result set.
 	builder.AddGroupBy(

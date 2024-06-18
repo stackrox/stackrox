@@ -74,11 +74,6 @@ run_scale_test() {
     fi
 }
 
-get_prometheus_metrics_parser() {
-    go install github.com/stackrox/prometheus-metric-parser@latest
-    prometheus-metric-parser help
-}
-
 compare_with_stored_metrics() {
     local debug_dump_dir="$1"
     local gs_path="gs://stackrox-ci-scale-test-results/${COMPARISON_METRICS}"

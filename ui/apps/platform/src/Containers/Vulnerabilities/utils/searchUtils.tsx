@@ -26,16 +26,7 @@ import {
     isFixableStatus,
     isVulnerabilitySeverityLabel,
 } from '../types';
-import {
-    IMAGE_CVE_SEARCH_OPTION,
-    IMAGE_SEARCH_OPTION,
-    DEPLOYMENT_SEARCH_OPTION,
-    NAMESPACE_SEARCH_OPTION,
-    CLUSTER_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-    COMPONENT_SEARCH_OPTION,
-    regexSearchOptions,
-} from '../searchOptions';
+import { regexSearchOptions } from '../searchOptions';
 
 export type OverviewPageSearch = {
     s?: SearchFilter;
@@ -129,24 +120,14 @@ export function severityLabelToSeverity(label: VulnerabilitySeverityLabel): Vuln
 }
 
 /**
- * Parses an open `SearchFilter` obtained from the URL into a restricted `SearchFilter` that
+ * Parses an open `SearchFilter` obtained from the URL into a `SearchFilter` that
  * matches the fields and values expected by the backend.
  */
-export function parseWorkloadQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySearchFilter {
+export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySearchFilter {
     const cleanSearchFilter: QuerySearchFilter = {};
 
-    // SearchFilter values that can be directly translated over to the backend equivalent
-    const unprocessedSearchKeys = [
-        IMAGE_CVE_SEARCH_OPTION.value,
-        IMAGE_SEARCH_OPTION.value,
-        DEPLOYMENT_SEARCH_OPTION.value,
-        NAMESPACE_SEARCH_OPTION.value,
-        CLUSTER_SEARCH_OPTION.value,
-        COMPONENT_SEARCH_OPTION.value,
-        COMPONENT_SOURCE_SEARCH_OPTION.value,
-    ] as const;
-    unprocessedSearchKeys.forEach((key) => {
-        const values = searchValueAsArray(rawSearchFilter[key]);
+    Object.entries(rawSearchFilter).forEach(([key, value]) => {
+        const values = searchValueAsArray(value);
         if (values.length > 0) {
             cleanSearchFilter[key] = values;
         }
@@ -243,7 +224,7 @@ export function applyRegexSearchModifiers(searchFilter: SearchFilter): SearchFil
     const regexSearchFilter = cloneDeep(searchFilter);
 
     Object.entries(regexSearchFilter).forEach(([key, value]) => {
-        if (regexSearchOptions.some((option) => option === key)) {
+        if (regexSearchOptions.some((option) => option.toLowerCase() === key.toLowerCase())) {
             regexSearchFilter[key] = searchValueAsArray(value).map((val) => `r/${val}`);
         }
     });

@@ -1,7 +1,6 @@
 import { gql, useQuery } from '@apollo/client';
 import { getPaginationParams } from 'utils/searchUtils';
-import { ApiSortOption } from 'types/search';
-import { Pagination } from 'services/types';
+import { ClientPagination, Pagination } from 'services/types';
 import { QuerySearchFilter } from '../../types';
 import { getRegexScopedQueryString } from '../../utils/searchUtils';
 
@@ -56,12 +55,12 @@ export type NodeCVE = {
     }[];
 };
 
-export default function useNodeCves(
-    querySearchFilter: QuerySearchFilter,
-    page: number,
-    perPage: number,
-    sortOption: ApiSortOption
-) {
+export default function useNodeCves({
+    querySearchFilter,
+    page,
+    perPage,
+    sortOption,
+}: { querySearchFilter: QuerySearchFilter } & ClientPagination) {
     return useQuery<
         { nodeCVEs: NodeCVE[] },
         {

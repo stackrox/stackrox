@@ -59,10 +59,10 @@ func ClientSingleton() Client {
 }
 
 func transportWithServiceCA() http.RoundTripper {
-	return transportWithAdditonalCA(serviceOperatorCAPath)
+	return transportWithAdditionalCA(serviceOperatorCAPath)
 }
 
-func transportWithAdditonalCA(caFile string) *http.Transport {
+func transportWithAdditionalCA(caFile string) *http.Transport {
 	rootCAs, err := x509.SystemCertPool()
 	if err != nil {
 		rootCAs = x509.NewCertPool()

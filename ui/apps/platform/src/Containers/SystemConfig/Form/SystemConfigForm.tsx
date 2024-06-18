@@ -37,7 +37,6 @@ import { PrivateConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { selectors } from 'reducers';
 import { initializeAnalytics } from 'global/initializeAnalytics';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import FormSelect from './FormSelect';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
@@ -99,7 +98,6 @@ const SystemConfigForm = ({
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const isTelemetryConfigured = useSelector(selectors.getIsTelemetryConfigured);
     const telemetryConfig = useSelector(selectors.getTelemetryConfig);
-    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const { privateConfig } = systemConfig;
     const publicConfig = getCompletePublicConfig(systemConfig);
@@ -402,28 +400,26 @@ const SystemConfigForm = ({
                         </FormHelperText>
                     </FormGroup>
                 </GridItem>
-                {isFeatureFlagEnabled('ROX_ADMINISTRATION_EVENTS') && (
-                    <GridItem>
-                        <FormGroup
-                            label="Administration events retention days"
+                <GridItem>
+                    <FormGroup
+                        label="Administration events retention days"
+                        isRequired
+                        fieldId="privateConfig.administrationEventsConfig.retentionDurationDays"
+                    >
+                        <TextInput
                             isRequired
-                            fieldId="privateConfig.administrationEventsConfig.retentionDurationDays"
-                        >
-                            <TextInput
-                                isRequired
-                                type="number"
-                                id="privateConfig.administrationEventsConfig.retentionDurationDays"
-                                name="privateConfig.administrationEventsConfig.retentionDurationDays"
-                                value={
-                                    values?.privateConfig?.administrationEventsConfig
-                                        ?.retentionDurationDays
-                                }
-                                onChange={(event, value) => onChange(value, event)}
-                                min={0}
-                            />
-                        </FormGroup>
-                    </GridItem>
-                )}
+                            type="number"
+                            id="privateConfig.administrationEventsConfig.retentionDurationDays"
+                            name="privateConfig.administrationEventsConfig.retentionDurationDays"
+                            value={
+                                values?.privateConfig?.administrationEventsConfig
+                                    ?.retentionDurationDays
+                            }
+                            onChange={(event, value) => onChange(value, event)}
+                            min={0}
+                        />
+                    </FormGroup>
+                </GridItem>
             </Grid>
             <Title headingLevel="h3">Cluster deletion</Title>
             <Grid hasGutter md={6}>

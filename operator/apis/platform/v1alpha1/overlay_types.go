@@ -87,8 +87,13 @@ type K8sObjectOverlay struct {
 	// Name of resource.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Name",order=3
 	Name string `json:"name,omitempty"`
+	// Optional marks the overlay as optional.
+	// When Optional is true, and the specified resource does not exist in the output manifests, the overlay will be skipped, and a warning will be logged.
+	// When Optional is false, and the specified resource does not exist in the output manifests, an error will be thrown.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Optional",order=4
+	Optional bool `json:"optional,omitempty"`
 	// List of patches to apply to resource.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Patches",order=4
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Patches",order=5
 	Patches []*K8sObjectOverlayPatch `json:"patches,omitempty"`
 }
 

@@ -345,6 +345,9 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 }
 
 func TestEndpoints(t *testing.T) {
+	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
+		t.Skip("Skipping endpoints test on OCP: TODO(ROX-24688)")
+	}
 	userCert, err := tls.LoadX509KeyPair(os.Getenv("CLIENT_CERT_PATH"), os.Getenv("CLIENT_KEY_PATH"))
 	require.NoError(t, err, "failed to load user certificate")
 

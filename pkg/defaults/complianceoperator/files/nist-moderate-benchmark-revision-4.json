@@ -1,0 +1,34 @@
+{
+  "id": "13d6b465-1467-4bfd-af0f-a3e2205048f1",
+  "name": "NIST 800-53 Moderate-Impact Baseline",
+  "version": "Revision 4",
+  "description": "",
+  "provider": "NIST",
+  "shortName": "NIST-800-53",
+  "profiles": [
+    {
+      "profileName": "ocp4-moderate",
+      "profileVersion": "latest"
+    },
+    {
+      "profileName": "ocp4-moderate-node",
+      "profileVersion": "latest"
+    },
+    {
+      "profileName": "rhcos4-moderate",
+      "profileVersion": "latest"
+    },
+    {
+      "profileName": "ocp4-moderate-rev-4",
+      "profileVersion": "Revision 4"
+    },
+    {
+      "profileName": "ocp4-moderate-node-rev-4",
+      "profileVersion": "Revision 4"
+    },
+    {
+      "profileName": "rhcos4-moderate-rev-4",
+      "profileVersion": "Revision 4"
+    }
+  ]
+}

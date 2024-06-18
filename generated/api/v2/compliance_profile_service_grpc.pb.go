@@ -19,10 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ComplianceProfileService_GetComplianceProfile_FullMethodName      = "/v2.ComplianceProfileService/GetComplianceProfile"
-	ComplianceProfileService_ListComplianceProfiles_FullMethodName    = "/v2.ComplianceProfileService/ListComplianceProfiles"
-	ComplianceProfileService_ListProfileSummaries_FullMethodName      = "/v2.ComplianceProfileService/ListProfileSummaries"
-	ComplianceProfileService_GetComplianceProfileCount_FullMethodName = "/v2.ComplianceProfileService/GetComplianceProfileCount"
+	ComplianceProfileService_GetComplianceProfile_FullMethodName   = "/v2.ComplianceProfileService/GetComplianceProfile"
+	ComplianceProfileService_ListComplianceProfiles_FullMethodName = "/v2.ComplianceProfileService/ListComplianceProfiles"
+	ComplianceProfileService_ListProfileSummaries_FullMethodName   = "/v2.ComplianceProfileService/ListProfileSummaries"
 )
 
 // ComplianceProfileServiceClient is the client API for ComplianceProfileService service.
@@ -35,8 +34,6 @@ type ComplianceProfileServiceClient interface {
 	ListComplianceProfiles(ctx context.Context, in *ProfilesForClusterRequest, opts ...grpc.CallOption) (*ListComplianceProfilesResponse, error)
 	// ListProfileSummaries returns profiles matching each cluster and the given query
 	ListProfileSummaries(ctx context.Context, in *ClustersProfileSummaryRequest, opts ...grpc.CallOption) (*ListComplianceProfileSummaryResponse, error)
-	// GetComplianceProfileCount returns the number of profiles matching the given query
-	GetComplianceProfileCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountComplianceProfilesResponse, error)
 }
 
 type complianceProfileServiceClient struct {
@@ -74,15 +71,6 @@ func (c *complianceProfileServiceClient) ListProfileSummaries(ctx context.Contex
 	return out, nil
 }
 
-func (c *complianceProfileServiceClient) GetComplianceProfileCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountComplianceProfilesResponse, error) {
-	out := new(CountComplianceProfilesResponse)
-	err := c.cc.Invoke(ctx, ComplianceProfileService_GetComplianceProfileCount_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // ComplianceProfileServiceServer is the server API for ComplianceProfileService service.
 // All implementations should embed UnimplementedComplianceProfileServiceServer
 // for forward compatibility
@@ -93,8 +81,6 @@ type ComplianceProfileServiceServer interface {
 	ListComplianceProfiles(context.Context, *ProfilesForClusterRequest) (*ListComplianceProfilesResponse, error)
 	// ListProfileSummaries returns profiles matching each cluster and the given query
 	ListProfileSummaries(context.Context, *ClustersProfileSummaryRequest) (*ListComplianceProfileSummaryResponse, error)
-	// GetComplianceProfileCount returns the number of profiles matching the given query
-	GetComplianceProfileCount(context.Context, *RawQuery) (*CountComplianceProfilesResponse, error)
 }
 
 // UnimplementedComplianceProfileServiceServer should be embedded to have forward compatible implementations.
@@ -109,9 +95,6 @@ func (UnimplementedComplianceProfileServiceServer) ListComplianceProfiles(contex
 }
 func (UnimplementedComplianceProfileServiceServer) ListProfileSummaries(context.Context, *ClustersProfileSummaryRequest) (*ListComplianceProfileSummaryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListProfileSummaries not implemented")
-}
-func (UnimplementedComplianceProfileServiceServer) GetComplianceProfileCount(context.Context, *RawQuery) (*CountComplianceProfilesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceProfileCount not implemented")
 }
 
 // UnsafeComplianceProfileServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -179,24 +162,6 @@ func _ComplianceProfileService_ListProfileSummaries_Handler(srv interface{}, ctx
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceProfileService_GetComplianceProfileCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RawQuery)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ComplianceProfileServiceServer).GetComplianceProfileCount(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ComplianceProfileService_GetComplianceProfileCount_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceProfileServiceServer).GetComplianceProfileCount(ctx, req.(*RawQuery))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // ComplianceProfileService_ServiceDesc is the grpc.ServiceDesc for ComplianceProfileService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -215,10 +180,6 @@ var ComplianceProfileService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListProfileSummaries",
 			Handler:    _ComplianceProfileService_ListProfileSummaries_Handler,
-		},
-		{
-			MethodName: "GetComplianceProfileCount",
-			Handler:    _ComplianceProfileService_GetComplianceProfileCount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -6,11 +6,15 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	benchmarkMocks "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore/mocks"
 	managerMocks "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager/mocks"
+	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	reportManagerMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scanSettingBindingMocks "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore/mocks"
 	suiteMocks "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore/mocks"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	v2 "github.com/stackrox/rox/generated/api/v2"
@@ -85,6 +89,10 @@ type ComplianceScanConfigServiceTestSuite struct {
 	scanConfigDatastore         *scanConfigMocks.MockDataStore
 	scanSettingBindingDatastore *scanSettingBindingMocks.MockDataStore
 	suiteDataStore              *suiteMocks.MockDataStore
+	notifierDS                  *notifierDS.MockDataStore
+	profileDS                   *profileDatastore.MockDataStore
+	clusterDatastore            *clusterDatastoreMocks.MockDataStore
+	benchmarkDS                 *benchmarkMocks.MockDataStore
 	service                     Service
 }
 
@@ -105,7 +113,10 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.scanConfigDatastore = scanConfigMocks.NewMockDataStore(s.mockCtrl)
 	s.scanSettingBindingDatastore = scanSettingBindingMocks.NewMockDataStore(s.mockCtrl)
 	s.suiteDataStore = suiteMocks.NewMockDataStore(s.mockCtrl)
-	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager)
+	s.profileDS = profileDatastore.NewMockDataStore(s.mockCtrl)
+	s.clusterDatastore = clusterDatastoreMocks.NewMockDataStore(s.mockCtrl)
+	s.benchmarkDS = benchmarkMocks.NewMockDataStore(s.mockCtrl)
+	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager, s.notifierDS, s.profileDS, s.benchmarkDS, s.clusterDatastore)
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TearDownTest() {
@@ -128,6 +139,13 @@ func (s *ComplianceScanConfigServiceTestSuite) TestComplianceScanConfigurationNa
 	_, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().Error(err)
 
+	request.ScanName = "default"
+	_, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Contains(err.Error(), "Scan configuration name \"default\" cannot be used as it is reserved by the Compliance Operator")
+
+	request.ScanName = "default-auto-apply"
+	_, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Contains(err.Error(), "Scan configuration name \"default-auto-apply\" cannot be used as it is reserved by the Compliance Operator")
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfiguration() {
@@ -382,40 +400,6 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 	}
 }
 
-func (s *ComplianceScanConfigServiceTestSuite) TestCountComplianceScanConfigurations() {
-	allAccessContext := sac.WithAllAccess(context.Background())
-
-	testCases := []struct {
-		desc      string
-		query     *apiV2.RawQuery
-		expectedQ *v1.Query
-	}{
-		{
-			desc:      "Empty query",
-			query:     &apiV2.RawQuery{Query: ""},
-			expectedQ: search.NewQueryBuilder().ProtoQuery(),
-		},
-		{
-			desc:      "Query with search field",
-			query:     &apiV2.RawQuery{Query: "Cluster ID:id"},
-			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery(),
-		},
-	}
-
-	for _, tc := range testCases {
-		s.T().Run(tc.desc, func(t *testing.T) {
-
-			s.scanConfigDatastore.EXPECT().CountScanConfigurations(allAccessContext, tc.expectedQ).
-				Return(1, nil).Times(1)
-
-			configs, err := s.service.GetComplianceScanConfigurationsCount(allAccessContext, tc.query)
-			s.Require().NoError(err)
-			s.Require().Equal(int32(1), configs.Count)
-		})
-	}
-
-}
-
 func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 	createdTime := timestamp.Now().GoTime()
@@ -532,6 +516,96 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 	}
 }
 
+func (s *ComplianceScanConfigServiceTestSuite) ListComplianceScanConfigProfiles() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	testCases := []struct {
+		desc           string
+		query          *apiV2.RawQuery
+		expectedQ      *v1.Query
+		expectedCountQ *v1.Query
+	}{
+		{
+			desc:           "Empty query",
+			query:          &apiV2.RawQuery{Query: ""},
+			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			expectedCountQ: search.EmptyQuery(),
+		},
+		{
+			desc:  "Query with search field",
+			query: &apiV2.RawQuery{Query: "Cluster ID:id"},
+			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
+				WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			expectedCountQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery(),
+		},
+		{
+			desc: "Query with custom pagination",
+			query: &apiV2.RawQuery{
+				Query:      "",
+				Pagination: &apiV2.Pagination{Limit: 1},
+			},
+			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery(),
+			expectedCountQ: search.EmptyQuery(),
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			expectedResp := &apiV2.ListComplianceScanConfigsProfileResponse{
+				Profiles:   nil,
+				TotalCount: 6,
+			}
+
+			s.scanConfigDatastore.EXPECT().GetProfilesNames(gomock.Any(), tc.query).Return([]string{"ocp4"}, nil).Times(1)
+			s.scanConfigDatastore.EXPECT().CountDistinctProfiles(gomock.Any(), tc.expectedCountQ).Return(1, nil).Times(1)
+
+			searchQuery := search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery()
+			searchQuery.Pagination = &v1.QueryPagination{}
+
+			profiles := []*storage.ComplianceOperatorProfileV2{
+				{
+					Name:           "ocp4",
+					ProductType:    "platform",
+					Description:    "this is a test",
+					Title:          "A Title",
+					ProfileVersion: "version 1",
+					Rules: []*storage.ComplianceOperatorProfileV2_Rule{
+						{
+							RuleName: "test 1",
+						},
+						{
+							RuleName: "test 2",
+						},
+						{
+							RuleName: "test 3",
+						},
+						{
+							RuleName: "test 4",
+						},
+						{
+							RuleName: "test 5",
+						},
+					},
+				},
+			}
+			s.profileDS.EXPECT().SearchProfiles(gomock.Any(), searchQuery).Return(profiles, nil).Times(1)
+
+			for _, profile := range profiles {
+				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(s.ctx, profile.GetName()).Return([]*storage.ComplianceOperatorBenchmarkV2{{
+					Id:        uuid.NewV4().String(),
+					Name:      "CIS",
+					ShortName: "OCP_CIS",
+					Version:   "1-5",
+				}}, nil).Times(1)
+			}
+
+			configProfiles, err := s.service.ListComplianceScanConfigProfiles(allAccessContext, tc.query)
+			s.Require().NoError(err)
+			s.Require().EqualValues(expectedResp, configProfiles)
+		})
+	}
+}
+
 func (s *ComplianceScanConfigServiceTestSuite) TestRunComplianceScanConfigurationWithValidScanConfigIdSucceeds() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 
@@ -590,6 +664,7 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.Complian
 			Profiles:     []string{"ocp4-cis"},
 			ScanSchedule: defaultAPISchedule,
 			Description:  "test-description",
+			Notifiers:    []*v2.NotifierConfiguration{},
 		},
 		ClusterStatus: []*apiV2.ClusterScanStatus{
 			{

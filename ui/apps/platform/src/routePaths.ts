@@ -170,7 +170,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Access']),
     },
     'administration-events': {
-        featureFlagRequirements: allEnabled(['ROX_ADMINISTRATION_EVENTS']),
         resourceAccessRequirements: everyResource(['Administration']),
     },
     apidocs: {

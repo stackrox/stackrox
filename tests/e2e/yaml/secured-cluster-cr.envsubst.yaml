@@ -8,6 +8,7 @@ spec:
   perNode:
     collector:
       collection: $collection_method
+      forceCollection: true
   scanner:
     scannerComponent: $scanner_component_setting
     analyzer:

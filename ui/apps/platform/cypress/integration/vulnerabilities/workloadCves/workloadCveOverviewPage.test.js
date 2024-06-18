@@ -10,10 +10,13 @@ import {
     interactAndWaitForCveList,
     interactAndWaitForImageList,
     interactAndWaitForDeploymentList,
+    typeAndEnterCustomSearchFilterValue,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 
 describe('Workload CVE overview page tests', () => {
+    const isAdvancedFiltersEnabled = hasFeatureFlag('ROX_VULN_MGMT_ADVANCED_FILTERS');
+
     withAuth();
 
     before(function () {
@@ -66,7 +69,8 @@ describe('Workload CVE overview page tests', () => {
             selectEntityTab(entity);
 
             // Ensure that only the correct filter chip is present
-            cy.get(selectors.filterChipGroupItem('Severity', 'Critical'));
+            const filterChipGroupName = isAdvancedFiltersEnabled ? 'CVE severity' : 'Severity';
+            cy.get(selectors.filterChipGroupItem(filterChipGroupName, 'Critical'));
             cy.get(selectors.filterChipGroupItems).should('have.lengthOf', 1);
 
             // TODO - See if there is a clean way to re-enable this to handle both cases where the
@@ -84,7 +88,10 @@ describe('Workload CVE overview page tests', () => {
 
     describe('Images without CVEs view tests', () => {
         beforeEach(function () {
-            if (!hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
+            if (
+                !hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS') ||
+                !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
+            ) {
                 this.skip();
             }
         });
@@ -154,19 +161,27 @@ describe('Workload CVE overview page tests', () => {
         });
 
         it('should apply the correct filters when switching between "with cves" and "without cves" views', () => {
+            const severityChip = isAdvancedFiltersEnabled ? 'CVE severity' : 'Severity';
+            const cveStatusChip = 'CVE status';
+            const imageNameChip = isAdvancedFiltersEnabled ? 'Image Name' : 'Image';
+
             // Since we want to test the behavior of the default filters with the two cve views, we
             // do not clear them by default in this case
             visitWorkloadCveOverview({ clearFiltersOnVisit: false });
 
             interactAndWaitForCveList(() => {
                 // Add a local filter
-                typeAndSelectCustomSearchFilterValue('Image', 'quay.io/bogus');
+                if (isAdvancedFiltersEnabled) {
+                    typeAndEnterCustomSearchFilterValue('Image', 'Name', 'quay.io/bogus');
+                } else {
+                    typeAndSelectCustomSearchFilterValue('Image', 'quay.io/bogus');
+                }
 
                 // Check that default filters and the local filter are present
-                cy.get(selectors.filterChipGroupItem('Severity', 'Critical'));
-                cy.get(selectors.filterChipGroupItem('Severity', 'Important'));
-                cy.get(selectors.filterChipGroupItem('CVE status', 'Fixable'));
-                cy.get(selectors.filterChipGroupItem('Image', 'quay.io/bogus'));
+                cy.get(selectors.filterChipGroupItem(severityChip, 'Critical'));
+                cy.get(selectors.filterChipGroupItem(severityChip, 'Important'));
+                cy.get(selectors.filterChipGroupItem(cveStatusChip, 'Fixable'));
+                cy.get(selectors.filterChipGroupItem(imageNameChip, 'quay.io/bogus'));
             }).should((xhr) => {
                 // Ensure the default "with cves" view passes a "Vulnerability State" filter automatically
                 // Ensure default and local filters are passed as well
@@ -197,7 +212,11 @@ describe('Workload CVE overview page tests', () => {
 
             interactAndWaitForImageList(() => {
                 // Apply a filter in the "without cves" view
-                typeAndSelectCustomSearchFilterValue('Image', 'quay.io/bogus');
+                if (isAdvancedFiltersEnabled) {
+                    typeAndEnterCustomSearchFilterValue('Image', 'Name', 'quay.io/bogus');
+                } else {
+                    typeAndSelectCustomSearchFilterValue('Image', 'quay.io/bogus');
+                }
             }).should((xhr) => {
                 // On switching views, all filters, including the defaults should be cleared
                 const requestQuery = xhr.request.body.variables.query.toLowerCase();
@@ -211,11 +230,13 @@ describe('Workload CVE overview page tests', () => {
                 // and reapply the default filters
                 changeObservedCveViewingMode('Image vulnerabilities');
                 // Check that default filters are present
-                cy.get(selectors.filterChipGroupItem('Severity', 'Critical'));
-                cy.get(selectors.filterChipGroupItem('Severity', 'Important'));
-                cy.get(selectors.filterChipGroupItem('CVE status', 'Fixable'));
+                cy.get(selectors.filterChipGroupItem(severityChip, 'Critical'));
+                cy.get(selectors.filterChipGroupItem(severityChip, 'Important'));
+                cy.get(selectors.filterChipGroupItem(cveStatusChip, 'Fixable'));
                 // check that the local applied filter is not present
-                cy.get(selectors.filterChipGroupItem('Image', 'quay.io/bogus')).should('not.exist');
+                cy.get(selectors.filterChipGroupItem(imageNameChip, 'quay.io/bogus')).should(
+                    'not.exist'
+                );
             }).should((xhr) => {
                 const requestQuery = xhr.request.body.variables.query.toLowerCase();
                 expect(requestQuery).to.contain('vulnerability state');

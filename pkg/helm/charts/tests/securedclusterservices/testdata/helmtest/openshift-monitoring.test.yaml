@@ -161,3 +161,23 @@ tests:
     kubeVersion:
       version: "v1.11.0"
   tests: *disabled-test
+
+- name: "Network policy is enabled"
+  set:
+    env.openshift: 4
+    scannerV4.disable: false
+    monitoring.openshift.enabled: true
+    system.enableNetworkPolicies: true
+  expect: |
+    .networkpolicys["sensor-monitoring-tls"] | assertThat(. != null)
+    .networkpolicys["scanner-v4-indexer-monitoring-tls"] | assertThat(. != null)
+
+- name: "Network policy is disabled"
+  set:
+    env.openshift: 4
+    scannerV4.disable: false
+    monitoring.openshift.enabled: true
+    system.enableNetworkPolicies: false
+  expect: |
+    .networkpolicys["sensor-monitoring-tls"] | assertThat(. == null)
+    .networkpolicys["scanner-v4-indexer-monitoring-tls"] | assertThat(. == null)

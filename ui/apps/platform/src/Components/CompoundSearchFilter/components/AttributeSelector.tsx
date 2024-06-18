@@ -1,7 +1,7 @@
 import React from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
-import { CompoundSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
+import { PartialCompoundSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
 import { getEntityAttributes } from 'Components/CompoundSearchFilter/utils/utils';
 
 import SimpleSelect from './SimpleSelect';
@@ -14,7 +14,7 @@ export type AttributeSelectorProps = {
     selectedEntity: SelectedEntity;
     selectedAttribute: SelectedAttribute;
     onChange: AttributeSelectorOnChange;
-    config: Partial<CompoundSearchFilterConfig>;
+    config: PartialCompoundSearchFilterConfig;
 };
 
 function AttributeSelector({
@@ -29,7 +29,7 @@ function AttributeSelector({
 
     const entityAttributes = getEntityAttributes(selectedEntity, config);
 
-    if (entityAttributes.length === 0) {
+    if (entityAttributes.length <= 1) {
         return null;
     }
 

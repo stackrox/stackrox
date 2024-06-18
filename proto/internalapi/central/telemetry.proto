@@ -10,6 +10,7 @@ message CancelPullTelemetryDataRequest {
   string request_id = 1;
 }
 
+// PullTelemetryDataRequest requests telemetry at Sensor
 message PullTelemetryDataRequest {
   enum TelemetryDataType {
     UNKNOWN = 0;
@@ -22,6 +23,7 @@ message PullTelemetryDataRequest {
   TelemetryDataType data_type = 2;
   int64 timeout_ms = 3;
   google.protobuf.Timestamp since = 4;
+  bool with_compliance_operator = 5;
 }
 
 message TelemetryResponsePayload {

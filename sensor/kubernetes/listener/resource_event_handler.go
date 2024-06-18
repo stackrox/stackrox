@@ -327,6 +327,11 @@ func (k *listenerImpl) handleAllEvents() {
 		},
 		Context: k.context,
 	})
+	utils.Should(k.pubSub.Publish(&internalmessage.SensorInternalMessage{
+		Kind:     internalmessage.SensorMessageResourceSyncFinished,
+		Text:     "Finished the k8s resource sync",
+		Validity: k.context,
+	}))
 }
 
 // Helper function that creates and adds a handler to an informer.

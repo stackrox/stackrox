@@ -38,3 +38,15 @@ tests:
     .networkpolicys["sensor"].spec.ingress[0] | .from[2].podSelector.matchLabels.app | assertThat(. == "admission-control")
     .networkpolicys["sensor"].spec.ingress[0] | .from[3].podSelector.matchLabels.app | assertThat(. == "scanner")
     .networkpolicys["sensor"].spec.ingress[0] | .from[4].podSelector.matchLabels.app | assertThat(. == "scanner-v4-indexer")
+
+- name: "network policies enabled"
+  set:
+    system.enableNetworkPolicies: true
+  expect: |
+    .networkpolicys["sensor"] | assertThat(. != null)
+
+- name: "network policies disabled"
+  set:
+    system.enableNetworkPolicies: false
+  expect: |
+    .networkpolicys["sensor"] | assertThat(. == null)

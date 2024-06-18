@@ -784,6 +784,12 @@ spec:
                     name:
                       description: Name of resource.
                       type: string
+                    optional:
+                      description: |-
+                        Optional marks the overlay as optional.
+                        When Optional is true, and the specified resource does not exist in the output manifests, the overlay will be skipped, and a warning will be logged.
+                        When Optional is false, and the specified resource does not exist in the output manifests, an error will be thrown.
+                      type: boolean
                     patches:
                       description: List of patches to apply to resource.
                       items:

@@ -1,3 +1,4 @@
+/* TODO - This file should be deleted once ROX_VULN_MGMT_ADVANCED_FILTERS is deleted */
 import React, { useState, useMemo } from 'react';
 import { debounce, Skeleton, ToolbarGroup } from '@patternfly/react-core';
 import { Select, SelectOption } from '@patternfly/react-core/deprecated';
@@ -77,7 +78,10 @@ function FilterAutocompleteSelect({
     // 1. The typeahead is not empty
     // 2. The search option supports regex matching
     autocompleteSearchFilter[searchOption.value] =
-        typeahead !== '' && regexSearchOptions.some((option) => option === searchOption.value)
+        typeahead !== '' &&
+        regexSearchOptions.some(
+            (option) => option.toLowerCase() === searchOption.value.toLowerCase()
+        )
             ? [`r/${typeahead}`]
             : [typeahead];
 

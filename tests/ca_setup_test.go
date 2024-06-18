@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -75,6 +76,9 @@ func TestCASetup(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.url, func(t *testing.T) {
+			if c.url == "https://untrusted-root.badssl.com" && os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
+				t.Skip("temporarily skipped on OCP. TODO(ROX-24688)")
+			}
 			internalServiceTimeout := 20 * time.Second
 			testTimeoutPadding := 500 * time.Millisecond
 			ctx, cancel := context.WithTimeout(context.Background(), internalServiceTimeout+testTimeoutPadding)

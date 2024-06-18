@@ -15,6 +15,7 @@ Note: These tests always run on CI unless explicitly labeled otherwise.
 **Note: There may not be any running deployments called `nginx`, as it will collide with the tests.**
 
 **Note: Some tests are just easier to run on CI (example: anything needing certs).**
+Alternatively, try the launcher script in [./e2e](./e2e/).
 
 
 ### From Command Line

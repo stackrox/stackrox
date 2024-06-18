@@ -1,5 +1,7 @@
 FROM registry.redhat.io/rhel8/postgresql-15:latest
 
+ARG MAIN_IMAGE_TAG
+
 LABEL \
     com.redhat.component="rhacs-scanner-v4-db-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
@@ -13,8 +15,10 @@ LABEL \
     summary="Scanner v4 DB for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     # We must set version label to prevent inheriting value set in the base stage.
-    # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
-    version="0.0.1-todo"
+    version="${MAIN_IMAGE_TAG}" \
+    # Release label is required by EC although has no practical semantics.
+    # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
+    release="1"
 
 USER root
 

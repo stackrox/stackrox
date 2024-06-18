@@ -60,6 +60,7 @@ type Store[T any, PT protocompat.Unmarshaler[T]] interface {
 	Get(ctx context.Context, id string) (PT, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error)
 	GetIDs(ctx context.Context) ([]string, error)
+	GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error)
 	DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	Delete(ctx context.Context, id string) error
@@ -257,11 +258,8 @@ func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) (
 	return rows, nil
 }
 
-// GetIDs returns all the IDs for the store.
-func (s *genericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
-	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll)
-
-	result, err := RunSearchRequestForSchema(ctx, s.schema, search.EmptyQuery(), s.db)
+func (s *genericStore[T, PT]) fetchIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
+	result, err := RunSearchRequestForSchema(ctx, s.schema, query, s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -272,6 +270,18 @@ func (s *genericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 	}
 
 	return identifiers, nil
+}
+
+// GetIDs returns all the IDs for the store.
+func (s *genericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll)
+	return s.fetchIDsByQuery(ctx, search.EmptyQuery())
+}
+
+// GetIDsByQuery returns the IDs for the store matching the query.
+func (s *genericStore[T, PT]) GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
+	return s.fetchIDsByQuery(ctx, query)
 }
 
 // GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.

@@ -86,8 +86,8 @@ func (s *AuditLogCollectionManagerTestSuite) getManager(
 		clusterIDGetter:         s.getClusterID,
 		eligibleComplianceNodes: servers,
 		fileStates:              fileStates,
-		updateInterval:          updateInterval,
-		stopSig:                 concurrency.NewSignal(),
+		updaterTicker:           time.NewTicker(updateInterval),
+		stopper:                 concurrency.NewStopper(),
 		forceUpdateSig:          concurrency.NewSignal(),
 		centralReady:            concurrency.NewSignal(),
 		auditEventMsgs:          make(chan *sensor.MsgFromCompliance, 5), // Buffered for the test only
@@ -471,7 +471,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWhenForced() 
 
 	manager := s.getManager(make(map[string]sensor.ComplianceService_CommunicateServer), expectedStatus)
 	// The updater will update a duration that is less than the test timeout, so the update will not be naturally sent until forced
-	manager.updateInterval = 1 * time.Minute
+	manager.updaterTicker = time.NewTicker(1 * time.Minute)
 
 	manager.receivedInitialStateFromCentral.Set(true)
 	manager.Notify(common.SensorComponentEventCentralReachable)
@@ -511,7 +511,13 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
 	manager.auditEventMsgs = make(chan *sensor.MsgFromCompliance)
 	defer close(manager.auditEventMsgs)
 	manager.receivedInitialStateFromCentral.Set(true)
-	s.NoError(manager.Start())
+	// Create a testTicker
+	testTicker := make(chan time.Time)
+	defer close(testTicker)
+	// Start the component.
+	// Here we do not call Start so we can inject our testTicker
+	go manager.runStateSaver()
+	go manager.runUpdater(testTicker)
 
 	centralC := manager.ResponsesC()
 	complianceC := manager.AuditMessagesChan()
@@ -521,6 +527,12 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
 	for i, state := range states {
 		manager.Notify(state)
 		complianceC <- s.getMsgFromCompliance(fmt.Sprintf("Node-%d", i), time.Now().Add(1*time.Second))
+		s.Eventually(func() bool {
+			// If the len of the file states is 0, the complianceC message was not processed yet and we need to wait
+			return len(manager.getLatestFileStates()) > 0
+		}, 500*time.Millisecond, time.Millisecond)
+		// Controlled tick
+		testTicker <- time.Now()
 		select {
 		case <-centralC:
 			s.T().Logf("Received message on centralC (state: %s)", state)

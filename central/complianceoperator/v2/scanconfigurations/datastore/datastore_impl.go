@@ -8,11 +8,16 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -23,6 +28,7 @@ var (
 )
 
 type datastoreImpl struct {
+	db            pgPkg.DB
 	storage       postgres.Store
 	statusStorage statusStore.Store
 	keyedMutex    *concurrency.KeyedMutex
@@ -304,4 +310,91 @@ func (ds *datastoreImpl) RemoveClusterFromScanConfig(ctx context.Context, cluste
 		}
 	}
 	return nil
+}
+
+type distinctProfileName struct {
+	ProfileName string `db:"compliance_config_profile_name"`
+}
+
+// GetProfilesNames gets the list of distinct profile names for the query
+func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]string, error) {
+	var err error
+	q, err = withSACFilter(ctx, resources.Compliance, q)
+	if err != nil {
+		return nil, err
+	}
+
+	clonedQuery := q.Clone()
+
+	// Build the select and group by on distinct profile name
+	clonedQuery.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ComplianceOperatorConfigProfileName).Distinct().Proto(),
+	}
+	clonedQuery.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorConfigProfileName.String(),
+		},
+	}
+
+	clonedQuery.Pagination = q.GetPagination()
+
+	var results []*distinctProfileName
+	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, d.db, schema.ComplianceOperatorScanConfigurationV2Schema, clonedQuery)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, nil
+	}
+	profileNames := make([]string, 0, len(results))
+	for _, result := range results {
+		profileNames = append(profileNames, result.ProfileName)
+	}
+
+	return profileNames, err
+}
+
+type distinctProfileCount struct {
+	TotalCount int    `db:"compliance_config_profile_name_count"`
+	Name       string `db:"compliance_config_profile_name"`
+}
+
+// CountDistinctProfiles returns count of distinct profiles matching query
+func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query) (int, error) {
+	var err error
+	q, err = withSACFilter(ctx, resources.Compliance, q)
+	if err != nil {
+		return 0, err
+	}
+
+	query := q.Clone()
+
+	query.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorConfigProfileName.String(),
+		},
+	}
+
+	var results []*distinctProfileCount
+	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, d.db, schema.ComplianceOperatorScanConfigurationV2Schema, withCountQuery(query, search.ComplianceOperatorConfigProfileName))
+	if err != nil {
+		return 0, err
+	}
+	return len(results), nil
+}
+
+func withCountQuery(query *v1.Query, field search.FieldLabel) *v1.Query {
+	cloned := query.Clone()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Proto(),
+	}
+	return cloned
+}
+
+func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetadata, query *v1.Query) (*v1.Query, error) {
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, err
+	}
+	return search.FilterQueryByQuery(query, sacQueryFilter), nil
 }

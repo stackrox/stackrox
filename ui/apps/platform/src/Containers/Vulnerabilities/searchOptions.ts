@@ -1,4 +1,15 @@
 import { SearchCategory } from 'services/SearchService';
+import { SearchFilterAttribute } from 'Components/CompoundSearchFilter/types';
+import {
+    nodeSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    imageSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    namespaceSearchFilterConfig,
+    clusterSearchFilterConfig,
+} from './searchFilterConfig';
 
 export type SearchOptionValue =
     | 'CLUSTER'
@@ -15,18 +26,24 @@ export type SearchOptionValue =
     | 'Requester User Name'
     | 'SEVERITY';
 
-// Search fields that will default to regex search
-export const regexSearchOptions: SearchOptionValue[] = [
-    'CLUSTER',
-    'COMPONENT',
-    'CVE',
-    'DEPLOYMENT',
-    'IMAGE',
-    'NAMESPACE',
-    'Namespace Label',
-    'Request Name',
-    'Requester User Name',
-] as const;
+/*
+ Search terms that will default to regex search.
+
+ We only convert to regex search if the search field is of type 'text' or 'autocomplete'
+*/
+export const regexSearchOptions = [
+    nodeSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    imageSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    namespaceSearchFilterConfig,
+    clusterSearchFilterConfig,
+]
+    .flatMap((config) => Object.values<SearchFilterAttribute>(config.attributes))
+    .filter(({ inputType }) => inputType === 'text' || inputType === 'autocomplete')
+    .map(({ searchTerm }) => searchTerm);
 
 export type SearchOption = { label: string; value: SearchOptionValue; category: SearchCategory };
 
@@ -46,18 +63,6 @@ export const IMAGE_CVE_SEARCH_OPTION = {
     label: 'CVE',
     value: 'CVE',
     category: 'IMAGE_VULNERABILITIES',
-} as const;
-
-export const NODE_CVE_SEARCH_OPTION = {
-    label: 'CVE',
-    value: 'CVE',
-    category: 'NODE_VULNERABILITIES',
-} as const;
-
-export const SNOOZED_NODE_CVE_SEARCH_OPTION = {
-    label: 'CVE Snoozed',
-    value: 'CVE Snoozed',
-    category: 'NODE_VULNERABILITIES',
 } as const;
 
 export const IMAGE_SEARCH_OPTION = {

@@ -21,6 +21,9 @@ type DataStore interface {
 
 	// DeleteBenchmark removes a benchmark object from the database
 	DeleteBenchmark(ctx context.Context, id string) error
+
+	// GetBenchmarksByProfileName returns the benchmarks for the given profile name
+	GetBenchmarksByProfileName(ctx context.Context, profileName string) ([]*storage.ComplianceOperatorBenchmarkV2, error)
 }
 
 // New returns an instance of DataStore.

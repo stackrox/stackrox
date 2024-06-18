@@ -61,6 +61,7 @@ const (
 type ComplianceOperatorBenchmarkV2 struct {
 	ID         string `gorm:"column:id;type:uuid;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar"`
+	Version    string `gorm:"column:version;type:varchar"`
 	ShortName  string `gorm:"column:shortname;type:varchar"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

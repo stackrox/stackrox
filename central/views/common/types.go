@@ -21,3 +21,10 @@ type ResourceCountByFixability interface {
 	GetTotal() int
 	GetFixable() int
 }
+
+type ResourceTotalCountByCVESeverity interface {
+	GetCriticalSeverityCount() int
+	GetImportantSeverityCount() int
+	GetModerateSeverityCount() int
+	GetLowSeverityCount() int
+}

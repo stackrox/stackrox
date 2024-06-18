@@ -20,27 +20,29 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { FileAltIcon, SearchIcon } from '@patternfly/react-icons';
 import { gql, useQuery } from '@apollo/client';
+import uniq from 'lodash/uniq';
 
 import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import { getTableUIState } from 'utils/getTableUIState';
-import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getPaginationParams, searchValueAsArray } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import {
-    CLUSTER_SEARCH_OPTION,
-    NAMESPACE_LABEL_SEARCH_OPTION,
-    NAMESPACE_SEARCH_OPTION,
-    SearchOption,
-} from 'Containers/Vulnerabilities/searchOptions';
 
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import {
+    OnSearchPayload,
+    clusterSearchFilterConfig,
+    namespaceSearchFilterConfig,
+} from 'Components/CompoundSearchFilter/types';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
-import FilterAutocompleteSelect from 'Containers/Vulnerabilities/components/FilterAutocomplete';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import KeyValueListModal from 'Components/KeyValueListModal';
+import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
+import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import DeploymentFilterLink from './DeploymentFilterLink';
 
@@ -90,11 +92,12 @@ const defaultSearchFilters = {
     'Vulnerability State': 'OBSERVED',
 };
 
-const searchOptions: SearchOption[] = [
-    NAMESPACE_SEARCH_OPTION,
-    NAMESPACE_LABEL_SEARCH_OPTION,
-    CLUSTER_SEARCH_OPTION,
-];
+const searchFilterConfig = {
+    Namespace: namespaceSearchFilterConfig,
+    Cluster: clusterSearchFilterConfig,
+};
+
+const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
 const sortFields = ['Namespace Risk Priority', 'Namespace', 'Cluster', 'Deployment Count'];
 const defaultSortOption = {
@@ -106,6 +109,10 @@ const pollInterval = 30000;
 
 function NamespaceViewPage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter({
+        ...searchFilter,
+        ...defaultSearchFilters,
+    });
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
@@ -120,10 +127,7 @@ function NamespaceViewPage() {
         error,
     } = useQuery<{ namespaces: Namespace[] }>(namespacesQuery, {
         variables: {
-            query: getRequestQueryStringForSearchFilter({
-                ...searchFilter,
-                ...defaultSearchFilters,
-            }),
+            query: getRegexScopedQueryString(querySearchFilter),
             pagination: getPaginationParams({ page, perPage, sortOption }),
         },
         pollInterval,
@@ -138,8 +142,27 @@ function NamespaceViewPage() {
         searchFilter,
     });
 
+    function onSearch({ category, value, action }: OnSearchPayload) {
+        const selectedSearchFilter = searchValueAsArray(searchFilter[category]);
+
+        const newFilter = {
+            ...searchFilter,
+            [category]:
+                action === 'ADD'
+                    ? uniq([...selectedSearchFilter, value])
+                    : selectedSearchFilter.filter((oldValue) => value !== oldValue),
+        };
+
+        if (action === 'ADD') {
+            // TODO - Add analytics tracking
+        }
+
+        setSearchFilter(newFilter);
+        onFilterChange();
+    }
+
     function onFilterChange() {
-        setPage(1);
+        setPage(1, 'replace');
     }
 
     return (
@@ -169,10 +192,10 @@ function NamespaceViewPage() {
             <PageSection>
                 <Toolbar>
                     <ToolbarContent>
-                        <FilterAutocompleteSelect
+                        <CompoundSearchFilter
+                            config={searchFilterConfig}
                             searchFilter={searchFilter}
-                            onFilterChange={(newFilter) => setSearchFilter(newFilter)}
-                            searchOptions={searchOptions}
+                            onSearch={onSearch}
                         />
                         <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                             <Pagination
@@ -194,14 +217,7 @@ function NamespaceViewPage() {
                         <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                             <SearchFilterChips
                                 onFilterChange={onFilterChange}
-                                filterChipGroupDescriptors={searchOptions.map(
-                                    ({ label, value }) => {
-                                        return {
-                                            displayName: label,
-                                            searchFilterName: value,
-                                        };
-                                    }
-                                )}
+                                filterChipGroupDescriptors={filterChipGroupDescriptors}
                             />
                         </ToolbarGroup>
                     </ToolbarContent>

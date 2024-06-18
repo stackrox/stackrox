@@ -622,15 +622,16 @@ func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 }
 
 type debugDumpOptions struct {
-	logs              logsMode
-	telemetryMode     telemetryMode
-	withCPUProfile    bool
-	withLogImbue      bool
-	withAccessControl bool
-	withNotifiers     bool
-	withCentral       bool
-	clusters          []string
-	since             time.Time
+	logs                   logsMode
+	telemetryMode          telemetryMode
+	withCPUProfile         bool
+	withLogImbue           bool
+	withAccessControl      bool
+	withNotifiers          bool
+	withCentral            bool
+	clusters               []string
+	since                  time.Time
+	withComplianceOperator bool
 }
 
 func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseWriter, filename string,
@@ -874,6 +875,11 @@ func getOptionalQueryParams(opts *debugDumpOptions, u *url.URL) error {
 	} else {
 		opts.since = time.Now().Add(-logWindow)
 	}
+
+	if values.Get("compliance-operator") == "true" {
+		opts.withComplianceOperator = true
+	}
+
 	return nil
 }
 

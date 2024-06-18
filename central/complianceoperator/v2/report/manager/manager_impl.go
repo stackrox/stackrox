@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -24,6 +25,7 @@ var (
 
 type reportRequest struct {
 	scanConfig *storage.ComplianceOperatorScanConfigurationV2
+	ctx        context.Context
 }
 
 type managerImpl struct {
@@ -39,23 +41,24 @@ type managerImpl struct {
 	isStopped atomic.Bool
 
 	// Mutex to synchronize access to runningReportConfigs map
-	mu sync.Mutex
-
+	mu             sync.Mutex
 	concurrencySem *semaphore.Weighted
+	reportGen      reportGen.ComplianceReportGenerator
 }
 
-func New(scanConfigDS scanConfigurationDS.DataStore) Manager {
+func New(scanConfigDS scanConfigurationDS.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
 	return &managerImpl{
 		datastore:            scanConfigDS,
 		stopper:              concurrency.NewStopper(),
 		runningReportConfigs: make(map[string]*reportRequest, maxRequests),
 		reportRequests:       make(chan *reportRequest, maxRequests),
 		concurrencySem:       semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
+		reportGen:            reportGen,
 	}
 }
 
 func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
-	if features.ComplianceReporting.Enabled() {
+	if !features.ComplianceReporting.Enabled() {
 		return nil
 	}
 
@@ -68,7 +71,8 @@ func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *stora
 
 	log.Infof("Submitting report for scan config %s at %v for execution.", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822))
 	req := &reportRequest{
-		scanConfig,
+		scanConfig: scanConfig,
+		ctx:        ctx,
 	}
 
 	select {
@@ -117,7 +121,25 @@ func (m *managerImpl) Stop() {
 func (m *managerImpl) generateReport(req *reportRequest) {
 	defer m.concurrencySem.Release(1)
 
-	// TODO ROX-24172: Implement business logic for querying, formatting and sending report over email
+	clusterIds := []string{}
+	profiles := []string{}
+	for _, cluster := range req.scanConfig.GetClusters() {
+		clusterIds = append(clusterIds, cluster.GetClusterId())
+	}
+
+	for _, profile := range req.scanConfig.GetProfiles() {
+		profiles = append(profiles, profile.GetProfileName())
+	}
+
+	repRequest := &reportGen.ComplianceReportRequest{
+		ScanConfigName: req.scanConfig.GetScanConfigName(),
+		ScanConfigID:   req.scanConfig.GetId(),
+		Profiles:       profiles,
+		ClusterIDs:     clusterIds,
+		Notifiers:      req.scanConfig.GetNotifiers(),
+		Ctx:            req.ctx,
+	}
+	m.reportGen.ProcessReportRequest(repRequest)
 	logging.Infof("Executing report request for scan config %q", req.scanConfig.GetId())
 
 	m.mu.Lock()

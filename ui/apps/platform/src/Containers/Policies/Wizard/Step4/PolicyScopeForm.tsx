@@ -105,8 +105,8 @@ function PolicyScopeForm() {
                         <Title headingLevel="h3">Restrict by scope</Title>
                         <div className="pf-v5-u-mt-sm">
                             Use Restrict by scope to enable this policy only for a specific cluster,
-                            namespace, or label. You can add multiple scope and also use regular
-                            expressions (RE2 syntax) for namespaces and labels.
+                            namespace, or deployment label. You can add multiple scopes and also use
+                            regular expressions (RE2 syntax) for namespaces and deployment labels.
                         </div>
                     </FlexItem>
                     <FlexItem className="pf-v5-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
@@ -141,7 +141,7 @@ function PolicyScopeForm() {
                             Use Exclude by scope to exclude entities from your policy. This function
                             is only available for Deploy and Runtime lifecycle stages. You can add
                             multiple scopes and also use regular expressions (RE2 syntax) for
-                            namespaces and labels.
+                            namespaces and deployment labels.
                         </div>
                     </FlexItem>
                     <FlexItem className="pf-v5-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>

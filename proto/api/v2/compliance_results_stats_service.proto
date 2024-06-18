@@ -24,6 +24,7 @@ message ComplianceProfileScanStats {
   string profile_name = 2;
   string title = 3;
   string version = 4;
+  repeated ComplianceBenchmark benchmarks = 5;
 }
 
 // ComplianceClusterScanStats provides scan stats overview based on cluster
@@ -41,6 +42,14 @@ message ComplianceScanClusterRequest {
 message ListComplianceProfileScanStatsResponse {
   repeated ComplianceProfileScanStats scan_stats = 1;
   int32 total_count = 2;
+}
+
+// ListComplianceClusterProfileStatsResponse provides stats for the profiles within the scans
+message ListComplianceClusterProfileStatsResponse {
+  repeated ComplianceProfileScanStats scan_stats = 1;
+  string cluster_id = 2;
+  string cluster_name = 3;
+  int32 total_count = 4;
 }
 
 // ListComplianceClusterScanStatsResponse provides stats for the clusters within the scans
@@ -68,6 +77,11 @@ service ComplianceResultsStatsService {
   // - profile: id(s) of the profile
   rpc GetComplianceProfilesStats(RawQuery) returns (ListComplianceProfileScanStatsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles"};
+  }
+
+  // GetComplianceProfilesClusterStats lists cluster stats grouped by profile
+  rpc GetComplianceProfilesClusterStats(ComplianceScanClusterRequest) returns (ListComplianceClusterProfileStatsResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles/clusters/{cluster_id}"};
   }
 
   // GetComplianceProfileCheckStats lists current stats for a specific cluster check

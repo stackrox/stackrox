@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-duplicate-type-constituents */
 import { sourceTypeLabels, sourceTypes } from 'types/image.proto';
-import { ValueOf } from 'utils/type.utils';
+import { DeepPartialByKey, ValueOf } from 'utils/type.utils';
 
 export type SearchFilterConfig = {
     displayName: string;
@@ -40,7 +40,7 @@ export const imageSearchFilterConfig = {
             displayName: 'Operating System',
             filterChipLabel: 'Image Operating System',
             searchTerm: 'Image OS',
-            inputType: 'text',
+            inputType: 'autocomplete',
         },
         Tag: {
             displayName: 'Tag',
@@ -48,29 +48,11 @@ export const imageSearchFilterConfig = {
             searchTerm: 'Image Tag',
             inputType: 'text',
         },
-        CVSS: {
-            displayName: 'CVSS',
-            filterChipLabel: 'Image CVSS',
-            searchTerm: 'Image Top CVSS',
-            inputType: 'condition-number',
-        },
         Label: {
             displayName: 'Label',
             filterChipLabel: 'Image Label',
             searchTerm: 'Image Label',
             inputType: 'autocomplete',
-        },
-        'Created Time': {
-            displayName: 'Created Time',
-            filterChipLabel: 'Image Created Time',
-            searchTerm: 'Image Created Time',
-            inputType: 'date-picker',
-        },
-        'Scan Time': {
-            displayName: 'Scan Time',
-            filterChipLabel: 'Image Scan Time',
-            searchTerm: 'Image Scan Time',
-            inputType: 'date-picker',
         },
         Registry: {
             displayName: 'Registry',
@@ -272,13 +254,13 @@ export type NodeAttributeInputType = ValueOf<NodeSearchFilterConfig['attributes'
 // Image CVE search filter
 
 export const imageCVESearchFilterConfig = {
-    displayName: 'Image CVE',
+    displayName: 'CVE',
     searchCategory: 'IMAGE_VULNERABILITIES',
     attributes: {
-        ID: {
-            displayName: 'ID',
-            filterChipLabel: 'Image CVE ID',
-            searchTerm: 'CVE ID',
+        Name: {
+            displayName: 'Name',
+            filterChipLabel: 'Image CVE',
+            searchTerm: 'CVE',
             inputType: 'autocomplete',
         },
         'Discovered Time': {
@@ -289,18 +271,9 @@ export const imageCVESearchFilterConfig = {
         },
         CVSS: {
             displayName: 'CVSS',
-            filterChipLabel: 'Image CVE CVSS',
+            filterChipLabel: 'CVSS',
             searchTerm: 'CVSS',
             inputType: 'condition-number',
-        },
-        Type: {
-            displayName: 'Type',
-            filterChipLabel: 'Image CVE Type',
-            searchTerm: 'CVE Type',
-            inputType: 'select',
-            inputProps: {
-                options: [{ label: 'Image CVE', value: 'IMAGE_CVE' }],
-            },
         },
     },
 } as const;
@@ -323,10 +296,10 @@ export const nodeCVESearchFilterConfig = {
     displayName: 'Node CVE',
     searchCategory: 'NODE_VULNERABILITIES',
     attributes: {
-        ID: {
-            displayName: 'ID',
-            filterChipLabel: 'Node CVE ID',
-            searchTerm: 'CVE ID',
+        Name: {
+            displayName: 'Name',
+            filterChipLabel: 'Node CVE',
+            searchTerm: 'CVE',
             inputType: 'autocomplete',
         },
         'Discovered Time': {
@@ -375,10 +348,10 @@ export const platformCVESearchFilterConfig = {
     displayName: 'Platform CVE',
     searchCategory: 'CLUSTER_VULNERABILITIES',
     attributes: {
-        ID: {
-            displayName: 'ID',
-            filterChipLabel: 'Platform CVE ID',
-            searchTerm: 'CVE ID',
+        Name: {
+            displayName: 'Name',
+            filterChipLabel: 'Platform CVE',
+            searchTerm: 'CVE',
             inputType: 'autocomplete',
         },
         'Discovered Time': {
@@ -510,6 +483,60 @@ export type NodeComponentAttributeInputType = ValueOf<
     NodeComponentSearchFilterConfig['attributes']
 >['inputType'];
 
+// Profile Check search filter
+
+export const profileCheckSearchFilterConfig = {
+    displayName: 'Profile Check',
+    searchCategory: 'COMPLIANCE', //@TODO: Update this once we know what to use
+    attributes: {
+        Name: {
+            displayName: 'Name',
+            filterChipLabel: 'Profile Check Name',
+            searchTerm: 'Compliance Check Name',
+            inputType: 'text',
+        },
+    },
+} as const;
+
+export type ProfileCheckSearchFilterConfig = {
+    displayName: (typeof profileCheckSearchFilterConfig)['displayName'];
+    searchCategory: (typeof profileCheckSearchFilterConfig)['searchCategory'];
+    attributes: (typeof profileCheckSearchFilterConfig)['attributes'];
+};
+
+export type ProfileCheckAttribute = keyof ProfileCheckSearchFilterConfig['attributes'];
+
+export type ProfileCheckAttributeInputType = ValueOf<
+    ProfileCheckSearchFilterConfig['attributes']
+>['inputType'];
+
+// Compliance Rule search filter
+
+export const complianceScanSearchFilterConfig = {
+    displayName: 'Compliance Scan',
+    searchCategory: 'COMPLIANCE', //@TODO: Update this once we know what to use
+    attributes: {
+        'Config ID': {
+            displayName: 'Config ID',
+            filterChipLabel: 'Compliance Scan Config ID',
+            searchTerm: 'Compliance Scan Config Id',
+            inputType: 'text',
+        },
+    },
+} as const;
+
+export type ComplianceScanSearchFilterConfig = {
+    displayName: (typeof complianceScanSearchFilterConfig)['displayName'];
+    searchCategory: (typeof complianceScanSearchFilterConfig)['searchCategory'];
+    attributes: (typeof complianceScanSearchFilterConfig)['attributes'];
+};
+
+export type ComplianceScanAttribute = keyof ComplianceScanSearchFilterConfig['attributes'];
+
+export type ComplianceScanAttributeInputType = ValueOf<
+    ComplianceScanSearchFilterConfig['attributes']
+>['inputType'];
+
 // Compound search filter config
 
 export const compoundSearchFilter: CompoundSearchFilterConfig = {
@@ -523,6 +550,8 @@ export const compoundSearchFilter: CompoundSearchFilterConfig = {
     'Platform CVE': platformCVESearchFilterConfig,
     'Image Component': imageComponentSearchFilterConfig,
     'Node Component': nodeComponentSearchFilterConfig,
+    'Profile Check': profileCheckSearchFilterConfig,
+    'Compliance Scan': complianceScanSearchFilterConfig,
 };
 
 export type CompoundSearchFilterConfig = {
@@ -536,7 +565,14 @@ export type CompoundSearchFilterConfig = {
     'Platform CVE': PlatformCVESearchFilterConfig;
     'Image Component': ImageComponentSearchFilterConfig;
     'Node Component': NodeComponentSearchFilterConfig;
+    'Profile Check': ProfileCheckSearchFilterConfig;
+    'Compliance Scan': ComplianceScanSearchFilterConfig;
 };
+
+// @TODO: Consider Dave's suggestion about reorganizing and readjusting types (https://github.com/stackrox/stackrox/pull/11349#discussion_r1628428375)
+export type PartialCompoundSearchFilterConfig = Partial<
+    DeepPartialByKey<CompoundSearchFilterConfig, 'attributes'>
+>;
 
 export const compoundSearchEntityNames = Object.keys(compoundSearchFilter);
 
@@ -552,7 +588,9 @@ export type SearchFilterAttributeName =
     | ImageCVEAttribute
     | NodeCVEAttribute
     | PlatformCVEAttribute
-    | ImageComponentAttribute;
+    | ImageComponentAttribute
+    | ProfileCheckAttribute
+    | ComplianceScanAttribute;
 
 export type SearchFilterAttributeInputType =
     | ImageAttributeInputType
@@ -562,4 +600,14 @@ export type SearchFilterAttributeInputType =
     | ImageCVEAttributeInputType
     | NodeCVEAttributeInputType
     | PlatformCVEAttributeInputType
-    | ImageComponentAttributeInputType;
+    | ImageComponentAttributeInputType
+    | ProfileCheckAttributeInputType
+    | ComplianceScanAttributeInputType;
+
+// Misc
+
+export type OnSearchPayload = {
+    action: 'ADD' | 'REMOVE';
+    category: string;
+    value: string;
+};

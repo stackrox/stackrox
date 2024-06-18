@@ -153,8 +153,9 @@ type Config struct {
 	External *ExternalPersistence
 	HostPath *HostPathPersistence
 
-	Password     string
-	PasswordAuto bool
+	Password         string
+	PasswordAuto     bool
+	PasswordDisabled bool
 
 	LicenseData []byte
 

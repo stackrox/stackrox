@@ -13,7 +13,7 @@ enum COStatus {
 
 // Next Tag: 8
 message ComplianceIntegration {
-  string id = 1; // @gotags: sql:"pk,type(uuid)"
+  string id = 1; // @gotags: search:"Compliance Operator Integration ID,hidden,store" sql:"pk,type(uuid)"
   string version = 2; // @gotags: search:"Compliance Operator Version,hidden,store"
   string cluster_id = 3; // @gotags: search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:compliance_unique_indicator"
   string compliance_namespace = 4;

@@ -12,7 +12,7 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-RUN scripts/konflux/fail-build-if-git-is-dirty.sh
+RUN .konflux/scripts/fail-build-if-git-is-dirty.sh
 
 RUN mkdir -p image/bin
 
@@ -27,6 +27,7 @@ ENV CI=1 GOFLAGS=""
 RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh ./roxctl && \
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
 
+
 # TODO(ROX-20312): pin image tags when there's a process that updates them automatically.
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
@@ -37,6 +38,8 @@ RUN microdnf upgrade -y --nobest && \
     microdnf clean all && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
+
+ARG MAIN_IMAGE_TAG
 
 LABEL \
     com.redhat.component="rhacs-roxctl-container" \
@@ -51,8 +54,10 @@ LABEL \
     summary="The CLI for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     # We must set version label to prevent inheriting value set in the base stage.
-    # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
-    version="0.0.1-todo"
+    version="${MAIN_IMAGE_TAG}" \
+    # Release label is required by EC although has no practical semantics.
+    # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
+    release="1"
 
 ENV ROX_ROXCTL_IN_MAIN_IMAGE="true"
 

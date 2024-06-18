@@ -215,6 +215,10 @@ func (u *Updater) Import(ctx context.Context, in io.Reader) (err error) {
 				return true
 			}
 		}
+		zlog.Info(ctx).
+			Str("updater", op.Updater).
+			Str("kind", string(op.Kind)).
+			Msg("importing update")
 		var ref uuid.UUID
 		count := 0
 		switch op.Kind {

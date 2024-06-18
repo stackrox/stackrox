@@ -1,0 +1,3 @@
+# stackrox-data is for the external networks archive downloaded and included in the main container during its build.
+*
+!.gitignore

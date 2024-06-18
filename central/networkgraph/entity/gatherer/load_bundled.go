@@ -108,6 +108,7 @@ func extractBundle(src string) (string, string, error) {
 		if err != nil {
 			return "", "", errors.Wrap(err, "creating external networks temp file")
 		}
+		defer utils.IgnoreError(file.Close)
 
 		_, err = io.Copy(file, reader)
 		if err != nil {

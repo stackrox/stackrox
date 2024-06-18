@@ -139,6 +139,9 @@ $(call go-tool, GO_JUNIT_REPORT_BIN, github.com/jstemmer/go-junit-report/v2, too
 $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tools/linters)
 $(call go-tool, GOVULNCHECK_BIN, golang.org/x/vuln/cmd/govulncheck, tools/linters)
 $(call go-tool, IMAGE_PREFETCHER_DEPLOY, github.com/stackrox/image-prefetcher/deploy, tools/test)
+$(call go-tool, PROMETHEUS_METRIC_PARSER_BIN, github.com/stackrox/prometheus-metric-parser, tools/test)
+
+IMAGE_PREFETCHER_DEPLOY_VERSION = $(shell go -C tools/test list -m -f '{{.Version}}' github.com/stackrox/image-prefetcher/deploy)
 
 ###########
 ## Style ##
@@ -389,6 +392,7 @@ cli-install:
 	# Workaround a bug on MacOS
 	rm -f $(GOPATH)/bin/roxctl
 	# Copy the user's specific OS into gopath
+	mkdir -p $(GOPATH)/bin
 	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
 
@@ -819,8 +823,12 @@ bootstrap_migration:
 
 .PHONY: image-prefetcher-start
 image-prefetcher-start: $(IMAGE_PREFETCHER_DEPLOY)
-	. scripts/ci/lib.sh; image_prefetcher_start stackrox-images $(IMAGE_PREFETCHER_DEPLOY)
+	. scripts/ci/lib.sh; image_prefetcher_start stackrox-images $(IMAGE_PREFETCHER_DEPLOY) $(IMAGE_PREFETCHER_DEPLOY_VERSION)
 
 .PHONY: image-prefetcher-await
 image-prefetcher-await:
 	. scripts/ci/lib.sh; image_prefetcher_await stackrox-images
+
+.PHONY: prometheus-metric-parser
+prometheus-metric-parser: $(PROMETHEUS_METRIC_PARSER_BIN)
+	@echo $(PROMETHEUS_METRIC_PARSER_BIN)

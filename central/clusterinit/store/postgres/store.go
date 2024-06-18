@@ -55,7 +55,10 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStoreWithPermissionChecker[storeType, *storeType](
+	// Use of pgSearch.NewGenericStoreWithCacheAndPermissionChecker can be dangerous with high cardinality stores,
+	// and be the source of memory pressure. Think twice about the need for in-memory caching
+	// of the whole store.
+	return pgSearch.NewGenericStoreWithCacheAndPermissionChecker[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -63,6 +66,8 @@ func New(db postgres.DB) Store {
 		copyFromClusterInitBundles,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
+		metricsSetCacheOperationDurationTime,
+
 		sac.NewAllGlobalResourceAllowedPermissionChecker(resources.Administration, resources.Integration),
 	)
 }
@@ -79,6 +84,10 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
+}
+
+func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetCacheOperationDurationTime(start, op, storeName)
 }
 
 func insertIntoClusterInitBundles(batch *pgx.Batch, obj *storage.InitBundleMeta) error {

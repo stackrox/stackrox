@@ -5,10 +5,12 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
+	complianceMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -16,42 +18,69 @@ import (
 
 func TestConvertStorageIntegrationToV2(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
-	clusterDatastore := clusterMocks.NewMockDataStore(mockCtrl)
+	complianceDatastore := complianceMocks.NewMockDataStore(mockCtrl)
 	mockClusterName := "mock-cluster"
+	testID := uuid.NewDummy().String()
 
 	var cases = []struct {
 		testname     string
 		integration  *storage.ComplianceIntegration
+		view         *datastore.IntegrationDetails
 		expected     *apiV2.ComplianceIntegration
 		clusterError bool
 	}{
 		{
 			testname: "Integration conversion",
 			integration: &storage.ComplianceIntegration{
-				Id:                  uuid.NewDummy().String(),
+				Id:                  testID,
 				Version:             "22",
 				ClusterId:           fixtureconsts.Cluster1,
 				ComplianceNamespace: fixtureconsts.Namespace1,
 				StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
+				OperatorInstalled:   true,
+			},
+			view: &datastore.IntegrationDetails{
+				ID:                                testID,
+				Version:                           "22",
+				OperatorInstalled:                 true,
+				OperatorStatus:                    storage.COStatus_HEALTHY,
+				ClusterID:                         fixtureconsts.Cluster1,
+				ClusterName:                       mockClusterName,
+				Type:                              storage.ClusterType_OPENSHIFT_CLUSTER,
+				StatusProviderMetadataClusterType: storage.ClusterMetadata_OCP,
 			},
 			expected: &apiV2.ComplianceIntegration{
-				Id:           uuid.NewDummy().String(),
-				Version:      "22",
-				ClusterId:    fixtureconsts.Cluster1,
-				ClusterName:  mockClusterName,
-				Namespace:    fixtureconsts.Namespace1,
-				StatusErrors: []string{"Error 1", "Error 2", "Error 3"},
+				Id:                  testID,
+				Version:             "22",
+				ClusterId:           fixtureconsts.Cluster1,
+				ClusterName:         mockClusterName,
+				Namespace:           fixtureconsts.Namespace1,
+				StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
+				OperatorInstalled:   true,
+				Status:              apiV2.COStatus_HEALTHY,
+				ClusterPlatformType: apiV2.ClusterPlatformType_OPENSHIFT_CLUSTER,
+				ClusterProviderType: apiV2.ClusterProviderType_OCP,
 			},
 			clusterError: false,
 		},
 		{
 			testname: "Integration conversion with cluster error",
 			integration: &storage.ComplianceIntegration{
-				Id:                  uuid.NewDummy().String(),
+				Id:                  testID,
 				Version:             "22",
 				ClusterId:           fixtureconsts.Cluster1,
 				ComplianceNamespace: fixtureconsts.Namespace1,
 				StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
+			},
+			view: &datastore.IntegrationDetails{
+				ID:                                testID,
+				Version:                           "22",
+				OperatorInstalled:                 true,
+				OperatorStatus:                    storage.COStatus_HEALTHY,
+				ClusterID:                         testconsts.Cluster1,
+				ClusterName:                       mockClusterName,
+				Type:                              storage.ClusterType_OPENSHIFT_CLUSTER,
+				StatusProviderMetadataClusterType: storage.ClusterMetadata_OCP,
 			},
 			expected:     nil,
 			clusterError: true,
@@ -61,12 +90,12 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.testname, func(t *testing.T) {
 			if c.clusterError {
-				clusterDatastore.EXPECT().GetClusterName(gomock.Any(), c.integration.GetClusterId()).Return("", false, errors.New("test can't find cluster name")).Times(1)
+				complianceDatastore.EXPECT().GetComplianceIntegration(gomock.Any(), c.view.ID).Return(nil, false, errors.New("test can't find compliance integration")).Times(1)
 			} else {
-				clusterDatastore.EXPECT().GetClusterName(gomock.Any(), c.integration.GetClusterId()).Return(mockClusterName, true, nil).Times(1)
+				complianceDatastore.EXPECT().GetComplianceIntegration(gomock.Any(), c.view.ID).Return(c.integration, true, nil).Times(1)
 			}
 
-			converted, clusterFound, err := convertStorageIntegrationToV2(context.Background(), c.integration, clusterDatastore)
+			converted, clusterFound, err := convertStorageIntegrationToV2(context.Background(), c.view, complianceDatastore)
 			if c.clusterError {
 				assert.NotNil(t, err)
 				assert.False(t, clusterFound)

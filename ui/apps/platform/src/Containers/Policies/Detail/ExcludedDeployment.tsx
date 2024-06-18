@@ -26,7 +26,9 @@ function ExcludedDeployment({
             )}
             {namespaceName && <DescriptionListItem term="Namespace" desc={namespaceName} />}
             {deploymentName && <DescriptionListItem term="Deployment" desc={deploymentName} />}
-            {label && <DescriptionListItem term="Label" desc={`${label.key}=${label.value}`} />}
+            {label && (
+                <DescriptionListItem term="Deployment label" desc={`${label.key}=${label.value}`} />
+            )}
         </DescriptionList>
     );
 }

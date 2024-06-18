@@ -32,7 +32,7 @@ OrchestratorMain orchestrator = OrchestratorType.create(
         Constants.ORCHESTRATOR_NAMESPACE
 )
 
-Logger log = LoggerFactory.getLogger("compare")
+Logger log = LoggerFactory.getLogger("scripts")
 
 // K8sRbacTest
 

@@ -25,6 +25,7 @@ const (
 	ComplianceResultsService_GetComplianceProfileResults_FullMethodName           = "/v2.ComplianceResultsService/GetComplianceProfileResults"
 	ComplianceResultsService_GetComplianceProfileCheckResult_FullMethodName       = "/v2.ComplianceResultsService/GetComplianceProfileCheckResult"
 	ComplianceResultsService_GetComplianceProfileClusterResults_FullMethodName    = "/v2.ComplianceResultsService/GetComplianceProfileClusterResults"
+	ComplianceResultsService_GetComplianceProfileCheckDetails_FullMethodName      = "/v2.ComplianceResultsService/GetComplianceProfileCheckDetails"
 )
 
 // ComplianceResultsServiceClient is the client API for ComplianceResultsService service.
@@ -50,6 +51,8 @@ type ComplianceResultsServiceClient interface {
 	GetComplianceProfileCheckResult(ctx context.Context, in *ComplianceProfileCheckRequest, opts ...grpc.CallOption) (*ListComplianceCheckClusterResponse, error)
 	// GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
 	GetComplianceProfileClusterResults(ctx context.Context, in *ComplianceProfileClusterRequest, opts ...grpc.CallOption) (*ListComplianceCheckResultResponse, error)
+	// GetComplianceProfileCheckDetails
+	GetComplianceProfileCheckDetails(ctx context.Context, in *ComplianceCheckDetailRequest, opts ...grpc.CallOption) (*ComplianceClusterCheckStatus, error)
 }
 
 type complianceResultsServiceClient struct {
@@ -114,6 +117,15 @@ func (c *complianceResultsServiceClient) GetComplianceProfileClusterResults(ctx 
 	return out, nil
 }
 
+func (c *complianceResultsServiceClient) GetComplianceProfileCheckDetails(ctx context.Context, in *ComplianceCheckDetailRequest, opts ...grpc.CallOption) (*ComplianceClusterCheckStatus, error) {
+	out := new(ComplianceClusterCheckStatus)
+	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceProfileCheckDetails_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ComplianceResultsServiceServer is the server API for ComplianceResultsService service.
 // All implementations should embed UnimplementedComplianceResultsServiceServer
 // for forward compatibility
@@ -137,6 +149,8 @@ type ComplianceResultsServiceServer interface {
 	GetComplianceProfileCheckResult(context.Context, *ComplianceProfileCheckRequest) (*ListComplianceCheckClusterResponse, error)
 	// GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
 	GetComplianceProfileClusterResults(context.Context, *ComplianceProfileClusterRequest) (*ListComplianceCheckResultResponse, error)
+	// GetComplianceProfileCheckDetails
+	GetComplianceProfileCheckDetails(context.Context, *ComplianceCheckDetailRequest) (*ComplianceClusterCheckStatus, error)
 }
 
 // UnimplementedComplianceResultsServiceServer should be embedded to have forward compatible implementations.
@@ -160,6 +174,9 @@ func (UnimplementedComplianceResultsServiceServer) GetComplianceProfileCheckResu
 }
 func (UnimplementedComplianceResultsServiceServer) GetComplianceProfileClusterResults(context.Context, *ComplianceProfileClusterRequest) (*ListComplianceCheckResultResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceProfileClusterResults not implemented")
+}
+func (UnimplementedComplianceResultsServiceServer) GetComplianceProfileCheckDetails(context.Context, *ComplianceCheckDetailRequest) (*ComplianceClusterCheckStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceProfileCheckDetails not implemented")
 }
 
 // UnsafeComplianceResultsServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -281,6 +298,24 @@ func _ComplianceResultsService_GetComplianceProfileClusterResults_Handler(srv in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ComplianceResultsService_GetComplianceProfileCheckDetails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ComplianceCheckDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComplianceResultsServiceServer).GetComplianceProfileCheckDetails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComplianceResultsService_GetComplianceProfileCheckDetails_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComplianceResultsServiceServer).GetComplianceProfileCheckDetails(ctx, req.(*ComplianceCheckDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ComplianceResultsService_ServiceDesc is the grpc.ServiceDesc for ComplianceResultsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -311,6 +346,10 @@ var ComplianceResultsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetComplianceProfileClusterResults",
 			Handler:    _ComplianceResultsService_GetComplianceProfileClusterResults_Handler,
+		},
+		{
+			MethodName: "GetComplianceProfileCheckDetails",
+			Handler:    _ComplianceResultsService_GetComplianceProfileCheckDetails_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

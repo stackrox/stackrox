@@ -287,7 +287,7 @@ func getTestScan(scanName string, profileID string, clusterID string) *storage.C
 		Errors:         "",
 		Warnings:       "",
 		Profile: &storage.ProfileShim{
-			ProfileId: profileID,
+			ProfileRefId: profileID,
 		},
 		Labels:           nil,
 		Annotations:      nil,

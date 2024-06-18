@@ -16,4 +16,4 @@ commands:
 - script: |
     set -eu # shell in CI does not grok -o pipefail
     # On OpenShift, test that Sensor auth reader rolebinding exists in kube-system.
-    if kubectl get scc > /dev/null 2>&1; then kubectl get rolebinding rhacs-sensor-auth-reader-${NAMESPACE} -n kube-system; fi
+    if retry-kubectl.sh get scc > /dev/null 2>&1; then kubectl get rolebinding rhacs-sensor-auth-reader-${NAMESPACE} -n kube-system; fi

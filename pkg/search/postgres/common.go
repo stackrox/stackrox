@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/random"
@@ -38,6 +39,16 @@ var (
 	emptyQueryErr = errox.InvalidArgs.New("empty query")
 
 	cursorDefaultTimeout = env.PostgresDefaultCursorTimeout.DurationSetting()
+
+	tableWithImageIDToField = map[string]string{
+		pkgSchema.ImagesTableName:              "Id",
+		pkgSchema.ImageComponentEdgesTableName: "ImageId",
+	}
+
+	tableWithImageCVEIDToField = map[string]string{
+		pkgSchema.ImageCvesTableName:              "Id",
+		pkgSchema.ImageComponentCveEdgesTableName: "ImageCveId",
+	}
 )
 
 // QueryType describe what type of query to execute
@@ -261,10 +272,31 @@ func (q *query) AsSQL() string {
 	querySB.WriteString(q.getPortionBeforeFromClause())
 	querySB.WriteString(" from ")
 	querySB.WriteString(q.From)
-	for _, innerJoin := range q.InnerJoins {
+
+	for i, innerJoin := range q.InnerJoins {
 		querySB.WriteString(" inner join ")
 		querySB.WriteString(innerJoin.rightTable)
 		querySB.WriteString(" on")
+
+		if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+			if (i == len(q.InnerJoins)-1) && (innerJoin.rightTable == pkgSchema.ImageCveEdgesTableName) {
+				// Step 4: Join image_cve_edges table such that both its ImageID and ImageCveId columns are matched with the joins so far
+				imageIDTable := findImageIDTableAndField(q.InnerJoins)
+				imageCVEIDTable := findImageCVEIDTableAndField(q.InnerJoins)
+				if imageIDTable != "" && imageCVEIDTable != "" {
+					imageIDField := tableWithImageIDToField[imageIDTable]
+					imageCVEIDField := tableWithImageCVEIDToField[imageCVEIDTable]
+					querySB.WriteString(fmt.Sprintf("(%s.%s = %s.%s and %s.%s = %s.%s)",
+						imageIDTable, imageIDField, pkgSchema.ImageCveEdgesTableName, "ImageId",
+						imageCVEIDTable, imageCVEIDField, pkgSchema.ImageCveEdgesTableName, "ImageCveId"))
+					continue
+				} else {
+					log.Error("Could not find tables to match both ImageId and ImageCveId columns on image_cve_edges table. " +
+						"Continuing with incomplete join")
+				}
+			}
+		}
+
 		for i, columnNamePair := range innerJoin.columnNamePairs {
 			if i > 0 {
 				querySB.WriteString(" and")
@@ -306,6 +338,34 @@ func (q *query) AsSQL() string {
 	return replaceVars(querySB.String())
 }
 
+func findImageIDTableAndField(joins []innerJoin) string {
+	for _, join := range joins {
+		_, found := tableWithImageIDToField[join.leftTable]
+		if found {
+			return join.leftTable
+		}
+		_, found = tableWithImageIDToField[join.rightTable]
+		if found {
+			return join.rightTable
+		}
+	}
+	return ""
+}
+
+func findImageCVEIDTableAndField(joins []innerJoin) string {
+	for _, join := range joins {
+		_, found := tableWithImageCVEIDToField[join.leftTable]
+		if found {
+			return join.leftTable
+		}
+		_, found = tableWithImageCVEIDToField[join.rightTable]
+		if found {
+			return join.rightTable
+		}
+	}
+	return ""
+}
+
 type parsedPaginationQuery struct {
 	OrderBys []orderByEntry
 	Limit    int
@@ -344,6 +404,14 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	}
 	standardizeFieldNamesInQuery(q)
 	innerJoins, dbFields := getJoinsAndFields(schema, q)
+
+	var err error
+	if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+		innerJoins, err = handleImageCveEdgesTableInJoins(schema, innerJoins)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	queryEntry, err := compileQueryToPostgres(schema, q, dbFields, nowForQuery)
 	if err != nil {
@@ -391,6 +459,48 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	}
 
 	return parsedQuery, nil
+}
+
+func handleImageCveEdgesTableInJoins(schema *walker.Schema, innerJoins []innerJoin) ([]innerJoin, error) {
+	// By avoiding ImageCveEdgesSchema as long as possible in getJoinsAndFields, we should have ensured that
+	// unless ImageCveEdgesSchema is the src schema, it is not a leftTable in any of the inner joins. This means that
+	// we have found an alternative route (via image_components) to join image and image_cves tables and if present,
+	// image_cve_edges table is only there because of its required fields. In other words, it is not being used to join
+	// any two distant tables.
+	// But we validate the same just to be safe here
+	if schema != pkgSchema.ImageCveEdgesSchema {
+		idx, isLeftTable := findTableInJoins(innerJoins, func(join innerJoin) bool {
+			return join.leftTable == pkgSchema.ImageCveEdgesTableName
+		})
+
+		if isLeftTable {
+			return nil, errors.Wrapf(errox.InvariantViolation,
+				"Even though '%s' is not the root table in the query, it is the left table in inner join '%v'",
+				pkgSchema.ImageCveEdgesTableName, innerJoins[idx])
+		}
+	}
+
+	// Step 3: If image_cve_edges table is the right table of any inner join, move that join to the end of the list.
+	// When building SQL query, this will ensure that we have already joined tables needed to match both CVEId and
+	// ImageId columns from image_cve_edges table.
+	idx, isRightTable := findTableInJoins(innerJoins, func(join innerJoin) bool {
+		return join.rightTable == pkgSchema.ImageCveEdgesTableName
+	})
+	if isRightTable {
+		elem := innerJoins[idx]
+		innerJoins = append(innerJoins[:idx], innerJoins[idx+1:]...)
+		innerJoins = append(innerJoins, elem)
+	}
+	return innerJoins, nil
+}
+
+func findTableInJoins(innerJoins []innerJoin, matchTables func(join innerJoin) bool) (int, bool) {
+	for i, join := range innerJoins {
+		if matchTables(join) {
+			return i, true
+		}
+	}
+	return -1, false
 }
 
 func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgsearch.QueryEntry {

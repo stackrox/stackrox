@@ -59,8 +59,8 @@ func (s *complianceIntegrationDataStoreTestSuite) SetupTest() {
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Compliance)
 
 	s.db = pgtest.ForT(s.T())
-	s.storage = postgres.New(s.db)
-	s.dataStore = New(s.storage)
+	s.storage = postgres.New(s.db.DB)
+	s.dataStore = New(s.storage, s.db.DB)
 }
 
 func (s *complianceIntegrationDataStoreTestSuite) TearDownTest() {
@@ -246,6 +246,66 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrations(
 	}
 }
 
+func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrationsView() {
+	testIntegrations := getDefaultTestIntegrations()
+	viewIntegrations := getDefaultTestIntegrationViews()
+	ids := s.addBaseIntegrations(testIntegrations)
+	for i, id := range ids {
+		testIntegrations[i].Id = id
+		viewIntegrations[i].ID = id
+	}
+
+	// Add some clusters
+	_, err := s.db.DB.Exec(context.Background(), "insert into clusters (id, name, status_providermetadata_cluster_type, type) values ($1, $2, $3, $4)", testconsts.Cluster1, "cluster1", 1, 1)
+	s.Require().NoError(err)
+	_, err = s.db.DB.Exec(context.Background(), "insert into clusters (id, name, status_providermetadata_cluster_type, type) values ($1, $2, $3, $4)", testconsts.Cluster2, "cluster2", 2, 2)
+	s.Require().NoError(err)
+	_, err = s.db.DB.Exec(context.Background(), "insert into clusters (id, name, status_providermetadata_cluster_type, type) values ($1, $2, $3, $4)", testconsts.Cluster3, "cluster3", 5, 5)
+	s.Require().NoError(err)
+
+	testCases := []struct {
+		desc           string
+		query          *apiV1.Query
+		scopeKey       string
+		expectedID     []string
+		expectedResult []*IntegrationDetails
+	}{
+		{
+			desc:           "Empty Query - Full access",
+			query:          search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:       testutils.UnrestrictedReadCtx,
+			expectedID:     ids,
+			expectedResult: viewIntegrations,
+		},
+		{
+			desc:           "Empty query - Only cluster 1 access",
+			query:          search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:       testutils.Cluster1ReadWriteCtx,
+			expectedID:     []string{ids[0]},
+			expectedResult: []*IntegrationDetails{viewIntegrations[0]},
+		},
+		{
+			desc:           "Cluster 2 query - Only cluster 2 access",
+			query:          search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			scopeKey:       testutils.Cluster2ReadWriteCtx,
+			expectedID:     []string{ids[1]},
+			expectedResult: []*IntegrationDetails{viewIntegrations[1]},
+		},
+		{
+			desc:           "Cluster 2 query - Only cluster 1 access",
+			query:          search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			scopeKey:       testutils.Cluster1ReadWriteCtx,
+			expectedID:     nil,
+			expectedResult: nil,
+		},
+	}
+	for _, tc := range testCases {
+		clusterIntegrations, err := s.dataStore.GetComplianceIntegrationsView(s.testContexts[tc.scopeKey], tc.query)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedResult, clusterIntegrations)
+	}
+}
+
 func (s *complianceIntegrationDataStoreTestSuite) TestRemoveComplianceIntegration() {
 	testIntegrations := getDefaultTestIntegrations()
 	ids := s.addBaseIntegrations(testIntegrations)
@@ -353,18 +413,59 @@ func getDefaultTestIntegrations() []*storage.ComplianceIntegration {
 			ClusterId:           testconsts.Cluster1,
 			ComplianceNamespace: fixtureconsts.Namespace1,
 			Version:             "2",
+			OperatorStatus:      storage.COStatus_UNHEALTHY,
+			OperatorInstalled:   true,
 		},
 		{
 			Id:                  "",
 			ClusterId:           testconsts.Cluster2,
 			ComplianceNamespace: fixtureconsts.Namespace1,
 			Version:             "2",
+			OperatorInstalled:   true,
 		},
 		{
 			Id:                  "",
 			ClusterId:           testconsts.Cluster3,
 			ComplianceNamespace: fixtureconsts.Namespace1,
 			Version:             "2",
+			OperatorInstalled:   true,
+		},
+	}
+
+	return integrations
+}
+
+func getDefaultTestIntegrationViews() []*IntegrationDetails {
+	integrations := []*IntegrationDetails{
+		{
+			ID:                                "",
+			Version:                           "2",
+			OperatorInstalled:                 true,
+			OperatorStatus:                    storage.COStatus_UNHEALTHY,
+			ClusterID:                         testconsts.Cluster1,
+			ClusterName:                       "cluster1",
+			Type:                              1,
+			StatusProviderMetadataClusterType: 1,
+		},
+		{
+			ID:                                "",
+			ClusterID:                         testconsts.Cluster2,
+			Version:                           "2",
+			OperatorStatus:                    storage.COStatus_HEALTHY,
+			ClusterName:                       "cluster2",
+			Type:                              2,
+			StatusProviderMetadataClusterType: 2,
+			OperatorInstalled:                 true,
+		},
+		{
+			ID:                                "",
+			ClusterID:                         testconsts.Cluster3,
+			Version:                           "2",
+			OperatorStatus:                    storage.COStatus_HEALTHY,
+			ClusterName:                       "cluster3",
+			Type:                              5,
+			StatusProviderMetadataClusterType: 5,
+			OperatorInstalled:                 true,
 		},
 	}
 

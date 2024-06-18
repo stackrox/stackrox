@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"testing"
-	"time"
 
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -142,8 +141,7 @@ type telemetryController struct {
 	payload *central.TelemetryResponsePayload_KubernetesInfo
 }
 
-func (t *telemetryController) PullKubernetesInfo(ctx context.Context, cb telemetry.KubernetesInfoChunkCallback,
-	_ time.Time) error {
+func (t *telemetryController) PullKubernetesInfo(ctx context.Context, cb telemetry.KubernetesInfoChunkCallback, opts telemetry.PullKubernetesInfoOpts) error {
 	return cb(ctx, t.payload)
 }
 

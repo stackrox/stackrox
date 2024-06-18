@@ -1,18 +1,18 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { Bullseye, Divider, Spinner, ToolbarItem } from '@patternfly/react-core';
+import { Divider, ToolbarItem } from '@patternfly/react-core';
 import { DropdownItem } from '@patternfly/react-core/deprecated';
 
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
-import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useMap from 'hooks/useMap';
 import { VulnerabilityState } from 'types/cve.proto';
 
+import { getTableUIState } from 'utils/getTableUIState';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
-import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
+import CVEsTable, { ImageCVE, cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import { VulnerabilitySeverityLabel } from '../../types';
 import { getStatusesForExceptionCount } from '../../utils/searchUtils';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
@@ -45,11 +45,13 @@ function CVEsTableContainer({
     isFiltered,
     isUnifiedDeferralsEnabled,
 }: CVEsTableContainerProps) {
-    const { searchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
     const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data, previousData } = useQuery(cveListQuery, {
+    const { error, loading, data } = useQuery<{
+        imageCVEs: ImageCVE[];
+    }>(cveListQuery, {
         variables: {
             query: workloadCvesScopedQueryString,
             pagination: {
@@ -78,7 +80,13 @@ function CVEsTableContainer({
 
     const createTableActions = showDeferralUI ? createExceptionModalActions : undefined;
 
-    const tableData = data ?? previousData;
+    const tableState = getTableUIState({
+        isLoading: loading,
+        data: data?.imageCVEs,
+        error,
+        searchFilter,
+    });
+
     return (
         <>
             {exceptionRequestModalOptions && (
@@ -142,34 +150,28 @@ function CVEsTableContainer({
                 )}
             </TableEntityToolbar>
             <Divider component="div" />
-            {loading && !tableData && (
-                <Bullseye>
-                    <Spinner />
-                </Bullseye>
-            )}
-            {error && (
-                <TableErrorComponent error={error} message="Adjust your filters and try again" />
-            )}
-            {!error && tableData && (
-                <div
-                    className="workload-cves-table-container"
-                    role="region"
-                    aria-live="polite"
-                    aria-busy={loading ? 'true' : 'false'}
-                >
-                    <CVEsTable
-                        cves={tableData.imageCVEs}
-                        unfilteredImageCount={imageCountData?.imageCount || 0}
-                        getSortParams={getSortParams}
-                        isFiltered={isFiltered}
-                        filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
-                        selectedCves={selectedCves}
-                        canSelectRows={canSelectRows}
-                        vulnerabilityState={vulnerabilityState}
-                        createTableActions={createTableActions}
-                    />
-                </div>
-            )}
+            <div
+                className="workload-cves-table-container"
+                role="region"
+                aria-live="polite"
+                aria-busy={loading ? 'true' : 'false'}
+            >
+                <CVEsTable
+                    tableState={tableState}
+                    unfilteredImageCount={imageCountData?.imageCount || 0}
+                    getSortParams={getSortParams}
+                    isFiltered={isFiltered}
+                    filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
+                    selectedCves={selectedCves}
+                    canSelectRows={canSelectRows}
+                    vulnerabilityState={vulnerabilityState}
+                    createTableActions={createTableActions}
+                    onClearFilters={() => {
+                        setSearchFilter({});
+                        pagination.setPage(1, 'replace');
+                    }}
+                />
+            </div>
         </>
     );
 }

@@ -50,10 +50,12 @@ type PLOPDataStoreTestSuite struct {
 
 func (suite *PLOPDataStoreTestSuite) SetupSuite() {
 	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
+
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
+
 	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -80,7 +82,7 @@ func (suite *PLOPDataStoreTestSuite) TearDownTest() {
 
 func (suite *PLOPDataStoreTestSuite) getPlopsFromDB() []*storage.ProcessListeningOnPortStorage {
 	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
-	err := suite.datastore.WalkAll(suite.hasWriteCtx,
+	err := suite.datastore.WalkAll(suite.hasReadCtx,
 		func(plop *storage.ProcessListeningOnPortStorage) error {
 			plopsFromDB = append(plopsFromDB, plop)
 			return nil
@@ -190,12 +192,21 @@ var (
 	}
 )
 
+func (suite *PLOPDataStoreTestSuite) addDeployments() {
+	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(suite.T(), suite.postgres.DB)
+	suite.Nil(err)
+	suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}))
+	suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: fixtureconsts.Deployment2, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}))
+}
+
 // TestPLOPAdd: Happy path for ProcessListeningOnPort, one PLOP object is added
 // with a correct process indicator reference and could be fetched later.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	indicators := getIndicators()
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+
+	suite.addDeployments()
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -207,7 +218,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
@@ -228,6 +239,181 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 			ExecFilePath: "test_path1",
 		},
 	})
+
+	// Check a deployment that doesn't exist
+	newPlops, err = suite.datastore.GetProcessListeningOnPort(
+		suite.hasReadCtx, fixtureconsts.Deployment3)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 0)
+
+	// Verify that newly added PLOP object doesn't have Process field set in
+	// the serialized column (because all the info is stored in the referenced
+	// process indicator record)
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:                 newPlopsFromDB[0].GetId(),
+		Port:               plopObjects[0].GetPort(),
+		Protocol:           plopObjects[0].GetProtocol(),
+		CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
+		ProcessIndicatorId: indicators[0].GetId(),
+		Closed:             false,
+		Process:            nil,
+		DeploymentId:       plopObjects[0].GetDeploymentId(),
+		PodUid:             plopObjects[0].GetPodUid(),
+		ClusterId:          fixtureconsts.Cluster1,
+		Namespace:          fixtureconsts.Namespace1,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+}
+
+// TestPLOPAddNoDeployments: Add PLOPs without a matching deployment in the deployments table
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoDeployments() {
+	indicators := getIndicators()
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasReadCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 0)
+
+	// Verify that newly added PLOP object doesn't have Process field set in
+	// the serialized column (because all the info is stored in the referenced
+	// process indicator record)
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:                 newPlopsFromDB[0].GetId(),
+		Port:               plopObjects[0].GetPort(),
+		Protocol:           plopObjects[0].GetProtocol(),
+		CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
+		ProcessIndicatorId: indicators[0].GetId(),
+		Closed:             false,
+		Process:            nil,
+		DeploymentId:       plopObjects[0].GetDeploymentId(),
+		PodUid:             plopObjects[0].GetPodUid(),
+		ClusterId:          fixtureconsts.Cluster1,
+		Namespace:          fixtureconsts.Namespace1,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+}
+
+// TestPLOPSAC: Tests getting the PLOPs with various levels of access
+func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
+	indicators := getIndicators()
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
+
+	suite.addDeployments()
+
+	cases := map[string]struct {
+		ctx           context.Context
+		expectAllowed bool
+	}{
+		"all access": {
+			ctx:           sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker()),
+			expectAllowed: true,
+		},
+		"access to cluster and namespace": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
+			)),
+			expectAllowed: true,
+		},
+		"read and write access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
+			)),
+			expectAllowed: true,
+		},
+		"access to wrong namespace": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+				sac.NamespaceScopeKeys(fixtureconsts.Namespace2),
+			)),
+			expectAllowed: false,
+		},
+		"access to wrong cluster": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster2),
+				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
+			)),
+			expectAllowed: false,
+		},
+		"cluster level access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+			)),
+			expectAllowed: true,
+		},
+	}
+
+	for name, c := range cases {
+		suite.Run(name, func() {
+			newPlops, err := suite.datastore.GetProcessListeningOnPort(
+				c.ctx, fixtureconsts.Deployment1)
+			if c.expectAllowed {
+				suite.NoError(err)
+				suite.Len(newPlops, 1)
+				suite.Equal(newPlops[0], &storage.ProcessListeningOnPort{
+					ContainerName: "test_container1",
+					PodId:         fixtureconsts.PodName1,
+					PodUid:        fixtureconsts.PodUID1,
+					DeploymentId:  fixtureconsts.Deployment1,
+					ClusterId:     fixtureconsts.Cluster1,
+					Namespace:     fixtureconsts.Namespace1,
+					Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+						Port:     1234,
+						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					},
+					Signal: &storage.ProcessSignal{
+						Name:         "test_process1",
+						Args:         "test_arguments1",
+						ExecFilePath: "test_path1",
+					},
+				})
+			} else {
+				suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+				suite.Len(newPlops, 0)
+			}
+		})
+	}
 
 	// Verify that newly added PLOP object doesn't have Process field set in
 	// the serialized column (because all the info is stored in the referenced
@@ -263,6 +449,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 
 	plopObjectsClosed := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -277,7 +465,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	// It's closed and excluded from the API response
@@ -312,6 +500,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -326,7 +516,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
@@ -378,6 +568,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseTwice() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -392,7 +584,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseTwice() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
@@ -430,6 +622,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 
 	plopObjectsClosed := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -448,7 +642,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	// The PLOP is reported since it is in the open state
@@ -502,6 +696,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 
 	plopObjectsClosed := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -520,7 +716,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	// It's closed and excluded from the API response
@@ -557,6 +753,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject, &closedPlopObject}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -567,7 +765,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	// It's closed and excluded from the API response
@@ -604,6 +802,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -618,7 +818,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
@@ -651,6 +851,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
+	suite.addDeployments()
+
 	// Verify that the plop table is empty before the test
 	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
 	err := suite.datastore.WalkAll(suite.hasWriteCtx,
@@ -671,7 +873,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
@@ -723,13 +925,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
+	suite.addDeployments()
+
 	// Add PLOP referencing non existing indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
@@ -763,6 +967,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenNoIndicatorThenClose() {
 
 	openPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
+	suite.addDeployments()
+
 	// Add PLOP referencing non existing indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasWriteCtx, fixtureconsts.Cluster1, openPlopObjects...))
@@ -781,7 +987,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenNoIndicatorThenClose() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
@@ -817,6 +1023,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenAndClosedNoIndicator() {
 	openPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 	closedPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
+	suite.addDeployments()
+
 	// Add open PLOP referencing non existing indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasWriteCtx, fixtureconsts.Cluster1, openPlopObjects...))
@@ -827,7 +1035,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenAndClosedNoIndicator() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
@@ -896,6 +1104,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 	}
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -906,7 +1116,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
@@ -962,6 +1172,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() 
 		&openPlopObject,
 	}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -976,7 +1188,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() 
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	// The plop is opened. Then in the batch it is closed and opened, so it is in
@@ -1017,6 +1229,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 		&closedPlopObject,
 	}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -1031,7 +1245,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	// It's closed and excluded from the API response
@@ -1128,6 +1342,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		&openPlopObject,
 	}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -1142,7 +1358,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	// It's closed and excluded from the API response
@@ -1234,6 +1450,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 		&openPlopObject,
 	}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -1248,7 +1466,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	// It's open and included into the API response
@@ -1300,6 +1518,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 	id.SetIndicatorID(initialIndicators[0])
 
 	openPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+
+	suite.addDeployments()
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -1401,7 +1621,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 
 	// Fetch inserted PLOP back from the new deployment
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment2)
+		suite.hasReadCtx, fixtureconsts.Deployment2)
 	suite.NoError(err)
 
 	// It's open and included in the API response for the new deployment
@@ -1426,7 +1646,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 
 	// Fetch inserted PLOP back from the old deployment
 	oldPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	// It's closed and doesn't appear in the API
@@ -1471,6 +1691,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPNoProcessInformation() {
 		Namespace:          fixtureconsts.Namespace1,
 	}
 
+	suite.addDeployments()
+
 	// It is not possible to add a PLOP from sensor with no process info
 	// so upsert directly to the database. In the tests when a process indicator
 	// is deleted the PLOP is also deleted from the database. This does not seem
@@ -1481,7 +1703,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPNoProcessInformation() {
 	// Fetch inserted PLOP back
 	// It doesn't appear in the API, because it has no process info
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
@@ -1529,6 +1751,8 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 		ClusterId:    fixtureconsts.Cluster1,
 		Namespace:    fixtureconsts.Namespace1,
 	}
+
+	suite.addDeployments()
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&plop1, &plop2}
 
@@ -1646,6 +1870,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&plopWithoutPodUID}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -1656,7 +1882,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
@@ -1703,7 +1929,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 
 	// Fetch inserted PLOP back
 	newPlops, err = suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
@@ -1788,6 +2014,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&plopWithoutPodUID}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -1798,7 +2026,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
@@ -1811,7 +2039,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 
 	// Fetch inserted PLOP back
 	newPlops, err = suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
@@ -1868,6 +2096,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatchWit
 		&openPlopObject,
 	}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -1882,7 +2112,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatchWit
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	// The plop is opened. Then in the batch it is closed and opened, so it is in
@@ -1950,6 +2180,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&plopWithoutClusterID}
 
+	suite.addDeployments()
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -1960,7 +2192,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
@@ -2008,7 +2240,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 
 	// Fetch inserted PLOP back
 	newPlops, err = suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, 1)
@@ -2116,6 +2348,8 @@ func (suite *PLOPDataStoreTestSuite) TestAddPodUids() {
 
 	plopObjects := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
 
+	suite.addDeployments()
+
 	// Add PLOPs
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
@@ -2134,7 +2368,7 @@ func (suite *PLOPDataStoreTestSuite) TestAddPodUids() {
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
+		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
 	suite.Len(newPlops, len(plopObjects))
@@ -2455,7 +2689,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPsByProcesses() {
 			}
 
 			suite.NoError(suite.indicatorDataStore.AddProcessIndicators(suite.hasWriteCtx, c.initialProcesses...))
-			countFromDB, err := suite.indicatorDataStore.Count(suite.hasReadCtx, nil)
+			countFromDB, err := suite.indicatorDataStore.Count(suite.hasAllCtx, nil)
 			suite.NoError(err)
 			suite.Equal(len(c.initialProcesses), countFromDB)
 
@@ -2489,6 +2723,8 @@ func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutProcessIndicatorOrProcess
 	}
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+
+	suite.addDeployments()
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(

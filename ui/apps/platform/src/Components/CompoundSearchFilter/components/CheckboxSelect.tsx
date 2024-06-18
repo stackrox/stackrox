@@ -7,10 +7,11 @@ import {
     MenuToggleElement,
     Badge,
 } from '@patternfly/react-core';
+import { ensureString } from '../utils/utils';
 
 type CheckboxSelectProps = {
     selection: string[];
-    onChange: (value: string[]) => void;
+    onChange: (checked: boolean, value: string) => void;
     children: ReactElement<typeof SelectOption> | ReactElement<typeof SelectOption>[];
     isDisabled?: boolean;
     ariaLabelMenu?: string;
@@ -32,14 +33,12 @@ function CheckboxSelect({
     };
 
     const onSelect = (
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        event: React.MouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
-        // @TODO: Consider what to do if the value is an invalid value
-        if (selection.includes(String(value))) {
-            onChange(selection.filter((id) => id !== value));
-        } else {
-            onChange([...selection, String(value)]);
+        if (event) {
+            const { checked } = event.target as HTMLInputElement;
+            onChange(checked, ensureString(value));
         }
     };
 

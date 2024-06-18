@@ -29,21 +29,30 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import useURLSort from 'hooks/useURLSort';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import CvePageHeader from '../../components/CvePageHeader';
-import { getOverviewPagePath, getRegexScopedQueryString } from '../../utils/searchUtils';
+import {
+    getOverviewPagePath,
+    getRegexScopedQueryString,
+    parseQuerySearchFilter,
+} from '../../utils/searchUtils';
 import useAffectedClusters from './useAffectedClusters';
 import AffectedClustersTable, { sortFields, defaultSortOption } from './AffectedClustersTable';
 import usePlatformCveMetadata from './usePlatformCveMetadata';
 import ClustersByTypeSummaryCard from './ClustersByTypeSummaryCard';
 import AffectedClustersSummaryCard from './AffectedClustersSummaryCard';
+import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
+import { clusterSearchFilterConfig } from '../../searchFilterConfig';
 
 const workloadCveOverviewCvePath = getOverviewPagePath('Platform', {
     entityTab: 'CVE',
 });
 
+const searchFilterConfig = {
+    Cluster: clusterSearchFilterConfig,
+};
+
 function PlatformCvePage() {
-    const { searchFilter } = useURLSearch();
-    // TODO - Need an equivalent function implementation for filter sanitization for Platform CVEs
-    const querySearchFilter = searchFilter;
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
     // We need to scope all queries to the *exact* CVE name so that we don't accidentally get
     // data that matches a prefix of the CVE name in the nested fields
@@ -61,13 +70,13 @@ function PlatformCvePage() {
         onSort: () => setPage(1),
     });
 
-    const { affectedClustersRequest, clusterData, clusterCount } = useAffectedClusters(
+    const { affectedClustersRequest, clusterData, clusterCount } = useAffectedClusters({
         query,
         page,
         perPage,
-        sortOption
-    );
-    const metadataRequest = usePlatformCveMetadata(cveId, query, page, perPage);
+        sortOption,
+    });
+    const metadataRequest = usePlatformCveMetadata({ cve: cveId, query, page, perPage });
     const cveName = metadataRequest.data?.platformCVE?.cve;
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
@@ -97,6 +106,19 @@ function PlatformCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-v5-u-flex-grow-1">
+                <AdvancedFiltersToolbar
+                    className="pf-v5-u-pb-0 pf-v5-u-px-sm"
+                    searchFilter={searchFilter}
+                    searchFilterConfig={searchFilterConfig}
+                    onFilterChange={(newFilter, { action }) => {
+                        setSearchFilter(newFilter);
+
+                        if (action === 'ADD') {
+                            // TODO - Add analytics tracking ROX-24509
+                        }
+                    }}
+                    includeCveSeverityFilters={false}
+                />
                 <SummaryCardLayout
                     error={metadataRequest.error}
                     isLoading={metadataRequest.loading}
@@ -139,15 +161,19 @@ function PlatformCvePage() {
                                 page={page}
                                 onSetPage={(_, newPage) => setPage(newPage)}
                                 onPerPageSelect={(_, newPerPage) => {
-                                    if (clusterCount < (page - 1) * newPerPage) {
-                                        setPage(1);
-                                    }
                                     setPerPage(newPerPage);
                                 }}
                             />
                         </SplitItem>
                     </Split>
-                    <AffectedClustersTable tableState={tableState} getSortParams={getSortParams} />
+                    <AffectedClustersTable
+                        tableState={tableState}
+                        getSortParams={getSortParams}
+                        onClearFilters={() => {
+                            setSearchFilter({});
+                            setPage(1, 'replace');
+                        }}
+                    />
                 </div>
             </PageSection>
         </>

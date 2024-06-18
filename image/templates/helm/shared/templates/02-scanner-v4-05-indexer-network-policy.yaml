@@ -1,4 +1,5 @@
 {{- include "srox.init" . -}}
+{{- if ._rox.system.enableNetworkPolicies }}
 {{- if ._rox.scannerV4._indexerEnabled }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -84,5 +85,6 @@ spec:
       app: scanner-v4-indexer
   policyTypes:
     - Ingress
+{{- end }}
 {{- end }}
 {{- end }}

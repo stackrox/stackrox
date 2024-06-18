@@ -918,3 +918,6 @@
 
 - query: (sum(container_memory_rss{name!="",container!="POD",namespace="stackrox"}) by (container, pod, namespace))
   metricName: stackrox_container_memory
+
+- query: (sum(container_memory_working_set_bytes{name!="",container!="POD",namespace="stackrox"}) by (container, pod, namespace))
+  metricName: stackrox_container_memory_working_set_bytes

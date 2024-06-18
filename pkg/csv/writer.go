@@ -3,6 +3,7 @@ package csv
 import (
 	"bytes"
 	"encoding/csv"
+	"io"
 	"net/http"
 	"sort"
 )
@@ -46,6 +47,20 @@ func (c *GenericWriter) IsEmpty() bool {
 // WriteBytes writes out csv header and values to the provided buffer
 func (c *GenericWriter) WriteBytes(buf *bytes.Buffer) error {
 	cw := csv.NewWriter(buf)
+	cw.UseCRLF = true
+	_ = cw.Write(c.header)
+	for _, v := range c.values {
+		if err := cw.Write(v); err != nil {
+			return err
+		}
+	}
+	cw.Flush()
+	return nil
+}
+
+// WriteCSVwrites out csv header and values to the provided IO writer
+func (c *GenericWriter) WriteCSV(w io.Writer) error {
+	cw := csv.NewWriter(w)
 	cw.UseCRLF = true
 	_ = cw.Write(c.header)
 	for _, v := range c.values {

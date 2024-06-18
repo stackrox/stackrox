@@ -68,3 +68,4 @@ monitoring:
     enabled: true
 system:
   enablePodSecurityPolicies: true
+  enableNetworkPolicies: true

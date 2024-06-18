@@ -29,6 +29,7 @@ Suppose we add a field `clusterDescription` to the `SecuredClusterServices` char
 1. Locate the Helm chart you want to extend under `image/templates/helm/stackrox-secured-cluster`
 1. Add the field `clusterDescription` to the `internal/config-shape.yaml` at the root level
 1. The value is directly translated into the `._rox` variable which happens in the `stackrox-secured-clusters/templates/init.tpl.htpl`
+1. If appropriate, add a default value in `internal/defaults.yaml.htpl`
 1. The `stackrox-secured-clusters/templates` directory contains the later rendered templates
 1. To read the value now add it to the Sensor deployment in `sensor.yaml.htpl`
 

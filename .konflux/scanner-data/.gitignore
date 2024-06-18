@@ -1,0 +1,3 @@
+# scanner-data is for mapping data files downloaded and included in Scanner V4 container during build.
+*
+!.gitignore

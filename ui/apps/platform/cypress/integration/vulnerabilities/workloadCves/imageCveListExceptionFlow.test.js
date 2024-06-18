@@ -39,7 +39,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
     });
 
     it('should defer a single CVE', () => {
-        visitAnyImageSinglePage().then(([image]) => {
+        visitAnyImageSinglePage().then((image) => {
             selectSingleCveForException('DEFERRAL').then((cveName) => {
                 verifySelectedCvesInModal([cveName]);
                 fillAndSubmitExceptionForm({
@@ -57,7 +57,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
     });
 
     it('should defer multiple selected CVEs', () => {
-        visitAnyImageSinglePage().then(([image]) => {
+        visitAnyImageSinglePage().then((image) => {
             selectMultipleCvesForException('DEFERRAL').then((cveNames) => {
                 verifySelectedCvesInModal(cveNames);
                 fillAndSubmitExceptionForm({
@@ -76,7 +76,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
     });
 
     it('should mark a single CVE as false positive', () => {
-        visitAnyImageSinglePage().then(([image]) => {
+        visitAnyImageSinglePage().then((image) => {
             selectSingleCveForException('FALSE_POSITIVE').then((cveName) => {
                 verifySelectedCvesInModal([cveName]);
                 fillAndSubmitExceptionForm({ comment: 'Test comment' });
@@ -90,7 +90,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
     });
 
     it('should mark multiple selected CVEs as false positive', () => {
-        visitAnyImageSinglePage().then(([image]) => {
+        visitAnyImageSinglePage().then((image) => {
             selectMultipleCvesForException('FALSE_POSITIVE').then((cveNames) => {
                 verifySelectedCvesInModal(cveNames);
                 fillAndSubmitExceptionForm({

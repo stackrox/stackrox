@@ -11,7 +11,7 @@ OrchestratorMain orchestrator = OrchestratorType.create(
            Env.mustGetOrchestratorType(),
            Constants.ORCHESTRATOR_NAMESPACE
 )
-Logger log = LoggerFactory.getLogger("repro")
+Logger log = LoggerFactory.getLogger("scripts")
 
 log.info "scaling down..."
 orchestrator.scaleDeployment("stackrox-operator", "admission-control", 0)

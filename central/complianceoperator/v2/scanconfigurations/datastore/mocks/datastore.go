@@ -41,6 +41,21 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
+// CountDistinctProfiles mocks base method.
+func (m *MockDataStore) CountDistinctProfiles(ctx context.Context, q *v1.Query) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountDistinctProfiles", ctx, q)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountDistinctProfiles indicates an expected call of CountDistinctProfiles.
+func (mr *MockDataStoreMockRecorder) CountDistinctProfiles(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDistinctProfiles", reflect.TypeOf((*MockDataStore)(nil).CountDistinctProfiles), ctx, q)
+}
+
 // CountScanConfigurations mocks base method.
 func (m *MockDataStore) CountScanConfigurations(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
@@ -69,6 +84,21 @@ func (m *MockDataStore) DeleteScanConfiguration(ctx context.Context, id string) 
 func (mr *MockDataStoreMockRecorder) DeleteScanConfiguration(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteScanConfiguration", reflect.TypeOf((*MockDataStore)(nil).DeleteScanConfiguration), ctx, id)
+}
+
+// GetProfilesNames mocks base method.
+func (m *MockDataStore) GetProfilesNames(ctx context.Context, q *v1.Query) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProfilesNames", ctx, q)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProfilesNames indicates an expected call of GetProfilesNames.
+func (mr *MockDataStoreMockRecorder) GetProfilesNames(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfilesNames", reflect.TypeOf((*MockDataStore)(nil).GetProfilesNames), ctx, q)
 }
 
 // GetScanConfigClusterStatus mocks base method.

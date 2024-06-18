@@ -52,9 +52,14 @@ export type AffectedCluster = {
 export type AffectedClustersTableProps = {
     tableState: TableUIState<AffectedCluster>;
     getSortParams: UseURLSortResult['getSortParams'];
+    onClearFilters: () => void;
 };
 
-function AffectedClustersTable({ tableState, getSortParams }: AffectedClustersTableProps) {
+function AffectedClustersTable({
+    tableState,
+    getSortParams,
+    onClearFilters,
+}: AffectedClustersTableProps) {
     return (
         <Table
             borders={tableState.type === 'COMPLETE'}
@@ -76,6 +81,7 @@ function AffectedClustersTable({ tableState, getSortParams }: AffectedClustersTa
                 tableState={tableState}
                 colSpan={3}
                 emptyProps={{ message: 'No clusters have been reported for this CVE' }}
+                filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) => (
                     <Tbody>
                         {data.map(({ id, name, type, status }) => (

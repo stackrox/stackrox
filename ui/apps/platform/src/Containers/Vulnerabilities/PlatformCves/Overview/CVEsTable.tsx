@@ -28,6 +28,7 @@ import CvssFormatted from 'Components/CvssFormatted';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 
+import ExpandRowTh from 'Components/ExpandRowTh';
 import {
     CLUSTER_CVE_STATUS_SORT_FIELD,
     CVE_SORT_FIELD,
@@ -68,6 +69,7 @@ export type CVEsTableProps = {
     canSelectRows?: boolean;
     sortOption: ApiSortOption;
     getSortParams: UseURLSortResult['getSortParams'];
+    onClearFilters: () => void;
 };
 
 function CVEsTable({
@@ -79,15 +81,16 @@ function CVEsTable({
     createRowActions,
     sortOption,
     getSortParams,
+    onClearFilters,
 }: CVEsTableProps) {
     const { page, perPage } = pagination;
 
-    const { data, previousData, error, loading } = usePlatformCves(
+    const { data, previousData, error, loading } = usePlatformCves({
         querySearchFilter,
         page,
         perPage,
-        sortOption
-    );
+        sortOption,
+    });
     const totalClusterCountRequest = useQuery(totalClusterCountQuery);
     const totalClusterCount = totalClusterCountRequest.data?.clusterCount ?? 0;
 
@@ -113,7 +116,7 @@ function CVEsTable({
         >
             <Thead noWrap>
                 <Tr>
-                    <Th aria-label="Expand row" />
+                    <ExpandRowTh />
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
                     <Th sort={getSortParams(CLUSTER_CVE_STATUS_SORT_FIELD)}>CVE status</Th>
@@ -139,6 +142,7 @@ function CVEsTable({
                 emptyProps={{
                     message: 'No CVEs have been detected for your secured clusters',
                 }}
+                filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
                     data.map((platformCve, rowIndex) => {
                         const {

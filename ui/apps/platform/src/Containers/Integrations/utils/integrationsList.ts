@@ -1,3 +1,4 @@
+import acscsEmail from 'images/acsEmailNotifier.svg';
 import artifactory from 'images/artifactory.svg';
 import aws from 'images/aws.svg';
 import awsSecurityHub from 'images/aws-security-hub.svg';
@@ -205,8 +206,8 @@ export const notifierIntegrationsDescriptors: NotifierIntegrationDescriptor[] = 
         type: 'email',
     },
     {
-        image: email,
-        label: 'ACSCS Email',
+        image: acscsEmail,
+        label: 'RHACS Cloud Service',
         type: 'acscsEmail',
         featureFlagDependency: ['ROX_ACSCS_EMAIL_NOTIFIER'],
     },

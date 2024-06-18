@@ -93,4 +93,15 @@ function useLocalStorage<Storage extends JsonValue>(
     return [storedValue, setStoredValue];
 }
 
+export function useBooleanLocalStorage(
+    key: string,
+    initialValue: boolean
+): UseLocalStorageReturn<boolean> {
+    return useLocalStorage<boolean>(
+        key,
+        initialValue,
+        (rawValue): rawValue is boolean => typeof rawValue === 'boolean'
+    );
+}
+
 export default useLocalStorage;

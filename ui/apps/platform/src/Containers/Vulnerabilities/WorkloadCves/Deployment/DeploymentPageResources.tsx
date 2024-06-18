@@ -86,7 +86,7 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
                 {deploymentResourcesData && (
                     <ExpandableSection
                         toggleText={`Images (${imageCount})`}
-                        onToggle={() => imageTableToggle.onToggle}
+                        onToggle={() => imageTableToggle.onToggle(!imageTableToggle.isOpen)}
                         isExpanded={imageTableToggle.isOpen}
                         style={
                             {
@@ -102,9 +102,6 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
                                 perPage={perPage}
                                 onSetPage={(_, newPage) => setPage(newPage)}
                                 onPerPageSelect={(_, newPerPage) => {
-                                    if (imageCount < (page - 1) * newPerPage) {
-                                        setPage(1);
-                                    }
                                     setPerPage(newPerPage);
                                 }}
                             />

@@ -168,7 +168,7 @@ function PolicyScopeCard({
                             </FlexItem>
                         )}
                         <FlexItem>
-                            <FormGroup label="Label" fieldId={`${name}-label`}>
+                            <FormGroup label="Deployment label" fieldId={`${name}-label`}>
                                 <Flex
                                     direction={{ default: 'row' }}
                                     flexWrap={{ default: 'nowrap' }}

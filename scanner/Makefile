@@ -42,9 +42,6 @@ endif
 # If you need to separate the declaration and the usage in Dockerfile, do this instead
 #    ARG CGO_ENABLED=1
 #    RUN make CGO_ENABLED=$CGO_ENABLED blah
-#
-# TODO(ROX-23969): remove this assignment so that CGO_ENABLED is set to 1 (see env.mk) in order to minimize testing
-# difference with FIPS builds.
 CGO_ENABLED = 0
 RACE_FLAG =
 ifeq ($(RACE),true)
@@ -139,18 +136,20 @@ $(build-t): $(build-deps-t)
 ifdef NODEPS
 .PHONY: $(build-deps-t)
 else
-$(build-deps-t): ../go.mod
+$(build-deps-t): $(shell find $(CURDIR)/.. -name "go.sum")
+	@echo "+ $@"
+	$(SILENT)touch $@
+endif
+
+%/go.sum: %/go.mod
 	@echo "+ $@"
 	$(SILENT)go mod tidy
 ifdef CI
-	$(SILENT)git diff --exit-code -- ../go.mod ../go.sum || { \
-		echo "go.mod/go.sum files were updated after running 'go mod tidy': run this command on your local machine and commit the results." ; \
-		exit 1 ; \
-	}
+	$(SILENT)GOTOOLCHAIN=local go mod tidy || { >&2 echo "Go toolchain does not match with installed Go version. This is a compatibility check that prevents breaking downstream builds. If you really need to update the toolchain version, ask in #forum-acs-golang" ; exit 1 ; }
+	$(SILENT)git diff --exit-code -- ../go.mod ../go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
 endif
 	$(SILENT)go mod verify
 	$(SILENT)touch $@
-endif
 
 ############
 ## Images ##
@@ -187,9 +186,9 @@ copy-scripts: $(image-scripts-t)
 	@echo "+ $@"
 
 .PHONY: image-scanner
-image-scanner: image/scanner/bin/scanner \
+image-scanner: $(if $(CI),,image/scanner/bin/scanner) \
                $(image-scripts-t) \
-               $(if $(CI),ossls-notice-no-download,ossls-notice)
+               ossls-notice
 	@echo "+ $@"
 	$(DOCKERBUILD) \
         -t stackrox/$(image-prefix):$(TAG) \
@@ -230,17 +229,15 @@ image-db: $(image-db-init-t)
 ## Tools ##
 ###########
 
-.PHONY: ossls-notice-no-download
-ossls-notice-no-download: $(build-deps-t)
+.PHONY: ossls-notice
+ossls-notice: $(build-deps-t)
 	@echo "+ $@"
+ifdef CI
 	$(SILENT)ossls version
 	$(SILENT)ossls audit --export image/scanner/THIRD_PARTY_NOTICES
-
-.PHONY: ossls-notice
-ossls-notice: $(build-deps-t) $(OSSLS_BIN)
-	@echo "+ $@"
-	$(SILENT)$(OSSLS_BIN) version
-	$(SILENT)$(OSSLS_BIN) audit --export image/scanner/THIRD_PARTY_NOTICES
+else
+	$(SILENT)mkdir -p image/scanner/THIRD_PARTY_NOTICES
+endif
 
 #################
 ## Integration ##

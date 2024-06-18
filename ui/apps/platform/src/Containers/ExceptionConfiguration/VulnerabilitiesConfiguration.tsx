@@ -286,7 +286,7 @@ function VulnerabilitiesConfiguration({
                                     isDisabled={!hasWriteAccessForPage}
                                     handleChange={handleChange}
                                     validated={validated}
-                                    helperTextInvalid={fieldError}
+                                    helperTextInvalid={fieldError ?? ''}
                                 />
                             );
                         })}

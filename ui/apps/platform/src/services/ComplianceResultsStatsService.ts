@@ -1,5 +1,3 @@
-import { generatePath } from 'react-router-dom';
-
 import axios from 'services/instance';
 import { SearchQueryOptions } from 'types/search';
 
@@ -14,7 +12,7 @@ import {
 
 const complianceResultsStatsBaseUrl = `${complianceV2Url}/scan/stats`;
 
-type ComplianceProfileScanStats = {
+export type ComplianceProfileScanStats = {
     checkStats: ComplianceCheckStatusCount[];
     profileName: string;
     title: string;
@@ -24,6 +22,13 @@ type ComplianceProfileScanStats = {
 export type ListComplianceProfileScanStatsResponse = {
     scanStats: ComplianceProfileScanStats[];
     totalCount: number;
+};
+
+export type ListComplianceClusterProfileStatsResponse = {
+    scanStats: ComplianceProfileScanStats[];
+    totalCount: number;
+    clusterId: string;
+    clusterName: string;
 };
 
 /**
@@ -36,13 +41,26 @@ export function getComplianceProfilesStats(): Promise<ListComplianceProfileScanS
 }
 
 /**
+ * Fetches the scan stats grouped by profile for a specific cluster.
+ */
+export function getComplianceProfilesClusterStats(
+    clusterId: string
+): Promise<ListComplianceClusterProfileStatsResponse> {
+    return axios
+        .get<ListComplianceClusterProfileStatsResponse>(
+            `${complianceResultsStatsBaseUrl}/profiles/clusters/${clusterId}`
+        )
+        .then((response) => response.data);
+}
+
+/**
  * Fetches the profile cluster results.
  */
 export function getComplianceClusterStats(
     profileName: string,
-    { sortOption, page, perPage }: SearchQueryOptions
+    { sortOption, page, perPage, searchFilter }: SearchQueryOptions
 ): Promise<ListComplianceClusterOverallStatsResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
     return axios
         .get<ListComplianceClusterOverallStatsResponse>(
             `${complianceResultsStatsBaseUrl}/profiles/${profileName}/clusters?${params}`
@@ -57,11 +75,9 @@ export function getComplianceProfileCheckStats(
     profileName: string,
     checkName: string
 ): Promise<ComplianceCheckResultStatusCount> {
-    const url = generatePath(
-        `${complianceV2Url}/scan/stats/profiles/:profileName/checks/:checkName`,
-        { profileName, checkName }
-    );
     return axios
-        .get<ListComplianceProfileResults>(url)
+        .get<ListComplianceProfileResults>(
+            `${complianceResultsStatsBaseUrl}/profiles/${profileName}/checks/${checkName}`
+        )
         .then((response) => response.data?.profileResults?.[0]);
 }

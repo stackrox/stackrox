@@ -18,6 +18,7 @@ import {
     CVE_STATUS_SORT_FIELD,
     CVSS_SORT_FIELD,
 } from 'Containers/Vulnerabilities/utils/sortFields';
+import ExpandRowTh from 'Components/ExpandRowTh';
 import {
     getIsSomeVulnerabilityFixable,
     getHighestVulnerabilitySeverity,
@@ -90,7 +91,7 @@ function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
         >
             <Thead noWrap>
                 <Tr>
-                    <Th aria-label="Expand row" />
+                    <ExpandRowTh />
                     <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
                     <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>Top severity</Th>
                     <Th sort={getSortParams(CVE_STATUS_SORT_FIELD)}>CVE status</Th>

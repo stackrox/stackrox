@@ -27,13 +27,16 @@ import {
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import useURLSort from 'hooks/useURLSort';
+import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import {
     getHiddenSeverities,
     getOverviewPagePath,
     getRegexScopedQueryString,
+    parseQuerySearchFilter,
 } from '../../utils/searchUtils';
 import CvePageHeader from '../../components/CvePageHeader';
+import { nodeSearchFilterConfig, nodeComponentSearchFilterConfig } from '../../searchFilterConfig';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import AffectedNodesTable, { defaultSortOption, sortFields } from './AffectedNodesTable';
 import AffectedNodesSummaryCard from './AffectedNodesSummaryCard';
@@ -42,10 +45,14 @@ import useNodeCveMetadata from './useNodeCveMetadata';
 
 const nodeCveOverviewCvePath = getOverviewPagePath('Node', { entityTab: 'CVE' });
 
+const searchFilterConfig = {
+    Node: nodeSearchFilterConfig,
+    'Node Component': nodeComponentSearchFilterConfig,
+} as const;
+
 function NodeCvePage() {
-    const { searchFilter } = useURLSearch();
-    // TODO - Need an equivalent function implementation for filter sanitization for Node CVEs
-    const querySearchFilter = searchFilter;
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
     // We need to scope all queries to the *exact* CVE name so that we don't accidentally get
     // data that matches a prefix of the CVE name in the nested fields
@@ -67,7 +74,12 @@ function NodeCvePage() {
 
     const { metadataRequest, nodeCount, cveData } = useNodeCveMetadata(cveId, query);
 
-    const { affectedNodesRequest, nodeData } = useAffectedNodes(query, page, perPage, sortOption);
+    const { affectedNodesRequest, nodeData } = useAffectedNodes({
+        query,
+        page,
+        perPage,
+        sortOption,
+    });
 
     const nodeCveName = cveData?.cve;
 
@@ -97,6 +109,18 @@ function NodeCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-v5-u-flex-grow-1">
+                <AdvancedFiltersToolbar
+                    className="pf-v5-u-pt-lg pf-v5-u-pb-0 pf-v5-u-px-sm"
+                    searchFilter={searchFilter}
+                    searchFilterConfig={searchFilterConfig}
+                    onFilterChange={(newFilter, { action }) => {
+                        setSearchFilter(newFilter);
+
+                        if (action === 'ADD') {
+                            // TODO - Add analytics tracking
+                        }
+                    }}
+                />
                 <SummaryCardLayout
                     error={metadataRequest.error}
                     isLoading={metadataRequest.loading}
@@ -143,9 +167,6 @@ function NodeCvePage() {
                                 onSetPage={(_, newPage) => setPage(newPage)}
                                 onPerPageSelect={(_, newPerPage) => {
                                     setPerPage(newPerPage);
-                                    if (nodeCount < (page - 1) * newPerPage) {
-                                        setPage(1, 'replace');
-                                    }
                                 }}
                             />
                         </SplitItem>

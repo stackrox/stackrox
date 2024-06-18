@@ -267,7 +267,7 @@ func (s *LocalScan) getRegistries(ctx context.Context, namespace string, imgName
 		// No registries found thus far, create a no auth registry.
 		reg, err := s.createNoAuthImageRegistry(ctx, imgName, s.regFactory)
 		if err != nil {
-			return nil, pkgErrors.Errorf("unable to create no auth integration for %q", imgName.GetFullName())
+			return nil, pkgErrors.Wrapf(err, "unable to create no auth integration for %q", imgName.GetFullName())
 		}
 		regs = append(regs, reg)
 	}

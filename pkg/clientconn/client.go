@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -94,6 +95,7 @@ type TLSConfigOptions struct {
 	InsecureSkipVerify bool
 	CustomCertVerifier tlscheck.TLSCertVerifier
 	RootCAs            *x509.CertPool
+	DialContext        func(ctx context.Context, addr string) (net.Conn, error)
 
 	GRPCOnly bool
 }

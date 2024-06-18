@@ -168,6 +168,16 @@ func (s *complianceBenchmarkDataStoreSuite) TestGetBenchmark() {
 	s.Require().False(found)
 }
 
+func (s *complianceBenchmarkDataStoreSuite) TestGetBenchmarksByProfileName() {
+	benchmark := getTestBenchmark(uuidStub1, "OpenShift CIS", "1.0", 1)
+	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, benchmark))
+
+	benchmarks, err := s.datastore.GetBenchmarksByProfileName(s.hasReadCtx, benchmark.GetProfiles()[0].GetProfileName())
+	s.Require().NoError(err)
+	s.Require().Len(benchmarks, 1)
+	s.Assert().Equal("OpenShift CIS", benchmarks[0].Name)
+}
+
 func getTestBenchmark(id string, name string, version string, profileCount int) *storage.ComplianceOperatorBenchmarkV2 {
 	var profiles []*storage.ComplianceOperatorBenchmarkV2_Profile
 	for i := 0; i < profileCount; i++ {

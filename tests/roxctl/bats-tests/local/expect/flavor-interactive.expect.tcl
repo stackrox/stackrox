@@ -37,6 +37,7 @@ expect "Path to the backup bundle from which to restore keys and certificates*: 
 expect "Read templates from local filesystem*:*: " { send "\n" }
 expect "Path to helm templates on your local filesystem*:*: " { send "\n" }
 expect "PEM cert bundle file*: " { send "\n" }
+expect "Disable the administrator password*: " { send "\n" }
 expect "Create PodSecurityPolicy resources*:*: " { send "\n" }
 expect "Administrator password*:*: " { send "\n" }
 expect "Orchestrator (k8s, openshift)*: " { send "k8s\n" }

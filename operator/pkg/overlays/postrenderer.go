@@ -72,6 +72,7 @@ func mapOverlays(overlays []*v1alpha1.K8sObjectOverlay) []*types.K8sObjectOverla
 			ApiVersion: o.APIVersion,
 			Kind:       o.Kind,
 			Name:       o.Name,
+			Optional:   o.Optional,
 			Patches:    mapOverlayPatches(o.Patches),
 		}
 	}

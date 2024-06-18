@@ -8,6 +8,9 @@ import (
 const (
 	// SensorMessageSoftRestart is a message kind where components require sensor-central connection to restart.
 	SensorMessageSoftRestart = "SensorMessage_SoftRestart"
+
+	// SensorMessageResourceSyncFinished is a message kind where components require the resource sync to be finished.
+	SensorMessageResourceSyncFinished = "SensorMessage_ResourceSyncFinished"
 )
 
 // SensorInternalMessageCallback is the callback used by subscribers.
@@ -17,7 +20,8 @@ type SensorInternalMessageCallback func(message *SensorInternalMessage)
 func NewMessageSubscriber() *MessageSubscriber {
 	return &MessageSubscriber{
 		subscribers: map[string][]SensorInternalMessageCallback{
-			SensorMessageSoftRestart: {},
+			SensorMessageSoftRestart:          {},
+			SensorMessageResourceSyncFinished: {},
 		},
 		lock: &sync.RWMutex{},
 	}

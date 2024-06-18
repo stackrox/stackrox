@@ -99,29 +99,49 @@ func (s *complianceRuleDataStoreTestSuite) TestGetControl() {
 		ruleFixtures   []*storage.ComplianceOperatorRuleV2
 		ctx            context.Context
 		// By default assumes length of all given example rules.
-		expectedLength int
+		expectedLength         int
+		inputBenchmarks        []string
+		expectedControlResults []*ControlResult
 	}{
 		"should return all controls": {
-			inputRuleNames: []string{"ocp4-api-server-anonymous-auth", "ocp4-api-server-admission-control-plugin-namespacelifecycle"},
-			ruleFixtures:   []*storage.ComplianceOperatorRuleV2{exampleRule1, exampleRule2},
-			ctx:            s.hasReadCtx,
+			inputRuleNames:  []string{"ocp4-api-server-anonymous-auth", "ocp4-api-server-admission-control-plugin-namespacelifecycle"},
+			ruleFixtures:    []*storage.ComplianceOperatorRuleV2{exampleRule1, exampleRule2},
+			inputBenchmarks: []string{},
+			ctx:             s.hasReadCtx,
+			expectedLength:  7,
+			// TODO: In progress add test cases
+			expectedControlResults: []*ControlResult{
+				{Control: "1.1.1", Standard: "CIS-OCP", RuleName: "ocp4-api-server-admission-control-plugin-namespacelifecycle"},
+				{Control: "2.2.2", Standard: "CIS-OCP", RuleName: "ocp4-api-server-admission-control-plugin-namespacelifecycle"},
+				{Control: "3.3.3", Standard: "CIS-OCP", RuleName: "ocp4-api-server-admission-control-plugin-namespacelifecycle"},
+				{Control: "CIP-003-8 R5.1.1", Standard: "NERC-CIP", RuleName: "ocp4-api-server-admission-control-plugin-namespacelifecycle"},
+				{Control: "CIP-555-9 R5.5.5", Standard: "NERC-CIP", RuleName: "ocp4-api-server-admission-control-plugin-namespacelifecycle"},
+				{Control: "CIP-003-8 R5.1.1", Standard: "NERC-CIP", RuleName: "ocp4-api-server-anonymous-auth"},
+			},
 		},
-		"should return only controls for a single rule": {
-			inputRuleNames: []string{"ocp4-api-server-admission-control-plugin-namespacelifecycle"},
-			ruleFixtures:   []*storage.ComplianceOperatorRuleV2{exampleRule1},
-			ctx:            s.hasReadCtx,
-			expectedLength: 0,
+		"should return only controls for a single rule and filter by benchmark": {
+			inputRuleNames:  []string{"ocp4-api-server-admission-control-plugin-namespacelifecycle"},
+			ruleFixtures:    []*storage.ComplianceOperatorRuleV2{exampleRule1},
+			ctx:             s.hasReadCtx,
+			inputBenchmarks: []string{"NERC-CIP"},
+			expectedLength:  2,
+			expectedControlResults: []*ControlResult{
+				{Standard: "NERC-CIP", Control: "CIP-003-8 R5.1.1", RuleName: "ocp4-api-server-admission-control-plugin-namespacelifecycle"},
+				{Standard: "NERC-CIP", Control: "CIP-555-9 R5.5.5", RuleName: "ocp4-api-server-admission-control-plugin-namespacelifecycle"},
+			},
 		},
 		"should return an empty result": {
 			inputRuleNames: []string{"rule-does-not-exist"},
 			ruleFixtures:   []*storage.ComplianceOperatorRuleV2{},
 			ctx:            s.hasReadCtx,
+			expectedLength: 0,
 		},
-		"should group results by name, control and standard": {
-			inputRuleNames: []string{"ocp4-api-server-anonymous-auth"},
-			ruleFixtures:   []*storage.ComplianceOperatorRuleV2{exampleRule2, exampleRule2},
-			ctx:            s.hasReadCtx,
-			expectedLength: 2,
+		"should group results by name, control and standard and not return duplicated results": {
+			inputRuleNames:  []string{"ocp4-api-server-anonymous-auth"},
+			inputBenchmarks: []string{"CIS-OCP"},
+			ruleFixtures:    []*storage.ComplianceOperatorRuleV2{exampleRule2, exampleRule2},
+			ctx:             s.hasReadCtx,
+			expectedLength:  1,
 		},
 	}
 
@@ -133,35 +153,23 @@ func (s *complianceRuleDataStoreTestSuite) TestGetControl() {
 				s.Require().NoError(err)
 			}
 
-			controlQueryResults, err := s.dataStore.GetControlsByRuleNames(testCase.ctx, testCase.inputRuleNames)
+			controlQueryResults, err := s.dataStore.GetControlsByRulesAndBenchmarks(testCase.ctx, testCase.inputRuleNames, testCase.inputBenchmarks)
 			s.Require().NoError(err)
 
-			for _, expectedRuleControl := range s.getAllRuleControls(testCase.ruleFixtures) {
+			for _, expectedRuleControl := range testCase.expectedControlResults {
 				// Lookup all control results, if a control result was found continue
 				found := false
 				for _, controlResult := range controlQueryResults {
-					if controlResult.Control == expectedRuleControl.Control {
+					if *controlResult == *expectedRuleControl {
 						found = true
 					}
 				}
-				s.Require().True(found, "expected rule %s not found", expectedRuleControl.Control)
+				s.Require().True(found, "expected ControlResult %v not found", expectedRuleControl)
 			}
 
-			if testCase.expectedLength == 0 {
-				s.Len(controlQueryResults, len(s.getAllRuleControls(testCase.ruleFixtures)), "list of expected controls must be equal to the returned list.")
-			} else {
-				s.Len(controlQueryResults, testCase.expectedLength)
-			}
+			s.Len(controlQueryResults, testCase.expectedLength)
 		})
 	}
-}
-
-func (s *complianceRuleDataStoreTestSuite) getAllRuleControls(rules []*storage.ComplianceOperatorRuleV2) []*storage.RuleControls {
-	var controls []*storage.RuleControls
-	for _, rule := range rules {
-		controls = append(controls, rule.Controls...)
-	}
-	return controls
 }
 
 func (s *complianceRuleDataStoreTestSuite) TestUpsertRule() {

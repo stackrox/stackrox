@@ -6,7 +6,7 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-RUN scripts/konflux/fail-build-if-git-is-dirty.sh
+RUN .konflux/scripts/fail-build-if-git-is-dirty.sh
 
 ARG VERSIONS_SUFFIX
 ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
@@ -20,8 +20,11 @@ ENV CI=1 GOFLAGS="" CGO_ENABLED=1
 RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh operator && \
     cp bin/linux_$(go env GOARCH)/operator image/bin/operator
 
+
 # TODO(ROX-20312): pin image tags when there's a process that updates them automatically.
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+
+ARG MAIN_IMAGE_TAG
 
 LABEL \
     com.redhat.component="rhacs-operator-container" \
@@ -36,8 +39,10 @@ LABEL \
     summary="Operator for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     # We must set version label to prevent inheriting value set in the base stage.
-    # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
-    version="0.0.1-todo"
+    version="${MAIN_IMAGE_TAG}" \
+    # Release label is required by EC although has no practical semantics.
+    # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
+    release="1"
 
 COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/operator /usr/local/bin/rhacs-operator
 

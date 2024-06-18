@@ -12,6 +12,12 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+)
+
+var (
+	plopSAC = sac.ForResource(resources.DeploymentExtension)
 )
 
 // NewFullStore augments the generated store with GetProcessListeningOnPort functions.
@@ -38,6 +44,8 @@ const getByDeploymentStmt = "SELECT plop.serialized, " +
 	"ON plop.processindicatorid = proc.id " +
 	"WHERE plop.deploymentid = $1 AND plop.closed = false"
 
+const getClusterAndNamespaceStmt = "SELECT namespace, clusterid FROM deployments WHERE id = $1"
+
 // Manually written function to get PLOP joined with ProcessIndicators
 func (s *fullStoreImpl) GetProcessListeningOnPort(
 	ctx context.Context,
@@ -49,9 +57,76 @@ func (s *fullStoreImpl) GetProcessListeningOnPort(
 		"ProcessListeningOnPortStorage",
 	)
 
+	allowed, err := pgutils.Retry2(func() (bool, error) {
+		return s.checkAccess(ctx, deploymentID)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !allowed {
+		return nil, nil
+	}
+
 	return pgutils.Retry2(func() ([]*storage.ProcessListeningOnPort, error) {
 		return s.retryableGetPLOP(ctx, deploymentID)
 	})
+}
+
+func (s *fullStoreImpl) checkAccess(
+	ctx context.Context,
+	deploymentID string,
+) (bool, error) {
+
+	extendedCtx := sac.WithAllAccess(ctx)
+	rows, err := s.db.Query(extendedCtx, getClusterAndNamespaceStmt, deploymentID)
+
+	if err != nil {
+		// Do not be alarmed if the error is simply NoRows
+		if err == pgx.ErrNoRows {
+			return false, nil
+		}
+		log.Warnf("%s: %s", getClusterAndNamespaceStmt, err)
+
+		return false, err
+	}
+	defer rows.Close()
+
+	allowed, err := s.checkAccesssForRows(ctx, rows)
+
+	if err != nil {
+		return false, err
+	}
+
+	return allowed, nil
+}
+
+func (s *fullStoreImpl) checkAccesssForRows(
+	ctx context.Context,
+	rows pgx.Rows,
+) (bool, error) {
+
+	// There should only be one row
+	if rows.Next() {
+		var namespace string
+		var clusterID string
+
+		if err := rows.Scan(&namespace, &clusterID); err != nil {
+			return false, pgutils.ErrNilIfNoRows(err)
+		}
+
+		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID), sac.NamespaceScopeKey(namespace)); err != nil {
+			return false, err
+		} else if !ok {
+			return false, sac.ErrResourceAccessDenied
+		}
+
+	} else {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (s *fullStoreImpl) retryableGetPLOP(
@@ -73,7 +148,7 @@ func (s *fullStoreImpl) retryableGetPLOP(
 	}
 	defer rows.Close()
 
-	results, err := s.readRows(rows)
+	results, err := s.readRows(ctx, rows)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +159,7 @@ func (s *fullStoreImpl) retryableGetPLOP(
 // Manual converting of raw data from SQL query to ProcessListeningOnPort (not
 // ProcessListeningOnPortStorage) object enriched with ProcessIndicator info.
 func (s *fullStoreImpl) readRows(
+	ctx context.Context,
 	rows pgx.Rows,
 ) ([]*storage.ProcessListeningOnPort, error) {
 	var plops []*storage.ProcessListeningOnPort
@@ -112,8 +188,10 @@ func (s *fullStoreImpl) readRows(
 		}
 
 		var procMsg storage.ProcessIndicator
-		if err := protocompat.Unmarshal(procSerialized, &procMsg); err != nil {
-			return nil, err
+		if procSerialized != nil {
+			if err := protocompat.Unmarshal(procSerialized, &procMsg); err != nil {
+				return nil, err
+			}
 		}
 
 		podUID = msg.GetPodUid()
@@ -180,9 +258,15 @@ func (s *fullStoreImpl) readRows(
 			ImageId:            procMsg.GetImageId(),
 		}
 
-		plops = append(plops, plop)
+		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(plop.ClusterId), sac.NamespaceScopeKey(plop.Namespace)); err == nil && ok {
+			plops = append(plops, plop)
+		}
 	}
 
 	log.Debugf("Read returned %+v plops", len(plops))
+	if len(plops) == 0 {
+		return nil, nil
+	}
+
 	return plops, nil
 }

@@ -9,8 +9,11 @@ import {
     urlEntityListTypes,
     violationsBasePath,
     vulnManagementImagesPath,
+    vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
 import { resourceTypes } from 'constants/entityTypes';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import { generatePathWithQuery } from 'utils/searchUtils';
 
 import SummaryCount from './SummaryCount';
 
@@ -35,16 +38,6 @@ const dataKey: Record<TileResource, string> = {
     Secret: 'secretCount',
 };
 
-// According to current minimalist philosophy, ignore that routes might have additional resource requirements.
-const tileLinks: Record<TileResource, string> = {
-    Cluster: clustersBasePath,
-    Node: `${configManagementPath}/${urlEntityListTypes[resourceTypes.NODE]}`,
-    Alert: violationsBasePath,
-    Deployment: `${configManagementPath}/${urlEntityListTypes[resourceTypes.DEPLOYMENT]}`,
-    Image: vulnManagementImagesPath,
-    Secret: `${configManagementPath}/${urlEntityListTypes[resourceTypes.SECRET]}`,
-};
-
 const tileNouns: Record<TileResource, string> = {
     Cluster: 'Cluster',
     Node: 'Node',
@@ -63,6 +56,21 @@ export type SummaryCountsProps = {
 };
 
 function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const areVMMiscImprovementsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA');
+
+    // According to current minimalist philosophy, ignore that routes might have additional resource requirements.
+    const tileLinks: Record<TileResource, string> = {
+        Cluster: clustersBasePath,
+        Node: `${configManagementPath}/${urlEntityListTypes[resourceTypes.NODE]}`,
+        Alert: violationsBasePath,
+        Deployment: `${configManagementPath}/${urlEntityListTypes[resourceTypes.DEPLOYMENT]}`,
+        Image: areVMMiscImprovementsEnabled
+            ? generatePathWithQuery(vulnerabilitiesWorkloadCvesPath, {}, { entityTab: 'Image' })
+            : vulnManagementImagesPath,
+        Secret: `${configManagementPath}/${urlEntityListTypes[resourceTypes.SECRET]}`,
+    };
+
     const tileResourcesQuery = tileResources
         .filter((tileResource) => hasReadAccessForResource[tileResource])
         .map((tileResource) => dataKey[tileResource])
@@ -106,14 +114,22 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
                 <Split className="pf-v5-u-flex-wrap">
                     {tileResources
                         .filter((tileResource) => typeof data[dataKey[tileResource]] === 'number')
-                        .map((tileResource) => (
-                            <SummaryCount
-                                key={tileResource}
-                                count={data[dataKey[tileResource]]}
-                                href={tileLinks[tileResource]}
-                                noun={tileNouns[tileResource]}
-                            />
-                        ))}
+                        .map((tileResource) => {
+                            const tooltip =
+                                areVMMiscImprovementsEnabled && tileResource === 'Image'
+                                    ? 'Count includes all images, with or without observed CVEs'
+                                    : undefined;
+
+                            return (
+                                <SummaryCount
+                                    key={tileResource}
+                                    count={data[dataKey[tileResource]]}
+                                    href={tileLinks[tileResource]}
+                                    noun={tileNouns[tileResource]}
+                                    tooltip={tooltip}
+                                />
+                            );
+                        })}
                 </Split>
             </SplitItem>
             <div className="pf-v5-u-color-200 pf-v5-u-font-size-sm pf-v5-u-mr-md pf-v5-u-mr-lg-on-lg">

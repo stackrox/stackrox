@@ -11,6 +11,7 @@ import { TableUIState } from 'utils/getTableUIState';
 import useSet from 'hooks/useSet';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
+import ExpandRowTh from 'Components/ExpandRowTh';
 import {
     CLUSTER_CVE_STATUS_SORT_FIELD,
     CVE_SORT_FIELD,
@@ -65,9 +66,10 @@ export type ClusterVulnerability = {
 export type CVEsTableProps = {
     tableState: TableUIState<ClusterVulnerability>;
     getSortParams: UseURLSortResult['getSortParams'];
+    onClearFilters: () => void;
 };
 
-function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
+function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps) {
     const COL_SPAN = 5;
     const expandedRowSet = useSet<string>();
 
@@ -81,7 +83,7 @@ function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
         >
             <Thead noWrap>
                 <Tr>
-                    <Th aria-label="Expand row" />
+                    <ExpandRowTh />
                     <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
                     <Th sort={getSortParams(CLUSTER_CVE_STATUS_SORT_FIELD)}>CVE status</Th>
                     <Th sort={getSortParams(CVE_TYPE_SORT_FIELD)}>CVE type</Th>
@@ -92,6 +94,7 @@ function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
                 tableState={tableState}
                 colSpan={COL_SPAN}
                 emptyProps={{ message: 'No CVEs were detected for this cluster' }}
+                filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
                     data.map((clusterVulnerability, rowIndex) => {
                         const { cve, isFixable, vulnerabilityType, cvss, scoreVersion, summary } =

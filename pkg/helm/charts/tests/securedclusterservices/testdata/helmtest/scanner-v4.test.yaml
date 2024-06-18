@@ -246,6 +246,24 @@ tests:
     .networkpolicys["scanner-v4-indexer"].spec.ingress[0] | .ports | assertThat(length == 1)
     .networkpolicys["scanner-v4-indexer"].spec.ingress[0] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
 
+- name: "scanner with network policies enabled"
+  set:
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+    system.enableNetworkPolicies: true
+  expect: |
+    .networkpolicys["scanner-v4-indexer"] | assertThat(. != null)
+    .networkpolicys["scanner-v4-matcher"] | assertThat(. == null)  # No matcher in secured cluster
+
+- name: "scanner with network policies disabled"
+  set:
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+    system.enableNetworkPolicies: false
+  expect: |
+    .networkpolicys["scanner-v4-indexer"] | assertThat(. == null)
+    .networkpolicys["scanner-v4-matcher"] | assertThat(. == null)
+
 - name: "Scanner V4 DB is backed by an emptyDir"
   set:
     scannerV4.disable: false

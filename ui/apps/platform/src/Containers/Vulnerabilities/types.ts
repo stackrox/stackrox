@@ -14,17 +14,15 @@ export function isFixableStatus(value: unknown): value is FixableStatus {
     return fixableStatuses.some((status) => status === value);
 }
 
-// `QuerySearchFilter` is a restricted subset of the `SearchFilter` obtained from the URL that only
-// supports search keys that are valid in the Workload CVE section of the app
-export type QuerySearchFilter = Partial<{
-    SEVERITY: VulnerabilitySeverity[];
-    FIXABLE: ('true' | 'false')[];
-    CVE: string[];
-    IMAGE: string[];
-    DEPLOYMENT: string[];
-    NAMESPACE: string[];
-    CLUSTER: string[];
-}>;
+// `QuerySearchFilter` is a restricted subset of the `SearchFilter` obtained from the URL that
+// has been parsed to convert values to the format expected by the backend. It also restricts
+// the filter values to a `string[]` for consistency.
+export type QuerySearchFilter = Partial<
+    {
+        SEVERITY: VulnerabilitySeverity[];
+        FIXABLE: ('true' | 'false')[];
+    } & Record<string, string[]>
+>;
 
 const vulnMgmtLocalStorageSchema = yup.object({
     preferences: yup.object({

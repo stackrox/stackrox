@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/stackrox/rox/tools/roxvet/analyzers/donotcompareproto"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/dontprintferr"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/filepathwalk"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/godoccapitalizationmismatch"
@@ -23,22 +24,23 @@ import (
 
 func main() {
 	unitchecker.Main(
-		godoccapitalizationmismatch.Analyzer,
+		donotcompareproto.Analyzer,
 		dontprintferr.Analyzer,
-		storeinterface.Analyzer,
+		filepathwalk.Analyzer,
+		godoccapitalizationmismatch.Analyzer,
+		gogoprotofunctions.Analyzer,
+		importpackagenames.Analyzer,
+		migrationreferencedschema.Analyzer,
 		needlessformat.Analyzer,
-		regexes.Analyzer,
-		uncheckedifassign.Analyzer,
 		protoclone.Analyzer,
 		protoptrs.Analyzer,
-		gogoprotofunctions.Analyzer,
-		unusedroxctlargs.Analyzer,
-		filepathwalk.Analyzer,
-		validateimports.Analyzer,
-		importpackagenames.Analyzer,
-		structuredlogs.Analyzer,
-		migrationreferencedschema.Analyzer,
-		undeferredmutexunlocks.Analyzer,
+		regexes.Analyzer,
 		sortslices.Analyzer,
+		storeinterface.Analyzer,
+		structuredlogs.Analyzer,
+		uncheckedifassign.Analyzer,
+		undeferredmutexunlocks.Analyzer,
+		unusedroxctlargs.Analyzer,
+		validateimports.Analyzer,
 	)
 }

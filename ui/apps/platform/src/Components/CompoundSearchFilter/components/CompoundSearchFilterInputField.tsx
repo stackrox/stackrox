@@ -1,14 +1,23 @@
 import React from 'react';
 import { DatePicker, SearchInput, SelectOption } from '@patternfly/react-core';
 
+import { SearchFilter } from 'types/search';
+import { getDate } from 'utils/dateUtils';
+import { dateFormat } from 'constants/dateTimeFormat';
 import { SelectedEntity } from './EntitySelector';
 import { SelectedAttribute } from './AttributeSelector';
 import {
-    CompoundSearchFilterConfig,
+    OnSearchPayload,
+    PartialCompoundSearchFilterConfig,
     SearchFilterAttribute,
     SelectSearchFilterAttribute,
 } from '../types';
-import { ensureConditionNumber, ensureString, ensureStringArray } from '../utils/utils';
+import {
+    conditionMap,
+    ensureConditionNumber,
+    ensureString,
+    ensureStringArray,
+} from '../utils/utils';
 
 import CheckboxSelect from './CheckboxSelect';
 import ConditionNumber from './ConditionNumber';
@@ -26,9 +35,10 @@ export type CompoundSearchFilterInputFieldProps = {
     selectedEntity: SelectedEntity;
     selectedAttribute: SelectedAttribute;
     value: InputFieldValue;
-    onSearch: InputFieldOnChange;
+    searchFilter: SearchFilter;
+    onSearch: ({ action, category, value }: OnSearchPayload) => void;
     onChange: InputFieldOnChange;
-    config: Partial<CompoundSearchFilterConfig>;
+    config: PartialCompoundSearchFilterConfig;
 };
 
 function isSelectType(
@@ -41,6 +51,7 @@ function CompoundSearchFilterInputField({
     selectedEntity,
     selectedAttribute,
     value,
+    searchFilter,
     onSearch,
     onChange,
     config,
@@ -50,7 +61,7 @@ function CompoundSearchFilterInputField({
     }
 
     const entityObject = config[selectedEntity];
-    const attributeObject: SearchFilterAttribute = entityObject?.attributes[selectedAttribute];
+    const attributeObject: SearchFilterAttribute = entityObject?.attributes?.[selectedAttribute];
 
     if (!attributeObject) {
         return null;
@@ -64,7 +75,14 @@ function CompoundSearchFilterInputField({
                 placeholder={textLabel}
                 value={ensureString(value)}
                 onChange={(_event, _value) => onChange(_value)}
-                onSearch={(_event, _value) => onSearch(_value)}
+                onSearch={(_event, _value) => {
+                    onSearch({
+                        action: 'ADD',
+                        category: attributeObject.searchTerm,
+                        value: _value,
+                    });
+                    onChange('');
+                }}
                 onClear={() => onChange('')}
                 submitSearchButtonLabel="Apply text input to search"
             />
@@ -76,10 +94,17 @@ function CompoundSearchFilterInputField({
                 aria-label="Filter by date"
                 buttonAriaLabel="Filter by date toggle"
                 value={ensureString(value)}
-                onChange={(_event, value) => {
-                    onChange(value);
-                    onSearch(value);
+                onChange={(_event, _value) => {
+                    const formattedValue = _value ? getDate(_value) : '';
+                    onChange(_value);
+                    onSearch({
+                        action: 'ADD',
+                        category: attributeObject.searchTerm,
+                        value: formattedValue,
+                    });
                 }}
+                dateFormat={getDate}
+                placeholder={dateFormat}
             />
         );
     }
@@ -91,13 +116,22 @@ function CompoundSearchFilterInputField({
                     onChange(newValue);
                 }}
                 onSearch={(newValue) => {
+                    const { condition, number } = newValue;
                     onChange(newValue);
-                    onSearch(newValue);
+                    onSearch({
+                        action: 'ADD',
+                        category: attributeObject.searchTerm,
+                        value: `${conditionMap[condition]}${number}`,
+                    });
                 }}
             />
         );
     }
-    if (entityObject && attributeObject.inputType === 'autocomplete') {
+    if (
+        entityObject &&
+        entityObject.searchCategory &&
+        attributeObject.inputType === 'autocomplete'
+    ) {
         const { searchCategory } = entityObject;
         const { searchTerm, filterChipLabel } = attributeObject;
         const textLabel = `Filter results by ${filterChipLabel.toLowerCase()}`;
@@ -110,8 +144,12 @@ function CompoundSearchFilterInputField({
                     onChange(newValue);
                 }}
                 onSearch={(newValue) => {
-                    onChange(newValue);
-                    onSearch(newValue);
+                    onSearch({
+                        action: 'ADD',
+                        category: attributeObject.searchTerm,
+                        value: newValue,
+                    });
+                    onChange('');
                 }}
                 textLabel={textLabel}
             />
@@ -119,15 +157,20 @@ function CompoundSearchFilterInputField({
     }
     if (isSelectType(attributeObject)) {
         const attributeLabel = attributeObject.displayName.toLowerCase();
-        const selection = ensureStringArray(value);
         const selectOptions = attributeObject.inputProps.options;
+        const { searchTerm } = attributeObject;
+        const selection = ensureStringArray(searchFilter?.[searchTerm]);
 
         return (
             <CheckboxSelect
                 selection={selection}
-                onChange={(value) => {
+                onChange={(checked, _value) => {
                     onChange(value);
-                    onSearch(value);
+                    onSearch({
+                        action: checked ? 'ADD' : 'REMOVE',
+                        category: attributeObject.searchTerm,
+                        value: _value,
+                    });
                 }}
                 ariaLabelMenu={`Filter by ${attributeLabel} select menu`}
                 toggleLabel={`Filter by ${attributeLabel}`}
