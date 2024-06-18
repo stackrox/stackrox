@@ -22,6 +22,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+var (
+	errBroken = errors.New("broken")
+)
+
 type fakeImageServiceClient struct {
 	v1.ImageServiceClient
 	fail bool
@@ -451,6 +455,7 @@ func (suite *scanTestSuite) TestEnrichNoRegistriesFailure() {
 	mirrorStore.EXPECT().PullSources(containerImg.GetName().GetFullName())
 	_, err = scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, "", "", false)
 	suite.Require().ErrorContains(err, "unable to create no auth integration")
+	suite.Require().ErrorContains(err, errBroken.Error())
 }
 
 func (suite *scanTestSuite) TestGetRegistries() {
@@ -658,7 +663,7 @@ func successCreateNoAuthImageRegistry(context.Context, *storage.ImageName, regis
 }
 
 func failCreateNoAuthImageRegistry(context.Context, *storage.ImageName, registries.Factory) (registryTypes.ImageRegistry, error) {
-	return nil, errors.New("broken")
+	return nil, errBroken
 }
 
 type fakeRegistry struct {
