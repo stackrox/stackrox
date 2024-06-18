@@ -139,6 +139,14 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
         cleanSearchFilter.FIXABLE = fixable.filter(isFixableStatus).map(fixableStatusToFixability);
     }
 
+    const clusterCveFixable = searchValueAsArray(rawSearchFilter['CLUSTER CVE FIXABLE']);
+
+    if (clusterCveFixable.length > 0) {
+        cleanSearchFilter['CLUSTER CVE FIXABLE'] = clusterCveFixable
+            .filter(isFixableStatus)
+            .map(fixableStatusToFixability);
+    }
+
     const severity = searchValueAsArray(rawSearchFilter.SEVERITY);
 
     if (severity.length > 0) {
