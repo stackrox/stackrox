@@ -99,12 +99,7 @@ jobs:
         run: make -C ui deps
 
       - name: Build UI
-        run: |
-          if [[ ${{env.ROX_PRODUCT_BRANDING}} == "STACKROX_BRANDING" ]]; then
-            make -C ui break-build
-          else
-            make -C ui build
-          fi
+        run: make -C ui build
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
