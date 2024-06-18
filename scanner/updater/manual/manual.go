@@ -28,11 +28,11 @@ type Vulnerability struct {
 	NormalizedSeverity string `yaml:"NormalizedSeverity"`
 	Package            struct {
 		Name           string `yaml:"Name"`
+		Kind           string `yaml:"Kind"`
 		RepositoryHint string `yaml:"RepositoryHint"`
 	} `yaml:"Package"`
-	IntroducedInVersion string `yaml:"IntroducedInVersion"`
-	FixedInVersion      string `yaml:"FixedInVersion"`
-	Repo                struct {
+	FixedInVersion string `yaml:"FixedInVersion"`
+	Repo           struct {
 		Name string `yaml:"Name"`
 		URI  string `yaml:"URI"`
 	} `yaml:"Repo"`
