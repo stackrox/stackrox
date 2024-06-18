@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { Tab, Tabs, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import { ComplianceProfileSummary } from 'services/ComplianceCommon';
@@ -17,11 +16,8 @@ function getUniqueStandards(profiles: ComplianceProfileSummary[]): string[] {
     return Array.from(standards);
 }
 
-function getInitialStandard(
-    profiles: ComplianceProfileSummary[],
-    profileNameParam: string
-): string {
-    const profile = profiles.find((profile) => profile.name === profileNameParam);
+function getInitialStandard(profiles: ComplianceProfileSummary[], profileName: string): string {
+    const profile = profiles.find((profile) => profile.name === profileName);
     if (profile && profile.standards.length > 0) {
         return profile.standards[0].shortName;
     }
@@ -31,22 +27,25 @@ function getInitialStandard(
 function isStandardInProfile(standardShortName: string, profile: ComplianceProfileSummary) {
     return (
         profile.standards.some((standard) => standard.shortName === standardShortName) ||
-        (standardShortName === 'Other' && profile.standards.length === 0)
+        (standardShortName === NON_STANDARD_TAB && profile.standards.length === 0)
     );
 }
 
 type ProfilesToggleGroupProps = {
+    profileName: string;
     profiles: ComplianceProfileSummary[];
     handleToggleChange: (selectedProfile: string) => void;
 };
 
-function ProfilesToggleGroup({ profiles, handleToggleChange }: ProfilesToggleGroupProps) {
-    const { profileName: profileNameParam } = useParams();
-
+function ProfilesToggleGroup({
+    profileName,
+    profiles,
+    handleToggleChange,
+}: ProfilesToggleGroupProps) {
     const uniqueStandards = useMemo(() => getUniqueStandards(profiles), [profiles]);
     const initialStandard = useMemo(
-        () => getInitialStandard(profiles, profileNameParam),
-        [profileNameParam, profiles]
+        () => getInitialStandard(profiles, profileName),
+        [profileName, profiles]
     );
 
     const [selectedStandard, setSelectedStandard] = useState(initialStandard);
@@ -56,13 +55,13 @@ function ProfilesToggleGroup({ profiles, handleToggleChange }: ProfilesToggleGro
         // Currently picks the first standard found since no profile should have multiple standards, however
         // if this changes in the future, we'll want to find all matches and only update selectedStandard if the
         // current selectedStandard doesn't exist in the match
-        if (profileNameParam) {
+        if (profileName) {
             const standardShortName =
-                profiles.find((profile) => profile.name === profileNameParam)?.standards[0]
-                    ?.shortName || NON_STANDARD_TAB;
+                profiles.find((profile) => profile.name === profileName)?.standards[0]?.shortName ||
+                NON_STANDARD_TAB;
             setSelectedStandard(standardShortName);
         }
-    }, [profileNameParam, profiles]);
+    }, [profileName, profiles]);
 
     function handleStandardSelection(standardShortName) {
         setSelectedStandard(standardShortName);
@@ -104,7 +103,7 @@ function ProfilesToggleGroup({ profiles, handleToggleChange }: ProfilesToggleGro
                         key={name}
                         text={name}
                         buttonId="compliance-profiles-toggle-group"
-                        isSelected={profileNameParam === name}
+                        isSelected={profileName === name}
                         onChange={() => handleToggleChange(name)}
                     />
                 ))}

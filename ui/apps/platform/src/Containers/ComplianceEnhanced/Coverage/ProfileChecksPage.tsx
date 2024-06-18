@@ -112,6 +112,7 @@ function ProfileChecksPage() {
             )}
             <PageSection variant="default">
                 <ProfilesToggleGroup
+                    profileName={profileName}
                     profiles={scanConfigProfilesResponse.profiles}
                     handleToggleChange={handleProfilesToggleChange}
                 />

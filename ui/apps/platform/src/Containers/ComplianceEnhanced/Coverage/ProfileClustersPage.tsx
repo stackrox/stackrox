@@ -120,6 +120,7 @@ function ProfileClustersPage() {
             )}
             <PageSection>
                 <ProfilesToggleGroup
+                    profileName={profileName}
                     profiles={scanConfigProfilesResponse.profiles}
                     handleToggleChange={handleProfilesToggleChange}
                 />

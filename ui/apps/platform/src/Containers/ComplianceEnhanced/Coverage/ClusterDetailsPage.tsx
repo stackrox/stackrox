@@ -181,6 +181,7 @@ function ClusterDetailsPage() {
             <Divider component="div" />
             <PageSection>
                 <ProfilesToggleGroup
+                    profileName={profileName}
                     profiles={scanConfigProfilesResponse?.profiles ?? []}
                     handleToggleChange={handleProfilesToggleChange}
                 />
