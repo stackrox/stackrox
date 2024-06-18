@@ -50,6 +50,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Scanner V4 may now be accessed anonymously for debugging purposes by enabling `ROX_SCANNER_V4_ALLOW_ANONYMOUS_AUTH`.
   - This was already enabled for development builds of StackRox, but now it may be configured for release builds, too.
   - This defaults to `true` for development builds, and `false` for release builds.
+- Deployment bundles created with roxctl do not contain PodSecurityPolicies (PSPs) anymore by default. When deploying to pre-1.25 Kubernetes clusters with PSPs enabled the --enable-pod-security-policies flag needs to be specified when invoking roxctl for generating deployment bundles.
 
 ## [4.4.0]
 

@@ -45,8 +45,8 @@ central_bundle_psp_disabled() {
     central_bundle_psp_enabled k8s --enable-pod-security-policies=true
 }
 
-@test "PodSecurityPolicies are enabled by default for central deployment bundle (k8s)" {
-    central_bundle_psp_enabled k8s
+@test "PodSecurityPolicies are disabled by default for central deployment bundle (k8s)" {
+    central_bundle_psp_disabled k8s
 }
 
 # Testing: central generate openshift
@@ -58,6 +58,6 @@ central_bundle_psp_disabled() {
     central_bundle_psp_enabled openshift --enable-pod-security-policies=true
 }
 
-@test "PodSecurityPolicies are enabled by default for central deployment bundle (openshift)" {
-    central_bundle_psp_enabled openshift
+@test "PodSecurityPolicies are disabled by default for central deployment bundle (openshift)" {
+    central_bundle_psp_disabled openshift
 }
