@@ -79,7 +79,7 @@ func main() {
 	}
 	exportCmd.Flags().Bool("split", false,
 		"If true create multiple bundles per updater, rather than a single bundle.")
-	exportCmd.Flags().String("manual-url", "", "URL to the manual vulnerability data.")
+	exportCmd.Flags().String("manual-url", DefaultURL, "URL to the manual vulnerability data.")
 
 	var importCmd = &cobra.Command{
 		Use:   "import",
