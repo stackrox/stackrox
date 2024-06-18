@@ -8,8 +8,8 @@ import (
 
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_vuln_request_v1_to_v2/schema"
-	"github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_vuln_request_v1_to_v2/store"
+	"github.com/stackrox/rox/migrator/migrations/m_201_to_m_202_vuln_request_v1_to_v2/schema"
+	"github.com/stackrox/rox/migrator/migrations/m_201_to_m_202_vuln_request_v1_to_v2/store"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"

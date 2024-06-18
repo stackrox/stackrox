@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"fmt"
 	"reflect"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -25,16 +23,7 @@ var (
 	// ImageCveEdgesSchema is the go schema for table `image_cve_edges`.
 	ImageCveEdgesSchema = func() *walker.Schema {
 		schema := walker.Walk(reflect.TypeOf((*storage.ImageCVEEdge)(nil)), "image_cve_edges")
-		referencedSchemas := map[string]*walker.Schema{
-			"storage.Image":    ImagesSchema,
-			"storage.ImageCVE": ImageCvesSchema,
-		}
-
-		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
-			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
-		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_VULN_EDGE, "imagecveedge", (*storage.ImageCVEEdge)(nil)))
-		schema.ScopingResource = resources.Image
 		return schema
 	}()
 )

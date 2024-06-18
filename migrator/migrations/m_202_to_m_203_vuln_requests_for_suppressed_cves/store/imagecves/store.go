@@ -1,11 +1,12 @@
-package imagecveedges
+package imagecves
 
 import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	migrationSchema "github.com/stackrox/rox/migrator/migrations/m_201_to_m_202_vuln_requests_for_suppressed_cves/schema"
+	migrationSchema "github.com/stackrox/rox/migrator/migrations/m_202_to_m_203_vuln_requests_for_suppressed_cves/schema"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -15,26 +16,16 @@ import (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = migrationSchema.ImageCveEdgesSchema
+	schema         = migrationSchema.ImageCvesSchema
 	targetResource = resources.Image
 )
 
-type storeType = storage.ImageCVEEdge
+type storeType = storage.ImageCVE
 
-// Store is the interface to interact with the storage for storage.ImageCVEEdge
+// Store is the interface to interact with the storage for storage.ImageCVE
 type Store interface {
-	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
-	Delete(ctx context.Context, id string) error
-	DeleteMany(ctx context.Context, identifiers []string) error
-
-	Exists(ctx context.Context, id string) (bool, error)
-
-	Get(ctx context.Context, id string) (*storeType, bool, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
-	GetIDs(ctx context.Context) ([]string, error)
-
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -43,8 +34,8 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoImageCveEdges,
-		copyFromImageCveEdges,
+		insertIntoImageCves,
+		copyFromImageCves,
 		nil,
 		nil,
 		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
@@ -58,7 +49,7 @@ func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 
-func insertIntoImageCveEdges(batch *pgx.Batch, obj *storage.ImageCVEEdge) error {
+func insertIntoImageCves(batch *pgx.Batch, obj *storage.ImageCVE) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -68,21 +59,29 @@ func insertIntoImageCveEdges(batch *pgx.Batch, obj *storage.ImageCVEEdge) error 
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		protocompat.NilOrTime(obj.GetFirstImageOccurrence()),
-		obj.GetState(),
-		obj.GetImageId(),
-		obj.GetImageCveId(),
+		obj.GetCveBaseInfo().GetCve(),
+		protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
+		protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+		obj.GetOperatingSystem(),
+		obj.GetCvss(),
+		obj.GetSeverity(),
+		obj.GetImpactScore(),
+		obj.GetSnoozed(),
+		protocompat.NilOrTime(obj.GetSnoozeExpiry()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cve_edges (Id, FirstImageOccurrence, State, ImageId, ImageCveId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, ImageId = EXCLUDED.ImageId, ImageCveId = EXCLUDED.ImageCveId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cves (Id, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, OperatingSystem, Cvss, Severity, ImpactScore, Snoozed, SnoozeExpiry, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Snoozed = EXCLUDED.Snoozed, SnoozeExpiry = EXCLUDED.SnoozeExpiry, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func copyFromImageCveEdges(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageCVEEdge) error {
+func copyFromImageCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageCVE) error {
 	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -91,10 +90,15 @@ func copyFromImageCveEdges(ctx context.Context, s pgSearch.Deleter, tx *postgres
 
 	copyCols := []string{
 		"id",
-		"firstimageoccurrence",
-		"state",
-		"imageid",
-		"imagecveid",
+		"cvebaseinfo_cve",
+		"cvebaseinfo_publishedon",
+		"cvebaseinfo_createdat",
+		"operatingsystem",
+		"cvss",
+		"severity",
+		"impactscore",
+		"snoozed",
+		"snoozeexpiry",
 		"serialized",
 	}
 
@@ -111,10 +115,15 @@ func copyFromImageCveEdges(ctx context.Context, s pgSearch.Deleter, tx *postgres
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			protocompat.NilOrTime(obj.GetFirstImageOccurrence()),
-			obj.GetState(),
-			obj.GetImageId(),
-			obj.GetImageCveId(),
+			obj.GetCveBaseInfo().GetCve(),
+			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
+			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+			obj.GetOperatingSystem(),
+			obj.GetCvss(),
+			obj.GetSeverity(),
+			obj.GetImpactScore(),
+			obj.GetSnoozed(),
+			protocompat.NilOrTime(obj.GetSnoozeExpiry()),
 			serialized,
 		})
 
@@ -132,7 +141,7 @@ func copyFromImageCveEdges(ctx context.Context, s pgSearch.Deleter, tx *postgres
 			// clear the inserts and vals for the next batch
 			deletes = deletes[:0]
 
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_cve_edges"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_cves"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
 			// clear the input rows for the next batch
@@ -144,5 +153,3 @@ func copyFromImageCveEdges(ctx context.Context, s pgSearch.Deleter, tx *postgres
 }
 
 // endregion Helper functions
-
-// region Used for testing

@@ -6,7 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	migrationSchema "github.com/stackrox/rox/migrator/migrations/m_201_to_m_202_vuln_requests_for_suppressed_cves/schema"
+	migrationSchema "github.com/stackrox/rox/migrator/migrations/m_202_to_m_203_vuln_requests_for_suppressed_cves/schema"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -24,21 +24,8 @@ type storeType = storage.Image
 
 // Store is the interface to interact with the storage for storage.Image
 type Store interface {
-	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
-	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
-	DeleteMany(ctx context.Context, identifiers []string) error
-
-	Count(ctx context.Context, query *v1.Query) (int, error)
-	Exists(ctx context.Context, id string) (bool, error)
-
-	Get(ctx context.Context, id string) (*storeType, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
-	GetIDs(ctx context.Context) ([]string, error)
-
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 // New returns a new Store instance using the provided sql instance.

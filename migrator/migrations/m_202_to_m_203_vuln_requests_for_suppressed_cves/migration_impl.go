@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/m_201_to_m_202_vuln_requests_for_suppressed_cves/schema"
-	vulnReqStore "github.com/stackrox/rox/migrator/migrations/m_201_to_m_202_vuln_requests_for_suppressed_cves/store/vulnerabilityrequests"
+	"github.com/stackrox/rox/migrator/migrations/m_202_to_m_203_vuln_requests_for_suppressed_cves/schema"
+	vulnReqStore "github.com/stackrox/rox/migrator/migrations/m_202_to_m_203_vuln_requests_for_suppressed_cves/store/vulnerabilityrequests"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -86,8 +86,10 @@ func collectSnoozedImageCVEs(ctx context.Context, database *types.Databases) (ma
 			continue
 		}
 
-		cveMap[proto.GetCveBaseInfo().GetCve()] = proto.GetSnoozeExpiry()
-		count++
+		if proto.GetCveBaseInfo() != nil {
+			cveMap[proto.GetCveBaseInfo().GetCve()] = proto.GetSnoozeExpiry()
+			count++
+		}
 	}
 	if rows.Err() != nil {
 		return nil, errors.Wrapf(rows.Err(), "failed to get rows for %s", schema.ImageCvesTableName)
@@ -103,7 +105,7 @@ func createVulnRequests(ctx context.Context, database *types.Databases, now *pro
 	var vulnReqs []*storage.VulnerabilityRequest
 	var count int
 	for cve, expiry := range cveMap {
-		// It the snooze expiry is past due, no need to create v2 exceptions since those will be reverted on Central startup anyway.
+		// If the snooze expiry is past due, no need to create v2 exceptions since those will be reverted on Central startup anyway.
 		if expiry != nil && protocompat.CompareTimestamps(now, expiry) >= 0 {
 			continue
 		}
