@@ -12,15 +12,6 @@
   ],
   "exclusions": [
     {
-      "name": "Don't alert on deployment gcp-cloud-controller-manager in openshift-cloud-controller-manager namespace",
-      "deployment": {
-        "name": "gcp-cloud-controller-manager",
-        "scope": {
-          "namespace": "openshift-cloud-controller-manager"
-        }
-      }
-    },
-    {
       "name": "Don't alert on deployment gcp-pd-csi-driver-controller in namespace openshift-cluster-csi-drivers",
       "deployment": {
         "name": "gcp-pd-csi-driver-controller",
