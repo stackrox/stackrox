@@ -56,8 +56,8 @@ type TitleCallback = (navDescriptionFiltered: NavDescription[]) => string | Reac
 // Parent conditional title finds key to decide presence or absence of counterpart parent.
 const keyForNetwork = 'Network';
 const keyForPlatformConfiguration = 'Platform Configuration';
-const keyForVulnerabilities = 'Vulnerabilities';
 const keyForCompliance = 'Compliance';
+const keyForVulnerabilities = 'Vulnerability Management';
 type IsActiveCallback = (pathname: string) => boolean;
 
 type LinkDescription = {
@@ -161,7 +161,7 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
         },
         {
             type: 'parent',
-            title: 'Vulnerabilities',
+            title: 'Vulnerability Management',
             key: keyForVulnerabilities,
             children: [
                 {
