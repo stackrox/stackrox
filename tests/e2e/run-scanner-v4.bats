@@ -187,11 +187,11 @@ teardown() {
     fi
 
     "$ROOT/scripts/ci/collect-service-logs.sh" "${central_namespace}" \
-      "${K8S_LOGS_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+      "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
 
     if [[ "${central_namespace}" != "${sensor_namespace}" && -n "${sensor_namespace}" ]]; then
       "$ROOT/scripts/ci/collect-service-logs.sh" "${sensor_namespace}" \
-        "${K8S_LOGS_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+        "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
     fi
 
     if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED}" && -n "${central_namespace}" ]]; then

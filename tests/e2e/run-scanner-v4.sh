@@ -6,7 +6,7 @@ source "${ROOT}/scripts/ci/lib.sh"
 
 set -euo pipefail
 
-export K8S_LOGS_DIR="$1"
+export SCANNER_V4_LOG_DIR="$1"
 REPORTS_DIR=$(mktemp -d)
 FAILED=0
 
