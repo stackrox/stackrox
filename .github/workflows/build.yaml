@@ -170,7 +170,7 @@ jobs:
 
       - name: Setup build env for debugging support
         run: |
-          if [[ "${GITHUB_HEAD_REF}" =~ -debug ]]; then
+          if [[ "${GITHUB_HEAD_REF:-}" =~ -debug ]]; then
             echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
           fi
 
