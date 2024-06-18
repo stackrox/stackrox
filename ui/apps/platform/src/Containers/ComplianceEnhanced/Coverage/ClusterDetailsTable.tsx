@@ -152,8 +152,8 @@ function ClusterDetailsTable({
                                 const isRowExpanded = expandedRows.includes(rowIndex);
 
                                 return (
-                                    <Tbody isExpanded={isRowExpanded}>
-                                        <Tr key={checkName}>
+                                    <Tbody isExpanded={isRowExpanded} key={checkName}>
+                                        <Tr>
                                             <Td dataLabel="Check">
                                                 <Link
                                                     to={`${generatePath(coverageCheckDetailsPath, {

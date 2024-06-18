@@ -84,7 +84,8 @@ function ProfileClustersTable({
                         title: 'There was an error loading profile clusters',
                     }}
                     emptyProps={{
-                        message: 'No results found',
+                        message:
+                            'If you have recently created a scan schedule, please wait a few minutes for the results to become available.',
                     }}
                     filteredEmptyProps={{
                         title: 'No clusters found',

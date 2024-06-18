@@ -17,7 +17,7 @@ import { SearchIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useTableSelection from 'hooks/useTableSelection';
-import { ComplianceProfileSummary } from 'services/ComplianceProfileService';
+import { ComplianceProfileSummary } from 'services/ComplianceCommon';
 
 import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
