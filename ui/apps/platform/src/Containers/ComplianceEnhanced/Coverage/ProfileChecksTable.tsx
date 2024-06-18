@@ -100,7 +100,8 @@ function ProfileChecksTable({
                         title: 'There was an error loading profile checks',
                     }}
                     emptyProps={{
-                        message: 'No results found',
+                        message:
+                            'If you have recently created a scan schedule, please wait a few minutes for the results to become available.',
                     }}
                     filteredEmptyProps={{
                         title: 'No checks found',
@@ -120,8 +121,8 @@ function ProfileChecksTable({
                                 const isRowExpanded = expandedRows.includes(rowIndex);
 
                                 return (
-                                    <Tbody isExpanded={isRowExpanded}>
-                                        <Tr key={checkName}>
+                                    <Tbody isExpanded={isRowExpanded} key={checkName}>
+                                        <Tr>
                                             <Td dataLabel="Check">
                                                 <Link
                                                     to={generatePath(coverageCheckDetailsPath, {
