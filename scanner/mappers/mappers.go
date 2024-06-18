@@ -83,7 +83,7 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if r == nil {
 		return nil, nil
 	}
-	filterPackages(r.Packages, r.PackageVulnerabilities)
+	filterPackages(r.Packages, r.Environments, r.PackageVulnerabilities)
 	nvdVulns, err := nvdVulnerabilities(r.Enrichments)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
@@ -590,19 +590,23 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 }
 
 // filterPackages filters out packages from the given map.
-func filterPackages(packages map[string]*claircore.Package, packageVulns map[string][]string) {
+func filterPackages(packages map[string]*claircore.Package, environments map[string][]*claircore.Environment, packageVulns map[string][]string) {
 	// We only filter out Node.js packages with no known vulnerabilities (if configured to do so) at this time.
 	if !env.ScannerV4PartialNodeJSSupport.BooleanSetting() {
 		return
 	}
-	for pkgID, pkg := range packages {
-		if srcType, _ := scannerv4.ParsePackageDB(pkg.PackageDB); srcType != storage.SourceType_NODEJS {
+	for pkgID := range packages {
+		envs := environments[pkgID]
+		// This is unexpected, but check here to be safe.
+		if len(envs) == 0 {
+			continue
+		}
+		if srcType, _ := scannerv4.ParsePackageDB(envs[0].PackageDB); srcType != storage.SourceType_NODEJS {
 			continue
 		}
 		if len(packageVulns[pkgID]) == 0 {
 			delete(packages, pkgID)
-			// Delete the entry in case it's an empty slice.
-			// No need for it.
+			delete(environments, pkgID)
 			delete(packageVulns, pkgID)
 		}
 	}

@@ -176,19 +176,33 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 						ID:        "0",
 						Name:      "nodejs0",
 						Version:   "0",
-						PackageDB: "nodejs:/app/nodejs0",
 					},
 					"1": {
 						ID:        "1",
 						Name:      "nodejs1",
 						Version:   "1",
-						PackageDB: "nodejs:/app/nodejs1",
 					},
 					"2": {
 						ID:        "2",
 						Name:      "nodejs2",
 						Version:   "2",
-						PackageDB: "nodejs:/app/nodejs2",
+					},
+				},
+				Environments: map[string][]*claircore.Environment{
+					"0": {
+						{
+							PackageDB: "nodejs:/app/nodejs0",
+						},
+					},
+					"1": {
+						{
+							PackageDB: "nodejs:/app/nodejs1",
+						},
+					},
+					"2": {
+						{
+							PackageDB: "nodejs:/app/nodejs2",
+						},
 					},
 				},
 				PackageVulnerabilities: map[string][]string{
@@ -228,8 +242,16 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							PackageDb: "nodejs:/app/nodejs1",
 							Cpe:       emptyCPE,
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb: "nodejs:/app/nodejs1",
+								},
+							},
 						},
 					},
 				},
