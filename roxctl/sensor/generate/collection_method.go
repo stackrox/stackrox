@@ -11,6 +11,7 @@ var (
 	humanReadableToEnum = map[string]storage.CollectionMethod{
 		"default":  storage.CollectionMethod_UNSET_COLLECTION,
 		"none":     storage.CollectionMethod_NO_COLLECTION,
+		"ebpf":     storage.CollectionMethod_EBPF,
 		"core_bpf": storage.CollectionMethod_CORE_BPF,
 	}
 
