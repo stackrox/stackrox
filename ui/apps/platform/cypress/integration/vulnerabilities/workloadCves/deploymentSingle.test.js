@@ -33,7 +33,7 @@ describe('Workload CVE Deployment Single page', () => {
             cy.get(selectors.searchEntityDropdown).click();
             cy.get(selectors.searchEntityMenuItem).contains('Image');
             cy.get(selectors.searchEntityMenuItem).contains('CVE');
-            cy.get(selectors.searchEntityMenuItem).contains('Image Component');
+            cy.get(selectors.searchEntityMenuItem).contains('Image component');
             cy.get(selectors.searchEntityDropdown).click();
         } else {
             cy.get(selectors.searchOptionsDropdown).click();

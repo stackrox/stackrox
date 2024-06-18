@@ -12,19 +12,19 @@ describe('searchFilterConfig', () => {
                 attributes: {
                     Name: {
                         displayName: 'Name',
-                        filterChipLabel: 'Image Name',
+                        filterChipLabel: 'Image name',
                         searchTerm: 'Image',
                         inputType: 'autocomplete',
                     },
                     Tag: {
                         displayName: 'Tag',
-                        filterChipLabel: 'Image Tag',
+                        filterChipLabel: 'Image tag',
                         searchTerm: 'Image Tag',
                         inputType: 'text',
                     },
                     Label: {
                         displayName: 'Label',
-                        filterChipLabel: 'Image Label',
+                        filterChipLabel: 'Image label',
                         searchTerm: 'Image Label',
                         inputType: 'autocomplete',
                     },
