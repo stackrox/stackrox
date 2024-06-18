@@ -79,7 +79,7 @@ function ClusterDetailsPage() {
     } = useRestQuery(fetchCheckResults);
 
     const searchFilterConfig = {
-        'Profile Check': getFilteredConfig(profileCheckSearchFilterConfig, ['Name']),
+        'Profile check': getFilteredConfig(profileCheckSearchFilterConfig, ['Name']),
     };
 
     const tableState = getTableUIState({
