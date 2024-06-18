@@ -329,6 +329,10 @@ _EOWARNING_
     # required to get a running central
     export ROX_POSTGRES_DATASTORE="true"
 
+    # image prefetch is initiated in .openshift-ci/pre_tests.py and may not be
+    # available for standalone testing.
+    export IMAGE_PREFETCH_DISABLED="true"
+
     case "$FLAVOR" in
         qa)
             run_qa_flavor
