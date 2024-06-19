@@ -145,6 +145,7 @@ linters-settings:
       - errox\..+\.CausedBy(f)?
       - errox\.ConcealSensitive
       - errox\.MakeSensitive
+      - errox\.NewSensitive
       - retry\.MakeRetryable
       - policy\.NewErr.*
 

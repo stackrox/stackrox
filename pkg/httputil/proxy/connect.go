@@ -13,6 +13,7 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/netutil"
 )
@@ -49,12 +50,12 @@ func dialWithConnectProxy(ctx context.Context, proxyURL *url.URL, address string
 	proxyAddress := proxyURL.Host
 	host, zone, port, err := netutil.ParseEndpoint(proxyAddress)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unparseable proxy address %q", proxyAddress)
+		return nil, errors.Wrap(err, "unparseable proxy address")
 	}
 	if port == "" {
 		defPort, ok := defaultPortsByScheme[proxyURL.Scheme]
 		if !ok {
-			return nil, errors.Errorf("invalid scheme %q in proxy URL", proxyURL.Scheme)
+			return nil, errors.New("invalid scheme in proxy URL")
 		}
 		port = defPort
 	}
@@ -62,7 +63,8 @@ func dialWithConnectProxy(ctx context.Context, proxyURL *url.URL, address string
 
 	rawConn, err := defaultDialer.DialContext(ctx, "tcp", proxyAddress)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to dial proxy %q", proxyAddress)
+		return nil, errox.NewSensitive(errox.WithSensitive(err),
+			errox.WithPublicMessage("failed to dial proxy"))
 	}
 	closeOnErrConn := rawConn
 	defer func() {
