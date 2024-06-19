@@ -136,7 +136,7 @@ spec:
     - name: fetchTags
       value: $(params.clone-fetch-tags)
     - name: ociStorage
-      value: $(params.output-image).git
+      value: $(params.output-image-repo):konflux-$(params.revision).git
     - name: ociArtifactExpiresAfter
       value: $(params.image-expires-after)
     runAfter:
@@ -177,7 +177,7 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     - name: ociStorage
-      value: $(params.output-image).prefetch
+      value: $(params.output-image-repo):konflux-$(params.revision).prefetch
     - name: ociArtifactExpiresAfter
       value: $(params.image-expires-after)
     runAfter:
