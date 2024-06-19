@@ -32,35 +32,43 @@ func TestNewSensitive(t *testing.T) {
 				WithPublicMessage("public"),
 				WithSensitive(dnsError),
 			},
-			expectPublic:    "public",
+			expectPublic:    "public: lookup: DNS error",
 			expectSensitive: "lookup localhost on 127.0.0.1: DNS error",
 		},
-
 		"formatted sensitive": {
 			opts: []sensitiveErrorOption{
 				WithSensitivef("format %q", "value")},
 			expectPublic:    "",
 			expectSensitive: "format \"value\"",
 		},
-		"with concealed err": {
+		"formatted sensitive with public error": {
 			opts: []sensitiveErrorOption{
-				WithConcealed(dnsError),
-				WithPublicMessage("oops")},
-			expectPublic:    "oops: lookup: DNS error",
-			expectSensitive: "lookup localhost on 127.0.0.1: DNS error",
+				WithPublicError("public", errors.New("message")),
+				WithSensitivef("secret %v", "1.2.3.4")},
+			expectPublic:    "public: message",
+			expectSensitive: "secret 1.2.3.4: message",
 		},
-		"with public err": {
+		"sensitive with public err": {
 			opts: []sensitiveErrorOption{
-				WithPublicError("oops", errors.New("message")),
-				WithSensitive(dnsError)},
-			expectPublic:    "oops: message",
-			expectSensitive: "lookup localhost on 127.0.0.1: DNS error",
+				WithPublicError("public", errors.New("error")),
+				WithSensitive(errors.New("secret"))},
+			expectPublic:    "public: error",
+			expectSensitive: "secret: error",
 		},
 		"sensitive in public": {
 			opts: []sensitiveErrorOption{
-				WithPublicError("new", MakeSensitive("public", dnsError)),
-				WithSensitivef("sensitive")},
-			expectPublic:    "new: public",
+				WithSensitivef("sensitive"),
+				WithPublicError("oops", MakeSensitive("public", dnsError)),
+			},
+			expectPublic:    "oops: public",
+			expectSensitive: "sensitive: lookup localhost on 127.0.0.1: DNS error",
+		},
+		"sensitive in public, different order, same result": {
+			opts: []sensitiveErrorOption{
+				WithPublicError("oops", MakeSensitive("public", dnsError)),
+				WithSensitivef("sensitive"),
+			},
+			expectPublic:    "oops: public",
 			expectSensitive: "sensitive: lookup localhost on 127.0.0.1: DNS error",
 		},
 	}
