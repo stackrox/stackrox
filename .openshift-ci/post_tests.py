@@ -142,9 +142,12 @@ class StoreArtifacts(RunWithBestEffortMixin):
 class PostClusterTest(StoreArtifacts):
     """The standard cluster test suite of debug gathering and analysis"""
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
+        collect_collector_metrics=True,
         collect_central_artifacts=True,
+        collect_service_logs=True,
         check_stackrox_logs=False,
         artifact_destination_prefix=None,
     ):
@@ -155,6 +158,8 @@ class PostClusterTest(StoreArtifacts):
                                                          "k8s-logs")
         else:
             self.service_logs_destination = PostTestsConstants.K8S_LOG_DIR
+        self._collect_collector_metrics = collect_collector_metrics
+        self._collect_service_logs = collect_service_logs
         self._check_stackrox_logs = check_stackrox_logs
         self.k8s_namespaces = [
             "stackrox",
@@ -177,12 +182,14 @@ class PostClusterTest(StoreArtifacts):
 
     def run(self, test_outputs=None):
         self.run_must_gather()
-        self.collect_collector_metrics()
+        if self._collect_collector_metrics:
+            self.collect_collector_metrics()
         if self.collect_central_artifacts and self.wait_for_central_api():
             self.get_central_debug_dump()
             self.get_central_diagnostics()
             self.grab_central_data()
-        self.collect_service_logs()
+        if self._collect_service_logs:
+            self.collect_service_logs()
         if self._check_stackrox_logs:
             self.check_stackrox_logs()
         self.store_artifacts(test_outputs)

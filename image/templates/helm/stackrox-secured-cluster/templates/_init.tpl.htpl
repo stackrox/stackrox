@@ -132,6 +132,7 @@
 {{ include "srox.setInstallMethod" (list $) }}
 
 {{ include "srox.applyDefaults" $ }}
+{{ include "srox.ensureCentralEndpointContainsPort" $ }}
 
 {{ include "srox.getStorageClasses" (list $) }}
 {{ include "srox.getPVCs" (list $) }}

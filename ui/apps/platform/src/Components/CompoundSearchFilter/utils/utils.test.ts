@@ -45,8 +45,8 @@ describe('utils', () => {
                     inputType: 'autocomplete',
                 },
                 {
-                    displayName: 'Discovered Time',
-                    filterChipLabel: 'Image CVE Discovered Time',
+                    displayName: 'Discovered time',
+                    filterChipLabel: 'Image CVE discovered time',
                     searchTerm: 'CVE Created Time',
                     inputType: 'date-picker',
                 },
@@ -116,7 +116,7 @@ describe('utils', () => {
                     searchFilterName: 'CVE',
                 },
                 {
-                    displayName: 'Image CVE Discovered Time',
+                    displayName: 'Image CVE discovered time',
                     searchFilterName: 'CVE Created Time',
                 },
                 {

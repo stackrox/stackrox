@@ -61,6 +61,7 @@ type AdvancedFiltersToolbarProps = {
     searchFilterConfig: CompoundSearchFilterProps['config'];
     searchFilter: SearchFilter;
     onFilterChange: (searchFilter: SearchFilter, payload: OnSearchPayload) => void;
+    cveStatusFilterField?: 'FIXABLE' | 'CLUSTER CVE FIXABLE';
     className?: string;
     defaultFilters?: DefaultFilters;
     includeCveSeverityFilters?: boolean;
@@ -73,6 +74,7 @@ function AdvancedFiltersToolbar({
     searchFilterConfig,
     searchFilter,
     onFilterChange,
+    cveStatusFilterField = 'FIXABLE',
     className = '',
     defaultFilters = emptyDefaultFilters,
     includeCveSeverityFilters = true,
@@ -144,6 +146,7 @@ function AdvancedFiltersToolbar({
                         )}
                         {includeCveStatusFilters && isFixabilityFiltersEnabled && (
                             <CVEStatusDropdown
+                                filterField={cveStatusFilterField}
                                 searchFilter={searchFilter}
                                 onSelect={(category, checked, value) =>
                                     onFilterApplied({

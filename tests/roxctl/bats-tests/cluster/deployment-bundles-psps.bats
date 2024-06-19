@@ -50,8 +50,8 @@ sensor_bundle_psp_disabled() {
     sensor_bundle_psp_enabled k8s --enable-pod-security-policies=true
 }
 
-@test "PodSecurityPolicies enabled by default for sensor deployment bundle (k8s)" {
-    sensor_bundle_psp_enabled k8s
+@test "PodSecurityPolicies are disabled by default for sensor deployment bundle (k8s)" {
+    sensor_bundle_psp_disabled k8s
 }
 
 # Testing: sensor generate openshift
@@ -63,6 +63,6 @@ sensor_bundle_psp_disabled() {
     sensor_bundle_psp_enabled openshift --enable-pod-security-policies=true
 }
 
-@test "PodSecurityPolicies enabled by default for sensor deployment bundle (openshift)" {
-    sensor_bundle_psp_enabled openshift
+@test "PodSecurityPolicies are disabled by default for sensor deployment bundle (openshift)" {
+    sensor_bundle_psp_disabled openshift
 }

@@ -186,6 +186,14 @@ teardown() {
         sensor_namespace="${CUSTOM_SENSOR_NAMESPACE}"
     fi
 
+    "$ROOT/scripts/ci/collect-service-logs.sh" "${central_namespace}" \
+      "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+
+    if [[ "${central_namespace}" != "${sensor_namespace}" && -n "${sensor_namespace}" ]]; then
+      "$ROOT/scripts/ci/collect-service-logs.sh" "${sensor_namespace}" \
+        "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+    fi
+
     if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED}" && -n "${central_namespace}" ]]; then
         # Test did not "complete" and was not skipped. Collect some analysis data.
         describe_pods_in_namespace "${central_namespace}"

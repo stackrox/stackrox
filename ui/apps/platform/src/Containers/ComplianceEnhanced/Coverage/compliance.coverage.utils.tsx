@@ -19,10 +19,10 @@ const WARNING_THRESHOLD = 75;
 
 type LabelColor = LabelProps['color'];
 
-type ClusterStatusObject = {
+export type ClusterStatusObject = {
     icon: ReactElement;
     statusText: string;
-    tooltipText: string;
+    tooltipText: string | null; // null if tooltip text is redundant with statusText
     color: LabelProps['color'];
 };
 
@@ -132,7 +132,7 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
             </Icon>
         ),
         statusText: 'Pass',
-        tooltipText: 'Check was successful',
+        tooltipText: null,
         color: 'blue',
     },
     FAIL: {
@@ -142,7 +142,7 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
             </Icon>
         ),
         statusText: 'Fail',
-        tooltipText: 'Check was unsuccessful',
+        tooltipText: null,
         color: 'red',
     },
     ERROR: {
@@ -173,7 +173,8 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
             </Icon>
         ),
         statusText: 'Manual',
-        tooltipText: 'Check cannot automatically assess the status and manual check is required',
+        tooltipText:
+            'Manual check requires additional organizational or technical knowledge that is not automatable',
         color: 'grey',
     },
     NOT_APPLICABLE: {

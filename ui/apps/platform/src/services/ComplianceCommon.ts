@@ -28,16 +28,6 @@ export type ComplianceCheckStatusCount = {
     status: ComplianceCheckStatus;
 };
 
-export type ComplianceBenchmark = {
-    name: string;
-    version: string;
-    description: string;
-    provider: string;
-    // shortName is extracted from the annotation.
-    // Example: from https://control.compliance.openshift.io/CIS-OCP we should have CIS-OCP
-    shortName: string;
-};
-
 export type ComplianceControl = {
     standard: string;
     control: string;
@@ -67,6 +57,26 @@ export type ComplianceClusterOverallStats = {
 export type ListComplianceClusterOverallStatsResponse = {
     scanStats: ComplianceClusterOverallStats[];
     totalCount: number;
+};
+
+export type ComplianceBenchmark = {
+    name: string;
+    version: string;
+    description: string;
+    provider: string;
+    // shortName is extracted from the annotation.
+    // Example: from https://control.compliance.openshift.io/CIS-OCP we should have CIS-OCP
+    shortName: string;
+};
+
+export type ComplianceProfileSummary = {
+    name: string;
+    productType: string;
+    description: string;
+    title: string;
+    ruleCount: number;
+    profileVersion: string;
+    standards: ComplianceBenchmark[];
 };
 
 /*

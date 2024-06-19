@@ -1,18 +1,9 @@
 import axios from 'services/instance';
 import qs from 'qs';
 
-import { complianceV2Url } from './ComplianceCommon';
+import { ComplianceProfileSummary, complianceV2Url } from './ComplianceCommon';
 
 const complianceProfilesBaseUrl = `${complianceV2Url}/profiles`;
-
-export type ComplianceProfileSummary = {
-    name: string;
-    productType: string;
-    description: string;
-    title: string;
-    ruleCount: number;
-    profileVersion: string;
-};
 
 /**
  * Fetches a list of compliance profile summaries based on the provided cluster IDs.

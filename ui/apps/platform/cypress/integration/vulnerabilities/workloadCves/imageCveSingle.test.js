@@ -36,7 +36,7 @@ describe('Workload CVE Image CVE Single page', () => {
             cy.get(selectors.searchEntityDropdown).click();
             cy.get(selectors.searchEntityMenuItem).contains('CVE').should('not.exist');
             cy.get(selectors.searchEntityMenuItem).contains('Image');
-            cy.get(selectors.searchEntityMenuItem).contains('Image Component');
+            cy.get(selectors.searchEntityMenuItem).contains('Image component');
             cy.get(selectors.searchEntityMenuItem).contains('Deployment');
             cy.get(selectors.searchEntityMenuItem).contains('Cluster');
             cy.get(selectors.searchEntityMenuItem).contains('Namespace');

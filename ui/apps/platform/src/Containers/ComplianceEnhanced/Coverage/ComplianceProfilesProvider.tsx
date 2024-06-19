@@ -3,23 +3,23 @@ import React, { createContext, useCallback } from 'react';
 import useRestQuery from 'hooks/useRestQuery';
 
 import {
-    getComplianceProfilesStats,
-    ListComplianceProfileScanStatsResponse,
-} from 'services/ComplianceResultsStatsService';
+    listComplianceScanConfigProfiles,
+    ListComplianceScanConfigsProfileResponse,
+} from 'services/ComplianceScanConfigurationService';
 
 type ComplianceProfilesContextValue = {
-    profileScanStats: ListComplianceProfileScanStatsResponse;
+    scanConfigProfilesResponse: ListComplianceScanConfigsProfileResponse;
     isLoading: boolean;
     error: Error | undefined;
 };
 
-const defaultProfileStats: ListComplianceProfileScanStatsResponse = {
-    scanStats: [],
+const defaultProfilesResponse: ListComplianceScanConfigsProfileResponse = {
+    profiles: [],
     totalCount: 0,
 };
 
 const defaultContextValue: ComplianceProfilesContextValue = {
-    profileScanStats: defaultProfileStats,
+    scanConfigProfilesResponse: defaultProfilesResponse,
     isLoading: true,
     error: undefined,
 };
@@ -28,11 +28,15 @@ export const ComplianceProfilesContext =
     createContext<ComplianceProfilesContextValue>(defaultContextValue);
 
 function ComplianceProfilesProvider({ children }: { children: React.ReactNode }) {
-    const fetchProfilesStats = useCallback(() => getComplianceProfilesStats(), []);
-    const { data: profileScanStats, loading: isLoading, error } = useRestQuery(fetchProfilesStats);
+    const fetchProfiles = useCallback(() => listComplianceScanConfigProfiles(), []);
+    const {
+        data: scanConfigProfilesResponse,
+        loading: isLoading,
+        error,
+    } = useRestQuery(fetchProfiles);
 
     const contextValue: ComplianceProfilesContextValue = {
-        profileScanStats: profileScanStats ?? defaultProfileStats,
+        scanConfigProfilesResponse: scanConfigProfilesResponse ?? defaultProfilesResponse,
         isLoading,
         error,
     };
