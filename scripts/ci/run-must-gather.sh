@@ -24,4 +24,5 @@ else
 fi
 
 echo "$(date) Attempting to gather debugging information from an OpenShift cluster"
-oc adm must-gather --dest-dir "${log_dir}"
+mkdir -p "${log_dir}"
+(cd "${log_dir}" && oc adm must-gather)
