@@ -12,10 +12,6 @@ on:
     - reopened
     - synchronize
 
-defaults:
-  run:
-    shell: bash
-
 jobs:
   define-job-matrix:
     outputs:
@@ -527,7 +523,8 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     steps:
-      - name: delete
+      - name: delete unused tools
+        shell: bash
         run: |
           set +e
           set -x
@@ -551,42 +548,26 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - run: df -h
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-
-      - run: df -h
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - run: df -h
-
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
-      - run: df -h
-
       - uses: ./.github/actions/handle-tagged-build
-
-      - run: df -h
 
       - name: Resolve mods for protos
         run: go mod tidy
 
-      - run: df -h
-
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
-
-      - run: df -h
 
       - name: Setup Go build environment
         if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
         run: echo "GOTAGS=release" >> "$GITHUB_ENV"
-
-      - run: df -h
 
       - name: Docker login
         # Skip for external contributions.
@@ -595,24 +576,16 @@ jobs:
         run: |
           ./scripts/ci/lib.sh registry_rw_login "quay.io/rhacs-eng"
 
-      - run: df -h
-
       - name: Build Operator Bundle image
         run: |
           make -C operator/ bundle bundle-build
-
-      - run: df -h
 
       - name: Build Operator image
         run: |
           scripts/lib.sh retry 6 true make -C operator/ build docker-buildx
 
-      - run: df -h
-
       - name: Check that Operator image is runnable
         run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
-
-      - run: df -h
 
       - name: Push images
         # Skip for external contributions.
@@ -621,8 +594,6 @@ jobs:
         run: |
           make -C operator/ docker-push-bundle | cat
 
-      - run: df -h
-
       # Index image can only be built once bundle was pushed
       - name: Build and push index
         # Skip for external contributions as the build relies on the previous image to be pushed.
@@ -630,8 +601,6 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           make -C operator/ index-buildx
-
-      - run: df -h
 
   scan-go-binaries:
     if: |
