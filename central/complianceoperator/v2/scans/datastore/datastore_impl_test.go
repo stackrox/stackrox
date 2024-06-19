@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -124,7 +125,7 @@ func (s *complianceScanDataStoreTestSuite) TestGetScan() {
 		retrievedObject, found, err := s.dataStore.GetScan(tc.testContext, tc.scanID)
 		s.Require().NoError(err)
 		s.Require().True(found != (tc.expectedResult == nil))
-		s.Require().Equal(tc.expectedResult, retrievedObject)
+		protoassert.Equal(s.T(), tc.expectedResult, retrievedObject)
 	}
 }
 
@@ -228,7 +229,7 @@ func (s *complianceScanDataStoreTestSuite) TestUpsertScan() {
 	retrievedObject, found, err := s.dataStore.GetScan(s.hasReadCtx, testScan3.GetId())
 	s.Require().NoError(err)
 	s.Require().True(found)
-	s.Require().Equal(testScan3.LastExecutedTime, retrievedObject.LastExecutedTime)
+	protoassert.Equal(s.T(), testScan3.LastExecutedTime, retrievedObject.LastExecutedTime)
 }
 
 func (s *complianceScanDataStoreTestSuite) TestDeleteScanByCluster() {
@@ -275,7 +276,7 @@ func (s *complianceScanDataStoreTestSuite) TestDeleteScan() {
 	retrievedObject, found, err = s.dataStore.GetScan(s.hasReadCtx, testScan2.GetId())
 	s.Require().NoError(err)
 	s.Require().True(found)
-	s.Require().Equal(testScan2, retrievedObject)
+	protoassert.Equal(s.T(), testScan2, retrievedObject)
 }
 
 func getTestScan(scanName string, profileID string, clusterID string) *storage.ComplianceOperatorScanV2 {

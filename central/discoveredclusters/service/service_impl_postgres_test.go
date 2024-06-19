@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -117,7 +118,7 @@ func (s *servicePostgresTestSuite) TestGetDiscoveredCluster() {
 		Id: discoveredClusters[0].GetId(),
 	})
 	s.Require().NoError(err)
-	s.Assert().Equal(discoveredClusters[0], resp.GetCluster())
+	protoassert.Equal(s.T(), discoveredClusters[0], resp.GetCluster())
 }
 
 func (s *servicePostgresTestSuite) TestListDiscoveredClusters() {

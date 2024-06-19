@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -58,7 +59,7 @@ func (s *ImagesStoreSuite) TestStore() {
 			vuln.FirstImageOccurrence = foundImage.GetLastUpdated()
 		}
 	}
-	s.Equal(cloned, foundImage)
+	protoassert.Equal(s.T(), cloned, foundImage)
 
 	imageCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -75,7 +76,7 @@ func (s *ImagesStoreSuite) TestStore() {
 
 	// Reconcile the timestamps that are set during upsert.
 	cloned.LastUpdated = foundImage.LastUpdated
-	s.Equal(cloned, foundImage)
+	protoassert.Equal(s.T(), cloned, foundImage)
 
 	s.NoError(store.Delete(ctx, image.GetId()))
 	foundImage, exists, err = store.Get(ctx, image.GetId())

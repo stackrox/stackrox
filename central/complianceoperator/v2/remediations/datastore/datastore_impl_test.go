@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -80,7 +81,7 @@ func (s *complianceRemediationDataStoreTestSuite) TestRemediation() {
 	remediationResult, found, err := s.dataStore.GetRemediation(s.hasReadCtx, remediationFixture.GetId())
 	s.Require().NoError(err)
 	s.Require().True(found, "remediation object should be found")
-	s.Require().Equal(remediationFixture, remediationResult)
+	protoassert.Equal(s.T(), remediationFixture, remediationResult)
 
 	// test get by cluster ID
 	remediationResultByCluster, err := s.dataStore.GetRemediationsByCluster(s.hasReadCtx, remediationFixture.GetClusterId())

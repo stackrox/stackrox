@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -116,7 +117,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestGetSuite() {
 			s.Require().NoError(err)
 			if tc.expectedRecordIndex.Contains(i) {
 				s.Require().True(exists)
-				s.Require().Equal(suites[i], suite1)
+				protoassert.Equal(s.T(), suites[i], suite1)
 			} else {
 				s.Require().False(exists)
 				s.Require().Nil(suite1)

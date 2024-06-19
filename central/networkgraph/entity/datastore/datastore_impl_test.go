@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -202,7 +203,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 		if c.pass {
 			suite.NoError(err)
 			suite.True(found)
-			suite.Equal(c.entity, actual)
+			protoassert.Equal(suite.T(), c.entity, actual)
 		} else {
 			suite.False(found)
 			suite.Nil(actual)
@@ -278,7 +279,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntitiesBatchOps() {
 		actual, found, err := suite.ds.GetEntity(suite.globalReadAccessCtx, entity.GetInfo().GetId())
 		suite.NoError(err)
 		suite.True(found)
-		suite.Equal(entity, actual)
+		protoassert.Equal(suite.T(), entity, actual)
 	}
 
 	// Delete

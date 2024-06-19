@@ -13,6 +13,7 @@ import (
 	beforeSchema "github.com/stackrox/rox/migrator/migrations/m_186_to_m_187_add_blob_search/schema/before"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -63,7 +64,7 @@ func (s *blobMigrationTestSuite) TestMigration() {
 		s.Equal(protocompat.NilOrTime(blob.ModifiedTime), nb.ModifiedTime)
 		converted, err := afterSchema.ConvertBlobToProto(&newBlobs[i])
 		s.Require().NoError(err)
-		s.Equal(blob, converted)
+		protoassert.Equal(s.T(), blob, converted)
 	}
 }
 

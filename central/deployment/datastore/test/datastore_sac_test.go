@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -258,7 +259,7 @@ func (s *deploymentDatastoreSACSuite) TestUpsertDeployment() {
 			} else {
 				s.NoError(err)
 				s.True(found)
-				s.Equal(deployment, fetched)
+				protoassert.Equal(s.T(), deployment, fetched)
 			}
 		})
 	}
@@ -278,7 +279,7 @@ func (s *deploymentDatastoreSACSuite) TestGetDeployment() {
 			if c.ExpectedFound {
 				s.Require().True(found)
 				s.Require().NotNil(res)
-				s.Equal(deployment, res)
+				protoassert.Equal(s.T(), deployment, res)
 			} else {
 				s.False(found)
 				s.Nil(res)
@@ -411,7 +412,7 @@ func (s *deploymentDatastoreSACSuite) TestListDeployment() {
 			if c.ExpectedFound {
 				s.True(found)
 				s.Require().NotNil(res)
-				s.Equal(listDeployment, res)
+				protoassert.Equal(s.T(), listDeployment, res)
 			} else {
 				s.False(found)
 				s.Nil(res)
@@ -439,13 +440,13 @@ func (s *deploymentDatastoreSACSuite) TestRemoveDeployment() {
 			s.NoError(err)
 			s.Require().True(preFound)
 			listPreFetch := deploymentTypes.ConvertDeploymentToDeploymentList(preFetch)
-			s.Require().Equal(listDeployment, listPreFetch)
+			protoassert.Equal(s.T(), listDeployment, listPreFetch)
 			if c.ExpectError {
 				s.Error(removeErr)
 				s.ErrorIs(removeErr, c.ExpectedError)
 				s.True(postFound)
 				listPostFetch := deploymentTypes.ConvertDeploymentToDeploymentList(postFetch)
-				s.Equal(listDeployment, listPostFetch)
+				protoassert.Equal(s.T(), listDeployment, listPostFetch)
 			} else {
 				s.NoError(removeErr)
 				s.False(postFound)

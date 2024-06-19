@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -109,7 +110,7 @@ func (s *k8sRoleBindingSACSuite) TestGetRoleBinding() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(roleBinding, res)
+				protoassert.Equal(s.T(), roleBinding, res)
 			} else {
 				s.False(found)
 				s.Nil(res)

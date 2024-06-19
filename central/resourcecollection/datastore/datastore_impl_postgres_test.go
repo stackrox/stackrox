@@ -14,6 +14,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -156,7 +157,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	obj, ok, err := s.datastore.Get(ctx, objA.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
-	assert.Equal(s.T(), objA, obj)
+	protoassert.Equal(s.T(), objA, obj)
 
 	// dryrun add duplicate 'a'
 	objADup := getTestCollection("a", nil)
@@ -185,7 +186,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	obj, ok, err = s.datastore.Get(ctx, objB.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
-	assert.Equal(s.T(), objB, obj)
+	protoassert.Equal(s.T(), objB, obj)
 
 	// try to delete 'a' while 'b' points to it
 	err = s.datastore.DeleteCollection(ctx, objA.GetId())
@@ -236,7 +237,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	obj, ok, err = s.datastore.Get(ctx, objA.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
-	assert.Equal(s.T(), objADup, obj)
+	protoassert.Equal(s.T(), objADup, obj)
 
 	// update 'a' with a new name
 	err = s.datastore.UpdateCollection(ctx, objA)
@@ -244,7 +245,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	obj, ok, err = s.datastore.Get(ctx, objA.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
-	assert.Equal(s.T(), objA, obj)
+	protoassert.Equal(s.T(), objA, obj)
 
 	// add 'e' that points to 'b' and verify
 	objE := getTestCollection("e", []string{objB.GetId()})
@@ -254,7 +255,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	obj, ok, err = s.datastore.Get(ctx, objE.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
-	assert.Equal(s.T(), objE, obj)
+	protoassert.Equal(s.T(), objE, obj)
 
 	// dryrun update 'e' to point to only 'a'
 	objEDup := objE.Clone()
@@ -264,7 +265,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	obj, ok, err = s.datastore.Get(ctx, objE.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
-	assert.Equal(s.T(), objEDup, obj)
+	protoassert.Equal(s.T(), objEDup, obj)
 
 	// update 'e' to point to only 'a', this tests addition and removal of edges
 	updateTestCollection(objE, []string{objA.GetId()})
@@ -273,7 +274,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	obj, ok, err = s.datastore.Get(ctx, objE.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
-	assert.Equal(s.T(), objE, obj)
+	protoassert.Equal(s.T(), objE, obj)
 
 	// dryrun update 'b' to point to only 'e'
 	objBDup := objB.Clone()
@@ -283,7 +284,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	obj, ok, err = s.datastore.Get(ctx, objB.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
-	assert.Equal(s.T(), objBDup, obj)
+	protoassert.Equal(s.T(), objBDup, obj)
 
 	// update 'b' to point to only 'e', making sure the original 'e' -> 'b' edge was removed
 	err = s.datastore.UpdateCollection(ctx, objB)
@@ -291,7 +292,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	obj, ok, err = s.datastore.Get(ctx, objB.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
-	assert.Equal(s.T(), objB, obj)
+	protoassert.Equal(s.T(), objB, obj)
 
 	// successful updates preserve createdAt and createdBy
 	objC := getTestCollection("c", nil)
@@ -308,7 +309,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	obj, ok, err = s.datastore.Get(ctx, objC.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
-	assert.Equal(s.T(), objC, obj)
+	protoassert.Equal(s.T(), objC, obj)
 
 	// clean up testing data and verify the datastore is empty
 	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objB.GetId()))
@@ -713,7 +714,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionToQueries() {
 				assert.NoError(t, err)
 				assert.Equal(t, len(test.expectedQueries), len(parsedQueries))
 				for i := 0; i < len(test.expectedQueries) && i < len(parsedQueries); i++ {
-					assert.Equal(t, test.expectedQueries[i], parsedQueries[i])
+					protoassert.Equal(t, test.expectedQueries[i], parsedQueries[i])
 				}
 			}
 		})

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -133,7 +134,7 @@ func (s *integrationHealthDatastoreTestSuite) TestUpdateIntegrationHealth() {
 	receivedIntegrationHealth, exists, err := s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(integrationHealth, receivedIntegrationHealth)
+	protoassert.Equal(s.T(), integrationHealth, receivedIntegrationHealth)
 
 	// 4. Updating an invalid integration health type should not be possible.
 	integrationHealth.Type = storage.IntegrationHealth_UNKNOWN

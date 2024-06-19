@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -53,6 +54,6 @@ func (suite *VersionStoreTestSuite) TestVersionStore() {
 		suite.NoError(suite.store.UpdateVersion(protoVersion))
 		got, err := suite.store.GetVersion()
 		suite.NoError(err)
-		suite.Equal(protoVersion, got)
+		protoassert.Equal(suite.T(), protoVersion, got)
 	}
 }
