@@ -21,6 +21,10 @@ const (
 
 var log = logging.LoggerForModule()
 
+func CheckTLSHardcoded(_ context.Context, _ string) (bool, error) {
+	return false, nil
+}
+
 // CheckTLS checks if the address is using TLS
 func CheckTLS(ctx context.Context, origAddr string) (bool, error) {
 	addr := urlfmt.TrimHTTPPrefixes(origAddr)
