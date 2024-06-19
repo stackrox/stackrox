@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -53,12 +54,12 @@ func (s *SensorUpgradeConfigsStoreSuite) TestStore() {
 	foundSensorUpgradeConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(sensorUpgradeConfig, foundSensorUpgradeConfig)
+	protoassert.Equal(s.T(), sensorUpgradeConfig, foundSensorUpgradeConfig)
 
 	foundSensorUpgradeConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(sensorUpgradeConfig, foundSensorUpgradeConfig)
+	protoassert.Equal(s.T(), sensorUpgradeConfig, foundSensorUpgradeConfig)
 
 	s.NoError(store.Delete(ctx))
 	foundSensorUpgradeConfig, exists, err = store.Get(ctx)
@@ -75,7 +76,7 @@ func (s *SensorUpgradeConfigsStoreSuite) TestStore() {
 	foundSensorUpgradeConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(sensorUpgradeConfig, foundSensorUpgradeConfig)
+	protoassert.Equal(s.T(), sensorUpgradeConfig, foundSensorUpgradeConfig)
 
 	sensorUpgradeConfig = &storage.SensorUpgradeConfig{}
 	s.NoError(testutils.FullInit(sensorUpgradeConfig, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -84,5 +85,5 @@ func (s *SensorUpgradeConfigsStoreSuite) TestStore() {
 	foundSensorUpgradeConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(sensorUpgradeConfig, foundSensorUpgradeConfig)
+	protoassert.Equal(s.T(), sensorUpgradeConfig, foundSensorUpgradeConfig)
 }
