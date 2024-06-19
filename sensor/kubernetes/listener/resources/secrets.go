@@ -308,8 +308,9 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 					log.Debugf("ROX-24163 calling UpsertGlobalRegistry for docker config from secret %q", secret.UID)
 					err = s.regStore.UpsertGlobalRegistry(context.Background(), registry, dce)
 				} else {
-					log.Debugf("ROX-24163 calling UpsertRegisty (!isGlobalPullSecret) for docker config from secret %q", secret.UID)
+					log.Debugf("ROX-24163 calling UpsertRegisty (!isGlobalPullSecret) for docker config from secret %q registry %s", secret.UID, registry)
 					err = s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
+					log.Debugf("ROX-24163 [END] calling UpsertRegisty (!isGlobalPullSecret) for docker config from secret %q %s", secret.UID, registry)
 				}
 				if err != nil {
 					log.Errorf("unable to upsert registry %q into store: %v", registry, err)

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
@@ -17,6 +18,8 @@ import (
 const (
 	timeout = 2 * time.Second
 )
+
+var log = logging.LoggerForModule()
 
 // CheckTLS checks if the address is using TLS
 func CheckTLS(ctx context.Context, origAddr string) (bool, error) {
@@ -40,7 +43,9 @@ func CheckTLS(ctx context.Context, origAddr string) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	log.Debugf("ROX-24163 dialing %s:%s", host, port)
 	conn, err := proxy.AwareDialContextTLS(ctx, fmt.Sprintf("%s:%s", host, port), nil)
+	log.Debugf("ROX-24163 [END] dialing %s:%s", host, port)
 	if err != nil {
 		switch err.(type) {
 		case x509.CertificateInvalidError,

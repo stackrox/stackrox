@@ -39,7 +39,9 @@ func (rs *Store) checkTLS(ctx context.Context, registry string) (secure bool, sk
 		utils.Should(errors.Errorf("Unsupported TLS check result: %v", result))
 	}
 
+	log.Debugf("ROX-24163 the TLS check result is not cached for the registry %s", registry)
 	secure, err = rs.doAndCacheTLSCheck(ctx, registry)
+	log.Debugf("ROX-24163 [END] the TLS check result is not cached for the registry %s: secured? %t error %v", registry, secure, err)
 	return secure, false, err
 }
 

@@ -211,13 +211,16 @@ func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string,
 		return nil
 	}
 
+	log.Debugf("ROX-24163 get registries for namespace %s registry %s", namespace, registry)
 	regs := rs.getRegistries(namespace)
 
 	// remove http/https prefixes from registry, matching may fail otherwise, the created registry.url will have
 	// the appropriate prefix
 	registry = urlfmt.TrimHTTPPrefixes(registry)
 	name := genIntegrationName(pullSecretNamePrefix, namespace, registry)
+	log.Debugf("ROX-24163 UpdateImageIntegration for registry %s", registry)
 	err = regs.UpdateImageIntegration(createImageIntegration(registry, dce, secure, name))
+	log.Debugf("ROX-24163 [END] UpdateImageIntegration for registry %s", registry)
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
