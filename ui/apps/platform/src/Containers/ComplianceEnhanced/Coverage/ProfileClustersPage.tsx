@@ -29,6 +29,7 @@ import useURLSort from 'hooks/useURLSort';
 import { getComplianceClusterStats } from 'services/ComplianceResultsStatsService';
 import { getTableUIState } from 'utils/getTableUIState';
 
+import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import { coverageProfileClustersPath } from './compliance.coverage.routes';
@@ -89,23 +90,9 @@ function ProfileClustersPage() {
         history.push(path);
     }
 
-    // @TODO: Consider making a function to make this more reusable
-    function onSearch(payload: OnSearchPayload) {
-        const { action, category, value } = payload;
-        const currentSelection = searchFilter[category] || [];
-        let newSelection = !Array.isArray(currentSelection) ? [currentSelection] : currentSelection;
-        if (action === 'ADD') {
-            newSelection.push(value);
-        } else if (action === 'REMOVE') {
-            newSelection = newSelection.filter((datum) => datum !== value);
-        } else {
-            // Do nothing
-        }
-        setSearchFilter({
-            ...searchFilter,
-            [category]: newSelection,
-        });
-    }
+    const onSearch = (payload: OnSearchPayload) => {
+        onURLSearch(searchFilter, setSearchFilter, payload);
+    };
 
     const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(
         (profile) => profile.name === profileName
