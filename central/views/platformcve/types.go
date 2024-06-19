@@ -29,6 +29,8 @@ type CveView interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Get(ctx context.Context, q *v1.Query) ([]CveCore, error)
 	GetClusterIDs(ctx context.Context, q *v1.Query) ([]string, error)
+	CVECountByType(ctx context.Context, q *v1.Query) (CVECountByType, error)
+	CVECountByFixability(ctx context.Context, q *v1.Query) (CVECountByFixability, error)
 }
 
 // ClusterCountByPlatformType provides ability to retrieve number of clusters of each platform type
@@ -37,4 +39,17 @@ type ClusterCountByPlatformType interface {
 	GetKubernetesClusterCount() int
 	GetOpenshiftClusterCount() int
 	GetOpenshift4ClusterCount() int
+}
+
+// CVECountByType provides the number of platform CVEs of each type
+type CVECountByType interface {
+	GetKubernetesCVECount() int
+	GetOpenshiftCVECount() int
+	GetIstioCVECount() int
+}
+
+// CVECountByFixability provides the number of fixable and total platform CVEs
+type CVECountByFixability interface {
+	GetTotal() int
+	GetFixable() int
 }
