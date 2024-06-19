@@ -146,7 +146,7 @@ spec:
       - name: name
         value: git-clone-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:734d1dc1ad64c5933df3269585d16b81cb1375d8ef49c8194a222e4069b70fef
+        value: quay.io/redhat-appstudio-tekton-catalog/task-git-clone-oci-ta:0.1@sha256:f1e58dcdb32efa9ca5b6f44e3600814624b9a8cfd59a1701379c789eeb8eef5b
       - name: kind
         value: task
       resolver: bundles
@@ -187,7 +187,7 @@ spec:
       - name: name
         value: prefetch-dependencies-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:f7e3a9d65b4a21e3e2b51cd0759c3696ea5b5f0505d47ae143386519c26d4c66
+        value: quay.io/redhat-appstudio-tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:a977d1a1b8cb79f29056e20a2e225b1018d84daad8b546de82f30b6326afee22
       - name: kind
         value: task
       resolver: bundles
@@ -223,7 +223,7 @@ spec:
       - name: name
         value: buildah-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.1@sha256:b6721707cbeb4e5f0c5164e3171b5e0c0e6dd597a2c5e094e9d4a8cdf15d85a3
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.1@sha256:2a42822363c83b95a84c2f6a10c4d957835431d812b1e4a045b51fab1cca9769
       - name: kind
         value: task
       resolver: bundles
@@ -272,7 +272,7 @@ spec:
       - name: name
         value: source-build-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-source-build-oci-ta:0.1@sha256:f700119afdb2c184b8b369d9d89dab1a11af571ccd152ba14da13267f6f89009
+        value: quay.io/redhat-appstudio-tekton-catalog/task-source-build-oci-ta:0.1@sha256:eae2e52027120286bcd3c1e3a48bf3f1281d9718549b9cd4098dcf11b06b71b8
       - name: kind
         value: task
       resolver: bundles
@@ -341,7 +341,7 @@ spec:
       - name: name
         value: sast-snyk-check-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-sast-snyk-check-oci-ta:0.1@sha256:3dbb7fe03431d6e7b102f376d0ac652f3f84838cce152f2f5529bc74790c74b8
+        value: quay.io/redhat-appstudio-tekton-catalog/task-sast-snyk-check-oci-ta:0.1@sha256:80f44bd76a16a687681420f04b1d3e5ee974856eee2b5853311660e6fb0422bf
       - name: kind
         value: task
       resolver: bundles
