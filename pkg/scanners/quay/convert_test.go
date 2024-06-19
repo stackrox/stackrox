@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protoassert"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stretchr/testify/assert"
 )
@@ -41,7 +42,7 @@ func TestConvertScanToImageScan(t *testing.T) {
 	quayScan, protoScan, image := getTestScan()
 	actualScan := convertScanToImageScan(image, quayScan)
 	// Ignore Scan time in the test, as it is defined as the time we retrieve the scan.
-	assert.Equal(t, protoScan.DataSource, actualScan.DataSource)
+	protoassert.Equal(t, protoScan.DataSource, actualScan.DataSource)
 	assert.Equal(t, "unknown", actualScan.OperatingSystem)
 	assert.Equal(t, protoScan.Components, actualScan.Components)
 }

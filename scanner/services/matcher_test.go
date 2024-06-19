@@ -10,6 +10,7 @@ import (
 	"github.com/quay/claircore/pkg/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	indexermocks "github.com/stackrox/rox/scanner/indexer/mocks"
 	matchermocks "github.com/stackrox/rox/scanner/matcher/mocks"
@@ -113,7 +114,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			Contents: nil,
 		})
 		s.NoError(err)
-		s.Equal(res, &v4.VulnerabilityReport{
+		protoassert.Equal(s.T(), res, &v4.VulnerabilityReport{
 			HashId: hashID,
 			Contents: &v4.Contents{
 				Packages: []*v4.Package{
@@ -122,6 +123,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			},
 			Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
 		})
+
 	})
 
 	s.Run("when contents is provided then parse index report and return", func() {
@@ -149,7 +151,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			}},
 		})
 		s.NoError(err)
-		s.Equal(res, &v4.VulnerabilityReport{
+		protoassert.Equal(s.T(), res, &v4.VulnerabilityReport{
 			HashId: hashID,
 			Contents: &v4.Contents{
 				Packages: []*v4.Package{
@@ -158,6 +160,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			},
 			Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
 		})
+
 	})
 }
 
@@ -174,9 +177,10 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata() {
 	srv := NewMatcherService(s.matcherMock, nil)
 	res, err := srv.GetMetadata(s.ctx, protocompat.ProtoEmpty())
 	s.NoError(err)
-	s.Equal(&v4.Metadata{
+	protoassert.Equal(s.T(), &v4.Metadata{
 		LastVulnerabilityUpdate: protoNow,
 	}, res)
+
 }
 
 func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata_error() {

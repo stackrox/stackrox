@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,7 +59,7 @@ func TestNewImage(t *testing.T) {
 		t.Run(c.ImageString, func(t *testing.T) {
 			img, err := GenerateImageFromString(c.ImageString)
 			assert.NoError(t, err)
-			assert.Equal(t, c.ExpectedImage, img)
+			protoassert.Equal(t, c.ExpectedImage, img)
 		})
 	}
 }
@@ -180,7 +181,7 @@ func TestGenerateImageFromStringWithOverride(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			img, err := GenerateImageFromStringWithOverride(c.image, c.override)
 			assert.NoError(t, err)
-			assert.Equal(t, c.expectedName, img.Name)
+			protoassert.Equal(t, c.expectedName, img.Name)
 		})
 	}
 }

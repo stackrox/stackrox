@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -3474,7 +3475,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 			for i, expected := range testCase.alerts {
 				suite.Equal(expected.GetType(), allAlerts[i].Type)
 				suite.Equal(expected.GetMessage(), allAlerts[i].Message)
-				suite.Equal(expected.GetKeyValueAttrs(), allAlerts[i].GetKeyValueAttrs())
+				protoassert.Equal(suite.T(), expected.GetKeyValueAttrs(), allAlerts[i].GetKeyValueAttrs())
 				// We do not want to compare time, as the violation timestamp uses now()
 				suite.NotNil(allAlerts[i].GetTime())
 			}

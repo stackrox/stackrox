@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
@@ -571,7 +572,7 @@ func TestMergeProcessesFromOldIntoNew(t *testing.T) {
 			out := mergeProcessesFromOldIntoNew(c.old, c.new)
 			assert.Equal(t, c.expectedOutput, out)
 			if c.expectedNew != nil {
-				assert.Equal(t, c.expectedNew, c.new)
+				protoassert.Equal(t, c.expectedNew, c.new)
 			}
 		})
 	}
@@ -701,7 +702,7 @@ func TestMergeRunTimeAlerts(t *testing.T) {
 			out := mergeRunTimeAlerts(c.old, c.new)
 			assert.Equal(t, c.expectedOutput, out)
 			if c.expectedNew != nil {
-				assert.Equal(t, c.expectedNew, c.new)
+				protoassert.Equal(t, c.expectedNew, c.new)
 			}
 		})
 	}
@@ -829,7 +830,7 @@ func TestFindAlert(t *testing.T) {
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			found := findAlert(c.toFind, c.alerts)
-			assert.Equal(t, c.expected, found)
+			protoassert.Equal(t, c.expected, found)
 		})
 	}
 }

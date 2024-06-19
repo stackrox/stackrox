@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	appsApiv1 "k8s.io/api/apps/v1"
@@ -86,7 +87,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGet() {
 			certificates, err := tc.fixture.repo.getServiceCertificates(getCtx)
 
 			if tc.expectedErr == nil {
-				s.Equal(tc.fixture.certificates, certificates)
+				protoassert.Equal(s.T(), tc.fixture.certificates, certificates)
 			}
 			s.ErrorIs(err, tc.expectedErr)
 		})
@@ -220,7 +221,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSu
 
 			s.Require().NoError(err)
 			tc.setExpectedCertsFunc(fixture.certificates)
-			s.Equal(fixture.certificates, certificates)
+			protoassert.Equal(s.T(), fixture.certificates, certificates)
 		})
 	}
 }

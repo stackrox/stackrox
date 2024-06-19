@@ -5,6 +5,7 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -339,7 +340,7 @@ func TestSetScoresAndScoreVersion(t *testing.T) {
 			}
 
 			assert.NoError(t, err)
-			assert.Equal(t, testcase.expected, vuln)
+			protoassert.Equal(t, testcase.expected, vuln)
 		})
 	}
 }

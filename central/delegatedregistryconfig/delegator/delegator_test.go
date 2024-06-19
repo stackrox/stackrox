@@ -11,6 +11,7 @@ import (
 	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	waiterMocks "github.com/stackrox/rox/pkg/waiter/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -315,7 +316,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 
 		image, err := d.DelegateScanImage(ctxBG, fakeImgName, fakeClusterID, false)
 		assert.NoError(t, err)
-		assert.Equal(t, fakeImage, image)
+		protoassert.Equal(t, fakeImage, image)
 	})
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
@@ -50,7 +51,7 @@ func TestGetCertExpiryStatus(t *testing.T) {
 			}))
 			result, err := getCertExpiryStatus(identity)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedStatus, result)
+			protoassert.Equal(t, tc.expectedStatus, result)
 		})
 	}
 }

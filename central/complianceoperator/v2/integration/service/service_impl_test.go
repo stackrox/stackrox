@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -134,7 +135,7 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 
 			configs, err := s.service.ListComplianceIntegrations(allAccessContext, tc.query)
 			s.NoError(err)
-			s.Equal(expectedResp, configs)
+			protoassert.Equal(s.T(), expectedResp, configs)
 		})
 	}
 }
