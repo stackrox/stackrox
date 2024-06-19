@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -149,7 +150,7 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaseline() {
 	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)
 	rsp, err := s.service.GetNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: baseline.GetDeploymentId()})
 	s.Nil(err)
-	s.Equal(rsp, baseline, "network baselines do not match")
+	protoassert.Equal(s.T(), rsp, baseline, "network baselines do not match")
 }
 
 func (s *NetworkBaselineServiceTestSuite) TestLockBaseline() {

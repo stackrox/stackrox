@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	nodeMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -222,7 +223,7 @@ func TestValidateIntegration(t *testing.T) {
 	assert.NotEqual(t, dockerConfig, requestWithADockerConfig.GetConfig().GetDocker())
 	err = s.reconcileImageIntegrationWithExisting(requestWithADockerConfig.GetConfig(), storedConfig)
 	assert.NoError(t, err)
-	assert.Equal(t, dockerConfig, requestWithADockerConfig.GetConfig().GetDocker())
+	protoassert.Equal(t, dockerConfig, requestWithADockerConfig.GetConfig().GetDocker())
 
 	// Test case: config request with a different endpoint
 	dockerConfigDiffEndpoint := dockerConfig.Clone()

@@ -12,9 +12,9 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 )
@@ -151,7 +151,7 @@ func (c *fakeAdmissionControlManagementServiceClient) PolicyAlerts(_ context.Con
 		c.t.Error("To many calls to PolicyAlerts")
 	}
 	if c.responseRequestPairs[c.currResponse].request != nil {
-		assert.Equal(c.t, c.responseRequestPairs[c.currResponse].request, req)
+		protoassert.Equal(c.t, c.responseRequestPairs[c.currResponse].request, req)
 	}
 	return c.responseRequestPairs[c.currResponse].response, c.responseRequestPairs[c.currResponse].err
 }

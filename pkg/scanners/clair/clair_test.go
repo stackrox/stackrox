@@ -9,6 +9,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
+	"github.com/stackrox/rox/pkg/protoassert"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stretchr/testify/suite"
 )
@@ -91,5 +92,5 @@ func (suite *ClairSuite) TestGetScan() {
 
 	// convert scans here. It relies on converting the scan but is not the conversion test
 	expectedImageScan := convertLayerToImageScan(image, layerEnvelope)
-	suite.Equal(expectedImageScan, scan)
+	protoassert.Equal(suite.T(), expectedImageScan, scan)
 }

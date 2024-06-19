@@ -284,6 +284,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/probeupload",
 			"pkg/process/normalize",
 			"pkg/process/id",
+			"pkg/protoassert",
 			"pkg/protocompat",
 			"pkg/protoconv",
 			"pkg/protoutils",

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -35,7 +36,7 @@ func (s *sinkTestSuite) TestSubscribe() {
 	trace := &v1.AuthorizationTraceResponse{}
 	go s.sink.PublishAuthzTrace(trace)
 	msg := <-c
-	s.Equal(trace, msg, "subscribed channel should receive the message")
+	protoassert.Equal(s.T(), trace, msg, "subscribed channel should receive the message")
 
 	cancel()
 	s.sink.PublishAuthzTrace(trace)
@@ -53,7 +54,7 @@ func (s *sinkTestSuite) TestPublishAuthzTrace() {
 	go s.sink.PublishAuthzTrace(trace)
 	// We can expect these two messages to be sent without blocking because channels have buffer size (1).
 	msg1 := <-c1
-	s.Equal(trace, msg1, "message should be delivered to first channel")
+	protoassert.Equal(s.T(), trace, msg1, "message should be delivered to first channel")
 	msg2 := <-c2
-	s.Equal(trace, msg2, "message should be delivered to second channel")
+	protoassert.Equal(s.T(), trace, msg2, "message should be delivered to second channel")
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -239,7 +240,7 @@ func TestParseNetworkDataWithMissingFields(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, actual, len(expected))
 	for i, entity := range actual {
-		assert.Equal(t, expected[i].GetInfo().GetExternalSource(), entity.GetInfo().GetExternalSource())
+		protoassert.Equal(t, expected[i].GetInfo().GetExternalSource(), entity.GetInfo().GetExternalSource())
 	}
 }
 

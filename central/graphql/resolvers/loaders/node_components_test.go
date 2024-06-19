@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/nodecomponent/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -54,7 +55,7 @@ func (suite *NodeComponentLoaderTestSuite) TestFromID() {
 	// Get a preloaded component from id.
 	component, err := loader.FromID(suite.ctx, nodeComponent1)
 	suite.NoError(err)
-	suite.Equal(loader.loaded[nodeComponent1], component)
+	protoassert.Equal(suite.T(), loader.loaded[nodeComponent1], component)
 
 	// Get a non-preloaded component from id.
 	thirdComponent := &storage.NodeComponent{Id: nodeComponent3}
@@ -63,12 +64,12 @@ func (suite *NodeComponentLoaderTestSuite) TestFromID() {
 
 	component, err = loader.FromID(suite.ctx, nodeComponent3)
 	suite.NoError(err)
-	suite.Equal(thirdComponent, component)
+	protoassert.Equal(suite.T(), thirdComponent, component)
 
 	// Above call should now be preloaded.
 	component, err = loader.FromID(suite.ctx, nodeComponent3)
 	suite.NoError(err)
-	suite.Equal(loader.loaded[nodeComponent3], component)
+	protoassert.Equal(suite.T(), loader.loaded[nodeComponent3], component)
 }
 
 func (suite *NodeComponentLoaderTestSuite) TestFromIDs() {

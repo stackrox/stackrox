@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -83,7 +84,7 @@ func (s *getAlertTests) TestGetAlert() {
 	result, err := s.service.GetAlert(fakeContext, s.fakeResourceByIDRequest)
 
 	s.NoError(err)
-	s.Equal(fakeAlert, result)
+	protoassert.Equal(s.T(), fakeAlert, result)
 }
 
 func (s *getAlertTests) TestGetAlertWhenTheDataAccessLayerFails() {
@@ -176,7 +177,7 @@ func (s *listAlertsTests) TestListAlerts() {
 	})
 
 	s.NoError(err)
-	s.Equal(s.expectedListAlertsResponse, result)
+	protoassert.Equal(s.T(), s.expectedListAlertsResponse, result)
 }
 
 func (s *listAlertsTests) TestListAlertsWhenTheDataLayerFails() {
@@ -355,7 +356,7 @@ func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*stora
 	})
 
 	s.NoError(err)
-	s.Equal(expected, result)
+	protoassert.Equal(s.T(), expected, result)
 }
 
 func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
@@ -673,7 +674,7 @@ func (s *getAlertsCountsTests) testGetAlertCounts(fakeSearchResultsSlice []searc
 	}, GroupBy: groupBy})
 
 	s.NoError(err)
-	s.Equal(expected, result)
+	protoassert.Equal(s.T(), expected, result)
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
@@ -871,7 +872,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 	})
 
 	s.NoError(err)
-	s.Equal(expected, result)
+	protoassert.Equal(s.T(), expected, result)
 }
 
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFails() {
@@ -924,7 +925,7 @@ func (s *patchAlertTests) TestSnoozeAlert() {
 	s.NoError(err)
 
 	s.Equal(fakeAlert.State, storage.ViolationState_SNOOZED)
-	s.Equal(fakeAlert.SnoozeTill, snoozeTill)
+	protoassert.Equal(s.T(), fakeAlert.SnoozeTill, snoozeTill)
 }
 
 func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {
