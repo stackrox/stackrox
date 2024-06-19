@@ -372,6 +372,10 @@ jobs:
       - name: Generate OSS notice
         run: make ossls-notice
 
+      - name: Force break
+        if: matrix.name == 'STACKROX_BRANDING' && matrix.arch == 'amd64'
+        run: exit 1
+
       - name: Set build tag for prerelease images
         if: matrix.name == 'prerelease'
         run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
