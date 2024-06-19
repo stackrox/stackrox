@@ -77,7 +77,7 @@ func (s *configServiceTestSuite) SetupSuite() {
 	// Not found because Singleton() was not called and default configuration was not initialize.
 	cfg, err := s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
-	s.EqualValues(&v1.GetVulnerabilityExceptionConfigResponse{}, cfg)
+	protoassert.Equal(s.T(), &v1.GetVulnerabilityExceptionConfigResponse{}, cfg)
 }
 
 func (s *configServiceTestSuite) TearDownSuite() {
@@ -99,7 +99,7 @@ func (s *configServiceTestSuite) TestExceptionConfigOps() {
 	expected := storagetov1.VulnerabilityExceptionConfig(defaultExceptionCfg)
 	cfg, err := s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
-	s.EqualValues(expected, cfg.GetConfig())
+	protoassert.Equal(s.T(), expected, cfg.GetConfig())
 
 	// Invalid Update.
 	updatedExceptionCfg := initialCfg.Clone().GetPrivateConfig().GetVulnerabilityExceptionConfig()
@@ -139,7 +139,7 @@ func (s *configServiceTestSuite) TestExceptionConfigOps() {
 	// Verify vulnerability exception configuration was not updated.
 	cfg, err = s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
-	s.EqualValues(expected, cfg.GetConfig())
+	protoassert.Equal(s.T(), expected, cfg.GetConfig())
 	// Verify other config was undisturbed.
 	pCfg, err := s.srv.GetPrivateConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
@@ -162,7 +162,7 @@ func (s *configServiceTestSuite) TestExceptionConfigOps() {
 	// Verify vulnerability exception configuration was not updated.
 	exceptionCfg, err := s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
-	s.EqualValues(expected, exceptionCfg.GetConfig())
+	protoassert.Equal(s.T(), expected, exceptionCfg.GetConfig())
 
 	// Valid Update.
 	updatedExceptionCfg = &storage.VulnerabilityExceptionConfig{
@@ -193,7 +193,7 @@ func (s *configServiceTestSuite) TestExceptionConfigOps() {
 	// Verify vulnerability exception configuration was updated.
 	cfg, err = s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
-	s.EqualValues(storagetov1.VulnerabilityExceptionConfig(updatedExceptionCfg), cfg.GetConfig())
+	protoassert.Equal(s.T(), storagetov1.VulnerabilityExceptionConfig(updatedExceptionCfg), cfg.GetConfig())
 	// Verify other config was undisturbed.
 	pCfg, err = s.srv.GetPrivateConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)

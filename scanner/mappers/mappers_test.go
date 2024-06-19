@@ -731,7 +731,7 @@ func Test_toProtoV4Contents(t *testing.T) {
 				assert.Nil(t, got)
 				assert.ErrorContains(t, err, tt.wantErr)
 			} else {
-				assert.EqualValues(t, tt.want, got)
+				protoassert.Equal(t, tt.want, got)
 				assert.NoError(t, err)
 			}
 		})

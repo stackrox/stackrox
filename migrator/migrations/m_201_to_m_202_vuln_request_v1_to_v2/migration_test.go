@@ -321,11 +321,11 @@ func (s *migrationTestSuite) verify(expected map[string]*storage.VulnerabilityRe
 		s.NotNil(expectedReq)
 		protoassert.Equal(s.T(), expectedReq.GetRequesterV2(), actualReq.GetRequesterV2())
 		protoassert.ElementsMatch(s.T(), expectedReq.GetApproversV2(), actualReq.GetApproversV2())
-		s.EqualValues(expectedReq.GetRequestor(), actualReq.GetRequestor())
+		protoassert.Equal(s.T(), expectedReq.GetRequestor(), actualReq.GetRequestor())
 		protoassert.ElementsMatch(s.T(), expectedReq.GetApprovers(), actualReq.GetApprovers())
-		s.EqualValues(expectedReq.GetDeferralReq(), actualReq.GetDeferralReq())
+		protoassert.Equal(s.T(), expectedReq.GetDeferralReq(), actualReq.GetDeferralReq())
 		s.EqualValues(expectedReq.UpdatedReq, actualReq.UpdatedReq)
-		s.EqualValues(expectedReq.Scope, actualReq.Scope)
+		protoassert.Equal(s.T(), expectedReq.Scope, actualReq.Scope)
 	}
 }
 

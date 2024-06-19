@@ -20,6 +20,7 @@ import (
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -122,7 +123,7 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 		cloned := actual.Clone()
 		// Adjust dynamic fields and ensure images in ACS are as expected.
 		standardizeImages(image, cloned)
-		s.Require().EqualValues(image, cloned)
+		protoassert.Equal(s.T(), image, cloned)
 
 		// Now that we confirmed that images match, use stored image to establish the expected test results.
 		// This makes dynamic fields matching (e.g. created at) straightforward.
