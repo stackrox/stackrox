@@ -116,8 +116,14 @@ spec:
     - name: skip-checks
       value: $(params.skip-checks)
     taskRef:
-      name: init
-      version: "0.2"
+      params:
+      - name: name
+        value: init
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-init:0.2@sha256:b23c7a924f303a67b3a00b32a6713ae1a4fccbc5327daa76a6edd250501ea7a3
+      - name: kind
+        value: task
+      resolver: bundles
 
   - name: clone-repository
     params:
@@ -136,8 +142,14 @@ spec:
     runAfter:
     - init
     taskRef:
-      name: git-clone-oci-ta
-      version: "0.1"
+      params:
+      - name: name
+        value: git-clone-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:734d1dc1ad64c5933df3269585d16b81cb1375d8ef49c8194a222e4069b70fef
+      - name: kind
+        value: task
+      resolver: bundles
     when:
     - input: $(tasks.init.results.build)
       operator: in
@@ -171,8 +183,14 @@ spec:
     runAfter:
     - determine-image-tag
     taskRef:
-      name: prefetch-dependencies-oci-ta
-      version: "0.1"
+      params:
+      - name: name
+        value: prefetch-dependencies-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:f7e3a9d65b4a21e3e2b51cd0759c3696ea5b5f0505d47ae143386519c26d4c66
+      - name: kind
+        value: task
+      resolver: bundles
 
   - name: build-container
     params:
@@ -201,8 +219,14 @@ spec:
     runAfter:
     - prefetch-dependencies
     taskRef:
-      name: buildah-oci-ta
-      version: "0.1"
+      params:
+      - name: name
+        value: buildah-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.1@sha256:b6721707cbeb4e5f0c5164e3171b5e0c0e6dd597a2c5e094e9d4a8cdf15d85a3
+      - name: kind
+        value: task
+      resolver: bundles
     when:
     - input: $(tasks.init.results.build)
       operator: in
@@ -222,8 +246,14 @@ spec:
     runAfter:
     - build-container
     taskRef:
-      name: apply-tags-oci-ta
-      version: "0.1"
+      params:
+      - name: name
+        value: apply-tags
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-apply-tags:0.1@sha256:29add9a49a2281a3755a9b580d2b9c5cb110231b14cccf8ade2fd7895a9b4b4a
+      - name: kind
+        value: task
+      resolver: bundles
 
   - name: build-source-image
     params:
@@ -238,8 +268,14 @@ spec:
     runAfter:
     - build-container
     taskRef:
-      name: source-build-oci-ta
-      version: "0.1"
+      params:
+      - name: name
+        value: source-build-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-source-build-oci-ta:0.1@sha256:f700119afdb2c184b8b369d9d89dab1a11af571ccd152ba14da13267f6f89009
+      - name: kind
+        value: task
+      resolver: bundles
     when:
     - input: $(tasks.init.results.build)
       operator: in
@@ -301,8 +337,14 @@ spec:
     runAfter:
     - clone-repository
     taskRef:
-      name: sast-snyk-check-oci-ta
-      version: "0.1"
+      params:
+      - name: name
+        value: sast-snyk-check-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-sast-snyk-check-oci-ta:0.1@sha256:3dbb7fe03431d6e7b102f376d0ac652f3f84838cce152f2f5529bc74790c74b8
+      - name: kind
+        value: task
+      resolver: bundles
     when:
     - input: $(params.skip-checks)
       operator: in
