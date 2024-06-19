@@ -68,7 +68,7 @@ function ScanConfigActionDropdown({
         </DropdownItem>,
         <DropdownSeparator key="Separator" />,
         <DropdownItem
-            key="Run scan now"
+            key="Run scan"
             component="button"
             description={isScanning ? 'Run is disabled while scan is already running' : ''}
             isDisabled={isScanning}
@@ -76,7 +76,7 @@ function ScanConfigActionDropdown({
                 handleRunScanConfig(scanConfigResponse);
             }}
         >
-            Run scan now
+            Run scan
         </DropdownItem>,
     ];
 
@@ -84,7 +84,7 @@ function ScanConfigActionDropdown({
         /* eslint-disable no-nested-ternary */
         dropdownItems.push(
             <DropdownItem
-                key="Send report now"
+                key="Send report"
                 component="button"
                 description={
                     notifiers.length === 0
@@ -98,7 +98,7 @@ function ScanConfigActionDropdown({
                     handleSendReport(scanConfigResponse);
                 }}
             >
-                Send report now
+                Send report
             </DropdownItem>
         );
         /* eslint-enable no-nested-ternary */
