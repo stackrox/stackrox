@@ -321,6 +321,6 @@ export const generatePathWithQuery = (
     queryParams
 ) => {
     const path = safeGeneratePath(pathTemplate, pathParams, pathTemplate);
-    const searchParams = new URLSearchParams(queryParams).toString();
-    return `${path}?${searchParams}`;
+    const searchParams = qs.stringify(queryParams, { encode: false, arrayFormat: 'indices' });
+    return `${path}${searchParams !== '' ? `?${searchParams}` : ''}`;
 };

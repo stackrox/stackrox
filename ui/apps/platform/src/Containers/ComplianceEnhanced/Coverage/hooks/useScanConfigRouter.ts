@@ -9,16 +9,26 @@ const useScanConfigRouter = () => {
     const { selectedScanConfigName } = useContext(ScanConfigurationsContext);
     const history = useHistory();
 
-    function generatePathWithScanConfig(path, pathParams: Partial<Record<string, unknown>> = {}) {
+    function generatePathWithScanConfig(
+        path,
+        pathParams: Partial<Record<string, unknown>> = {},
+        searchParams = {}
+    ) {
         return generatePathWithQuery(
             path,
             pathParams,
-            selectedScanConfigName ? { scanSchedule: selectedScanConfigName } : {}
+            selectedScanConfigName
+                ? { ...searchParams, scanSchedule: selectedScanConfigName }
+                : searchParams
         );
     }
 
-    function navigateWithScanConfigQuery(path, pathParams: Partial<Record<string, unknown>> = {}) {
-        const generatedPath = generatePathWithScanConfig(path, pathParams);
+    function navigateWithScanConfigQuery(
+        path,
+        pathParams: Partial<Record<string, unknown>> = {},
+        searchParams = {}
+    ) {
+        const generatedPath = generatePathWithScanConfig(path, pathParams, searchParams);
         history.push(generatedPath);
     }
 
