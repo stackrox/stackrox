@@ -178,6 +178,36 @@ func (m *MockCveView) EXPECT() *MockCveViewMockRecorder {
 	return m.recorder
 }
 
+// CVECountByFixability mocks base method.
+func (m *MockCveView) CVECountByFixability(ctx context.Context, q *v1.Query) (platformcve.CVECountByFixability, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CVECountByFixability", ctx, q)
+	ret0, _ := ret[0].(platformcve.CVECountByFixability)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CVECountByFixability indicates an expected call of CVECountByFixability.
+func (mr *MockCveViewMockRecorder) CVECountByFixability(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CVECountByFixability", reflect.TypeOf((*MockCveView)(nil).CVECountByFixability), ctx, q)
+}
+
+// CVECountByType mocks base method.
+func (m *MockCveView) CVECountByType(ctx context.Context, q *v1.Query) (platformcve.CVECountByType, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CVECountByType", ctx, q)
+	ret0, _ := ret[0].(platformcve.CVECountByType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CVECountByType indicates an expected call of CVECountByType.
+func (mr *MockCveViewMockRecorder) CVECountByType(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CVECountByType", reflect.TypeOf((*MockCveView)(nil).CVECountByType), ctx, q)
+}
+
 // Count mocks base method.
 func (m *MockCveView) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
@@ -300,4 +330,120 @@ func (m *MockClusterCountByPlatformType) GetOpenshiftClusterCount() int {
 func (mr *MockClusterCountByPlatformTypeMockRecorder) GetOpenshiftClusterCount() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOpenshiftClusterCount", reflect.TypeOf((*MockClusterCountByPlatformType)(nil).GetOpenshiftClusterCount))
+}
+
+// MockCVECountByType is a mock of CVECountByType interface.
+type MockCVECountByType struct {
+	ctrl     *gomock.Controller
+	recorder *MockCVECountByTypeMockRecorder
+}
+
+// MockCVECountByTypeMockRecorder is the mock recorder for MockCVECountByType.
+type MockCVECountByTypeMockRecorder struct {
+	mock *MockCVECountByType
+}
+
+// NewMockCVECountByType creates a new mock instance.
+func NewMockCVECountByType(ctrl *gomock.Controller) *MockCVECountByType {
+	mock := &MockCVECountByType{ctrl: ctrl}
+	mock.recorder = &MockCVECountByTypeMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockCVECountByType) EXPECT() *MockCVECountByTypeMockRecorder {
+	return m.recorder
+}
+
+// GetIstioCVECount mocks base method.
+func (m *MockCVECountByType) GetIstioCVECount() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIstioCVECount")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetIstioCVECount indicates an expected call of GetIstioCVECount.
+func (mr *MockCVECountByTypeMockRecorder) GetIstioCVECount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIstioCVECount", reflect.TypeOf((*MockCVECountByType)(nil).GetIstioCVECount))
+}
+
+// GetKubernetesCVECount mocks base method.
+func (m *MockCVECountByType) GetKubernetesCVECount() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetKubernetesCVECount")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetKubernetesCVECount indicates an expected call of GetKubernetesCVECount.
+func (mr *MockCVECountByTypeMockRecorder) GetKubernetesCVECount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKubernetesCVECount", reflect.TypeOf((*MockCVECountByType)(nil).GetKubernetesCVECount))
+}
+
+// GetOpenshiftCVECount mocks base method.
+func (m *MockCVECountByType) GetOpenshiftCVECount() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOpenshiftCVECount")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetOpenshiftCVECount indicates an expected call of GetOpenshiftCVECount.
+func (mr *MockCVECountByTypeMockRecorder) GetOpenshiftCVECount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOpenshiftCVECount", reflect.TypeOf((*MockCVECountByType)(nil).GetOpenshiftCVECount))
+}
+
+// MockCVECountByFixability is a mock of CVECountByFixability interface.
+type MockCVECountByFixability struct {
+	ctrl     *gomock.Controller
+	recorder *MockCVECountByFixabilityMockRecorder
+}
+
+// MockCVECountByFixabilityMockRecorder is the mock recorder for MockCVECountByFixability.
+type MockCVECountByFixabilityMockRecorder struct {
+	mock *MockCVECountByFixability
+}
+
+// NewMockCVECountByFixability creates a new mock instance.
+func NewMockCVECountByFixability(ctrl *gomock.Controller) *MockCVECountByFixability {
+	mock := &MockCVECountByFixability{ctrl: ctrl}
+	mock.recorder = &MockCVECountByFixabilityMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockCVECountByFixability) EXPECT() *MockCVECountByFixabilityMockRecorder {
+	return m.recorder
+}
+
+// GetFixable mocks base method.
+func (m *MockCVECountByFixability) GetFixable() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFixable")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetFixable indicates an expected call of GetFixable.
+func (mr *MockCVECountByFixabilityMockRecorder) GetFixable() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFixable", reflect.TypeOf((*MockCVECountByFixability)(nil).GetFixable))
+}
+
+// GetTotal mocks base method.
+func (m *MockCVECountByFixability) GetTotal() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotal")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetTotal indicates an expected call of GetTotal.
+func (mr *MockCVECountByFixabilityMockRecorder) GetTotal() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotal", reflect.TypeOf((*MockCVECountByFixability)(nil).GetTotal))
 }
