@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -69,8 +68,8 @@ func (s *alertHandlerSuite) TestProcessAlert() {
 						s.T().Error("ResponsesC should not be closed")
 					}
 					expected := createAlertResultsMsg(admissionControlAlerts.AlertResults[0])
+					s.Equal(expected.Context, res.Context)
 					protoassert.Equal(s.T(), expected.MsgFromSensor, res.MsgFromSensor)
-					assert.Nil(s.T(), res.Context)
 				}
 			}
 		})
