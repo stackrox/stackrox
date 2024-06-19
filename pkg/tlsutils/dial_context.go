@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -20,7 +21,7 @@ func DialContext(ctx context.Context, network, addr string, tlsConfig *tls.Confi
 	conn, err := dialer.DialContext(ctx, network, addr)
 	if err != nil {
 		log.Debugw("tls dial failed", logging.Err(err))
-		return nil, errox.ConcealSensitive(err)
+		return nil, errors.Wrap(errox.ConcealSensitive(err), "unable to establish a TLS-enabled connection")
 	}
 	return conn.(*tls.Conn), nil
 }
