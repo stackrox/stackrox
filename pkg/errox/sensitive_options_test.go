@@ -1,90 +1,164 @@
 package errox
 
 import (
-	"errors"
 	"net"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestNewSensitive(t *testing.T) {
+func TestWithPublicMessage(t *testing.T) {
+	err := &RoxSensitiveError{}
+	WithPublicMessage("message")(err)
+	assert.Equal(t, "message", err.public.Error())
+	WithPublicMessage("another")(err)
+	assert.Equal(t, "another: message", err.public.Error())
+	assert.Nil(t, err.sensitive)
+	assert.Empty(t, UnconcealSensitive(err))
+}
+
+func TestErrorIs(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		err := NewSensitive()
+		assert.ErrorIs(t, err, nil)
+	})
+	t.Run("public", func(t *testing.T) {
+		err := &RoxSensitiveError{}
+		WithPublicError(NotFound)(err)
+		assert.ErrorIs(t, err, NotFound)
+		WithPublicError(InvalidArgs)(err)
+		assert.ErrorIs(t, err, NotFound)
+		WithPublicMessage("message")
+		assert.ErrorIs(t, err, NotFound)
+	})
+	t.Run("sensitive", func(t *testing.T) {
+		err := &RoxSensitiveError{}
+		WithSensitive(testDNSError)(err)
+		assert.ErrorIs(t, err, testDNSError)
+		WithSensitive(InvalidArgs)(err)
+		assert.ErrorIs(t, err, testDNSError)
+	})
+	t.Run("public sensitive", func(t *testing.T) {
+		err := &RoxSensitiveError{}
+		WithPublicError(NotFound)(err)
+		WithSensitive(testDNSError)(err)
+		assert.ErrorIs(t, err, testDNSError)
+		assert.ErrorIs(t, err, NotFound)
+	})
+	t.Run("sensitive public", func(t *testing.T) {
+		err := &RoxSensitiveError{}
+		WithSensitive(testDNSError)(err)
+		WithPublicError(NotFound)(err)
+		assert.ErrorIs(t, err, testDNSError)
+		assert.ErrorIs(t, err, NotFound)
+	})
+}
+
+func TestWithSensitive(t *testing.T) {
+	err := &RoxSensitiveError{}
 	dnsError := &net.DNSError{Err: "DNS error", Name: "localhost", Server: "127.0.0.1"}
+	WithSensitive(dnsError)(err)
+	assert.Equal(t, "lookup: DNS error", err.Error())
+	assert.Equal(t, "lookup: DNS error", err.sensitive.Error())
+	assert.Equal(t, "lookup localhost on 127.0.0.1: DNS error", UnconcealSensitive(err))
 
-	tests := map[string]struct {
-		opts               []sensitiveErrorOption
-		expectPublic       string
-		expectSensitive    string
-		expectNil          bool
-		expectNotSensitive bool
-	}{
-		"nil with no options": {expectNil: true, expectNotSensitive: true},
-		"not nil, not sensitive with only public message": {
-			opts: []sensitiveErrorOption{
-				WithPublicMessage("message")},
-			expectPublic:       "message",
-			expectSensitive:    "message",
-			expectNotSensitive: true,
-		},
-		"sensitive error with public message": {
-			opts: []sensitiveErrorOption{
-				WithPublicMessage("public"),
-				WithSensitive(dnsError),
-			},
-			expectPublic:    "public: lookup: DNS error",
-			expectSensitive: "lookup localhost on 127.0.0.1: DNS error",
-		},
-		"formatted sensitive": {
-			opts: []sensitiveErrorOption{
-				WithSensitivef("format %q", "value")},
-			expectPublic:    "",
-			expectSensitive: "format \"value\"",
-		},
-		"formatted sensitive with public error": {
-			opts: []sensitiveErrorOption{
-				WithPublicError("public", errors.New("message")),
-				WithSensitivef("secret %v", "1.2.3.4")},
-			expectPublic:    "public: message",
-			expectSensitive: "secret 1.2.3.4: message",
-		},
-		"sensitive with public err": {
-			opts: []sensitiveErrorOption{
-				WithPublicError("public", errors.New("error")),
-				WithSensitive(errors.New("secret"))},
-			expectPublic:    "public: error",
-			expectSensitive: "secret: error",
-		},
-		"sensitive in public": {
-			opts: []sensitiveErrorOption{
-				WithSensitivef("sensitive"),
-				WithPublicError("oops", MakeSensitive("public", dnsError)),
-			},
-			expectPublic:    "oops: public",
-			expectSensitive: "sensitive: lookup localhost on 127.0.0.1: DNS error",
-		},
-		"sensitive in public, different order, same result": {
-			opts: []sensitiveErrorOption{
-				WithPublicError("oops", MakeSensitive("public", dnsError)),
-				WithSensitivef("sensitive"),
-			},
-			expectPublic:    "oops: public",
-			expectSensitive: "sensitive: lookup localhost on 127.0.0.1: DNS error",
-		},
-	}
+	WithSensitive(errors.New("another"))(err)
+	assert.Equal(t, "lookup: DNS error", err.Error())
+	assert.Equal(t, "another: lookup: DNS error", err.sensitive.Error())
+	assert.Equal(t, "another: lookup localhost on 127.0.0.1: DNS error", UnconcealSensitive(err))
 
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			err := NewSensitive(test.opts...)
-			if test.expectNil {
-				assert.Nil(t, err)
-			} else {
-				require.NotNil(t, err)
-				assert.Equal(t, test.expectPublic, err.Error())
-			}
-			assert.Equal(t, test.expectSensitive, UnconcealSensitive(err))
-			var serr SensitiveError
-			assert.NotEqual(t, test.expectNotSensitive, errors.As(err, &serr))
-		})
-	}
+	var serr error = MakeSensitive("public", errors.WithMessage(ConcealSensitive(dnsError), "secret"))
+	err = &RoxSensitiveError{}
+	WithSensitive(serr)(err)
+	assert.Equal(t, "public: lookup: DNS error", err.Error())
+	assert.Equal(t, "public: lookup: DNS error", err.sensitive.Error())
+	assert.Equal(t, "secret: lookup localhost on 127.0.0.1: DNS error", UnconcealSensitive(err))
+
+	serr = errors.WithMessage(ConcealSensitive(dnsError), "secret")
+	err = &RoxSensitiveError{}
+	WithSensitive(serr)(err) // adds dns public message to the public part
+	assert.Equal(t, "lookup: DNS error", err.Error())
+	assert.Equal(t, "secret: lookup: DNS error", err.sensitive.Error())
+	assert.Equal(t, "secret: lookup localhost on 127.0.0.1: DNS error", UnconcealSensitive(err))
+}
+
+func TestWithSensitivef(t *testing.T) {
+	err := &RoxSensitiveError{}
+	WithSensitivef("format %v", "value")(err)
+	assert.Nil(t, err.public)
+	assert.Empty(t, err.Error())
+	assert.Equal(t, "format value", err.sensitive.Error())
+	assert.Equal(t, err.sensitive.Error(), UnconcealSensitive(err))
+}
+
+func TestWithPublicError(t *testing.T) {
+	err := &RoxSensitiveError{}
+	WithPublicError(errors.New("public"))(err)
+	assert.Equal(t, "public", err.public.Error())
+	assert.Equal(t, err.public.Error(), err.Error())
+	assert.Nil(t, err.sensitive)
+
+	WithPublicError(errors.New("another"))(err)
+	assert.Equal(t, "another: public", err.public.Error())
+	assert.Equal(t, err.public.Error(), err.Error())
+	assert.Nil(t, err.sensitive)
+}
+
+func TestOrder(t *testing.T) {
+	t.Run("public message, sensitive", func(t *testing.T) {
+		err := &RoxSensitiveError{}
+		WithPublicMessage("message")(err)
+		WithSensitive(testDNSError)(err)
+
+		assert.Equal(t, "message", err.public.Error())
+		assert.Equal(t, "message: lookup: DNS error", err.Error())
+		assert.Equal(t, "lookup: DNS error", err.sensitive.Error())
+		assert.Equal(t, "lookup localhost on 127.0.0.1: DNS error", UnconcealSensitive(err))
+	})
+	t.Run("sensitive, public message", func(t *testing.T) {
+		err := &RoxSensitiveError{}
+		WithSensitive(testDNSError)(err)
+		WithPublicMessage("message")(err)
+
+		assert.Equal(t, "message", err.public.Error())
+		assert.Equal(t, "message: lookup: DNS error", err.Error())
+		assert.Equal(t, "lookup: DNS error", err.sensitive.Error())
+		assert.Equal(t, "lookup localhost on 127.0.0.1: DNS error", UnconcealSensitive(err))
+	})
+
+	public := errors.New("message")
+	t.Run("public error, sensitive", func(t *testing.T) {
+		err := &RoxSensitiveError{}
+		WithPublicError(public)(err)
+		WithSensitive(testDNSError)(err)
+
+		assert.Equal(t, "message", err.public.Error())
+		assert.Equal(t, "message: lookup: DNS error", err.Error())
+		assert.Equal(t, "lookup: DNS error", err.sensitive.Error())
+		assert.Equal(t, "lookup localhost on 127.0.0.1: DNS error", UnconcealSensitive(err))
+	})
+	t.Run("sensitive, public error", func(t *testing.T) {
+		err := &RoxSensitiveError{}
+		WithSensitive(testDNSError)(err)
+		WithPublicError(public)(err)
+
+		assert.Equal(t, "message", err.public.Error())
+		assert.Equal(t, "message: lookup: DNS error", err.Error())
+		assert.Equal(t, "lookup: DNS error", err.sensitive.Error())
+		assert.Equal(t, "lookup localhost on 127.0.0.1: DNS error", UnconcealSensitive(err))
+	})
+}
+
+func TestNewSensitive(t *testing.T) {
+	err := NewSensitive()
+	assert.Nil(t, err)
+
+	public := errors.New("message")
+	err = NewSensitive(WithPublicError(public))
+	assert.Equal(t, public, err)
+
+	err = NewSensitive(WithSensitive(testDNSError), WithPublicError(public))
+	assert.Equal(t, "message: lookup: DNS error", err.Error())
+	assert.Equal(t, "lookup localhost on 127.0.0.1: DNS error", UnconcealSensitive(err))
 }

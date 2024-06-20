@@ -6,91 +6,72 @@ import (
 	"github.com/pkg/errors"
 )
 
-type sensitiveErrorOptions struct {
-	public    string
-	sensitive error
-}
-
-type sensitiveErrorOption func(o *sensitiveErrorOptions)
+type sensitiveErrorOption func(o *RoxSensitiveError)
 
 // NewSensitive constructs a Sensitive error based on the provided options.
 //
 // Example:
 //
-//	err := errors.New("message")
-//	err = NewSensitive(
-//	  WithPublicError("public", err),
-//	  WithSensitivef("secret %v", "1.2.3.4"))
+//	err := NewSensitive(
+//	  WithSensitive(dnsError),
+//	  WithPublicMessage("message"),
+//	)
 //
-//	err.Error() // "public: message"
-//	UnconcealSensitive(err) // "secret 1.2.3.4: message"
+//	err.Error() // "message: lookup: DNS error"
+//	UnconcealSensitive(err) // "lookup localhost on 127.0.0.1: DNS error"
 func NewSensitive(opts ...sensitiveErrorOption) error {
-	x := sensitiveErrorOptions{}
+	result := RoxSensitiveError{}
 	for _, o := range opts {
-		o(&x)
+		o(&result)
 	}
-
-	if x.sensitive == nil {
-		if x.public == "" {
+	if result.sensitive == nil {
+		if result.public == nil {
 			return nil
 		}
-		return errors.New(x.public)
+		return result.public
 	}
-	return MakeSensitive(x.public, x.sensitive)
+	result.unprotectedGoRoutineID.Store(unsetID)
+	return &result
 }
 
-// WithPublicMessage sets the public part of the resulting sensitive error.
+// WithPublicMessage adds the public part to the resulting sensitive error.
+// See WithPublicError.
 func WithPublicMessage(message string) sensitiveErrorOption {
-	return func(o *sensitiveErrorOptions) {
-		o.public = message
-	}
+	return WithPublicError(errors.New(message))
 }
 
-// WithPublicError adds a public message to the resulting sensitive error,
-// including the public message from the provided error.
-// The provided error will also be wrapped by the sensitive part.
+// WithPublicError adds the public part to the resulting sensitive error,
+// wrapping already set value.
 //
 // Example:
 //
 //	err := NewSensitive(
-//	  WithPublicError("public", errors.New("error")),
-//	  WithSensitive(errors.New("secret")))
-//	err.Error() // "public: error"
-//	UnconcealSensitive(err) // "secret: error"
-func WithPublicError(public string, err error) sensitiveErrorOption {
-	return func(o *sensitiveErrorOptions) {
-		var serr SensitiveError
-		WithSensitive(err)(o)
-		if errors.As(err, &serr) {
-			// The public message from the sensitive error will be added
-			// automatically in Error().
-			WithPublicMessage(public)(o)
+//	  WithPublicError(errors.New("one")),
+//	  WithPublicError(errors.New("two")))
+//	err.Error() // "two: one"
+func WithPublicError(err error) sensitiveErrorOption {
+	return func(o *RoxSensitiveError) {
+		if o.public != nil {
+			o.public = errors.WithMessage(o.public, err.Error())
 		} else {
-			WithPublicMessage(public + ": " + err.Error())(o)
+			o.public = err
 		}
 	}
 }
 
-// WithSensitive conceals the provided error and adds it to the sensitive part
-// of the resulting sensitive error.
+// WithSensitive adds the provided error to the sensitive part of the resulting
+// sensitive error.
 func WithSensitive(err error) sensitiveErrorOption {
-	err = ConcealSensitive(err)
-	return func(o *sensitiveErrorOptions) {
+	return func(o *RoxSensitiveError) {
 		if o.sensitive != nil {
-			if o.public == "" {
-				o.sensitive = errors.WithMessage(err, UnconcealSensitive(o.sensitive))
-			} else {
-				// If sensitive has already been provided by WithPublicError,
-				// wrap it with the provided message.
-				o.sensitive = errors.WithMessage(o.sensitive, UnconcealSensitive(err))
-			}
+			o.sensitive = errors.WithMessage(o.sensitive, UnconcealSensitive(err))
 		} else {
-			o.sensitive = err
+			o.sensitive = ConcealSensitive(err)
 		}
 	}
 }
 
-// WithSensitivef is a helping wrapper over WithSensitive.
+// WithSensitivef is a wrapper over WithSensitive.
 func WithSensitivef(format string, args ...any) sensitiveErrorOption {
 	return WithSensitive(fmt.Errorf(format, args...))
 }
