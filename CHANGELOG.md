@@ -26,7 +26,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - Slim/Full Collector images have been deprecated and will be removed in a
   future release. The two image flavors are now functionally identical (neither contain any kernel drivers.)
-- The field `error` returned for failed API calls has been deprecated, and it will be removed in a future release. Instead of using the `error` field, the `message` field should be used. The `message` field contains the same information as the `error` field.
+- The field `error` returned for failed API calls has been deprecated, and it will be removed in a future release. Instead of using the `error` field, use the `message` field. The `message` field contains the same information as the `error` field.
 
 ### Technical Changes
 
