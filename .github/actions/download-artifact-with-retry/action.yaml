@@ -20,6 +20,7 @@ runs:
       run: |
         echo outcome ${{ steps.download-artifact-try1.outcome }}
         echo object  ${{ steps.download-artifact-try1 }}
+      shell: bash
     - name: download-artifact-try2
       if: steps.download-artifact-try1.outcome == 'failure'
       uses: actions/download-artifact@v4
