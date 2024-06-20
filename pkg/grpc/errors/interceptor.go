@@ -63,7 +63,7 @@ func logErrorIfInternal(err error) {
 
 func concealError(err error) error {
 	var serr errox.SensitiveError
-	if err == nil || errors.As(err, &serr) {
+	if _, ok := status.FromError(err); ok || errors.As(err, &serr) {
 		return err
 	}
 	if message := errox.GetBaseSentinelMessage(err); message != "" {
@@ -78,9 +78,7 @@ func ConcealErrorInterceptor(ctx context.Context, req interface{}, _ *grpc.Unary
 }
 
 func ConcealErrorStreamInterceptor(srv interface{}, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	err := handler(srv, ss)
-	logErrorIfInternal(err)
-	return concealError(err)
+	return concealError(handler(srv, ss))
 }
 
 // ErrorToGrpcCodeInterceptor translates common errors defined in errorhelpers to GRPC codes.

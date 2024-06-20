@@ -315,6 +315,11 @@ func Test_concealError(t *testing.T) {
 			"invalid arguments",
 			"invalid arguments",
 		},
+		"http status": {
+			status.Error(codes.NotFound, "not found"),
+			"rpc error: code = NotFound desc = not found",
+			"rpc error: code = NotFound desc = not found",
+		},
 	}
 
 	for name, test := range tests {
