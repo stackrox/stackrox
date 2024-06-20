@@ -14,3 +14,16 @@ export function displayClusterType(type: ClusterType): string {
             return ensureExhaustive(type);
     }
 }
+
+export function displayCveType(cveType: string): string {
+    switch (cveType) {
+        case 'K8S_CVE':
+            return 'Kubernetes';
+        case 'ISTIO_CVE':
+            return 'Istio';
+        case 'OPENSHIFT_CVE':
+            return 'Openshift';
+        default:
+            return cveType;
+    }
+}

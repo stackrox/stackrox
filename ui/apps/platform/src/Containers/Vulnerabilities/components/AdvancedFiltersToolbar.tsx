@@ -96,10 +96,16 @@ function AdvancedFiltersToolbar({
         )
         .concat(
             includeCveStatusFilters && isFixabilityFiltersEnabled
-                ? makeDefaultFilterDescriptor(defaultFilters, {
-                      displayName: 'CVE status',
-                      searchFilterName: 'FIXABLE',
-                  })
+                ? [
+                      makeDefaultFilterDescriptor(defaultFilters, {
+                          displayName: 'CVE status',
+                          searchFilterName: 'FIXABLE',
+                      }),
+                      makeDefaultFilterDescriptor(defaultFilters, {
+                          displayName: 'CVE status',
+                          searchFilterName: 'CLUSTER CVE FIXABLE',
+                      }),
+                  ]
                 : []
         );
 
