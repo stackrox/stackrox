@@ -496,7 +496,7 @@ func TestParsePackageDB(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.packageDB, func(t *testing.T) {
-			source, location := parsePackageDB(testcase.packageDB)
+			source, location := ParsePackageDB(testcase.packageDB)
 			assert.Equal(t, testcase.expectedSourceType, source)
 			assert.Equal(t, testcase.expectedLocation, location)
 		})
