@@ -24,9 +24,8 @@ func TestServicePostgres(t *testing.T) {
 type servicePostgresTestSuite struct {
 	suite.Suite
 
-	helper    *testutils.ExportServicePostgresTestHelper
-	service   Service
-	internals servicePostgresTestSuiteInternals
+	helper  *testutils.ExportServicePostgresTestHelper
+	service Service
 }
 
 func (s *servicePostgresTestSuite) SetupTest() {
