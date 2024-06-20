@@ -129,5 +129,5 @@ func (c *cveCountByFixabilityResponse) GetTotal() int {
 }
 
 func (c *cveCountByFixabilityResponse) GetFixable() int {
-	return c.CVECount
+	return c.FixableCount
 }
