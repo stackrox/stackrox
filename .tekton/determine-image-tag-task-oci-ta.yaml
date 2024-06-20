@@ -12,7 +12,8 @@ spec:
     type: string
   - name: SOURCE_ARTIFACT
     description: The Trusted Artifact URI pointing to the artifact with
-      the application source code.
+      the application source code. This should be the result of the git-clone task,
+      results from other tasks might fail as dirty.
     type: string
   results:
   - name: image-tag

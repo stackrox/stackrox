@@ -169,7 +169,6 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     runAfter:
-    # This task must run on a freshly cloned repository to prevent seeing any changes from other tasks.
     - clone-repository
     taskRef:
       name: determine-image-tag-oci-ta
@@ -185,7 +184,7 @@ spec:
     - name: ociArtifactExpiresAfter
       value: $(params.oci-artifact-expires-after)
     runAfter:
-    - determine-image-tag
+    - clone-repository
     taskRef:
       params:
       - name: name
@@ -221,6 +220,7 @@ spec:
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     runAfter:
+    - determine-image-tag
     - prefetch-dependencies
     taskRef:
       params:
@@ -335,7 +335,7 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     runAfter:
-    - clone-repository
+    - prefetch-dependencies
     taskRef:
       params:
       - name: name
