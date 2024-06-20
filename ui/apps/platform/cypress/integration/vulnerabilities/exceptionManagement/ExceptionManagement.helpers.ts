@@ -44,7 +44,7 @@ export function visitDeniedRequestsTab() {
 }
 
 function assertClipboardWriteAndVisitRequestPage(id) {
-    cy.location().then(({ origin }) => {
+    return cy.location().then(({ origin }) => {
         const url = `${origin}/main/vulnerabilities/exception-management/requests/${id}`;
 
         // To prevent permission or timing problems, do not actually write to clipboard.
@@ -57,6 +57,7 @@ function assertClipboardWriteAndVisitRequestPage(id) {
         cy.get('@writeText').should('have.been.calledOnceWith', url);
 
         visit(url);
+        return Promise.resolve(id);
     });
 }
 
@@ -68,28 +69,35 @@ export function deferAndVisitRequestDetails({
     comment: string;
     expiry: string;
     scope: string;
-}) {
+}): Cypress.Chainable<{
+    cveName: string;
+    requestName: string;
+}> {
     visitWorkloadCveOverview();
 
     // defer a single cve
-    selectSingleCveForException('DEFERRAL').then((cveName) => {
-        verifySelectedCvesInModal([cveName]);
+    return selectSingleCveForException('DEFERRAL')
+        .then((cveName) => {
+            verifySelectedCvesInModal([cveName]);
 
-        fillAndSubmitExceptionForm({
-            comment,
-            expiryLabel: expiry,
-        }).then(({ response }) => {
+            return fillAndSubmitExceptionForm({
+                comment,
+                expiryLabel: expiry,
+            }).then(({ response }) => Promise.resolve({ response, cveName }));
+        })
+        .then(({ response, cveName }) => {
             verifyExceptionConfirmationDetails({
                 expectedAction: 'Deferral',
                 cves: [cveName],
                 scope,
                 expiry,
             });
+            const { id, name } = response?.body?.exception ?? {};
 
-            // Response is source of truth for exceptipn id.
-            assertClipboardWriteAndVisitRequestPage(response?.body?.exception?.id);
+            // Response is source of truth for exception id.
+            assertClipboardWriteAndVisitRequestPage(id);
+            return Promise.resolve({ requestName: name, cveName });
         });
-    });
 }
 
 export function markFalsePositiveAndVisitRequestDetails({
@@ -98,23 +106,32 @@ export function markFalsePositiveAndVisitRequestDetails({
 }: {
     comment: string;
     scope: string;
-}) {
+}): Cypress.Chainable<{
+    cveName: string;
+    requestName: string;
+}> {
     visitWorkloadCveOverview();
 
     // mark a single cve as false positive
-    selectSingleCveForException('FALSE_POSITIVE').then((cveName) => {
-        verifySelectedCvesInModal([cveName]);
-        fillAndSubmitExceptionForm({ comment }).then(({ response }) => {
+    return selectSingleCveForException('FALSE_POSITIVE')
+        .then((cveName) => {
+            verifySelectedCvesInModal([cveName]);
+            return fillAndSubmitExceptionForm({ comment }).then(({ response }) =>
+                Promise.resolve({ response, cveName })
+            );
+        })
+        .then(({ response, cveName }) => {
             verifyExceptionConfirmationDetails({
                 expectedAction: 'False positive',
                 cves: [cveName],
                 scope,
             });
+            const { id, name } = response?.body?.exception ?? {};
 
-            // Response is source of truth for exceptipn id.
-            assertClipboardWriteAndVisitRequestPage(response?.body?.exception?.id);
+            // Response is source of truth for exception id.
+            assertClipboardWriteAndVisitRequestPage(id);
+            return Promise.resolve({ requestName: name, cveName });
         });
-    });
 }
 
 // This function approves a request on the exception management request details page
