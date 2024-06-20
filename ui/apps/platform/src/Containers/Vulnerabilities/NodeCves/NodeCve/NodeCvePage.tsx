@@ -36,19 +36,35 @@ import {
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
 import CvePageHeader from '../../components/CvePageHeader';
-import { nodeSearchFilterConfig, nodeComponentSearchFilterConfig } from '../../searchFilterConfig';
+import {
+    nodeSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    clusterSearchFilterConfig,
+} from '../../searchFilterConfig';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import AffectedNodesTable, { defaultSortOption, sortFields } from './AffectedNodesTable';
 import AffectedNodesSummaryCard from './AffectedNodesSummaryCard';
 import useAffectedNodes from './useAffectedNodes';
 import useNodeCveMetadata from './useNodeCveMetadata';
+import useNodeCveSummaryData from './useNodeCveSummaryData';
 
 const nodeCveOverviewCvePath = getOverviewPagePath('Node', { entityTab: 'CVE' });
 
 const searchFilterConfig = {
     Node: nodeSearchFilterConfig,
     'Node Component': nodeComponentSearchFilterConfig,
+    Cluster: clusterSearchFilterConfig,
 } as const;
+
+const defaultNodeCveSummary = {
+    affectedNodeCountBySeverity: {
+        critical: { total: 0 },
+        important: { total: 0 },
+        moderate: { total: 0 },
+        low: { total: 0 },
+    },
+    distroTuples: [],
+};
 
 function NodeCvePage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -72,7 +88,8 @@ function NodeCvePage() {
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
 
-    const { metadataRequest, nodeCount, cveData } = useNodeCveMetadata(cveId, query);
+    const { metadataRequest, cveData: cveMetadata } = useNodeCveMetadata(cveId);
+    const { summaryDataRequest, nodeCount } = useNodeCveSummaryData(cveId, query);
 
     const { affectedNodesRequest, nodeData } = useAffectedNodes({
         query,
@@ -81,7 +98,7 @@ function NodeCvePage() {
         sortOption,
     });
 
-    const nodeCveName = cveData?.cve;
+    const nodeCveName = cveMetadata?.cve;
 
     const tableState = getTableUIState({
         isLoading: affectedNodesRequest.loading,
@@ -105,7 +122,7 @@ function NodeCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light">
-                <CvePageHeader data={cveData} />
+                <CvePageHeader data={cveMetadata} />
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-v5-u-flex-grow-1">
@@ -126,23 +143,28 @@ function NodeCvePage() {
                     isLoading={metadataRequest.loading}
                 >
                     <SummaryCard
-                        data={metadataRequest.data}
+                        data={summaryDataRequest.data}
                         loadingText="Loading affected nodes summary"
                         renderer={({ data }) => (
                             <AffectedNodesSummaryCard
                                 affectedNodeCount={nodeCount}
                                 totalNodeCount={data.totalNodeCount}
-                                operatingSystemCount={data.nodeCVE.distroTuples.length}
+                                operatingSystemCount={
+                                    (data.nodeCVE ?? defaultNodeCveSummary).distroTuples.length
+                                }
                             />
                         )}
                     />
                     <SummaryCard
-                        data={metadataRequest.data}
+                        data={summaryDataRequest.data}
                         loadingText="Loading affected nodes by CVE severity summary"
                         renderer={({ data }) => (
                             <BySeveritySummaryCard
                                 title="Nodes by severity"
-                                severityCounts={data.nodeCVE.nodeCountBySeverity}
+                                severityCounts={
+                                    (data.nodeCVE ?? defaultNodeCveSummary)
+                                        .affectedNodeCountBySeverity
+                                }
                                 hiddenSeverities={hiddenSeverities}
                             />
                         )}
@@ -171,7 +193,14 @@ function NodeCvePage() {
                             />
                         </SplitItem>
                     </Split>
-                    <AffectedNodesTable tableState={tableState} getSortParams={getSortParams} />
+                    <AffectedNodesTable
+                        tableState={tableState}
+                        getSortParams={getSortParams}
+                        onClearFilters={() => {
+                            setSearchFilter({});
+                            setPage(1, 'replace');
+                        }}
+                    />
                 </div>
             </PageSection>
         </>

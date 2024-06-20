@@ -89,10 +89,15 @@ export type AffectedNode = {
 export type AffectedNodesTableProps = {
     tableState: TableUIState<AffectedNode>;
     getSortParams: UseURLSortResult['getSortParams'];
+    onClearFilters: () => void;
 };
 
 // TODO Add filter icon to dynamic table columns
-function AffectedNodesTable({ tableState, getSortParams }: AffectedNodesTableProps) {
+function AffectedNodesTable({
+    tableState,
+    getSortParams,
+    onClearFilters,
+}: AffectedNodesTableProps) {
     const colSpan = 8;
     const expandedRowSet = useSet<string>();
 
@@ -122,6 +127,7 @@ function AffectedNodesTable({ tableState, getSortParams }: AffectedNodesTablePro
                 emptyProps={{
                     message: 'There are no nodes that are affected by this CVE',
                 }}
+                filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
                     data.map((node, rowIndex) => {
                         const { id, name, nodeComponents } = node;
