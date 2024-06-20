@@ -16,6 +16,10 @@ runs:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
       continue-on-error: true
+    - name: check outcome try1
+      run: |
+        echo outcome ${{ steps.download-artifact-try1.outcome }}
+        echo object  ${{ steps.download-artifact-try1 }}
     - name: download-artifact-try2
       if: steps.download-artifact-try1.outcome == 'failure'
       uses: actions/download-artifact@v4
