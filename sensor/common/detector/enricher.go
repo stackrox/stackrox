@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/clusterid"
@@ -226,7 +227,7 @@ func (c *cacheValue) updateImageNoLock(image *storage.Image) {
 		return
 	}
 
-	c.image.Names = protoutils.SliceUnique(append(c.image.GetNames(), existingNames...))
+	c.image.Names = utils.UniqueImageNames(c.image.GetNames(), existingNames)
 }
 
 func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
