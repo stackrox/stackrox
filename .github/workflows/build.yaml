@@ -252,6 +252,7 @@ jobs:
 
   build-and-push-main:
     runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
     needs:
       - define-job-matrix
       - pre-build-ui
