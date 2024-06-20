@@ -444,9 +444,9 @@ function NetworkPolicySimulatorSidePanel({
                                         <TextContent>
                                             <Text component={TextVariants.p}>
                                                 Generate a set of recommended network policies based
-                                                on your cluster's traffic. Only deployments that are
-                                                part of the current scope will be included in
-                                                generated policies.
+                                                on your cluster&apos;s traffic. Only deployments
+                                                that are part of the current scope will be included
+                                                in generated policies.
                                             </Text>
                                         </TextContent>
                                     </StackItem>
