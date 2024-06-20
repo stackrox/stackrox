@@ -23,5 +23,6 @@ gcloud compute scp setup-env-var.sh "$vm_name":~/setup-env-var.sh --recurse --pr
 gcloud compute scp run-perf-tests.sh "$vm_name":~/run-perf-tests.sh --recurse --project acs-team-sandbox
 gcloud compute scp install-and-run.sh "$vm_name":~/install-and-run.sh --recurse --project acs-team-sandbox
 gcloud compute scp env.sh "$vm_name":~/env.sh --recurse --project acs-team-sandbox
+gcloud compute scp perf-tests.json "$vm_name":~/perf-tests.json --recurse --project acs-team-sandbox
 
 echo "gcloud compute ssh --zone \"$zone\" "$vm_name" --project \"acs-team-sandbox\""
