@@ -414,7 +414,12 @@ function NavigationSidebar({
                                                 />
                                             );
                                         }
-                                        return <NavItemSeparator key={childDescription.key} />;
+                                        return (
+                                            <NavItemSeparator
+                                                key={childDescription.key}
+                                                role="listitem"
+                                            />
+                                        );
                                     })}
                                 </NavExpandable>
                             );
