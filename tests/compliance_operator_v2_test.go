@@ -148,7 +148,7 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 	}
 }
 
-func TestCentralSendsScanConfiguration(t *testing.T) {
+func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	ctx := context.Background()
 	k8sClient := createK8sClient(t)
 
