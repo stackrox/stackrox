@@ -114,7 +114,7 @@ func retryableRunSelectRequestForSchema[T any](ctx context.Context, db postgres.
 
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error executing query %s", queryStr)
+		return nil, errExecQuery(err, queryStr)
 	}
 	defer rows.Close()
 
