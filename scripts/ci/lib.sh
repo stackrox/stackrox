@@ -163,6 +163,8 @@ process_central_metrics() {
         die "missing arg. usage: process_central_metrics <debug_dump_dir>"
     fi
 
+    local output_dir="$1"
+
     local metrics_output
     local csv_output
     metrics_output="$(mktemp --suffix=.prom)"
