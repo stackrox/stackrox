@@ -81,6 +81,10 @@ spec:
     description: Fetch tags with git clone
     name: clone-fetch-tags
     type: string
+  - default: "1d"
+    description: OCI Artifact (workspace) expiration time.
+    name: oci-artifact-expires-after
+    type: string
 
   results:
   - description: ""
@@ -138,7 +142,7 @@ spec:
     - name: ociStorage
       value: $(params.output-image-repo):konflux-$(params.revision).git
     - name: ociArtifactExpiresAfter
-      value: $(params.image-expires-after)
+      value: $(params.oci-artifact-expires-after)
     runAfter:
     - init
     taskRef:
@@ -160,7 +164,7 @@ spec:
 
   - name: determine-image-tag
     params:
-    - name: tag-suffix
+    - name: TAG_SUFFIX
       value: $(params.output-tag-suffix)
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
@@ -179,7 +183,7 @@ spec:
     - name: ociStorage
       value: $(params.output-image-repo):konflux-$(params.revision).prefetch
     - name: ociArtifactExpiresAfter
-      value: $(params.image-expires-after)
+      value: $(params.oci-artifact-expires-after)
     runAfter:
     - determine-image-tag
     taskRef:
@@ -239,10 +243,6 @@ spec:
     - name: ADDITIONAL_TAGS
       value:
       - konflux-$(params.revision)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    - name: CACHI2_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     runAfter:
     - build-container
     taskRef:

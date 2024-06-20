@@ -7,7 +7,7 @@ metadata:
 spec:
   description: Determines the tag for the output image using the StackRox convention from 'make tag' output.
   params:
-  - name: tag-suffix
+  - name: TAG_SUFFIX
     description: Suffix to append to generated image tag.
     type: string
   - name: SOURCE_ARTIFACT
@@ -40,4 +40,4 @@ spec:
       dnf -y install git make
 
       .konflux/scripts/fail-build-if-git-is-dirty.sh
-      echo -n "$(make --quiet --no-print-directory tag)$(params.tag-suffix)" | tee "$(results.image-tag.path)"
+      echo -n "$(make --quiet --no-print-directory tag)$(params.TAG_SUFFIX)" | tee "$(results.image-tag.path)"
