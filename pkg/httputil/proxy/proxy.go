@@ -110,7 +110,9 @@ func AwareDialContextTLS(ctx context.Context, address string, tlsClientConf *tls
 		return nil, errors.Wrapf(err, "unparseable address %q", address)
 	}
 
+	log.Debugf("ROX-24163 AwareDialContext dialing %s", address)
 	conn, err := AwareDialContext(ctx, address)
+	log.Debugf("ROX-24163 [END] AwareDialContext dialing %s", address)
 	if err != nil {
 		return nil, err
 	}
@@ -122,6 +124,8 @@ func AwareDialContextTLS(ctx context.Context, address string, tlsClientConf *tls
 		tlsClientConf = tlsClientConf.Clone()
 		tlsClientConf.ServerName = host
 	}
+	log.Debugf("ROX-24163 handshaking %s", address)
+	defer log.Debugf("ROX-24163 [END] handshaking %s", address)
 	tlsConn := tls.Client(conn, tlsClientConf)
 	if err := tlsConn.Handshake(); err != nil {
 		utils.IgnoreError(tlsConn.Close)
