@@ -90,6 +90,14 @@ func TestWithSensitivef(t *testing.T) {
 	assert.Empty(t, err.Error())
 	assert.Equal(t, "format value", err.sensitive.Error())
 	assert.Equal(t, err.sensitive.Error(), UnconcealSensitive(err))
+
+	err = &RoxSensitiveError{}
+	WithPublicMessage("public")(err)
+	WithSensitivef("format %v", "value")(err)
+	assert.Equal(t, "public", err.public.Error())
+	assert.Equal(t, "format value: public", err.sensitive.Error())
+	assert.Equal(t, "public", err.Error())
+	assert.Equal(t, err.sensitive.Error(), UnconcealSensitive(err))
 }
 
 func TestWithPublicError(t *testing.T) {

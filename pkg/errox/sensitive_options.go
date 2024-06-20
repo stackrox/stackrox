@@ -71,7 +71,20 @@ func WithSensitive(err error) sensitiveErrorOption {
 	}
 }
 
-// WithSensitivef is a wrapper over WithSensitive.
+// WithSensitivef adds a formatted error message to the sensitive part.
+// If public part has been set already, it will be wrapped to the sensitive part
+// as well.
+//
+// Example:
+//
+//	err := NewSensitive(WithPublicMessage("message"), WithSensitivef("secret"))
+//	err.Error() // "message"
+//	UnconcealSensitive(err) // "secret: message"
 func WithSensitivef(format string, args ...any) sensitiveErrorOption {
-	return WithSensitive(fmt.Errorf(format, args...))
+	return func(o *RoxSensitiveError) {
+		if o.public != nil {
+			WithSensitive(o.public)(o)
+		}
+		WithSensitive(fmt.Errorf(format, args...))(o)
+	}
 }
