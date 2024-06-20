@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stackrox/rox/central/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
 )
 
 func TestServicePostgres(t *testing.T) {
@@ -22,16 +24,20 @@ func TestServicePostgres(t *testing.T) {
 type servicePostgresTestSuite struct {
 	suite.Suite
 
+	helper    *testutils.ExportServicePostgresTestHelper
+	service   Service
 	internals servicePostgresTestSuiteInternals
 }
 
 func (s *servicePostgresTestSuite) SetupTest() {
-	err := setupTest(s.T(), &s.internals)
+	s.helper = &testutils.ExportServicePostgresTestHelper{}
+	err := s.helper.SetupTest(s.T())
 	s.Require().NoError(err)
+	s.service = New(s.helper.Deployments, s.helper.Images)
 }
 
 func (s *servicePostgresTestSuite) TearDownTest() {
-	cleanupTest(s.T(), &s.internals)
+	s.helper.TearDownTest(s.T())
 }
 
 func (s *servicePostgresTestSuite) createDeployment(deployment *storage.Deployment, id string) *storage.Deployment {
@@ -42,11 +48,11 @@ func (s *servicePostgresTestSuite) createDeployment(deployment *storage.Deployme
 func (s *servicePostgresTestSuite) upsertDeployments(deployments []*storage.Deployment) {
 	upsertCtx := sac.WithAllAccess(context.Background())
 	for _, deployment := range deployments {
-		err := s.internals.deployments.UpsertDeployment(upsertCtx, deployment)
+		err := s.helper.Deployments.UpsertDeployment(upsertCtx, deployment)
 		s.Require().NoError(err)
 	}
 	for _, image := range fixtures.DeploymentImages() {
-		err := s.internals.images.UpsertImage(upsertCtx, image)
+		err := s.helper.Images.UpsertImage(upsertCtx, image)
 		s.Require().NoError(err)
 	}
 }
@@ -111,11 +117,16 @@ func (s *servicePostgresTestSuite) TestExport() {
 			s.upsertDeployments(c.deployments)
 
 			request := &v1.VulnMgmtExportWorkloadsRequest{Timeout: 5, Query: c.query}
-			conn, closeFunc, err := createGRPCWorkloadsService(&s.internals)
+			conn, closeFunc, err := s.helper.CreateGRPCStreamingService(
+				s.T(),
+				func(registrar grpc.ServiceRegistrar) {
+					v1.RegisterVulnMgmtServiceServer(registrar, s.service)
+				},
+			)
 			s.Require().NoError(err)
 			defer closeFunc()
 			client := v1.NewVulnMgmtServiceClient(conn)
-			results, err := receiveWorkloads(s.internals.ctx, client, request, false)
+			results, err := receiveWorkloads(s.helper.Ctx, client, request, false)
 			s.Require().NoError(err)
 
 			// The images are the same for all deployments to simplify the assertions.

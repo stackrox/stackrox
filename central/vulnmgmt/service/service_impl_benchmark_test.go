@@ -3,135 +3,57 @@
 package service
 
 import (
-	"compress/gzip"
-	"context"
-	"encoding/json"
 	"fmt"
-	"math/rand"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
+	"github.com/stackrox/rox/central/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/random"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils"
-)
-
-const (
-	namespace10pct = "Namespace10%"
-	namepsace90pct = "Namespace90%"
+	"google.golang.org/grpc"
 )
 
 func BenchmarkService_Export(b *testing.B) {
-	_ = b
-	testSuite := &servicePostgresTestSuiteInternals{}
-	err := setupTest(b, testSuite)
+	testHelper := &testutils.ExportServicePostgresTestHelper{}
+	err := testHelper.SetupTest(b)
 	if err != nil {
 		b.Error(err)
 	}
-	defer cleanupTest(b, testSuite)
-
-	fmt.Println(time.Now().UTC().Unix(), "Injecting base images")
-	baseImageIDs, baseImageNamesByIDs, err := injectInitialImages(testSuite)
-	if err != nil {
-		b.Error(err)
+	defer testHelper.TearDownTest(b)
+	svc := New(testHelper.Deployments, testHelper.Images)
+	deltas := []int{500}
+	// The test runs by default with a lower scale as smoke test
+	// in the benchmark unit tests. To test at higher scales (takes time),
+	// run the test with ROX_SCALE_TEST set to a non-empty value
+	// in the test environment.
+	scale := os.Getenv("ROX_SCALE_TEST")
+	if scale != "" {
+		deltas = []int{500, 500, 1000, 3000, 5000}
 	}
+	imageIDs := make([]string, 0)
+	imageNamesByIDs := make(map[string]*storage.ImageName)
 
-	fmt.Println(time.Now().UTC().Unix(), "Injecting base deployments")
-	err = injectRandomDeployments(testSuite, 500, baseImageIDs, baseImageNamesByIDs)
-	if err != nil {
-		b.Error(err)
-	}
-
-	fmt.Println(time.Now().UTC().Unix(), "Starting actual tests")
-	b.Run("500", getServiceBenchmark(testSuite))
-
-	fmt.Println(time.Now().UTC().Unix(), "Injecting 500 extra images")
-	imageIDs := make([]string, 0, 20*len(baseImageIDs))
-	imageIDs = append(imageIDs, baseImageIDs...)
-	imageNamesByIDs := make(map[string]*storage.ImageName, 20*len(baseImageNamesByIDs))
-	for k, v := range baseImageNamesByIDs {
-		imageNamesByIDs[k] = v
-	}
-	newImageIDs, newImageNameByIDs, err := injectExtraImages(testSuite, 1)
-	imageIDs = append(imageIDs, newImageIDs...)
-	for k, v := range newImageNameByIDs {
-		imageNamesByIDs[k] = v
-	}
-
-	fmt.Println(time.Now().UTC().Unix(), "Injecting 500 extra deployments")
-	err = injectRandomDeployments(testSuite, 500, imageIDs, imageNamesByIDs)
-	if err != nil {
-		b.Error(err)
-	}
-
-	fmt.Println(time.Now().UTC().Unix(), "Continuing actual tests")
-	b.Run("1000", getServiceBenchmark(testSuite))
-
-	fmt.Println(time.Now().UTC().Unix(), "Injecting 4000 extra images")
-	newImageIDs, newImageNameByIDs, err = injectExtraImages(testSuite, 8)
-	imageIDs = append(imageIDs, newImageIDs...)
-	for k, v := range newImageNameByIDs {
-		imageNamesByIDs[k] = v
-	}
-
-	fmt.Println(time.Now().UTC().Unix(), "Injecting 4000 extra deployments")
-	err = injectRandomDeployments(testSuite, 4000, imageIDs, imageNamesByIDs)
-	if err != nil {
-		b.Error(err)
-	}
-
-	fmt.Println(time.Now().UTC().Unix(), "Continuing actual tests (2)")
-	b.Run("5 000", getServiceBenchmark(testSuite))
-
-	fmt.Println(time.Now().UTC().Unix(), "Injecting 5000 extra images")
-	newImageIDs, newImageNameByIDs, err = injectExtraImages(testSuite, 10)
-	imageIDs = append(imageIDs, newImageIDs...)
-	for k, v := range newImageNameByIDs {
-		imageNamesByIDs[k] = v
-	}
-
-	fmt.Println(time.Now().UTC().Unix(), "Injecting 5000 extra deployments")
-	err = injectRandomDeployments(testSuite, 5000, imageIDs, imageNamesByIDs)
-	if err != nil {
-		b.Error(err)
-	}
-
-	fmt.Println(time.Now().UTC().Unix(), "Continuing actual tests (3)")
-	b.Run("10 000", getServiceBenchmark(testSuite))
-}
-
-func getBaseImageSet() ([]*storage.Image, error) {
-	dataFile, err := os.Open("testdata/imgdata.json.gz")
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = dataFile.Close() }()
-
-	zipReader, err := gzip.NewReader(dataFile)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = zipReader.Close() }()
-
-	jsonReader := json.NewDecoder(zipReader)
-	unmarshaler := jsonpb.Unmarshaler{}
-
-	images := make([]*storage.Image, 0, 500)
-
-	for jsonReader.More() {
-		img := &storage.Image{}
-		err = unmarshaler.UnmarshalNext(jsonReader, img)
+	total := 0
+	for ix, delta := range deltas {
+		total += delta
+		fmt.Println(time.Now().UTC().Unix(), "Injecting", delta, "images")
+		addedImageIDs, addedImageNamesByID, err := testHelper.InjectImages(b, delta)
 		if err != nil {
-			return nil, err
+			b.Error(err)
 		}
-		images = append(images, img)
+		imageIDs = append(imageIDs, addedImageIDs...)
+		for imageID, imageName := range addedImageNamesByID {
+			imageNamesByIDs[imageID] = imageName
+		}
+		fmt.Println(time.Now().UTC().Unix(), "Injecting", delta, "deployments")
+		err = testHelper.InjectDeployments(b, delta, imageIDs, imageNamesByIDs)
+		if err != nil {
+			b.Error(err)
+		}
+		fmt.Println(time.Now().UTC().Unix(), "Test iteration", ix+1)
+		b.Run(fmt.Sprintf("%d", total), getExportServiceBenchmark(testHelper, svc))
 	}
-
-	return images, nil
 }
 
 /*
@@ -164,12 +86,16 @@ Benchmark results
  and # images)  | Elapsed ns       | Elapsed ns       | Elapsed ns       |
 ----------------+------------------+------------------+------------------+
             500 |    9.165.222.465 |    1.896.871.287 |    9.100.526.550 |
+                |       18.330.445 |       37.937.426 |       20.223.392 |
 ----------------+------------------+------------------+------------------+
           1.000 |   17.562.401.077 |    3.695.793.796 |   16.655.958.011 |
+                |       17.562.401 |       36.957.938 |       18.503.287 |
 ----------------+------------------+------------------+------------------+
           5.000 |  232.410.473.350 |   17.445.117.452 |  133.301.396.811 |
+                |       46.482.095 |       34.890.235 |       29.622.533 |
 ----------------+------------------+------------------+------------------+
          10.000 |  385.138.425.396 |   35.631.981.696 |  302.740.800.784 |
+                |       38.513.843 |       35.631.981 |       33.637.867 |
 ----------------+------------------+------------------+------------------+
 
 The structure of the service call is:
@@ -193,140 +119,34 @@ The structure of the service call is:
   ]
 */
 
-func injectInitialImages(suite *servicePostgresTestSuiteInternals) ([]string, map[string]*storage.ImageName, error) {
-	images, err := getBaseImageSet()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	imageIDs := make([]string, 0, len(images))
-	imageNamesByIDs := make(map[string]*storage.ImageName, len(images))
-	allAccessCtx := sac.WithAllAccess(suite.ctx)
-
-	for _, img := range images {
-		imgID := img.GetId()
-		imageIDs = append(imageIDs, imgID)
-		imageNamesByIDs[imgID] = img.GetName()
-		err = suite.images.UpsertImage(allAccessCtx, img)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-
-	return imageIDs, imageNamesByIDs, nil
-}
-
-func injectExtraImages(suite *servicePostgresTestSuiteInternals, copyCount int) ([]string, map[string]*storage.ImageName, error) {
-	images, err := getBaseImageSet()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	imageIDs := make([]string, 0, len(images))
-	imageNamesByIDs := make(map[string]*storage.ImageName, len(images))
-	allAccessCtx := sac.WithAllAccess(suite.ctx)
-
-	for _, img := range images {
-		imgName := img.GetName()
-		for i := 0; i < copyCount; i++ {
-			clone := img.Clone()
-			clone.Id, err = random.GenerateString(65, random.HexValues)
-			cloneID := clone.GetId()
-			imageIDs = append(imageIDs, cloneID)
-			imageNamesByIDs[cloneID] = imgName
-			err = suite.images.UpsertImage(allAccessCtx, clone)
-			if err != nil {
-				return nil, nil, err
-			}
-		}
-	}
-
-	return imageIDs, imageNamesByIDs, nil
-}
-
-func injectRandomDeployments(
-	suite *servicePostgresTestSuiteInternals,
-	count int,
-	imageIDs []string,
-	imageNamesByIDs map[string]*storage.ImageName,
-) error {
-	baseContainer := &storage.Container{}
-	err := testutils.FullInit(baseContainer, testutils.UniqueInitializer(), testutils.JSONFieldsFilter)
-	if err != nil {
-		return err
-	}
-	for i := 0; i < count; i++ {
-		d := &storage.Deployment{}
-		err = testutils.FullInit(d, testutils.UniqueInitializer(), testutils.JSONFieldsFilter)
-		if err != nil {
-			return err
-		}
-		nContainers := i%3 + 1
-		containers := make([]*storage.Container, 0, 3)
-		for j := 0; j < nContainers; j++ {
-			ix := int(rand.Int31()) % len(imageIDs)
-			imgID := imageIDs[ix]
-			imgName := imageNamesByIDs[imgID]
-			containerImage := &storage.ContainerImage{
-				Id:             imgID,
-				Name:           imgName,
-				NotPullable:    false,
-				IsClusterLocal: false,
-			}
-			container := baseContainer.Clone()
-			container.Image = containerImage
-			containers = append(containers, container)
-		}
-		if i%10 == 9 {
-			d.Namespace = namespace10pct
-		} else {
-			d.Namespace = namepsace90pct
-		}
-		d.Containers = containers
-		ctx := sac.WithAllAccess(context.Background())
-		err := suite.deployments.UpsertDeployment(ctx, d)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func getServiceBenchmark(suite *servicePostgresTestSuiteInternals) func(b *testing.B) {
+func getExportServiceBenchmark(
+	helper *testutils.ExportServicePostgresTestHelper,
+	service Service,
+) func(b *testing.B) {
 	return func(b *testing.B) {
-		testScenarios := []struct {
-			name            string
-			query           string
-			targetNamespace string
-		}{
-			{
-				name: "No Query",
+		conn, closeFunc, err := helper.CreateGRPCStreamingService(
+			b,
+			func(registrar grpc.ServiceRegistrar) {
+				v1.RegisterVulnMgmtServiceServer(registrar, service)
 			},
-			{
-				name:            "Query 10% of dataset",
-				targetNamespace: namespace10pct,
-			},
-			{
-				name:            "Query 90% of dataset",
-				targetNamespace: namepsace90pct,
-			},
+		)
+		if err != nil {
+			b.Error(err)
 		}
+		defer closeFunc()
 
-		for _, scenario := range testScenarios {
-			b.Run(scenario.name, func(b *testing.B) {
+		testCases := testutils.GetBaseTestCases()
+		for _, testCase := range testCases {
+			b.Run(testCase.Name, func(ib *testing.B) {
 				request := &v1.VulnMgmtExportWorkloadsRequest{Timeout: 3600}
-				if scenario.targetNamespace != "" {
-					request.Query = fmt.Sprintf("Namespace:%s", scenario.targetNamespace)
+				if testCase.TargetNamespace != "" {
+					request.Query = fmt.Sprintf("Namespace:%s", testCase.TargetNamespace)
 				}
-				conn, closeFunc, err := createGRPCWorkloadsService(suite)
-				if err != nil {
-					b.Error(err)
-				}
-				defer closeFunc()
 
 				client := v1.NewVulnMgmtServiceClient(conn)
-				for i := 0; i < b.N; i++ {
-					_, err = receiveWorkloads(suite.ctx, client, request, true)
+				ib.ResetTimer()
+				for i := 0; i < ib.N; i++ {
+					_, err = receiveWorkloads(helper.Ctx, client, request, true)
 					if err != nil {
 						b.Error(err)
 					}
