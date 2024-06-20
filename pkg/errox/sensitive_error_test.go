@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var testDNSError error = &net.DNSError{Err: "DNS error", Name: "localhost", Server: "127.0.0.1"}
+
 func TestSensitiveError(t *testing.T) {
 	secret := errors.New("SECRET")
 
@@ -96,6 +98,10 @@ func TestConcealSensitive(t *testing.T) {
 	})
 	t.Run("not sensitive", func(t *testing.T) {
 		err := errors.New("non-sensitive")
+		assert.Equal(t, err, ConcealSensitive(err))
+	})
+	t.Run("sensitive", func(t *testing.T) {
+		err := MakeSensitive("public", errors.WithMessage(testDNSError, "wrapped"))
 		assert.Equal(t, err, ConcealSensitive(err))
 	})
 	t.Run("DNSError", func(t *testing.T) {

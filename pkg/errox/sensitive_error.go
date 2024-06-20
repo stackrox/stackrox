@@ -78,6 +78,16 @@ func (e *RoxSensitiveError) Unwrap() error {
 	return e.public
 }
 
+func (e *RoxSensitiveError) Is(err error) bool {
+	if err == nil {
+		return e == nil || (e.public == nil && e.sensitive == nil)
+	}
+	if e == nil {
+		return err == nil
+	}
+	return errors.Is(e.public, err) || errors.Is(e.sensitive, err)
+}
+
 // UnconcealSensitive returns the full error message with all data from
 // occasional sensitive errors exposed.
 func UnconcealSensitive(err error) string {
@@ -103,7 +113,13 @@ func (e *RoxSensitiveError) Error() string {
 	}
 	// If there is another sensitive error in the chain, add its public message.
 	if serr := (SensitiveError)(nil); errors.As(e.sensitive, &serr) {
+		if e.public == nil {
+			return serr.Error()
+		}
 		return e.public.Error() + ": " + serr.Error()
+	}
+	if e.public == nil {
+		return ""
 	}
 	return e.public.Error()
 }
