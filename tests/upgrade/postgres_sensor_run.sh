@@ -74,8 +74,16 @@ test_upgrade() {
 
     touch "${STATE_DEPLOYED}"
 
-    test_sensor_bundle
-    test_upgrader
+    junit_wrap test_sensor_bundle \
+               "roxctl sensor get-bundle test" \
+               "See log for error details." \
+               test_sensor_bundle
+
+    junit_wrap test_upgrader \
+               "bin/upgrader tests" \
+               "See log for error details." \
+               test_upgrader
+
     remove_existing_stackrox_resources
 }
 

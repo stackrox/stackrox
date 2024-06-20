@@ -76,167 +76,203 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-    # To test we remain backwards compatible rollback to 4.1.x
-    FORCE_ROLLBACK_VERSION="4.1.3"
+    _test_upgrade_paths__initial_deployment() {
+        # To test we remain backwards compatible rollback to 4.1.x
+        FORCE_ROLLBACK_VERSION="4.1.3"
 
-    cd "$REPO_FOR_TIME_TRAVEL"
-    git checkout "$EARLIER_SHA"
+        cd "$REPO_FOR_TIME_TRAVEL"
+        git checkout "$EARLIER_SHA"
 
-    # There is an issue on gke v1.24 for these older releases where we may have a
-    # timeout trying to get the metadata for the cloud provider.  Rather than extend
-    # the general wait_for_api time period and potentially hide issues from other
-    # tests we will extend the wait period for these tests.
-    export MAX_WAIT_SECONDS=600
+        # There is an issue on gke v1.24 for these older releases where we may have a
+        # timeout trying to get the metadata for the cloud provider.  Rather than extend
+        # the general wait_for_api time period and potentially hide issues from other
+        # tests we will extend the wait period for these tests.
+        export MAX_WAIT_SECONDS=600
 
-    ########################################################################################
-    # Use roxctl to generate helm files and deploy older central backed by RocksDB         #
-    ########################################################################################
-    deploy_earlier_postgres_central
-    wait_for_api
-    setup_client_TLS_certs
+        ########################################################################################
+        # Use roxctl to generate helm files and deploy older central backed by Postgres        #
+        ########################################################################################
+        deploy_earlier_postgres_central
+        wait_for_api
+        setup_client_TLS_certs
 
-    restore_4_1_backup
-    wait_for_api
+        restore_4_1_backup
+        wait_for_api
 
-    # Run with some scale to have data populated to migrate
-    deploy_scaled_workload
+        # Run with some scale to have data populated to migrate
+        deploy_scaled_workload
 
-    # Get the API_TOKEN for the upgrades
-    export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
+        # Get the API_TOKEN for the upgrades
+        export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
 
-    cd "$TEST_ROOT"
+        cd "$TEST_ROOT"
 
-    # This test does a lot of upgrades and bounces.  If things take a little longer to bounce we can get entries in
-    # logs indicating communication problems.  Those need to be allowed in the case of this test ONLY.
-    cp scripts/ci/logcheck/allowlist-patterns /tmp/allowlist-patterns
-    echo "# postgres was bounced, may see some connection errors" >> /tmp/allowlist-patterns
-    echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> /tmp/allowlist-patterns
-    echo "Unable to connect to Sensor at" >> /tmp/allowlist-patterns
-    echo "No suitable kernel object downloaded for kernel" >> /tmp/allowlist-patterns
-    echo "Unexpected HTTP request failure" >> /tmp/allowlist-patterns
-    echo "UNEXPECTED:  Unknown message type" >> /tmp/allowlist-patterns
-    # bouncing the database can result in this error
-    echo "FATAL: the database system is shutting down" >> /tmp/allowlist-patterns
-    # Using ci_export so the post tests have this as well
-    ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
+        # This test does a lot of upgrades and bounces.  If things take a little longer to bounce we can get entries in
+        # logs indicating communication problems.  Those need to be allowed in the case of this test ONLY.
+        cp scripts/ci/logcheck/allowlist-patterns /tmp/allowlist-patterns
+        echo "# postgres was bounced, may see some connection errors" >> /tmp/allowlist-patterns
+        echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> /tmp/allowlist-patterns
+        echo "Unable to connect to Sensor at" >> /tmp/allowlist-patterns
+        echo "No suitable kernel object downloaded for kernel" >> /tmp/allowlist-patterns
+        echo "Unexpected HTTP request failure" >> /tmp/allowlist-patterns
+        echo "UNEXPECTED:  Unknown message type" >> /tmp/allowlist-patterns
+        # bouncing the database can result in this error
+        echo "FATAL: the database system is shutting down" >> /tmp/allowlist-patterns
+        # Using ci_export so the post tests have this as well
+        ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
 
-    # Add some Postgres Access Scopes.  These should not survive a rollback.
-    createPostgresScopes
-    checkForPostgresAccessScopes
+        # Add some Postgres Access Scopes.  These should not survive a rollback.
+        createPostgresScopes
+        checkForPostgresAccessScopes
+    }
+    junit_wrap "upgrade_paths" \
+               "A deployment of an older central backed by Postgres" \
+               "See log for error details." \
+               _test_upgrade_paths__initial_deployment
 
-    ########################################################################################
-    # Bounce central to ensure everything starts back up.                                  #
-    ########################################################################################
-    info "Bouncing central"
-    kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
-    wait_for_api
-    sensor_wait
-    # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n stackrox delete pod -l app=collector --grace-period=0
+    _test_upgrade_paths__central_bounce() {
+        ########################################################################################
+        # Bounce central to ensure everything starts back up.                                  #
+        ########################################################################################
+        info "Bouncing central"
+        kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
+        wait_for_api
+        sensor_wait
+        # Bounce collectors to avoid restarts on initial module pull
+        kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
-    # Verify data is still there
-    checkForPostgresAccessScopes
+        # Verify data is still there
+        checkForPostgresAccessScopes
 
-    validate_upgrade "01-bounce-after-upgrade" "bounce after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-    collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce"
+        validate_upgrade "01-bounce-after-upgrade" "bounce after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+        collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce"
+    }
+    junit_wrap "upgrade_paths" \
+               "Bounce central to ensure everything starts back up" \
+               "See log for error details." \
+               _test_upgrade_paths__central_bounce
 
-    ########################################################################################
-    # Bounce central-db to ensure central recovers from the database outage.               #
-    ########################################################################################
-    info "Bouncing central-db"
-    # Extend the MUTEX timeout just for this case as a restart of the db will cause locks to be held longer as it should
-    kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=600
-    wait_for_api
-    kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central-db -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
-    wait_for_api
-    wait_for_central_db
+    _test_upgrade_paths__central_db_bounce() {
+        ########################################################################################
+        # Bounce central-db to ensure central recovers from the database outage.               #
+        ########################################################################################
+        info "Bouncing central-db"
+        # Extend the MUTEX timeout just for this case as a restart of the db will cause locks to be held longer as it should
+        kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=600
+        wait_for_api
+        kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central-db -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
+        wait_for_api
+        wait_for_central_db
 
-    # Verify data is still there
-    checkForPostgresAccessScopes
+        # Verify data is still there
+        checkForPostgresAccessScopes
 
-    validate_upgrade "02-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+        validate_upgrade "02-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
-    collect_and_check_stackrox_logs "$log_output_dir" "02_post_bounce-db"
+        collect_and_check_stackrox_logs "$log_output_dir" "02_post_bounce-db"
 
-    # Ensure central is ready for requests after any previous tests
-    wait_for_api
+        # Ensure central is ready for requests after any previous tests
+        wait_for_api
+    }
+    junit_wrap "upgrade_paths" \
+               "Bounce central-db to ensure central recovers from the database outage" \
+               "See log for error details." \
+               _test_upgrade_paths__central_db_bounce
 
-    ########################################################################################
-    # Upgrade to current in order to run any Postgres -> Postgres migrations               #
-    ########################################################################################
-    kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
-    kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
-    wait_for_api
+    _test_upgrade_paths__migrations_to_current() {
+        ########################################################################################
+        # Upgrade to current in order to run any Postgres -> Postgres migrations               #
+        ########################################################################################
+        kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
+        kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
+        wait_for_api
 
-    # Verify data is still there
-    checkForPostgresAccessScopes
+        # Verify data is still there
+        checkForPostgresAccessScopes
 
-    validate_upgrade "03_postgres_postgres_upgrade" "Upgrade Postgres backed central" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+        validate_upgrade "03_postgres_postgres_upgrade" "Upgrade Postgres backed central" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
-    collect_and_check_stackrox_logs "$log_output_dir" "03_postgres_postgres_upgrade"
+        collect_and_check_stackrox_logs "$log_output_dir" "03_postgres_postgres_upgrade"
+    }
+    junit_wrap "upgrade_paths" \
+               "Upgrade to current in order to run any Postgres -> Postgres migrations" \
+               "See log for error details." \
+               _test_upgrade_paths__migrations_to_current
 
-    ########################################################################################
-    # Rollback to the previous Postgres                                                    #
-    ########################################################################################
-    info "Rolling back to previous version with Postgres still enabled"
-    force_rollback_to_previous_postgres
-    wait_for_api
+    _test_upgrade_paths__rollback() {
+        ########################################################################################
+        # Rollback to the previous Postgres                                                    #
+        ########################################################################################
+        info "Rolling back to previous version with Postgres still enabled"
+        force_rollback_to_previous_postgres
+        wait_for_api
 
-    validate_upgrade "04_postgres_postgres_rollback" "Rollback Postgres backed central" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+        validate_upgrade "04_postgres_postgres_rollback" "Rollback Postgres backed central" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
-    collect_and_check_stackrox_logs "$log_output_dir" "04_postgres_postgres_rollback"
+        collect_and_check_stackrox_logs "$log_output_dir" "04_postgres_postgres_rollback"
 
-    # Ensure central is ready for requests after any previous tests
-    wait_for_api
+        # Ensure central is ready for requests after any previous tests
+        wait_for_api
+    }
+    junit_wrap "upgrade_paths" \
+               "Rollback to the previous Postgres" \
+               "See log for error details." \
+               _test_upgrade_paths__rollback
 
-    ########################################################################################
-    # Upgrade back to latest to run the smoke tests                                        #
-    ########################################################################################
-    kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
-    kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
+    _test_upgrade_paths__smoke_tests() {
+        ########################################################################################
+        # Upgrade back to latest to run the smoke tests                                        #
+        ########################################################################################
+        kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
+        kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
 
-    wait_for_api
+        wait_for_api
 
-    # Cleanup the scaled sensor before smoke tests
-    helm uninstall -n stackrox stackrox-secured-cluster-services
+        # Cleanup the scaled sensor before smoke tests
+        helm uninstall -n stackrox stackrox-secured-cluster-services
 
-    # Remove scaled Sensor from Central
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" cluster delete --name scale-remote
+        # Remove scaled Sensor from Central
+        "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" cluster delete --name scale-remote
 
-    info "Fetching a sensor bundle for cluster 'remote'"
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
-    rm -rf sensor-remote
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
-    [[ -d sensor-remote ]]
+        info "Fetching a sensor bundle for cluster 'remote'"
+        "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
+        rm -rf sensor-remote
+        "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
+        [[ -d sensor-remote ]]
 
-    info "Installing sensor"
-    ./sensor-remote/sensor.sh
-    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$CURRENT_TAG"
-    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$CURRENT_TAG"
-    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(make collector-tag)" \
-        "compliance=$REGISTRY/main:$CURRENT_TAG"
-    if [[ "$(kubectl -n stackrox get ds/collector -o=jsonpath='{$.spec.template.spec.containers[*].name}')" == *"node-inventory"* ]]; then
-        echo "Upgrading node-inventory container"
-        kubectl -n stackrox set image ds/collector "node-inventory=$REGISTRY/scanner-slim:$(make scanner-tag)"
-    else
-        echo "Skipping node-inventory container as this is not Openshift 4"
-    fi
+        info "Installing sensor"
+        ./sensor-remote/sensor.sh
+        kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$CURRENT_TAG"
+        kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$CURRENT_TAG"
+        kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(make collector-tag)" \
+            "compliance=$REGISTRY/main:$CURRENT_TAG"
+        if [[ "$(kubectl -n stackrox get ds/collector -o=jsonpath='{$.spec.template.spec.containers[*].name}')" == *"node-inventory"* ]]; then
+            echo "Upgrading node-inventory container"
+            kubectl -n stackrox set image ds/collector "node-inventory=$REGISTRY/scanner-slim:$(make scanner-tag)"
+        else
+            echo "Skipping node-inventory container as this is not Openshift 4"
+        fi
 
-    sensor_wait
-    # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n stackrox delete pod -l app=collector --grace-period=0
+        sensor_wait
+        # Bounce collectors to avoid restarts on initial module pull
+        kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
-    wait_for_central_reconciliation
+        wait_for_central_reconciliation
 
-    rm -f FAIL
-    remove_qa_test_results
+        rm -f FAIL
+        remove_qa_test_results
 
-    info "Running smoke tests"
-    CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test || touch FAIL
-    store_qa_test_results "upgrade-paths-smoke-tests"
-    [[ ! -f FAIL ]] || die "Smoke tests failed"
+        info "Running smoke tests"
+        CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test || touch FAIL
+        store_qa_test_results "upgrade-paths-smoke-tests"
+        [[ ! -f FAIL ]] || die "Smoke tests failed"
 
-    collect_and_check_stackrox_logs "$log_output_dir" "04_final"
+        collect_and_check_stackrox_logs "$log_output_dir" "04_final"
+    }
+    junit_wrap "upgrade_paths" \
+               "Upgrade back to latest to run the smoke tests" \
+               "See log for error details." \
+               _test_upgrade_paths__smoke_tests
 }
 
 force_rollback_to_previous_postgres() {
