@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
@@ -94,6 +95,9 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 
 	if checkTLS != nil {
 		store.checkTLSFunc = checkTLS
+	}
+	if env.FakeTLSCheck.BooleanSetting() {
+		store.checkTLSFunc = tlscheck.CheckTLSHardcoded
 	}
 
 	return store

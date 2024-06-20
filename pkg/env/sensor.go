@@ -78,4 +78,7 @@ var (
 	// You can choose between "all" for everything, or one of the following:
 	// role, rolebinding, clusterrole, clusterrolebinding, serviceaccount, secret, misc
 	InformerTraceLogs = RegisterSetting("ROX_INFORMER_TRACE_LOGS", WithDefault(""))
+
+	// FakeTLSCheck disables network calls (during sensor sync) to check TLS of registries defined in dockerconfig secrets
+	FakeTLSCheck = RegisterBooleanSetting("ROX_FAKE_TLSCHECK", false)
 )
