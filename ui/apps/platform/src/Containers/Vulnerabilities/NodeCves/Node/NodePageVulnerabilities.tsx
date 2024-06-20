@@ -105,7 +105,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                         renderer={({ data }) => (
                             <BySeveritySummaryCard
                                 title="CVEs by severity"
-                                severityCounts={data.node.cveCountBySeverityAndFixability}
+                                severityCounts={data.node.nodeCVECountBySeverity}
                                 hiddenSeverities={hiddenSeverities}
                             />
                         )}
@@ -115,7 +115,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                         data={summaryRequest.data}
                         renderer={({ data }) => (
                             <CvesByStatusSummaryCard
-                                cveStatusCounts={data.node.cveCountBySeverityAndFixability}
+                                cveStatusCounts={data.node.nodeCVECountBySeverity}
                                 hiddenStatuses={hiddenStatuses}
                                 isBusy={summaryRequest.loading}
                             />
