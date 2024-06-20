@@ -85,7 +85,7 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 	store := &Store{
 		factory:                     regFactory,
 		store:                       make(map[string]registries.Set),
-		checkTLSFunc:                tlscheck.CheckTLSHardcoded,
+		checkTLSFunc:                tlscheck.CheckTLS,
 		globalRegistries:            registries.NewSet(regFactory, types.WithGCPTokenManager(gcp.Singleton())),
 		centralRegistryIntegrations: registries.NewSet(regFactory, types.WithGCPTokenManager(gcp.Singleton())),
 		clusterLocalRegistryHosts:   set.NewStringSet(),
