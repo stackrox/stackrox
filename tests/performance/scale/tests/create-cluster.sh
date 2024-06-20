@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eou pipefail
+set -eoux pipefail
 
 export INFRA_NAME=$1
 
@@ -12,7 +12,10 @@ export KUBECONFIG="${ARTIFACTS_DIR}/kubeconfig"
 infractl lifespan "${INFRA_NAME}" 24h
 
 # Set number of pods per node
-oc create --filename=../utilities/examples/set-max-pods.yml
+max_pods_set="$(oc get KubeletConfig set-max-pods || true)"
+if [[ -z "$max_pods_set" ]]; then
+  oc create --filename=$HOME/go/src/github.com/stackrox/stackrox/tests/performance/scale/utilities/examples/set-max-pods.yml
+fi
 
 for machineset in `oc get machineset.machine.openshift.io --namespace openshift-machine-api  | tail -n +2 | awk '{print $1}'`; do
 	oc scale --replicas=18 machineset --namespace openshift-machine-api $machineset

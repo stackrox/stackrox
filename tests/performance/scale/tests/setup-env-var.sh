@@ -16,3 +16,5 @@ export KUBECONFIG="${ARTIFACTS_DIR}/kubeconfig"
 export PROMETHEUS_URL="https://$(oc get route --namespace openshift-monitoring prometheus-k8s --output jsonpath='{.spec.host}' | xargs)"
 
 export PROMETHEUS_TOKEN="$(oc serviceaccounts new-token --namespace openshift-monitoring prometheus-k8s)"
+
+source ./env.sh
