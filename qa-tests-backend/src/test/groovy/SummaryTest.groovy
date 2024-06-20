@@ -45,14 +45,16 @@ class SummaryTest extends BaseSpecification {
 
             // Discrepancy here:
             // Stackrox has: 'kube-rbac-proxy-crio'
-            // Openshift has: 'kube-rbac-proxy-crio-piotr-06-11-cigna-gtnb7-master-2.c.acs-team-temp-dev.internal' (for each node)
+            // Openshift has: 'kube-rbac-proxy-crio-piotr-06-11-cigna-gtnb7-master-2.c.acs-team-temp-dev.internal'
+            // (for each node)
 
             if (stackroxSummaryCounts.numDeployments != orchestratorResourceNames.size()) {
                 log.info "The summary count for deployments in ACS does not equal the orchestrator count."
                 log.info "ACS count: ${stackroxSummaryCounts.numDeployments}, " +
                         "orchestrator count ${orchestratorResourceNames.size()}"
                 log.info "This diff may help with debug, however deployment names may be different between APIs"
-                log.info "In this diff, 'removed' means 'missing in orchestrator but given in ACS', whereas 'added' the other way round"
+                log.info "In this diff, 'removed' means 'missing in orchestrator but given in ACS', " +
+                    "whereas 'added' - the other way round"
                 List<String> stackroxDeploymentNames = Services.getDeployments()*.name
                 Javers javers = JaversBuilder.javers()
                         .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
