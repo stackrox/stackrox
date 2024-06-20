@@ -63,6 +63,10 @@ var (
 			replacement: "github.com/stackrox/rox/pkg/sync",
 			allowlist: set.NewStringSet(
 				"github.com/stackrox/rox/pkg/bolthelper/crud/proto",
+				// The cacheValue lock used while images are being scanned
+				// is expected to be held longer then 10s, to avoid panics in
+				// dev builds using stdlib sync in the detector instead.
+				"github.com/stackrox/rox/sensor/common/detectorgithub.com/stackrox/rox/pkg/bolthelper/crud/proto",
 			),
 		},
 		"github.com/magiconair/properties/assert": {
