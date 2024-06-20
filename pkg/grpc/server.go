@@ -201,6 +201,9 @@ func (a *apiImpl) Stop() bool {
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	var u []grpc.UnaryServerInterceptor
 
+	// Conceal errors out of the metrics interceptor to not break the stats.
+	u = append(u, grpc_errors.ConcealErrorInterceptor)
+
 	// The metrics and error interceptors are first in line, i.e., outermost, to
 	// make sure all requests are registered in Prometheus with errors converted
 	// to gRPC status codes.
@@ -247,6 +250,9 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 
 func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	var s []grpc.StreamServerInterceptor
+
+	// Conceal errors out of the metrics interceptor to not break the stats.
+	s = append(s, grpc_errors.ConcealErrorStreamInterceptor)
 
 	// The metrics and error interceptors are first in line, i.e., outermost, to
 	// make sure all requests are registered in Prometheus with errors converted

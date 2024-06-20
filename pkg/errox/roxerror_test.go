@@ -86,3 +86,13 @@ func TestCausedBy(t *testing.T) {
 		assert.ErrorIs(t, err, NotFound)
 	}
 }
+
+func TestSentinelMessage(t *testing.T) {
+	assert.Equal(t, "not found", GetBaseSentinelMessage(NotFound))
+	assert.Equal(t, "not found", GetBaseSentinelMessage(NotFound.CausedBy(InvalidArgs)))
+	assert.Equal(t, "not found", GetBaseSentinelMessage(NotFound.CausedBy("secret")))
+	assert.Equal(t, "not found", GetBaseSentinelMessage(errors.WithMessage(NotFound, "secret")))
+	assert.Equal(t, "not found", GetBaseSentinelMessage(errors.WithMessage(NotFound.New("secret"), "secret")))
+	assert.Equal(t, "not found", GetBaseSentinelMessage(NotFound.New("secret")))
+	assert.Equal(t, "", GetBaseSentinelMessage(errors.New("abc")))
+}

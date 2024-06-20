@@ -285,3 +285,43 @@ func TestErrToGRPCStatus(t *testing.T) {
 		})
 	}
 }
+
+func Test_concealError(t *testing.T) {
+	someError := errors.New("some error")
+
+	tests := map[string]struct {
+		err               error
+		expectedError     string
+		expectedFullError string
+	}{
+		"standard error": {
+			someError,
+			"server error",
+			"server error",
+		},
+		"sensitive": {
+			errox.MakeSensitive("public", someError),
+			"public",
+			"some error",
+		},
+		"sensitive sentinel": {
+			errox.MakeSensitive("public", errox.InvalidArgs),
+			"public",
+			"invalid arguments",
+		},
+		"sentinel caused by sensitive": {
+			// CausedBy loses the type of the cause.
+			errox.InvalidArgs.CausedBy(errox.MakeSensitive("public", someError)),
+			"invalid arguments",
+			"invalid arguments",
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := concealError(test.err)
+			assert.Equal(t, test.expectedError, err.Error())
+			assert.Equal(t, test.expectedFullError, errox.UnconcealSensitive(err))
+		})
+	}
+}

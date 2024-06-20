@@ -61,6 +61,28 @@ func logErrorIfInternal(err error) {
 	}
 }
 
+func concealError(err error) error {
+	var serr errox.SensitiveError
+	if err == nil || errors.As(err, &serr) {
+		return err
+	}
+	if message := errox.GetBaseSentinelMessage(err); message != "" {
+		return errors.New(message)
+	}
+	return errox.ServerError
+}
+
+func ConcealErrorInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	resp, err := handler(ctx, req)
+	return resp, concealError(err)
+}
+
+func ConcealErrorStreamInterceptor(srv interface{}, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	err := handler(srv, ss)
+	logErrorIfInternal(err)
+	return concealError(err)
+}
+
 // ErrorToGrpcCodeInterceptor translates common errors defined in errorhelpers to GRPC codes.
 func ErrorToGrpcCodeInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	resp, err := handler(ctx, req)
