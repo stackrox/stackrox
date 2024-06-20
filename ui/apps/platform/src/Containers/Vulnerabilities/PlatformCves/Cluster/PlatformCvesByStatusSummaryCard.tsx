@@ -29,7 +29,7 @@ const statusHiddenText = {
 } as const;
 
 export const platformCveCountByStatusFragment = gql`
-    fragment PlatformCveCountByStatus on PlatformCVECountByStatus {
+    fragment PlatformCveCountByStatusFragment on PlatformCVECountByFixability {
         total
         fixable
     }
