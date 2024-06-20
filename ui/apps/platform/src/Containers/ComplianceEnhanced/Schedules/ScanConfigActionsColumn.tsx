@@ -52,7 +52,7 @@ function ScanConfigActionsColumn({
             isSeparator: true,
         },
         {
-            title: 'Run scan now',
+            title: 'Run scan',
             // description: isScanning ? 'Run is disabled while scan is already running' : '',
             // isDisabled: isScanning,
             onClick: (event) => {
@@ -62,7 +62,7 @@ function ScanConfigActionsColumn({
         },
         /* eslint-disable no-nested-ternary */
         {
-            title: 'Send report now',
+            title: 'Send report',
             description:
                 notifiers.length === 0
                     ? 'Send is disabled if no delivery destinations'
@@ -92,7 +92,7 @@ function ScanConfigActionsColumn({
                 handleDeleteScanConfig(scanConfigResponse);
             },
         },
-    ].filter(({ title }) => title !== 'Send report now' || isComplianceReportingEnabled);
+    ].filter(({ title }) => title !== 'Send report' || isComplianceReportingEnabled);
 
     return (
         <ActionsColumn
