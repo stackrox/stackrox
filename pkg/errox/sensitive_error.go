@@ -91,6 +91,9 @@ func (e *RoxSensitiveError) Is(err error) bool {
 // UnconcealSensitive returns the full error message with all data from
 // occasional sensitive errors exposed.
 func UnconcealSensitive(err error) string {
+	if err == nil {
+		return ""
+	}
 	if sensitive := (SensitiveError)(nil); errors.As(err, &sensitive) {
 		sensitive.unprotect()
 		defer sensitive.protect()
