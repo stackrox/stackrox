@@ -3,6 +3,8 @@ import { hasFeatureFlag } from '../../../helpers/features';
 import {
     cancelAllCveExceptions,
     typeAndSelectCustomSearchFilterValue,
+    viewCvesByObservationState,
+    visitWorkloadCveOverview,
 } from '../workloadCves/WorkloadCves.helpers';
 import {
     markFalsePositiveAndVisitRequestDetails,
@@ -10,6 +12,7 @@ import {
     approveRequest,
 } from './ExceptionManagement.helpers';
 import { selectors } from './ExceptionManagement.selectors';
+import { selectors as workloadSelectors } from '../workloadCves/WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 const comment = 'False positive!';
@@ -57,6 +60,24 @@ describe('Exception Management - Approved False Positives Table', () => {
         cy.get(
             'table tr:first-child td[data-label="Requested action"]:contains("False positive")'
         ).should('exist');
+    });
+
+    it('should navigate from Workload CVEs to a request list filtered by the specific CVE', () => {
+        markFalsePositiveAndVisitRequestDetails({ comment, scope }).then(
+            ({ requestName, cveName }) => {
+                approveRequest();
+
+                visitWorkloadCveOverview();
+                viewCvesByObservationState('False positives');
+
+                // Verify correct CVE filter
+                cy.get('td[data-label="Request details"] a:contains("View")').click();
+                cy.get(workloadSelectors.filterChipGroupItem('CVE', cveName));
+
+                // Verify a link in the table containing the request
+                cy.get('td a').contains(requestName);
+            }
+        );
     });
 
     it('should be able to navigate to the Request Details page by clicking on the request name', () => {
