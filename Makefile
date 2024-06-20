@@ -1,5 +1,6 @@
 include $(CURDIR)/make/env.mk
 
+DEBUG_BUILD=yes
 PLATFORM ?= linux/amd64
 ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
