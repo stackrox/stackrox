@@ -625,11 +625,29 @@ jobs:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     strategy:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     steps:
+      - name: delete unused tools
+        shell: bash
+        run: |
+          set +e
+          set -x
+          df -h
+          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
+            rm -rf "/mnt${delete:?}"
+            df -h "/mnt${delete:?}"
+          done
+          df -h
+          for path in /mnt/usr/share /mnt/usr/local/lib /mnt/opt /mnt/opt/hostedtoolcache; do
+            du --threshold=100 -hs "${path}"/* | sort -nr | tail -10
+          done
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
