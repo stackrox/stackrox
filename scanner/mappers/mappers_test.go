@@ -173,19 +173,19 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 				},
 				Packages: map[string]*claircore.Package{
 					"0": {
-						ID:        "0",
-						Name:      "nodejs0",
-						Version:   "0",
+						ID:      "0",
+						Name:    "nodejs0",
+						Version: "0",
 					},
 					"1": {
-						ID:        "1",
-						Name:      "nodejs1",
-						Version:   "1",
+						ID:      "1",
+						Name:    "nodejs1",
+						Version: "1",
 					},
 					"2": {
-						ID:        "2",
-						Name:      "nodejs2",
-						Version:   "2",
+						ID:      "2",
+						Name:    "nodejs2",
+						Version: "2",
 					},
 				},
 				Environments: map[string][]*claircore.Environment{
@@ -242,7 +242,7 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Cpe:       emptyCPE,
+							Cpe: emptyCPE,
 						},
 					},
 					Environments: map[string]*v4.Environment_List{
