@@ -32,7 +32,7 @@ import (
 
 var (
 	scanConfig1 = v2.ComplianceScanConfiguration{
-		ScanName: "testConfig1",
+		ScanName: "test-scan",
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			Description: "test123",
 			OneTimeScan: false,
@@ -50,7 +50,7 @@ var (
 		},
 	}
 	modifiedScanConfig1 = v2.ComplianceScanConfiguration{
-		ScanName: "testConfig1",
+		ScanName: "test-scan",
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			Description: "test456",
 			OneTimeScan: false,
@@ -161,7 +161,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	query := &v2.RawQuery{Query: ""}
 	scanConfigs, err := service.ListComplianceScanConfigurations(ctx, query)
 	assert.NoError(t, err)
-	assert.Equal(t, len(scanConfigs.GetConfigurations()), 1)
+	require.Equal(t, len(scanConfigs.GetConfigurations()), 1)
 
 	assert.Equal(t, resp, scanConfigs.GetConfigurations()[0])
 
@@ -177,7 +177,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	query = &v2.RawQuery{Query: ""}
 	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
 	assert.NoError(t, err)
-	assert.Equal(t, len(scanConfigs.GetConfigurations()), 1)
+	require.Equal(t, len(scanConfigs.GetConfigurations()), 1)
 	assert.Equal(t, resp, scanConfigs.GetConfigurations()[0])
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
