@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/net/proxy"
@@ -19,7 +20,8 @@ const (
 // http(s) (via CONNECT) and socks5 proxy URLs.
 func DialWithProxy(ctx context.Context, proxyURL *url.URL, address string) (net.Conn, error) {
 	if proxyURL == nil {
-		return defaultDialer.DialContext(ctx, "tcp", address)
+		conn, err := defaultDialer.DialContext(ctx, "tcp", address)
+		return conn, errox.ConcealSensitive(err)
 	}
 
 	switch proxyURL.Scheme {
@@ -28,7 +30,7 @@ func DialWithProxy(ctx context.Context, proxyURL *url.URL, address string) (net.
 	case "socks5", "socks5h":
 		return dialWithSocks5Proxy(ctx, proxyURL, address)
 	default:
-		return nil, errors.Errorf("invalid scheme %q in proxy URL %v", proxyURL.Scheme, proxyURL)
+		return nil, errors.Errorf("invalid scheme in proxy URL")
 	}
 }
 
@@ -45,7 +47,12 @@ func dialWithSocks5Proxy(ctx context.Context, proxyURL *url.URL, address string)
 
 	host, zone, port, err := netutil.ParseEndpoint(proxyURL.Host)
 	if err != nil {
-		return nil, errors.Wrapf(err, "invalid endpoint in proxy URL %v", proxyURL)
+		// parsing err has no sensitive information, but the added context has:
+		return nil, errox.NewSensitive(
+			errox.WithSensitivef("invalid endpoint in proxy URL %q", proxyURL),
+			errox.WithPublicMessage("invalid endpoint in proxy URL"),
+			errox.WithPublicError(err),
+		)
 	}
 	if port == "" {
 		port = defaultSOCKS5Port
@@ -53,11 +60,12 @@ func dialWithSocks5Proxy(ctx context.Context, proxyURL *url.URL, address string)
 	endpoint := netutil.FormatEndpoint(host, zone, port)
 	socksDialer, err := proxy.SOCKS5("tcp", endpoint, auth, defaultDialer)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(errox.ConcealSensitive(err), "failed to create SOCKS5 proxy dialer")
 	}
 	socksCtxDialer, _ := socksDialer.(proxy.ContextDialer)
 	if socksCtxDialer == nil {
 		return nil, utils.ShouldErr(errors.New("expected SOCKS5 dialer to implement DialContext"))
 	}
-	return socksCtxDialer.DialContext(ctx, "tcp", address)
+	conn, err := socksCtxDialer.DialContext(ctx, "tcp", address)
+	return conn, errox.ConcealSensitive(err)
 }

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/utils"
@@ -120,18 +121,27 @@ func RoundTripper(options ...Option) http.RoundTripper {
 func AwareDialContext(ctx context.Context, address string) (net.Conn, error) {
 	configurator := FromConfig()
 	if configurator == nil {
-		return defaultDialer.DialContext(ctx, "tcp", address)
+		conn, err := defaultDialer.DialContext(ctx, "tcp", address)
+		return conn, errox.ConcealSensitive(err)
 	}
 
 	fakeHTTPReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("tcp://%s", address), nil)
 	if err != nil {
-		return nil, utils.ShouldErr(errors.Wrapf(err, "failed to instantiate fake HTTP request for address %q", address))
+		err = errors.Wrapf(errox.ConcealSensitive(err), "failed to instantiate fake HTTP request")
+		return nil, utils.ShouldErr(err)
 	}
 	proxyURL, err := configurator(fakeHTTPReq)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to determine proxy URL for address %q", address)
+		return nil, errors.Wrapf(errox.ConcealSensitive(err), "failed to determine proxy URL")
 	}
-	return DialWithProxy(ctx, proxyURL, address)
+	conn, err := DialWithProxy(ctx, proxyURL, address)
+	if err != nil {
+		return nil, errox.NewSensitive(
+			errox.WithSensitive(err),
+			errox.WithSensitivef("failed to connect to proxy URL %q", proxyURL),
+			errox.WithPublicMessage("failed to connect to proxy"))
+	}
+	return conn, nil
 }
 
 // AwareDialContextTLS is a convenience wrapper around AwareDialContext that establishes a TLS connection.
@@ -139,7 +149,7 @@ func AwareDialContext(ctx context.Context, address string) (net.Conn, error) {
 func AwareDialContextTLS(ctx context.Context, address string, tlsClientConf *tls.Config) (net.Conn, error) {
 	host, _, _, err := netutil.ParseEndpoint(address)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unparseable address %q", address)
+		return nil, errors.Wrap(err, "unparseable address")
 	}
 
 	conn, err := AwareDialContext(ctx, address)
@@ -157,7 +167,7 @@ func AwareDialContextTLS(ctx context.Context, address string, tlsClientConf *tls
 	tlsConn := tls.Client(conn, tlsClientConf)
 	if err := tlsConn.Handshake(); err != nil {
 		utils.IgnoreError(tlsConn.Close)
-		return nil, err
+		return nil, errox.ConcealSensitive(err)
 	}
 	return tlsConn, nil
 }

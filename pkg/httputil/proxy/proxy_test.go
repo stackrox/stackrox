@@ -2,12 +2,15 @@ package proxy
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"testing"
 	"time"
 
 	"github.com/ghodss/yaml"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/http/httpproxy"
@@ -175,4 +178,26 @@ func TestProxyOptions(t *testing.T) {
 			assert.Equal(t, tc.responseTimeout, transport.ResponseHeaderTimeout)
 		})
 	}
+}
+
+func TestProxyErrors(t *testing.T) {
+	var addrError error = &net.AddrError{Err: "failed", Addr: "SECRET"}
+
+	// Testing formatting of errors returned by AwareDialContext.
+
+	err := errors.Wrapf(errox.ConcealSensitive(addrError), "failed to instantiate fake HTTP request")
+
+	assert.Equal(t, "failed to instantiate fake HTTP request: address: failed", err.Error())
+	assert.Equal(t, "failed to instantiate fake HTTP request: address SECRET: failed",
+		errox.UnconcealSensitive(err))
+
+	err = errox.NewSensitive(
+		errox.WithSensitive(addrError),
+		errox.WithSensitivef("failed to connect to proxy URL %q", "proxyURL"),
+		errox.WithPublicMessage("failed to connect to proxy"),
+	)
+
+	assert.Equal(t, "failed to connect to proxy: address: failed", err.Error())
+	assert.Equal(t, "failed to connect to proxy URL \"proxyURL\": address SECRET: failed",
+		errox.UnconcealSensitive(err))
 }
