@@ -27,6 +27,7 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { ApiSortOption } from 'types/search';
 
 import ExpandRowTh from 'Components/ExpandRowTh';
+import { vulnerabilitySeverityLabels } from 'messages/common';
 import {
     CVE_SORT_FIELD,
     NODE_COUNT_SORT_FIELD,
@@ -38,7 +39,7 @@ import CVESelectionTh from '../../components/CVESelectionTh';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import { getScoreVersionsForTopCVSS, sortCveDistroList } from '../../utils/sortUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import { QuerySearchFilter } from '../../types';
+import { QuerySearchFilter, isVulnerabilitySeverityLabel } from '../../types';
 import useNodeCves from './useNodeCves';
 import useTotalNodeCount from './useTotalNodeCount';
 
@@ -50,7 +51,7 @@ export const sortFields = [
     // FIRST_DISCOVERED_SORT_FIELD,
 ];
 
-export const defaultSortOption = { field: NODE_TOP_CVSS_SORT_FIELD, direction: 'desc' } as const;
+export const defaultSortOption = { field: CVE_SORT_FIELD, direction: 'desc' } as const;
 
 export type CVEsTableProps = {
     querySearchFilter: QuerySearchFilter;
@@ -94,6 +95,10 @@ function CVEsTable({
     const expandedRowSet = useSet<string>();
     const colSpan = canSelectRows ? 8 : 6;
 
+    const filteredSeverities = querySearchFilter.SEVERITY?.map(
+        (s) => vulnerabilitySeverityLabels[s]
+    ).filter(isVulnerabilitySeverityLabel);
+
     return (
         <Table
             borders={tableState.type === 'COMPLETE'}
@@ -133,7 +138,7 @@ function CVEsTable({
                     data.map((nodeCve, rowIndex) => {
                         const {
                             cve,
-                            nodeCountBySeverity: { critical, important, moderate, low },
+                            affectedNodeCountBySeverity: { critical, important, moderate, low },
                             distroTuples,
                             topCVSS,
                             affectedNodeCount,
@@ -172,7 +177,7 @@ function CVEsTable({
                                             importantCount={important.total}
                                             moderateCount={moderate.total}
                                             lowCount={low.total}
-                                            // TODO - Add filtered severities once filter toolbar is in place
+                                            filteredSeverities={filteredSeverities}
                                         />
                                     </Td>
                                     <Td dataLabel="Top CVSS">
