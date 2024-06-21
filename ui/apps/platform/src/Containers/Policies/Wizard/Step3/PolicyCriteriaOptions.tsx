@@ -128,7 +128,7 @@ function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCrit
     }
 
     function addPolicyFieldCardHandler(fieldCard) {
-        setFieldValue(`policySections[${selectedSectionIndex as unknown as string}].policyGroups`, [
+        setFieldValue(`policySections[${String(selectedSectionIndex)}].policyGroups`, [
             ...policyGroups,
             fieldCard,
         ]);
@@ -160,7 +160,7 @@ function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCrit
         >
             <Title headingLevel="h3" className="pf-v5-u-px-md pf-v5-u-pt-md">
                 Add policy criteria to{' '}
-                {selectedSection.sectionName || `Condition ${selectedSectionIndex + 1}`}
+                {selectedSection?.sectionName || `Condition ${selectedSectionIndex + 1}`}
             </Title>
             <FlexItem>
                 <Button variant="link" onClick={() => setAllExpanded(!allExpanded)}>
