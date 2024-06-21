@@ -1158,10 +1158,7 @@ func TestTranslate(t *testing.T) {
 
 func TestTranslatePartialMatch(t *testing.T) {
 	type args struct {
-		clientSet kubernetes.Interface
-		c         platform.Central
-		pvcs      []*corev1.PersistentVolumeClaim
-		version   string
+		c platform.Central
 	}
 
 	truth := true

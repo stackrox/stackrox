@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jeremywohl/flatten"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/images"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
@@ -932,48 +933,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 			},
 		},
-		"disabled network policies": {
-			args: args{
-				c: platform.Central{
-					ObjectMeta: v1.ObjectMeta{
-						Namespace: "stackrox",
-					},
-					Spec: platform.CentralSpec{
-						System: &platform.GlobalSystemSpec{
-							EnableNetworkPolicies: false,
-						},
-					},
-				},
-			},
-			want: chartutil.Values{
-				"central": map[string]interface{}{
-					"system": map[string]interface{}{
-						"enableNetworkPolicies": false,
-					},
-				},
-			},
-		},
-		"enabled network policies": {
-			args: args{
-				c: platform.Central{
-					ObjectMeta: v1.ObjectMeta{
-						Namespace: "stackrox",
-					},
-					Spec: platform.CentralSpec{
-						System: &platform.GlobalSystemSpec{
-							EnableNetworkPolicies: true,
-						},
-					},
-				},
-			},
-			want: chartutil.Values{
-				"central": map[string]interface{}{
-					"system": map[string]interface{}{
-						"enableNetworkPolicies": true,
-					},
-				},
-			},
-		},
 	}
 
 	for name, tt := range tests {
@@ -994,6 +953,71 @@ func (s *TranslationTestSuite) TestTranslate() {
 			}
 
 			assert.Equal(t, wantAsValues, got)
+		})
+	}
+}
+
+func TestTranslatePartialMatch(t *testing.T) {
+	type args struct {
+		sc platform.SecuredCluster
+	}
+
+	truth := true
+	falsity := false
+
+	tests := map[string]struct {
+		args args
+		want chartutil.Values
+	}{
+		"disabled network policies": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						System: &platform.GlobalSystemSpec{
+							EnableNetworkPolicies: &falsity,
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"system.enableNetworkPolicies": false,
+			},
+		},
+		"enabled network policies": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						System: &platform.GlobalSystemSpec{
+							EnableNetworkPolicies: &truth,
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"system.enableNetworkPolicies": true,
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			wantAsValues, err := translation.ToHelmValues(tt.want)
+			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
+
+			client := newDefaultFakeClientWithCentral(t) // Provide default objects and central for detection
+			translator := New(client, client)
+			got, err := translator.translate(context.Background(), tt.args.sc)
+			assert.NoError(t, err)
+
+			wantFlattened, err := flatten.Flatten(wantAsValues, "", flatten.DotStyle)
+			assert.NoError(t, err)
+			for key, wantValue := range wantFlattened {
+				gotValue, err := got.PathValue(key)
+				assert.NoError(t, err)
+				assert.Equal(t, wantValue, gotValue)
+			}
 		})
 	}
 }

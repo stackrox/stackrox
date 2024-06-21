@@ -433,8 +433,10 @@ func createConfigFingerprint(sc platform.SecuredCluster) (string, error) {
 	return fmt.Sprintf("%x", sha256.Sum256(specAsYaml)), nil
 }
 
-func getSystemComponentValues(sc *platform.SecuredCluster) *translation.ValuesBuilder {
+func getSystemComponentValues(s *platform.GlobalSystemSpec) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
-	translation.SetEnableNetworkPolicies(&sv, sc.Spec.System.EnableNetworkPolicies)
+	if s.EnableNetworkPolicies != nil {
+		sv.SetBoolValue("enableNetworkPolicies", *s.EnableNetworkPolicies)
+	}
 	return &sv
 }
