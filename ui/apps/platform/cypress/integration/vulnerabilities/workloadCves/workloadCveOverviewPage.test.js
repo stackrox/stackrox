@@ -104,7 +104,7 @@ describe('Workload CVE overview page tests', () => {
             // the new table component that always renders the header
             // const riskPriorityHeader = 'th:contains("Risk priority")';
             // const cvesBySeverityHeader = 'th:contains("CVEs by severity")';
-            const prioritizeByNamespaceButton = 'button:contains("Prioritize by namespace view")';
+            const prioritizeByNamespaceButton = 'a:contains("Prioritize by namespace view")';
             const defaultFiltersButton = 'button:contains("Default filters")';
 
             function assertCveElementsArePresent() {
