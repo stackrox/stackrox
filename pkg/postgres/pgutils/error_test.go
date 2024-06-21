@@ -16,6 +16,10 @@ func TestWrappedErrors(t *testing.T) {
 	multiError1Error := errorhelpers.NewErrorList("hello")
 	multiError1Error.AddError(context.DeadlineExceeded)
 
+	multiErrorCanceled := errorhelpers.NewErrorList("hello")
+	multiErrorCanceled.AddError(context.Canceled)
+	multiErrorCanceled.AddErrors(errors.New("other error"))
+
 	multiErrorDeadlineExceeded := errorhelpers.NewErrorList("hello")
 	multiErrorDeadlineExceeded.AddError(context.DeadlineExceeded)
 	multiErrorDeadlineExceeded.AddErrors(errors.New("other error"))
@@ -33,8 +37,12 @@ func TestWrappedErrors(t *testing.T) {
 			transient: false,
 		},
 		{
+			err:       errors.Wrap(context.Canceled, "hello"),
+			transient: false,
+		},
+		{
 			err:       errors.Wrap(context.DeadlineExceeded, "hello"),
-			transient: true,
+			transient: false,
 		},
 		{
 			err:       errors.Wrap(errors.Wrap(io.EOF, "1"), "2"),
@@ -50,11 +58,15 @@ func TestWrappedErrors(t *testing.T) {
 		},
 		{
 			err:       multiError1Error.ToError(),
-			transient: true,
+			transient: false,
+		},
+		{
+			err:       multiErrorCanceled.ToError(),
+			transient: false,
 		},
 		{
 			err:       multiErrorDeadlineExceeded.ToError(),
-			transient: true,
+			transient: false,
 		},
 	}
 	for _, c := range cases {
