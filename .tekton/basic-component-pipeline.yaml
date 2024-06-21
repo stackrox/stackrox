@@ -82,7 +82,7 @@ spec:
     name: clone-fetch-tags
     type: string
   - default: "1d"
-    description: OCI Artifact (workspace) expiration time.
+    description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
     name: oci-artifact-expires-after
     type: string
 
@@ -192,7 +192,7 @@ spec:
   - name: build-container
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.image-tag)
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -208,7 +208,7 @@ spec:
     - name: BUILD_ARGS
       value:
       - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.image-tag)
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT

@@ -16,7 +16,7 @@ spec:
       results from other tasks might fail as dirty.
     type: string
   results:
-  - name: image-tag
+  - name: IMAGE_TAG
     description: Image Tag determined by custom logic.
   volumes:
     - name: workdir
@@ -41,4 +41,4 @@ spec:
       dnf -y install git make
 
       .konflux/scripts/fail-build-if-git-is-dirty.sh
-      echo -n "$(make --quiet --no-print-directory tag)$(params.TAG_SUFFIX)" | tee "$(results.image-tag.path)"
+      echo -n "$(make --quiet --no-print-directory tag)$(params.TAG_SUFFIX)" | tee "$(results.IMAGE_TAG.path)"
