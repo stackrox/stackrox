@@ -68,8 +68,8 @@ func concealError(err error) error {
 	if s, ok := status.FromError(err); ok {
 		return status.Error(s.Code(), s.Code().String())
 	}
-	if message := errox.GetBaseSentinelMessage(err); message != "" {
-		return errors.New(message)
+	if err, ok := errox.GetBaseSentinelError(err); ok {
+		return err
 	}
 	return errox.ServerError
 }

@@ -315,6 +315,12 @@ func Test_concealError(t *testing.T) {
 			"invalid arguments",
 			"invalid arguments",
 		},
+		"custom sentinel": {
+			// Only the bottom sentinel error never contains sensitive messages.
+			errors.WithMessage(errox.InvalidArgs.New("secret"), "hidden"),
+			"invalid arguments",
+			"invalid arguments",
+		},
 		"http status": {
 			// gRPC status message is dropped.
 			status.Error(codes.NotFound, "absent"),

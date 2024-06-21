@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRoxErrorIs(t *testing.T) {
@@ -88,11 +89,28 @@ func TestCausedBy(t *testing.T) {
 }
 
 func TestSentinelMessage(t *testing.T) {
-	assert.Equal(t, "not found", GetBaseSentinelMessage(NotFound))
-	assert.Equal(t, "not found", GetBaseSentinelMessage(NotFound.CausedBy(InvalidArgs)))
-	assert.Equal(t, "not found", GetBaseSentinelMessage(NotFound.CausedBy("secret")))
-	assert.Equal(t, "not found", GetBaseSentinelMessage(errors.WithMessage(NotFound, "secret")))
-	assert.Equal(t, "not found", GetBaseSentinelMessage(errors.WithMessage(NotFound.New("secret"), "secret")))
-	assert.Equal(t, "not found", GetBaseSentinelMessage(NotFound.New("secret")))
-	assert.Equal(t, "", GetBaseSentinelMessage(errors.New("abc")))
+	tests := []struct {
+		err              error
+		expectedSentinel error
+		expectedFound    bool
+	}{
+		{NotFound, NotFound, true},
+		{NotFound.CausedBy(InvalidArgs), NotFound, true},
+		{NotFound.CausedBy("secret"), NotFound, true},
+		{errors.WithMessage(NotFound, "secret"), NotFound, true},
+		{errors.WithMessage(NotFound.New("secret"), "secret"), NotFound, true},
+		{NotFound.New("secret"), NotFound, true},
+		{errors.New("abc"), nil, false},
+	}
+
+	for _, test := range tests {
+		re, ok := GetBaseSentinelError(test.err)
+		assert.Equal(t, test.expectedFound, ok)
+		if test.expectedFound {
+			require.NotNil(t, re)
+			assert.ErrorIs(t, re, test.expectedSentinel, re)
+		} else {
+			assert.Nil(t, re)
+		}
+	}
 }
