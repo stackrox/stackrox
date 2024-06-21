@@ -24,41 +24,6 @@ func BenchmarkService_Export(b *testing.B) {
 	svc := New(testHelper.Images, nil, nil, nil, nil, nil, nil, nil)
 	benchmarkFunc := getExportServiceBenchmark(testHelper, svc)
 	testHelper.InjectDataAndRunBenchmark(b, true, benchmarkFunc)
-	/*
-		total := 0
-		deltas := []int{500}
-		// The test runs by default with a lower scale as smoke test
-		// in the benchmark unit tests. To test at higher scales (takes time),
-		// run the test with ROX_SCALE_TEST set to a non-empty value
-		// in the test environment.
-		scale := os.Getenv("ROX_SCALE_TEST")
-		if scale != "" {
-			deltas = []int{500, 500, 1000, 3000, 5000}
-		}
-		imageIDs := make([]string, 0)
-		imageNamesByID := make(map[string]*storage.ImageName)
-		for ix, delta := range deltas {
-			fmt.Println(time.Now().UTC().Unix(), "Injecting", delta, "images")
-			addedImageIDs, addedImageNamesByID, err := testHelper.InjectImages(b, delta)
-			if err != nil {
-				b.Error(err)
-			}
-			imageIDs = append(imageIDs, addedImageIDs...)
-			for imageID, imageName := range addedImageNamesByID {
-				imageNamesByID[imageID] = imageName
-			}
-			// Inject deployments to map images to namespaces and allow filtering query to work.
-			fmt.Println(time.Now().UTC().Unix(), "Injecting", delta, "deployments")
-			err = testHelper.InjectDeployments(b, delta, imageIDs, imageNamesByID)
-			if err != nil {
-				b.Error(err)
-			}
-			fmt.Println(time.Now().UTC().Unix(), "Test iteration", ix+1)
-			total += delta
-			b.Run(fmt.Sprintf("%d", total), getExportServiceBenchmark(testHelper, svc))
-		}
-
-	*/
 }
 
 func getExportServiceBenchmark(

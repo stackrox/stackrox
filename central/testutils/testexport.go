@@ -11,13 +11,13 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/random"
 	"github.com/stackrox/rox/pkg/sac"
@@ -32,6 +32,10 @@ import (
 const (
 	namespace10pct = "Namespace10%"
 	namepsace90pct = "Namespace90%"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // ExportServicePostgresTestHelper is a utility to help testing the
@@ -299,7 +303,7 @@ func (h *ExportServicePostgresTestHelper) InjectDataAndRunBenchmark(
 	for ix, datasetSize := range datasetSizes {
 		delta := datasetSize - lastDatasetSize
 		if injectImages {
-			fmt.Println(time.Now().UTC().Unix(), "Injecting", delta, "images")
+			log.Info("Injecting ", delta, " images")
 			addedImageIDs, addedImageNamesByID, err := h.InjectImages(b, delta)
 			if err != nil {
 				b.Error(err)
@@ -309,12 +313,12 @@ func (h *ExportServicePostgresTestHelper) InjectDataAndRunBenchmark(
 				imageNamesByIDs[imageID] = imageName
 			}
 		}
-		fmt.Println(time.Now().UTC().Unix(), "Injecting", delta, "deployments")
+		log.Info("Injecting ", delta, " deployments")
 		err := h.InjectDeployments(b, delta, imageIDs, imageNamesByIDs)
 		if err != nil {
 			b.Error(err)
 		}
-		fmt.Println(time.Now().UTC().Unix(), "Test iteration", ix+1)
+		log.Info("Test iteration ", ix+1)
 		b.Run(fmt.Sprintf("%d", datasetSize), benchmark)
 	}
 

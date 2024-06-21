@@ -24,39 +24,6 @@ func BenchmarkService_Export(b *testing.B) {
 	svc := New(testHelper.Deployments, nil, nil, nil, nil, nil)
 	benchmarkFunc := getExportServiceBenchmark(testHelper, svc)
 	testHelper.InjectDataAndRunBenchmark(b, false, benchmarkFunc)
-	/*
-		total := 0
-		deltas := []int{500}
-		// The test runs by default with a lower scale as smoke test
-		// in the benchmark unit tests. To test at higher scales (takes time),
-		// run the test with ROX_SCALE_TEST set to a non-empty value
-		// in the test environment.
-		scale := os.Getenv("ROX_SCALE_TEST")
-		if scale != "" {
-			deltas = []int{500, 500, 1000, 3000, 5000}
-		}
-		baseImages, err := testutils.GetBaseImageSet()
-		if err != nil {
-			b.Error(err)
-		}
-		imageIDs := make([]string, 0, len(baseImages))
-		imageNamesByID := make(map[string]*storage.ImageName, len(baseImages))
-		for _, img := range baseImages {
-			imageID := img.GetId()
-			imageName := img.GetName()
-			imageIDs = append(imageIDs, imageID)
-			imageNamesByID[imageID] = imageName
-		}
-		for _, delta := range deltas {
-			total += delta
-			err := testHelper.InjectDeployments(b, delta, imageIDs, imageNamesByID)
-			if err != nil {
-				b.Error(err)
-			}
-			b.Run(fmt.Sprintf("%d", total), getExportServiceBenchmark(testHelper, svc))
-		}
-
-	*/
 }
 
 func getExportServiceBenchmark(
