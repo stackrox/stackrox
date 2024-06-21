@@ -206,7 +206,6 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	// to gRPC status codes.
 	u = append(u, grpc_prometheus.UnaryServerInterceptor)
 	u = append(u, grpc_errors.ErrorToGrpcCodeInterceptor)
-	u = append(u, grpc_errors.ConcealErrorInterceptor)
 
 	if a.config.RateLimiter != nil {
 		u = append(u, a.config.RateLimiter.GetUnaryServerInterceptor())
@@ -254,7 +253,6 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	// to gRPC status codes.
 	s = append(s, grpc_prometheus.StreamServerInterceptor)
 	s = append(s, grpc_errors.ErrorToGrpcCodeStreamInterceptor)
-	s = append(s, grpc_errors.ConcealErrorStreamInterceptor)
 
 	if a.config.RateLimiter != nil {
 		s = append(s, a.config.RateLimiter.GetStreamServerInterceptor())

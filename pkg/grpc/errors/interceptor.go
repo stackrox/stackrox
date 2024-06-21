@@ -62,9 +62,11 @@ func logErrorIfInternal(err error) {
 }
 
 func concealError(err error) error {
-	var serr errox.SensitiveError
-	if _, ok := status.FromError(err); ok || errors.As(err, &serr) {
+	if serr := (errox.SensitiveError)(nil); errors.As(err, &serr) {
 		return err
+	}
+	if s, ok := status.FromError(err); ok {
+		return status.Error(s.Code(), s.Code().String())
 	}
 	if message := errox.GetBaseSentinelMessage(err); message != "" {
 		return errors.New(message)

@@ -147,6 +147,7 @@ linters-settings:
       - errox\.MakeSensitive
       - retry\.MakeRetryable
       - policy\.NewErr.*
+      - status\.Error[f]?
 
 linters:
   # please, do not use `enable-all`: it's deprecated and will be removed soon.

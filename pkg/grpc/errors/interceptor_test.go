@@ -316,9 +316,10 @@ func Test_concealError(t *testing.T) {
 			"invalid arguments",
 		},
 		"http status": {
-			status.Error(codes.NotFound, "not found"),
-			"rpc error: code = NotFound desc = not found",
-			"rpc error: code = NotFound desc = not found",
+			// gRPC status message is dropped.
+			status.Error(codes.NotFound, "absent"),
+			"rpc error: code = NotFound desc = NotFound",
+			"rpc error: code = NotFound desc = NotFound",
 		},
 	}
 
