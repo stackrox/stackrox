@@ -18,6 +18,7 @@ import (
 
 const (
 	proxyReloadInterval = 5 * time.Second
+	tlsHandshakeTimeout = 2 * time.Second
 )
 
 var (
@@ -127,7 +128,9 @@ func AwareDialContextTLS(ctx context.Context, address string, tlsClientConf *tls
 	log.Debugf("ROX-24163 handshaking %s", address)
 	defer log.Debugf("ROX-24163 [END] handshaking %s", address)
 	tlsConn := tls.Client(conn, tlsClientConf)
-	if err := tlsConn.Handshake(); err != nil {
+	ctxHandshake, cancel := context.WithTimeout(ctx, tlsHandshakeTimeout)
+	defer cancel()
+	if err := tlsConn.HandshakeContext(ctxHandshake); err != nil {
 		utils.IgnoreError(tlsConn.Close)
 		return nil, err
 	}
