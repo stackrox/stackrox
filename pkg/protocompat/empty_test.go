@@ -3,11 +3,11 @@ package protocompat
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/rox/pkg/protoassert"
 )
 
 func TestEmpty(t *testing.T) {
 	refEmpty := &Empty{}
 
-	assert.Equal(t, refEmpty, ProtoEmpty())
+	protoassert.Equal(t, refEmpty, ProtoEmpty())
 }

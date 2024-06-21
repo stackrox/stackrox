@@ -10,6 +10,8 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
@@ -41,7 +43,7 @@ func Test_ToProtoV4IndexReport(t *testing.T) {
 				assert.Nil(t, tt.want)
 				assert.ErrorContains(t, err, tt.wantErr)
 			} else {
-				assert.Equal(t, tt.want, got)
+				protoassert.Equal(t, tt.want, got)
 				assert.NoError(t, err)
 			}
 		})
@@ -121,6 +123,138 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 					},
 				},
 				Contents: &v4.Contents{},
+			},
+			wantErr: "",
+		},
+	}
+	ctx := context.Background()
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := ToProtoV4VulnerabilityReport(ctx, tt.arg)
+			if tt.wantErr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tt.wantErr)
+			}
+			protoassert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
+	t.Setenv(env.ScannerV4PartialNodeJSSupport.EnvVar(), "true")
+
+	now := time.Now()
+	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
+	assert.NoError(t, err)
+
+	tests := map[string]struct {
+		arg     *claircore.VulnerabilityReport
+		want    *v4.VulnerabilityReport
+		wantErr string
+	}{
+		"filter Node.js packages without vulns": {
+			arg: &claircore.VulnerabilityReport{
+				Hash: claircore.MustParseDigest("sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e"),
+				Vulnerabilities: map[string]*claircore.Vulnerability{
+					"1": {
+						ID:                 "1",
+						Name:               "sample vuln name",
+						Description:        "sample vuln description",
+						Issued:             now,
+						Links:              "sample vuln links",
+						Severity:           claircore.Critical.String(),
+						NormalizedSeverity: claircore.Critical,
+						Package:            &claircore.Package{ID: "sample vuln package id"},
+						Dist:               &claircore.Distribution{ID: "sample vuln distribution id"},
+						Repo:               &claircore.Repository{ID: "sample vuln repository id"},
+						FixedInVersion:     "sample vuln fixed in",
+					},
+				},
+				Packages: map[string]*claircore.Package{
+					"0": {
+						ID:      "0",
+						Name:    "nodejs0",
+						Version: "0",
+					},
+					"1": {
+						ID:      "1",
+						Name:    "nodejs1",
+						Version: "1",
+					},
+					"2": {
+						ID:      "2",
+						Name:    "nodejs2",
+						Version: "2",
+					},
+				},
+				Environments: map[string][]*claircore.Environment{
+					"0": {
+						{
+							PackageDB: "nodejs:/app/nodejs0",
+						},
+					},
+					"1": {
+						{
+							PackageDB: "nodejs:/app/nodejs1",
+						},
+					},
+					"2": {
+						{
+							PackageDB: "nodejs:/app/nodejs2",
+						},
+					},
+				},
+				PackageVulnerabilities: map[string][]string{
+					"1": {"1"},
+					"2": {},
+				},
+			},
+			want: &v4.VulnerabilityReport{
+				// Converter doesn't set HashId to empty.
+				HashId: "",
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"1": {
+						Id:                 "1",
+						Name:               "sample vuln name",
+						Description:        "sample vuln description",
+						Issued:             protoNow,
+						Link:               "sample vuln links",
+						Severity:           "Critical",
+						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+						PackageId:          "sample vuln package id",
+						DistributionId:     "sample vuln distribution id",
+						RepositoryId:       "sample vuln repository id",
+						FixedInVersion:     "sample vuln fixed in",
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"1": {
+						Values: []string{"1"},
+					},
+				},
+				Contents: &v4.Contents{
+					Packages: []*v4.Package{
+						{
+							Id:      "1",
+							Name:    "nodejs1",
+							Version: "1",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe: emptyCPE,
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb: "nodejs:/app/nodejs1",
+								},
+							},
+						},
+					},
+				},
 			},
 			wantErr: "",
 		},
@@ -399,7 +533,7 @@ func Test_toProtoV4Package(t *testing.T) {
 				assert.ErrorContains(t, err, tt.wantErr)
 				assert.Nil(t, tt.want)
 			} else {
-				assert.Equal(t, tt.want, got)
+				protoassert.Equal(t, tt.want, got)
 				assert.NoError(t, err)
 			}
 		})
@@ -465,7 +599,7 @@ func Test_toProtoV4Distribution(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := toProtoV4Distribution(tt.arg)
-			assert.Equal(t, tt.want, got)
+			protoassert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -500,7 +634,7 @@ func Test_toProtoV4Repository(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := toProtoV4Repository(tt.arg)
-			assert.Equal(t, tt.want, got)
+			protoassert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -539,7 +673,7 @@ func Test_toProtoV4Environment(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			got := toProtoV4Environment(tt.arg)
-			assert.Equal(t, tt.want, got)
+			protoassert.Equal(t, tt.want, got)
 			if tt.want != nil && tt.want.RepositoryIds != nil {
 				assert.NotEqual(t, &tt.want.RepositoryIds, &got.RepositoryIds)
 			}

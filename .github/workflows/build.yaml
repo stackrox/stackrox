@@ -168,6 +168,12 @@ jobs:
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
 
+      - name: Setup build env for debugging support
+        run: |
+          if [[ "${GITHUB_HEAD_REF:-}" =~ -debug ]]; then
+            echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
+          fi
+
       - name: Setup Go build environment for release
         if: |
           contains(github.event.pull_request.labels.*.name, 'ci-release-build')
@@ -296,6 +302,9 @@ jobs:
             echo "GO_BINARIES_BUILD_ARTIFACT=go-binaries-build-${{ matrix.arch }}-${go_binaries}"
             echo "ROX_PRODUCT_BRANDING=${brand}"
           } >> "$GITHUB_ENV"
+          if [[ "${GITHUB_HEAD_REF:-}" =~ -debug ]]; then
+            echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
+          fi
 
       - name: Checkout
         uses: actions/checkout@v4

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { generatePath, Link } from 'react-router-dom';
 import {
     Divider,
@@ -12,53 +12,54 @@ import {
     ToolbarItem,
     Tooltip,
 } from '@patternfly/react-core';
-import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';
-import { getTableUIState } from 'utils/getTableUIState';
+import { TableUIState } from 'utils/getTableUIState';
 
 import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
-import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
-import StatusCountIcon from './components/StatusCountIcon';
 import {
     calculateCompliancePercentage,
     getCompliancePfClassName,
     getStatusCounts,
 } from './compliance.coverage.utils';
-
-import './ProfileChecksTable.css';
+import ControlLabels from './components/ControlLabels';
+import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
+import StatusCountIcon from './components/StatusCountIcon';
 
 export type ProfileChecksTableProps = {
-    isLoading: boolean;
-    error: Error | undefined;
-    profileChecksResults: ComplianceCheckResultStatusCount[];
     profileChecksResultsCount: number;
     profileName: string;
     pagination: UseURLPaginationResult;
+    tableState: TableUIState<ComplianceCheckResultStatusCount>;
     getSortParams: UseURLSortResult['getSortParams'];
 };
 
 function ProfileChecksTable({
-    isLoading,
-    error,
-    profileChecksResults,
     profileChecksResultsCount,
     profileName,
     pagination,
+    tableState,
     getSortParams,
 }: ProfileChecksTableProps) {
-    const tableState = getTableUIState({
-        isLoading,
-        data: profileChecksResults,
-        error,
-        searchFilter: {},
-    });
-
+    /* eslint-disable no-nested-ternary */
+    const [expandedRows, setExpandedRows] = useState<number[]>([]);
     const { page, perPage, setPage, setPerPage } = pagination;
+
+    function toggleRow(selectedRowIndex: number) {
+        const newExpandedRows = expandedRows.includes(selectedRowIndex)
+            ? expandedRows.filter((index) => index !== selectedRowIndex)
+            : [...expandedRows, selectedRowIndex];
+        setExpandedRows(newExpandedRows);
+    }
+
+    useEffect(() => {
+        setExpandedRows([]);
+    }, [page, perPage, tableState]);
 
     return (
         <>
@@ -99,16 +100,17 @@ function ProfileChecksTable({
                         title: 'There was an error loading profile checks',
                     }}
                     emptyProps={{
-                        message: 'No results found',
+                        message:
+                            'If you have recently created a scan schedule, please wait a few minutes for the results to become available.',
                     }}
                     filteredEmptyProps={{
                         title: 'No checks found',
                         message: 'Clear all filters and try again',
                     }}
                     renderer={({ data }) => (
-                        <Tbody>
-                            {data.map((check) => {
-                                const { checkName, rationale, checkStats } = check;
+                        <>
+                            {data.map((check, rowIndex) => {
+                                const { checkName, rationale, checkStats, controls } = check;
                                 const { passCount, failCount, otherCount, totalCount } =
                                     getStatusCounts(checkStats);
                                 const passPercentage = calculateCompliancePercentage(
@@ -116,81 +118,116 @@ function ProfileChecksTable({
                                     totalCount
                                 );
                                 const progressBarId = `progress-bar-${checkName}`;
+                                const isRowExpanded = expandedRows.includes(rowIndex);
 
                                 return (
-                                    <Tr key={checkName}>
-                                        <Td dataLabel="Check">
-                                            <Link
-                                                to={generatePath(coverageCheckDetailsPath, {
-                                                    checkName,
-                                                    profileName,
-                                                })}
-                                            >
-                                                {checkName}
-                                            </Link>
-                                            {/*
+                                    <Tbody isExpanded={isRowExpanded} key={checkName}>
+                                        <Tr>
+                                            <Td dataLabel="Check">
+                                                <Link
+                                                    to={generatePath(coverageCheckDetailsPath, {
+                                                        checkName,
+                                                        profileName,
+                                                    })}
+                                                >
+                                                    {checkName}
+                                                </Link>
+                                                {/*
                                                 grid display is required to prevent the cell from
                                                 expanding to the text length. The Truncate PF component
                                                 is not used here because it displays a tooltip on hover
                                             */}
-                                            <div style={{ display: 'grid' }}>
-                                                <Text
-                                                    component={TextVariants.small}
-                                                    className="pf-v5-u-color-200 truncate-text"
-                                                >
-                                                    {rationale}
-                                                </Text>
-                                            </div>
-                                        </Td>
-                                        <Td dataLabel="Controls" modifier="fitContent">
-                                            placeholder
-                                        </Td>
-                                        <Td dataLabel="Fail status" modifier="fitContent">
-                                            <StatusCountIcon
-                                                text="cluster"
-                                                status="fail"
-                                                count={failCount}
-                                            />
-                                        </Td>
-                                        <Td dataLabel="Pass status" modifier="fitContent">
-                                            <StatusCountIcon
-                                                text="cluster"
-                                                status="pass"
-                                                count={passCount}
-                                            />
-                                        </Td>
-                                        <Td dataLabel="Other status" modifier="fitContent">
-                                            <StatusCountIcon
-                                                text="cluster"
-                                                status="other"
-                                                count={otherCount}
-                                            />
-                                        </Td>
-                                        <Td dataLabel="Compliance">
-                                            <Progress
-                                                id={progressBarId}
-                                                value={passPercentage}
-                                                measureLocation={ProgressMeasureLocation.outside}
-                                                className={getCompliancePfClassName(passPercentage)}
-                                                aria-label={`${checkName} compliance percentage`}
-                                            />
-                                            <Tooltip
-                                                content={
-                                                    <div>
-                                                        {`${passCount} / ${totalCount} clusters are passing this check`}
-                                                    </div>
+                                                <div style={{ display: 'grid' }}>
+                                                    <Text
+                                                        component={TextVariants.small}
+                                                        className="pf-v5-u-color-200 pf-v5-u-text-truncate"
+                                                    >
+                                                        {rationale}
+                                                    </Text>
+                                                </div>
+                                            </Td>
+                                            <Td
+                                                dataLabel="Controls"
+                                                modifier="fitContent"
+                                                compoundExpand={
+                                                    controls.length > 1
+                                                        ? {
+                                                              isExpanded: isRowExpanded,
+                                                              onToggle: () => toggleRow(rowIndex),
+                                                              rowIndex,
+                                                              columnIndex: 1,
+                                                          }
+                                                        : undefined
                                                 }
-                                                triggerRef={() =>
-                                                    document.getElementById(
-                                                        progressBarId
-                                                    ) as HTMLButtonElement
-                                                }
-                                            />
-                                        </Td>
-                                    </Tr>
+                                            >
+                                                {controls.length > 1 ? (
+                                                    `${controls.length} controls`
+                                                ) : controls.length === 1 ? (
+                                                    <ControlLabels controls={controls} />
+                                                ) : (
+                                                    '-'
+                                                )}
+                                            </Td>
+                                            <Td dataLabel="Fail status" modifier="fitContent">
+                                                <StatusCountIcon
+                                                    text="cluster"
+                                                    status="fail"
+                                                    count={failCount}
+                                                />
+                                            </Td>
+                                            <Td dataLabel="Pass status" modifier="fitContent">
+                                                <StatusCountIcon
+                                                    text="cluster"
+                                                    status="pass"
+                                                    count={passCount}
+                                                />
+                                            </Td>
+                                            <Td dataLabel="Other status" modifier="fitContent">
+                                                <StatusCountIcon
+                                                    text="cluster"
+                                                    status="other"
+                                                    count={otherCount}
+                                                />
+                                            </Td>
+                                            <Td dataLabel="Compliance">
+                                                <Progress
+                                                    id={progressBarId}
+                                                    value={passPercentage}
+                                                    measureLocation={
+                                                        ProgressMeasureLocation.outside
+                                                    }
+                                                    className={getCompliancePfClassName(
+                                                        passPercentage
+                                                    )}
+                                                    aria-label={`${checkName} compliance percentage`}
+                                                />
+                                                <Tooltip
+                                                    content={
+                                                        <div>
+                                                            {`${passCount} / ${totalCount} clusters are passing this check`}
+                                                        </div>
+                                                    }
+                                                    triggerRef={() =>
+                                                        document.getElementById(
+                                                            progressBarId
+                                                        ) as HTMLButtonElement
+                                                    }
+                                                />
+                                            </Td>
+                                        </Tr>
+                                        {isRowExpanded && (
+                                            <Tr isExpanded={isRowExpanded}>
+                                                <Td colSpan={6}>
+                                                    <ExpandableRowContent>
+                                                        <ControlLabels controls={controls} />
+                                                    </ExpandableRowContent>
+                                                </Td>
+                                            </Tr>
+                                        )}
+                                    </Tbody>
                                 );
                             })}
-                        </Tbody>
+                        </>
                     )}
                 />
             </Table>

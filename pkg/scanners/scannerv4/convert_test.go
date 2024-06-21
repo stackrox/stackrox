@@ -5,6 +5,7 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -339,7 +340,7 @@ func TestSetScoresAndScoreVersion(t *testing.T) {
 			}
 
 			assert.NoError(t, err)
-			assert.Equal(t, testcase.expected, vuln)
+			protoassert.Equal(t, testcase.expected, vuln)
 		})
 	}
 }
@@ -495,7 +496,7 @@ func TestParsePackageDB(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.packageDB, func(t *testing.T) {
-			source, location := parsePackageDB(testcase.packageDB)
+			source, location := ParsePackageDB(testcase.packageDB)
 			assert.Equal(t, testcase.expectedSourceType, source)
 			assert.Equal(t, testcase.expectedLocation, location)
 		})

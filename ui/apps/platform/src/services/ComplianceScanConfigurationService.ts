@@ -4,7 +4,7 @@ import qs from 'qs';
 import { ApiSortOption } from 'types/search';
 import { SlimUser } from 'types/user.proto';
 
-import { complianceV2Url } from './ComplianceCommon';
+import { ComplianceProfileSummary, complianceV2Url } from './ComplianceCommon';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import { NotifierConfiguration } from './ReportsService.types';
 import { Empty } from './types';
@@ -81,6 +81,18 @@ export type ComplianceScanConfigurationStatus = {
 export type ListComplianceScanConfigurationsResponse = {
     configurations: ComplianceScanConfigurationStatus[];
     totalCount: number; // int32
+};
+
+export type ListComplianceScanConfigsProfileResponse = {
+    profiles: ComplianceProfileSummary[];
+    totalCount: number;
+};
+
+export type ListComplianceScanConfigsClusterProfileResponse = {
+    profiles: ComplianceProfileSummary[];
+    totalCount: number;
+    clusterId: string;
+    clusterName: string;
 };
 
 /*
@@ -184,4 +196,28 @@ export function runComplianceReport(scanConfigId: string): Promise<ComplianceRun
         .then((response) => {
             return response.data;
         });
+}
+
+/**
+ * Fetches all profiles that are included in a scan configuration.
+ */
+export function listComplianceScanConfigProfiles(): Promise<ListComplianceScanConfigsProfileResponse> {
+    return axios
+        .get<ListComplianceScanConfigsProfileResponse>(
+            `${complianceScanConfigBaseUrl}/profiles/collection`
+        )
+        .then((response) => response.data);
+}
+
+/**
+ * Fetches all profiles that are included in a scan configuration on a specific cluster.
+ */
+export function listComplianceScanConfigClusterProfiles(
+    clusterId: string
+): Promise<ListComplianceScanConfigsClusterProfileResponse> {
+    return axios
+        .get<ListComplianceScanConfigsClusterProfileResponse>(
+            `${complianceScanConfigBaseUrl}/clusters/${clusterId}/profiles/collection`
+        )
+        .then((response) => response.data);
 }

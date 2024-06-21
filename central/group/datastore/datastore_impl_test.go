@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -109,7 +110,7 @@ func (s *groupDataStoreTestSuite) TestGet() {
 	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: group.GetProps().GetId(),
 		AuthProviderId: group.GetProps().GetAuthProviderId()})
 	s.NoError(err)
-	s.Equal(group, g)
+	protoassert.Equal(s.T(), group, g)
 
 	// Test that a non-existing group will yield errox.NotFound.
 	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(nil, false, nil).Times(1)
@@ -549,12 +550,12 @@ func (s *groupDataStoreTestSuite) TestCanUpdateExistingDefaultGroup() {
 
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, g *storage.Group) {
 		g.GetProps().Id = ""
-		s.Equal(newDefaultGroup, g)
+		protoassert.Equal(s.T(), newDefaultGroup, g)
 	})
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, groups []*storage.Group) {
 		for _, g := range groups {
 			g.GetProps().Id = ""
-			s.Equal(newDefaultGroup, g)
+			protoassert.Equal(s.T(), newDefaultGroup, g)
 		}
 	})
 

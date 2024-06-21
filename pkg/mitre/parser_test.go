@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -70,7 +71,7 @@ func TestUnmarshal(t *testing.T) {
 
 	bundles, err := ExtractMitreAttackBundle(Enterprise, []Platform{Container}, rawBundle.Objects)
 	assert.NoError(t, err)
-	assert.Equal(t, &storage.MitreAttackBundle{
+	protoassert.Equal(t, &storage.MitreAttackBundle{
 		Version: "9.0",
 		Matrices: []*storage.MitreAttackMatrix{
 			expectedContainerMatrix,
@@ -79,11 +80,12 @@ func TestUnmarshal(t *testing.T) {
 
 	bundles, err = ExtractMitreAttackBundle(Enterprise, []Platform{Linux, Container}, rawBundle.Objects)
 	assert.NoError(t, err)
-	assert.Equal(t, &storage.MitreAttackBundle{
+	protoassert.Equal(t, &storage.MitreAttackBundle{
 		Version: "9.0",
 		Matrices: []*storage.MitreAttackMatrix{
 			expectedContainerMatrix,
 			expectedLinuxMatrix,
 		},
 	}, bundles)
+
 }

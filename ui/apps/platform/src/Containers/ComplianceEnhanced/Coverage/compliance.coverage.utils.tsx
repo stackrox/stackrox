@@ -11,11 +11,7 @@ import {
     WrenchIcon,
 } from '@patternfly/react-icons';
 
-import {
-    ComplianceCheckStatus,
-    ComplianceCheckStatusCount,
-    ComplianceCheckStatusEnum,
-} from 'services/ComplianceCommon';
+import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
 
 // Thresholds for compliance status
 const DANGER_THRESHOLD = 50;
@@ -23,10 +19,10 @@ const WARNING_THRESHOLD = 75;
 
 type LabelColor = LabelProps['color'];
 
-type ClusterStatusObject = {
+export type ClusterStatusObject = {
     icon: ReactElement;
     statusText: string;
-    tooltipText: string;
+    tooltipText: string | null; // null if tooltip text is redundant with statusText
     color: LabelProps['color'];
 };
 
@@ -52,10 +48,10 @@ export function getStatusCounts(checkStats: ComplianceCheckStatusCount[]): {
     checkStats.forEach((statusInfo) => {
         totalCount += statusInfo.count;
         switch (statusInfo.status) {
-            case ComplianceCheckStatusEnum.PASS:
+            case 'PASS':
                 passCount += statusInfo.count;
                 break;
-            case ComplianceCheckStatusEnum.FAIL:
+            case 'FAIL':
                 failCount += statusInfo.count;
                 break;
             default:
@@ -112,28 +108,44 @@ export function getComplianceLabelGroupColor(
     return 'blue';
 }
 
-const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject } = {
-    [ComplianceCheckStatusEnum.PASS]: {
+export function sortCheckStats(items: ComplianceCheckStatusCount[]): ComplianceCheckStatusCount[] {
+    const order: ComplianceCheckStatus[] = [
+        'PASS',
+        'FAIL',
+        'MANUAL',
+        'ERROR',
+        'INFO',
+        'NOT_APPLICABLE',
+        'INCONSISTENT',
+        'UNSET_CHECK_STATUS',
+    ];
+    return [...items].sort((a, b) => {
+        return order.indexOf(a.status) - order.indexOf(b.status);
+    });
+}
+
+const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
+    PASS: {
         icon: (
             <Icon>
                 <CheckCircleIcon color="var(--pf-v5-global--primary-color--100)" />
             </Icon>
         ),
         statusText: 'Pass',
-        tooltipText: 'Check was successful',
+        tooltipText: null,
         color: 'blue',
     },
-    [ComplianceCheckStatusEnum.FAIL]: {
+    FAIL: {
         icon: (
             <Icon>
                 <SecurityIcon color="var(--pf-v5-global--danger-color--100)" />
             </Icon>
         ),
         statusText: 'Fail',
-        tooltipText: 'Check was unsuccessful',
+        tooltipText: null,
         color: 'red',
     },
-    [ComplianceCheckStatusEnum.ERROR]: {
+    ERROR: {
         icon: (
             <Icon>
                 <ExclamationTriangleIcon color="var(--pf-v5-global--disabled-color--100)" />
@@ -143,7 +155,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         tooltipText: 'Check ran successfully, but could not complete',
         color: 'grey',
     },
-    [ComplianceCheckStatusEnum.INFO]: {
+    INFO: {
         icon: (
             <Icon>
                 <ExclamationCircleIcon color="var(--pf-v5-global--disabled-color--100)" />
@@ -154,17 +166,18 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
             'Check was successful and found something not severe enough to be considered an error',
         color: 'grey',
     },
-    [ComplianceCheckStatusEnum.MANUAL]: {
+    MANUAL: {
         icon: (
             <Icon>
                 <WrenchIcon color="var(--pf-v5-global--disabled-color--100)" />
             </Icon>
         ),
         statusText: 'Manual',
-        tooltipText: 'Check cannot automatically assess the status and manual check is required',
+        tooltipText:
+            'Manual check requires additional organizational or technical knowledge that is not automatable',
         color: 'grey',
     },
-    [ComplianceCheckStatusEnum.NOT_APPLICABLE]: {
+    NOT_APPLICABLE: {
         icon: (
             <Icon>
                 <BanIcon color="var(--pf-v5-global--disabled-color--100)" />
@@ -174,7 +187,7 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         tooltipText: 'Check did not run as it is not applicable',
         color: 'grey',
     },
-    [ComplianceCheckStatusEnum.INCONSISTENT]: {
+    INCONSISTENT: {
         icon: (
             <Icon>
                 <UnknownIcon color="var(--pf-v5-global--disabled-color--100)" />
@@ -184,13 +197,13 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
         tooltipText: 'Different nodes report different results',
         color: 'grey',
     },
-    [ComplianceCheckStatusEnum.UNSET_CHECK_STATUS]: {
+    UNSET_CHECK_STATUS: {
         icon: (
             <Icon>
                 <ResourcesEmptyIcon color="var(--pf-v5-global--disabled-color--100)" />
             </Icon>
         ),
-        statusText: 'Unset', // TODO: ask about this status
+        statusText: 'Unset',
         tooltipText: '',
         color: 'grey',
     },

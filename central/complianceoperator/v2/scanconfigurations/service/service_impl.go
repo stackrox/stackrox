@@ -7,13 +7,19 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
+	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanSettingBindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
+	"github.com/stackrox/rox/central/convert/storagetov2"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -37,7 +43,8 @@ var (
 		user.With(permissions.View(resources.Compliance)): {
 			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigurations",
 			"/v2.ComplianceScanConfigurationService/GetComplianceScanConfiguration",
-			"/v2.ComplianceScanConfigurationService/GetComplianceScanConfigurationsCount",
+			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigProfiles",
+			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigClusterProfiles",
 		},
 		user.With(permissions.Modify(resources.Compliance)): {
 			"/v2.ComplianceScanConfigurationService/CreateComplianceScanConfiguration",
@@ -55,7 +62,8 @@ var (
 
 // New returns a service object for registering with grpc.
 func New(scanConfigDS scanConfigDS.DataStore, scanSettingBindingsDS scanSettingBindingsDS.DataStore,
-	suiteDS suiteDS.DataStore, manager compliancemanager.Manager, reportManager complianceReportManager.Manager, notifierDS notifierDS.DataStore) Service {
+	suiteDS suiteDS.DataStore, manager compliancemanager.Manager, reportManager complianceReportManager.Manager, notifierDS notifierDS.DataStore, profileDS profileDS.DataStore,
+	benchmarkDS benchmarksDS.DataStore, clusterDS clusterDatastore.DataStore) Service {
 	return &serviceImpl{
 		scanConfigDS:                    scanConfigDS,
 		complianceScanSettingBindingsDS: scanSettingBindingsDS,
@@ -63,6 +71,9 @@ func New(scanConfigDS scanConfigDS.DataStore, scanSettingBindingsDS scanSettingB
 		manager:                         manager,
 		reportManager:                   reportManager,
 		notifierDS:                      notifierDS,
+		profileDS:                       profileDS,
+		benchmarkDS:                     benchmarkDS,
+		clusterDS:                       clusterDS,
 	}
 }
 
@@ -75,6 +86,9 @@ type serviceImpl struct {
 	manager                         compliancemanager.Manager
 	reportManager                   complianceReportManager.Manager
 	notifierDS                      notifierDS.DataStore
+	profileDS                       profileDS.DataStore
+	benchmarkDS                     benchmarksDS.DataStore
+	clusterDS                       clusterDatastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -215,20 +229,6 @@ func (s *serviceImpl) GetComplianceScanConfiguration(ctx context.Context, req *v
 	return convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS)
 }
 
-func (s *serviceImpl) GetComplianceScanConfigurationsCount(ctx context.Context, request *v2.RawQuery) (*v2.ComplianceScanConfigurationsCount, error) {
-	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-	}
-	scanConfigs, err := s.scanConfigDS.CountScanConfigurations(ctx, parsedQuery)
-	if err != nil {
-		return nil, errors.Wrap(errox.NotFound, err.Error())
-	}
-	return &v2.ComplianceScanConfigurationsCount{
-		Count: int32(scanConfigs),
-	}, nil
-}
-
 func (s *serviceImpl) RunComplianceScanConfiguration(ctx context.Context, request *v2.ResourceByID) (*v2.Empty, error) {
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required to rerun a scan")
@@ -270,6 +270,74 @@ func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunRe
 	}, nil
 }
 
+func (s *serviceImpl) ListComplianceScanConfigProfiles(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanConfigsProfileResponse, error) {
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	// To get total count, need the parsed query without the paging.
+	countQuery := parsedQuery.Clone()
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
+
+	profiles, profileCount, err := s.getProfiles(ctx, parsedQuery, countQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v2.ListComplianceScanConfigsProfileResponse{
+		Profiles:   profiles,
+		TotalCount: int32(profileCount),
+	}, nil
+}
+
+func (s *serviceImpl) ListComplianceScanConfigClusterProfiles(ctx context.Context, request *v2.ComplianceConfigClusterProfileRequest) (*v2.ListComplianceScanConfigsClusterProfileResponse, error) {
+	if request.GetClusterId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "cluster is required")
+	}
+
+	clusterName, found, err := s.clusterDS.GetClusterName(ctx, request.GetClusterId())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Error retrieving cluster %q:%v", request.GetClusterId(), err)
+	}
+	if !found {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to find cluster %q", request.GetClusterId())
+	}
+
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	// Add the cluster ids as an exact match
+	parsedQuery = search.ConjunctionQuery(
+		search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ClusterID, request.GetClusterId()).ProtoQuery(),
+		parsedQuery,
+	)
+
+	// To get total count, need the parsed query without the paging.
+	countQuery := parsedQuery.Clone()
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
+
+	profiles, profileCount, err := s.getProfiles(ctx, parsedQuery, countQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v2.ListComplianceScanConfigsClusterProfileResponse{
+		ClusterId:   request.GetClusterId(),
+		ClusterName: clusterName,
+		Profiles:    profiles,
+		TotalCount:  int32(profileCount),
+	}, nil
+}
+
 func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {
 	if len(req.GetClusters()) == 0 {
 		return errors.Wrap(errox.InvalidArgs, "At least one cluster is required for a scan configuration")
@@ -280,4 +348,47 @@ func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {
 	}
 
 	return nil
+}
+
+func (s *serviceImpl) getBenchmarks(ctx context.Context, profileNames []string) (map[string][]*storage.ComplianceOperatorBenchmarkV2, error) {
+	// Get the benchmarks
+	benchmarkMap := make(map[string][]*storage.ComplianceOperatorBenchmarkV2, len(profileNames))
+	for _, profileName := range profileNames {
+		if _, found := benchmarkMap[profileName]; !found {
+			benchmarks, err := s.benchmarkDS.GetBenchmarksByProfileName(ctx, profileName)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to retrieve benchmarks for profile %q.", profileName)
+			}
+			benchmarkMap[profileName] = benchmarks
+		}
+	}
+
+	return benchmarkMap, nil
+}
+
+func (s *serviceImpl) getProfiles(ctx context.Context, query *v1.Query, countQuery *v1.Query) ([]*v2.ComplianceProfileSummary, int, error) {
+	profileNames, err := s.scanConfigDS.GetProfilesNames(ctx, query)
+	if err != nil {
+		return nil, 0, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve scan configurations for query %v", query)
+	}
+
+	// Build query to get the filtered list by profile names
+	profileQuery := search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ComplianceOperatorProfileName, profileNames...).ProtoQuery()
+	profiles, err := s.profileDS.SearchProfiles(ctx, profileQuery)
+	if err != nil {
+		return nil, 0, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for %v", profileQuery)
+	}
+
+	// Get the benchmarks
+	benchmarkMap, err := s.getBenchmarks(ctx, profileNames)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	profileCount, err := s.scanConfigDS.CountDistinctProfiles(ctx, countQuery)
+	if err != nil {
+		return nil, 0, errors.Wrap(errox.NotFound, err.Error())
+	}
+
+	return storagetov2.ComplianceProfileSummary(profiles, benchmarkMap), profileCount, nil
 }

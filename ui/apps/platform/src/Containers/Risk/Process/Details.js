@@ -23,7 +23,9 @@ function Details({ deploymentId, processGroup }) {
             <div className="px-3">
                 <EventTimelineOverview deploymentId={deploymentId} />
             </div>
-            <h3 className="border-b border-base-500 pb-2 mx-3 my-5">Running Processes</h3>
+            <h3 className="border-b border-base-500 pb-2 mx-3 my-5">
+                History of Running Processes
+            </h3>
             <DiscoveryCards
                 deploymentId={deploymentId}
                 processGroup={processes}

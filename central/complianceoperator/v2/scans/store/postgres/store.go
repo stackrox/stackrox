@@ -117,7 +117,7 @@ func insertIntoComplianceOperatorScanV2(batch *pgx.Batch, obj *storage.Complianc
 		obj.GetId(),
 		obj.GetScanConfigName(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
-		pgutils.NilOrUUID(obj.GetProfile().GetProfileId()),
+		pgutils.NilOrUUID(obj.GetProfile().GetProfileRefId()),
 		obj.GetStatus().GetResult(),
 		protocompat.NilOrTime(obj.GetLastExecutedTime()),
 		obj.GetScanName(),
@@ -125,7 +125,7 @@ func insertIntoComplianceOperatorScanV2(batch *pgx.Batch, obj *storage.Complianc
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_v2 (Id, ScanConfigName, ClusterId, Profile_ProfileId, Status_Result, LastExecutedTime, ScanName, ScanRefId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanConfigName = EXCLUDED.ScanConfigName, ClusterId = EXCLUDED.ClusterId, Profile_ProfileId = EXCLUDED.Profile_ProfileId, Status_Result = EXCLUDED.Status_Result, LastExecutedTime = EXCLUDED.LastExecutedTime, ScanName = EXCLUDED.ScanName, ScanRefId = EXCLUDED.ScanRefId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_v2 (Id, ScanConfigName, ClusterId, Profile_ProfileRefId, Status_Result, LastExecutedTime, ScanName, ScanRefId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanConfigName = EXCLUDED.ScanConfigName, ClusterId = EXCLUDED.ClusterId, Profile_ProfileRefId = EXCLUDED.Profile_ProfileRefId, Status_Result = EXCLUDED.Status_Result, LastExecutedTime = EXCLUDED.LastExecutedTime, ScanName = EXCLUDED.ScanName, ScanRefId = EXCLUDED.ScanRefId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -146,7 +146,7 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 		"id",
 		"scanconfigname",
 		"clusterid",
-		"profile_profileid",
+		"profile_profilerefid",
 		"status_result",
 		"lastexecutedtime",
 		"scanname",
@@ -169,7 +169,7 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 			obj.GetId(),
 			obj.GetScanConfigName(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
-			pgutils.NilOrUUID(obj.GetProfile().GetProfileId()),
+			pgutils.NilOrUUID(obj.GetProfile().GetProfileRefId()),
 			obj.GetStatus().GetResult(),
 			protocompat.NilOrTime(obj.GetLastExecutedTime()),
 			obj.GetScanName(),

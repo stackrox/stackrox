@@ -37,7 +37,6 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Compliance)): {
 			"/v2.ComplianceResultsService/GetComplianceScanResults",
-			"/v2.ComplianceResultsService/GetComplianceOverallClusterCount",
 			"/v2.ComplianceResultsService/GetComplianceScanCheckResult",
 			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResults",
 			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResultsCount",
@@ -107,22 +106,6 @@ func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.Ra
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
 	return s.searchComplianceCheckResults(ctx, parsedQuery, countQuery)
-}
-
-// GetComplianceOverallClusterCount returns scan results count
-func (s *serviceImpl) GetComplianceOverallClusterCount(ctx context.Context, query *v2.RawQuery) (*v2.CountComplianceScanResults, error) {
-	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
-	}
-
-	count, err := s.complianceResultsDS.CountByField(ctx, parsedQuery, search.ClusterID)
-	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", query)
-	}
-	return &v2.CountComplianceScanResults{
-		Count: int32(count),
-	}, nil
 }
 
 // GetComplianceScanCheckResult returns the specific result by ID

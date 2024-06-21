@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -64,7 +65,7 @@ func TestParseCVSSV3(t *testing.T) {
 		t.Run(c.input, func(t *testing.T) {
 			cvss, err := ParseCVSSV3(c.input)
 			assert.NoError(t, err)
-			assert.Equal(t, c.cvssV3, cvss)
+			protoassert.Equal(t, c.cvssV3, cvss)
 		})
 	}
 

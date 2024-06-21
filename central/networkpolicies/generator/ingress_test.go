@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -77,7 +78,7 @@ func TestGenerateIngressRule_WithInternetIngress(t *testing.T) {
 	}
 
 	rule := generateIngressRule(deployment1, portDesc{}, nss)
-	assert.Equal(t, allowAllIngress, rule)
+	protoassert.Equal(t, allowAllIngress, rule)
 }
 
 func TestGenerateIngressRule_WithInternetIngress_WithPorts(t *testing.T) {
@@ -176,7 +177,7 @@ func TestGenerateIngressRule_WithInternetExposure(t *testing.T) {
 	}
 
 	rule := generateIngressRule(deployment1, portDesc{}, nss)
-	assert.Equal(t, allowAllIngress, rule)
+	protoassert.Equal(t, allowAllIngress, rule)
 }
 
 func TestGenerateIngressRule_WithInternetExposure_WithPorts(t *testing.T) {

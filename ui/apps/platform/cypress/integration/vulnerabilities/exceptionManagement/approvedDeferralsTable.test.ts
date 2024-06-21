@@ -3,6 +3,8 @@ import { hasFeatureFlag } from '../../../helpers/features';
 import {
     cancelAllCveExceptions,
     typeAndSelectCustomSearchFilterValue,
+    viewCvesByObservationState,
+    visitWorkloadCveOverview,
 } from '../workloadCves/WorkloadCves.helpers';
 import {
     deferAndVisitRequestDetails,
@@ -10,6 +12,7 @@ import {
     approveRequest,
 } from './ExceptionManagement.helpers';
 import { selectors } from './ExceptionManagement.selectors';
+import { selectors as workloadSelectors } from '../workloadCves/WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 const comment = 'Defer me';
@@ -59,6 +62,22 @@ describe('Exception Management - Approved Deferrals Table', () => {
         cy.get(
             'table tr:first-child td[data-label="Requested action"]:contains("Deferred (when all fixed)")'
         ).should('exist');
+    });
+
+    it('should navigate from Workload CVEs to a request list filtered by the specific CVE', () => {
+        deferAndVisitRequestDetails({ comment, expiry, scope }).then(({ requestName, cveName }) => {
+            approveRequest();
+
+            visitWorkloadCveOverview();
+            viewCvesByObservationState('Deferred');
+
+            // Verify correct CVE filter
+            cy.get('td[data-label="Request details"] a:contains("View")').click();
+            cy.get(workloadSelectors.filterChipGroupItem('CVE', cveName));
+
+            // Verify a link in the table containing the request
+            cy.get('td a').contains(requestName);
+        });
     });
 
     it('should be able to navigate to the Request Details page by clicking on the request name', () => {

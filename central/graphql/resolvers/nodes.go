@@ -31,9 +31,10 @@ func init() {
 		schema.AddExtraResolvers("Node", []string{
 			"cluster: Cluster!",
 			"complianceResults(query: String): [ControlResult!]!",
-			"controls(query: String): [ComplianceControl!]!",
 			"controlStatus(query: String): String!",
+			"controls(query: String): [ComplianceControl!]!",
 			"failingControls(query: String): [ComplianceControl!]!",
+			"nodeCVECountBySeverity(query: String): ResourceTotalCountByCVESeverity!",
 			"nodeComplianceControlCount(query: String) : ComplianceControlCount!",
 			"nodeComponentCount(query: String): Int!",
 			"nodeComponents(query: String, pagination: Pagination): [NodeComponent!]!",
@@ -320,6 +321,12 @@ func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args Raw
 
 func (resolver *nodeResolver) getNodeRawQuery() string {
 	return search.NewQueryBuilder().AddExactMatches(search.NodeID, resolver.data.GetId()).Query()
+}
+
+// NodeCVECountBySeverity returns the count of node cves by severity in the node.
+func (resolver *nodeResolver) NodeCVECountBySeverity(ctx context.Context, args RawQuery) (*resourceTotalCountBySeverityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeCVECountBySeverity")
+	return resolver.root.NodeCVECountBySeverity(resolver.nodeScopeContext(ctx), args)
 }
 
 // NodeVulnerabilities returns the vulnerabilities in the node.

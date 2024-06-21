@@ -11,6 +11,7 @@ import TooltipTh from 'Components/TooltipTh';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { TableUIState } from 'utils/getTableUIState';
+import { ACTION_COLUMN_POPPER_PROPS } from 'constants/tables';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel, WatchStatus } from '../../types';
@@ -200,7 +201,7 @@ function ImagesTable({
                                             />
                                         </Td>
                                     )}
-                                    <Td>{operatingSystem}</Td>
+                                    <Td>{operatingSystem || 'unknown'}</Td>
                                     <Td modifier="nowrap">
                                         {deploymentCount > 0 ? (
                                             <>
@@ -214,19 +215,23 @@ function ImagesTable({
                                         )}
                                     </Td>
                                     <Td>
-                                        <DateDistance
-                                            date={metadata?.v1?.created}
-                                            asPhrase={false}
-                                        />
+                                        {metadata?.v1?.created ? (
+                                            <DateDistance
+                                                date={metadata.v1.created}
+                                                asPhrase={false}
+                                            />
+                                        ) : (
+                                            'unknown'
+                                        )}
                                     </Td>
                                     <Td>
-                                        <DateDistance date={scanTime} />
+                                        {scanTime ? <DateDistance date={scanTime} /> : 'unknown'}
                                     </Td>
                                     {hasWriteAccessForWatchedImage && (
                                         <Td isActionCell>
                                             {name?.tag && (
                                                 <ActionsColumn
-                                                    // menuAppendTo={() => document.body}
+                                                    popperProps={ACTION_COLUMN_POPPER_PROPS}
                                                     items={[
                                                         {
                                                             title: watchImageMenuText,

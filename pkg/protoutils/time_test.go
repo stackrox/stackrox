@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 )
@@ -60,7 +61,7 @@ func TestRoundTimestamp(t *testing.T) {
 		Nanos:   123456789,
 	}
 	notRounded := RoundTimestamp(tsInvalid, time.Microsecond)
-	assert.Equal(t, tsInvalid, notRounded)
+	protoassert.Equal(t, tsInvalid, notRounded)
 
 	ts1 := &types.Timestamp{
 		Seconds: 1510860932,

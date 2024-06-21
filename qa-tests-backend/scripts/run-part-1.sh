@@ -45,6 +45,8 @@ config_part_1() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
 
+    image_prefetcher_system_await
+
     deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
     deploy_optional_e2e_components
     setup_workload_identities
@@ -54,6 +56,8 @@ config_part_1() {
     get_ECR_docker_pull_password
     # TODO(ROX-14759): Re-enable once image pulling is fixed.
     #deploy_clair_v4
+
+    image_prefetcher_prebuilt_await
 }
 
 reuse_config_part_1() {

@@ -6,11 +6,9 @@ import {
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
-    Tooltip,
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import IconText from 'Components/PatternFly/IconText/IconText';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseURLSortResult } from 'hooks/useURLSort';
@@ -25,10 +23,14 @@ import {
     PartialCompoundSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
 import { SearchFilter } from 'types/search';
+
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import { CHECK_STATUS_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
+import StatusIcon from './components/StatusIcon';
+
+export const tabContentIdForResults = 'check-details-Results-tab-section';
 
 export type CheckDetailsTableProps = {
     checkResultsCount: number;
@@ -62,7 +64,7 @@ function CheckDetailsTable({
     const { page, perPage, setPage, setPerPage } = pagination;
 
     return (
-        <>
+        <div id={tabContentIdForResults}>
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarGroup className="pf-v5-u-w-100">
@@ -154,12 +156,7 @@ function CheckDetailsTable({
                                         </Td>
                                         <Td dataLabel="Last scanned">{firstDiscoveredAsPhrase}</Td>
                                         <Td dataLabel="Compliance status">
-                                            <Tooltip content={clusterStatusObject.tooltipText}>
-                                                <IconText
-                                                    icon={clusterStatusObject.icon}
-                                                    text={clusterStatusObject.statusText}
-                                                />
-                                            </Tooltip>
+                                            <StatusIcon clusterStatusObject={clusterStatusObject} />
                                         </Td>
                                     </Tr>
                                 );
@@ -168,7 +165,7 @@ function CheckDetailsTable({
                     )}
                 />
             </Table>
-        </>
+        </div>
     );
 }
 

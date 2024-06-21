@@ -25,6 +25,7 @@ import DateDistance from 'Components/DateDistance';
 import { TableUIState } from 'utils/getTableUIState';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import ExpandRowTh from 'Components/ExpandRowTh';
+import { ACTION_COLUMN_POPPER_PROPS } from 'constants/tables';
 import { VulnerabilitySeverityLabel } from '../../types';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
@@ -295,7 +296,7 @@ function CVEsTable({
                                         {createTableActions && (
                                             <Td className="pf-v5-u-px-0">
                                                 <ActionsColumn
-                                                    // menuAppendTo={() => document.body}
+                                                    popperProps={ACTION_COLUMN_POPPER_PROPS}
                                                     items={createTableActions({
                                                         cve,
                                                         summary,

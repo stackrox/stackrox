@@ -463,6 +463,14 @@ export function interactAndWaitForDeploymentList(callback) {
 }
 
 export function waitForTableLoadCompleteIndicator() {
-    cy.get(selectors.loadingSpinner);
-    cy.get(selectors.loadingSpinner).should('not.exist');
+    cy.get(`table ${selectors.loadingSpinner}`);
+    cy.get(`table ${selectors.loadingSpinner}`).should('not.exist');
+}
+
+export function visitNamespaceView() {
+    cy.get('button:contains("Prioritize by namespace view")').click();
+}
+
+export function viewCvesByObservationState(observationState) {
+    cy.get('button[role="tab"]').contains(observationState).click();
 }

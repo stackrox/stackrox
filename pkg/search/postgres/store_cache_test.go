@@ -125,7 +125,6 @@ func TestCachedDelete(t *testing.T) {
 	require.Nil(t, missingObjAfter)
 	require.False(t, missingFoundAfter)
 	require.NoError(t, missingErrAfter)
-
 }
 
 func TestCachedDeleteMany(t *testing.T) {
@@ -247,6 +246,41 @@ func TestCachedWalk(t *testing.T) {
 
 	assert.ElementsMatch(t, walkedNames, injectedNames)
 	assert.ElementsMatch(t, testObjects, walkedObjects)
+}
+
+func TestCachedWalkByQuery(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newCachedStore(testDB)
+	require.NotNil(t, store)
+
+	testObjects := sampleCachedTestSingleKeyStructArray("WalkByQuery")
+	err := store.UpsertMany(cachedStoreCtx, testObjects)
+	require.NoError(t, err)
+
+	query2 := getCachedMatchFieldQuery("Test Name", "Test WalkByQuery 2")
+	query4 := getCachedMatchFieldQuery("Test Key", "TestWalkByQuery4")
+	query := getCachedDisjunctionQuery(query2, query4)
+
+	walkedNames := make([]string, 0, len(testObjects))
+	walkedObjects := make([]*storage.TestSingleKeyStruct, 0, len(testObjects))
+	walkFn := func(obj *storage.TestSingleKeyStruct) error {
+		walkedNames = append(walkedNames, obj.Name)
+		walkedObjects = append(walkedObjects, obj)
+		return nil
+	}
+	err = store.WalkByQuery(cachedStoreCtx, query, walkFn)
+	require.NoError(t, err)
+
+	expectedNames := []string{
+		"Test WalkByQuery 2",
+		"Test WalkByQuery 4",
+	}
+	expectedObjects := []*storage.TestSingleKeyStruct{
+		testObjects[1],
+		testObjects[3],
+	}
+	assert.ElementsMatch(t, expectedNames, walkedNames)
+	assert.ElementsMatch(t, expectedObjects, walkedObjects)
 }
 
 func TestCachedGetAll(t *testing.T) {
@@ -513,7 +547,6 @@ func pkGetterForCache(obj *storage.TestSingleKeyStruct) string {
 
 // copied from tools/generate-helpers/pg-table-bindings/test/postgres/store.go
 func insertIntoTestSingleKeyStructsWithCache(batch *pgx.Batch, obj *storage.TestSingleKeyStruct) error {
-
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr

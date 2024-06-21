@@ -294,13 +294,35 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 }
 
 // WalkByQuery iterates over all the objects scoped by the query applies the closure.
-func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj PT) error) error {
-	if q == nil || protocompat.Equal(q, search.EmptyQuery()) {
+func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
+	if query == nil || protocompat.Equal(query, search.EmptyQuery()) {
 		c.cacheLock.RLock()
 		defer c.cacheLock.RUnlock()
 		return c.walkCacheNoLock(ctx, fn)
 	}
-	return c.underlyingStore.WalkByQuery(ctx, q, fn)
+
+	identifiers, err := c.underlyingStore.GetIDsByQuery(ctx, query)
+	// Fallback to the underlying store on error.
+	if err != nil {
+		log.Errorf("Failed to get identifiers by query, falling back to walk results by query: %v", err)
+		return c.underlyingStore.WalkByQuery(ctx, query, fn)
+	}
+	c.cacheLock.RLock()
+	defer c.cacheLock.RUnlock()
+	for _, id := range identifiers {
+		obj, found := c.cache[id]
+		if !found {
+			log.Warnf("Object %q not found in store cache", id)
+			continue
+		}
+		if !c.isReadAllowed(ctx, obj) {
+			continue
+		}
+		if err := fn(obj); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Walk iterates over all the objects in the store and applies the closure.
@@ -312,7 +334,28 @@ func (c *cachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) er
 
 // GetByQuery returns the objects from the store matching the query.
 func (c *cachedStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
-	return c.underlyingStore.GetByQuery(ctx, query)
+	defer c.setCacheOperationDurationTime(time.Now(), ops.GetByQuery)
+	identifiers, err := c.underlyingStore.GetIDsByQuery(ctx, query)
+	// Fallback to the underlying store on error.
+	if err != nil {
+		log.Errorf("Failed to get identifiers by query, falling back to get results by query: %v", err)
+		return c.underlyingStore.GetByQuery(ctx, query)
+	}
+	results := make([]*T, 0, len(identifiers))
+	c.cacheLock.RLock()
+	defer c.cacheLock.RUnlock()
+	for _, id := range identifiers {
+		obj, found := c.cache[id]
+		if !found {
+			log.Warnf("Object %q not found in store cache", id)
+			continue
+		}
+		if !c.isReadAllowed(ctx, obj) {
+			continue
+		}
+		results = append(results, obj.Clone())
+	}
+	return results, nil
 }
 
 // DeleteByQuery removes the objects from the store based on the passed query.
@@ -344,6 +387,11 @@ func (c *cachedStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	return result, nil
+}
+
+// GetIDsByQuery returns the IDs for the store matching the query.
+func (c *cachedStore[T, PT]) GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
+	return c.underlyingStore.GetIDsByQuery(ctx, query)
 }
 
 // GetAll retrieves all objects from the store.

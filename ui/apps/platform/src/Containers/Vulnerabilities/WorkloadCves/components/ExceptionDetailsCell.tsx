@@ -12,7 +12,7 @@ function getExceptionManagementURL(
     cve: string,
     vulnerabilityState: Exclude<VulnerabilityState, 'OBSERVED'>
 ): string {
-    const query = getUrlQueryStringForSearchFilter({ cve });
+    const query = getUrlQueryStringForSearchFilter({ CVE: cve });
 
     switch (vulnerabilityState) {
         case 'DEFERRED':

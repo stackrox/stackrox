@@ -27,7 +27,7 @@ import (
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
-	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
+	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -54,9 +54,16 @@ const (
 	logImbueGCFreq     = 24 * time.Hour
 	logImbueWindow     = 24 * 7 * time.Hour
 
-	alertQueryTimeout = 10 * time.Minute
+	alertQueryTimeout    = 10 * time.Minute
+	alertDeleteBatchSize = 5000
 
 	flowsSemaphoreWeight = 5
+
+	pruneResolvedDeployAfterKey   = "pruneResolvedDeployAfter"
+	pruneAllRuntimeAfterKey       = "pruneAllRuntimeAfter"
+	pruneDeletedRuntimeAfterKey   = "pruneDeletedRuntimeAfter"
+	pruneAttemptedDeployAfterKey  = "pruneAttemptedDeployAfter"
+	pruneAttemptedRuntimeAfterKey = "pruneAttemptedRuntimeAfter"
 )
 
 var (
@@ -803,15 +810,18 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 		pruneAttemptedDeployAfter,
 		pruneAttemptedRuntimeAfter := getConfigValues(config)
 
-	var queries []*v1.Query
+	queryMap := make(map[string]*v1.Query)
 
+	// Originally we collected all alerts in one query.  This resulted in a query with 4 large or clauses.
+	// That will always result in a full table scan.  ROX-24559 will break these up into smaller queries to
+	// increase the likelihood that indexes are used to acquire the data.
 	if pruneResolvedDeployAfter > 0 {
 		q := search.NewQueryBuilder().
 			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
 			AddExactMatches(search.ViolationState, storage.ViolationState_RESOLVED.String()).
 			AddDays(search.ViolationTime, int64(pruneResolvedDeployAfter)).
 			ProtoQuery()
-		queries = append(queries, q)
+		queryMap[pruneResolvedDeployAfterKey] = q
 	}
 
 	if pruneAllRuntimeAfter > 0 {
@@ -819,7 +829,7 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
 			AddDays(search.ViolationTime, int64(pruneAllRuntimeAfter)).
 			ProtoQuery()
-		queries = append(queries, q)
+		queryMap[pruneAllRuntimeAfterKey] = q
 	}
 
 	if pruneDeletedRuntimeAfter > 0 && pruneAllRuntimeAfter != pruneDeletedRuntimeAfter {
@@ -828,7 +838,7 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 			AddDays(search.ViolationTime, int64(pruneDeletedRuntimeAfter)).
 			AddBools(search.Inactive, true).
 			ProtoQuery()
-		queries = append(queries, q)
+		queryMap[pruneDeletedRuntimeAfterKey] = q
 	}
 
 	if pruneAttemptedDeployAfter > 0 {
@@ -837,7 +847,7 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 			AddExactMatches(search.ViolationState, storage.ViolationState_ATTEMPTED.String()).
 			AddDays(search.ViolationTime, int64(pruneAttemptedDeployAfter)).
 			ProtoQuery()
-		queries = append(queries, q)
+		queryMap[pruneAttemptedDeployAfterKey] = q
 	}
 
 	if pruneAttemptedRuntimeAfter > 0 {
@@ -846,10 +856,10 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 			AddExactMatches(search.ViolationState, storage.ViolationState_ATTEMPTED.String()).
 			AddDays(search.ViolationTime, int64(pruneAttemptedRuntimeAfter)).
 			ProtoQuery()
-		queries = append(queries, q)
+		queryMap[pruneAttemptedRuntimeAfterKey] = q
 	}
 
-	if len(queries) == 0 {
+	if len(queryMap) == 0 {
 		log.Info("No alert retention configuration, skipping")
 		return
 	}
@@ -857,20 +867,48 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 	ctx, cancel := context.WithTimeout(pruningCtx, alertQueryTimeout)
 	defer cancel()
 
-	alertResults, err := g.alerts.Search(ctx, search.DisjunctionQuery(queries...))
-	if err != nil {
-		log.Error(err)
-		return
-	}
+	prunedAlertCount := 0
+	// Go through the various queries and remove those batches.
+	for key, query := range queryMap {
+		log.Debugf("Pruning for key %q", key)
+		var alertsToPrune []string
+		// The alert searcher is opinionated and adds some default query parameters.
+		// Those should not be included for pruning.  Simpler to just use `WalkByQuery`
+		err := g.alerts.WalkByQuery(ctx, query, func(alert *storage.Alert) error {
+			alertsToPrune = append(alertsToPrune, alert.GetId())
 
-	alertsToPrune := search.ResultsToIDs(alertResults)
+			return nil
+		})
+		if err != nil {
+			log.Errorf("Unable to prune alerts for query %v", query)
+			continue
+		}
 
-	if len(alertsToPrune) > 0 {
-		log.Infof("[Alert pruning] Removing %d alerts", len(alertsToPrune))
-		if err := g.alerts.DeleteAlerts(pruningCtx, alertsToPrune...); err != nil {
-			log.Error(err)
+		localBatchSize := alertDeleteBatchSize
+
+		for {
+			if len(alertsToPrune) == 0 {
+				break
+			}
+
+			if len(alertsToPrune) < localBatchSize {
+				localBatchSize = len(alertsToPrune)
+			}
+
+			alertBatch := alertsToPrune[:localBatchSize]
+			log.Infof("[Alert pruning] Removing %d alerts for %q", len(alertBatch), key)
+			if err := g.alerts.DeleteAlerts(pruningCtx, alertBatch...); err != nil {
+				log.Error(err)
+			} else {
+				prunedAlertCount = prunedAlertCount + len(alertBatch)
+			}
+
+			// Move the slice forward to start the next batch
+			alertsToPrune = alertsToPrune[localBatchSize:]
 		}
 	}
+
+	log.Infof("Pruned %d alerts based on retention configuration", prunedAlertCount)
 }
 
 func (g *garbageCollectorImpl) removeOrphanedRisks() {

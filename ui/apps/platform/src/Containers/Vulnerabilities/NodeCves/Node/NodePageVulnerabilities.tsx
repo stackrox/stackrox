@@ -41,7 +41,7 @@ import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 
 const searchFilterConfig = {
     NodeCVE: nodeCVESearchFilterConfig,
-    'Node Component': nodeComponentSearchFilterConfig,
+    'Node component': nodeComponentSearchFilterConfig,
 };
 
 export type NodePageVulnerabilitiesProps = {

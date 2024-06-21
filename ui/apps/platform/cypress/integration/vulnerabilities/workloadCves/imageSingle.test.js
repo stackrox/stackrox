@@ -31,7 +31,7 @@ describe('Workload CVE Image Single page', () => {
         // have CVEs, so we apply a wildcard filter to ensure only images with CVEs are visible
         if (!hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')) {
             if (isAdvancedFiltersEnabled) {
-                typeAndEnterCustomSearchFilterValue('Image CVE', 'Name', '.*');
+                typeAndEnterCustomSearchFilterValue('CVE', 'Name', '.*');
             } else {
                 typeAndSelectCustomSearchFilterValue('CVE', '.*');
             }
@@ -49,8 +49,8 @@ describe('Workload CVE Image Single page', () => {
         // Check that only applicable resource menu items are present in the toolbar
         if (isAdvancedFiltersEnabled) {
             cy.get(selectors.searchEntityDropdown).click();
-            cy.get(selectors.searchEntityMenuItem).contains('Image CVE');
-            cy.get(selectors.searchEntityMenuItem).contains('Image Component');
+            cy.get(selectors.searchEntityMenuItem).contains('Image');
+            cy.get(selectors.searchEntityMenuItem).contains('Image component');
             cy.get(selectors.searchEntityDropdown).click();
         } else {
             cy.get(selectors.searchOptionsDropdown).click();
@@ -151,7 +151,7 @@ describe('Workload CVE Image Single page', () => {
                 const cveName = $cveNameCell.innerText;
                 // Enter the CVE name into the CVE filter
                 if (isAdvancedFiltersEnabled) {
-                    typeAndEnterSearchFilterValue('Image CVE', 'Name', cveName);
+                    typeAndEnterSearchFilterValue('CVE', 'Name', cveName);
                 } else {
                     typeAndSelectSearchFilterValue('CVE', cveName);
                 }

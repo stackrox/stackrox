@@ -36,7 +36,6 @@ import (
 	"github.com/quay/claircore/rpm"
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
@@ -52,14 +51,12 @@ func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
 		dpkg.NewEcosystem(ctx),
 		gobin.NewEcosystem(ctx),
 		java.NewEcosystem(ctx),
+		nodejs.NewEcosystem(ctx),
 		python.NewEcosystem(ctx),
 		rhcc.NewEcosystem(ctx),
 		rhel.NewEcosystem(ctx),
 		rpm.NewEcosystem(ctx),
 		ruby.NewEcosystem(ctx),
-	}
-	if env.ScannerV4NodeJSSupport.BooleanSetting() {
-		es = append(es, nodejs.NewEcosystem(ctx))
 	}
 	return es
 }

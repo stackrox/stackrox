@@ -20,7 +20,6 @@ import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
-import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
 import { getComplianceProfileCheckStats } from 'services/ComplianceResultsStatsService';
 import {
     getComplianceProfileCheckDetails,
@@ -28,32 +27,20 @@ import {
 } from 'services/ComplianceResultsService';
 import { getTableUIState } from 'utils/getTableUIState';
 
-import CheckDetailsTable from './CheckDetailsTable';
+import CheckDetailsTable, { tabContentIdForResults } from './CheckDetailsTable';
 import CheckDetailsInfo from './components/CheckDetailsInfo';
-import DetailsPageHeader, { PageHeaderLabel } from './components/DetailsPageHeader';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { CLUSTER_QUERY } from './compliance.coverage.constants';
-import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
+import CheckDetailsHeader from './CheckDetailsHeader';
 
 export const DETAILS_TAB = 'Details';
 const RESULTS_TAB = 'Results';
 
+const tabContentIdForDetails = 'check-details-Details-tab-section';
+
 export const TAB_NAV_QUERY = 'detailsTab';
 const TAB_NAV_VALUES = [RESULTS_TAB, DETAILS_TAB] as const;
-
-function sortCheckStats(a: ComplianceCheckStatusCount, b: ComplianceCheckStatusCount) {
-    const order: ComplianceCheckStatus[] = [
-        'PASS',
-        'FAIL',
-        'MANUAL',
-        'ERROR',
-        'INFO',
-        'NOT_APPLICABLE',
-        'INCONSISTENT',
-    ];
-    return order.indexOf(a.status) - order.indexOf(b.status);
-}
 
 function CheckDetails() {
     const { checkName, profileName } = useParams();
@@ -115,23 +102,6 @@ function CheckDetails() {
         searchFilter: {},
     });
 
-    const checkStatsLabels =
-        checkStatsResponse?.checkStats
-            .sort(sortCheckStats)
-            .reduce((acc, checkStat) => {
-                const statusObject = getClusterResultsStatusObject(checkStat.status);
-                if (statusObject && checkStat.count > 0) {
-                    const label: PageHeaderLabel = {
-                        text: `${statusObject.statusText}: ${checkStat.count}`,
-                        icon: statusObject.icon,
-                        color: statusObject.color,
-                    };
-                    return [...acc, label];
-                }
-                return acc;
-            }, [] as PageHeaderLabel[])
-            .filter((component) => component !== null) || [];
-
     useEffect(() => {
         if (checkResultsResponse) {
             setCurrentDatetime(new Date());
@@ -171,15 +141,11 @@ function CheckDetails() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light">
-                <DetailsPageHeader
+                <CheckDetailsHeader
+                    checkName={checkName}
+                    checkStatsResponse={checkStatsResponse}
                     isLoading={isLoadingCheckStats}
-                    name={checkName}
-                    labels={checkStatsLabels}
-                    summary={checkStatsResponse?.rationale}
-                    nameScreenReaderText="Loading profile check details"
-                    metadataScreenReaderText="Loading profile check details"
                     error={checkStatsError}
-                    errorAlertTitle="Unable to fetch profile check stats"
                 />
             </PageSection>
             <Divider component="div" />
@@ -190,10 +156,17 @@ function CheckDetails() {
                 }}
                 component={TabsComponent.nav}
                 className="pf-v5-u-pl-md pf-v5-u-background-color-100 pf-v5-u-flex-shrink-0"
-                role="region"
             >
-                <Tab eventKey={RESULTS_TAB} title={RESULTS_TAB} />
-                <Tab eventKey={DETAILS_TAB} title={DETAILS_TAB} />
+                <Tab
+                    eventKey={RESULTS_TAB}
+                    title={RESULTS_TAB}
+                    tabContentId={tabContentIdForResults}
+                />
+                <Tab
+                    eventKey={DETAILS_TAB}
+                    title={DETAILS_TAB}
+                    tabContentId={tabContentIdForDetails}
+                />
             </Tabs>
             <PageSection>
                 {activeTabKey === RESULTS_TAB && (
@@ -211,7 +184,7 @@ function CheckDetails() {
                     />
                 )}
                 {activeTabKey === DETAILS_TAB && (
-                    <PageSection variant="light" component="div">
+                    <PageSection variant="light" component="div" id={tabContentIdForDetails}>
                         <CheckDetailsInfo
                             checkDetails={checkDetailsResponse}
                             isLoading={isLoadingCheckDetails}

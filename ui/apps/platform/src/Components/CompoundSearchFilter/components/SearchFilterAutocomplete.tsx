@@ -89,10 +89,6 @@ function SearchFilterAutocomplete({
         () =>
             debounce((newValue: string) => {
                 setFilterValue(newValue);
-                if (newValue && !isOpen) {
-                    // Open the menu when the input value changes and the new value is not empty
-                    setIsOpen(true);
-                }
                 setActiveItem(null);
                 setFocusedItemIndex(null);
                 setIsTyping(false);

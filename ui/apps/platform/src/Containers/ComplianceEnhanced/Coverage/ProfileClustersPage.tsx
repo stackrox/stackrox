@@ -3,41 +3,50 @@ import { generatePath, useHistory, useParams } from 'react-router-dom';
 import {
     Divider,
     PageSection,
-    Title,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import PageTitle from 'Components/PageTitle';
-import useRestQuery from 'hooks/useRestQuery';
-import useURLPagination from 'hooks/useURLPagination';
-import useURLSort from 'hooks/useURLSort';
-import { getComplianceClusterStats } from 'services/ComplianceResultsStatsService';
-import { getTableUIState } from 'utils/getTableUIState';
-
+import ComplianceUsageDisclaimer, {
+    COMPLIANCE_DISCLAIMER_KEY,
+} from 'Components/ComplianceUsageDisclaimer';
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import {
     OnSearchPayload,
     clusterSearchFilterConfig,
     profileCheckSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
-import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
-import useURLSearch from 'hooks/useURLSearch';
+import PageTitle from 'Components/PageTitle';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
+import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
+import { getComplianceClusterStats } from 'services/ComplianceResultsStatsService';
+import { getTableUIState } from 'utils/getTableUIState';
+
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import { coverageProfileClustersPath } from './compliance.coverage.routes';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
+import ProfileDetailsHeader from './components/ProfileDetailsHeader';
 import CoveragesPageHeader from './CoveragesPageHeader';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
 import ProfileClustersTable from './ProfileClustersTable';
 
 function ProfileClustersPage() {
+    const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useBooleanLocalStorage(
+        COMPLIANCE_DISCLAIMER_KEY,
+        false
+    );
     const { profileName } = useParams();
     const history = useHistory();
-    const { profileScanStats } = useContext(ComplianceProfilesContext);
+    const { isLoading: isLoadingScanConfigProfiles, scanConfigProfilesResponse } =
+        useContext(ComplianceProfilesContext);
     const [currentDatetime, setCurrentDatetime] = useState<Date>(new Date());
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
 
@@ -98,25 +107,33 @@ function ProfileClustersPage() {
         });
     }
 
+    const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(
+        (profile) => profile.name === profileName
+    );
+
     return (
         <>
             <PageTitle title="Compliance coverage - Profile clusters" />
             <CoveragesPageHeader />
+            {!isDisclaimerAccepted && (
+                <ComplianceUsageDisclaimer onAccept={() => setIsDisclaimerAccepted(true)} />
+            )}
             <PageSection>
                 <ProfilesToggleGroup
-                    profiles={profileScanStats.scanStats}
+                    profileName={profileName}
+                    profiles={scanConfigProfilesResponse.profiles}
                     handleToggleChange={handleProfilesToggleChange}
                 />
-            </PageSection>
-            <PageSection variant="default" className="pf-v5-u-py-0">
-                <PageSection variant="light" className="pf-v5-u-p-0">
+                <Divider component="div" />
+                <ProfileDetailsHeader
+                    isLoading={isLoadingScanConfigProfiles}
+                    profileName={profileName}
+                    profileDetails={selectedProfileDetails}
+                />
+                <Divider component="div" />
+                <PageSection variant="light" className="pf-v5-u-p-0" component="div">
                     <Toolbar>
                         <ToolbarContent>
-                            <ToolbarGroup className="pf-v5-u-w-100">
-                                <Title headingLevel="h2" className="pf-v5-u-py-md">
-                                    Profile results
-                                </Title>
-                            </ToolbarGroup>
                             <ToolbarGroup className="pf-v5-u-w-100">
                                 <ToolbarItem className="pf-v5-u-flex-1">
                                     <CompoundSearchFilter

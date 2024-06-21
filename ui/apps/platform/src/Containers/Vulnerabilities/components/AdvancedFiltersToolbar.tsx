@@ -61,9 +61,11 @@ type AdvancedFiltersToolbarProps = {
     searchFilterConfig: CompoundSearchFilterProps['config'];
     searchFilter: SearchFilter;
     onFilterChange: (searchFilter: SearchFilter, payload: OnSearchPayload) => void;
+    cveStatusFilterField?: 'FIXABLE' | 'CLUSTER CVE FIXABLE';
     className?: string;
     defaultFilters?: DefaultFilters;
-    includeCveFilters?: boolean;
+    includeCveSeverityFilters?: boolean;
+    includeCveStatusFilters?: boolean;
     // TODO We need to be able to apply the autocomplete search context to the advanced filters component @see FilterAutocomplete.tsx
     // autocompleteSearchContext?: unknown;
 };
@@ -72,9 +74,11 @@ function AdvancedFiltersToolbar({
     searchFilterConfig,
     searchFilter,
     onFilterChange,
+    cveStatusFilterField = 'FIXABLE',
     className = '',
     defaultFilters = emptyDefaultFilters,
-    includeCveFilters = true,
+    includeCveSeverityFilters = true,
+    includeCveStatusFilters = true,
     // TODO We need to be able to apply the autocomplete search context to the advanced filters component
     // autocompleteSearchContext,
 }: AdvancedFiltersToolbarProps) {
@@ -83,7 +87,7 @@ function AdvancedFiltersToolbar({
 
     const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig)
         .concat(
-            includeCveFilters
+            includeCveSeverityFilters
                 ? makeDefaultFilterDescriptor(defaultFilters, {
                       displayName: 'CVE severity',
                       searchFilterName: 'SEVERITY',
@@ -91,11 +95,17 @@ function AdvancedFiltersToolbar({
                 : []
         )
         .concat(
-            includeCveFilters && isFixabilityFiltersEnabled
-                ? makeDefaultFilterDescriptor(defaultFilters, {
-                      displayName: 'CVE status',
-                      searchFilterName: 'FIXABLE',
-                  })
+            includeCveStatusFilters && isFixabilityFiltersEnabled
+                ? [
+                      makeDefaultFilterDescriptor(defaultFilters, {
+                          displayName: 'CVE status',
+                          searchFilterName: 'FIXABLE',
+                      }),
+                      makeDefaultFilterDescriptor(defaultFilters, {
+                          displayName: 'CVE status',
+                          searchFilterName: 'CLUSTER CVE FIXABLE',
+                      }),
+                  ]
                 : []
         );
 
@@ -125,20 +135,24 @@ function AdvancedFiltersToolbar({
                         onSearch={onFilterApplied}
                     />
                 </ToolbarGroup>
-                {includeCveFilters && (
+                {(includeCveSeverityFilters ||
+                    (includeCveStatusFilters && isFixabilityFiltersEnabled)) && (
                     <ToolbarGroup>
-                        <CVESeverityDropdown
-                            searchFilter={searchFilter}
-                            onSelect={(category, checked, value) =>
-                                onFilterApplied({
-                                    category,
-                                    value,
-                                    action: checked ? 'ADD' : 'REMOVE',
-                                })
-                            }
-                        />
-                        {isFixabilityFiltersEnabled && (
+                        {includeCveSeverityFilters && (
+                            <CVESeverityDropdown
+                                searchFilter={searchFilter}
+                                onSelect={(category, checked, value) =>
+                                    onFilterApplied({
+                                        category,
+                                        value,
+                                        action: checked ? 'ADD' : 'REMOVE',
+                                    })
+                                }
+                            />
+                        )}
+                        {includeCveStatusFilters && isFixabilityFiltersEnabled && (
                             <CVEStatusDropdown
+                                filterField={cveStatusFilterField}
                                 searchFilter={searchFilter}
                                 onSelect={(category, checked, value) =>
                                     onFilterApplied({

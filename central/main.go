@@ -168,9 +168,10 @@ import (
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
 	versionUtils "github.com/stackrox/rox/central/version/utils"
-	vulnRequestManager "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
-	vulnRequestService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
-	vulnRequestServiceV2 "github.com/stackrox/rox/central/vulnerabilityrequest/service/v2"
+	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
+	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
+	vulnRequestService "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service"
+	vulnRequestServiceV2 "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/iap"
@@ -435,6 +436,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		collectionService.Singleton(),
 		policyCategoryService.Singleton(),
 		processListeningOnPorts.Singleton(),
+		vulnMgmtService.Singleton(),
 	}
 
 	// The scheduled backup service is not applicable when using an external database
