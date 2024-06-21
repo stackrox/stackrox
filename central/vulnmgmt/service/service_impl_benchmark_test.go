@@ -56,69 +56,6 @@ func BenchmarkService_Export(b *testing.B) {
 	}
 }
 
-/*
-Sample run outcome.
-
-Data injection phase (bench results removed from output)
-
-BenchmarkService_Export
-1718789959 Injecting base images
-1718790077 Injecting base deployments
-1718790082 Starting actual tests
-... Results with a 500 item DB
-1718790102 Injecting 500 extra images
-1718790179 Injecting 500 extra deployments
-1718790183 Continuing actual tests
-... Results with a 1.000 item DB
-1718790221 Injecting 4000 extra images
-1718791150 Injecting 4000 extra deployments
-1718791190 Continuing actual tests (2)
-... Results with a 5.000 item DB
-1718791574 Injecting 5000 extra images
-1718792407 Injecting 5000 extra deployments
-1718792448 Continuing actual tests (3)
-... Results with a 10.000 item DB
-
-Benchmark results
-
- DB Size        | No query         | Query 10% of db  | Query 90% of db  |
- (# deployment  |                  |                  |                  |
- and # images)  | Elapsed ns       | Elapsed ns       | Elapsed ns       |
-----------------+------------------+------------------+------------------+
-            500 |    9.165.222.465 |    1.896.871.287 |    9.100.526.550 |
-                |       18.330.445 |       37.937.426 |       20.223.392 |
-----------------+------------------+------------------+------------------+
-          1.000 |   17.562.401.077 |    3.695.793.796 |   16.655.958.011 |
-                |       17.562.401 |       36.957.938 |       18.503.287 |
-----------------+------------------+------------------+------------------+
-          5.000 |  232.410.473.350 |   17.445.117.452 |  133.301.396.811 |
-                |       46.482.095 |       34.890.235 |       29.622.533 |
-----------------+------------------+------------------+------------------+
-         10.000 |  385.138.425.396 |   35.631.981.696 |  302.740.800.784 |
-                |       38.513.843 |       35.631.981 |       33.637.867 |
-----------------+------------------+------------------+------------------+
-
-The structure of the service call is:
-- Walk by query on deployments
-  - pull elements directly from cache if empty query
-  - pull elements from DB otherwise
-  [ for each deployment :
-    - for each container in the deployment:
-      - identify the container image ID
-      - get the container image from cache
-      - on cache miss, get the container image from DB
-        - get the image metadata from DB (table images)
-        - get ImageCVEEdge objects (table image_cve_edges)
-        - get CVE IDs from the edge objects
-        - get ImageComponentEdge objects (table image_component_edges)
-        - get component IDs from edge objects
-        - get ImageComponent objects (table image_components)
-        - get (Image)ComponentCVEEdge objects (table image_component_cve_edges)
-        - get ImageCVE objects (table image_cves)
-        - reconstruct image object from fetched elements
-  ]
-*/
-
 func getExportServiceBenchmark(
 	helper *testutils.ExportServicePostgresTestHelper,
 	service Service,
@@ -148,7 +85,7 @@ func getExportServiceBenchmark(
 				for i := 0; i < ib.N; i++ {
 					_, err = receiveWorkloads(helper.Ctx, client, request, true)
 					if err != nil {
-						b.Error(err)
+						ib.Error(err)
 					}
 				}
 			})
