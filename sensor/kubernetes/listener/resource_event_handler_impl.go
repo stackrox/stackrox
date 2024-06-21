@@ -110,7 +110,8 @@ func (h *resourceEventHandlerImpl) registerObject(newObj interface{}) {
 
 	secret, isSecret := newObj.(*corev1.Secret)
 	if isSecret {
-		log.Debugf("ROX-24163 registerObject processes secret ID=%q type=%q", secret.GetUID(), secret.Type)
+		log.Debugf("ROX-24163 registerObject processes secret (ns/name=%s/%s ID=%q type=%q)",
+			secret.GetNamespace(), secret.GetName(), secret.GetUID(), secret.Type)
 	}
 
 	newUID := getObjUID(newObj)
@@ -120,20 +121,20 @@ func (h *resourceEventHandlerImpl) registerObject(newObj interface{}) {
 		h.seenIDs[newUID] = struct{}{}
 	} else if h.missingInitialIDs != nil {
 		if isSecret {
-			log.Debugf("ROX-24163 registerObject deleting secret (ID=%q type=%q) form missingInitialIDs",
-				secret.GetUID(), secret.Type)
+			log.Debugf("ROX-24163 registerObject deleting secret (ns/name=%s/%s ID=%q type=%q) form missingInitialIDs",
+				secret.GetNamespace(), secret.GetName(), secret.GetUID(), secret.Type)
 		}
 		delete(h.missingInitialIDs, newUID)
 		h.checkHasSeenAllInitialIDsNoLock()
 	} else {
 		if isSecret {
-			log.Debugf("ROX-24163 registerObject else-case secret (ID=%q type=%q)",
-				secret.GetUID(), secret.Type)
+			log.Debugf("ROX-24163 registerObject else-case secret (ns/name=%s/%s ID=%q type=%q)",
+				secret.GetNamespace(), secret.GetName(), secret.GetUID(), secret.Type)
 		}
 	}
 	if isSecret {
-		log.Debugf("ROX-24163 registerObject done processing secret (ID=%q type=%q). len(h.missingInitialIDs)=%d",
-			secret.GetUID(), secret.Type, len(h.missingInitialIDs))
+		log.Debugf("ROX-24163 registerObject done processing secret (ns/name=%s/%s ID=%q type=%q). len(h.missingInitialIDs)=%d",
+			secret.GetNamespace(), secret.GetName(), secret.GetUID(), secret.Type, len(h.missingInitialIDs))
 	}
 }
 
