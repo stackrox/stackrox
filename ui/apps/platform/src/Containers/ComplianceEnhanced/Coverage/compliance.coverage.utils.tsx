@@ -11,7 +11,6 @@ import {
     WrenchIcon,
 } from '@patternfly/react-icons';
 
-import { QueryValue } from 'hooks/useURLParameter';
 import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
 import { SearchFilter } from 'types/search';
 
@@ -217,18 +216,16 @@ export function getClusterResultsStatusObject(status: ComplianceCheckStatus): Cl
     return statusIconTextMap[status];
 }
 
-export function createScanConfigFilter(selectedScanConfig: QueryValue) {
-    return typeof selectedScanConfig === 'string'
-        ? { [SCAN_CONFIG_NAME_QUERY]: selectedScanConfig }
-        : {};
+export function createScanConfigFilter(selectedScanConfigName: string | undefined) {
+    return selectedScanConfigName ? { [SCAN_CONFIG_NAME_QUERY]: selectedScanConfigName } : {};
 }
 
 export function combineSearchFilterWithScanConfig(
     searchFilter: SearchFilter,
-    selectedScanConfig: QueryValue
+    selectedScanConfigName: string | undefined
 ): SearchFilter {
     return {
         ...searchFilter,
-        ...createScanConfigFilter(selectedScanConfig),
+        ...createScanConfigFilter(selectedScanConfigName),
     };
 }

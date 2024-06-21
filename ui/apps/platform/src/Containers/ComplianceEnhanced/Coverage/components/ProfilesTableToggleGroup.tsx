@@ -7,7 +7,7 @@ import {
     coverageProfileClustersPath,
     CoverageProfilePath,
 } from '../compliance.coverage.routes';
-import useScanConfigRouter from '../hooks/useNavigateWithScanConfig';
+import useScanConfigRouter from '../hooks/useScanConfigRouter';
 
 export type ProfilesTableToggleGroupProps = {
     activeToggle: 'checks' | 'clusters';

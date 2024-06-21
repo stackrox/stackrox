@@ -317,10 +317,10 @@ export function addRegexPrefixToFilters(
 // TODO: Fallback needed?
 export const generatePathWithQuery = (
     pathTemplate: string,
-    params: Partial<Record<string, unknown>>,
+    pathParams: Partial<Record<string, unknown>>,
     queryParams
 ) => {
-    const path = safeGeneratePath(pathTemplate, params, pathTemplate);
+    const path = safeGeneratePath(pathTemplate, pathParams, pathTemplate);
     const searchParams = new URLSearchParams(queryParams).toString();
     return `${path}?${searchParams}`;
 };

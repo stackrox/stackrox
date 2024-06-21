@@ -30,7 +30,7 @@ import {
 import ControlLabels from './components/ControlLabels';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
-import useScanConfigRouter from './hooks/useNavigateWithScanConfig';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
 
 export type ProfileChecksTableProps = {
     profileChecksResultsCount: number;

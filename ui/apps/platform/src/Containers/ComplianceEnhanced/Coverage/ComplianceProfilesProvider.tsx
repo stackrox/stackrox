@@ -30,11 +30,11 @@ export const ComplianceProfilesContext =
     createContext<ComplianceProfilesContextValue>(defaultContextValue);
 
 function ComplianceProfilesProvider({ children }: { children: React.ReactNode }) {
-    const { selectedScanConfig } = useContext(ScanConfigurationsContext);
+    const { selectedScanConfigName } = useContext(ScanConfigurationsContext);
 
     const fetchProfiles = useCallback(
-        () => listComplianceScanConfigProfiles(createScanConfigFilter(selectedScanConfig)),
-        [selectedScanConfig]
+        () => listComplianceScanConfigProfiles(createScanConfigFilter(selectedScanConfigName)),
+        [selectedScanConfigName]
     );
     const {
         data: scanConfigProfilesResponse,

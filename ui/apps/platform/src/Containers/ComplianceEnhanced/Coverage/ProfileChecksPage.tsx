@@ -37,7 +37,7 @@ import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
-import useScanConfigRouter from './hooks/useNavigateWithScanConfig';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
 import CoveragesPageHeader from './CoveragesPageHeader';
 import ProfileChecksTable from './ProfileChecksTable';
@@ -52,7 +52,7 @@ function ProfileChecksPage() {
     const { profileName } = useParams();
     const { isLoading: isLoadingScanConfigProfiles, scanConfigProfilesResponse } =
         useContext(ComplianceProfilesContext);
-    const { selectedScanConfig } = useContext(ScanConfigurationsContext);
+    const { selectedScanConfigName } = useContext(ScanConfigurationsContext);
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { page, perPage, setPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
@@ -63,14 +63,17 @@ function ProfileChecksPage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const fetchProfileChecks = useCallback(() => {
-        const combinedFilter = combineSearchFilterWithScanConfig(searchFilter, selectedScanConfig);
+        const combinedFilter = combineSearchFilterWithScanConfig(
+            searchFilter,
+            selectedScanConfigName
+        );
         return getComplianceProfileResults(profileName, {
             sortOption,
             page,
             perPage,
             searchFilter: combinedFilter,
         });
-    }, [page, perPage, profileName, sortOption, searchFilter, selectedScanConfig]);
+    }, [page, perPage, profileName, sortOption, searchFilter, selectedScanConfigName]);
     const { data: profileChecks, loading: isLoading, error } = useRestQuery(fetchProfileChecks);
 
     const searchFilterConfig = {

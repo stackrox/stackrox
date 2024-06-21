@@ -5,7 +5,7 @@ import {
     listComplianceScanConfigurations,
     ListComplianceScanConfigurationsResponse,
 } from 'services/ComplianceScanConfigurationService';
-import useURLParameter, { HistoryAction, QueryValue } from 'hooks/useURLParameter';
+import useURLParameter, { HistoryAction } from 'hooks/useURLParameter';
 
 type ScanConfigurationsContextValue = {
     scanConfigurationsQuery: {
@@ -13,9 +13,9 @@ type ScanConfigurationsContextValue = {
         isLoading: boolean;
         error: Error | undefined;
     };
-    selectedScanConfig: QueryValue;
-    setSelectedScanConfig: (
-        scanConfigName: QueryValue,
+    selectedScanConfigName: string | undefined;
+    setSelectedScanConfigName: (
+        scanConfigName: string | undefined,
         historyAction?: HistoryAction | undefined
     ) => void;
 };
@@ -31,15 +31,18 @@ const defaultContextValue: ScanConfigurationsContextValue = {
         isLoading: true,
         error: undefined,
     },
-    selectedScanConfig: undefined,
-    setSelectedScanConfig: () => {},
+    selectedScanConfigName: undefined,
+    setSelectedScanConfigName: () => {},
 };
 
 export const ScanConfigurationsContext =
     createContext<ScanConfigurationsContextValue>(defaultContextValue);
 
 function ScanConfigurationsProvider({ children }: { children: React.ReactNode }) {
-    const [selectedScanConfig, setSelectedScanConfig] = useURLParameter('scanSchedule', undefined);
+    const [selectedScanConfigName, setSelectedScanConfigName] = useURLParameter(
+        'scanSchedule',
+        undefined
+    );
 
     const fetchScanConfigurations = useCallback(() => listComplianceScanConfigurations(), []);
     const {
@@ -48,14 +51,24 @@ function ScanConfigurationsProvider({ children }: { children: React.ReactNode })
         error,
     } = useRestQuery(fetchScanConfigurations);
 
+    const selectedScanConfigNameString =
+        typeof selectedScanConfigName === 'string' ? selectedScanConfigName : undefined;
+
+    const wrappedSetSelectedScanConfig = (
+        scanConfigName: string | undefined,
+        historyAction?: HistoryAction | undefined
+    ) => {
+        setSelectedScanConfigName(scanConfigName, historyAction);
+    };
+
     const contextValue: ScanConfigurationsContextValue = {
         scanConfigurationsQuery: {
             response: scanConfigurationsResponse ?? defaultResponse,
             isLoading,
             error,
         },
-        selectedScanConfig,
-        setSelectedScanConfig,
+        selectedScanConfigName: selectedScanConfigNameString,
+        setSelectedScanConfigName: wrappedSetSelectedScanConfig,
     };
 
     return (

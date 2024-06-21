@@ -27,7 +27,7 @@ import {
 } from './compliance.coverage.utils';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
-import useScanConfigRouter from './hooks/useNavigateWithScanConfig';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
 
 export type ProfileClustersTableProps = {
     currentDatetime: Date;

@@ -6,7 +6,7 @@ import ScanConfigurationSelect from './components/ScanConfigurationSelect';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 
 function CoveragesPageHeader() {
-    const { setSelectedScanConfig } = useContext(ScanConfigurationsContext);
+    const { setSelectedScanConfigName } = useContext(ScanConfigurationsContext);
     return (
         <>
             <PageSection component="div" variant="light" padding={{ default: 'noPadding' }}>
@@ -27,7 +27,7 @@ function CoveragesPageHeader() {
                         <Button
                             variant="link"
                             icon={<TimesCircleIcon />}
-                            onClick={() => setSelectedScanConfig(undefined)}
+                            onClick={() => setSelectedScanConfigName(undefined)}
                         >
                             Reset filter
                         </Button>

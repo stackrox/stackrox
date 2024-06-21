@@ -6,14 +6,14 @@ import { generatePathWithQuery } from 'utils/searchUtils';
 import { ScanConfigurationsContext } from '../ScanConfigurationsProvider';
 
 const useScanConfigRouter = () => {
-    const { selectedScanConfig } = useContext(ScanConfigurationsContext);
+    const { selectedScanConfigName } = useContext(ScanConfigurationsContext);
     const history = useHistory();
 
     function generatePathWithScanConfig(path, pathParams: Partial<Record<string, unknown>> = {}) {
         return generatePathWithQuery(
             path,
             pathParams,
-            selectedScanConfig ? { scanSchedule: selectedScanConfig } : {}
+            selectedScanConfigName ? { scanSchedule: selectedScanConfigName } : {}
         );
     }
 

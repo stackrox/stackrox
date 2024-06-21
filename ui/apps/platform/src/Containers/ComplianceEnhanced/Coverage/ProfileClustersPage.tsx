@@ -38,7 +38,7 @@ import { combineSearchFilterWithScanConfig } from './compliance.coverage.utils';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
 import CoveragesPageHeader from './CoveragesPageHeader';
-import useScanConfigRouter from './hooks/useNavigateWithScanConfig';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
 import ProfileClustersTable from './ProfileClustersTable';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
@@ -52,7 +52,7 @@ function ProfileClustersPage() {
     const { profileName } = useParams();
     const { isLoading: isLoadingScanConfigProfiles, scanConfigProfilesResponse } =
         useContext(ComplianceProfilesContext);
-    const { selectedScanConfig } = useContext(ScanConfigurationsContext);
+    const { selectedScanConfigName } = useContext(ScanConfigurationsContext);
     const [currentDatetime, setCurrentDatetime] = useState<Date>(new Date());
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
 
@@ -65,14 +65,17 @@ function ProfileClustersPage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const fetchProfileClusters = useCallback(() => {
-        const combinedFilter = combineSearchFilterWithScanConfig(searchFilter, selectedScanConfig);
+        const combinedFilter = combineSearchFilterWithScanConfig(
+            searchFilter,
+            selectedScanConfigName
+        );
         return getComplianceClusterStats(profileName, {
             sortOption,
             page,
             perPage,
             searchFilter: combinedFilter,
         });
-    }, [page, perPage, profileName, sortOption, searchFilter, selectedScanConfig]);
+    }, [page, perPage, profileName, sortOption, searchFilter, selectedScanConfigName]);
     const { data: profileClusters, loading: isLoading, error } = useRestQuery(fetchProfileClusters);
 
     const searchFilterConfig = {
