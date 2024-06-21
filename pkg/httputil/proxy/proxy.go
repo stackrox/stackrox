@@ -18,7 +18,6 @@ import (
 
 const (
 	proxyReloadInterval = 5 * time.Second
-	tlsHandshakeTimeout = 2 * time.Second
 )
 
 var (
@@ -155,11 +154,9 @@ func AwareDialContextTLS(ctx context.Context, address string, tlsClientConf *tls
 		tlsClientConf = tlsClientConf.Clone()
 		tlsClientConf.ServerName = host
 	}
-	ctxHandshake, cancel := context.WithTimeout(ctx, tlsHandshakeTimeout)
-	defer cancel()
 	tlsConn := tls.Client(conn, tlsClientConf)
 	// The handshake must be done with a timeout to avoid infinite blocking of Sensor sync.
-	if err := tlsConn.HandshakeContext(ctxHandshake); err != nil {
+	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		utils.IgnoreError(tlsConn.Close)
 		return nil, err
 	}
