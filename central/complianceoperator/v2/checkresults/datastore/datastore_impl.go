@@ -281,7 +281,7 @@ func (d *datastoreImpl) CountByField(ctx context.Context, query *v1.Query, field
 	return 0, errors.Errorf("Unable to group result counts by %q", field)
 }
 
-func (d *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.ComplianceOperatorCheckResultV2) error) error {
+func (d *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn func(result *storage.ComplianceOperatorCheckResultV2) error) error {
 	wrappedFn := func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
 		return fn(checkResult)
 	}

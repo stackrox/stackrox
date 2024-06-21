@@ -889,8 +889,10 @@ func (s *complianceCheckResultDataStoreTestSuite) TestGetComplianceCheckResult()
 func (s *complianceCheckResultDataStoreTestSuite) TestWalkByQueryCheckResult() {
 	s.setupTestData()
 	rec1 := getTestRec(testconsts.Cluster1)
+	rec1.CheckName = "test-check1"
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
 	rec2 := getTestRec(testconsts.Cluster2)
+	rec2.CheckName = "test-check2"
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
 	parsedQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, rec1.GetScanConfigName()).
 		AddExactMatches(search.ClusterID, rec1.ClusterId).
@@ -916,6 +918,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestWalkByQueryCheckResult() {
 	})
 
 	s.Require().NotEmpty(resultsQuery)
+	s.Require().Equal(resultsQuery[0].CheckName, rec1.GetCheckName())
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResultStats() {

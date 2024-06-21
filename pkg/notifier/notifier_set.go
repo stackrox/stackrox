@@ -112,7 +112,6 @@ func (p *notifierSetImpl) GetNotifier(_ context.Context, id string) notifiers.No
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	log.Infof("notifier id is %s. notifier set is %s", id, p.notifiers)
 	return p.notifiers[id]
 }
 

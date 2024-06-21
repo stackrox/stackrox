@@ -99,7 +99,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceRep
 		return
 	}
 	if data == nil {
-		log.Errorf("Error getting report data for scan config %s. NO data returned by query", req.ScanConfigName)
+		log.Infof("NO data returned for scan config %s", req.ScanConfigName)
 		return
 	}
 
@@ -145,17 +145,15 @@ func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportR
 			ProtoQuery()
 		resultCluster := []*ResultRow{}
 
-		err := rg.checkResultsDS.WalkByQuery(req.Ctx, parsedQuery, func(c *storage.ComplianceOperatorCheckResultV2) error {
+		err := rg.checkResultsDS.WalkByQuery(req.Ctx, parsedQuery, func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
 			row := &ResultRow{
-				ClusterName: c.GetClusterName(),
-				CheckName:   c.GetCheckName(),
-				Description: c.GetDescription(),
-				Status:      c.GetStatus().String(),
-				Remediation: c.GetInstructions(),
+				ClusterName: checkResult.GetClusterName(),
+				CheckName:   checkResult.GetCheckName(),
+				Description: checkResult.GetDescription(),
+				Status:      checkResult.GetStatus().String(),
+				Remediation: checkResult.GetInstructions(),
 			}
 			// get profile name for the check result
-			q := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, c.GetScanRefId()).ProtoQuery()
-			log.Info("query to get profiles is %s", q)
 			profiles, err := rg.profileDS.SearchProfiles(req.Ctx, q)
 			if err != nil {
 				return err
@@ -167,7 +165,7 @@ func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportR
 			row.Profile = profiles[0].GetName()
 
 			// get remediation for the check result
-			q = search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorCheckName, c.GetCheckName()).AddExactMatches(search.ClusterID, c.GetClusterId()).ProtoQuery()
+			q = search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorCheckName, checkResult.GetCheckName()).AddExactMatches(search.ClusterID, checkResult.GetClusterId()).ProtoQuery()
 			remediations, err := rg.remediationDS.SearchRemediations(req.Ctx, q)
 			if err != nil {
 				return err
@@ -177,9 +175,9 @@ func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportR
 			}
 
 			resultCluster = append(resultCluster, row)
-			if c.GetStatus() == storage.ComplianceOperatorCheckResultV2_FAIL {
+			if checkResult.GetStatus() == storage.ComplianceOperatorCheckResultV2_FAIL {
 				resultEmailComplianceReport.TotalFail += 1
-			} else if c.GetStatus() == storage.ComplianceOperatorCheckResultV2_PASS {
+			} else if checkResult.GetStatus() == storage.ComplianceOperatorCheckResultV2_PASS {
 				resultEmailComplianceReport.TotalPass += 1
 			} else {
 				resultEmailComplianceReport.TotalMixed += 1
@@ -202,11 +200,8 @@ func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData 
 
 	errorList := errorhelpers.NewErrorList("Error sending compliance report email notifications")
 	for _, repNotifier := range notifiersList {
-		notifierID := repNotifier.GetId()
-		nf := rg.notificationProcessor.GetNotifier(ctx, notifierID)
+		nf := rg.notificationProcessor.GetNotifier(ctx, repNotifier.GetId())
 		reportNotifier, ok := nf.(notifiers.ReportNotifier)
-		log.Infof("nf is %s", nf)
-		log.Infof("reportnotifier is %s", reportNotifier)
 		if !ok {
 			errorList.AddError(errors.Errorf("incorrect type of notifier %s for compliance report", repNotifier.GetEmailConfig().GetNotifierId()))
 			continue
@@ -214,7 +209,6 @@ func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData 
 
 		customBody := repNotifier.GetEmailConfig().GetCustomBody()
 		body, err := formatEmailBodywithDetails(defaultEmailBodyTemplate, emailBody)
-		log.Infof("format email body is %s.body is %s", emailBody, body)
 		if err != nil {
 			errorList.AddError(errors.Errorf("Error formatting email body for notifier %s: %s",
 				repNotifier.GetEmailConfig().GetNotifierId(), err))
@@ -279,7 +273,6 @@ func format(results map[string][]*ResultRow) (*bytes.Buffer, error) {
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
 	for clusterID, res := range results {
-		log.Infof("Creating csv for cluster %s", clusterID)
 		fileName := fmt.Sprintf("cluster_%s.csv", clusterID)
 		err := createCSVInZip(zipWriter, fileName, res)
 		if err != nil {
