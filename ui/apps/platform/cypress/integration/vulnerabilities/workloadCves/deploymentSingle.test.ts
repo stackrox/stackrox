@@ -105,18 +105,17 @@ describe('Workload CVE Deployment Single page', () => {
 
         // Check that no severities are hidden by default
         cy.get(selectors.summaryCard('CVEs by severity'))
-            .find("*:contains('Results hidden')")
+            .find('p')
+            .contains(new RegExp('(Critical|Important|Moderate|Low) hidden'))
             .should('not.exist');
 
         applyLocalSeverityFilters('Critical');
 
         // Check that summary card severities are hidden correctly
-        cy.get(`${selectors.severityIcon('Critical')} + *:contains("Results hidden")`).should(
-            'not.exist'
-        );
-        cy.get(`${selectors.severityIcon('Important')} + *:contains("Results hidden")`);
-        cy.get(`${selectors.severityIcon('Moderate')} + *:contains("Results hidden")`);
-        cy.get(`${selectors.severityIcon('Low')} + *:contains("Results hidden")`);
+        cy.get(`*:contains("Critical hidden")`).should('not.exist');
+        cy.get(`*:contains("Important hidden")`);
+        cy.get(`*:contains("Moderate hidden")`);
+        cy.get(`*:contains("Low hidden")`);
 
         // Check that table rows are filtered
         cy.get(selectors.filteredViewLabel);
