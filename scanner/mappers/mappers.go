@@ -291,7 +291,7 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 			continue
 		}
 		pkgVulns[id] = &v4.StringList{
-			Values: filterVulns(vulnIDs, ccVulnerabilities),
+			Values: filterRepeatedVulns(vulnIDs, ccVulnerabilities),
 		}
 	}
 	return pkgVulns
@@ -816,9 +816,9 @@ func findName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
 	return "", false
 }
 
-// filterVulns filters repeat vulnerabilities out of vulnIDs and returns the result.
+// filterRepeatedVulns filters repeat vulnerabilities out of vulnIDs and returns the result.
 // This function does not guarantee ordering is preserved.
-func filterVulns(vulnIDs []string, vulns map[string]*claircore.Vulnerability) []string {
+func filterRepeatedVulns(vulnIDs []string, ccVulnerabilities map[string]*claircore.Vulnerability) []string {
 	// Group each vulnerability by name.
 	// This maps each name to a slice of vulnerabilities to protect against the possibility
 	// Claircore finds multiple vulnerabilities with the same name for this package from different vulnerability streams.
@@ -826,7 +826,7 @@ func filterVulns(vulnIDs []string, vulns map[string]*claircore.Vulnerability) []
 	vulnsByName := make(map[string][]*claircore.Vulnerability)
 OUTER:
 	for _, vulnID := range vulnIDs {
-		vuln := vulns[vulnID]
+		vuln := ccVulnerabilities[vulnID]
 		if vuln == nil {
 			continue
 		}
@@ -844,7 +844,7 @@ OUTER:
 		vulnsByName[vuln.Name] = append(vulnsByName[vuln.Name], vuln)
 	}
 
-	filtered := make([]string, 0, len(vulns))
+	filtered := make([]string, 0, len(vulnIDs))
 	for _, vulns := range vulnsByName {
 		for _, vuln := range vulns {
 			filtered = append(filtered, vuln.ID)
