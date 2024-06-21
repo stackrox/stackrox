@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRoxErrorIs(t *testing.T) {
@@ -84,5 +85,32 @@ func TestCausedBy(t *testing.T) {
 		err := NotFound.New("absolute disaster").CausedByf("out of %v", "sense")
 		assert.Equal(t, "absolute disaster: out of sense", err.Error())
 		assert.ErrorIs(t, err, NotFound)
+	}
+}
+
+func TestSentinelMessage(t *testing.T) {
+	tests := []struct {
+		err              error
+		expectedSentinel error
+		expectedFound    bool
+	}{
+		{NotFound, NotFound, true},
+		{NotFound.CausedBy(InvalidArgs), NotFound, true},
+		{NotFound.CausedBy("secret"), NotFound, true},
+		{errors.WithMessage(NotFound, "secret"), NotFound, true},
+		{errors.WithMessage(NotFound.New("secret"), "secret"), NotFound, true},
+		{NotFound.New("secret"), NotFound, true},
+		{errors.New("abc"), nil, false},
+	}
+
+	for _, test := range tests {
+		re, ok := GetBaseSentinelError(test.err)
+		assert.Equal(t, test.expectedFound, ok)
+		if test.expectedFound {
+			require.NotNil(t, re)
+			assert.ErrorIs(t, re, test.expectedSentinel, re)
+		} else {
+			assert.Nil(t, re)
+		}
 	}
 }

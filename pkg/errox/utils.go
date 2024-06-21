@@ -14,3 +14,14 @@ func IsAny(err error, targets ...error) bool {
 	}
 	return false
 }
+
+// GetBaseSentinelError returns the lowest found sentinel error, and the flag
+// that tells whether the error has been found.
+func GetBaseSentinelError(err error) (error, bool) {
+	var re Error
+	for errors.As(err, &re) {
+		err = errors.Unwrap(re)
+	}
+	re, ok := (re).(*RoxError)
+	return re, ok
+}
