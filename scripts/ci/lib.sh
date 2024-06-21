@@ -167,9 +167,11 @@ process_central_metrics() {
 
     local metrics_output
     local csv_output
+    local debug_dump_zip
     metrics_output="$(mktemp --suffix=.prom)"
     csv_output="$(mktemp --suffix=.csv)"
-    unzip -p "${output_dir}/*.zip" metrics-1 > "${metrics_output}"
+    debug_dump_zip="$(ls -t *.zip | head -1)"
+    unzip -p "${output_dir}/${debug_dump_zip}" metrics-1 > "${metrics_output}"
 
     get_prometheus_metrics_parser
 
