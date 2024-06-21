@@ -202,7 +202,6 @@ class PostClusterTest(StoreArtifacts):
         )
 
     def run_must_gather(self):
-        # TODO: run only on OCP clusters
         self.run_with_best_effort(
             [
                 "scripts/ci/run-must-gather.sh",
