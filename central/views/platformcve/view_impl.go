@@ -124,7 +124,7 @@ func (v *platformCVECoreViewImpl) CVECountByType(ctx context.Context, q *v1.Quer
 	return results[0], nil
 }
 
-func (v *platformCVECoreViewImpl) CVECountByFixability(ctx context.Context, q *v1.Query) (CVECountByFixability, error) {
+func (v *platformCVECoreViewImpl) CVECountByFixability(ctx context.Context, q *v1.Query) (common.ResourceCountByFixability, error) {
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}

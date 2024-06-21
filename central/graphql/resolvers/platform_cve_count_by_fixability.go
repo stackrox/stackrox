@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/views/common"
 	"github.com/stackrox/rox/central/views/platformcve"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -20,11 +21,11 @@ func init() {
 type platformCVECountByFixabilityResolver struct {
 	ctx  context.Context
 	root *Resolver
-	data platformcve.CVECountByFixability
+	data common.ResourceCountByFixability
 }
 
 func (resolver *Resolver) wrapPlatformCVECountByFixabilityWithContext(ctx context.Context,
-	value platformcve.CVECountByFixability, err error) (*platformCVECountByFixabilityResolver, error) {
+	value common.ResourceCountByFixability, err error) (*platformCVECountByFixabilityResolver, error) {
 	if err != nil {
 		return nil, err
 	}

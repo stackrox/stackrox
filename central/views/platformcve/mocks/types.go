@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 	time "time"
 
+	common "github.com/stackrox/rox/central/views/common"
 	platformcve "github.com/stackrox/rox/central/views/platformcve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -179,10 +180,10 @@ func (m *MockCveView) EXPECT() *MockCveViewMockRecorder {
 }
 
 // CVECountByFixability mocks base method.
-func (m *MockCveView) CVECountByFixability(ctx context.Context, q *v1.Query) (platformcve.CVECountByFixability, error) {
+func (m *MockCveView) CVECountByFixability(ctx context.Context, q *v1.Query) (common.ResourceCountByFixability, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CVECountByFixability", ctx, q)
-	ret0, _ := ret[0].(platformcve.CVECountByFixability)
+	ret0, _ := ret[0].(common.ResourceCountByFixability)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -395,55 +396,4 @@ func (m *MockCVECountByType) GetOpenshiftCVECount() int {
 func (mr *MockCVECountByTypeMockRecorder) GetOpenshiftCVECount() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOpenshiftCVECount", reflect.TypeOf((*MockCVECountByType)(nil).GetOpenshiftCVECount))
-}
-
-// MockCVECountByFixability is a mock of CVECountByFixability interface.
-type MockCVECountByFixability struct {
-	ctrl     *gomock.Controller
-	recorder *MockCVECountByFixabilityMockRecorder
-}
-
-// MockCVECountByFixabilityMockRecorder is the mock recorder for MockCVECountByFixability.
-type MockCVECountByFixabilityMockRecorder struct {
-	mock *MockCVECountByFixability
-}
-
-// NewMockCVECountByFixability creates a new mock instance.
-func NewMockCVECountByFixability(ctrl *gomock.Controller) *MockCVECountByFixability {
-	mock := &MockCVECountByFixability{ctrl: ctrl}
-	mock.recorder = &MockCVECountByFixabilityMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockCVECountByFixability) EXPECT() *MockCVECountByFixabilityMockRecorder {
-	return m.recorder
-}
-
-// GetFixable mocks base method.
-func (m *MockCVECountByFixability) GetFixable() int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFixable")
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// GetFixable indicates an expected call of GetFixable.
-func (mr *MockCVECountByFixabilityMockRecorder) GetFixable() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFixable", reflect.TypeOf((*MockCVECountByFixability)(nil).GetFixable))
-}
-
-// GetTotal mocks base method.
-func (m *MockCVECountByFixability) GetTotal() int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTotal")
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// GetTotal indicates an expected call of GetTotal.
-func (mr *MockCVECountByFixabilityMockRecorder) GetTotal() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotal", reflect.TypeOf((*MockCVECountByFixability)(nil).GetTotal))
 }

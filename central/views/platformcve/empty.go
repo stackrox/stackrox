@@ -1,5 +1,7 @@
 package platformcve
 
+import "github.com/stackrox/rox/central/views/common"
+
 // NewEmptyClusterCountByPlatformType creates an empty instance of type ClusterCountByPlatformType.
 func NewEmptyClusterCountByPlatformType() ClusterCountByPlatformType {
 	return &emptyClusterCountByPlatformType{}
@@ -41,7 +43,7 @@ func (e *emptyCVECountByType) GetIstioCVECount() int {
 	return 0
 }
 
-func NewEmptyCVECountByFixability() CVECountByFixability {
+func NewEmptyCVECountByFixability() common.ResourceCountByFixability {
 	return &emptyCVECountByFixability{}
 }
 

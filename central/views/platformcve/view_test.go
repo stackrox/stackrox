@@ -13,6 +13,7 @@ import (
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	converterV2 "github.com/stackrox/rox/central/cve/converter/v2"
+	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
@@ -860,7 +861,7 @@ func (s *PlatformCVEViewTestSuite) compileExpectedCVECountByType(filter *filterI
 	}
 }
 
-func (s *PlatformCVEViewTestSuite) compileExpectedCVECountByFixability(filter *filterImpl) CVECountByFixability {
+func (s *PlatformCVEViewTestSuite) compileExpectedCVECountByFixability(filter *filterImpl) common.ResourceCountByFixability {
 	totalCVECount := 0
 	fixableCVECount := 0
 
