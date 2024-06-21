@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -153,7 +152,7 @@ func TestPreserveResources(t *testing.T) {
 	var mergedDS v1.DaemonSet
 	require.NoError(t, convert(scheme.Scheme, newDSUnstructured, &mergedDS))
 
-	protoassert.Equal(t, expectedMergedDS, &mergedDS)
+	assert.Equal(t, expectedMergedDS, &mergedDS)
 }
 
 func TestPreserveTolerations(t *testing.T) {
