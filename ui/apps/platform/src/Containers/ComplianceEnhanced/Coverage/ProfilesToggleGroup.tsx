@@ -31,6 +31,8 @@ function isStandardInProfile(standardShortName: string, profile: ComplianceProfi
     );
 }
 
+const tabContentId = 'profiles-toggle-group';
+
 type ProfilesToggleGroupProps = {
     profileName: string;
     profiles: ComplianceProfileSummary[];
@@ -91,10 +93,12 @@ function ProfilesToggleGroup({
                         key={standardShortName}
                         eventKey={standardShortName}
                         title={standardShortName}
+                        tabContentId={tabContentId}
                     />
                 ))}
             </Tabs>
             <ToggleGroup
+                id={tabContentId}
                 aria-label="Toggle for selected profile view"
                 className="pf-v5-u-background-color-100 pf-v5-u-p-md"
             >
