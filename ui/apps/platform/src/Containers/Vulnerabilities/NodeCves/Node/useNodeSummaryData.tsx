@@ -9,7 +9,7 @@ const nodeSummaryDataQuery = gql`
     query getNodeVulnSummary($id: ID!, $query: String!) {
         node(id: $id) {
             id
-            cveCountBySeverityAndFixability(query: $query) {
+            nodeCVECountBySeverity(query: $query) {
                 ...ResourceCountsByCVESeverityAndStatus
             }
         }
@@ -21,7 +21,7 @@ export default function useNodeSummaryData(id: string, query: string) {
         {
             node: {
                 id: string;
-                cveCountBySeverityAndFixability: ResourceCountByCveSeverityAndStatus;
+                nodeCVECountBySeverity: ResourceCountByCveSeverityAndStatus;
             };
         },
         {
