@@ -36,9 +36,7 @@ var (
 		"map[string]":   "MapEqual",
 	}
 
-	allowedCallerPackages = []string{
-		"github.com/stackrox/rox/central/delegatedregistryconfig/convert",
-	}
+	allowedCallerPackages []string
 
 	bannedEqualFunctions = set.NewFrozenStringSet(
 		"github.com/google/go-cmp/cmp.Equal",
@@ -85,7 +83,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			return
 		}
 
-		for _, arg := range call.Args {
+		for _, arg := range call.Args[:min(len(call.Args), 3)] {
 			typ := pass.TypesInfo.Types[arg].Type
 			if typ == nil {
 				continue

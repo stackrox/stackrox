@@ -85,8 +85,7 @@ func TestCASetup(t *testing.T) {
 			defer cancel()
 			resp, err := service.URLHasValidCert(ctx, &central.URLHasValidCertRequest{Url: c.url})
 			require.NoError(t, err)
-			t.Logf("received resp: %+v. %s", resp, c.additionalMessage)
-			assert.Equal(t, c.expectedResp, resp.GetResult())
+			assert.Equal(t, c.expectedResp, resp.GetResult(), "received resp: %+v. %s", resp, c.additionalMessage)
 		})
 	}
 }

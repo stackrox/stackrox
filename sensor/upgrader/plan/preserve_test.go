@@ -250,7 +250,7 @@ func TestPreserveTolerations(t *testing.T) {
 	var mergedDeploy v1.Deployment
 	require.NoError(t, convert(scheme.Scheme, newDeployUnstructured, &mergedDeploy))
 
-	protoassert.Equal(t, expectedMergedDeploy, &mergedDeploy)
+	assert.Equal(t, expectedMergedDeploy, &mergedDeploy)
 }
 
 func Test_applyPreservedProperties(t *testing.T) {
