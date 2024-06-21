@@ -128,9 +128,7 @@ func AwareDialContextTLS(ctx context.Context, address string, tlsClientConf *tls
 	log.Debugf("ROX-24163 handshaking %s", address)
 	defer log.Debugf("ROX-24163 [END] handshaking %s", address)
 	tlsConn := tls.Client(conn, tlsClientConf)
-	ctxHandshake, cancel := context.WithTimeout(ctx, tlsHandshakeTimeout)
-	defer cancel()
-	if err := tlsConn.HandshakeContext(ctxHandshake); err != nil {
+	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		utils.IgnoreError(tlsConn.Close)
 		return nil, err
 	}
