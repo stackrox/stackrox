@@ -82,7 +82,7 @@ function PolicySection({
                 isFlat
                 isCompact
                 isSelected={isSelected}
-                isSelectable
+                isSelectable={showAccessiblePolicyCriteria}
                 className={!readOnly ? 'policy-section-card' : ''}
             >
                 <CardHeader
@@ -120,8 +120,7 @@ function PolicySection({
                         },
                         selectableActions: {
                             selectableActionId: `policy-section-${sectionIndex}`,
-                            selectableActionAriaLabelledby: `Policy section ${sectionIndex + 1}: ${sectionName}`,
-                            name: 'single-selectable-card-example',
+                            selectableActionAriaLabel: `Policy section ${sectionIndex + 1}: ${sectionName}`,
                             variant: 'single',
                             onChange: () => {
                                 onChangeSelected(sectionIndex);
