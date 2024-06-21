@@ -30,45 +30,6 @@ import (
 	dynclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	scanConfig1 = v2.ComplianceScanConfiguration{
-		ScanName: "test-scan",
-		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
-			Description: "test123",
-			OneTimeScan: false,
-			Profiles:    []string{"ocp4-e8"},
-			ScanSchedule: &v2.Schedule{
-				Hour:         2,
-				Minute:       0,
-				IntervalType: v2.Schedule_WEEKLY,
-				Interval: &v2.Schedule_DaysOfWeek_{
-					DaysOfWeek: &v2.Schedule_DaysOfWeek{
-						Days: []int32{4, 3},
-					},
-				},
-			},
-		},
-	}
-	modifiedScanConfig1 = v2.ComplianceScanConfiguration{
-		ScanName: "test-scan",
-		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
-			Description: "test456",
-			OneTimeScan: false,
-			Profiles:    []string{"rhcos4-e8"},
-			ScanSchedule: &v2.Schedule{
-				Hour:         2,
-				Minute:       0,
-				IntervalType: v2.Schedule_WEEKLY,
-				Interval: &v2.Schedule_DaysOfWeek_{
-					DaysOfWeek: &v2.Schedule_DaysOfWeek{
-						Days: []int32{1, 5},
-					},
-				},
-			},
-		},
-	}
-)
-
 func scaleToN(ctx context.Context, client kubernetes.Interface, deploymentName string, namespace string, replicas int32) (err error) {
 	scaleRequest := &autoscalingV1.Scale{
 		Spec: autoscalingV1.ScaleSpec{
@@ -154,8 +115,53 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v2.NewComplianceScanConfigurationServiceClient(conn)
+	serviceCluster := v1.NewClustersServiceClient(conn)
+	clusters, err := serviceCluster.GetClusters(ctx, &v1.GetClustersRequest{})
+	assert.NoError(t, err)
+	clusterID := clusters.GetClusters()[0].GetId()
 
-	resp, err := service.CreateComplianceScanConfiguration(ctx, &scanConfig1)
+	scanConfig := v2.ComplianceScanConfiguration{
+		ScanName: "test-scan",
+		Id:       "",
+		Clusters: []string{clusterID},
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			Description: "test123",
+			OneTimeScan: false,
+			Profiles:    []string{"ocp4-e8"},
+			ScanSchedule: &v2.Schedule{
+				Hour:         2,
+				Minute:       0,
+				IntervalType: v2.Schedule_WEEKLY,
+				Interval: &v2.Schedule_DaysOfWeek_{
+					DaysOfWeek: &v2.Schedule_DaysOfWeek{
+						Days: []int32{4, 3},
+					},
+				},
+			},
+		},
+	}
+	modifiedScanConfig := v2.ComplianceScanConfiguration{
+		ScanName: "test-scan",
+		Id:       "",
+		Clusters: []string{clusterID},
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			Description: "test456",
+			OneTimeScan: false,
+			Profiles:    []string{"rhcos4-e8"},
+			ScanSchedule: &v2.Schedule{
+				Hour:         2,
+				Minute:       0,
+				IntervalType: v2.Schedule_WEEKLY,
+				Interval: &v2.Schedule_DaysOfWeek_{
+					DaysOfWeek: &v2.Schedule_DaysOfWeek{
+						Days: []int32{1, 5},
+					},
+				},
+			},
+		},
+	}
+
+	resp, err := service.CreateComplianceScanConfiguration(ctx, &scanConfig)
 	assert.NoError(t, err)
 
 	query := &v2.RawQuery{Query: ""}
@@ -169,7 +175,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
 
-	resp, err = service.CreateComplianceScanConfiguration(ctx, &modifiedScanConfig1)
+	resp, err = service.CreateComplianceScanConfiguration(ctx, &modifiedScanConfig)
 	assert.NoError(t, err)
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 1)
