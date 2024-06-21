@@ -99,20 +99,12 @@ describe('Workload CVE overview page tests', () => {
         it('should remove cve-related UI elements when viewing the "without cves" view', () => {
             visitWorkloadCveOverview();
 
-            // TODO
-            // These cannot be relied on in CI until the table is refactored to use
-            // the new table component that always renders the header
-            // const riskPriorityHeader = 'th:contains("Risk priority")';
-            // const cvesBySeverityHeader = 'th:contains("CVEs by severity")';
+            const cvesBySeverityHeader = 'th:contains("CVEs by severity")';
             const prioritizeByNamespaceButton = 'a:contains("Prioritize by namespace view")';
             const defaultFiltersButton = 'button:contains("Default filters")';
 
             function assertCveElementsArePresent() {
-                // TODO
-                // These cannot be relied on in CI until the table is refactored to use
-                // the new table component that always renders the header
-                // cy.get(riskPriorityHeader);
-                // cy.get(cvesBySeverityHeader);
+                cy.get(cvesBySeverityHeader);
                 cy.get(prioritizeByNamespaceButton);
                 cy.get(defaultFiltersButton);
                 cy.get(selectors.severityDropdown);
@@ -120,11 +112,7 @@ describe('Workload CVE overview page tests', () => {
             }
 
             function assertCveElementsAreNotPresent() {
-                // TODO
-                // These cannot be relied on in CI until the table is refactored to use
-                // the new table component that always renders the header
-                // cy.get(riskPriorityHeader).should('not.exist');
-                // cy.get(cvesBySeverityHeader).should('not.exist');
+                cy.get(cvesBySeverityHeader).should('not.exist');
                 cy.get(prioritizeByNamespaceButton).should('not.exist');
                 cy.get(defaultFiltersButton).should('not.exist');
                 cy.get(selectors.severityDropdown).should('not.exist');
