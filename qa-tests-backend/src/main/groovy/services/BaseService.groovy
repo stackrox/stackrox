@@ -1,5 +1,6 @@
 package services
 
+import com.google.common.reflect.ClassPath
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
 import groovy.util.logging.Slf4j
@@ -16,6 +17,7 @@ import io.grpc.netty.NegotiationType
 import io.grpc.netty.NettyChannelBuilder
 import io.netty.handler.ssl.SslContextBuilder
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
+
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.EmptyOuterClass
 import util.Env
@@ -24,6 +26,11 @@ import util.Keys
 @CompileStatic
 @Slf4j
 class BaseService {
+
+    private static final ClassLoader LOADER = Thread.currentThread().getContextClassLoader()
+    private static final String API_PKG = "io.stackrox.proto.api"
+    private static final String GRPC_SERVICE_CLASS_NAME_SUFFIX = "ServiceGrpc"
+    private static final String FIELD_NAME = "SERVICE_NAME"
 
     static final String BASIC_AUTH_USERNAME = Env.mustGetUsername()
     static final String BASIC_AUTH_PASSWORD = Env.mustGetPassword()
@@ -51,7 +58,7 @@ class BaseService {
     }
 
     private static updateAuthConfig(Boolean newUseClientCert, ClientInterceptor newAuthInterceptor) {
-        synchronized(BaseService) {
+        synchronized (BaseService) {
             if (useClientCert == newUseClientCert && authInterceptor == newAuthInterceptor) {
                 return
             }
@@ -128,6 +135,8 @@ class BaseService {
 
             transportChannel = NettyChannelBuilder
                     .forAddress(Env.mustGetHostname(), Env.mustGetPort())
+                    .defaultServiceConfig(getServiceConfig())
+                    .maxRetryAttempts(3)
                     .enableRetry()
                     .negotiationType(NegotiationType.TLS)
                     .sslContext(sslContext)
@@ -144,9 +153,33 @@ class BaseService {
         }
     }
 
+    private static Map<String, ?> getServiceConfig() {
+        return ["methodConfig": [
+                [
+                        "name"       : getGrpcServicesList(),
+                        "timeout"    : "30.0s",
+                        "retryPolicy": [
+                                "maxAttempts"         : "3",
+                                "initialBackoff"      : "1s",
+                                "maxBackoff"          : "10s",
+                                "backoffMultiplier"   : "2",
+                                "retryableStatusCodes": ["UNAVAILABLE", "UNKNOWN"]
+                        ]
+                ]
+        ]]
+    }
+
+    private static List<LinkedHashMap<String, String>> getGrpcServicesList() {
+        return ClassPath.from(LOADER)
+                .getTopLevelClassesRecursive(API_PKG)
+                .findAll { it.name.endsWith(GRPC_SERVICE_CLASS_NAME_SUFFIX) }
+                .collect { it.load().getField(FIELD_NAME).get("").toString() }
+                .collect { ["service": it] }
+    }
+
     static Channel getChannel() {
         if (effectiveChannel == null) {
-            synchronized(BaseService) {
+            synchronized (BaseService) {
                 initializeChannel()
             }
         }
