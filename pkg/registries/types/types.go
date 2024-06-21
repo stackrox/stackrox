@@ -56,6 +56,15 @@ func (c *Config) GetInsecure() bool {
 	return false
 }
 
+// GetRegistryHostname returns RegistryHostname if Config is non-nil, empty string otherwise.
+func (c *Config) GetRegistryHostname() string {
+	if c != nil {
+		return c.RegistryHostname
+	}
+
+	return ""
+}
+
 // Registry is the interface that all image registries must implement
 type Registry interface {
 	Match(image *storage.ImageName) bool
