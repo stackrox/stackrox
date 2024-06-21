@@ -263,7 +263,8 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	for registry, dce := range dockerConfig {
 		if fromDefaultSA {
 			// Store the registry credentials so Sensor can reach it.
-			log.Debugf("ROX-24163 calling UpsertRegisty for docker config from secret %q", secret.UID)
+			log.Debugf("ROX-24163 calling UpsertRegisty for docker config from secret %s/%s ID=%s",
+				secret.GetNamespace(), secret.GetName(), secret.GetUID())
 			err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
 			if err != nil {
 				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
@@ -305,12 +306,16 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				// as namespace + secret name + registry.
 				var err error
 				if isGlobalPullSecret {
-					log.Debugf("ROX-24163 calling UpsertGlobalRegistry for docker config from secret %q", secret.UID)
+					log.Debugf("ROX-24163 calling UpsertGlobalRegistry for docker config from secret %s/%s ID=%s",
+						secret.GetNamespace(), secret.GetName(), secret.GetUID())
 					err = s.regStore.UpsertGlobalRegistry(context.Background(), registry, dce)
 				} else {
-					log.Debugf("ROX-24163 calling UpsertRegisty (!isGlobalPullSecret) for docker config from secret %q registry %s", secret.UID, registry)
+
+					log.Debugf("ROX-24163 calling UpsertRegisty (!isGlobalPullSecret) for docker config from secret (%s/%s ID=%s) registry %s",
+						secret.GetNamespace(), secret.GetName(), secret.GetUID(), registry)
 					err = s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
-					log.Debugf("ROX-24163 [END] calling UpsertRegisty (!isGlobalPullSecret) for docker config from secret %q %s", secret.UID, registry)
+					log.Debugf("ROX-24163 [END] calling UpsertRegisty (!isGlobalPullSecret) for docker config from secret (%s/%s ID=%s) registry %s",
+						secret.GetNamespace(), secret.GetName(), secret.GetUID(), registry)
 				}
 				if err != nil {
 					log.Errorf("unable to upsert registry %q into store: %v", registry, err)
