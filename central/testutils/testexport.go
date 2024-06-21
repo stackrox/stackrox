@@ -8,8 +8,10 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -259,6 +261,63 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 		}
 	}
 	return nil
+}
+
+// InjectDataAndRunBenchmark pushes datasets of various sizes to database,
+// and runs the provided benchmark function against them.
+func (h *ExportServicePostgresTestHelper) InjectDataAndRunBenchmark(
+	b *testing.B,
+	injectImages bool,
+	benchmark func(b *testing.B),
+) {
+	datasetSizes := []int{500}
+	// The test runs by default with a lower scale as smoke test
+	// in the benchmark unit tests. To test at higher scales (takes time),
+	// run the test with ROX_SCALE_TEST set to a non-empty value
+	// in the test environment.
+	scale := os.Getenv("ROX_SCALE_TEST")
+	if scale != "" {
+		datasetSizes = []int{500, 1000, 2000, 5000, 10000}
+	}
+	imageIDs := make([]string, 0)
+	imageNamesByIDs := make(map[string]*storage.ImageName)
+	if !injectImages {
+		images, err := GetBaseImageSet()
+		if err != nil {
+			b.Error(err)
+		}
+		for _, image := range images {
+			imageID := image.GetId()
+			imageName := image.GetName()
+			imageIDs = append(imageIDs, imageID)
+			imageNamesByIDs[imageID] = imageName
+		}
+	}
+
+	slices.Sort(datasetSizes)
+	lastDatasetSize := 0
+	for ix, datasetSize := range datasetSizes {
+		delta := datasetSize - lastDatasetSize
+		if injectImages {
+			fmt.Println(time.Now().UTC().Unix(), "Injecting", delta, "images")
+			addedImageIDs, addedImageNamesByID, err := h.InjectImages(b, delta)
+			if err != nil {
+				b.Error(err)
+			}
+			imageIDs = append(imageIDs, addedImageIDs...)
+			for imageID, imageName := range addedImageNamesByID {
+				imageNamesByIDs[imageID] = imageName
+			}
+		}
+		fmt.Println(time.Now().UTC().Unix(), "Injecting", delta, "deployments")
+		err := h.InjectDeployments(b, delta, imageIDs, imageNamesByIDs)
+		if err != nil {
+			b.Error(err)
+		}
+		fmt.Println(time.Now().UTC().Unix(), "Test iteration", ix+1)
+		b.Run(fmt.Sprintf("%d", datasetSize), benchmark)
+	}
+
 }
 
 // TestScenario contains the parameters for an export API test.

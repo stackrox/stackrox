@@ -4,13 +4,10 @@ package service
 
 import (
 	"fmt"
-	"os"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/central/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"google.golang.org/grpc"
 )
 
@@ -22,38 +19,43 @@ func BenchmarkService_Export(b *testing.B) {
 	}
 	defer testHelper.TearDownTest(b)
 	svc := New(testHelper.Deployments, testHelper.Images)
-	deltas := []int{500}
-	// The test runs by default with a lower scale as smoke test
-	// in the benchmark unit tests. To test at higher scales (takes time),
-	// run the test with ROX_SCALE_TEST set to a non-empty value
-	// in the test environment.
-	scale := os.Getenv("ROX_SCALE_TEST")
-	if scale != "" {
-		deltas = []int{500, 500, 1000, 3000, 5000}
-	}
-	imageIDs := make([]string, 0)
-	imageNamesByIDs := make(map[string]*storage.ImageName)
+	benchmarkFunc := getExportServiceBenchmark(testHelper, svc)
+	testHelper.InjectDataAndRunBenchmark(b, true, benchmarkFunc)
+	/*
+		deltas := []int{500}
+		// The test runs by default with a lower scale as smoke test
+		// in the benchmark unit tests. To test at higher scales (takes time),
+		// run the test with ROX_SCALE_TEST set to a non-empty value
+		// in the test environment.
+		scale := os.Getenv("ROX_SCALE_TEST")
+		if scale != "" {
+			deltas = []int{500, 500, 1000, 3000, 5000}
+		}
+		imageIDs := make([]string, 0)
+		imageNamesByIDs := make(map[string]*storage.ImageName)
 
-	total := 0
-	for ix, delta := range deltas {
-		total += delta
-		fmt.Println(time.Now().UTC().Unix(), "Injecting", delta, "images")
-		addedImageIDs, addedImageNamesByID, err := testHelper.InjectImages(b, delta)
-		if err != nil {
-			b.Error(err)
+		total := 0
+		for ix, delta := range deltas {
+			total += delta
+			fmt.Println(time.Now().UTC().Unix(), "Injecting", delta, "images")
+			addedImageIDs, addedImageNamesByID, err := testHelper.InjectImages(b, delta)
+			if err != nil {
+				b.Error(err)
+			}
+			imageIDs = append(imageIDs, addedImageIDs...)
+			for imageID, imageName := range addedImageNamesByID {
+				imageNamesByIDs[imageID] = imageName
+			}
+			fmt.Println(time.Now().UTC().Unix(), "Injecting", delta, "deployments")
+			err = testHelper.InjectDeployments(b, delta, imageIDs, imageNamesByIDs)
+			if err != nil {
+				b.Error(err)
+			}
+			fmt.Println(time.Now().UTC().Unix(), "Test iteration", ix+1)
+			b.Run(fmt.Sprintf("%d", total), getExportServiceBenchmark(testHelper, svc))
 		}
-		imageIDs = append(imageIDs, addedImageIDs...)
-		for imageID, imageName := range addedImageNamesByID {
-			imageNamesByIDs[imageID] = imageName
-		}
-		fmt.Println(time.Now().UTC().Unix(), "Injecting", delta, "deployments")
-		err = testHelper.InjectDeployments(b, delta, imageIDs, imageNamesByIDs)
-		if err != nil {
-			b.Error(err)
-		}
-		fmt.Println(time.Now().UTC().Unix(), "Test iteration", ix+1)
-		b.Run(fmt.Sprintf("%d", total), getExportServiceBenchmark(testHelper, svc))
-	}
+	
+	*/
 }
 
 func getExportServiceBenchmark(
