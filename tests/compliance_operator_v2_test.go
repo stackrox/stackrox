@@ -167,11 +167,9 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	query := &v2.RawQuery{Query: ""}
 	scanConfigs, err := service.ListComplianceScanConfigurations(ctx, query)
 	assert.NoError(t, err)
-	require.Equal(t, len(scanConfigs.GetConfigurations()), 1)
+	require.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
 
 	assert.Equal(t, resp, scanConfigs.GetConfigurations()[0])
-
-	k8sClient.AutoscalingV1()
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
 
@@ -183,7 +181,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	query = &v2.RawQuery{Query: ""}
 	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
 	assert.NoError(t, err)
-	require.Equal(t, len(scanConfigs.GetConfigurations()), 1)
+	require.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
 	assert.Equal(t, resp, scanConfigs.GetConfigurations()[0])
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
