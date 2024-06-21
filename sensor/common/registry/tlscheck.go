@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -21,11 +22,35 @@ var (
 	tlsCheckTTL = env.RegistryTLSCheckTTL.DurationSetting()
 )
 
+type tlsCheckCacheImpl struct {
+	// results holds results from TLS checks. This prevents repeatedly
+	// performing checks on the same registry. For example, on Sensor startup
+	// if a cluster has 10 pull secrets referencing quay.io, that would normally
+	// result in ten connections to quay.io to test TLS, by caching the results
+	// the number of connections can be reduced to one.
+	//
+	// An expiring cache is used because the TLS state of a registry may change.
+	results expiringcache.Cache
+
+	checkTLSFunc CheckTLS
+}
+
+func NewTLSCheckCache(checkTLSFunc CheckTLS) *tlsCheckCacheImpl {
+	return &tlsCheckCacheImpl{
+		results:      expiringcache.NewExpiringCache(tlsCheckTTL),
+		checkTLSFunc: checkTLSFunc,
+	}
+}
+
+func (c *tlsCheckCacheImpl) Cleanup() {
+	c.results.RemoveAll()
+}
+
 // checkTLS performs a TLS check on a registry or returns the result from a
 // previous check. Returns true for skip if there was a previous error and the
 // registry should not be upserted into the store.
-func (rs *Store) checkTLS(ctx context.Context, registry string) (secure bool, skip bool, err error) {
-	result := rs.getCachedTLSCheckResult(registry)
+func (c *tlsCheckCacheImpl) CheckTLS(ctx context.Context, registry string) (secure bool, skip bool, err error) {
+	result := c.getCachedTLSCheckResult(registry)
 	switch result {
 	case tlsCheckResultUnknown:
 		// Do nothing (will proceed to after switch block).
@@ -39,7 +64,7 @@ func (rs *Store) checkTLS(ctx context.Context, registry string) (secure bool, sk
 		utils.Should(errors.Errorf("Unsupported TLS check result: %v", result))
 	}
 
-	secure, err = rs.doAndCacheTLSCheck(ctx, registry)
+	secure, err = c.doAndCacheTLSCheck(ctx, registry)
 	return secure, false, err
 }
 
@@ -52,10 +77,10 @@ func (rs *Store) getCachedTLSCheckResult(registry string) tlsCheckResult {
 	return resultI
 }
 
-func (rs *Store) doAndCacheTLSCheck(ctx context.Context, registry string) (bool, error) {
-	secure, err := rs.checkTLSFunc(ctx, registry)
+func (c *tlsCheckCacheImpl) doAndCacheTLSCheck(ctx context.Context, registry string) (bool, error) {
+	secure, err := c.checkTLSFunc(ctx, registry)
 	if err != nil {
-		rs.tlsCheckResults.Add(registry, tlsCheckResultError)
+		c.results.Add(registry, tlsCheckResultError)
 		return false, errors.Wrapf(err, "unable to check TLS for registry %q", registry)
 	}
 
@@ -64,7 +89,7 @@ func (rs *Store) doAndCacheTLSCheck(ctx context.Context, registry string) (bool,
 		res = tlsCheckResultSecure
 	}
 
-	rs.tlsCheckResults.Add(registry, res)
+	c.results.Add(registry, res)
 
 	return secure, nil
 }

@@ -128,20 +128,21 @@ func TestRegistryStore_MultipleSecretsSameRegistry(t *testing.T) {
 	assert.Equal(t, reg.Config().Password, dceB.Password)
 }
 
-func TestRegistryStore_FailUpsertCheckTLS(t *testing.T) {
-	ctx := context.Background()
-	regStore := NewRegistryStore(alwaysFailCheckTLS)
-	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
-	ns := "namespace"
+// TODO: repurpose this test to verify that metadata call returns an error instead
+// func TestRegistryStore_FailUpsertCheckTLS(t *testing.T) {
+// 	ctx := context.Background()
+// 	regStore := NewRegistryStore(alwaysFailCheckTLS)
+// 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+// 	ns := "namespace"
 
-	// upsert that fails TLS check should error out and NOT perform an upsert
-	assert.Error(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
-	assert.Nil(t, regStore.store[ns])
+// 	// upsert that fails TLS check should error out and NOT perform an upsert
+// 	assert.Error(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
+// 	assert.Nil(t, regStore.store[ns])
 
-	// a subsequent upsert should not return an error and also NOT perform an upsert
-	assert.NoError(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
-	assert.Nil(t, regStore.store[ns])
-}
+// 	// a subsequent upsert should not return an error and also NOT perform an upsert
+// 	assert.NoError(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
+// 	assert.Nil(t, regStore.store[ns])
+// }
 
 func TestRegistryStore_GlobalStore(t *testing.T) {
 	ctx := context.Background()
@@ -163,25 +164,26 @@ func TestRegistryStore_GlobalStore(t *testing.T) {
 	assert.Zero(t, len(regStore.store), "non-global store should not have been modified")
 }
 
-func TestRegistryStore_GlobalStoreFailUpsertCheckTLS(t *testing.T) {
-	ctx := context.Background()
-	regStore := NewRegistryStore(alwaysFailCheckTLS)
-	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+// TODO: repurpose this test to verify that metadata call returns an error instead
+// func TestRegistryStore_GlobalStoreFailUpsertCheckTLS(t *testing.T) {
+// 	ctx := context.Background()
+// 	regStore := NewRegistryStore(alwaysFailCheckTLS)
+// 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
 
-	// upsert that fails TLS check should error out and NOT perform an upsert
-	require.Error(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
-	assert.True(t, regStore.globalRegistries.IsEmpty(), "global store should not be populated")
+// 	// upsert that fails TLS check should error out and NOT perform an upsert
+// 	require.Error(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
+// 	assert.True(t, regStore.globalRegistries.IsEmpty(), "global store should not be populated")
 
-	// a subsequent upsert should not return an error and also NOT perform an upsert
-	require.NoError(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
-	assert.True(t, regStore.globalRegistries.IsEmpty(), "global store should not be populated")
-}
+// 	// a subsequent upsert should not return an error and also NOT perform an upsert
+// 	require.NoError(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
+// 	assert.True(t, regStore.globalRegistries.IsEmpty(), "global store should not be populated")
+// }
 
 func TestRegistryStore_CreateImageIntegrationType(t *testing.T) {
-	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, false, "")
+	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, "")
 	assert.Equal(t, ii.Type, types.DockerType)
 
-	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, true, "")
+	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, "")
 	assert.Equal(t, ii.Type, types.RedHatType)
 }
 
