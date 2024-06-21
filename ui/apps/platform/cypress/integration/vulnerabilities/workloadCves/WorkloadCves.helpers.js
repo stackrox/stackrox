@@ -468,7 +468,7 @@ export function waitForTableLoadCompleteIndicator() {
 }
 
 export function visitNamespaceView() {
-    cy.get('button:contains("Prioritize by namespace view")').click();
+    cy.get('a:contains("Prioritize by namespace view")').click();
 }
 
 export function viewCvesByObservationState(observationState) {

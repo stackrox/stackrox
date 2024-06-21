@@ -13,7 +13,6 @@ import { gql, useApolloClient, useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import difference from 'lodash/difference';
 import isEmpty from 'lodash/isEmpty';
-import { Link } from 'react-router-dom';
 
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -48,6 +47,7 @@ import {
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
+import LinkShim from 'Components/PatternFly/LinkShim';
 import {
     DefaultFilters,
     WorkloadEntityTab,
@@ -425,11 +425,13 @@ function WorkloadCvesOverviewPage() {
                                                 spaceItems={{ default: 'spaceItemsSm' }}
                                             >
                                                 {hasReadAccessForNamespaces && (
-                                                    <Link to={vulnerabilityNamespaceViewPath}>
-                                                        <Button variant="secondary">
-                                                            Prioritize by namespace view
-                                                        </Button>
-                                                    </Link>
+                                                    <Button
+                                                        variant="secondary"
+                                                        href={vulnerabilityNamespaceViewPath}
+                                                        component={LinkShim}
+                                                    >
+                                                        Prioritize by namespace view
+                                                    </Button>
                                                 )}
                                                 {isFixabilityFiltersEnabled && (
                                                     <DefaultFilterModal
