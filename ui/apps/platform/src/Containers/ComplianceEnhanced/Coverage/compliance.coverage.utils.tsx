@@ -11,7 +11,11 @@ import {
     WrenchIcon,
 } from '@patternfly/react-icons';
 
+import { QueryValue } from 'hooks/useURLParameter';
 import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
+import { SearchFilter } from 'types/search';
+
+import { SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 
 // Thresholds for compliance status
 const DANGER_THRESHOLD = 50;
@@ -211,4 +215,20 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
 
 export function getClusterResultsStatusObject(status: ComplianceCheckStatus): ClusterStatusObject {
     return statusIconTextMap[status];
+}
+
+export function createScanConfigFilter(selectedScanConfig: QueryValue) {
+    return typeof selectedScanConfig === 'string'
+        ? { [SCAN_CONFIG_NAME_QUERY]: selectedScanConfig }
+        : {};
+}
+
+export function combineSearchFilterWithScanConfig(
+    searchFilter: SearchFilter,
+    selectedScanConfig: QueryValue
+): SearchFilter {
+    return {
+        ...searchFilter,
+        ...createScanConfigFilter(selectedScanConfig),
+    };
 }

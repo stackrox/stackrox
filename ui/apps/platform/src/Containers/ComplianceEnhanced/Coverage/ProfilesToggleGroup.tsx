@@ -10,10 +10,14 @@ function getUniqueStandards(profiles: ComplianceProfileSummary[]): string[] {
     const standards = new Set(
         profiles.flatMap((profile) => profile.standards.map((standard) => standard.shortName))
     );
+
+    const standardsArray = Array.from(standards).sort();
+
     if (profiles.some((profile) => profile.standards.length === 0)) {
-        standards.add(NON_STANDARD_TAB);
+        standardsArray.push(NON_STANDARD_TAB);
     }
-    return Array.from(standards);
+
+    return standardsArray;
 }
 
 function getInitialStandard(profiles: ComplianceProfileSummary[], profileName: string): string {
@@ -24,7 +28,10 @@ function getInitialStandard(profiles: ComplianceProfileSummary[], profileName: s
     return NON_STANDARD_TAB;
 }
 
-function isStandardInProfile(standardShortName: string, profile: ComplianceProfileSummary) {
+function isStandardInProfile(
+    standardShortName: string,
+    profile: ComplianceProfileSummary
+): boolean {
     return (
         profile.standards.some((standard) => standard.shortName === standardShortName) ||
         (standardShortName === NON_STANDARD_TAB && profile.standards.length === 0)
@@ -55,13 +62,18 @@ function ProfilesToggleGroup({
         // Currently picks the first standard found since no profile should have multiple standards, however
         // if this changes in the future, we'll want to find all matches and only update selectedStandard if the
         // current selectedStandard doesn't exist in the match
-        if (profileName) {
+        if (profileName && profiles.some((profile) => profile.name === profileName)) {
             const standardShortName =
                 profiles.find((profile) => profile.name === profileName)?.standards[0]?.shortName ||
                 NON_STANDARD_TAB;
             setSelectedStandard(standardShortName);
+        } else {
+            if (profiles[0]?.name) {
+                // useful when scan schedule filter changes and current profile is not in the list
+                handleToggleChange(profiles[0].name);
+            }
         }
-    }, [profileName, profiles]);
+    }, [profileName, profiles, handleToggleChange]);
 
     function handleStandardSelection(standardShortName) {
         setSelectedStandard(standardShortName);
