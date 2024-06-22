@@ -14,6 +14,7 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -73,6 +74,8 @@ func init() {
 			"openShiftClusterVulnerabilities(query: String, pagination: Pagination): [ClusterVulnerability!]!",
 			"openShiftClusterVulnerabilityCount(query: String): Int!",
 			"passingControls(query: String): [ComplianceControl!]!",
+			"platformCVECountByFixability(query: String): PlatformCVECountByFixability!",
+			"platformCVECountByType(query: String): PlatformCVECountByType!",
 			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"plottedNodeVulnerabilities(query: String): PlottedNodeVulnerabilities!",
 			"policies(query: String, pagination: Pagination): [Policy!]!",
@@ -952,4 +955,42 @@ func (resolver *clusterResolver) UnusedVarSink(_ context.Context, _ RawQuery) *i
 
 func (resolver *orchestratorMetadataResolver) OpenShiftVersion() (string, error) {
 	return resolver.data.GetOpenshiftVersion(), nil
+}
+
+// PlatformCVECountByType returns resolver to get number of platform CVEs by CVE type
+func (resolver *clusterResolver) PlatformCVECountByType(ctx context.Context, q RawQuery) (*platformCVECountByTypeResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlatformCVECountByType")
+
+	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
+		return nil, errors.Errorf("Feature %s is disabled", features.VulnMgmtWorkloadCVEs.Name())
+	}
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+	query, err := q.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	val, err := resolver.root.PlatformCVEView.CVECountByType(resolver.clusterScopeContext(ctx), query)
+	return resolver.root.wrapPlatformCVECountByTypeWithContext(ctx, val, err)
+}
+
+// PlatformCVECountByFixability returns the resolver to get the number of total and fixable platform CVEs
+func (resolver *clusterResolver) PlatformCVECountByFixability(ctx context.Context, q RawQuery) (*platformCVECountByFixabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlatformCVECountByFixability")
+
+	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
+		return nil, errors.Errorf("Feature %s is disabled", features.VulnMgmtWorkloadCVEs.Name())
+	}
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+	query, err := q.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	val, err := resolver.root.PlatformCVEView.CVECountByFixability(resolver.clusterScopeContext(ctx), query)
+	return resolver.root.wrapPlatformCVECountByFixabilityWithContext(ctx, val, err)
 }
