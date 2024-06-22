@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -34,7 +33,7 @@ func (n *nodeCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, erro
 	}
 
 	var results []*nodeCVECoreCount
-	results, err = pgSearch.RunSelectRequestForSchema[nodeCVECoreCount](ctx, n.db, n.schema, withCountQuery(q))
+	results, err = pgSearch.RunSelectRequestForSchema[nodeCVECoreCount](ctx, n.db, n.schema, common.WithCountQuery(q, search.CVE))
 	if err != nil {
 		return 0, err
 	}
@@ -91,7 +90,7 @@ func (n *nodeCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) 
 	}
 
 	var results []*countByNodeCVESeverity
-	results, err = pgSearch.RunSelectRequestForSchema[countByNodeCVESeverity](ctx, n.db, n.schema, withCountBySeveritySelectQuery(q, search.CVE))
+	results, err = pgSearch.RunSelectRequestForSchema[countByNodeCVESeverity](ctx, n.db, n.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
 	if err != nil {
 		return nil, err
 	}
@@ -142,65 +141,10 @@ func withSelectQuery(q *v1.Query) *v1.Query {
 		search.NewQuerySelect(search.OperatingSystem).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 		search.NewQuerySelect(search.NodeID).Distinct().Proto(),
 	}
-	cloned.Selects = append(cloned.Selects, withCountBySeveritySelectQuery(q, search.NodeID).Selects...)
+	cloned.Selects = append(cloned.Selects, common.WithCountBySeverityAndFixabilityQuery(q, search.NodeID).Selects...)
 
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
-	}
-	return cloned
-}
-
-func withCountBySeveritySelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
-	cloned := q.Clone()
-	cloned.Selects = append(cloned.Selects,
-		search.NewQuerySelect(countOn).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("critical_severity_count",
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.Severity,
-						storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String(),
-					).ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(countOn).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("important_severity_count",
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.Severity,
-						storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY.String(),
-					).ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(countOn).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("moderate_severity_count",
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.Severity,
-						storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY.String(),
-					).ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(countOn).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("low_severity_count",
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.Severity,
-						storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String(),
-					).ProtoQuery(),
-			).Proto(),
-	)
-	return cloned
-}
-
-func withCountQuery(q *v1.Query) *v1.Query {
-	cloned := q.Clone()
-	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.CVE).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 	}
 	return cloned
 }

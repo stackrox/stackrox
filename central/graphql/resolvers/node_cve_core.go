@@ -29,7 +29,7 @@ func init() {
 		schema.AddType("NodeCVECore",
 			[]string{
 				"affectedNodeCount: Int!",
-				"affectedNodeCountBySeverity: ResourceTotalCountByCVESeverity!",
+				"affectedNodeCountBySeverity: ResourceCountByCVESeverity!",
 				"cve: String!",
 				"distroTuples: [NodeVulnerability!]!",
 				"firstDiscoveredInSystem: Time",
@@ -42,7 +42,7 @@ func init() {
 		// `subfieldScopeQuery` applies the scope query to all the subfields of the NodeCVE resolver.
 		// This eliminates the need to pass queries to individual resolvers.
 		schema.AddQuery("nodeCVE(cve: String, subfieldScopeQuery: String): NodeCVECore"),
-		schema.AddQuery("nodeCVECountBySeverity(query: String): ResourceTotalCountByCVESeverity!"),
+		schema.AddQuery("nodeCVECountBySeverity(query: String): ResourceCountByCVESeverity!"),
 	)
 }
 
@@ -76,8 +76,8 @@ func (resolver *nodeCVECoreResolver) AffectedNodeCount(_ context.Context) int32 
 	return int32(resolver.data.GetNodeCount())
 }
 
-func (resolver *nodeCVECoreResolver) AffectedNodeCountBySeverity(ctx context.Context) (*resourceTotalCountBySeverityResolver, error) {
-	return resolver.root.wrapResourceTotalCountBySeverityContext(ctx, resolver.data.GetNodeCountBySeverity(), nil)
+func (resolver *nodeCVECoreResolver) AffectedNodeCountBySeverity(ctx context.Context) (*resourceCountBySeverityResolver, error) {
+	return resolver.root.wrapResourceCountByCVESeverityWithContext(ctx, resolver.data.GetNodeCountBySeverity(), nil)
 }
 
 func (resolver *nodeCVECoreResolver) CVE(_ context.Context) string {
@@ -233,7 +233,7 @@ func (resolver *Resolver) NodeCVEs(ctx context.Context, q PaginatedQuery) ([]*no
 
 // NodeCVECountBySeverity returns the count of node cves satisfying the specified query by severity.
 // Note: Client must explicitly pass observed/deferred CVEs.
-func (resolver *Resolver) NodeCVECountBySeverity(ctx context.Context, q RawQuery) (*resourceTotalCountBySeverityResolver, error) {
+func (resolver *Resolver) NodeCVECountBySeverity(ctx context.Context, q RawQuery) (*resourceCountBySeverityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeCVECountBySeverity")
 
 	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
@@ -251,5 +251,5 @@ func (resolver *Resolver) NodeCVECountBySeverity(ctx context.Context, q RawQuery
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapResourceTotalCountBySeverityContext(ctx, response, nil)
+	return resolver.wrapResourceCountByCVESeverityWithContext(ctx, response, nil)
 }
