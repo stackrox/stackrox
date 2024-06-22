@@ -971,6 +971,7 @@ func (resolver *clusterResolver) PlatformCVECountByType(ctx context.Context, q R
 	if err != nil {
 		return nil, err
 	}
+	query = tryUnsuppressedQuery(query)
 
 	val, err := resolver.root.PlatformCVEView.CVECountByType(resolver.clusterScopeContext(ctx), query)
 	return resolver.root.wrapPlatformCVECountByTypeWithContext(ctx, val, err)
@@ -990,6 +991,7 @@ func (resolver *clusterResolver) PlatformCVECountByFixability(ctx context.Contex
 	if err != nil {
 		return nil, err
 	}
+	query = tryUnsuppressedQuery(query)
 
 	val, err := resolver.root.PlatformCVEView.CVECountByFixability(resolver.clusterScopeContext(ctx), query)
 	return resolver.root.wrapPlatformCVECountByFixabilityWithContext(ctx, val, err)
