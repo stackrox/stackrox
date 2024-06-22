@@ -17,8 +17,8 @@ if [[ -z "$max_pods_set" ]]; then
   oc create --filename=$HOME/go/src/github.com/stackrox/stackrox/tests/performance/scale/utilities/examples/set-max-pods.yml
 fi
 
-#for machineset in `oc get machineset.machine.openshift.io --namespace openshift-machine-api  | tail -n +2 | awk '{print $1}'`; do
-#	oc scale --replicas=18 machineset --namespace openshift-machine-api $machineset
-#done
+for machineset in `oc get machineset.machine.openshift.io --namespace openshift-machine-api  | tail -n +2 | awk '{print $1}'`; do
+	oc scale --replicas=18 machineset --namespace openshift-machine-api $machineset
+done
 
 ./isolate-monitoring.sh

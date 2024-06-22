@@ -17,6 +17,7 @@ cd ${HOME}/stackrox/tests/performance/scale/tests/kube-burner/cluster-density
 ntests="$(jq '.perfTests | length' "$json_tests_file")"
 for ((i = 0; i < ntests; i = i + 1)); do
 	printf 'yes\n'  | "${HOME}/workflow/bin/teardown"
+
 	"${utilities_dir}/start-central-and-scanner.sh" "${ARTIFACTS_DIR}"
 	"${utilities_dir}/wait-for-pods.sh" "${ARTIFACTS_DIR}"
 	"${utilities_dir}/get-bundle.sh" "${ARTIFACTS_DIR}"
