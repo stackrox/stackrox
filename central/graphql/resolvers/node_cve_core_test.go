@@ -266,15 +266,31 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverity() {
 	q := &RawQuery{}
 	expectedQ, err := q.AsV1QueryOrEmpty()
 	s.Require().NoError(err)
-	cbs := nodecve.NewCountByNodeCVESeverity(7, 6, 5, 4)
+	cbs := nodecve.NewCountByNodeCVESeverity(7, 3, 6, 2, 5, 1, 4, 0)
 
 	s.nodeCVEView.EXPECT().CountBySeverity(s.ctx, expectedQ).Return(cbs, nil)
 	response, err := s.resolver.NodeCVECountBySeverity(s.ctx, *q)
 	s.NoError(err)
-	s.Equal(response.Critical(s.ctx), int32(7))
-	s.Equal(response.Important(s.ctx), int32(6))
-	s.Equal(response.Moderate(s.ctx), int32(5))
-	s.Equal(response.Low(s.ctx), int32(4))
+
+	critical, err := response.Critical(s.ctx)
+	s.NoError(err)
+	s.Equal(int32(7), critical.Total(s.ctx))
+	s.Equal(int32(3), critical.Fixable(s.ctx))
+
+	important, err := response.Important(s.ctx)
+	s.NoError(err)
+	s.Equal(int32(6), important.Total(s.ctx))
+	s.Equal(int32(2), important.Fixable(s.ctx))
+
+	moderate, err := response.Moderate(s.ctx)
+	s.NoError(err)
+	s.Equal(int32(5), moderate.Total(s.ctx))
+	s.Equal(int32(1), moderate.Fixable(s.ctx))
+
+	low, err := response.Low(s.ctx)
+	s.NoError(err)
+	s.Equal(int32(4), low.Total(s.ctx))
+	s.Equal(int32(0), low.Fixable(s.ctx))
 }
 
 func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverityWithQuery() {
@@ -282,15 +298,31 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverityWithQuery() {
 		Query: pointers.String("Node:node"),
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.Node, "node").ProtoQuery()
-	cbs := nodecve.NewCountByNodeCVESeverity(7, 6, 5, 4)
+	cbs := nodecve.NewCountByNodeCVESeverity(7, 3, 6, 2, 5, 1, 4, 0)
 
 	s.nodeCVEView.EXPECT().CountBySeverity(s.ctx, expectedQ).Return(cbs, nil)
 	response, err := s.resolver.NodeCVECountBySeverity(s.ctx, *q)
 	s.NoError(err)
-	s.Equal(response.Critical(s.ctx), int32(7))
-	s.Equal(response.Important(s.ctx), int32(6))
-	s.Equal(response.Moderate(s.ctx), int32(5))
-	s.Equal(response.Low(s.ctx), int32(4))
+
+	critical, err := response.Critical(s.ctx)
+	s.NoError(err)
+	s.Equal(int32(7), critical.Total(s.ctx))
+	s.Equal(int32(3), critical.Fixable(s.ctx))
+
+	important, err := response.Important(s.ctx)
+	s.NoError(err)
+	s.Equal(int32(6), important.Total(s.ctx))
+	s.Equal(int32(2), important.Fixable(s.ctx))
+
+	moderate, err := response.Moderate(s.ctx)
+	s.NoError(err)
+	s.Equal(int32(5), moderate.Total(s.ctx))
+	s.Equal(int32(1), moderate.Fixable(s.ctx))
+
+	low, err := response.Low(s.ctx)
+	s.NoError(err)
+	s.Equal(int32(4), low.Total(s.ctx))
+	s.Equal(int32(0), low.Fixable(s.ctx))
 }
 
 func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverityWithInternalError() {
@@ -353,14 +385,30 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVESubResolvers() {
 	s.Equal(ts, response.FirstDiscoveredInSystem(s.ctx).Time)
 
 	// CountByNodeCVESeverity
-	sev := nodecve.NewCountByNodeCVESeverity(1, 2, 3, 4)
+	sev := nodecve.NewCountByNodeCVESeverity(7, 3, 6, 2, 5, 1, 4, 0)
 	cveCoreMock.EXPECT().GetNodeCountBySeverity().Return(sev)
 	sevResolver, err := response.AffectedNodeCountBySeverity(s.ctx)
-	s.Nil(err)
-	s.Equal(int32(sev.GetCriticalSeverityCount().GetTotal()), sevResolver.Critical(s.ctx))
-	s.Equal(int32(sev.GetImportantSeverityCount().GetTotal()), sevResolver.Important(s.ctx))
-	s.Equal(int32(sev.GetModerateSeverityCount().GetTotal()), sevResolver.Moderate(s.ctx))
-	s.Equal(int32(sev.GetLowSeverityCount().GetTotal()), sevResolver.Low(s.ctx))
+	s.NoError(err)
+
+	critical, err := sevResolver.Critical(s.ctx)
+	s.NoError(err)
+	s.Equal(int32(sev.GetCriticalSeverityCount().GetTotal()), critical.Total(s.ctx))
+	s.Equal(int32(sev.GetCriticalSeverityCount().GetFixable()), critical.Fixable(s.ctx))
+
+	important, err := sevResolver.Important(s.ctx)
+	s.NoError(err)
+	s.Equal(int32(sev.GetImportantSeverityCount().GetTotal()), important.Total(s.ctx))
+	s.Equal(int32(sev.GetImportantSeverityCount().GetFixable()), important.Fixable(s.ctx))
+
+	moderate, err := sevResolver.Moderate(s.ctx)
+	s.NoError(err)
+	s.Equal(int32(sev.GetModerateSeverityCount().GetTotal()), moderate.Total(s.ctx))
+	s.Equal(int32(sev.GetModerateSeverityCount().GetFixable()), moderate.Fixable(s.ctx))
+
+	low, err := sevResolver.Low(s.ctx)
+	s.NoError(err)
+	s.Equal(int32(sev.GetLowSeverityCount().GetTotal()), low.Total(s.ctx))
+	s.Equal(int32(sev.GetLowSeverityCount().GetFixable()), low.Fixable(s.ctx))
 
 	// DistroTuples
 	cveIDsToTest := []string{"11", "22"}
