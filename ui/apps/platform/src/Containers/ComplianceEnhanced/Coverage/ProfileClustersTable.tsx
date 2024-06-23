@@ -1,5 +1,5 @@
 import React from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
     Divider,
     Pagination,
@@ -27,6 +27,7 @@ import {
 } from './compliance.coverage.utils';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
 
 export type ProfileClustersTableProps = {
     currentDatetime: Date;
@@ -45,6 +46,7 @@ function ProfileClustersTable({
     tableState,
     getSortParams,
 }: ProfileClustersTableProps) {
+    const { generatePathWithScanConfig } = useScanConfigRouter();
     const { page, perPage, setPage, setPerPage } = pagination;
 
     return (
@@ -115,10 +117,13 @@ function ProfileClustersTable({
                                     <Tr key={clusterId}>
                                         <Td dataLabel="Cluster">
                                             <Link
-                                                to={generatePath(coverageClusterDetailsPath, {
-                                                    clusterId,
-                                                    profileName,
-                                                })}
+                                                to={generatePathWithScanConfig(
+                                                    coverageClusterDetailsPath,
+                                                    {
+                                                        clusterId,
+                                                        profileName,
+                                                    }
+                                                )}
                                             >
                                                 {clusterName}
                                             </Link>
