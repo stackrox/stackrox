@@ -74,6 +74,7 @@ func (s *complianceRemediationDataStoreTestSuite) TestSearchRemediation() {
 	}
 	// test insert
 	err := s.dataStore.UpsertRemediation(s.hasWriteCtx, remediationFixture)
+	s.Require().NoError(err)
 	remediationFixture = &storage.ComplianceOperatorRemediationV2{
 		Id:                        uuid.NewV4().String(),
 		ClusterId:                 uuid.NewV4().String(),

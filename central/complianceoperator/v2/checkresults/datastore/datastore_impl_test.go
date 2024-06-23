@@ -367,7 +367,6 @@ func (s *complianceCheckResultDataStoreTestSuite) SetupTest() {
 	configStorage := checkResultsStorage.New(s.db)
 	s.searcher = checkresultsSearch.New(configStorage)
 	s.dataStore = New(s.storage, s.db, s.searcher)
-
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) TearDownTest() {
@@ -907,7 +906,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestWalkByQueryCheckResult() {
 	s.Require().NotEmpty(results)
 	resultsQuery := []*repResults{}
 
-	s.dataStore.WalkByQuery(s.testContexts[testutils.UnrestrictedReadCtx], parsedQuery, func(c *storage.ComplianceOperatorCheckResultV2) error {
+	err = s.dataStore.WalkByQuery(s.testContexts[testutils.UnrestrictedReadCtx], parsedQuery, func(c *storage.ComplianceOperatorCheckResultV2) error {
 		res := &repResults{
 			ClusterName: c.GetClusterName(),
 			CheckName:   c.GetCheckName(),
@@ -916,7 +915,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestWalkByQueryCheckResult() {
 		resultsQuery = append(resultsQuery, res)
 		return nil
 	})
-
+	s.Require().NoError(err)
 	s.Require().NotEmpty(resultsQuery)
 	s.Require().Equal(resultsQuery[0].CheckName, rec1.GetCheckName())
 }
