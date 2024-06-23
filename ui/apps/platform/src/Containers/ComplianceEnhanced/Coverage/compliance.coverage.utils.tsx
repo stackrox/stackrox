@@ -12,6 +12,9 @@ import {
 } from '@patternfly/react-icons';
 
 import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
+import { SearchFilter } from 'types/search';
+
+import { SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 
 // Thresholds for compliance status
 const DANGER_THRESHOLD = 50;
@@ -211,4 +214,18 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
 
 export function getClusterResultsStatusObject(status: ComplianceCheckStatus): ClusterStatusObject {
     return statusIconTextMap[status];
+}
+
+export function createScanConfigFilter(selectedScanConfigName: string | undefined) {
+    return selectedScanConfigName ? { [SCAN_CONFIG_NAME_QUERY]: selectedScanConfigName } : {};
+}
+
+export function combineSearchFilterWithScanConfig(
+    searchFilter: SearchFilter,
+    selectedScanConfigName: string | undefined
+): SearchFilter {
+    return {
+        ...searchFilter,
+        ...createScanConfigFilter(selectedScanConfigName),
+    };
 }

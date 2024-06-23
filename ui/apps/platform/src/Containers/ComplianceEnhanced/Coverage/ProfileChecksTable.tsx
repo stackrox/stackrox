@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
     Divider,
     Pagination,
@@ -30,6 +30,7 @@ import {
 import ControlLabels from './components/ControlLabels';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
 
 export type ProfileChecksTableProps = {
     profileChecksResultsCount: number;
@@ -47,6 +48,7 @@ function ProfileChecksTable({
     getSortParams,
 }: ProfileChecksTableProps) {
     /* eslint-disable no-nested-ternary */
+    const { generatePathWithScanConfig } = useScanConfigRouter();
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
     const { page, perPage, setPage, setPerPage } = pagination;
 
@@ -125,10 +127,13 @@ function ProfileChecksTable({
                                         <Tr>
                                             <Td dataLabel="Check">
                                                 <Link
-                                                    to={generatePath(coverageCheckDetailsPath, {
-                                                        checkName,
-                                                        profileName,
-                                                    })}
+                                                    to={generatePathWithScanConfig(
+                                                        coverageCheckDetailsPath,
+                                                        {
+                                                            checkName,
+                                                            profileName,
+                                                        }
+                                                    )}
                                                 >
                                                     {checkName}
                                                 </Link>
