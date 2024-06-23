@@ -2,6 +2,7 @@ package sac
 
 import (
 	"context"
+	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/utils"
@@ -36,4 +37,9 @@ func WithAllAccess(ctx context.Context) context.Context {
 // scope checks.
 func WithNoAccess(ctx context.Context) context.Context {
 	return WithGlobalAccessScopeChecker(ctx, denyAllScopeCheckerCore)
+}
+
+// GetGlobalAccessScopeContextKey this is for testing purposes only
+func GetGlobalAccessScopeContextKey(_ *testing.T) globalAccessScopeContextKey {
+	return globalAccessScopeContextKey{}
 }

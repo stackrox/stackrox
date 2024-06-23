@@ -15,6 +15,7 @@ import (
 )
 
 var (
+	networkBaselineNotFoundErr = errors.New("network baseline not found for deployment")
 	// l4ProtoMap translates between `storage.L4Protocol` and `storage.Protocol`, which are
 	// separate types for historical reasons.
 	l4ProtoMap = map[storage.L4Protocol]storage.Protocol{
@@ -287,6 +288,7 @@ func (g *generator) generateNodeFromBaselineForDeployment(
 	ctx context.Context,
 	deployment *storage.Deployment,
 	includePorts bool,
+	setSelected bool,
 ) (*node, error) {
 	if isProtectedDeployment(deployment) {
 		return nil, errors.New("cannot generate policy for a protected deployment")
@@ -297,17 +299,16 @@ func (g *generator) generateNodeFromBaselineForDeployment(
 	if err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("network baseline not found for deployment")
+		return nil, networkBaselineNotFoundErr
 	}
 
 	deploymentNode := createNode(networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: deployment.GetId()})
 	deploymentNode.deployment = deployment
+	deploymentNode.selected = setSelected
 
-	// Temporarily elevate permissions to obtain all deployments in cluster.
-	elevatedCtx := sac.WithAllAccess(ctx)
 	// Since we only generate ingress flows, we only look at ingress peers for policy generation
 	for _, peer := range baseline.GetPeers() {
-		peerNode := g.populateNode(elevatedCtx, peer.GetEntity().GetInfo().GetId(), peer.GetEntity().GetInfo().GetType())
+		peerNode := g.populateNode(ctx, peer.GetEntity().GetInfo().GetId(), peer.GetEntity().GetInfo().GetType())
 		if peerNode == nil {
 			// Peer deployment probably has been deleted.
 			continue

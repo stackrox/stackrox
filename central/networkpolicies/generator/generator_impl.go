@@ -107,20 +107,13 @@ func (g *generator) getNetworkPolicies(ctx context.Context, deleteExistingMode v
 	}
 }
 
-func (g *generator) generateGraph(ctx context.Context, clusterID string, query *v1.Query, since *time.Time, includePorts bool) (map[networkgraph.Entity]*node, error) {
+func (g *generator) generateGraph(ctx context.Context, clusterID string, query *v1.Query, since *time.Time, includePorts bool) ([]*node, error) {
 	// Temporarily elevate permissions to obtain all network flows in cluster.
 	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(clusterID)))
-
-	clusterFlowStore, err := g.globalFlowDataStore.GetFlowStore(networkGraphGenElevatedCtx, clusterID)
-	if err != nil {
-		return nil, err
-	} else if clusterFlowStore == nil {
-		return nil, errors.Errorf("could not obtain flow store for cluster %q", clusterID)
-	}
 
 	clusterIDQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	deploymentsQuery := clusterIDQuery
@@ -138,7 +131,34 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	relevantDeployments := sac.FilterSlice(networkFlowsChecker, deployments, func(deployment *storage.Deployment) sac.ScopePredicate {
 		return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
 	})
-	relevantDeploymentsMap := objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments)
+	var graph []*node
+	var deploymentsWithMissingBaseline []*storage.Deployment
+	for _, deployment := range relevantDeployments {
+		deploymentNode, err := g.generateNodeFromBaselineForDeployment(ctx, deployment, includePorts, true)
+		if err != nil && err == networkBaselineNotFoundErr {
+			log.Debugf("unable to generate node from baseline for deployment %s, We will try to generate it based on network flows", deployment.GetId())
+			deploymentsWithMissingBaseline = append(deploymentsWithMissingBaseline, deployment)
+			continue
+		}
+		if err != nil {
+			log.Errorf("unable to generate node from baseline for deployment %s: %v", deployment.GetId(), err)
+			continue
+		}
+		graph = append(graph, deploymentNode)
+	}
+
+	if len(deploymentsWithMissingBaseline) == 0 {
+		return graph, nil
+	}
+
+	relevantDeploymentsMap := objects.ListDeploymentsMapByIDFromDeployments(deploymentsWithMissingBaseline)
+
+	clusterFlowStore, err := g.globalFlowDataStore.GetFlowStore(networkGraphGenElevatedCtx, clusterID)
+	if err != nil {
+		return nil, err
+	} else if clusterFlowStore == nil {
+		return nil, errors.Errorf("could not obtain flow store for cluster %q", clusterID)
+	}
 
 	// Since we are generating ingress policies only, retrieve all flows incoming to one of the relevant deployments.
 	// Note that this will never retrieve listen endpoint "flows".
@@ -160,7 +180,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
 	utils.Should(err)
 	flows = aggr.Aggregate(flows)
-	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments),
+	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, objects.ListDeploymentsMapByIDFromDeployments(deploymentsWithMissingBaseline),
 		func(id string) *storage.NetworkEntityInfo {
 			if networkTree == nil {
 				return nil
@@ -172,19 +192,45 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	// Aggregate all external flows by node names to control the number of external nodes.
 	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
 	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
-	return g.buildGraph(ctx, clusterID, relevantDeployments, flows, missingInfoFlows, includePorts)
+	graphMap, err := g.buildGraph(ctx, clusterID, deploymentsWithMissingBaseline, flows, missingInfoFlows, includePorts)
+	if err != nil {
+		log.Errorf("could not build the graph for based on flows for deployments with missing baselines")
+		return nil, err
+	}
+
+	for _, n := range graphMap {
+		graph = append(graph, n)
+	}
+
+	return graph, nil
 }
 
-func (g *generator) populateNode(elevatedCtx context.Context, id string, entityType storage.NetworkEntityInfo_Type) *node {
+func (g *generator) populateNode(ctx context.Context, id string, entityType storage.NetworkEntityInfo_Type) *node {
 	n := createNode(networkgraph.Entity{Type: entityType, ID: id})
 	if entityType == storage.NetworkEntityInfo_DEPLOYMENT {
-		nodeDeployment, ok, err := g.deploymentStore.GetDeployment(elevatedCtx, id)
-		if err != nil || !ok {
+		nodeDeployment, ok, err := g.deploymentStore.GetDeployment(ctx, id)
+		if err != nil {
 			// Deployment not found. It might be deleted.
 			log.Debugf("detected peer deployment %q missing while trying to generate baseline generated policy", id)
 			return nil
 		}
-		n.deployment = nodeDeployment
+		if !ok {
+			// Do a deployment quey with elevated privileges to make sure the deployment is not invisible (marked as masked).
+			// If it is, return the node and mark it as `masked`.
+
+			// Temporarily elevate permissions to obtain all deployments in cluster.
+			elevatedCtx := sac.WithAllAccess(ctx)
+			nodeDeployment, ok, err = g.deploymentStore.GetDeployment(elevatedCtx, id)
+			if err != nil || !ok {
+				// Deployment not found. It might be deleted.
+				log.Debugf("detected peer deployment %q missing while trying to generate baseline generated policy", id)
+				return nil
+			}
+			n.masked = true
+		}
+		if nodeDeployment != nil {
+			n.deployment = nodeDeployment
+		}
 	}
 	return n
 }
@@ -240,7 +286,7 @@ func (g *generator) getBaselineGeneratedPolicy(node *node, namespacesByName map[
 	return policy
 }
 
-func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, namespacesByName map[string]*storage.NamespaceMetadata, existingPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
+func (g *generator) generatePolicies(graph []*node, namespacesByName map[string]*storage.NamespaceMetadata, existingPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
 	ingressPolicies, egressPolicies := groupNetworkPolicies(existingPolicies)
 
 	var generatedPolicies []*storage.NetworkPolicy
@@ -309,7 +355,7 @@ func (g *generator) GenerateFromBaselineForDeployment(
 		return nil, nil, errors.New("deployment not found")
 	}
 
-	node, err := g.generateNodeFromBaselineForDeployment(ctx, deployment, req.GetIncludePorts())
+	node, err := g.generateNodeFromBaselineForDeployment(ctx, deployment, req.GetIncludePorts(), false)
 	if err != nil {
 		return nil, nil, err
 	} else if node == nil {
