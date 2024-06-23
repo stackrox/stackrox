@@ -310,6 +310,9 @@ func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, f
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	for _, id := range identifiers {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		obj, found := c.cache[id]
 		if !found {
 			log.Warnf("Object %q not found in store cache", id)
@@ -414,6 +417,9 @@ func (c *cachedStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
 
 func (c *cachedStore[T, PT]) walkCacheNoLock(ctx context.Context, fn func(obj PT) error) error {
 	for _, obj := range c.cache {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		if !c.isReadAllowed(ctx, obj) {
 			continue
 		}

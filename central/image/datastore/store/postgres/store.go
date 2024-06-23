@@ -804,21 +804,27 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Image, bool, e
 }
 
 func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image, bool, error) {
+	log.Info("retryable Get start")
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
+	log.Info("retryable acquire conn done")
 	if err != nil {
 		return nil, false, err
 	}
 	defer release()
 
+	log.Info("retryable conn begin")
 	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, false, err
 	}
+	log.Info("retryable get full image")
 	image, found, err := s.getFullImage(ctx, tx, id)
+	log.Info("retryable commit")
 	// No changes are made to the database, so COMMIT or ROLLBACK have same effect.
 	if err := tx.Commit(ctx); err != nil {
 		return nil, false, err
 	}
+	log.Info("retryable commit done")
 	return image, found, err
 }
 
@@ -886,20 +892,24 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 }
 
 func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID string) (*storage.Image, bool, error) {
+	log.Info("get full image start")
 	row := tx.QueryRow(ctx, getImageMetaStmt, imageID)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
+	log.Info("get full image scan done")
 	var image storage.Image
 	if err := image.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 
+	log.Info("get full populate image")
 	if err := s.populateImage(ctx, tx, &image); err != nil {
 		return nil, false, err
 	}
+	log.Info("get full populate image done")
 	return &image, true, nil
 }
 

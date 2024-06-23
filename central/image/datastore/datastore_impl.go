@@ -185,14 +185,18 @@ func (ds *datastoreImpl) GetImageMetadata(ctx context.Context, id string) (*stor
 
 // GetImage delegates to the underlying store.
 func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Image, bool, error) {
+	log.Info("GetImage start")
 	img, found, err := ds.storage.Get(ctx, sha)
+	log.Info("storage Get done")
 	if err != nil || !found {
 		return nil, false, err
 	}
+	log.Info("storage can read image")
 	if ok, err := ds.canReadImage(ctx, sha); err != nil || !ok {
 		return nil, false, err
 	}
 
+	log.Info("storage update image priority")
 	ds.updateImagePriority(img)
 
 	return img, true, nil

@@ -248,6 +248,25 @@ func TestCachedWalk(t *testing.T) {
 	assert.ElementsMatch(t, testObjects, walkedObjects)
 }
 
+func TestCachedWalkContextCancelation(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newCachedStore(testDB)
+	require.NotNil(t, store)
+
+	testObjects := sampleCachedTestSingleKeyStructArray("Walk")
+	err := store.UpsertMany(cachedStoreCtx, testObjects)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(cachedStoreCtx)
+	cancel()
+	walkFn := func(obj *storage.TestSingleKeyStruct) error {
+		return nil
+	}
+	err = store.Walk(ctx, walkFn)
+
+	assert.ErrorIs(t, err, context.Canceled)
+}
+
 func TestCachedWalkByQuery(t *testing.T) {
 	testDB := pgtest.ForT(t)
 	store := newCachedStore(testDB)
@@ -281,6 +300,25 @@ func TestCachedWalkByQuery(t *testing.T) {
 	}
 	assert.ElementsMatch(t, expectedNames, walkedNames)
 	assert.ElementsMatch(t, expectedObjects, walkedObjects)
+}
+
+func TestCachedWalkByQueryContextCancelation(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newCachedStore(testDB)
+	require.NotNil(t, store)
+
+	testObjects := sampleCachedTestSingleKeyStructArray("WalkByQuery")
+	err := store.UpsertMany(cachedStoreCtx, testObjects)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(cachedStoreCtx)
+	cancel()
+	walkFn := func(obj *storage.TestSingleKeyStruct) error {
+		return nil
+	}
+	err = store.WalkByQuery(ctx, nil, walkFn)
+
+	assert.ErrorIs(t, err, context.Canceled)
 }
 
 func TestCachedGetAll(t *testing.T) {

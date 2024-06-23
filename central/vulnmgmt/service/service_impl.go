@@ -69,7 +69,7 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 	ctx := srv.Context()
 	if timeout := req.GetTimeout(); timeout != 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Millisecond)
 		defer cancel()
 	}
 	imageCache, err := lru.New[string, *storage.Image](cacheSize)
@@ -94,7 +94,13 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 				continue
 			}
 
-			img, found, err := s.images.GetImage(ctx, imgID)
+			log.Infof("get image %q", imgID)
+			time, _ := ctx.Deadline()
+			log.Infof("context deadline: %+v", time)
+			newCtx, cancel := context.WithCancel(ctx)
+			defer cancel()
+			img, found, err := s.images.GetImage(newCtx, imgID)
+			log.Infof("get image %q DONE", imgID)
 			if err != nil {
 				log.Errorf("Error getting image for container %q (SHA: %s): %v", d.GetName(), container.GetId(), err)
 				continue

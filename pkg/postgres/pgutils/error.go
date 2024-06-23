@@ -70,10 +70,10 @@ func IsTransientError(err error) bool {
 	if errox.IsAny(err, pgx.ErrNoRows, pgx.ErrTxClosed, pgx.ErrTxCommitRollback) {
 		return false
 	}
-	if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-		return true
+	if errox.IsAny(err, context.Canceled, context.DeadlineExceeded) {
+		return false
 	}
-	if errox.IsAny(err, context.DeadlineExceeded) {
+	if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 		return true
 	}
 	if errox.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe, syscall.ECONNREFUSED, syscall.ECONNRESET, syscall.ECONNABORTED, syscall.EPIPE) {
