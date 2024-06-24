@@ -19,13 +19,13 @@ func TestDialContextError(t *testing.T) {
 	}{
 		"connection refused": {
 			addr:    "127.0.0.1:10001",
-			message: "unable to establish a TLS-enabled connection: dial tcp: connect: connection refused"},
+			message: "unable to establish a TLS-enabled connection: dial tcp: connect"},
 		"no port": {
 			addr:    "127.0.0.1",
-			message: "unable to establish a TLS-enabled connection: address: missing port in address"},
+			message: "unable to establish a TLS-enabled connection: dial tcp: address: missing port in address"},
 		"bad address": {
-			addr:    "127.0.0.1:x",
-			message: "unable to establish a TLS-enabled connection: lookup: unknown port"},
+			addr:    "bad.svc:1",
+			message: "unable to establish a TLS-enabled connection: dial tcp: lookup: no such host"},
 	}
 
 	for name, test := range tests {

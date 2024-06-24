@@ -2,6 +2,7 @@ package errox
 
 import (
 	"net"
+	"strconv"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -81,12 +82,23 @@ func TestGetUserMessage(t *testing.T) {
 			WithUserMessage(&net.DNSError{Err: "bad", Name: "name", Server: "server"}, "message"),
 			"message: lookup: bad",
 		},
-		"net.OpError": {
+		"net.OpError with unknown error": {
 			WithUserMessage(&net.OpError{Op: "dial", Net: "tcp",
 				Err:    errors.New("refused"),
 				Source: &net.IPAddr{IP: net.IPv4(1, 2, 3, 4)}},
 				"message"),
-			"message: dial tcp: refused",
+			"message: dial tcp",
+		},
+		"net.OpError with net.DNSError": {
+			WithUserMessage(&net.OpError{Op: "dial", Net: "tcp",
+				Err:    &net.DNSError{Err: "bad", Server: "server"},
+				Source: &net.IPAddr{IP: net.IPv4(1, 2, 3, 4)}},
+				"message"),
+			"message: dial tcp: lookup: bad",
+		},
+		"strconv": {
+			func() error { _, err := strconv.Atoi("abc"); return err }(),
+			"error parsing \"abc\"",
 		},
 	}
 

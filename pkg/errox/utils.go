@@ -27,11 +27,3 @@ func GetBaseSentinelError(err error) Error {
 	}
 	return ServerError
 }
-
-func GetUserMessage(err error) string {
-	var um *userMessage
-	if errors.As(err, &um) {
-		return um.UserMessage()
-	}
-	return ""
-}
