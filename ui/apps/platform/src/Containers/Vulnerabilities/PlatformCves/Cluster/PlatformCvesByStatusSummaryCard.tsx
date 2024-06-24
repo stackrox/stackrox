@@ -23,6 +23,11 @@ const statusDisplays = [
     },
 ] as const;
 
+const statusHiddenText = {
+    Fixable: 'Fixable hidden',
+    'Not fixable': 'Not fixable hidden',
+} as const;
+
 export const platformCveCountByStatusFragment = gql`
     fragment PlatformCveCountByStatus on PlatformCVECountByStatus {
         total
@@ -59,7 +64,7 @@ function PlatformCvesByStatusSummaryCard({
                             >
                                 <Icon />
                                 <Text style={{ color: isHidden ? disabledColor100 : 'inherit' }}>
-                                    {isHidden ? 'Results hidden' : text(data)}
+                                    {isHidden ? statusHiddenText[status] : text(data)}
                                 </Text>
                             </Flex>
                         );
