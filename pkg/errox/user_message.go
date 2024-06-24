@@ -31,6 +31,9 @@ func (u *userMessage) Error() string {
 }
 
 func (u *userMessage) UserMessage() string {
+	if u == nil {
+		return ""
+	}
 	var um *userMessage
 	if errors.As(u.base, &um) {
 		return u.message + ": " + um.UserMessage()
