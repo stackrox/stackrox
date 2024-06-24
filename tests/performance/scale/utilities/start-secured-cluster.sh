@@ -15,6 +15,7 @@ settings=(
     --set clusterName=perf-test
     --set enableOpenShiftMonitoring=true
     --set exposeMonitoring=true
+    --set collector.collectionMethod=KERNEL_MODULE
 )
 
 if [[ -n ${collector_image_tag:-} ]]; then
