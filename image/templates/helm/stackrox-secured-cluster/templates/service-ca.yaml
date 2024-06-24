@@ -13,7 +13,4 @@ metadata:
 type: Opaque
 stringData:
   ca.pem: |
-    {{- if hasKey (.Values.metadata).annotations "init-bundle.stackrox.io/name" }}
-    {{- fail "It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart. Make sure to provide an init bundle for Helm chart installation.") | indent 4 }}
-    {{- end }}
     {{- required "A CA certificate must be specified" ._rox.ca._cert | nindent 4 }}
