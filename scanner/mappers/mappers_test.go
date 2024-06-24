@@ -268,7 +268,7 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 			} else {
 				assert.ErrorContains(t, err, tt.wantErr)
 			}
-			assert.Equal(t, tt.want, got)
+			protoassert.Equal(t, tt.want, got)
 		})
 	}
 }
