@@ -50,6 +50,8 @@ type PolicyUpdates struct {
 	Rationale *string
 	// Description is the new description string
 	Description *string
+	// Severity is the new severity
+	Severity storage.Severity
 	// Disable is true if the policy should be disabled, false if it should be enabled and nil for no change
 	Disable *bool
 }
@@ -100,6 +102,9 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 	}
 	if u.Description != nil {
 		policy.Description = *u.Description
+	}
+	if u.Severity != 0 {
+		policy.Severity = u.Severity
 	}
 
 	for _, toRemove := range u.CategoriesToRemove {
@@ -154,6 +159,11 @@ func ExclusionComparator(first, second *storage.Policy) bool {
 // NameComparator compares both policies' names and returns true if they are equal
 func NameComparator(first, second *storage.Policy) bool {
 	return strings.TrimSpace(first.GetName()) == strings.TrimSpace(second.GetName())
+}
+
+// SeverityComparator compares both policies' severity and returns true if they are equal
+func SeverityComparator(first, second *storage.Policy) bool {
+	return first.GetSeverity() == second.GetSeverity()
 }
 
 // RemediationComparator compares the Remediation section of both policies and returns true if they are equal
@@ -245,6 +255,13 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 	}
 	beforePolicy.Remediation = ""
 	afterPolicy.Remediation = ""
+
+	// Severity
+	if beforePolicy.GetSeverity() != afterPolicy.GetSeverity() {
+		updates.Severity = afterPolicy.Severity
+	}
+	beforePolicy.Severity = 0
+	afterPolicy.Severity = 0
 
 	// Enable/Disable
 	if beforePolicy.GetDisabled() != afterPolicy.GetDisabled() {
