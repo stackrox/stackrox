@@ -277,3 +277,42 @@ func getImageIntegrationEvents(events *component.ResourceEvent) []*central.Senso
 
 	return iiEvents
 }
+
+func Test_validateRegistryURL(t *testing.T) {
+	tests := map[string]struct {
+		URL              string
+		wantErrToContain string
+	}{
+		"Valid URL": {
+			URL:              "http://example.com:80/abc",
+			wantErrToContain: "",
+		},
+		"URL with scheme, port and space in host": {
+			URL:              "http://exam ple.com:80/abc",
+			wantErrToContain: `invalid character " " in host name`,
+		},
+		"URL with port and space in host": {
+			URL:              "exam ple.com:80/abc",
+			wantErrToContain: "first path segment in URL cannot contain colon",
+		},
+		"URL with scheme, and space in host": {
+			URL:              "tcp://exam ple.com/abc",
+			wantErrToContain: `invalid character " " in host name`,
+		},
+		// The URL pkg treats the 'exam ple.com' here not as hostname, but a relative path
+		"URL with space in host": {
+			URL:              "exam ple.com/abc",
+			wantErrToContain: "contains no hostname",
+		},
+	}
+	for tname, tt := range tests {
+		t.Run(tname, func(t *testing.T) {
+			gotErr := validateRegistryURL(tt.URL)
+			if tt.wantErrToContain == "" {
+				assert.NoError(t, gotErr)
+			} else {
+				assert.ErrorContains(t, gotErr, tt.wantErrToContain)
+			}
+		})
+	}
+}

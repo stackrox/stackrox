@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"sort"
 	"strings"
 
@@ -242,6 +243,18 @@ func imageIntegationIDSetFromSecret(secret *v1.Secret) (set.StringSet, error) {
 	return imageIntegrationIDSet, nil
 }
 
+func validateRegistryURL(s string) error {
+	parsed, err := url.Parse(s)
+	if err != nil {
+		return err
+	}
+	// If the host name contains a space, then the Host-part is completely empty
+	if parsed.Host == "" {
+		return errors.New("URL contains no hostname")
+	}
+	return nil
+}
+
 func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret, action central.ResourceAction) *component.ResourceEvent {
 	dockerConfig := getDockerConfigFromSecret(secret)
 	if len(dockerConfig) == 0 {
@@ -261,6 +274,11 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 
 	newIntegrationSet := set.NewStringSet()
 	for registry, dce := range dockerConfig {
+		if err := validateRegistryURL(registry); err != nil {
+			log.Errorf("invalid registry URL %q: %v. Check secret %s/%s and sanitize the URLs",
+				registry, err, secret.GetNamespace(), secret.GetName())
+			continue
+		}
 		if fromDefaultSA {
 			// Store the registry credentials so Sensor can reach it.
 			err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
