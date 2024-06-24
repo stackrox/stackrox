@@ -24,7 +24,7 @@ func TestDialContextError(t *testing.T) {
 			addr:    "127.0.0.1",
 			message: "unable to establish a TLS-enabled connection: address: missing port in address"},
 		"bad address": {
-			addr:    "127.0.0.1:10001/32",
+			addr:    "127.0.0.1:x",
 			message: "unable to establish a TLS-enabled connection: lookup: unknown port"},
 	}
 
@@ -37,8 +37,7 @@ func TestDialContextError(t *testing.T) {
 
 			_, err := DialContext(context.Background(), "tcp", test.addr, &tls.Config{})
 			userMessage := errox.GetUserMessage(err)
-			assert.Equal(t, test.message,
-				userMessage)
+			assert.Equal(t, test.message, userMessage)
 			assert.Equal(t, 1, observedLogs.Len())
 		})
 	}
