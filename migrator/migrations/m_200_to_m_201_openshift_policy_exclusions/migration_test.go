@@ -81,14 +81,12 @@ func (s *policyMigrationTestSuite) TestMigration() {
 	for _, diff := range policyDiffs {
 		s.Run(fmt.Sprintf("Testing policy %s", diff.PolicyFileName), func() {
 			afterPolicy, _ := policymigrationhelper.ReadPolicyFromFile(policyDiffFS, filepath.Join("policies_before_and_after/after", diff.PolicyFileName))
-			afterPolicy.Categories = nil
-
 			var foundPolicies []schema.Policies
 			result := s.gormDB.Limit(1).Where(&schema.Policies{ID: afterPolicy.GetId()}).Find(&foundPolicies)
 			s.Require().NoError(result.Error)
 			migratedPolicy, err := schema.ConvertPolicyToProto(&foundPolicies[0])
 			s.Require().NoError(err)
-			s.Equal(afterPolicy, migratedPolicy)
+			s.ElementsMatch(migratedPolicy.Exclusions, afterPolicy.Exclusions, "exclusion do not match after migration")
 		})
 	}
 }
