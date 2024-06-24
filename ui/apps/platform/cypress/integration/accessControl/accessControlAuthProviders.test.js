@@ -71,7 +71,7 @@ describe('Access Control Auth providers', () => {
 
         assertAccessControlEntityPage(entitiesKey);
 
-        cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get('h1').should('have.text', `Create ${type} provider`);
         cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
@@ -102,7 +102,7 @@ describe('Access Control Auth providers', () => {
 
         assertAccessControlEntityPage(entitiesKey);
 
-        cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get('h1').should('have.text', `Create ${type} provider`);
         cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
@@ -251,7 +251,7 @@ describe('Access Control Auth providers', () => {
 
         assertAccessControlEntityPage(entitiesKey);
 
-        cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get('h1').should('have.text', `Create ${type} provider`);
         cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
@@ -302,7 +302,7 @@ describe('Access Control Auth providers', () => {
 
         assertAccessControlEntityPage(entitiesKey);
 
-        cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get('h1').should('have.text', `Create ${type} provider`);
         cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         getInputByLabel('Name').should('be.enabled').should('have.attr', 'required');
@@ -346,7 +346,7 @@ describe('Access Control Auth providers', () => {
 
         assertAccessControlEntityPage(entitiesKey);
 
-        cy.get('h2').should('have.text', `Create ${type} provider`);
+        cy.get('h1').should('have.text', `Create ${type} provider`);
         cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');

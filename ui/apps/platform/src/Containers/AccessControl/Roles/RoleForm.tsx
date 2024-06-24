@@ -118,7 +118,7 @@ function RoleForm({
             <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
-                        <Title headingLevel="h2">
+                        <Title headingLevel="h1">
                             {action === 'create' ? 'Create role' : role.name}
                         </Title>
                     </ToolbarItem>

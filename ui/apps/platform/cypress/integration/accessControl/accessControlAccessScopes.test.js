@@ -56,7 +56,7 @@ describe('Access Control Access scopes', () => {
         const entityName = 'Deny All';
         clickEntityNameInTable(entitiesKey, entityName);
 
-        cy.get(`h2:contains("${entityName}")`);
+        cy.get(`h1:contains("${entityName}")`);
         cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
         cy.get(selectors.form.notEditableLabel).should('exist');
