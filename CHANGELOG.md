@@ -57,6 +57,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - This was already enabled for development builds of StackRox, but now it may be configured for release builds, too.
   - This defaults to `true` for development builds, and `false` for release builds.
 - Deployment bundles created with roxctl do not contain PodSecurityPolicies (PSPs) anymore by default. When deploying to pre-1.25 Kubernetes clusters with PSPs enabled the --enable-pod-security-policies flag needs to be specified when invoking roxctl for generating deployment bundles.
+- ROX-24725: Enhances Sensor's image scan event handling when `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is `true` so only one simultaneous scan request is allowed per unique image.
+  - Also increases the chances of scan cache hits when multiple names for the same image have been observed.
+  - This enhancement is enabled by default when `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is `true` on Sensor, it can be disabled by setting `ROX_SENSOR_SINGLE_SCAN` to `false` on Sensor.
 
 ## [4.4.0]
 
