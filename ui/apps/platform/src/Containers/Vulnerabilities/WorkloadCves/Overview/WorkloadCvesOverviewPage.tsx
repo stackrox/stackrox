@@ -48,6 +48,8 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import LinkShim from 'Components/PatternFly/LinkShim';
+import { SearchFilterEntityName } from 'Components/CompoundSearchFilter/types';
+
 import {
     DefaultFilters,
     WorkloadEntityTab,
@@ -130,8 +132,8 @@ function mergeDefaultAndLocalFilters(
 
 const searchFilterConfig = {
     Image: imageSearchFilterConfig,
-    ImageCVE: imageCVESearchFilterConfig,
-    ImageComponent: imageComponentSearchFilterConfig,
+    'Image CVE': imageCVESearchFilterConfig,
+    'Image Component': imageComponentSearchFilterConfig,
     Deployment: deploymentSearchFilterConfig,
     Namespace: namespaceSearchFilterConfig,
     Cluster: clusterSearchFilterConfig,
@@ -139,6 +141,10 @@ const searchFilterConfig = {
 
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
+
+    const [defaultSearchFilter, setDefaultSearchFilter] = useState<
+        SearchFilterEntityName | undefined
+    >();
 
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
@@ -236,6 +242,8 @@ function WorkloadCvesOverviewPage() {
         pagination.setPage(1);
         sort.setSortOption(getDefaultSortOption(entityTab), 'replace');
 
+        setDefaultSearchFilter(entityTab === 'CVE' ? 'Image CVE' : entityTab);
+
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
             properties: {
@@ -253,6 +261,7 @@ function WorkloadCvesOverviewPage() {
         setSearchFilter({}, 'replace');
         if (activeEntityTabKey === 'CVE') {
             setActiveEntityTabKey('Image', 'replace');
+            setDefaultSearchFilter('Image');
             sort.setSortOption(getDefaultSortOption('Image'), 'replace');
         }
 
@@ -265,6 +274,7 @@ function WorkloadCvesOverviewPage() {
     function onVulnerabilityStateChange(vulnerabilityState: VulnerabilityState) {
         // Reset all filters, sorting, and pagination and apply to the current history entry
         setActiveEntityTabKey('CVE');
+        setDefaultSearchFilter('Image CVE');
         setSearchFilter({}, 'replace');
         sort.setSortOption(getDefaultWorkloadSortOption('CVE'), 'replace');
         pagination.setPage(1, 'replace');
@@ -324,6 +334,7 @@ function WorkloadCvesOverviewPage() {
             }}
             includeCveSeverityFilters={isViewingWithCves}
             includeCveStatusFilters={isViewingWithCves}
+            defaultSearchFilter={defaultSearchFilter}
         />
     ) : (
         <WorkloadCveFilterToolbar
