@@ -252,11 +252,11 @@
 
 {{ include "srox.initGlobalPrefix" (list $) }}
 
-{{ if and (hasKey (.Values.metadata).annotations "init-bundle.stackrox.io/name") (empty ._rox.ca._cert) }}
+{{- if and (hasKey (.Values.metadata).annotations "init-bundle.stackrox.io/name") (empty ._rox.ca._cert) }}
     {{ include "srox.fail" (list . " Error: It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart. Make sure to provide an init bundle for Helm chart installation.") }}
-{{ else if and (not (empty ._rox.ca._cert)) (hasKey (.Values.metadata).annotations "init-bundle.stackrox.io/name") }}
+{{- else if and (not (empty ._rox.ca._cert)) (hasKey (.Values.metadata).annotations "init-bundle.stackrox.io/name") }}
     {{ include "srox.warn" (list . "It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart. Make sure to provide an init bundle for Helm chart installation.") }}
-{{ end }}
+{{- end }}
 
 {{/* ManagedBy related settings */}}
 {{/* The field `helmManaged` defaults to true, therefore `managedBy` will only be changed to `MANAGER_TYPE_MANUAL` here
