@@ -24,13 +24,13 @@ const iconFuture = (
     <Icon>
         <BanIcon color="var(--pf-v5-global--danger-color--100)" />
     </Icon>
-);
+); // danger because it time is complete and incorrect
 
 const iconInvalid = (
     <Icon>
         <ExclamationTriangleIcon color="var(--pf-v5-global--warning-color--100)" />
     </Icon>
-);
+); // warning because time might be incomplete
 
 type FilterByStartingTimeValidationMessageProps = {
     currentTimeObject: Date | null;
