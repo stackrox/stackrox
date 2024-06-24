@@ -275,7 +275,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	newIntegrationSet := set.NewStringSet()
 	for registry, dce := range dockerConfig {
 		if err := validateRegistryURL(registry); err != nil {
-			log.Errorf("invalid registry URL %q: %v. Check secret %s/%s and sanitize the URLs",
+			log.Errorf("invalid registry URL %q: %v. Check secret %s/%s and sanitize the URLs it contains",
 				registry, err, secret.GetNamespace(), secret.GetName())
 			continue
 		}

@@ -299,6 +299,14 @@ func Test_validateRegistryURL(t *testing.T) {
 			URL:              "tcp://exam ple.com/abc",
 			wantErrToContain: `invalid character " " in host name`,
 		},
+		"URL with leading space in host": {
+			URL:              " example.com",
+			wantErrToContain: "contains no hostname",
+		},
+		"URL with trailing space in host": {
+			URL:              "example.com ",
+			wantErrToContain: "contains no hostname",
+		},
 		// The URL pkg treats the 'exam ple.com' here not as hostname, but a relative path
 		"URL with space in host": {
 			URL:              "exam ple.com/abc",
