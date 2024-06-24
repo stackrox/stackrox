@@ -1,10 +1,10 @@
 ## Description
-<!--- A detailed explanation of the changes in your PR. Feel free to remove this section if the title of your PR is sufficiently descriptive. -->
+
+<!-- A detailed explanation of the changes in your PR. Feel free to remove this section if the title of your PR is sufficiently descriptive. -->
 
 
-## Checklist
 All three items *must be* checked:
-<!-- Remove conflicting items that won't be checked -->
+<!-- Remove conflicting items that won't be checked. -->
 
 - [ ] CI results are inspected
 - [ ] CHANGELOG is updated
@@ -13,14 +13,23 @@ All three items *must be* checked:
 - [ ] Documentation is not needed
 
 ## Testing
-- [ ] added unit, e2e, regression, and/or compatibility tests
+
+### Automated testing
+
+There *must be* at least one item and all items *must be* checked:
+<!-- Remove item(s) that don't apply and won't be checked. -->
+
+- [ ] added unit tests
+- [ ] added e2e tests
+- [ ] added regression tests
+- [ ] added compatibility tests
 - [ ] modified existing tests
-- [x] **no new tests added**
-  <!--- Please explain why unless it's obvious, e.g., the PR is a one-line comment change. -->
+- [ ] **no automated tests**
+  <!-- Please explain why unless it's obvious, e.g., the PR is a one-line comment change. -->
 
 ### How I validated my change
 
-<!---
+<!--
 Use this space to explain **how you validated** that **your change functions exactly how you expect it**.
 Feel free to attach JSON snippets, curl commands, screenshots, etc. Apply a simple benchmark: would the information you
 provided convince any reviewer or any external reader that you did enough to validate your change.
