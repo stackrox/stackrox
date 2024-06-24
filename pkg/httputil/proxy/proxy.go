@@ -123,7 +123,8 @@ func AwareDialContextTLS(ctx context.Context, address string, tlsClientConf *tls
 		tlsClientConf.ServerName = host
 	}
 	tlsConn := tls.Client(conn, tlsClientConf)
-	if err := tlsConn.Handshake(); err != nil {
+	// The handshake must be done with a timeout to avoid infinite blocking of Sensor sync.
+	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		utils.IgnoreError(tlsConn.Close)
 		return nil, err
 	}
