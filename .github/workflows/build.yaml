@@ -70,6 +70,7 @@ jobs:
 
   pre-build-ui:
     strategy:
+      fail-fast: false
       matrix:
         branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
     env:
@@ -253,6 +254,11 @@ jobs:
       - pre-build-cli
       - pre-build-go-binaries
       - pre-build-docs
+    # This step will run even if required pre-* steps failed. By following this
+    # approach as much of the build matrix as possible is completed despite
+    # transient issues e.g. docker pull timeouts. In this way some e2e jobs that
+    # require some part of the build matrix can still proceed.
+    if: ${{ !cancelled() }}
     strategy:
       # Supports four image builds (see Setup build env):
       # STACKROX_BRANDING
@@ -421,6 +427,12 @@ jobs:
     needs:
     - define-job-matrix
     - build-and-push-main
+    # This step will run even if some of the build-and-push-matrix steps failed.
+    # By following this approach as much of the build matrix as possible is
+    # completed despite transient issues e.g. docker pull timeouts. In this way
+    # some e2e jobs that require some part of the build matrix can still
+    # proceed.
+    if: ${{ !cancelled() }}
     strategy:
       # Supports four image builds (see Setup build env):
       # STACKROX_BRANDING
