@@ -1,14 +1,13 @@
 import React from 'react';
-import { Toolbar, ToolbarGroup, ToolbarContent, Flex } from '@patternfly/react-core';
+import { Toolbar, ToolbarGroup, ToolbarContent } from '@patternfly/react-core';
 import { uniq } from 'lodash';
-import { Globe } from 'react-feather';
 
 import CompoundSearchFilter, {
     CompoundSearchFilterProps,
 } from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import SearchFilterChips, { FilterChip } from 'Components/PatternFly/SearchFilterChips';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { SearchFilter } from 'types/search';
 import { searchValueAsArray } from 'utils/searchUtils';
@@ -18,23 +17,6 @@ import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
 
 import './AdvancedFiltersToolbar.css';
-
-type FilterChipProps = {
-    isGlobal?: boolean;
-    name: string;
-};
-
-function FilterChip({ isGlobal, name }: FilterChipProps) {
-    if (isGlobal) {
-        return (
-            <Flex alignItems={{ default: 'alignItemsCenter' }} flexWrap={{ default: 'nowrap' }}>
-                <Globe height="15px" />
-                {name}
-            </Flex>
-        );
-    }
-    return <Flex>{name}</Flex>;
-}
 
 function makeDefaultFilterDescriptor(
     defaultFilters: DefaultFilters,
