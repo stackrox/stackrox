@@ -1,9 +1,9 @@
 import React from 'react';
-import { DatePicker, SearchInput, SelectOption } from '@patternfly/react-core';
+import { Button, DatePicker, Flex, SearchInput, SelectOption } from '@patternfly/react-core';
+import { ArrowRightIcon } from '@patternfly/react-icons';
 
 import { SearchFilter } from 'types/search';
 import { getDate } from 'utils/dateUtils';
-import { dateFormat } from 'constants/dateTimeFormat';
 import { SelectedEntity } from './EntitySelector';
 import { SelectedAttribute } from './AttributeSelector';
 import {
@@ -45,6 +45,22 @@ function isSelectType(
     attributeObject: SearchFilterAttribute
 ): attributeObject is SelectSearchFilterAttribute {
     return attributeObject.inputType === 'select';
+}
+
+function dateParse(date: string): Date {
+    const split = date.split('/');
+    if (split.length !== 3) {
+        return new Date('Invalid Date');
+    }
+    const month = split[0];
+    const day = split[1];
+    const year = split[2];
+    if (month.length !== 2 || day.length !== 2 || year.length !== 4) {
+        return new Date('Invalid Date');
+    }
+    return new Date(
+        `${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00`
+    );
 }
 
 function CompoundSearchFilterInputField({
@@ -89,23 +105,39 @@ function CompoundSearchFilterInputField({
         );
     }
     if (attributeObject.inputType === 'date-picker') {
+        const dateValue = ensureString(value);
+
         return (
-            <DatePicker
-                aria-label="Filter by date"
-                buttonAriaLabel="Filter by date toggle"
-                value={ensureString(value)}
-                onChange={(_event, _value) => {
-                    const formattedValue = _value ? getDate(_value) : '';
-                    onChange(_value);
-                    onSearch({
-                        action: 'ADD',
-                        category: attributeObject.searchTerm,
-                        value: formattedValue,
-                    });
-                }}
-                dateFormat={getDate}
-                placeholder={dateFormat}
-            />
+            <Flex spaceItems={{ default: 'spaceItemsNone' }}>
+                <DatePicker
+                    aria-label="Filter by date"
+                    buttonAriaLabel="Filter by date toggle"
+                    value={dateValue}
+                    onChange={(_event, _value) => {
+                        onChange(_value);
+                    }}
+                    dateFormat={getDate}
+                    dateParse={dateParse}
+                    placeholder="MM/DD/YYYY"
+                />
+                <Button
+                    variant="control"
+                    aria-label="Apply date input to search"
+                    onClick={() => {
+                        const date = dateParse(dateValue);
+                        if (!Number.isNaN(date.getTime())) {
+                            onSearch({
+                                action: 'ADD',
+                                category: attributeObject.searchTerm,
+                                value: dateValue,
+                            });
+                            onChange('');
+                        }
+                    }}
+                >
+                    <ArrowRightIcon />
+                </Button>
+            </Flex>
         );
     }
     if (attributeObject.inputType === 'condition-number') {
