@@ -120,7 +120,7 @@ export type Cluster = {
     dynamicConfig: DynamicClusterConfig;
     tolerationsConfig: TolerationsConfig;
     priority: string; // int64
-    healthStatus: ClusterHealthStatus;
+    healthStatus?: ClusterHealthStatus;
     slimCollector: boolean;
 
     // The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed.
