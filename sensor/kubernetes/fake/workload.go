@@ -75,6 +75,11 @@ type ServiceWorkload struct {
 	NumLoadBalancers int `yaml:"numLoadBalancers"`
 }
 
+// SecretWorkload defines the workload of secrets
+type SecretWorkload struct {
+	NumDockerConfigJSON int `yaml:"numDockerConfigJSON"`
+}
+
 // Workload is the definition of a scale workload
 type Workload struct {
 	DeploymentWorkload    []DeploymentWorkload    `yaml:"deploymentWorkload"`
@@ -83,6 +88,7 @@ type Workload struct {
 	NetworkWorkload       NetworkWorkload         `yaml:"networkWorkload"`
 	RBACWorkload          RBACWorkload            `yaml:"rbacWorkload"`
 	ServiceWorkload       ServiceWorkload         `yaml:"serviceWorkload"`
+	SecretWorkload        SecretWorkload          `yaml:"secretWorkload"`
 	NumNamespaces         int                     `yaml:"numNamespaces"`
 	MatchLabels           bool                    `yaml:"matchLabels"`
 }

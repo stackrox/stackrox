@@ -11,16 +11,17 @@ import (
 const (
 	idSeparator = "\x00"
 
-	namespacePrefix      = "namespaces"
-	podPrefix            = "pods"
-	deploymentPrefix     = "deployments"
-	replicaSetPrefix     = "replicasets"
-	nodePrefix           = "nodes"
-	serviceAccountPrefix = "serviceaccount"
-	rolesPrefix          = "roles"
-	rolebindingsPrefix   = "rolebindings"
-	servicePrefix        = "services"
-	networkPolicyPrefix  = "networkpolicies"
+	namespacePrefix              = "namespaces"
+	podPrefix                    = "pods"
+	deploymentPrefix             = "deployments"
+	replicaSetPrefix             = "replicasets"
+	nodePrefix                   = "nodes"
+	serviceAccountPrefix         = "serviceaccount"
+	rolesPrefix                  = "roles"
+	rolebindingsPrefix           = "rolebindings"
+	servicePrefix                = "services"
+	dockerConfigJSONSecretPrefix = "dockerconfigjsonsecrets"
+	networkPolicyPrefix          = "networkpolicies"
 )
 
 func idOrNewUID(id string) types.UID {

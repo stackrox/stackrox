@@ -193,6 +193,8 @@ func (w *WorkloadManager) initializePreexistingResources() {
 
 	labelsPool.matchLabels = w.workload.MatchLabels
 
+	objects = append(objects, w.getSecrets(w.workload.SecretWorkload, w.getIDsForPrefix(dockerConfigJSONSecretPrefix))...)
+
 	objects = append(objects, w.getRBAC(w.workload.RBACWorkload, w.getIDsForPrefix(serviceAccountPrefix), w.getIDsForPrefix(rolesPrefix), w.getIDsForPrefix(rolebindingsPrefix))...)
 	var resources []*deploymentResourcesToBeManaged
 

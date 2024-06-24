@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/cloudflare/cfssl/certinfo"
 	"github.com/pkg/errors"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/registries/rhel"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -261,6 +263,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 
 	newIntegrationSet := set.NewStringSet()
 	for registry, dce := range dockerConfig {
+		log.Info("==================== registry: ", registry)
 		if fromDefaultSA {
 			// Store the registry credentials so Sensor can reach it.
 			err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
@@ -386,6 +389,10 @@ func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) 
 	}
 }
 
+var (
+	once sync.Once
+)
+
 // ProcessEvent processes a secret resource event, and returns the sensor events to emit in response.
 func (s *secretDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
 	secret := obj.(*v1.Secret)
@@ -403,6 +410,16 @@ func (s *secretDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 		if !s.regStore.RemoveSecretID(parsedID) {
 			log.Warnf("Should have secret (%s:%s) in registryStore known IDs but ID wasn't found", secret.GetName(), parsedID)
 		}
+	}
+
+	log.Infof("==================== Secret %s %s", secret.GetName(), secret.Type)
+	if env.FakeDelay.Setting() == "once" {
+		once.Do(func() {
+			time.Sleep(env.FakeDelayTime.DurationSetting())
+		})
+	}
+	if env.FakeDelay.Setting() == "all" {
+		time.Sleep(env.FakeDelayTime.DurationSetting())
 	}
 
 	switch secret.Type {
