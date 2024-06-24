@@ -125,7 +125,7 @@ func (suite *ImageLoaderTestSuite) TestFromIDs() {
 	// Get a preloaded image from id.
 	images, err := loader.FromIDs(suite.ctx, []string{sha1, sha2})
 	suite.NoError(err)
-	suite.Equal([]*storage.Image{
+	protoassert.SlicesEqual(suite.T(), []*storage.Image{
 		loader.loaded[sha1],
 		loader.loaded[sha2],
 	}, images)
@@ -137,7 +137,7 @@ func (suite *ImageLoaderTestSuite) TestFromIDs() {
 
 	images, err = loader.FromIDs(suite.ctx, []string{sha1, sha2, sha3})
 	suite.NoError(err)
-	suite.Equal([]*storage.Image{
+	protoassert.SlicesEqual(suite.T(), []*storage.Image{
 		loader.loaded[sha1],
 		loader.loaded[sha2],
 		thirdImage,
@@ -146,7 +146,7 @@ func (suite *ImageLoaderTestSuite) TestFromIDs() {
 	// Above call should now be preloaded.
 	images, err = loader.FromIDs(suite.ctx, []string{sha1, sha2, sha3})
 	suite.NoError(err)
-	suite.Equal([]*storage.Image{
+	protoassert.SlicesEqual(suite.T(), []*storage.Image{
 		loader.loaded[sha1],
 		loader.loaded[sha2],
 		loader.loaded[sha3],
@@ -177,7 +177,7 @@ func (suite *ImageLoaderTestSuite) TestFromQuery() {
 
 	images, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.Image{
+	protoassert.SlicesEqual(suite.T(), []*storage.Image{
 		loader.loaded[sha1],
 		loader.loaded[sha2],
 	}, images)
@@ -202,7 +202,7 @@ func (suite *ImageLoaderTestSuite) TestFromQuery() {
 
 	images, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.Image{
+	protoassert.SlicesEqual(suite.T(), []*storage.Image{
 		loader.loaded[sha1],
 		loader.loaded[sha2],
 		thirdImage,
@@ -224,7 +224,7 @@ func (suite *ImageLoaderTestSuite) TestFromQuery() {
 
 	images, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.Image{
+	protoassert.SlicesEqual(suite.T(), []*storage.Image{
 		loader.loaded[sha1],
 		loader.loaded[sha2],
 		loader.loaded[sha3],

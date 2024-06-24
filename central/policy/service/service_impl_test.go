@@ -285,7 +285,7 @@ func (s *PolicyServiceTestSuite) TestImportPolicy() {
 	s.Require().Len(resp.GetResponses(), 1)
 	policyResp := resp.GetResponses()[0]
 	resultPolicy := policyResp.GetPolicy()
-	s.Equal(importedPolicy.GetPolicySections(), resultPolicy.GetPolicySections())
+	protoassert.SlicesEqual(s.T(), importedPolicy.GetPolicySections(), resultPolicy.GetPolicySections())
 }
 
 func (s *PolicyServiceTestSuite) testScopes(query string, mockClusters []*storage.Cluster, expectedScopes ...*storage.Scope) {

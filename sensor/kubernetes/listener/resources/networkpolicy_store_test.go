@@ -61,7 +61,7 @@ func TestNetworkPoliciesStoreFind(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			found := store.Find(defaultNS, tt.podLabels)
-			assert.Equal(t, len(tt.expectedIDs), len(found), "expected to find %d IDs, but found: %v", len(tt.expectedIDs), found)
+			assert.Len(t, found, len(tt.expectedIDs))
 
 			for _, expID := range tt.expectedIDs {
 				assert.Equal(t, expID, found[expID].GetId())

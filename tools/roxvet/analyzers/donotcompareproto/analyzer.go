@@ -44,18 +44,18 @@ var (
 	)
 
 	bannedAssertFunctions = set.NewFrozenStringSet(
-	// "(*github.com/stretchr/testify/assert.Assertions).Contains",
-	// "(*github.com/stretchr/testify/assert.Assertions).Equal",
-	// "(*github.com/stretchr/testify/assert.Assertions).NotEqual",
-	// "(*github.com/stretchr/testify/require.Assertions).Contains",
-	// "(*github.com/stretchr/testify/require.Assertions).Equal",
-	// "(*github.com/stretchr/testify/require.Assertions).NotEqual",
-	// "github.com/stretchr/testify/assert.Contains",
-	// "github.com/stretchr/testify/assert.Equal",
-	// "github.com/stretchr/testify/assert.NotEqual",
-	// "github.com/stretchr/testify/require.Contains",
-	// "github.com/stretchr/testify/require.Equal",
-	// "github.com/stretchr/testify/require.NotEqual",
+		// "(*github.com/stretchr/testify/assert.Assertions).Contains",
+		"(*github.com/stretchr/testify/assert.Assertions).Equal",
+		// "(*github.com/stretchr/testify/assert.Assertions).NotEqual",
+		// "(*github.com/stretchr/testify/require.Assertions).Contains",
+		"(*github.com/stretchr/testify/require.Assertions).Equal",
+		// "(*github.com/stretchr/testify/require.Assertions).NotEqual",
+		// "github.com/stretchr/testify/assert.Contains",
+		"github.com/stretchr/testify/assert.Equal",
+		// "github.com/stretchr/testify/assert.NotEqual",
+		// "github.com/stretchr/testify/require.Contains",
+		"github.com/stretchr/testify/require.Equal",
+		// "github.com/stretchr/testify/require.NotEqual",
 	)
 )
 
@@ -83,7 +83,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			return
 		}
 
-		for _, arg := range call.Args {
+		for _, arg := range call.Args[:min(len(call.Args), 3)] {
 			typ := pass.TypesInfo.Types[arg].Type
 			if typ == nil {
 				continue

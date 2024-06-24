@@ -179,7 +179,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdateAuditLogFileStateSendsFil
 
 	manager.SetAuditLogFileStateFromCentral(fileStates)
 
-	s.Equal(fileStates, manager.fileStates)
+	protoassert.MapEqual(s.T(), fileStates, manager.fileStates)
 
 	protoassert.Equal(s.T(), fileStates["node-a"],
 		servers["node-a"].(*mockServer).sentList[0].GetAuditLogCollectionRequest().GetStartReq().GetCollectStartState())
@@ -194,7 +194,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdateAuditLogFileStateDoesNotS
 
 	manager.SetAuditLogFileStateFromCentral(fileStates)
 
-	s.Equal(fileStates, manager.fileStates, "Even if disabled the state change should be recorded")
+	protoassert.MapEqual(s.T(), fileStates, manager.fileStates, "Even if disabled the state change should be recorded")
 
 	for _, server := range servers {
 		s.Len(server.(*mockServer).sentList, 0, "No start message should have been sent because collection is disabled")
@@ -251,7 +251,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestGetLatestFileStatesReturnsCopyO
 	manager.updateFileState("node-a", firstEvent)
 
 	states := manager.getLatestFileStates()
-	s.Equal(
+	protoassert.MapEqual(s.T(),
 		map[string]*storage.AuditLogFileState{"node-a": firstState},
 		states,
 	)
@@ -268,13 +268,13 @@ func (s *AuditLogCollectionManagerTestSuite) TestGetLatestFileStatesReturnsCopyO
 	manager.updateFileState("node-b", altNodeEvent)
 
 	// The originally retrieved state should not have changed
-	s.Equal(
+	protoassert.MapEqual(s.T(),
 		map[string]*storage.AuditLogFileState{"node-a": firstState},
 		states,
 	)
 
 	// But when fetched again, the new states should be shown
-	s.Equal(
+	protoassert.MapEqual(s.T(),
 		map[string]*storage.AuditLogFileState{"node-a": secondState, "node-b": altNodeState},
 		manager.getLatestFileStates(),
 	)
@@ -330,7 +330,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverSavesFileStates() {
 
 	states := manager.getLatestFileStates()
 	delete(states, "node-X") // Just in case the test ran fast, and the message added to flush the channel exists, remove it
-	s.Equal(expectedFileStates, states)
+	protoassert.MapEqual(s.T(), expectedFileStates, states)
 
 }
 
@@ -460,7 +460,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWithLatestFil
 	defer manager.Stop(nil)
 
 	status := s.getUpdaterStatusMsg(manager, 10)
-	s.Equal(expectedStatus, status.GetNodeAuditLogFileStates())
+	protoassert.MapEqual(s.T(), expectedStatus, status.GetNodeAuditLogFileStates())
 }
 
 func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWhenForced() {
@@ -484,7 +484,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWhenForced() 
 	manager.ForceUpdate()
 
 	status := s.getUpdaterStatusMsg(manager, 1)
-	s.Equal(expectedStatus, status.GetNodeAuditLogFileStates())
+	protoassert.MapEqual(s.T(), expectedStatus, status.GetNodeAuditLogFileStates())
 }
 
 func (s *AuditLogCollectionManagerTestSuite) getUpdaterStatusMsg(updater updater.Component, times int) *central.AuditLogStatusInfo {

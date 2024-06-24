@@ -15,6 +15,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -467,7 +468,7 @@ func (s *generatorTestSuite) TestGenerate() {
 
 	sortPolicies(expectedPolicies)
 
-	s.Equal(expectedPolicies, generatedPolicies)
+	protoassert.SlicesEqual(s.T(), expectedPolicies, generatedPolicies)
 }
 
 func depFlow(fromID, toID string) *storage.NetworkFlow {
@@ -872,5 +873,5 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 	}
 
 	sortPolicies(expectedPolicies)
-	s.Equal(expectedPolicies, generatedPolicies)
+	protoassert.SlicesEqual(s.T(), expectedPolicies, generatedPolicies)
 }

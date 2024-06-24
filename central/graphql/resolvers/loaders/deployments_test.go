@@ -86,7 +86,7 @@ func (suite *DeploymentLoaderTestSuite) TestFromIDs() {
 	// Get a preloaded deployment from id.
 	deployments, err := loader.FromIDs(suite.ctx, []string{dep1, dep2})
 	suite.NoError(err)
-	suite.Equal([]*storage.Deployment{
+	protoassert.SlicesEqual(suite.T(), []*storage.Deployment{
 		loader.loaded[dep1],
 		loader.loaded[dep2],
 	}, deployments)
@@ -98,7 +98,7 @@ func (suite *DeploymentLoaderTestSuite) TestFromIDs() {
 
 	deployments, err = loader.FromIDs(suite.ctx, []string{dep1, dep2, dep3})
 	suite.NoError(err)
-	suite.Equal([]*storage.Deployment{
+	protoassert.SlicesEqual(suite.T(), []*storage.Deployment{
 		loader.loaded[dep1],
 		loader.loaded[dep2],
 		thirdDeployment,
@@ -107,7 +107,7 @@ func (suite *DeploymentLoaderTestSuite) TestFromIDs() {
 	// Above call should now be preloaded.
 	deployments, err = loader.FromIDs(suite.ctx, []string{dep1, dep2, dep3})
 	suite.NoError(err)
-	suite.Equal([]*storage.Deployment{
+	protoassert.SlicesEqual(suite.T(), []*storage.Deployment{
 		loader.loaded[dep1],
 		loader.loaded[dep2],
 		loader.loaded[dep3],
@@ -138,7 +138,7 @@ func (suite *DeploymentLoaderTestSuite) TestFromQuery() {
 
 	deployments, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.Deployment{
+	protoassert.SlicesEqual(suite.T(), []*storage.Deployment{
 		loader.loaded[dep1],
 		loader.loaded[dep2],
 	}, deployments)
@@ -163,7 +163,7 @@ func (suite *DeploymentLoaderTestSuite) TestFromQuery() {
 
 	deployments, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.Deployment{
+	protoassert.SlicesEqual(suite.T(), []*storage.Deployment{
 		loader.loaded[dep1],
 		loader.loaded[dep2],
 		thirdDeployment,
@@ -185,7 +185,7 @@ func (suite *DeploymentLoaderTestSuite) TestFromQuery() {
 
 	deployments, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.Deployment{
+	protoassert.SlicesEqual(suite.T(), []*storage.Deployment{
 		loader.loaded[dep1],
 		loader.loaded[dep2],
 		loader.loaded[dep3],

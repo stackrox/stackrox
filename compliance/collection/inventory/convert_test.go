@@ -274,7 +274,7 @@ func (s *inventoryConvertTestSuite) TestConvertExecutables() {
 		s.Run(testName, func() {
 			for i, got := range convertExecutables(testCase.exe) {
 				s.Equal(testCase.expected[i].GetPath(), got.GetPath())
-				s.Equal(testCase.expected[i].GetRequiredFeatures(), got.GetRequiredFeatures())
+				protoassert.SlicesEqual(s.T(), testCase.expected[i].GetRequiredFeatures(), got.GetRequiredFeatures())
 			}
 		})
 	}

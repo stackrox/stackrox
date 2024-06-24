@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -194,7 +195,7 @@ func TestSortSubjects(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err)
-			assert.Equal(t, c.expected, testSubjects)
+			protoassert.SlicesEqual(t, c.expected, testSubjects)
 		})
 	}
 }
@@ -251,7 +252,7 @@ func TestGetFiltered(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			filteredSubjects, err := GetFilteredSubjects(c.query, c.subjects)
 			require.NoError(t, err)
-			assert.Equal(t, c.expectedSubjects, filteredSubjects)
+			protoassert.SlicesEqual(t, c.expectedSubjects, filteredSubjects)
 		})
 	}
 }

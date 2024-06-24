@@ -24,7 +24,7 @@ func TestConvertFeatures(t *testing.T) {
 	t.Setenv(features.ActiveVulnMgmt.EnvVar(), "true")
 
 	clairFeatures, protoComponents := mock.GetTestFeatures()
-	assert.Equal(t, protoComponents, ConvertFeatures(nil, clairFeatures, ""))
+	protoassert.SlicesEqual(t, protoComponents, ConvertFeatures(nil, clairFeatures, ""))
 }
 
 func TestVersionFormatCompleteness(t *testing.T) {

@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -204,7 +205,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanSta
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -291,7 +292,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceOverallCluster
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -390,7 +391,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats()
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -651,7 +652,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -775,7 +776,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesCluste
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -872,7 +873,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 			results, err := s.service.GetComplianceProfileCheckStats(s.ctx, tc.query)
 			if tc.expectedErr == nil {
 				s.Require().NoError(err)
-				s.Require().Equal(tc.expectedResp, results)
+				protoassert.Equal(s.T(), tc.expectedResp, results)
 			} else {
 				s.Require().Error(tc.expectedErr, err)
 				s.Require().Nil(results)
