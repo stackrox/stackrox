@@ -3,6 +3,10 @@ package errox
 import (
 	"fmt"
 	"net"
+	"net/url"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -30,33 +34,45 @@ func (u *userMessage) Error() string {
 	return u.message
 }
 
-func (u *userMessage) UserMessage() string {
-	if u == nil {
-		return ""
+func joinIfNotEmpty(args ...string) string {
+	sb := strings.Builder{}
+	for _, arg := range args {
+		if arg != "" {
+			if sb.Len() != 0 {
+				sb.WriteString(": ")
+			}
+			sb.WriteString(arg)
+		}
 	}
-	var um *userMessage
-	if errors.As(u.base, &um) {
-		return u.message + ": " + um.UserMessage()
-	}
-	if extracted := extractUserMessage(u.base); extracted != "" {
-		return u.message + ": " + extracted
-	}
-	return u.message
+	return sb.String()
 }
 
-func extractUserMessage(err error) string {
-	if e := (*net.AddrError)(nil); errors.As(err, &e) {
-		return "address: " + e.Err
-	}
-	if e := (*net.DNSError)(nil); errors.As(err, &e) {
-		return "lookup: " + e.Err
-	}
-	if e := (*net.OpError)(nil); errors.As(err, &e) {
-		s := e.Op
-		if e.Net != "" {
-			s += " " + e.Net
+func GetUserMessage(err error) string {
+	for ; err != nil; err = errors.Unwrap(err) {
+		switch e := err.(type) {
+		case *userMessage:
+			return joinIfNotEmpty(e.message, GetUserMessage(e.base))
+		case *net.OpError:
+			op := e.Op
+			if e.Net != "" {
+				op += " " + e.Net
+			}
+			return joinIfNotEmpty(op, GetUserMessage(e.Err))
+		case *net.AddrError:
+			return joinIfNotEmpty("address", e.Err)
+		case *net.DNSError:
+			return joinIfNotEmpty("lookup", e.Err)
+		case *os.SyscallError:
+			return joinIfNotEmpty(e.Syscall, GetUserMessage(e.Err))
+		case *os.PathError:
+			return joinIfNotEmpty(e.Op, GetUserMessage(e.Err))
+		case *url.Error:
+			return joinIfNotEmpty(e.Op, GetUserMessage(e.Err))
+		case *strconv.NumError:
+			return joinIfNotEmpty("error parsing "+strconv.Quote(e.Num), GetUserMessage(e.Err))
+		default:
+			continue
 		}
-		return s + ": " + e.Err.Error()
 	}
 	return ""
 }
