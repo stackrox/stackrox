@@ -42,7 +42,7 @@ function ClusterEditForm({
     return (
         <div className="bg-base-200 px-4 w-full">
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
-            {selectedCluster.id ? (
+            {selectedCluster.id && selectedCluster.healthStatus ? (
                 <ClusterSummary
                     healthStatus={selectedCluster.healthStatus}
                     status={selectedCluster.status}
