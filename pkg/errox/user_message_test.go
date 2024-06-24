@@ -33,6 +33,8 @@ func TestWithUserMessage(t *testing.T) {
 			assert.Equal(t, test.expectedMessage, test.err.Error())
 		})
 	}
+
+	assert.ErrorIs(t, WithUserMessage(NotFound, "message"), NotFound)
 }
 
 func TestGetUserMessage(t *testing.T) {
