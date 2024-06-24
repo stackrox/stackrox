@@ -1511,7 +1511,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						if c.policyName == "Images with no scans" {
 							if len(suite.deployments[id].GetContainers()) == 1 {
 								msg := fmt.Sprintf(c.sampleViolationForMatched, suite.deployments[id].GetContainers()[0].GetName())
-								assert.Equal(t, actualViolations[id], []*storage.Alert_Violation{{Message: msg}})
+								protoassert.SlicesEqual(t, actualViolations[id], []*storage.Alert_Violation{{Message: msg}})
 							}
 						}
 					}
@@ -1530,7 +1530,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 							assert.Contains(t, actualViolations[id], violation)
 						}
 					} else {
-						assert.Equal(t, violations, actualViolations[id])
+						protoassert.SlicesEqual(t, violations, actualViolations[id])
 					}
 				} else {
 					assert.NotContains(t, actualViolations, id)
@@ -1779,7 +1779,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 			for id, violations := range c.expectedViolations {
 				assert.Contains(t, actualViolations, id)
-				assert.Equal(t, violations, actualViolations[id])
+				protoassert.SlicesEqual(t, violations, actualViolations[id])
 			}
 			if len(c.shouldNotMatch) > 0 {
 				if c.policyName == "Required Image Label" {
@@ -1798,7 +1798,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				for id := range suite.images {
 					if _, shouldNotMatch := c.shouldNotMatch[id]; !shouldNotMatch {
 						assert.Contains(t, actualViolations, id)
-						assert.Equal(t, actualViolations[id], []*storage.Alert_Violation{{Message: c.sampleViolationForMatched}})
+						protoassert.SlicesEqual(t, actualViolations[id], []*storage.Alert_Violation{{Message: c.sampleViolationForMatched}})
 					}
 				}
 			}
@@ -1859,7 +1859,7 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 			for _, v := range c.expectedViolations {
 				expectedMessages = append(expectedMessages, &storage.Alert_Violation{Message: v})
 			}
-			suite.Equal(matched.AlertViolations, expectedMessages)
+			protoassert.SlicesEqual(suite.T(), matched.AlertViolations, expectedMessages)
 		})
 	}
 }
@@ -2036,7 +2036,7 @@ func (suite *DefaultPoliciesTestSuite) TestK8sRBACField() {
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					matched.Add(depRef)
-					assert.Equal(t, violations.AlertViolations, c.expectedViolations[depRef])
+					protoassert.SlicesEqual(t, violations.AlertViolations, c.expectedViolations[depRef])
 				} else {
 					assert.Empty(t, c.expectedViolations[depRef])
 				}
@@ -2625,7 +2625,7 @@ func (suite *DefaultPoliciesTestSuite) TestAutomountServiceAccountToken() {
 			violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 			suite.NoError(err, "deployment matcher run must succeed")
 			suite.Empty(violations.ProcessViolation)
-			suite.Equal(c.ExpectedAlerts, violations.AlertViolations)
+			protoassert.SlicesEqual(suite.T(), c.ExpectedAlerts, violations.AlertViolations)
 		})
 	}
 }
@@ -3290,7 +3290,7 @@ func (suite *DefaultPoliciesTestSuite) TestReplicasPolicyCriteria() {
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
-			suite.Equal(violations.AlertViolations, testCase.alerts)
+			protoassert.SlicesEqual(suite.T(), violations.AlertViolations, testCase.alerts)
 		})
 	}
 }
@@ -3373,7 +3373,7 @@ func (suite *DefaultPoliciesTestSuite) TestLivenessProbePolicyCriteria() {
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
-			suite.Equal(violations.AlertViolations, testCase.alerts)
+			protoassert.SlicesEqual(suite.T(), violations.AlertViolations, testCase.alerts)
 		})
 	}
 }
@@ -3561,7 +3561,7 @@ func (suite *DefaultPoliciesTestSuite) TestReadinessProbePolicyCriteria() {
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
-			suite.Equal(violations.AlertViolations, testCase.alerts)
+			protoassert.SlicesEqual(suite.T(), violations.AlertViolations, testCase.alerts)
 		})
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/alerttest"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -65,7 +66,7 @@ func (s *alertDataStoreTestSuite) TestSearchAlerts() {
 	result, err := s.dataStore.SearchAlerts(s.hasReadCtx, &v1.Query{})
 
 	s.Equal(errFake, err)
-	s.Equal([]*v1.SearchResult{{Id: alerttest.FakeAlertID}}, result)
+	protoassert.SlicesEqual(s.T(), []*v1.SearchResult{{Id: alerttest.FakeAlertID}}, result)
 }
 
 func (s *alertDataStoreTestSuite) TestSearchRawAlerts() {
@@ -74,7 +75,7 @@ func (s *alertDataStoreTestSuite) TestSearchRawAlerts() {
 	result, err := s.dataStore.SearchRawAlerts(s.hasReadCtx, &v1.Query{})
 
 	s.Equal(errFake, err)
-	s.Equal([]*storage.Alert{{Id: alerttest.FakeAlertID}}, result)
+	protoassert.SlicesEqual(s.T(), []*storage.Alert{{Id: alerttest.FakeAlertID}}, result)
 }
 
 func (s *alertDataStoreTestSuite) TestSearchListAlerts() {
@@ -83,7 +84,7 @@ func (s *alertDataStoreTestSuite) TestSearchListAlerts() {
 	result, err := s.dataStore.SearchListAlerts(s.hasReadCtx, &v1.Query{})
 
 	s.Equal(errFake, err)
-	s.Equal(alerttest.NewFakeListAlertSlice(), result)
+	protoassert.SlicesEqual(s.T(), alerttest.NewFakeListAlertSlice(), result)
 }
 
 func (s *alertDataStoreTestSuite) TestCountAlerts_Success() {

@@ -86,7 +86,7 @@ func (suite *ClusterCVELoaderTestSuite) TestFromIDs() {
 	// Get a preloaded cve from id.
 	cves, err := loader.FromIDs(suite.ctx, []string{clusterCve1, clusterCve2})
 	suite.NoError(err)
-	suite.Equal([]*storage.ClusterCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ClusterCVE{
 		loader.loaded[clusterCve1],
 		loader.loaded[clusterCve2],
 	}, cves)
@@ -98,7 +98,7 @@ func (suite *ClusterCVELoaderTestSuite) TestFromIDs() {
 
 	cves, err = loader.FromIDs(suite.ctx, []string{clusterCve1, clusterCve2, clusterCve3})
 	suite.NoError(err)
-	suite.Equal([]*storage.ClusterCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ClusterCVE{
 		loader.loaded[clusterCve1],
 		loader.loaded[clusterCve2],
 		thirdCVE,
@@ -107,7 +107,7 @@ func (suite *ClusterCVELoaderTestSuite) TestFromIDs() {
 	// Above call should now be preloaded.
 	cves, err = loader.FromIDs(suite.ctx, []string{clusterCve1, clusterCve2, clusterCve3})
 	suite.NoError(err)
-	suite.Equal([]*storage.ClusterCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ClusterCVE{
 		loader.loaded[clusterCve1],
 		loader.loaded[clusterCve2],
 		loader.loaded[clusterCve3],
@@ -138,7 +138,7 @@ func (suite *ClusterCVELoaderTestSuite) TestFromQuery() {
 
 	cves, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ClusterCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ClusterCVE{
 		loader.loaded[clusterCve1],
 		loader.loaded[clusterCve2],
 	}, cves)
@@ -163,7 +163,7 @@ func (suite *ClusterCVELoaderTestSuite) TestFromQuery() {
 
 	cves, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ClusterCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ClusterCVE{
 		loader.loaded[clusterCve1],
 		loader.loaded[clusterCve2],
 		thirdCVE,
@@ -185,7 +185,7 @@ func (suite *ClusterCVELoaderTestSuite) TestFromQuery() {
 
 	cves, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ClusterCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ClusterCVE{
 		loader.loaded[clusterCve1],
 		loader.loaded[clusterCve2],
 		loader.loaded[clusterCve3],

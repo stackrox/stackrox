@@ -10,7 +10,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-func Equal(t *testing.T, expected, actual proto.Message, msgAndArgs ...interface{}) bool {
+func Equal(t testing.TB, expected, actual proto.Message, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	if proto.Equal(expected, actual) {
 		return true
@@ -22,7 +22,7 @@ func Equal(t *testing.T, expected, actual proto.Message, msgAndArgs ...interface
 	return assert.JSONEq(t, e, a, msgAndArgs)
 }
 
-func SlicesEqual[T proto.Message](t *testing.T, expected, actual []T, msgAndArgs ...interface{}) bool {
+func SlicesEqual[T proto.Message](t testing.TB, expected, actual []T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	areEqual := assert.Len(t, actual, len(expected))
 	for i, e := range expected {
@@ -35,7 +35,7 @@ func SlicesEqual[T proto.Message](t *testing.T, expected, actual []T, msgAndArgs
 	return areEqual
 }
 
-func MapSliceEqual[K comparable, T proto.Message](t *testing.T, expected, actual map[K][]T, msgAndArgs ...interface{}) bool {
+func MapSliceEqual[K comparable, T proto.Message](t testing.TB, expected, actual map[K][]T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	expectedKeys := maps.Keys(expected)
 	actualKeys := maps.Keys(actual)
@@ -50,7 +50,7 @@ func MapSliceEqual[K comparable, T proto.Message](t *testing.T, expected, actual
 	return areEqual
 }
 
-func MapEqual[K comparable, T proto.Message](t *testing.T, expected, actual map[K]T, msgAndArgs ...interface{}) bool {
+func MapEqual[K comparable, T proto.Message](t testing.TB, expected, actual map[K]T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	expectedKeys := maps.Keys(expected)
 	actualKeys := maps.Keys(actual)

@@ -84,7 +84,7 @@ func (suite *NamespaceLoaderTestSuite) TestFromIDs() {
 	// Get preloaded namespaces from ids.
 	namespaces, err := loader.FromIDs(suite.ctx, []string{namespace1, namespace2})
 	suite.NoError(err)
-	suite.Equal([]*storage.NamespaceMetadata{
+	protoassert.SlicesEqual(suite.T(), []*storage.NamespaceMetadata{
 		loader.loaded[namespace1],
 		loader.loaded[namespace2],
 	}, namespaces)
@@ -96,7 +96,7 @@ func (suite *NamespaceLoaderTestSuite) TestFromIDs() {
 
 	namespaces, err = loader.FromIDs(suite.ctx, []string{namespace1, namespace2, namespace3})
 	suite.NoError(err)
-	suite.Equal([]*storage.NamespaceMetadata{
+	protoassert.SlicesEqual(suite.T(), []*storage.NamespaceMetadata{
 		loader.loaded[namespace1],
 		loader.loaded[namespace2],
 		thirdNamespace,
@@ -105,7 +105,7 @@ func (suite *NamespaceLoaderTestSuite) TestFromIDs() {
 	// Above call should now be preloaded.
 	namespaces, err = loader.FromIDs(suite.ctx, []string{namespace1, namespace2, namespace3})
 	suite.NoError(err)
-	suite.Equal([]*storage.NamespaceMetadata{
+	protoassert.SlicesEqual(suite.T(), []*storage.NamespaceMetadata{
 		loader.loaded[namespace1],
 		loader.loaded[namespace2],
 		loader.loaded[namespace3],
@@ -134,7 +134,7 @@ func (suite *NamespaceLoaderTestSuite) TestFromQuery() {
 
 	namespaces, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.NamespaceMetadata{
+	protoassert.SlicesEqual(suite.T(), []*storage.NamespaceMetadata{
 		loader.loaded[namespace1],
 		loader.loaded[namespace2],
 	}, namespaces)
@@ -159,7 +159,7 @@ func (suite *NamespaceLoaderTestSuite) TestFromQuery() {
 
 	namespaces, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.NamespaceMetadata{
+	protoassert.SlicesEqual(suite.T(), []*storage.NamespaceMetadata{
 		loader.loaded[namespace1],
 		loader.loaded[namespace2],
 		thirdNamespace,
@@ -181,7 +181,7 @@ func (suite *NamespaceLoaderTestSuite) TestFromQuery() {
 
 	namespaces, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.NamespaceMetadata{
+	protoassert.SlicesEqual(suite.T(), []*storage.NamespaceMetadata{
 		loader.loaded[namespace1],
 		loader.loaded[namespace2],
 		loader.loaded[namespace3],

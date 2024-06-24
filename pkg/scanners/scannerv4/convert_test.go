@@ -116,7 +116,7 @@ func TestConvert(t *testing.T) {
 
 	actual := imageScan(inMetadata, inReport)
 
-	assert.Equal(t, expected.Components, actual.Components)
+	protoassert.SlicesEqual(t, expected.Components, actual.Components)
 	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
 }
 

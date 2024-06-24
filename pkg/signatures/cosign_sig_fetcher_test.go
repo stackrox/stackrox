@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stretchr/testify/assert"
@@ -167,7 +168,7 @@ func TestCosignSignatureFetcher_FetchSignature_Success(t *testing.T) {
 
 	res, err := f.FetchSignatures(context.Background(), img, img.GetName().GetFullName(), reg)
 	assert.NoError(t, err)
-	assert.Equal(t, expectedSignatures, res)
+	protoassert.SlicesEqual(t, expectedSignatures, res)
 }
 
 func TestCosignSignatureFetcher_FetchSignature_Failure(t *testing.T) {

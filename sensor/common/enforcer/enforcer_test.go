@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/rox/pkg/protoassert"
 )
 
 type alertEnforcementPair struct {
@@ -153,7 +153,7 @@ func TestProcessAlertResults(t *testing.T) {
 					break LOOP
 				}
 			}
-			assert.Equal(t, c.expectedEnforcements, foundEnforcements)
+			protoassert.SlicesEqual(t, c.expectedEnforcements, foundEnforcements)
 		})
 	}
 }

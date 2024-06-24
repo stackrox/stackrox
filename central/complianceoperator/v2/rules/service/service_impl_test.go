@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -66,7 +67,7 @@ func (s *ComplianceRulesServiceTestSuite) TestGetComplianceRuleByName() {
 
 	rule, err := s.service.GetComplianceRule(s.ctx, &apiV2.RuleRequest{RuleName: ruleName})
 	s.Require().NoError(err)
-	s.Require().Equal(convertUtils.GetRuleV2(s.T()), rule)
+	protoassert.Equal(s.T(), convertUtils.GetRuleV2(s.T()), rule)
 }
 
 func (s *ComplianceRulesServiceTestSuite) TestGetComplianceRuleByNameNotPresent() {

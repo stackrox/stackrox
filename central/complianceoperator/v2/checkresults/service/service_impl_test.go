@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -212,7 +213,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(convertUtils.GetConvertedComplianceData(s.T()), results.GetScanResults())
+				protoassert.SlicesEqual(s.T(), convertUtils.GetConvertedComplianceData(s.T()), results.GetScanResults())
 			}
 		})
 	}
@@ -276,7 +277,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResult() {
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(convertUtils.GetConvertedComplianceResult(s.T(), scan1.LastExecutedTime), result)
+				protoassert.Equal(s.T(), convertUtils.GetConvertedComplianceResult(s.T(), scan1.LastExecutedTime), result)
 			}
 		})
 	}
@@ -478,7 +479,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 			results, err := s.service.GetComplianceProfileResults(s.ctx, tc.query)
 			if tc.expectedErr == nil {
 				s.Require().NoError(err)
-				s.Require().Equal(tc.expectedResp, results)
+				protoassert.Equal(s.T(), tc.expectedResp, results)
 			} else {
 				s.Require().Error(tc.expectedErr, err)
 				s.Require().Nil(results)
@@ -617,7 +618,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult(
 			results, err := s.service.GetComplianceProfileCheckResult(s.ctx, tc.query)
 			if tc.expectedErr == nil {
 				s.Require().NoError(err)
-				s.Require().Equal(tc.expectedResp, results)
+				protoassert.Equal(s.T(), tc.expectedResp, results)
 			} else {
 				s.Require().Error(tc.expectedErr, err)
 				s.Require().Nil(results)
@@ -742,7 +743,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 			results, err := s.service.GetComplianceProfileClusterResults(s.ctx, tc.query)
 			if tc.expectedErr == nil {
 				s.Require().NoError(err)
-				s.Require().Equal(tc.expectedResp, results)
+				protoassert.Equal(s.T(), tc.expectedResp, results)
 			} else {
 				s.Require().Error(tc.expectedErr, err)
 				s.Require().Nil(results)
@@ -878,7 +879,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckDetails
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(convertUtils.GetConvertedComplianceResult(s.T(), nil), result)
+				protoassert.Equal(s.T(), convertUtils.GetConvertedComplianceResult(s.T(), nil), result)
 			}
 		})
 	}

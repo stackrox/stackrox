@@ -86,7 +86,7 @@ func (suite *ImageCVELoaderTestSuite) TestFromIDs() {
 	// Get a preloaded cve from id.
 	cves, err := loader.FromIDs(suite.ctx, []string{imageCve1, imageCve2})
 	suite.NoError(err)
-	suite.Equal([]*storage.ImageCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ImageCVE{
 		loader.loaded[imageCve1],
 		loader.loaded[imageCve2],
 	}, cves)
@@ -98,7 +98,7 @@ func (suite *ImageCVELoaderTestSuite) TestFromIDs() {
 
 	cves, err = loader.FromIDs(suite.ctx, []string{imageCve1, imageCve2, imageCve3})
 	suite.NoError(err)
-	suite.Equal([]*storage.ImageCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ImageCVE{
 		loader.loaded[imageCve1],
 		loader.loaded[imageCve2],
 		thirdCVE,
@@ -107,7 +107,7 @@ func (suite *ImageCVELoaderTestSuite) TestFromIDs() {
 	// Above call should now be preloaded.
 	cves, err = loader.FromIDs(suite.ctx, []string{imageCve1, imageCve2, imageCve3})
 	suite.NoError(err)
-	suite.Equal([]*storage.ImageCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ImageCVE{
 		loader.loaded[imageCve1],
 		loader.loaded[imageCve2],
 		loader.loaded[imageCve3],
@@ -138,7 +138,7 @@ func (suite *ImageCVELoaderTestSuite) TestFromQuery() {
 
 	cves, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ImageCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ImageCVE{
 		loader.loaded[imageCve1],
 		loader.loaded[imageCve2],
 	}, cves)
@@ -163,7 +163,7 @@ func (suite *ImageCVELoaderTestSuite) TestFromQuery() {
 
 	cves, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ImageCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ImageCVE{
 		loader.loaded[imageCve1],
 		loader.loaded[imageCve2],
 		thirdCVE,
@@ -185,7 +185,7 @@ func (suite *ImageCVELoaderTestSuite) TestFromQuery() {
 
 	cves, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ImageCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ImageCVE{
 		loader.loaded[imageCve1],
 		loader.loaded[imageCve2],
 		loader.loaded[imageCve3],

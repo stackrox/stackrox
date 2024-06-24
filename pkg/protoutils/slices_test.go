@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -171,7 +172,7 @@ func TestSliceUnique(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.unique, SliceUnique(tc.slice))
+			protoassert.SlicesEqual(t, tc.unique, SliceUnique(tc.slice))
 		})
 	}
 }
