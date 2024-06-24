@@ -62,6 +62,7 @@ export type CVEsTableProps = {
     canSelectRows?: boolean;
     sortOption: ApiSortOption;
     getSortParams: UseURLSortResult['getSortParams'];
+    onClearFilters: () => void;
 };
 
 function CVEsTable({
@@ -73,6 +74,7 @@ function CVEsTable({
     canSelectRows,
     sortOption,
     getSortParams,
+    onClearFilters,
 }: CVEsTableProps) {
     const { page, perPage } = pagination;
 
@@ -134,6 +136,7 @@ function CVEsTable({
                 emptyProps={{
                     message: 'No CVEs have been detected for nodes across your secured clusters',
                 }}
+                filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
                     data.map((nodeCve, rowIndex) => {
                         const {
