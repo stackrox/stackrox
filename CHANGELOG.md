@@ -7,6 +7,19 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.4.4]
+
+### Added Features
+
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+- ROX-24725: Enhances Sensor's image scan event handling when `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is `true` so only one simultaneous scan request is allowed per unique image.
+  - Also increases the chances of scan cache hits when multiple names for the same image have been observed.
+  - This enhancement is enabled by default when `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is `true` on Sensor, it can be disabled by setting `ROX_SENSOR_SINGLE_SCAN` to `false` on Sensor.
+
 ## [4.4.1]
 
 ### Added Features
