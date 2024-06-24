@@ -14,6 +14,8 @@ import EntitySelector, { SelectedEntity } from './EntitySelector';
 import AttributeSelector, { SelectedAttribute } from './AttributeSelector';
 import CompoundSearchFilterInputField, { InputFieldValue } from './CompoundSearchFilterInputField';
 
+import './CompoundSearchFilter.css';
+
 export type CompoundSearchFilterProps = {
     config: PartialCompoundSearchFilterConfig;
     defaultEntity?: SearchFilterEntityName;
