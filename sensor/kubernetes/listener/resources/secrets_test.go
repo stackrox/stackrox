@@ -283,8 +283,12 @@ func Test_validateRegistryURL(t *testing.T) {
 		URL              string
 		wantErrToContain string
 	}{
-		"Valid URL": {
+		"Valid URL with scheme, host and port": {
 			URL:              "http://example.com:80/abc",
+			wantErrToContain: "",
+		},
+		"Valid URL with host and port": {
+			URL:              "example.com:80/abc",
 			wantErrToContain: "",
 		},
 		"URL with scheme, port and space in host": {
