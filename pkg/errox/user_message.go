@@ -2,6 +2,7 @@ package errox
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/pkg/errors"
 )
@@ -34,7 +35,27 @@ func (u *userMessage) UserMessage() string {
 	if errors.As(u.base, &um) {
 		return u.message + ": " + um.UserMessage()
 	}
+	if extracted := extractUserMessage(u.base); extracted != "" {
+		return u.message + ": " + extracted
+	}
 	return u.message
+}
+
+func extractUserMessage(err error) string {
+	if e := (*net.AddrError)(nil); errors.As(err, &e) {
+		return "address: " + e.Err
+	}
+	if e := (*net.DNSError)(nil); errors.As(err, &e) {
+		return "lookup: " + e.Err
+	}
+	if e := (*net.OpError)(nil); errors.As(err, &e) {
+		s := e.Op
+		if e.Net != "" {
+			s += " " + e.Net
+		}
+		return s + ": " + e.Err.Error()
+	}
+	return ""
 }
 
 func WithUserMessage(err error, format string, args ...any) error {

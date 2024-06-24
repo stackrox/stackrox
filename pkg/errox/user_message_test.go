@@ -1,6 +1,7 @@
 package errox
 
 import (
+	"net"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -68,6 +69,22 @@ func TestGetUserMessage(t *testing.T) {
 					"message2"),
 				"sensitive2"),
 			expectedMessage: "message2: message1",
+		},
+		"net.AddrError": {
+			WithUserMessage(&net.AddrError{Err: "bad", Addr: "1.2.3.4"},
+				"message"),
+			"message: address: bad",
+		},
+		"net.DNSError": {
+			WithUserMessage(&net.DNSError{Err: "bad", Name: "name", Server: "server"}, "message"),
+			"message: lookup: bad",
+		},
+		"net.OpError": {
+			WithUserMessage(&net.OpError{Op: "dial", Net: "tcp",
+				Err:    errors.New("refused"),
+				Source: &net.IPAddr{IP: net.IPv4(1, 2, 3, 4)}},
+				"message"),
+			"message: dial tcp: refused",
 		},
 	}
 
