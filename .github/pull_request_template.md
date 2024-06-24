@@ -2,7 +2,7 @@
 
 <!-- A detailed explanation of the changes in your PR. Feel free to remove this section if the title of your PR is sufficiently descriptive. -->
 
-TBD
+change me!
 
 ### User-facing documentation
 
@@ -49,6 +49,4 @@ Explain here why you skipped testing in case you did so.
 Have you created automated tests for your change? Explain here which validation activities you did manually and why so.
 -->
 
-TBD
-
-#### Automated testing
+change me!
