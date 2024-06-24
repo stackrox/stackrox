@@ -16,6 +16,7 @@ import ClusterDetailsPage from './ClusterDetailsPage';
 import ComplianceProfilesProvider, {
     ComplianceProfilesContext,
 } from './ComplianceProfilesProvider';
+import CoverageEmptyState from './CoverageEmptyState';
 import ProfileChecksPage from './ProfileChecksPage';
 import ProfileClustersPage from './ProfileClustersPage';
 import ScanConfigurationsProvider from './ScanConfigurationsProvider';
@@ -42,8 +43,7 @@ function CoverageContent() {
     }
 
     if (!isLoading && scanConfigProfilesResponse.totalCount === 0) {
-        // TODO: Add a message for when there are no profiles
-        return <div>No profiles, create a scan schedule</div>;
+        return <CoverageEmptyState />;
     }
 
     return (

@@ -98,7 +98,7 @@ function ClusterDetailsPage() {
         isLoading: isLoadingCheckResults,
         data: checkResultsResponse?.checkResults,
         error: checkResultsError,
-        searchFilter: {},
+        searchFilter,
     });
 
     function handleProfilesToggleChange(selectedProfile: string) {
@@ -122,6 +122,11 @@ function ClusterDetailsPage() {
         const value = selection;
         onSearch({ action, category, value });
     };
+
+    function onClearFilters() {
+        setSearchFilter({});
+        setPage(1, 'replace');
+    }
 
     if (scanConfigProfilesError) {
         return (
@@ -228,6 +233,7 @@ function ClusterDetailsPage() {
                             searchFilter={searchFilter}
                             onSearch={onSearch}
                             onCheckStatusSelect={onCheckStatusSelect}
+                            onClearFilters={onClearFilters}
                         />
                     </>
                 )}

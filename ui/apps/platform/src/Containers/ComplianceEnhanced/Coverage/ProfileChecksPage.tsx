@@ -88,7 +88,7 @@ function ProfileChecksPage() {
         isLoading,
         data: profileChecks?.profileResults,
         error,
-        searchFilter: {},
+        searchFilter,
     });
 
     const onSearch = (payload: OnSearchPayload) => {
@@ -97,6 +97,11 @@ function ProfileChecksPage() {
 
     function handleProfilesToggleChange(selectedProfile: string) {
         navigateWithScanConfigQuery(coverageProfileChecksPath, { profileName: selectedProfile });
+    }
+
+    function onClearFilters() {
+        setSearchFilter({});
+        setPage(1, 'replace');
     }
 
     const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(
@@ -171,6 +176,7 @@ function ProfileChecksPage() {
                                 pagination={pagination}
                                 tableState={tableState}
                                 getSortParams={getSortParams}
+                                onClearFilters={onClearFilters}
                             />
                         </PageSection>
                     </>

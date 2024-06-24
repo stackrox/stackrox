@@ -38,6 +38,7 @@ export type ProfileChecksTableProps = {
     pagination: UseURLPaginationResult;
     tableState: TableUIState<ComplianceCheckResultStatusCount>;
     getSortParams: UseURLSortResult['getSortParams'];
+    onClearFilters: () => void;
 };
 
 function ProfileChecksTable({
@@ -46,6 +47,7 @@ function ProfileChecksTable({
     pagination,
     tableState,
     getSortParams,
+    onClearFilters,
 }: ProfileChecksTableProps) {
     /* eslint-disable no-nested-ternary */
     const { generatePathWithScanConfig } = useScanConfigRouter();
@@ -106,10 +108,7 @@ function ProfileChecksTable({
                         message:
                             'If you have recently created a scan schedule, please wait a few minutes for the results to become available.',
                     }}
-                    filteredEmptyProps={{
-                        title: 'No checks found',
-                        message: 'Clear all filters and try again',
-                    }}
+                    filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) => (
                         <>
                             {data.map((check, rowIndex) => {
