@@ -5,7 +5,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stretchr/testify/assert"
 )
@@ -20,14 +19,14 @@ func TestClone(t *testing.T) {
 
 	cloned := Clone(m1)
 
-	protoassert.Equal(t, m1, cloned)
+	assert.True(t, Equal(m1, cloned))
 
 	// Change a field value to ensure the clone does not point
 	// to the original struct.
 	clonedNamespace, casted := cloned.(*storage.NamespaceMetadata)
 	assert.True(t, casted)
 	clonedNamespace.Name = "Namespace AA"
-	assert.NotEqual(t, m1, cloned)
+	assert.False(t, Equal(m1, cloned))
 }
 
 func TestEqual(t *testing.T) {
@@ -121,7 +120,7 @@ func TestUnmarshal(t *testing.T) {
 	decoded := &storage.NamespaceMetadata{}
 	err = Unmarshal(data, decoded)
 	assert.NoError(t, err)
-	protoassert.Equal(t, msg, decoded)
+	assert.True(t, Equal(msg, decoded))
 }
 
 func TestMerge(t *testing.T) {

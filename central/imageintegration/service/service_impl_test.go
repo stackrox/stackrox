@@ -220,7 +220,7 @@ func TestValidateIntegration(t *testing.T) {
 	assert.True(t, exists)
 
 	// Ensure successfully pulled credentials from storedConfig
-	assert.NotEqual(t, dockerConfig, requestWithADockerConfig.GetConfig().GetDocker())
+	protoassert.NotEqual(t, dockerConfig, requestWithADockerConfig.GetConfig().GetDocker())
 	err = s.reconcileImageIntegrationWithExisting(requestWithADockerConfig.GetConfig(), storedConfig)
 	assert.NoError(t, err)
 	protoassert.Equal(t, dockerConfig, requestWithADockerConfig.GetConfig().GetDocker())

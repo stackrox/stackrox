@@ -123,7 +123,7 @@ func (suite *AuditLogTestSuite) TestPermissionsRemoval() {
 	a = &audit{withoutPermissions: true}
 	withoutPermissions := a.newAuditMessage(ctxWithMockIdentity, "this is a test", "/v1./Test",
 		interceptor.AuthStatus{Error: nil}, nil)
-	suite.NotEqual(userInfo, withoutPermissions.GetUser())
+	protoassert.NotEqual(suite.T(), userInfo, withoutPermissions.GetUser())
 	suite.Empty(withoutPermissions.GetUser().GetPermissions())
 	for _, userRole := range withoutPermissions.GetUser().GetRoles() {
 		suite.Empty(userRole.GetResourceToAccess())
