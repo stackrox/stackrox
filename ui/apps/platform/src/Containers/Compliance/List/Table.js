@@ -12,7 +12,6 @@ import Table from 'Components/Table';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import Loader from 'Components/Loader';
 import TablePagination from 'Components/TablePagination';
-import TableGroup from 'Components/TableGroup';
 import { getColumnsByEntity, getColumnsByStandard } from 'constants/tableColumns';
 import Query from 'Components/CacheFirstQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -23,6 +22,7 @@ import { LIST_STANDARD, STANDARDS_QUERY } from 'queries/standard';
 import queryService from 'utils/queryService';
 
 import { complianceEntityTypes, entityCountNounOrdinaryCase } from '../entitiesForCompliance';
+import TableGroup from './TableGroup';
 
 function getQuery(entityType) {
     switch (entityType) {

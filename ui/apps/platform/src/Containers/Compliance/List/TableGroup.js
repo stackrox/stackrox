@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import Table from 'Components/Table';
 import Collapsible from 'react-collapsible';
 import * as Icon from 'react-feather';
-import pluralize from 'pluralize';
+
+import { entityCountNounOrdinaryCase } from '../entitiesForCompliance';
 
 const icons = {
     opened: <Icon.ChevronUp size="14" />,
@@ -63,9 +64,9 @@ class TableGroup extends Component {
                     </div>
                     <h1 className="p-3 pl-0 font-700 text-lg leading-normal">{name}</h1>
                 </div>
-                <div className="flex items-center flex-shrink-0 font-700 text-sm p-3 pr-4 opacity-50">{`${
-                    rows.length
-                } ${pluralize(this.props.entityType, rows.length)}`}</div>
+                <div className="flex items-center flex-shrink-0 p-3 pr-4">
+                    {entityCountNounOrdinaryCase(rows.length, this.props.entityType)}
+                </div>
             </div>
         </div>
     );
