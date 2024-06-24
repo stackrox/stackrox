@@ -73,15 +73,16 @@ function ProfileClustersTable({
                     <Tr>
                         <Th sort={getSortParams('Cluster')}>Cluster</Th>
                         <Th>Last scanned</Th>
-                        <Th>Fail status</Th>
                         <Th>Pass status</Th>
+                        <Th>Fail status</Th>
+                        <Th>Manual status</Th>
                         <Th>Other status</Th>
                         <Th width={30}>Compliance</Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
                     tableState={tableState}
-                    colSpan={6}
+                    colSpan={7}
                     errorProps={{
                         title: 'There was an error loading profile clusters',
                     }}
@@ -101,8 +102,13 @@ function ProfileClustersTable({
                                     lastScanTime,
                                     checkStats,
                                 } = clusterInfo;
-                                const { passCount, failCount, otherCount, totalCount } =
-                                    getStatusCounts(checkStats);
+                                const {
+                                    passCount,
+                                    failCount,
+                                    manualCount,
+                                    otherCount,
+                                    totalCount,
+                                } = getStatusCounts(checkStats);
                                 const passPercentage = calculateCompliancePercentage(
                                     passCount,
                                     totalCount
@@ -129,6 +135,13 @@ function ProfileClustersTable({
                                             </Link>
                                         </Td>
                                         <Td dataLabel="Last scanned">{firstDiscoveredAsPhrase}</Td>
+                                        <Td dataLabel="Pass status">
+                                            <StatusCountIcon
+                                                text="check"
+                                                status="pass"
+                                                count={passCount}
+                                            />
+                                        </Td>
                                         <Td dataLabel="Fail status">
                                             <StatusCountIcon
                                                 text="check"
@@ -136,11 +149,11 @@ function ProfileClustersTable({
                                                 count={failCount}
                                             />
                                         </Td>
-                                        <Td dataLabel="Pass status">
+                                        <Td dataLabel="Manual status" modifier="fitContent">
                                             <StatusCountIcon
                                                 text="check"
-                                                status="pass"
-                                                count={passCount}
+                                                status="manual"
+                                                count={manualCount}
                                             />
                                         </Td>
                                         <Td dataLabel="Other status">

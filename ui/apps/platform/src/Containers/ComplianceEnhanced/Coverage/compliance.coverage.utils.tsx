@@ -40,11 +40,13 @@ export type ComplianceStatus = (typeof ComplianceStatus)[keyof typeof Compliance
 export function getStatusCounts(checkStats: ComplianceCheckStatusCount[]): {
     passCount: number;
     failCount: number;
+    manualCount: number;
     otherCount: number;
     totalCount: number;
 } {
     let passCount = 0;
     let failCount = 0;
+    let manualCount = 0;
     let otherCount = 0;
     let totalCount = 0;
 
@@ -57,12 +59,15 @@ export function getStatusCounts(checkStats: ComplianceCheckStatusCount[]): {
             case 'FAIL':
                 failCount += statusInfo.count;
                 break;
+            case 'MANUAL':
+                manualCount += statusInfo.count;
+                break;
             default:
                 otherCount += statusInfo.count;
         }
     });
 
-    return { passCount, failCount, otherCount, totalCount };
+    return { passCount, failCount, manualCount, otherCount, totalCount };
 }
 
 export function calculateCompliancePercentage(passCount: number, totalCount: number): number {
