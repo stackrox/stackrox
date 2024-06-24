@@ -59,6 +59,10 @@ func ParseEndpoint(endpoint string) (host, zone, port string, err error) {
 		err = errors.New("empty host")
 		return
 	}
+	if strings.Contains(host, " ") {
+		err = errors.New("host contains invalid character")
+		return
+	}
 	if len(hostZoneComponents) > 1 {
 		zone = hostZoneComponents[1]
 		if zone == "" {
