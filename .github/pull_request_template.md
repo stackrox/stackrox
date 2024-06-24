@@ -3,10 +3,14 @@
 
 
 ## Checklist
-All items *must be* checked:
+All three items *must be* checked:
+<!-- Remove conflicting items that won't be checked -->
+
 - [ ] CI results are inspected
-- [ ] CHANGELOG is updated **OR** not needed
-- [ ] Documentation PR is created and linked above **OR** not needed
+- [ ] CHANGELOG is updated
+- [ ] I believe CHANGELOG update is not needed
+- [ ] Documentation PR is created and linked above
+- [ ] Documentation is not needed
 
 ## Testing
 - [ ] added unit, e2e, regression, and/or compatibility tests
