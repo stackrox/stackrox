@@ -1916,6 +1916,9 @@ junit_wrap() {
     local command_output_file
     command_output_file="$(mktemp)"
 
+    # The desired command is wrapped with a `{start,stop}_tee` for inline tee
+    # behavior. This is required because `if "$@" | tee;` runs `$@` in a
+    # subshell that will lose any variables exported by `$@`.
     start_tee "${command_output_file}"
     if "$@"; then
         stop_tee
