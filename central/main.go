@@ -595,6 +595,13 @@ func startGRPCServer() {
 		Endpoints:          endpointCfgs,
 	}
 
+	if env.EnableErrorConcealment.BooleanSetting() {
+		config.UnaryInterceptors = append(config.UnaryInterceptors,
+			errors.ConcealErrorInterceptor)
+		config.StreamInterceptors = append(config.StreamInterceptors,
+			errors.ConcealErrorStreamInterceptor)
+	}
+
 	if devbuild.IsEnabled() {
 		config.UnaryInterceptors = append(config.UnaryInterceptors,
 			errors.LogInternalErrorInterceptor,
