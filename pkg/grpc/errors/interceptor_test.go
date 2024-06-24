@@ -285,3 +285,76 @@ func TestErrToGRPCStatus(t *testing.T) {
 		})
 	}
 }
+
+func Test_concealError(t *testing.T) {
+	someError := errors.New("some error")
+
+	tests := map[string]struct {
+		err                 error
+		expectedUserMessage string
+		expectedFullError   string
+	}{
+		"standard error": {
+			err:                 someError,
+			expectedUserMessage: "server error",
+			expectedFullError:   "some error",
+		},
+		"public": {
+			errox.WithUserMessage(someError, "public"),
+			"public",
+			"public: some error",
+		},
+		"public sentinel": {
+			errox.WithUserMessage(errox.InvalidArgs, "public"),
+			"public",
+			"public: invalid arguments",
+		},
+		"sentinel caused by public": {
+			// CausedBy loses the type of the cause.
+			errox.InvalidArgs.CausedBy(errox.WithUserMessage(someError, "public")),
+			"invalid arguments",
+			"invalid arguments: public: some error",
+		},
+		"custom sentinel": {
+			// Only the bottom sentinel error never contains sensitive messages.
+			errors.WithMessage(errox.InvalidArgs.New("secret"), "hidden"),
+			"invalid arguments",
+			"hidden: secret",
+		},
+		"http status": {
+			// gRPC status message is dropped.
+			status.Error(codes.NotFound, "absent"),
+			"rpc error: code = NotFound desc = NotFound",
+			"rpc error: code = NotFound desc = absent",
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := concealError(test.err)
+			assert.Equal(t, test.expectedUserMessage, err.Error(), "invalid user message")
+			assert.Equal(t, test.expectedFullError, test.err.Error(), "invalid full error")
+		})
+	}
+
+	t.Run("conceal to preserve type", func(t *testing.T) {
+		err := concealError(errors.New("message"))
+		assert.ErrorIs(t, err, errox.ServerError)
+
+		err = concealError(errors.WithMessage(errox.NotFound, "message"))
+		assert.ErrorIs(t, err, errox.NotFound)
+
+		err = concealError(errors.WithMessage(errox.WithUserMessage(errox.NotFound, "user message"), "message"))
+		assert.ErrorIs(t, err, errox.NotFound)
+
+		err = concealError(status.Error(codes.NotFound, "message"))
+		s, ok := status.FromError(err)
+		assert.True(t, ok)
+		assert.Equal(t, codes.NotFound, s.Code())
+
+		err = concealError(errox.WithUserMessage(status.Error(codes.NotFound, "message"), "user message"))
+		s, ok = status.FromError(err)
+		assert.True(t, ok)
+		assert.Equal(t, codes.NotFound, s.Code())
+	})
+}

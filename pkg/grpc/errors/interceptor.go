@@ -2,9 +2,9 @@ package errors
 
 import (
 	"context"
-	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	errox_grpc "github.com/stackrox/rox/pkg/errox/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -59,6 +59,34 @@ func logErrorIfInternal(err error) {
 	if grpcStatus := ErrToGrpcStatus(err); grpcStatus.Code() == codes.Internal {
 		log.Errorf("Internal error occurred: %v", err)
 	}
+}
+
+// concealError returns a new error, based on the type or code of the given one,
+// with the message replaced with public messages found in the error chain, or,
+// if none found, with the generic message for the given error type or code.
+func concealError(err error) error {
+	userMessage := errox.GetUserMessage(err)
+
+	if s, ok := status.FromError(err); ok {
+		if userMessage == "" {
+			userMessage = s.Code().String()
+		}
+		return status.Error(s.Code(), userMessage)
+	}
+	sentinel := errox.GetBaseSentinelError(err)
+	if userMessage != "" {
+		return sentinel.New(userMessage)
+	}
+	return sentinel
+}
+
+func ConcealErrorInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	resp, err := handler(ctx, req)
+	return resp, concealError(err)
+}
+
+func ConcealErrorStreamInterceptor(srv interface{}, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return concealError(handler(srv, ss))
 }
 
 // ErrorToGrpcCodeInterceptor translates common errors defined in errorhelpers to GRPC codes.

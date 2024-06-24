@@ -14,3 +14,24 @@ func IsAny(err error, targets ...error) bool {
 	}
 	return false
 }
+
+// GetBaseSentinelError returns the lowest found sentinel error, or ServerError
+// if none found.
+func GetBaseSentinelError(err error) Error {
+	var re Error
+	for errors.As(err, &re) {
+		err = errors.Unwrap(re)
+	}
+	if re, ok := (re).(*RoxError); ok {
+		return re
+	}
+	return ServerError
+}
+
+func GetUserMessage(err error) string {
+	var um *userMessage
+	if errors.As(err, &um) {
+		return um.UserMessage()
+	}
+	return ""
+}
