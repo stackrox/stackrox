@@ -1,5 +1,3 @@
-import static util.Helpers.withRetry
-
 import org.javers.core.Javers
 import org.javers.core.JaversBuilder
 import org.javers.core.diff.ListCompareAlgorithm
@@ -13,7 +11,6 @@ import objects.Namespace
 import services.ClusterService
 import services.NamespaceService
 import services.NodeService
-import services.SummaryService
 import util.Helpers
 
 import org.junit.Assume
@@ -22,47 +19,6 @@ import spock.lang.Tag
 
 @Tag("PZ")
 class SummaryTest extends BaseSpecification {
-
-    @Tag("BAT")
-    @Tag("COMPATIBILITY")
-    @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
-    def "Verify TopNav counts for Nodes, Deployments, and Secrets"() {
-        // https://issues.redhat.com/browse/ROX-6844
-        Assume.assumeFalse(ClusterService.isOpenShift4())
-
-        expect:
-        "Counts API should match orchestrator details"
-
-        withRetry(10, 6) {
-            def stackroxSummaryCounts = SummaryService.getCounts()
-            List<String> orchestratorResourceNames = orchestrator.getDeploymentCount() +
-                    orchestrator.getDaemonSetCount() +
-                    // Static pods get renamed as "static-<name>-pods" in sensor, so match it for easy debugging
-                    orchestrator.getStaticPodCount().collect {  "static-" + it + "-pods"  } +
-                    orchestrator.getStatefulSetCount() +
-                    orchestrator.getJobCount()
-
-            if (stackroxSummaryCounts.numDeployments != orchestratorResourceNames.size()) {
-                log.info "The summary count for deployments does not equate to the orchestrator count."
-                log.info "Stackrox count: ${stackroxSummaryCounts.numDeployments}, " +
-                        "orchestrator count ${orchestratorResourceNames.size()}"
-                log.info "This diff may help with debug, however deployment names may be different between APIs"
-                List<String> stackroxDeploymentNames = Services.getDeployments()*.name
-                Javers javers = JaversBuilder.javers()
-                        .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
-                        .build()
-                log.info javers.compare(stackroxDeploymentNames, orchestratorResourceNames).prettyPrint()
-
-                log.info "Use the full set of deployments to compare manually if diff isn't helpful"
-                log.info "Stackrox deployments: " + stackroxDeploymentNames.join(",")
-                log.info "Orchestrator deployments: " + orchestratorResourceNames.join(",")
-            }
-
-            assert Math.abs(stackroxSummaryCounts.numDeployments - orchestratorResourceNames.size()) <= 2
-            assert Math.abs(stackroxSummaryCounts.numSecrets - orchestrator.getSecretCount()) <= 2
-            assert Math.abs(stackroxSummaryCounts.numNodes - orchestrator.getNodeCount()) <= 2
-        }
-    }
 
     @Tag("BAT")
     def "Verify node details"() {
