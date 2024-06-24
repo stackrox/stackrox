@@ -1,22 +1,26 @@
-## Description
+### Description
 
 <!-- A detailed explanation of the changes in your PR. Feel free to remove this section if the title of your PR is sufficiently descriptive. -->
 
+TBD
 
-All three items *must be* checked:
+### User-facing documentation
+
+(*must be* 2 items and both *must be* checked)
 <!-- Remove conflicting items that won't be checked. -->
 
-- [ ] CI results are inspected
 - [ ] CHANGELOG is updated
-- [ ] I believe CHANGELOG update is not needed
+- [ ] CHANGELOG update is not needed
 - [ ] Documentation PR is created and linked above
 - [ ] Documentation is not needed
 
-## Testing
+### Testing
 
-### Automated testing
+- [ ] inspected CI results
 
-There *must be* at least one item and all items *must be* checked:
+#### Automated testing
+
+(*must be* at least 1 item and all items *must be* checked)
 <!-- Remove item(s) that don't apply and won't be checked. -->
 
 - [ ] added unit tests
@@ -24,10 +28,10 @@ There *must be* at least one item and all items *must be* checked:
 - [ ] added regression tests
 - [ ] added compatibility tests
 - [ ] modified existing tests
-- [ ] **no automated tests**
+- [ ] contributed **no automated tests**
   <!-- Please explain why unless it's obvious, e.g., the PR is a one-line comment change. -->
 
-### How I validated my change
+#### How I validated my change
 
 <!--
 Use this space to explain **how you validated** that **your change functions exactly how you expect it**.
@@ -44,3 +48,7 @@ Explain here why you skipped testing in case you did so.
 
 Have you created automated tests for your change? Explain here which validation activities you did manually and why so.
 -->
+
+TBD
+
+#### Automated testing
