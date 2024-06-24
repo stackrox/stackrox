@@ -3,6 +3,6 @@
 package buildinfo
 
 const (
-	releaseBuild = false
+	releaseBuild = true
 	buildFlavor  = "development"
 )
