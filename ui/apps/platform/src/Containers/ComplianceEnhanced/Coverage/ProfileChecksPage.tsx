@@ -30,6 +30,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { getComplianceProfileResults } from 'services/ComplianceResultsService';
 import { getTableUIState } from 'utils/getTableUIState';
+import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import { combineSearchFilterWithScanConfig } from './compliance.coverage.utils';
@@ -88,22 +89,8 @@ function ProfileChecksPage() {
         searchFilter: {},
     });
 
-    // @TODO: Consider making a function to make this more reusable
     const onSearch = (payload: OnSearchPayload) => {
-        const { action, category, value } = payload;
-        const currentSelection = searchFilter[category] || [];
-        let newSelection = !Array.isArray(currentSelection) ? [currentSelection] : currentSelection;
-        if (action === 'ADD') {
-            newSelection.push(value);
-        } else if (action === 'REMOVE') {
-            newSelection = newSelection.filter((datum) => datum !== value);
-        } else {
-            // Do nothing
-        }
-        setSearchFilter({
-            ...searchFilter,
-            [category]: newSelection,
-        });
+        onURLSearch(searchFilter, setSearchFilter, payload);
     };
 
     function handleProfilesToggleChange(selectedProfile: string) {
