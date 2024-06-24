@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -8,7 +8,7 @@ import {
     Tabs,
     TabsComponent,
 } from '@patternfly/react-core';
-import { generatePath, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { OnSearchPayload, clusterSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
@@ -27,12 +27,22 @@ import {
 } from 'services/ComplianceResultsService';
 import { getTableUIState } from 'utils/getTableUIState';
 
+import CheckDetailsHeader from './CheckDetailsHeader';
 import CheckDetailsTable, { tabContentIdForResults } from './CheckDetailsTable';
+import {
+    combineSearchFilterWithScanConfig,
+    createScanConfigFilter,
+    getScanConfigurationSelectData,
+} from './compliance.coverage.utils';
 import CheckDetailsInfo from './components/CheckDetailsInfo';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { CLUSTER_QUERY } from './compliance.coverage.constants';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
-import CheckDetailsHeader from './CheckDetailsHeader';
+import ScanConfigurationSelect, {
+    ScanConfigurationSelectData,
+} from './components/ScanConfigurationSelect';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
+import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 
 export const DETAILS_TAB = 'Details';
 const RESULTS_TAB = 'Results';
@@ -43,7 +53,10 @@ export const TAB_NAV_QUERY = 'detailsTab';
 const TAB_NAV_VALUES = [RESULTS_TAB, DETAILS_TAB] as const;
 
 function CheckDetails() {
+    const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
+        useContext(ScanConfigurationsContext);
     const { checkName, profileName } = useParams();
+    const { generatePathWithScanConfig } = useScanConfigRouter();
     const [currentDatetime, setCurrentDatetime] = useState(new Date());
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { page, perPage, setPage } = pagination;
@@ -56,8 +69,13 @@ function CheckDetails() {
     const [activeTabKey, setActiveTabKey] = useURLStringUnion(TAB_NAV_QUERY, TAB_NAV_VALUES);
 
     const fetchCheckStats = useCallback(
-        () => getComplianceProfileCheckStats(profileName, checkName),
-        [profileName, checkName]
+        () =>
+            getComplianceProfileCheckStats(
+                profileName,
+                checkName,
+                createScanConfigFilter(selectedScanConfigName)
+            ),
+        [profileName, checkName, selectedScanConfigName]
     );
     const {
         data: checkStatsResponse,
@@ -75,16 +93,18 @@ function CheckDetails() {
         error: CheckDetailsError,
     } = useRestQuery(fetchCheckDetails);
 
-    const fetchCheckResults = useCallback(
-        () =>
-            getComplianceProfileCheckResult(profileName, checkName, {
-                page,
-                perPage,
-                sortOption,
-                searchFilter,
-            }),
-        [page, perPage, checkName, profileName, sortOption, searchFilter]
-    );
+    const fetchCheckResults = useCallback(() => {
+        const combinedFilter = combineSearchFilterWithScanConfig(
+            searchFilter,
+            selectedScanConfigName
+        );
+        return getComplianceProfileCheckResult(profileName, checkName, {
+            page,
+            perPage,
+            sortOption,
+            searchFilter: combinedFilter,
+        });
+    }, [page, perPage, checkName, profileName, sortOption, searchFilter, selectedScanConfigName]);
     const {
         data: checkResultsResponse,
         loading: isLoadingCheckResults,
@@ -123,14 +143,18 @@ function CheckDetails() {
         onSearch({ action, category, value });
     };
 
+    const scanConfigurationSelectData: ScanConfigurationSelectData[] =
+        getScanConfigurationSelectData(scanConfigurationsQuery.response.configurations, {
+            profileName,
+        });
+
     return (
         <>
             <PageTitle title="Compliance coverage - Check" />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItem>Compliance coverage</BreadcrumbItem>
                     <BreadcrumbItemLink
-                        to={generatePath(coverageProfileChecksPath, {
+                        to={generatePathWithScanConfig(coverageProfileChecksPath, {
                             profileName,
                         })}
                     >
@@ -139,6 +163,13 @@ function CheckDetails() {
                     <BreadcrumbItem isActive>{checkName}</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
+            <Divider component="div" />
+            <ScanConfigurationSelect
+                isLoading={scanConfigurationsQuery.isLoading}
+                scanConfigs={scanConfigurationSelectData}
+                selectedScanConfigName={selectedScanConfigName}
+                setSelectedScanConfigName={setSelectedScanConfigName}
+            />
             <Divider component="div" />
             <PageSection variant="light">
                 <CheckDetailsHeader

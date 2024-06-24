@@ -203,9 +203,9 @@ export function runComplianceReport(scanConfigId: string): Promise<ComplianceRun
  * Fetches all profiles that are included in a scan configuration.
  */
 export function listComplianceScanConfigProfiles(
-    searchFilter: SearchFilter
+    scanConfigSearchFilter: SearchFilter
 ): Promise<ListComplianceScanConfigsProfileResponse> {
-    const query = getRequestQueryStringForSearchFilter(searchFilter);
+    const query = getRequestQueryStringForSearchFilter(scanConfigSearchFilter);
     const params = qs.stringify({ query }, { arrayFormat: 'repeat', allowDots: true });
     return axios
         .get<ListComplianceScanConfigsProfileResponse>(
@@ -218,11 +218,14 @@ export function listComplianceScanConfigProfiles(
  * Fetches all profiles that are included in a scan configuration on a specific cluster.
  */
 export function listComplianceScanConfigClusterProfiles(
-    clusterId: string
+    clusterId: string,
+    scanConfigSearchFilter: SearchFilter
 ): Promise<ListComplianceScanConfigsClusterProfileResponse> {
+    const query = getRequestQueryStringForSearchFilter(scanConfigSearchFilter);
+    const params = qs.stringify({ query: { query } }, { arrayFormat: 'repeat', allowDots: true });
     return axios
         .get<ListComplianceScanConfigsClusterProfileResponse>(
-            `${complianceScanConfigBaseUrl}/clusters/${clusterId}/profiles/collection`
+            `${complianceScanConfigBaseUrl}/clusters/${clusterId}/profiles/collection?${params}`
         )
         .then((response) => response.data);
 }
