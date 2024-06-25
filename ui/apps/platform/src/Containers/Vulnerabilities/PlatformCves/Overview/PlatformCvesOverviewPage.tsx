@@ -142,7 +142,7 @@ function PlatformCvesOverviewPage() {
                     </Flex>
                     <FlexItem>
                         <SnoozeCveToggleButton
-                            searchFilter={querySearchFilter}
+                            searchFilter={searchFilter}
                             setSearchFilter={setSearchFilter}
                         />
                     </FlexItem>
