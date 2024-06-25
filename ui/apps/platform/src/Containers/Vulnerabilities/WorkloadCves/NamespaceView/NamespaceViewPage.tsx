@@ -2,15 +2,11 @@ import React from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
-    Bullseye,
-    Button,
     Divider,
     Flex,
     FlexItem,
     PageSection,
     Pagination,
-    Spinner,
-    Text,
     Title,
     Toolbar,
     ToolbarContent,
@@ -18,7 +14,6 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { FileAltIcon, SearchIcon } from '@patternfly/react-icons';
 import { gql, useQuery } from '@apollo/client';
 import uniq from 'lodash/uniq';
 
@@ -35,13 +30,12 @@ import {
     clusterSearchFilterConfig,
     namespaceSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
-import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
-import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import KeyValueListModal from 'Components/KeyValueListModal';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import DeploymentFilterLink from './DeploymentFilterLink';
@@ -135,7 +129,7 @@ function NamespaceViewPage() {
 
     const namespacesData = data?.namespaces ?? previousData?.namespaces;
 
-    const tableUIState = getTableUIState({
+    const tableState = getTableUIState({
         isLoading,
         data: namespacesData,
         error,
@@ -235,108 +229,65 @@ function NamespaceViewPage() {
                             <Th>Annotations</Th>
                         </Tr>
                     </Thead>
-                    <Tbody>
-                        {tableUIState.type === 'ERROR' && (
-                            <Tr>
-                                <Td colSpan={6}>
-                                    <TableErrorComponent
-                                        error={tableUIState.error}
-                                        message="An error occurred. Try refreshing again"
-                                    />
-                                </Td>
-                            </Tr>
-                        )}
-                        {tableUIState.type === 'LOADING' && (
-                            <Tr>
-                                <Td colSpan={6}>
-                                    <Bullseye>
-                                        <Spinner aria-label="Loading table data" />
-                                    </Bullseye>
-                                </Td>
-                            </Tr>
-                        )}
-                        {tableUIState.type === 'EMPTY' && (
-                            <Tr>
-                                <Td colSpan={6}>
-                                    <Bullseye>
-                                        <EmptyStateTemplate
-                                            title="There are currently no namespaces"
-                                            headingLevel="h2"
-                                            icon={FileAltIcon}
-                                        >
-                                            <Text>There are currently no namespaces.</Text>
-                                        </EmptyStateTemplate>
-                                    </Bullseye>
-                                </Td>
-                            </Tr>
-                        )}
-                        {tableUIState.type === 'FILTERED_EMPTY' && (
-                            <Tr>
-                                <Td colSpan={6}>
-                                    <Bullseye>
-                                        <EmptyStateTemplate
-                                            title="No results found"
-                                            headingLevel="h2"
-                                            icon={SearchIcon}
-                                        >
-                                            <Text>
-                                                We couldn’t find any items matching your search
-                                                criteria. Try adjusting your filters or search terms
-                                                for better results
-                                            </Text>
-                                            <Button
-                                                variant="link"
-                                                onClick={() => {
-                                                    setPage(1);
-                                                    setSearchFilter({});
-                                                }}
-                                            >
-                                                Clear search filters
-                                            </Button>
-                                        </EmptyStateTemplate>
-                                    </Bullseye>
-                                </Td>
-                            </Tr>
-                        )}
-                        {(tableUIState.type === 'COMPLETE' || tableUIState.type === 'POLLING') &&
-                            tableUIState.data.map((namespace) => {
-                                const {
-                                    metadata: {
-                                        id,
-                                        name,
-                                        clusterName,
-                                        labels,
-                                        annotations,
-                                        priority,
-                                    },
-                                    deploymentCount,
-                                } = namespace;
+                    <TbodyUnified
+                        tableState={tableState}
+                        colSpan={6}
+                        errorProps={{
+                            title: 'There was an error loading namespaces',
+                        }}
+                        emptyProps={{
+                            message:
+                                'No results found. Please try adjusting your search criteria or navigate back to a previous page.',
+                        }}
+                        filteredEmptyProps={{
+                            title: 'No namespaces found',
+                            message: 'Clear all filters and try again',
+                        }}
+                        renderer={({ data }) => (
+                            <Tbody>
+                                {data.map((namespace) => {
+                                    const {
+                                        metadata: {
+                                            id,
+                                            name,
+                                            clusterName,
+                                            labels,
+                                            annotations,
+                                            priority,
+                                        },
+                                        deploymentCount,
+                                    } = namespace;
 
-                                return (
-                                    <Tr key={id}>
-                                        <Td dataLabel="Namespace">{name}</Td>
-                                        <Td dataLabel="Risk priority">{priority}</Td>
-                                        <Td dataLabel="Cluster">{clusterName}</Td>
-                                        <Td dataLabel="Deployments">
-                                            <DeploymentFilterLink
-                                                deploymentCount={deploymentCount}
-                                                namespaceName={name}
-                                                clusterName={clusterName}
-                                            />
-                                        </Td>
-                                        <Td dataLabel="Labels">
-                                            <KeyValueListModal type="label" keyValues={labels} />
-                                        </Td>
-                                        <Td dataLabel="Annotations">
-                                            <KeyValueListModal
-                                                type="annotation"
-                                                keyValues={annotations}
-                                            />
-                                        </Td>
-                                    </Tr>
-                                );
-                            })}
-                    </Tbody>
+                                    return (
+                                        <Tr key={id}>
+                                            <Td dataLabel="Namespace">{name}</Td>
+                                            <Td dataLabel="Risk priority">{priority}</Td>
+                                            <Td dataLabel="Cluster">{clusterName}</Td>
+                                            <Td dataLabel="Deployments">
+                                                <DeploymentFilterLink
+                                                    deploymentCount={deploymentCount}
+                                                    namespaceName={name}
+                                                    clusterName={clusterName}
+                                                />
+                                            </Td>
+                                            <Td dataLabel="Labels">
+                                                <KeyValueListModal
+                                                    type="label"
+                                                    keyValues={labels}
+                                                />
+                                            </Td>
+                                            <Td dataLabel="Annotations">
+                                                <KeyValueListModal
+                                                    type="annotation"
+                                                    keyValues={annotations}
+                                                />
+                                            </Td>
+                                        </Tr>
+                                    );
+                                })}
+                            </Tbody>
+                        )}
+                    />
                 </Table>
             </PageSection>
         </>
