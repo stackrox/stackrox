@@ -1,7 +1,3 @@
-#The following block checks for the validity of the provided init bundle. (`helm install ... -f <init-bundle.yaml>`)
-#1. Throw an error if no init bundle was provided
-#2. Throw an error if the wrong init-bundle format was provided (user wrongly passed an operator-formatted init-bundle to helm). We detect the presence of an operator init bundle by checking for the Kubernetes secret annotation "init-bundle.stackrox.io/name", that suggests a user has wrongly used `helm install ... -f <operator-init-bundle.yaml>.`
-#3. Warn if the user specified both init bundles, e.g. `helm install ... -f <helm-init-bundle.yaml> -f <operator-init-bundle.yaml>`
 values:
   imagePullSecrets:
     allowNone: true
