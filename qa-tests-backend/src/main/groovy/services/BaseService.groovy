@@ -163,7 +163,15 @@ class BaseService {
                                 "initialBackoff"      : "1s",
                                 "maxBackoff"          : "10s",
                                 "backoffMultiplier"   : "2",
-                                "retryableStatusCodes": ["UNAVAILABLE", "UNKNOWN"]
+                                "retryableStatusCodes": [
+                                        "ABORTED",
+                                        "CANCELLED",
+                                        "DEADLINE_EXCEEDED",
+                                        "INTERNAL",
+                                        "RESOURCE_EXHAUSTED",
+                                        "UNAVAILABLE",
+                                        "UNKNOWN",
+                                ]
                         ]
                 ]
         ]]

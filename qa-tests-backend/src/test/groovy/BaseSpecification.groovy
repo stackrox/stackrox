@@ -25,6 +25,7 @@ import objects.Secret
 import services.BaseService
 import services.ClusterService
 import services.ImageIntegrationService
+import services.ImageService
 import services.MetadataService
 import services.RoleService
 import util.Env
@@ -236,6 +237,8 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
+
+        ImageService.getImage("some digest ")
     }
 
     static setupCoreImageIntegration() {

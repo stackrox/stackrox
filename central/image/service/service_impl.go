@@ -130,30 +130,9 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetImage returns an image with given sha if it exists.
 func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest) (*storage.Image, error) {
-	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "id must be specified")
-	}
-
-	id := types.NewDigest(request.GetId()).Digest()
-
-	image, exists, err := s.datastore.GetImage(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "image with id %q does not exist", request.GetId())
-	}
-
-	if !request.GetIncludeSnoozed() {
-		// This modifies the image object
-		utils.FilterSuppressedCVEsNoClone(image)
-	}
-	if request.GetStripDescription() {
-		// This modifies the image object
-		utils.StripCVEDescriptionsNoClone(image)
-	}
-
-	return image, nil
+	log.Infof("GetImage %q", request.String())
+	log.Warn("Returning error")
+	return nil, status.Error(codes.Unknown, "Unknown error")
 }
 
 // CountImages counts the number of images that match the input query.
