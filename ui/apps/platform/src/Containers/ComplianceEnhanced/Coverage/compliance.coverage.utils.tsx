@@ -16,7 +16,6 @@ import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfig
 import { SearchFilter } from 'types/search';
 
 import { SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
-import { ScanConfigurationSelectData } from './components/ScanConfigurationSelect';
 
 // Thresholds for compliance status
 const DANGER_THRESHOLD = 50;
@@ -237,25 +236,19 @@ export function combineSearchFilterWithScanConfig(
     };
 }
 
-export function getScanConfigurationSelectData(
-    configurations: ComplianceScanConfigurationStatus[],
+export function isScanConfigurationDisabled(
+    config: ComplianceScanConfigurationStatus,
     disabledCriteria: { profileName?: string; clusterId?: string } = {}
-): ScanConfigurationSelectData[] {
-    return configurations.map((config) => {
-        const { profileName, clusterId } = disabledCriteria;
-        let isDisabled = false;
+): boolean {
+    const { profileName, clusterId } = disabledCriteria;
 
-        if (profileName && !config.scanConfig.profiles.includes(profileName)) {
-            isDisabled = true;
-        }
-        if (clusterId && !config.clusterStatus.some((cluster) => cluster.clusterId === clusterId)) {
-            isDisabled = true;
-        }
+    if (profileName && !config.scanConfig.profiles.includes(profileName)) {
+        return true;
+    }
 
-        return {
-            id: config.id,
-            isDisabled,
-            name: config.scanName,
-        };
-    });
+    if (clusterId && !config.clusterStatus.some((cluster) => cluster.clusterId === clusterId)) {
+        return true;
+    }
+
+    return false;
 }

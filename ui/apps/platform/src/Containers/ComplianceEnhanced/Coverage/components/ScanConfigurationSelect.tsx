@@ -13,18 +13,15 @@ import {
 } from '@patternfly/react-core';
 import { TimesCircleIcon } from '@patternfly/react-icons';
 
-const ALL_SCAN_SCHEDULES_OPTION = 'All scan schedules';
+import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 
-export type ScanConfigurationSelectData = {
-    id: string;
-    isDisabled: boolean;
-    name: string;
-};
+const ALL_SCAN_SCHEDULES_OPTION = 'All scan schedules';
 
 type ScanConfigurationSelectProps = {
     isLoading: boolean;
-    scanConfigs: ScanConfigurationSelectData[];
+    scanConfigs: ComplianceScanConfigurationStatus[];
     selectedScanConfigName: string | undefined;
+    isScanConfigDisabled?: (config: ComplianceScanConfigurationStatus) => boolean;
     setSelectedScanConfigName: (value: string | undefined) => void;
 };
 
@@ -32,6 +29,7 @@ function ScanConfigurationSelect({
     isLoading,
     scanConfigs,
     selectedScanConfigName,
+    isScanConfigDisabled = () => false,
     setSelectedScanConfigName,
 }: ScanConfigurationSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
@@ -92,10 +90,10 @@ function ScanConfigurationSelect({
                                         return (
                                             <SelectOption
                                                 key={config.id}
-                                                value={config.name}
-                                                isDisabled={config.isDisabled}
+                                                value={config.scanName}
+                                                isDisabled={isScanConfigDisabled(config)}
                                             >
-                                                {config.name}
+                                                {config.scanName}
                                             </SelectOption>
                                         );
                                     })}

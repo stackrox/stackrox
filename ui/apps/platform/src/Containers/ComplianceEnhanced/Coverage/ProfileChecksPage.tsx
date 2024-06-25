@@ -34,16 +34,11 @@ import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
-import {
-    combineSearchFilterWithScanConfig,
-    getScanConfigurationSelectData,
-} from './compliance.coverage.utils';
+import { combineSearchFilterWithScanConfig } from './compliance.coverage.utils';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
-import ScanConfigurationSelect, {
-    ScanConfigurationSelectData,
-} from './components/ScanConfigurationSelect';
+import ScanConfigurationSelect from './components/ScanConfigurationSelect';
 import CoveragesPageHeader from './CoveragesPageHeader';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
@@ -108,9 +103,6 @@ function ProfileChecksPage() {
         (profile) => profile.name === profileName
     );
 
-    const scanConfigurationSelectData: ScanConfigurationSelectData[] =
-        getScanConfigurationSelectData(scanConfigurationsQuery.response.configurations);
-
     return (
         <>
             <PageTitle title="Compliance coverage - Profile checks" />
@@ -118,7 +110,7 @@ function ProfileChecksPage() {
             <Divider component="div" />
             <ScanConfigurationSelect
                 isLoading={scanConfigurationsQuery.isLoading}
-                scanConfigs={scanConfigurationSelectData}
+                scanConfigs={scanConfigurationsQuery.response.configurations}
                 selectedScanConfigName={selectedScanConfigName}
                 setSelectedScanConfigName={setSelectedScanConfigName}
             />

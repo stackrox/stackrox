@@ -32,15 +32,13 @@ import CheckDetailsTable, { tabContentIdForResults } from './CheckDetailsTable';
 import {
     combineSearchFilterWithScanConfig,
     createScanConfigFilter,
-    getScanConfigurationSelectData,
+    isScanConfigurationDisabled,
 } from './compliance.coverage.utils';
 import CheckDetailsInfo from './components/CheckDetailsInfo';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { CLUSTER_QUERY } from './compliance.coverage.constants';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
-import ScanConfigurationSelect, {
-    ScanConfigurationSelectData,
-} from './components/ScanConfigurationSelect';
+import ScanConfigurationSelect from './components/ScanConfigurationSelect';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 
@@ -143,11 +141,6 @@ function CheckDetails() {
         onSearch({ action, category, value });
     };
 
-    const scanConfigurationSelectData: ScanConfigurationSelectData[] =
-        getScanConfigurationSelectData(scanConfigurationsQuery.response.configurations, {
-            profileName,
-        });
-
     return (
         <>
             <PageTitle title="Compliance coverage - Check" />
@@ -166,8 +159,11 @@ function CheckDetails() {
             <Divider component="div" />
             <ScanConfigurationSelect
                 isLoading={scanConfigurationsQuery.isLoading}
-                scanConfigs={scanConfigurationSelectData}
+                scanConfigs={scanConfigurationsQuery.response.configurations}
                 selectedScanConfigName={selectedScanConfigName}
+                isScanConfigDisabled={(config) =>
+                    isScanConfigurationDisabled(config, { profileName })
+                }
                 setSelectedScanConfigName={setSelectedScanConfigName}
             />
             <Divider component="div" />

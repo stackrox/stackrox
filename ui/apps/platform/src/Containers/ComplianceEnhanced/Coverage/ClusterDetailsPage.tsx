@@ -40,13 +40,8 @@ import {
     coverageProfileClustersPath,
     coverageClusterDetailsPath,
 } from './compliance.coverage.routes';
-import {
-    createScanConfigFilter,
-    getScanConfigurationSelectData,
-} from './compliance.coverage.utils';
-import ScanConfigurationSelect, {
-    ScanConfigurationSelectData,
-} from './components/ScanConfigurationSelect';
+import { createScanConfigFilter, isScanConfigurationDisabled } from './compliance.coverage.utils';
+import ScanConfigurationSelect from './components/ScanConfigurationSelect';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
@@ -145,11 +140,6 @@ function ClusterDetailsPage() {
         (profile) => profile.name === profileName
     );
 
-    const scanConfigurationSelectData: ScanConfigurationSelectData[] =
-        getScanConfigurationSelectData(scanConfigurationsQuery.response.configurations, {
-            clusterId,
-        });
-
     return (
         <>
             <PageTitle title="Compliance coverage - Cluster" />
@@ -174,8 +164,11 @@ function ClusterDetailsPage() {
             <Divider component="div" />
             <ScanConfigurationSelect
                 isLoading={scanConfigurationsQuery.isLoading}
-                scanConfigs={scanConfigurationSelectData}
+                scanConfigs={scanConfigurationsQuery.response.configurations}
                 selectedScanConfigName={selectedScanConfigName}
+                isScanConfigDisabled={(config) =>
+                    isScanConfigurationDisabled(config, { clusterId })
+                }
                 setSelectedScanConfigName={setSelectedScanConfigName}
             />
             <Divider component="div" />
