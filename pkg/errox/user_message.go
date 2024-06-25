@@ -52,6 +52,11 @@ func GetUserMessage(err error) string {
 		switch e := err.(type) {
 		case *userMessage:
 			return joinIfNotEmpty(e.message, GetUserMessage(e.base))
+		case *RoxError:
+			if e.base != nil {
+				return GetUserMessage(e.base)
+			}
+			return e.message
 		case *net.OpError:
 			op := e.Op
 			if e.Net != "" {

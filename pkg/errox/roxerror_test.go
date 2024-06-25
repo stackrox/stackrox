@@ -108,3 +108,10 @@ func TestSentinelMessage(t *testing.T) {
 		assert.ErrorIs(t, re, test.expectedSentinel, re)
 	}
 }
+
+func TestGetBaseSentinelError(t *testing.T) {
+	assert.Equal(t, "not found", GetBaseSentinelError(
+		NotFound.New("abc").New("def")).Error())
+	assert.Equal(t, "not found", GetBaseSentinelError(
+		errors.WithMessage(NotFound.New("abc").New("def"), "message")).Error())
+}
