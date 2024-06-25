@@ -38,11 +38,11 @@ func TestWrappedErrors(t *testing.T) {
 		},
 		{
 			err:       errors.Wrap(context.Canceled, "hello"),
-			transient: false,
+			transient: true,
 		},
 		{
 			err:       errors.Wrap(context.DeadlineExceeded, "hello"),
-			transient: false,
+			transient: true,
 		},
 		{
 			err:       errors.Wrap(errors.Wrap(io.EOF, "1"), "2"),
@@ -58,15 +58,15 @@ func TestWrappedErrors(t *testing.T) {
 		},
 		{
 			err:       multiError1Error.ToError(),
-			transient: false,
+			transient: true,
 		},
 		{
 			err:       multiErrorCanceled.ToError(),
-			transient: false,
+			transient: true,
 		},
 		{
 			err:       multiErrorDeadlineExceeded.ToError(),
-			transient: false,
+			transient: true,
 		},
 	}
 	for _, c := range cases {

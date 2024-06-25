@@ -70,8 +70,9 @@ func IsTransientError(err error) bool {
 	if errox.IsAny(err, pgx.ErrNoRows, pgx.ErrTxClosed, pgx.ErrTxCommitRollback) {
 		return false
 	}
+	// If the parent context expires, we abort the retries explicitly.
 	if errox.IsAny(err, context.Canceled, context.DeadlineExceeded) {
-		return false
+		return true
 	}
 	if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 		return true
