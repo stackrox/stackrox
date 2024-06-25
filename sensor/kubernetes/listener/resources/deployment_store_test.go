@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
@@ -584,7 +585,7 @@ func (s *deploymentStoreSuite) TestEnhanceDeploymentReadOnly() {
 	s.deploymentStore.EnhanceDeploymentReadOnly(&d, deps)
 
 	s.Equal(storage.PermissionLevel_CLUSTER_ADMIN, d.GetServiceAccountPermissionLevel())
-	s.Contains(d.GetPorts(), &storage.PortConfig{ContainerPort: 4321, Protocol: "TCP"})
+	protoassert.SliceContains(s.T(), d.GetPorts(), &storage.PortConfig{ContainerPort: 4321, Protocol: "TCP"})
 	s.Empty(s.deploymentStore.deployments, "EnhanceDeploymentReadOnly mustn't modify deployment store")
 }
 

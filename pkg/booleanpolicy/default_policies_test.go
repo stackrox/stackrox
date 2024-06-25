@@ -1527,7 +1527,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 					if c.allowUnvalidatedViolations {
 						assert.NotEmpty(t, violations)
 						for _, violation := range violations {
-							assert.Contains(t, actualViolations[id], violation)
+							protoassert.SliceContains(t, actualViolations[id], violation)
 						}
 					} else {
 						protoassert.SlicesEqual(t, violations, actualViolations[id])
