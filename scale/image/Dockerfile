@@ -1,4 +1,4 @@
-FROM google/cloud-sdk:357.0.0
+FROM google/cloud-sdk:482.0.0
 
 # Profiler
 RUN apt-get update && apt-get -y install wget curl
