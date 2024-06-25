@@ -71,12 +71,11 @@ func GetUserMessage(err error) string {
 			}
 			switch len(messages) {
 			case 0:
-				return fmt.Sprintf("%s error", e.StartString())
+				return e.StartString()
 			case 1:
-				return fmt.Sprintf("%s error: %s", e.StartString(), messages[0])
+				return e.StartString() + ": " + messages[0]
 			default:
-				return fmt.Sprintf("%s errors: [%s]", e.StartString(),
-					strings.Join(messages, ", "))
+				return e.StartString() + ": [" + strings.Join(messages, ", ") + "]"
 			}
 		case *multierror.Error:
 			if e.Len() == 0 {

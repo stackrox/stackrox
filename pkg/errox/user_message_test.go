@@ -86,22 +86,22 @@ func TestGetUserMessage(t *testing.T) {
 		"errorlist 0": {
 			errorhelpers.NewErrorListWithErrors("start",
 				[]error{errors.New("secret")}),
-			"start error",
+			"start",
 		},
 		"errorlist 1": {
 			errorhelpers.NewErrorListWithErrors("start",
 				[]error{NotFound}),
-			"start error: not found",
+			"start: not found",
 		},
 		"errorlist 2": {
 			errorhelpers.NewErrorListWithErrors("start",
 				[]error{NotFound, errors.New("secret")}),
-			"start error: not found",
+			"start: not found",
 		},
 		"errorlist 3": {
 			errorhelpers.NewErrorListWithErrors("start",
 				[]error{NotFound, errors.New("secret"), InvalidArgs}),
-			"start errors: [not found, invalid arguments]",
+			"start: [not found, invalid arguments]",
 		},
 		"errorlist 4": {
 			errorhelpers.NewErrorListWithErrors("start", []error{}),
