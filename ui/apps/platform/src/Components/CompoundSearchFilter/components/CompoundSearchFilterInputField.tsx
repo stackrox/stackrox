@@ -10,13 +10,13 @@ import {
     OnSearchPayload,
     PartialCompoundSearchFilterConfig,
     SearchFilterAttribute,
-    SelectSearchFilterAttribute,
 } from '../types';
 import {
     conditionMap,
     ensureConditionNumber,
     ensureString,
     ensureStringArray,
+    isSelectType,
 } from '../utils/utils';
 
 import CheckboxSelect from './CheckboxSelect';
@@ -40,12 +40,6 @@ export type CompoundSearchFilterInputFieldProps = {
     onChange: InputFieldOnChange;
     config: PartialCompoundSearchFilterConfig;
 };
-
-function isSelectType(
-    attributeObject: SearchFilterAttribute
-): attributeObject is SelectSearchFilterAttribute {
-    return attributeObject.inputType === 'select';
-}
 
 function dateParse(date: string): Date {
     const split = date.split('/');
