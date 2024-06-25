@@ -44,13 +44,14 @@ const StaticConfigurationSection = ({
     isManagerTypeNonConfigurable,
     handleChange,
 }) => {
+    const filteredRuntimeOptions = runtimeOptions.filter((option) => {
+        // disallow EBPF selection for new clusters, but display
+        // for existing clusters.
+        return isManagerTypeNonConfigurable || option.value !== 'EBPF'
+    })
     // curry the change handlers for the select inputs
     const onCollectionMethodChange = getSelectComparison(
-        runtimeOptions.filter(function(option) {
-            // disallow EBPF selection for new clusters, but display
-            // for existing clusters.
-            return isManagerTypeNonConfigurable || option.value !== 'EBPF'
-        }),
+        filteredRuntimeOptions,
         'collectionMethod',
         selectedCluster,
         handleChange
@@ -171,7 +172,7 @@ const StaticConfigurationSection = ({
                         Collection Method
                     </label>
                     <Select
-                        options={runtimeOptions}
+                        options={filteredRuntimeOptions}
                         placeholder="Select a runtime option"
                         onChange={onCollectionMethodChange}
                         className={selectElementClassName}
