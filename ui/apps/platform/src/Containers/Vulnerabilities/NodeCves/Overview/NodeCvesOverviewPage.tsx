@@ -84,6 +84,11 @@ function NodeCvesOverviewPage() {
         );
     }
 
+    function onClearFilters() {
+        setSearchFilter({});
+        pagination.setPage(1, 'replace');
+    }
+
     const { data } = useNodeCveEntityCounts(querySearchFilter);
 
     const entityCounts = {
@@ -200,6 +205,7 @@ function NodeCvesOverviewPage() {
                                     )}
                                     sortOption={sortOption}
                                     getSortParams={getSortParams}
+                                    onClearFilters={onClearFilters}
                                 />
                             )}
                             {activeEntityTabKey === 'Node' && (
@@ -209,6 +215,7 @@ function NodeCvesOverviewPage() {
                                     pagination={pagination}
                                     sortOption={sortOption}
                                     getSortParams={getSortParams}
+                                    onClearFilters={onClearFilters}
                                 />
                             )}
                         </CardBody>

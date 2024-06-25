@@ -152,7 +152,14 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                             />
                         </SplitItem>
                     </Split>
-                    <CVEsTable tableState={tableState} getSortParams={getSortParams} />
+                    <CVEsTable
+                        tableState={tableState}
+                        getSortParams={getSortParams}
+                        onClearFilters={() => {
+                            setSearchFilter({});
+                            setPage(1, 'replace');
+                        }}
+                    />
                 </div>
             </PageSection>
         </>
