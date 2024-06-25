@@ -2,6 +2,7 @@
 # shellcheck disable=SC1091
 
 load "../../test_helpers.bats"
+bats_require_minimum_version 1.5.0
 
 function setup() {
     source "${BATS_TEST_DIRNAME}/../lib.sh"
@@ -144,4 +145,48 @@ _EO_DETAILS_
     run save_junit_failure 'UNITTest' "A <unit> &test" "nada"
     run cat "${junit_dir}/junit-UNITTest.xml"
     assert_output --partial 'name="A &lt;unit&gt; &amp;test"'
+}
+
+@test "JUNIT wrapping functionality" {
+    wrapped_functionality() {
+        echo "This bit of fn() will have a JUNIT record \o/"
+    }
+    run junit_wrap "Suite" "Test" "failure message" "wrapped_functionality"
+    assert_success
+    run cat "${junit_dir}/junit-Suite.xml"
+    assert_output --partial 'tests="1"'
+    assert_output --partial 'failures="0"'
+}
+
+@test "JUNIT wrapping functionality - propagates failure" {
+    wrapped_functionality() {
+        echo "This bit of fn() will have a JUNIT record \o/"
+        not_a_valid_command
+    }
+    run -127 junit_wrap "Suite" "Test" "failure message" "wrapped_functionality"
+    assert_failure
+    run cat "${junit_dir}/junit-Suite.xml"
+    assert_output --partial 'tests="1"'
+    assert_output --partial 'failures="1"'
+}
+
+@test "JUNIT wrapping functionality - includes output on failure" {
+    wrapped_functionality() {
+        echo "This bit of fn() will have a JUNIT record \o/"
+        not_a_valid_command
+    }
+    run -127 junit_wrap "Suite" "Test" "failure message" "wrapped_functionality"
+    run cat "${junit_dir}/junit-Suite.xml"
+    assert_output --partial "This bit of fn() will have a JUNIT record \o/"
+}
+
+@test "JUNIT wrapping functionality - includes stderr on failure" {
+    wrapped_functionality() {
+        >&2 echo "This bit of fn() will have a JUNIT record \o/"
+        ls -l /noexisto
+    }
+    run junit_wrap "Suite" "Test" "failure message" "wrapped_functionality"
+    run cat "${junit_dir}/junit-Suite.xml"
+    assert_output --partial "This bit of fn() will have a JUNIT record \o/"
+    assert_output --partial "ls: cannot access '/noexisto': No such file or directory"
 }
