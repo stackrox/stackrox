@@ -160,7 +160,6 @@ _EO_DETAILS_
 
 @test "JUNIT wrapping functionality - propagates failure" {
     wrapped_functionality() {
-        echo "This bit of fn() will have a JUNIT record \o/"
         not_a_valid_command
     }
     run -127 junit_wrap "Suite" "Test" "failure message" "wrapped_functionality"
@@ -168,6 +167,15 @@ _EO_DETAILS_
     run cat "${junit_dir}/junit-Suite.xml"
     assert_output --partial 'tests="1"'
     assert_output --partial 'failures="1"'
+}
+
+@test "JUNIT wrapping functionality - propagates exports" {
+    BEFORE="before"
+    wrapped_functionality() {
+        export BEFORE="after"
+    }
+    junit_wrap "Suite" "Test" "failure message" "wrapped_functionality"
+    assert_equal "${BEFORE}" "after"
 }
 
 @test "JUNIT wrapping functionality - includes output on failure" {

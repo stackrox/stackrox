@@ -1916,18 +1916,13 @@ junit_wrap() {
     local command_output_file
     command_output_file="$(mktemp)"
 
-    # The desired command is wrapped with a `{start,stop}_tee` for inline tee
-    # behavior. This is required because `if "$@" | tee;` runs `$@` in a
-    # subshell that will lose any variables exported by `$@`.
-
-    start_tee "${command_output_file}"
-    if "$@"; then
-        stop_tee
+    if "$@" > "${command_output_file}" 2>&1; then
+        cat "${command_output_file}"
         save_junit_success "${class}" "${description}"
         rm -f "${command_output_file}"
     else
         local ret_code="$?"
-        stop_tee
+        cat "${command_output_file}"
         local failure_body=""
         if [[ -n "$failure_message" ]]; then
             failure_body="${failure_message}

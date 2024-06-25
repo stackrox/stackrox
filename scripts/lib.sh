@@ -182,32 +182,6 @@ retry() {
     return 0
 }
 
-# Function to turn on tee behavior
-start_tee() {
-    # Save original file descriptors
-    exec 3>&1  # Save stdout to file descriptor 3
-    exec 4>&2  # Save stderr to file descriptor 4
-
-    # Open a file for writing if specified
-    if [ -n "$1" ]; then
-        exec 1> >(tee -a "$1")  # Redirect stdout to file and tee
-    else
-        exec 1> >(tee /dev/stderr)  # Redirect stdout to tee
-    fi
-
-    exec 2>&1  # Redirect stderr to stdout
-}
-
-# Function to turn off tee behavior
-stop_tee() {
-    exec 1>&3  # Restore stdout from file descriptor 3
-    exec 2>&4  # Restore stderr from file descriptor 4
-
-    # Close file descriptors
-    exec 3>&-  # Close file descriptor 3
-    exec 4>&-  # Close file descriptor 4
-}
-
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         usage
