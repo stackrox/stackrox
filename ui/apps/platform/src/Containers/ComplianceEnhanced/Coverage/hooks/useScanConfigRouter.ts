@@ -12,23 +12,20 @@ const useScanConfigRouter = () => {
     function generatePathWithScanConfig(
         path,
         pathParams: Partial<Record<string, unknown>> = {},
-        searchParams = {}
+        searchFilter = {}
     ) {
-        return generatePathWithQuery(
-            path,
-            pathParams,
-            selectedScanConfigName
-                ? { ...searchParams, scanSchedule: selectedScanConfigName }
-                : searchParams
-        );
+        return generatePathWithQuery(path, pathParams, {
+            customParams: selectedScanConfigName ? { scanSchedule: selectedScanConfigName } : {},
+            searchFilter,
+        });
     }
 
     function navigateWithScanConfigQuery(
         path,
         pathParams: Partial<Record<string, unknown>> = {},
-        searchParams = {}
+        searchFilter = {}
     ) {
-        const generatedPath = generatePathWithScanConfig(path, pathParams, searchParams);
+        const generatedPath = generatePathWithScanConfig(path, pathParams, searchFilter);
         history.push(generatedPath);
     }
 

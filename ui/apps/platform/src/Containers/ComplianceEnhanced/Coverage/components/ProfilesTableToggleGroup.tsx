@@ -1,8 +1,8 @@
 import React from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
-import qs from 'qs';
 
+import useURLSearch from 'hooks/useURLSearch';
 import {
     coverageProfileChecksPath,
     coverageProfileClustersPath,
@@ -17,13 +17,12 @@ export type ProfilesTableToggleGroupProps = {
 function ProfilesTableToggleGroup({ activeToggle }: ProfilesTableToggleGroupProps) {
     const { navigateWithScanConfigQuery } = useScanConfigRouter();
     const { profileName } = useParams();
-    const location = useLocation();
+    const { searchFilter } = useURLSearch();
 
     const handleToggleChange = (resultsView) => {
-        const searchParams = qs.parse(location.search, { ignoreQueryPrefix: true });
         const path: CoverageProfilePath =
             resultsView === 'checks' ? coverageProfileChecksPath : coverageProfileClustersPath;
-        navigateWithScanConfigQuery(path, { profileName }, searchParams);
+        navigateWithScanConfigQuery(path, { profileName }, searchFilter);
     };
 
     return (

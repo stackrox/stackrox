@@ -98,7 +98,11 @@ function ProfileClustersPage() {
     }, [profileClusters]);
 
     function handleProfilesToggleChange(selectedProfile: string) {
-        navigateWithScanConfigQuery(coverageProfileClustersPath, { profileName: selectedProfile });
+        navigateWithScanConfigQuery(
+            coverageProfileClustersPath,
+            { profileName: selectedProfile },
+            searchFilter
+        );
     }
 
     const onSearch = (payload: OnSearchPayload) => {
