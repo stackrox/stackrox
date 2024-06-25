@@ -47,8 +47,8 @@ const StaticConfigurationSection = ({
     const filteredRuntimeOptions = runtimeOptions.filter((option) => {
         // disallow EBPF selection for new clusters, but display
         // for existing clusters.
-        return isManagerTypeNonConfigurable || option.value !== 'EBPF'
-    })
+        return isManagerTypeNonConfigurable || option.value !== 'EBPF';
+    });
     // curry the change handlers for the select inputs
     const onCollectionMethodChange = getSelectComparison(
         filteredRuntimeOptions,
