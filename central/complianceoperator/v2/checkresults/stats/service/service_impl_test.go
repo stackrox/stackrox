@@ -530,7 +530,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileScanSta
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().ElementsMatch(tc.expectedResp, results.GetScanStats())
+				protoassert.ElementsMatch(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}

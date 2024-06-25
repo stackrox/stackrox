@@ -151,7 +151,7 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteNone() {
 
 	existing, toDelete, err := s.generator.getNetworkPolicies(s.hasReadCtx, v1.GenerateNetworkPoliciesRequest_NONE, "cluster")
 	s.NoError(err)
-	s.ElementsMatch(existing, testNetworkPolicies)
+	protoassert.ElementsMatch(s.T(), existing, testNetworkPolicies)
 	s.Empty(toDelete)
 }
 
@@ -160,8 +160,8 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteGenerated() {
 
 	existing, toDelete, err := s.generator.getNetworkPolicies(s.hasReadCtx, v1.GenerateNetworkPoliciesRequest_GENERATED_ONLY, "cluster")
 	s.NoError(err)
-	s.ElementsMatch(existing, []*storage.NetworkPolicy{testNetworkPolicies[0], testNetworkPolicies[2]})
-	s.ElementsMatch(toDelete, []*storage.NetworkPolicyReference{
+	protoassert.ElementsMatch(s.T(), existing, []*storage.NetworkPolicy{testNetworkPolicies[0], testNetworkPolicies[2]})
+	protoassert.ElementsMatch(s.T(), toDelete, []*storage.NetworkPolicyReference{
 		{
 			Namespace: testNetworkPolicies[1].Namespace,
 			Name:      testNetworkPolicies[1].Name,
@@ -179,7 +179,7 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteAll() {
 	existing, toDelete, err := s.generator.getNetworkPolicies(s.hasReadCtx, v1.GenerateNetworkPoliciesRequest_ALL, "cluster")
 	s.NoError(err)
 	s.Empty(existing)
-	s.ElementsMatch(toDelete, []*storage.NetworkPolicyReference{
+	protoassert.ElementsMatch(s.T(), toDelete, []*storage.NetworkPolicyReference{
 		{
 			Namespace: testNetworkPolicies[0].Namespace,
 			Name:      testNetworkPolicies[0].Name,

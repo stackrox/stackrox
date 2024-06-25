@@ -727,7 +727,7 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 				&v1.ResourceByID{Id: deps[0].GetId()})
 			suite.NoError(err, "expected GetAllowedPeersFromCurrentPolicyForDeployment to succeed")
 
-			suite.ElementsMatch(resp.GetAllowedPeers(), testCase.expectedAllowedPeers)
+			protoassert.ElementsMatch(suite.T(), resp.GetAllowedPeers(), testCase.expectedAllowedPeers)
 		})
 	}
 }

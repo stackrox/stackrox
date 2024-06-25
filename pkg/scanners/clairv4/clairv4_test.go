@@ -10,6 +10,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/utils"
@@ -209,6 +210,6 @@ func TestGetScan(t *testing.T) {
 	scan, err := clair.GetScan(testImage.image)
 	assert.NoError(t, err)
 	expected := testImage.expected
-	assert.ElementsMatch(t, expected.Components, scan.Components)
+	protoassert.ElementsMatch(t, expected.Components, scan.Components)
 	assert.Equal(t, expected.OperatingSystem, scan.OperatingSystem)
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoassert"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -144,7 +143,7 @@ func TestGenerateIngressRule_WithInternetIngress_WithPorts(t *testing.T) {
 	}
 
 	rules := generateIngressRules(deployment1, nss)
-	assert.ElementsMatch(t, expectedRules, rules)
+	protoassert.ElementsMatch(t, expectedRules, rules)
 }
 
 func TestGenerateIngressRule_WithInternetExposure(t *testing.T) {
@@ -259,7 +258,7 @@ func TestGenerateIngressRule_WithInternetExposure_WithPorts(t *testing.T) {
 	}
 
 	rules := generateIngressRules(deployment1, nss)
-	assert.ElementsMatch(t, expectedRules, rules)
+	protoassert.ElementsMatch(t, expectedRules, rules)
 }
 
 func TestGenerateIngressRule_WithoutInternet(t *testing.T) {
@@ -310,7 +309,7 @@ func TestGenerateIngressRule_WithoutInternet(t *testing.T) {
 	}
 
 	rule := generateIngressRule(tgtDeployment, portDesc{}, nss)
-	assert.ElementsMatch(t, expectedPeers, rule.From)
+	protoassert.ElementsMatch(t, expectedPeers, rule.From)
 }
 
 func TestGenerateIngressRule_WithoutInternet_WithPorts(t *testing.T) {
@@ -398,7 +397,7 @@ func TestGenerateIngressRule_WithoutInternet_WithPorts(t *testing.T) {
 			return rule.From[i].NamespaceSelector == nil && rule.From[j].NamespaceSelector != nil
 		})
 	}
-	assert.ElementsMatch(t, expectedRules, rules)
+	protoassert.ElementsMatch(t, expectedRules, rules)
 }
 
 func TestGenerateIngressRule_ScopeAlienDeployment(t *testing.T) {
@@ -472,7 +471,7 @@ func TestGenerateIngressRule_ScopeAlienNSOnly(t *testing.T) {
 		},
 	}
 	rule := generateIngressRule(tgtDeployment, portDesc{}, nss)
-	assert.ElementsMatch(t, expectedPeers, rule.From)
+	protoassert.ElementsMatch(t, expectedPeers, rule.From)
 }
 
 func TestGenerateIngressRule_FromProtectedNS(t *testing.T) {
@@ -539,5 +538,5 @@ func TestGenerateIngressRule_FromProtectedNS(t *testing.T) {
 
 	rules := generateIngressRules(tgtDeployment, nss)
 	require.Len(t, rules, 1)
-	assert.ElementsMatch(t, expectedPeers, rules[0].From)
+	protoassert.ElementsMatch(t, expectedPeers, rules[0].From)
 }

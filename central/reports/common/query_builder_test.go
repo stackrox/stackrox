@@ -166,7 +166,7 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 			assertQueries: func(t testing.TB, expected *v1.Query, actual *v1.Query) {
 				switch typedQ := actual.GetQuery().(type) {
 				case *v1.Query_Disjunction:
-					assert.ElementsMatch(t,
+					protoassert.ElementsMatch(t,
 						expected.GetQuery().(*v1.Query_Disjunction).Disjunction.GetQueries(),
 						typedQ.Disjunction.GetQueries())
 				default:

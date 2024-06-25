@@ -902,7 +902,7 @@ func TestEnrichWithSignature_Success(t *testing.T) {
 			updated, err := e.enrichWithSignature(emptyCtx, c.ctx, c.img)
 			assert.NoError(t, err)
 			assert.Equal(t, c.updated, updated)
-			assert.ElementsMatch(t, c.expectedSigs, c.img.GetSignature().GetSignatures())
+			protoassert.ElementsMatch(t, c.expectedSigs, c.img.GetSignature().GetSignatures())
 		})
 	}
 }
@@ -1048,7 +1048,7 @@ func TestEnrichWithSignatureVerificationData_Success(t *testing.T) {
 			updated, err := e.enrichWithSignatureVerificationData(emptyCtx, c.ctx, c.img)
 			assert.NoError(t, err)
 			assert.Equal(t, c.updated, updated)
-			assert.ElementsMatch(t, c.expectedVerificationResults, c.img.GetSignatureVerificationData().GetResults())
+			protoassert.ElementsMatch(t, c.expectedVerificationResults, c.img.GetSignatureVerificationData().GetResults())
 		})
 	}
 }
@@ -1269,7 +1269,7 @@ func TestFetchFromDatabase_ForceFetch(t *testing.T) {
 	imgFetchedFromDB, exists := e.fetchFromDatabase(context.Background(), img, UseImageNamesRefetchCachedValues)
 	assert.False(t, exists)
 	protoassert.Equal(t, img.GetName(), imgFetchedFromDB.GetName())
-	assert.ElementsMatch(t, img.GetNames(), imgFetchedFromDB.GetNames())
+	protoassert.ElementsMatch(t, img.GetNames(), imgFetchedFromDB.GetNames())
 	assert.Nil(t, img.GetSignature())
 	assert.Nil(t, img.GetSignatureVerificationData())
 }
@@ -1358,7 +1358,7 @@ func TestUpdateFromDatabase_ImageNames(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			testImg := img.Clone()
 			_ = e.updateImageFromDatabase(context.Background(), testImg, testCase.opt)
-			assert.ElementsMatch(t, testImg.GetNames(), testCase.expectedImageNames)
+			protoassert.ElementsMatch(t, testImg.GetNames(), testCase.expectedImageNames)
 		})
 	}
 }

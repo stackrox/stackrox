@@ -191,7 +191,7 @@ func (s *groupDataStoreTestSuite) TestGetFiltered() {
 		groups[1], groups[2], groups[3], groups[4], groups[6],
 	}
 	s.NoError(err)
-	s.ElementsMatch(expectedGroups, actualGroups)
+	protoassert.ElementsMatch(s.T(), expectedGroups, actualGroups)
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesWalk() {
@@ -235,7 +235,7 @@ func (s *groupDataStoreTestSuite) TestWalk() {
 
 	actualGroups, err := s.dataStore.Walk(s.hasWriteCtx, "authProvider1", attributes)
 	s.NoError(err)
-	s.ElementsMatch(expectedGroups, actualGroups)
+	protoassert.ElementsMatch(s.T(), expectedGroups, actualGroups)
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesAdd() {

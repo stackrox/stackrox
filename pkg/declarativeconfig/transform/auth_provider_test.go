@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -270,7 +271,7 @@ func TestTransformAuthProvider(t *testing.T) {
 
 	assert.Equal(t, expectedClaimMappings, authProviderProto.GetClaimMappings())
 
-	assert.ElementsMatch(t, expectedRequiredAttributes, authProviderProto.GetRequiredAttributes())
+	protoassert.ElementsMatch(t, expectedRequiredAttributes, authProviderProto.GetRequiredAttributes())
 
 	require.Contains(t, protos, groupType)
 	require.Len(t, protos[groupType], 4)

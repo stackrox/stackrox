@@ -58,13 +58,13 @@ func TestNRadixTreeIPv4(t *testing.T) {
 
 	protoassert.Equal(t, e2, tree.GetMatchingSupernetForCIDR("35.187.144.0/18", nil))
 
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e2, e5}, tree.GetSubnets(e3.GetId()))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e2, e5}, tree.GetSubnets(e3.GetId()))
 
 	tree.Remove(e3.GetId())
 	assert.Nil(t, tree.Get(e3.GetId()))
 
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e2, e5}, tree.GetSubnetsForCIDR(e3.GetExternalSource().GetCidr()))
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e2, e5, e7}, tree.GetSubnetsForCIDR("0.0.0.0/0"))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e2, e5}, tree.GetSubnetsForCIDR(e3.GetExternalSource().GetCidr()))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e2, e5, e7}, tree.GetSubnetsForCIDR("0.0.0.0/0"))
 }
 
 func TestNRadixTreeIPv6(t *testing.T) {
@@ -110,11 +110,11 @@ func TestNRadixTreeIPv6(t *testing.T) {
 
 	protoassert.Equal(t, e2, tree.GetMatchingSupernetForCIDR("2001:db8:3333:4444:5555:6666:7777:8888/90", nil))
 
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e4}, tree.GetSubnets(e3.GetId()))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e4}, tree.GetSubnets(e3.GetId()))
 
 	tree.Remove(e3.GetId())
 	assert.Nil(t, tree.Get(e3.GetId()))
 
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e4}, tree.GetSubnetsForCIDR(e3.GetExternalSource().GetCidr()))
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e1, e5}, tree.GetSubnetsForCIDR("::ffff:0:0/0"))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e4}, tree.GetSubnetsForCIDR(e3.GetExternalSource().GetCidr()))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e1, e5}, tree.GetSubnetsForCIDR("::ffff:0:0/0"))
 }
