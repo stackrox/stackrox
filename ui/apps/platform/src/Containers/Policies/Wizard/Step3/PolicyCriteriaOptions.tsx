@@ -73,7 +73,7 @@ function PolicyCriteriaOptions({ descriptors, selectedSectionIndex }: PolicyCrit
     const [filteredItems, setFilteredItems] = useState<TreeViewDataItem[]>([]);
     const [isFiltered, setIsFiltered] = useState(false);
     const { values, setFieldValue } = useFormikContext<Policy>();
-    const { policyGroups } = values.policySections[selectedSectionIndex];
+    const { policyGroups } = values.policySections[selectedSectionIndex] ?? [];
 
     const selectedSection = values.policySections[selectedSectionIndex];
 

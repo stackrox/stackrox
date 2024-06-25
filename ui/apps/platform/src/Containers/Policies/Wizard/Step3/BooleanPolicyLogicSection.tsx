@@ -70,7 +70,7 @@ function BooleanPolicyLogicSection({
                             sectionIndex={sectionIndex}
                             descriptors={filteredDescriptors}
                             readOnly={readOnly}
-                            selectedSection={selectedSection}
+                            selectedSectionIndex={selectedSection}
                         />
                         {sectionIndex !== values.policySections.length - 1 && (
                             <Flex
