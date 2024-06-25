@@ -71,13 +71,15 @@ function ProfileClustersTable({
             <Table>
                 <Thead>
                     <Tr>
-                        <Th sort={getSortParams('Cluster')}>Cluster</Th>
-                        <Th>Last scanned</Th>
-                        <Th>Pass status</Th>
-                        <Th>Fail status</Th>
-                        <Th>Manual status</Th>
-                        <Th>Other status</Th>
-                        <Th width={30}>Compliance</Th>
+                        <Th sort={getSortParams('Cluster')} width={50}>
+                            Cluster
+                        </Th>
+                        <Th modifier="fitContent">Last scanned</Th>
+                        <Th modifier="fitContent">Pass status</Th>
+                        <Th modifier="fitContent">Fail status</Th>
+                        <Th modifier="fitContent">Manual status</Th>
+                        <Th modifier="fitContent">Other status</Th>
+                        <Th width={50}>Compliance</Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
