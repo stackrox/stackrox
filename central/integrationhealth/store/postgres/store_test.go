@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *IntegrationHealthsStoreSuite) TestStore() {
 	foundIntegrationHealth, exists, err = store.Get(ctx, integrationHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(integrationHealth, foundIntegrationHealth)
+	protoassert.Equal(s.T(), integrationHealth, foundIntegrationHealth)
 
 	integrationHealthCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *IntegrationHealthsStoreSuite) TestStore() {
 	foundIntegrationHealth, exists, err = store.Get(ctx, integrationHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(integrationHealth, foundIntegrationHealth)
+	protoassert.Equal(s.T(), integrationHealth, foundIntegrationHealth)
 
 	s.NoError(store.Delete(ctx, integrationHealth.GetId()))
 	foundIntegrationHealth, exists, err = store.Get(ctx, integrationHealth.GetId())

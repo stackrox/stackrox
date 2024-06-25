@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -53,12 +54,12 @@ func (s *NotificationSchedulesStoreSuite) TestStore() {
 	foundNotificationSchedule, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(notificationSchedule, foundNotificationSchedule)
+	protoassert.Equal(s.T(), notificationSchedule, foundNotificationSchedule)
 
 	foundNotificationSchedule, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(notificationSchedule, foundNotificationSchedule)
+	protoassert.Equal(s.T(), notificationSchedule, foundNotificationSchedule)
 
 	s.NoError(store.Delete(ctx))
 	foundNotificationSchedule, exists, err = store.Get(ctx)
@@ -75,7 +76,7 @@ func (s *NotificationSchedulesStoreSuite) TestStore() {
 	foundNotificationSchedule, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(notificationSchedule, foundNotificationSchedule)
+	protoassert.Equal(s.T(), notificationSchedule, foundNotificationSchedule)
 
 	notificationSchedule = &storage.NotificationSchedule{}
 	s.NoError(testutils.FullInit(notificationSchedule, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -84,5 +85,5 @@ func (s *NotificationSchedulesStoreSuite) TestStore() {
 	foundNotificationSchedule, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(notificationSchedule, foundNotificationSchedule)
+	protoassert.Equal(s.T(), notificationSchedule, foundNotificationSchedule)
 }

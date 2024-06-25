@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *DiscoveredClustersStoreSuite) TestStore() {
 	foundDiscoveredCluster, exists, err = store.Get(ctx, discoveredCluster.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(discoveredCluster, foundDiscoveredCluster)
+	protoassert.Equal(s.T(), discoveredCluster, foundDiscoveredCluster)
 
 	discoveredClusterCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *DiscoveredClustersStoreSuite) TestStore() {
 	foundDiscoveredCluster, exists, err = store.Get(ctx, discoveredCluster.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(discoveredCluster, foundDiscoveredCluster)
+	protoassert.Equal(s.T(), discoveredCluster, foundDiscoveredCluster)
 
 	s.NoError(store.Delete(ctx, discoveredCluster.GetId()))
 	foundDiscoveredCluster, exists, err = store.Get(ctx, discoveredCluster.GetId())

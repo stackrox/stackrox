@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *SecuredUnitsStoreSuite) TestStore() {
 	foundSecuredUnits, exists, err = store.Get(ctx, securedUnits.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(securedUnits, foundSecuredUnits)
+	protoassert.Equal(s.T(), securedUnits, foundSecuredUnits)
 
 	securedUnitsCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *SecuredUnitsStoreSuite) TestStore() {
 	foundSecuredUnits, exists, err = store.Get(ctx, securedUnits.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(securedUnits, foundSecuredUnits)
+	protoassert.Equal(s.T(), securedUnits, foundSecuredUnits)
 
 	s.NoError(store.Delete(ctx, securedUnits.GetId()))
 	foundSecuredUnits, exists, err = store.Get(ctx, securedUnits.GetId())

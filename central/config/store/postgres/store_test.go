@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -53,12 +54,12 @@ func (s *ConfigsStoreSuite) TestStore() {
 	foundConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(config, foundConfig)
+	protoassert.Equal(s.T(), config, foundConfig)
 
 	foundConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(config, foundConfig)
+	protoassert.Equal(s.T(), config, foundConfig)
 
 	s.NoError(store.Delete(ctx))
 	foundConfig, exists, err = store.Get(ctx)
@@ -75,7 +76,7 @@ func (s *ConfigsStoreSuite) TestStore() {
 	foundConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(config, foundConfig)
+	protoassert.Equal(s.T(), config, foundConfig)
 
 	config = &storage.Config{}
 	s.NoError(testutils.FullInit(config, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -84,5 +85,5 @@ func (s *ConfigsStoreSuite) TestStore() {
 	foundConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(config, foundConfig)
+	protoassert.Equal(s.T(), config, foundConfig)
 }

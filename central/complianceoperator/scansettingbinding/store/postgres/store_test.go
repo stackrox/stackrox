@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	foundComplianceOperatorScanSettingBinding, exists, err = store.Get(ctx, complianceOperatorScanSettingBinding.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorScanSettingBinding, foundComplianceOperatorScanSettingBinding)
+	protoassert.Equal(s.T(), complianceOperatorScanSettingBinding, foundComplianceOperatorScanSettingBinding)
 
 	complianceOperatorScanSettingBindingCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	foundComplianceOperatorScanSettingBinding, exists, err = store.Get(ctx, complianceOperatorScanSettingBinding.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorScanSettingBinding, foundComplianceOperatorScanSettingBinding)
+	protoassert.Equal(s.T(), complianceOperatorScanSettingBinding, foundComplianceOperatorScanSettingBinding)
 
 	s.NoError(store.Delete(ctx, complianceOperatorScanSettingBinding.GetId()))
 	foundComplianceOperatorScanSettingBinding, exists, err = store.Get(ctx, complianceOperatorScanSettingBinding.GetId())

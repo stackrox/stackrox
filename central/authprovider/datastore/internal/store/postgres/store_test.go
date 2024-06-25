@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *AuthProvidersStoreSuite) TestStore() {
 	foundAuthProvider, exists, err = store.Get(ctx, authProvider.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(authProvider, foundAuthProvider)
+	protoassert.Equal(s.T(), authProvider, foundAuthProvider)
 
 	authProviderCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *AuthProvidersStoreSuite) TestStore() {
 	foundAuthProvider, exists, err = store.Get(ctx, authProvider.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(authProvider, foundAuthProvider)
+	protoassert.Equal(s.T(), authProvider, foundAuthProvider)
 
 	s.NoError(store.Delete(ctx, authProvider.GetId()))
 	foundAuthProvider, exists, err = store.Get(ctx, authProvider.GetId())
@@ -102,7 +103,7 @@ func (s *AuthProvidersStoreSuite) TestStore() {
 	s.NoError(store.UpsertMany(ctx, authProviders))
 	allAuthProvider, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch(authProviders, allAuthProvider)
+	protoassert.ElementsMatch(s.T(), authProviders, allAuthProvider)
 
 	authProviderCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

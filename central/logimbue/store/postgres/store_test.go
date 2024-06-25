@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *LogImbuesStoreSuite) TestStore() {
 	foundLogImbue, exists, err = store.Get(ctx, logImbue.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(logImbue, foundLogImbue)
+	protoassert.Equal(s.T(), logImbue, foundLogImbue)
 
 	logImbueCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *LogImbuesStoreSuite) TestStore() {
 	foundLogImbue, exists, err = store.Get(ctx, logImbue.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(logImbue, foundLogImbue)
+	protoassert.Equal(s.T(), logImbue, foundLogImbue)
 
 	s.NoError(store.Delete(ctx, logImbue.GetId()))
 	foundLogImbue, exists, err = store.Get(ctx, logImbue.GetId())
@@ -102,7 +103,7 @@ func (s *LogImbuesStoreSuite) TestStore() {
 	s.NoError(store.UpsertMany(ctx, logImbues))
 	allLogImbue, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch(logImbues, allLogImbue)
+	protoassert.ElementsMatch(s.T(), logImbues, allLogImbue)
 
 	logImbueCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

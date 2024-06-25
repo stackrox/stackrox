@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *BlobsStoreSuite) TestStore() {
 	foundBlob, exists, err = store.Get(ctx, blob.GetName())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(blob, foundBlob)
+	protoassert.Equal(s.T(), blob, foundBlob)
 
 	blobCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *BlobsStoreSuite) TestStore() {
 	foundBlob, exists, err = store.Get(ctx, blob.GetName())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(blob, foundBlob)
+	protoassert.Equal(s.T(), blob, foundBlob)
 
 	s.NoError(store.Delete(ctx, blob.GetName()))
 	foundBlob, exists, err = store.Get(ctx, blob.GetName())
