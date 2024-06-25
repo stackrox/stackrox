@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -53,12 +54,12 @@ func (s *DelegatedRegistryConfigsStoreSuite) TestStore() {
 	foundDelegatedRegistryConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(delegatedRegistryConfig, foundDelegatedRegistryConfig)
+	protoassert.Equal(s.T(), delegatedRegistryConfig, foundDelegatedRegistryConfig)
 
 	foundDelegatedRegistryConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(delegatedRegistryConfig, foundDelegatedRegistryConfig)
+	protoassert.Equal(s.T(), delegatedRegistryConfig, foundDelegatedRegistryConfig)
 
 	s.NoError(store.Delete(ctx))
 	foundDelegatedRegistryConfig, exists, err = store.Get(ctx)
@@ -75,7 +76,7 @@ func (s *DelegatedRegistryConfigsStoreSuite) TestStore() {
 	foundDelegatedRegistryConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(delegatedRegistryConfig, foundDelegatedRegistryConfig)
+	protoassert.Equal(s.T(), delegatedRegistryConfig, foundDelegatedRegistryConfig)
 
 	delegatedRegistryConfig = &storage.DelegatedRegistryConfig{}
 	s.NoError(testutils.FullInit(delegatedRegistryConfig, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -84,5 +85,5 @@ func (s *DelegatedRegistryConfigsStoreSuite) TestStore() {
 	foundDelegatedRegistryConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(delegatedRegistryConfig, foundDelegatedRegistryConfig)
+	protoassert.Equal(s.T(), delegatedRegistryConfig, foundDelegatedRegistryConfig)
 }

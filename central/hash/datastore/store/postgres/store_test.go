@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -70,7 +71,7 @@ func (s *HashesStoreSuite) TestStore() {
 	foundHash, exists, err = store.Get(ctx, hash.GetClusterId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(hash, foundHash)
+	protoassert.Equal(s.T(), hash, foundHash)
 
 	hashCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -88,7 +89,7 @@ func (s *HashesStoreSuite) TestStore() {
 	foundHash, exists, err = store.Get(ctx, hash.GetClusterId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(hash, foundHash)
+	protoassert.Equal(s.T(), hash, foundHash)
 
 	s.NoError(store.Delete(ctx, hash.GetClusterId()))
 	foundHash, exists, err = store.Get(ctx, hash.GetClusterId())

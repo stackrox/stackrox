@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -70,7 +71,7 @@ func (s *ComplianceOperatorScanConfigurationV2StoreSuite) TestStore() {
 	foundComplianceOperatorScanConfigurationV2, exists, err = store.Get(ctx, complianceOperatorScanConfigurationV2.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorScanConfigurationV2, foundComplianceOperatorScanConfigurationV2)
+	protoassert.Equal(s.T(), complianceOperatorScanConfigurationV2, foundComplianceOperatorScanConfigurationV2)
 
 	complianceOperatorScanConfigurationV2Count, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -88,7 +89,7 @@ func (s *ComplianceOperatorScanConfigurationV2StoreSuite) TestStore() {
 	foundComplianceOperatorScanConfigurationV2, exists, err = store.Get(ctx, complianceOperatorScanConfigurationV2.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorScanConfigurationV2, foundComplianceOperatorScanConfigurationV2)
+	protoassert.Equal(s.T(), complianceOperatorScanConfigurationV2, foundComplianceOperatorScanConfigurationV2)
 
 	s.NoError(store.Delete(ctx, complianceOperatorScanConfigurationV2.GetId()))
 	foundComplianceOperatorScanConfigurationV2, exists, err = store.Get(ctx, complianceOperatorScanConfigurationV2.GetId())

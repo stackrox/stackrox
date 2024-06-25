@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -73,7 +74,7 @@ func (s *ComplianceOperatorScanV2StoreSuite) TestStore() {
 	foundComplianceOperatorScanV2, exists, err = store.Get(ctx, complianceOperatorScanV2.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorScanV2, foundComplianceOperatorScanV2)
+	protoassert.Equal(s.T(), complianceOperatorScanV2, foundComplianceOperatorScanV2)
 
 	complianceOperatorScanV2Count, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -91,7 +92,7 @@ func (s *ComplianceOperatorScanV2StoreSuite) TestStore() {
 	foundComplianceOperatorScanV2, exists, err = store.Get(ctx, complianceOperatorScanV2.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorScanV2, foundComplianceOperatorScanV2)
+	protoassert.Equal(s.T(), complianceOperatorScanV2, foundComplianceOperatorScanV2)
 
 	s.NoError(store.Delete(ctx, complianceOperatorScanV2.GetId()))
 	foundComplianceOperatorScanV2, exists, err = store.Get(ctx, complianceOperatorScanV2.GetId())
@@ -337,7 +338,7 @@ func (s *ComplianceOperatorScanV2StoreSuite) TestSACGet() {
 			expectedFound := len(testCase.expectedObjects) > 0
 			assert.Equal(t, expectedFound, exists)
 			if expectedFound {
-				assert.Equal(t, objA, actual)
+				protoassert.Equal(t, objA, actual)
 			} else {
 				assert.Nil(t, actual)
 			}
@@ -409,7 +410,7 @@ func (s *ComplianceOperatorScanV2StoreSuite) TestSACGetMany() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			actual, missingIndices, err := s.store.GetMany(testCase.context, []string{objA.GetId(), objB.GetId()})
 			assert.NoError(t, err)
-			assert.Equal(t, testCase.expectedObjects, actual)
+			protoassert.SlicesEqual(t, testCase.expectedObjects, actual)
 			assert.Equal(t, testCase.expectedMissingIndices, missingIndices)
 		})
 	}

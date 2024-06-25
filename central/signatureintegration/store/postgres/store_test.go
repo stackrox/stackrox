@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *SignatureIntegrationsStoreSuite) TestStore() {
 	foundSignatureIntegration, exists, err = store.Get(ctx, signatureIntegration.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(signatureIntegration, foundSignatureIntegration)
+	protoassert.Equal(s.T(), signatureIntegration, foundSignatureIntegration)
 
 	signatureIntegrationCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *SignatureIntegrationsStoreSuite) TestStore() {
 	foundSignatureIntegration, exists, err = store.Get(ctx, signatureIntegration.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(signatureIntegration, foundSignatureIntegration)
+	protoassert.Equal(s.T(), signatureIntegration, foundSignatureIntegration)
 
 	s.NoError(store.Delete(ctx, signatureIntegration.GetId()))
 	foundSignatureIntegration, exists, err = store.Get(ctx, signatureIntegration.GetId())

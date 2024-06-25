@@ -15,11 +15,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -88,7 +89,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
 	s.True(exists)
-	s.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}})
+	protoassert.Equal(s.T(), {{$name}}, found{{.TrimmedType|upperCamelCase}})
 
 	{{$name}}Count, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -111,7 +112,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
 	s.True(exists)
-	s.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}})
+	protoassert.Equal(s.T(), {{$name}}, found{{.TrimmedType|upperCamelCase}})
 
 	s.NoError(store.Delete(ctx, {{template "paramList" $}}))
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
@@ -142,7 +143,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 {{- if .GetAll }}
 	all{{.TrimmedType|upperCamelCase}}, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch({{$name}}s, all{{.TrimmedType|upperCamelCase}})
+	protoassert.ElementsMatch(s.T(), {{$name}}s, all{{.TrimmedType|upperCamelCase}})
 {{- end }}
 
 	{{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx, search.EmptyQuery())
@@ -385,7 +386,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGet() {
 			expectedFound := len(testCase.expectedObjects) > 0
 			assert.Equal(t, expectedFound, exists)
 			if expectedFound {
-				assert.Equal(t, objA, actual)
+				protoassert.Equal(t, objA, actual)
 			} else {
 				assert.Nil(t, actual)
 			}
@@ -457,7 +458,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetMany() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			actual, missingIndices, err := s.store.GetMany(testCase.context, []string{ {{ "objA" | .Obj.GetID }}, {{ "objB" | .Obj.GetID }} })
 			assert.NoError(t, err)
-			assert.Equal(t, testCase.expectedObjects, actual)
+			protoassert.SlicesEqual(t, testCase.expectedObjects, actual)
 			assert.Equal(t, testCase.expectedMissingIndices, missingIndices)
 		})
 	}

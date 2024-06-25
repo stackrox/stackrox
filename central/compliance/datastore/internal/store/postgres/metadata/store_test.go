@@ -11,6 +11,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -66,7 +67,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestStore() {
 	foundComplianceRunMetadata, exists, err = store.Get(ctx, complianceRunMetadata.GetRunId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceRunMetadata, foundComplianceRunMetadata)
+	protoassert.Equal(s.T(), complianceRunMetadata, foundComplianceRunMetadata)
 
 	complianceRunMetadataCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -84,7 +85,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestStore() {
 	foundComplianceRunMetadata, exists, err = store.Get(ctx, complianceRunMetadata.GetRunId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceRunMetadata, foundComplianceRunMetadata)
+	protoassert.Equal(s.T(), complianceRunMetadata, foundComplianceRunMetadata)
 
 	s.NoError(store.Delete(ctx, complianceRunMetadata.GetRunId()))
 	foundComplianceRunMetadata, exists, err = store.Get(ctx, complianceRunMetadata.GetRunId())
@@ -330,7 +331,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACGet() {
 			expectedFound := len(testCase.expectedObjects) > 0
 			assert.Equal(t, expectedFound, exists)
 			if expectedFound {
-				assert.Equal(t, objA, actual)
+				protoassert.Equal(t, objA, actual)
 			} else {
 				assert.Nil(t, actual)
 			}
@@ -402,7 +403,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACGetMany() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			actual, missingIndices, err := s.store.GetMany(testCase.context, []string{objA.GetRunId(), objB.GetRunId()})
 			assert.NoError(t, err)
-			assert.Equal(t, testCase.expectedObjects, actual)
+			protoassert.SlicesEqual(t, testCase.expectedObjects, actual)
 			assert.Equal(t, testCase.expectedMissingIndices, missingIndices)
 		})
 	}
