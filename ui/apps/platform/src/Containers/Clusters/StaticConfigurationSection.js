@@ -46,7 +46,11 @@ const StaticConfigurationSection = ({
 }) => {
     // curry the change handlers for the select inputs
     const onCollectionMethodChange = getSelectComparison(
-        runtimeOptions,
+        runtimeOptions.filter(function(option) {
+            // disallow EBPF selection for new clusters, but display
+            // for existing clusters.
+            return isManagerTypeNonConfigurable || option.value !== 'EBPF'
+        }),
         'collectionMethod',
         selectedCluster,
         handleChange
