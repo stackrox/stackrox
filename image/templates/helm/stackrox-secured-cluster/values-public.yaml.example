@@ -299,10 +299,7 @@
 ## Collector specific configuration.
 #collector:
 #
-#  # Deprecated. This value has no effect.
-#  forceCollectionMethod: false
-#
-#  # Collection method to use when `forceCollectionMethod` is `true`. Can be one of:
+#  # Collection method to use. Can be one of:
 #  #   - CORE_BPF
 #  #   - NO_COLLECTION
 #  collectionMethod: CORE_BPF

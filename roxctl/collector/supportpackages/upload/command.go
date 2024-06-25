@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	uploadHelpLong = `Upload files from a collector support package to Central.
+	uploadHelpLong = `Upload files from a Collector support package to Central.
 Note: uploaded support packages will only affect Secured Clusters on versions
 less than 4.5. Newer versions do not require support packages.`
 )
