@@ -1,4 +1,5 @@
-import { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
+import React from 'react';
+import { FilterChip, FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 
 import { SearchFilter } from 'types/search';
 import { SetSearchFilter } from 'hooks/useURLSearch';
@@ -8,6 +9,7 @@ import {
     SearchFilterAttribute,
     SearchFilterAttributeName,
     SearchFilterEntityName,
+    SelectSearchFilterAttribute,
     compoundSearchEntityNames,
 } from '../types';
 
@@ -98,6 +100,12 @@ export function ensureConditionNumber(value: unknown): { condition: string; numb
     };
 }
 
+export function isSelectType(
+    attributeObject: SearchFilterAttribute
+): attributeObject is SelectSearchFilterAttribute {
+    return attributeObject.inputType === 'select';
+}
+
 /**
  * Helper function to convert a search filter config object into an
  * array of FilterChipGroupDescriptor objects for use in the SearchFilterChips component
@@ -108,12 +116,29 @@ export function ensureConditionNumber(value: unknown): { condition: string; numb
 export function makeFilterChipDescriptors(
     searchFilterConfig: PartialCompoundSearchFilterConfig
 ): FilterChipGroupDescriptor[] {
-    return Object.values(searchFilterConfig).flatMap(({ attributes = {} }) =>
-        Object.values(attributes).map((attributeConfig) => ({
-            displayName: attributeConfig.filterChipLabel,
-            searchFilterName: attributeConfig.searchTerm,
-        }))
+    const filterChipDescriptors = Object.values(searchFilterConfig).flatMap(({ attributes = {} }) =>
+        Object.values(attributes).map((attributeConfig: SearchFilterAttribute) => {
+            const baseConfig = {
+                displayName: attributeConfig.filterChipLabel,
+                searchFilterName: attributeConfig.searchTerm,
+            };
+
+            if (isSelectType(attributeConfig)) {
+                return {
+                    ...baseConfig,
+                    render: (filter: string) => {
+                        const option = attributeConfig.inputProps.options.find(
+                            (option) => option.value === filter
+                        );
+                        return <FilterChip name={option?.label || 'N/A'} />;
+                    },
+                };
+            }
+
+            return baseConfig;
+        })
     );
+    return filterChipDescriptors;
 }
 
 // Function to take a compound search "onSearch" payload and update the URL
