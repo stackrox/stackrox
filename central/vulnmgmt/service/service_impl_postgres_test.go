@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -116,7 +117,8 @@ func (s *servicePostgresTestSuite) TestExport() {
 			s.upsertDeployments(c.deployments)
 
 			request := &v1.VulnMgmtExportWorkloadsRequest{Timeout: 5, Query: c.query}
-			conn, closeFunc, err := s.helper.CreateGRPCStreamingService(
+			conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
+				s.helper.Ctx,
 				s.T(),
 				func(registrar grpc.ServiceRegistrar) {
 					v1.RegisterVulnMgmtServiceServer(registrar, s.service)
@@ -125,7 +127,7 @@ func (s *servicePostgresTestSuite) TestExport() {
 			s.Require().NoError(err)
 			defer closeFunc()
 			client := v1.NewVulnMgmtServiceClient(conn)
-			results, err := receiveWorkloads(s.helper.Ctx, client, request, false)
+			results, err := receiveWorkloads(s.helper.Ctx, s.T(), client, request, false)
 			s.Require().NoError(err)
 
 			// The images are the same for all deployments to simplify the assertions.

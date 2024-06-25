@@ -6,14 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"net"
 	"os"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/jsonpb"
-	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,10 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/utils"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/test/bufconn"
 )
 
 const (
@@ -72,52 +66,6 @@ func (h *ExportServicePostgresTestHelper) TearDownTest(tb testing.TB) {
 	h.pool.Close()
 }
 
-// getAuthInterceptor returns a GRPC Steam Interceptor that overrides the server context to make sure all calls are authenticated.
-func getAuthInterceptor(ctx context.Context) func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		return handler(srv, &grpcMiddleware.WrappedServerStream{
-			ServerStream:   ss,
-			WrappedContext: ctx,
-		})
-	}
-}
-
-// CreateGRPCStreamingService creates a streaming server, registers the target
-// services there, and returns a connection to the streaming server along with
-// a function to close the connection.
-func (h *ExportServicePostgresTestHelper) CreateGRPCStreamingService(
-	_ testing.TB,
-	registerServices func(registrar grpc.ServiceRegistrar),
-) (*grpc.ClientConn, func(), error) {
-	bufferSize := 1024 * 1024
-	listener := bufconn.Listen(bufferSize)
-
-	server := grpc.NewServer(grpc.StreamInterceptor(getAuthInterceptor(h.Ctx)))
-	registerServices(server)
-
-	go func() {
-		utils.IgnoreError(func() error { return server.Serve(listener) })
-	}()
-
-	conn, err := grpc.DialContext(h.Ctx, "",
-		grpc.WithContextDialer(
-			func(ctx context.Context, _ string) (net.Conn, error) {
-				return listener.DialContext(ctx)
-			},
-		),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	closeFunc := func() {
-		utils.IgnoreError(listener.Close)
-		server.Stop()
-	}
-	return conn, closeFunc, nil
-}
-
 func getImageSetPath() (string, error) {
 	// Go up the directory tree from the current working directory
 	// to location where the subtree to the image data file matches.
@@ -142,8 +90,8 @@ func getImageSetPath() (string, error) {
 	return "", nil
 }
 
-// GetBaseImageSet returns a set of realistic images for testing purposes.
-func GetBaseImageSet() ([]*storage.Image, error) {
+// getTestImages returns a set of realistic images for testing purposes.
+func getTestImages() ([]*storage.Image, error) {
 	imageDataPath, err := getImageSetPath()
 	if err != nil {
 		return nil, err
@@ -183,7 +131,7 @@ func (h *ExportServicePostgresTestHelper) InjectImages(
 	_ testing.TB,
 	count int,
 ) ([]string, map[string]*storage.ImageName, error) {
-	baseImages, err := GetBaseImageSet()
+	baseImages, err := getTestImages()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -286,7 +234,7 @@ func (h *ExportServicePostgresTestHelper) InjectDataAndRunBenchmark(
 	imageIDs := make([]string, 0)
 	imageNamesByIDs := make(map[string]*storage.ImageName)
 	if !injectImages {
-		images, err := GetBaseImageSet()
+		images, err := getTestImages()
 		if err != nil {
 			b.Error(err)
 		}
@@ -320,19 +268,20 @@ func (h *ExportServicePostgresTestHelper) InjectDataAndRunBenchmark(
 		}
 		log.Info("Test iteration ", ix+1)
 		b.Run(fmt.Sprintf("%d", datasetSize), benchmark)
+		lastDatasetSize = datasetSize
 	}
 
 }
 
-// TestScenario contains the parameters for an export API test.
-type TestScenario struct {
+// ExportTestCase contains the parameters for an export API test.
+type ExportTestCase struct {
 	Name            string
 	TargetNamespace string
 }
 
-// GetBaseTestCases returns a basic set of TestScenario objects.
-func GetBaseTestCases() []TestScenario {
-	return []TestScenario{
+// GetExportTestCases returns a minimal list of TestScenario objects.
+func GetExportTestCases() []ExportTestCase {
+	return []ExportTestCase{
 		{
 			Name: "No Query",
 		},

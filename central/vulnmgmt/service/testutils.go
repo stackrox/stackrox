@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"io"
+	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
 func receiveWorkloads(
 	ctx context.Context,
+	_ testing.TB,
 	client v1.VulnMgmtServiceClient,
 	request *v1.VulnMgmtExportWorkloadsRequest,
 	swallow bool,

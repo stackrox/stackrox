@@ -11,6 +11,7 @@ import (
 
 	"github.com/stackrox/rox/central/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"google.golang.org/grpc"
 )
 
@@ -31,8 +32,8 @@ func getExportServiceBenchmark(
 	svc Service,
 ) func(b *testing.B) {
 	return func(b *testing.B) {
-		testCases := testutils.GetBaseTestCases()
-		conn, closeFunc, err := helper.CreateGRPCStreamingService(
+		conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
+			helper.Ctx,
 			b,
 			func(registrar grpc.ServiceRegistrar) {
 				v1.RegisterDeploymentServiceServer(registrar, svc)
@@ -43,6 +44,7 @@ func getExportServiceBenchmark(
 		}
 		defer closeFunc()
 
+		testCases := testutils.GetExportTestCases()
 		for _, testCase := range testCases {
 			b.Run(testCase.Name, func(ib *testing.B) {
 				request := &v1.ExportDeploymentRequest{Timeout: 3600}
@@ -52,7 +54,7 @@ func getExportServiceBenchmark(
 				client := v1.NewDeploymentServiceClient(conn)
 				ib.ResetTimer()
 				for i := 0; i < ib.N; i++ {
-					_, err = receiveWorkloads(helper.Ctx, client, request, true)
+					err = receiveWorkloads(helper.Ctx, client, request)
 					if err != nil {
 						ib.Error(err)
 					}
@@ -66,21 +68,16 @@ func receiveWorkloads(
 	ctx context.Context,
 	client v1.DeploymentServiceClient,
 	request *v1.ExportDeploymentRequest,
-	swallow bool,
-) ([]*v1.ExportDeploymentResponse, error) {
+) error {
 	out, err := client.ExportDeployments(ctx, request)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	var results []*v1.ExportDeploymentResponse
 	for {
-		chunk, err := out.Recv()
+		_, err := out.Recv()
 		if errors.Is(err, io.EOF) {
 			break
 		}
-		if !swallow {
-			results = append(results, chunk)
-		}
 	}
-	return results, nil
+	return nil
 }

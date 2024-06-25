@@ -11,6 +11,7 @@ import (
 
 	"github.com/stackrox/rox/central/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"google.golang.org/grpc"
 )
 
@@ -31,7 +32,8 @@ func getExportServiceBenchmark(
 	svc Service,
 ) func(b *testing.B) {
 	return func(b *testing.B) {
-		conn, closeFunc, err := helper.CreateGRPCStreamingService(
+		conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
+			helper.Ctx,
 			b,
 			func(registrar grpc.ServiceRegistrar) {
 				v1.RegisterImageServiceServer(registrar, svc)
@@ -42,7 +44,7 @@ func getExportServiceBenchmark(
 		}
 		defer closeFunc()
 
-		testCases := testutils.GetBaseTestCases()
+		testCases := testutils.GetExportTestCases()
 		for _, testCase := range testCases {
 			b.Run(testCase.Name, func(ib *testing.B) {
 				request := &v1.ExportImageRequest{Timeout: 3600}
@@ -53,7 +55,7 @@ func getExportServiceBenchmark(
 				client := v1.NewImageServiceClient(conn)
 				ib.ResetTimer()
 				for i := 0; i < ib.N; i++ {
-					_, err = receiveWorkloads(helper.Ctx, client, request, true)
+					err = receiveWorkloads(helper.Ctx, client, request)
 					if err != nil {
 						ib.Error(err)
 					}
@@ -67,21 +69,16 @@ func receiveWorkloads(
 	ctx context.Context,
 	client v1.ImageServiceClient,
 	request *v1.ExportImageRequest,
-	swallow bool,
-) ([]*v1.ExportImageResponse, error) {
+) error {
 	out, err := client.ExportImages(ctx, request)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	var results []*v1.ExportImageResponse
 	for {
-		chunk, err := out.Recv()
+		_, err := out.Recv()
 		if errors.Is(err, io.EOF) {
 			break
 		}
-		if !swallow {
-			results = append(results, chunk)
-		}
 	}
-	return results, nil
+	return nil
 }

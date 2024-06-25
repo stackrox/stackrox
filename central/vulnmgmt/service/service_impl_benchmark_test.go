@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/central/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"google.golang.org/grpc"
 )
 
@@ -28,7 +29,8 @@ func getExportServiceBenchmark(
 	service Service,
 ) func(b *testing.B) {
 	return func(b *testing.B) {
-		conn, closeFunc, err := helper.CreateGRPCStreamingService(
+		conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
+			helper.Ctx,
 			b,
 			func(registrar grpc.ServiceRegistrar) {
 				v1.RegisterVulnMgmtServiceServer(registrar, service)
@@ -39,7 +41,7 @@ func getExportServiceBenchmark(
 		}
 		defer closeFunc()
 
-		testCases := testutils.GetBaseTestCases()
+		testCases := testutils.GetExportTestCases()
 		for _, testCase := range testCases {
 			b.Run(testCase.Name, func(ib *testing.B) {
 				request := &v1.VulnMgmtExportWorkloadsRequest{Timeout: 3600}
@@ -50,7 +52,7 @@ func getExportServiceBenchmark(
 				client := v1.NewVulnMgmtServiceClient(conn)
 				ib.ResetTimer()
 				for i := 0; i < ib.N; i++ {
-					_, err = receiveWorkloads(helper.Ctx, client, request, true)
+					_, err = receiveWorkloads(helper.Ctx, ib, client, request, true)
 					if err != nil {
 						ib.Error(err)
 					}
