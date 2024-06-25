@@ -45,26 +45,24 @@ func (simpleInitializer) Value(kind reflect.Kind, _ []reflect.StructField) inter
 type uniqueInitializer struct{}
 
 func (uniqueInitializer) Value(kind reflect.Kind, _ []reflect.StructField) interface{} {
-	// seed rand
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-
 	switch kind {
 	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return r.Int31()
+		return rand.Int31()
 	case reflect.Int8, reflect.Uint8:
 		// We are using Uint8 for bytes that become varchars.  Need to ensure that we return a
 		// non-zero number within the Uint8 range of values.
-		return r.Intn(100) + 1
+		return rand.Intn(100) + 1
 	case reflect.Float32, reflect.Float64:
-		return r.Float32()
+		return rand.Float32()
 	case reflect.Complex64, reflect.Complex128:
-		return complex(r.Float32(), 1.0)
+		return complex(rand.Float32(), 1.0)
 	case reflect.Bool:
 		return true
 	case reflect.String:
 		return uuid.NewV4().String()
+	default:
+		return nil
 	}
-	return nil
 }
 
 // SimpleInitializer returns a BasicTypeInitializer that initializes all fields of basic types with a simple non-zero
