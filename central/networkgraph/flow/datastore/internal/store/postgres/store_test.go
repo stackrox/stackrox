@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -95,7 +96,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 1)
-	s.Equal(networkFlow, foundNetworkFlows[0])
+	protoassert.Equal(s.T(), networkFlow, foundNetworkFlows[0])
 
 	// Check the get all flows by since time
 	time3 := time.Unix(3, 0)

@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -116,7 +117,7 @@ func (s *ServiceLevelConfigSeparationSuiteV2) TestListReportConfigurations() {
 		&apiV2.RawQuery{Query: fmt.Sprintf("Report Name:%s", s.v2Configs[0].Name)})
 	s.Require().NoError(err)
 	s.Require().Equal(1, len(res.ReportConfigs))
-	s.Require().Equal(apiV2Configs[0], res.ReportConfigs[0])
+	protoassert.Equal(s.T(), apiV2Configs[0], res.ReportConfigs[0])
 }
 
 func (s *ServiceLevelConfigSeparationSuiteV2) TestGetReportConfiguration() {
@@ -125,7 +126,7 @@ func (s *ServiceLevelConfigSeparationSuiteV2) TestGetReportConfiguration() {
 	// returns v2 config
 	res, err := s.service.GetReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: s.v2Configs[0].Id})
 	s.Require().NoError(err)
-	s.Require().Equal(apiV2Configs[0], res)
+	protoassert.Equal(s.T(), apiV2Configs[0], res)
 
 	// error on requesting v1 config
 	_, err = s.service.GetReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: s.v1Configs[0].Id})

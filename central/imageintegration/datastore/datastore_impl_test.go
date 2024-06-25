@@ -13,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -148,7 +149,7 @@ func testIntegrations(t *testing.T, insertStorage store.Store, retrievalStorage 
 		got, exists, err := retrievalStorage.GetImageIntegration(ctx, r.GetId())
 		assert.NoError(t, err)
 		assert.True(t, exists)
-		assert.Equal(t, got, r)
+		protoassert.Equal(t, got, r)
 	}
 
 	// Test Update
@@ -164,7 +165,7 @@ func testIntegrations(t *testing.T, insertStorage store.Store, retrievalStorage 
 		got, exists, err := retrievalStorage.GetImageIntegration(ctx, r.GetId())
 		assert.NoError(t, err)
 		assert.True(t, exists)
-		assert.Equal(t, got, r)
+		protoassert.Equal(t, got, r)
 	}
 
 	// Test Remove
@@ -210,12 +211,12 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsGet() {
 
 	gotInt, exists, err := suite.datastore.GetImageIntegration(suite.hasReadCtx, integration.GetId())
 	suite.NoError(err, "expected no error trying to read with permissions")
-	suite.Equal(integration, gotInt)
+	protoassert.Equal(suite.T(), integration, gotInt)
 	suite.True(exists)
 
 	gotInt, exists, err = suite.datastore.GetImageIntegration(suite.hasWriteCtx, integration.GetId())
 	suite.NoError(err, "expected no error trying to read with permissions")
-	suite.Equal(integration, gotInt)
+	protoassert.Equal(suite.T(), integration, gotInt)
 	suite.True(exists)
 }
 

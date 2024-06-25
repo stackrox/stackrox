@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
@@ -175,7 +176,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestGetProcessBaseline() {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, c.expectedResult, baseline)
+				protoassert.Equal(t, c.expectedResult, baseline)
 			}
 		})
 	}
@@ -192,7 +193,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestGetLoadProcessBaseline() {
 
 	baseline, _ := suite.service.GetProcessBaseline(hasWriteCtx, requestByKey)
 
-	assert.Equal(suite.T(), baseline.GetKey(), knownBaseline.GetKey())
+	protoassert.Equal(suite.T(), baseline.GetKey(), knownBaseline.GetKey())
 }
 
 func (suite *ProcessBaselineServiceTestSuite) TestGetLoadProcessBaselineDeletedDeployment() {
@@ -400,10 +401,11 @@ func (suite *ProcessBaselineServiceTestSuite) TestDeleteProcessBaselines() {
 	}
 	resp, err := suite.service.DeleteProcessBaselines(hasWriteCtx, request)
 	suite.NoError(err)
-	suite.Equal(&v1.DeleteProcessBaselinesResponse{
+	protoassert.Equal(suite.T(), &v1.DeleteProcessBaselinesResponse{
 		NumDeleted: 1,
 		DryRun:     true,
 	}, resp)
+
 	requestByKey := &v1.GetProcessBaselineRequest{Key: baselines[0].Key}
 	baseline, _ := suite.service.GetProcessBaseline(hasReadCtx, requestByKey)
 	suite.NotNil(baseline.Elements)
@@ -412,7 +414,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestDeleteProcessBaselines() {
 	request.Confirm = true
 	resp, err = suite.service.DeleteProcessBaselines(hasWriteCtx, request)
 	suite.NoError(err)
-	suite.Equal(&v1.DeleteProcessBaselinesResponse{
+	protoassert.Equal(suite.T(), &v1.DeleteProcessBaselinesResponse{
 		NumDeleted: 1,
 		DryRun:     false,
 	}, resp)
@@ -429,8 +431,9 @@ func (suite *ProcessBaselineServiceTestSuite) TestDeleteProcessBaselines() {
 	}
 	resp, err = suite.service.DeleteProcessBaselines(hasWriteCtx, request)
 	suite.NoError(err)
-	suite.Equal(&v1.DeleteProcessBaselinesResponse{
+	protoassert.Equal(suite.T(), &v1.DeleteProcessBaselinesResponse{
 		NumDeleted: int32(len(baselines)),
 		DryRun:     false,
 	}, resp)
+
 }

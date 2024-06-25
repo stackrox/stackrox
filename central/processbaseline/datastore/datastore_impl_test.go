@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -91,7 +92,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) createAndStoreBaseline(key *stor
 	suite.NoError(err)
 	suite.NotNil(id)
 	suite.NotNil(baseline.Created)
-	suite.Equal(baseline.Created, baseline.LastUpdate)
+	protoassert.Equal(suite.T(), baseline.Created, baseline.LastUpdate)
 	suite.True(protocompat.CompareTimestamps(baseline.StackRoxLockedTimestamp, baseline.Created) >= 0)
 
 	suite.Equal(suite.mustSerializeKey(key), id)
@@ -123,7 +124,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) doGet(key *storage.ProcessBaseli
 		suite.True(exists)
 		suite.NotNil(baseline)
 		if equals != nil {
-			suite.Equal(equals, baseline)
+			protoassert.Equal(suite.T(), equals, baseline)
 		}
 	} else {
 		suite.Nil(baseline)
@@ -225,7 +226,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
 	suite.NoError(err)
 	suite.Equal(1, len(baseline.GetElements()))
 	suite.Equal(firstProcess, baseline.GetElements()[0].GetElement().GetProcessName())
-	suite.Equal(key, baseline.GetKey())
+	protoassert.Equal(suite.T(), key, baseline.GetKey())
 	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
 
 	secondProcess := "Joseph is the Best"
@@ -238,7 +239,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
 		processNames = append(processNames, element.GetElement().GetProcessName())
 	}
 	suite.ElementsMatch([]string{firstProcess, secondProcess}, processNames)
-	suite.Equal(key, baseline.GetKey())
+	protoassert.Equal(suite.T(), key, baseline.GetKey())
 	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) > 0)
 }
 
@@ -319,7 +320,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestIDToKeyConversion() {
 	resKey, err := IDToKey(id)
 	suite.NoError(err)
 	suite.NotNil(resKey)
-	suite.Equal(key, resKey)
+	protoassert.Equal(suite.T(), key, resKey)
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline() {
@@ -354,7 +355,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
 	suite.NoError(err)
 
-	suite.Equal(key, baseline.GetKey())
+	protoassert.Equal(suite.T(), key, baseline.GetKey())
 	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
 	suite.True(baseline.UserLockedTimestamp == nil)
 	suite.True(baseline.Elements != nil)
@@ -407,7 +408,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
 	suite.NoError(err)
 
-	suite.Equal(key, baseline.GetKey())
+	protoassert.Equal(suite.T(), key, baseline.GetKey())
 	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
 	suite.True(baseline.UserLockedTimestamp == nil)
 	suite.True(baseline.Elements != nil)
@@ -423,7 +424,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
 	suite.NoError(err)
 
-	suite.Equal(key, baseline.GetKey())
+	protoassert.Equal(suite.T(), key, baseline.GetKey())
 	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
 	suite.True(baseline.UserLockedTimestamp == nil)
 	suite.True(baseline.Elements == nil || len(baseline.Elements) == 0)

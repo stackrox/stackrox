@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/blob/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -74,6 +75,6 @@ func (s *snapshotTestSuite) TestSnapshot() {
 	bytes, err := io.ReadAll(snap)
 	s.Require().NoError(err)
 	s.Equal(randomData, bytes)
-	s.Equal(insertBlob, snap.GetBlob())
+	protoassert.Equal(s.T(), insertBlob, snap.GetBlob())
 	s.FileExists(snap.Name())
 }

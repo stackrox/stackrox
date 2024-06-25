@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -407,13 +408,13 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
 	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasReadCtx, uuid.Nil.String())
 	suite.NoError(err, "expected no error trying to read with permissions")
 	suite.True(exists)
-	suite.Equal(testIndicator, indicator)
+	protoassert.Equal(suite.T(), testIndicator, indicator)
 
 	mockStore.EXPECT().Get(suite.hasWriteCtx, gomock.Any()).Return(testIndicator, true, nil)
 	indicator, exists, err = suite.datastore.GetProcessIndicator(suite.hasWriteCtx, uuid.NewDummy().String())
 	suite.NoError(err, "expected no error trying to read with permissions")
 	suite.True(exists)
-	suite.Equal(testIndicator, indicator)
+	protoassert.Equal(suite.T(), testIndicator, indicator)
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAdd() {

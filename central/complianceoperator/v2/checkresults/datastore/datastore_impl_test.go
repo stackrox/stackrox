@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -396,7 +397,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResult() {
 	retrieveRec1, found, err := s.storage.Get(s.hasReadCtx, rec1.GetId())
 	s.Require().NoError(err)
 	s.Require().True(found)
-	s.Require().Equal(rec1, retrieveRec1)
+	protoassert.Equal(s.T(), rec1, retrieveRec1)
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResult() {
@@ -880,7 +881,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestGetComplianceCheckResult()
 	for _, tc := range testCases {
 		result, found, err := s.dataStore.GetComplianceCheckResult(s.testContexts[tc.scopeKey], tc.id)
 		s.Require().NoError(err)
-		s.Require().Equal(tc.expectedResponse, result)
+		protoassert.Equal(s.T(), tc.expectedResponse, result)
 		s.Require().NotEqual(tc.expectedResponse == nil, found)
 	}
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -110,7 +111,7 @@ func (s *ReprocessorPostgresTestSuite) TestUnsuppressWithPostgres() {
 		}
 	}
 	expectedImage := cloneAndUpdateRiskPriority(image)
-	s.Equal(expectedImage, storedImage)
+	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	s.reprocessorLoop.unsuppressCVEsWithExpiredSuppressState()
 

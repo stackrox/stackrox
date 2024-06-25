@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -78,7 +79,7 @@ func (s *datastorePostgresTestSuite) TestGetCloudSource() {
 
 	roundtripCloudSource, err := s.datastore.GetCloudSource(s.readCtx, cloudSource.GetId())
 	s.Require().NoError(err)
-	s.Assert().Equal(cloudSource, roundtripCloudSource)
+	protoassert.Equal(s.T(), cloudSource, roundtripCloudSource)
 }
 
 func (s *datastorePostgresTestSuite) TestGetAllCloudSources() {
@@ -112,7 +113,7 @@ func (s *datastorePostgresTestSuite) TestUpsertCloudSource_Success() {
 
 	roundtripCloudSource, err := s.datastore.GetCloudSource(s.readCtx, cloudSource.GetId())
 	s.Require().NoError(err)
-	s.Assert().Equal(cloudSource, roundtripCloudSource)
+	protoassert.Equal(s.T(), cloudSource, roundtripCloudSource)
 }
 
 func (s *datastorePostgresTestSuite) TestUpsertCloudSource_InvalidArgument() {

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -137,7 +138,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegration()
 		retrievedIntegration, exists, err := s.dataStore.GetComplianceIntegration(s.testContexts[tc.scopeKey], tc.requestID)
 		s.NoError(err)
 		s.True(exists != (tc.expectedResult == nil))
-		s.Equal(tc.expectedResult, retrievedIntegration)
+		protoassert.Equal(s.T(), tc.expectedResult, retrievedIntegration)
 	}
 }
 

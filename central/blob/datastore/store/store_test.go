@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -72,7 +73,7 @@ func (s *BlobsStoreSuite) TestStore() {
 	s.Require().True(exists)
 	s.NotZero(blob.GetOid())
 	s.verifyLargeObjectCounts(1)
-	s.Equal(insertBlob, blob)
+	protoassert.Equal(s.T(), insertBlob, blob)
 	s.Equal(randomData, buf.Bytes())
 
 	s.NoError(s.store.Delete(ctx, insertBlob.GetName()))
