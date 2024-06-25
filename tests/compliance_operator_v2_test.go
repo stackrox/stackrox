@@ -127,7 +127,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			Description: "test123",
 			OneTimeScan: false,
-			Profiles:    []string{"ocp4-e8"},
+			Profiles:    []string{"ocp4-cis-1-4"},
 			ScanSchedule: &v2.Schedule{
 				Hour:         2,
 				Minute:       0,
@@ -147,7 +147,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			Description: "test456",
 			OneTimeScan: false,
-			Profiles:    []string{"rhcos4-e8"},
+			Profiles:    []string{"ocp4-cis-1-4-5"},
 			ScanSchedule: &v2.Schedule{
 				Hour:         2,
 				Minute:       0,
