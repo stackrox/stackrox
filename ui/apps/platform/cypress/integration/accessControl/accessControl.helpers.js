@@ -137,7 +137,7 @@ export function assertAccessControlEntitiesPage(entitiesKey) {
 export function assertAccessControlEntityPage(entitiesKey) {
     // Positive assertions.
 
-    // Caller is responsible to assert h2 element.
+    // Caller is responsible to assert h1 element.
 
     cy.title().should(
         'match',
@@ -161,7 +161,6 @@ export function assertAccessControlEntityPage(entitiesKey) {
 }
 
 export function assertAccessControlEntityDoesNotExist(entitiesKey) {
-    cy.get('h2').should('not.exist');
     cy.get('li.pf-v5-c-breadcrumb__item:nth-child(2)').should('not.exist');
 
     cy.get('.pf-v5-c-empty-state h1').should(
