@@ -57,7 +57,7 @@ func (s *fullStoreImpl) GetProcessListeningOnPort(
 		"ProcessListeningOnPortStorage",
 	)
 
-	allowed, err := pgutils.Retry2(func() (bool, error) {
+	allowed, err := pgutils.Retry2(ctx, func() (bool, error) {
 		return s.checkAccess(ctx, deploymentID)
 	})
 
@@ -69,7 +69,7 @@ func (s *fullStoreImpl) GetProcessListeningOnPort(
 		return nil, nil
 	}
 
-	return pgutils.Retry2(func() ([]*storage.ProcessListeningOnPort, error) {
+	return pgutils.Retry2(ctx, func() ([]*storage.ProcessListeningOnPort, error) {
 		return s.retryableGetPLOP(ctx, deploymentID)
 	})
 }

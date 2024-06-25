@@ -444,7 +444,7 @@ func (c *sensorConnection) getNetworkBaselineSyncMsg(ctx context.Context) (*cent
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, errors.Wrap(err, "could not list network baselines for Sensor connection")
 	}
 	return &central.MsgToSensor{
@@ -471,7 +471,7 @@ func (c *sensorConnection) getBaselineSyncMsg(ctx context.Context) (*central.Msg
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, errors.Wrap(err, "could not list process baselines for Sensor connection")
 	}
 	return &central.MsgToSensor{

@@ -529,7 +529,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Node")
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.upsert(ctx, obj)
 	})
 }
@@ -538,7 +538,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
 func (s *storeImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Node")
 
-	return pgutils.Retry2(func() (int, error) {
+	return pgutils.Retry2(ctx, func() (int, error) {
 		return s.retryableCount(ctx, q)
 	})
 }
@@ -551,7 +551,7 @@ func (s *storeImpl) retryableCount(ctx context.Context, q *v1.Query) (int, error
 func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "Node")
 
-	return pgutils.Retry2(func() ([]search.Result, error) {
+	return pgutils.Retry2(ctx, func() ([]search.Result, error) {
 		return s.retryableSearch(ctx, q)
 	})
 }
@@ -564,7 +564,7 @@ func (s *storeImpl) retryableSearch(ctx context.Context, q *v1.Query) ([]search.
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Node")
 
-	return pgutils.Retry2(func() (bool, error) {
+	return pgutils.Retry2(ctx, func() (bool, error) {
 		return s.retryableExists(ctx, id)
 	})
 }
@@ -582,7 +582,7 @@ func (s *storeImpl) retryableExists(ctx context.Context, id string) (bool, error
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Node")
 
-	return pgutils.Retry3(func() (*storage.Node, bool, error) {
+	return pgutils.Retry3(ctx, func() (*storage.Node, bool, error) {
 		return s.retryableGet(ctx, id)
 	})
 }
@@ -764,7 +764,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Node")
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableDelete(ctx, id)
 	})
 }
@@ -812,7 +812,7 @@ func (s *storeImpl) deleteNodeTree(ctx context.Context, tx *postgres.Tx, nodeID 
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Node")
 
-	return pgutils.Retry3(func() ([]*storage.Node, []int, error) {
+	return pgutils.Retry3(ctx, func() ([]*storage.Node, []int, error) {
 		return s.retryableGetMany(ctx, ids)
 	})
 }
@@ -914,7 +914,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeMetadata")
 
-	return pgutils.Retry3(func() (*storage.Node, bool, error) {
+	return pgutils.Retry3(ctx, func() (*storage.Node, bool, error) {
 		return s.retryableGetNodeMetadata(ctx, id)
 	})
 }
@@ -943,7 +943,7 @@ func (s *storeImpl) retryableGetNodeMetadata(ctx context.Context, id string) (*s
 func (s *storeImpl) GetManyNodeMetadata(ctx context.Context, ids []string) ([]*storage.Node, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Node")
 
-	return pgutils.Retry3(func() ([]*storage.Node, []int, error) {
+	return pgutils.Retry3(ctx, func() ([]*storage.Node, []int, error) {
 		return s.retryableGetManyNodeMetadata(ctx, ids)
 	})
 }
