@@ -306,7 +306,7 @@ func Test_concealError(t *testing.T) {
 		},
 		"public sentinel": {
 			errox.WithUserMessage(errox.InvalidArgs, "public"),
-			"public",
+			"public: invalid arguments",
 			"public: invalid arguments",
 		},
 		"sentinel caused by public": {
