@@ -89,15 +89,16 @@ function ProfileChecksTable({
                             Check
                         </Th>
                         <Th modifier="fitContent">Controls</Th>
-                        <Th modifier="fitContent">Fail status</Th>
                         <Th modifier="fitContent">Pass status</Th>
+                        <Th modifier="fitContent">Fail status</Th>
+                        <Th modifier="fitContent">Manual status</Th>
                         <Th modifier="fitContent">Other status</Th>
                         <Th width={40}>Compliance</Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
                     tableState={tableState}
-                    colSpan={6}
+                    colSpan={7}
                     errorProps={{
                         title: 'There was an error loading profile checks',
                     }}
@@ -113,8 +114,13 @@ function ProfileChecksTable({
                         <>
                             {data.map((check, rowIndex) => {
                                 const { checkName, rationale, checkStats, controls } = check;
-                                const { passCount, failCount, otherCount, totalCount } =
-                                    getStatusCounts(checkStats);
+                                const {
+                                    passCount,
+                                    failCount,
+                                    manualCount,
+                                    otherCount,
+                                    totalCount,
+                                } = getStatusCounts(checkStats);
                                 const passPercentage = calculateCompliancePercentage(
                                     passCount,
                                     totalCount
@@ -173,6 +179,13 @@ function ProfileChecksTable({
                                                     '-'
                                                 )}
                                             </Td>
+                                            <Td dataLabel="Pass status" modifier="fitContent">
+                                                <StatusCountIcon
+                                                    text="cluster"
+                                                    status="pass"
+                                                    count={passCount}
+                                                />
+                                            </Td>
                                             <Td dataLabel="Fail status" modifier="fitContent">
                                                 <StatusCountIcon
                                                     text="cluster"
@@ -180,11 +193,11 @@ function ProfileChecksTable({
                                                     count={failCount}
                                                 />
                                             </Td>
-                                            <Td dataLabel="Pass status" modifier="fitContent">
+                                            <Td dataLabel="Manual status" modifier="fitContent">
                                                 <StatusCountIcon
                                                     text="cluster"
-                                                    status="pass"
-                                                    count={passCount}
+                                                    status="manual"
+                                                    count={manualCount}
                                                 />
                                             </Td>
                                             <Td dataLabel="Other status" modifier="fitContent">
@@ -222,7 +235,7 @@ function ProfileChecksTable({
                                         </Tr>
                                         {isRowExpanded && (
                                             <Tr isExpanded={isRowExpanded}>
-                                                <Td colSpan={6}>
+                                                <Td colSpan={7}>
                                                     <ExpandableRowContent>
                                                         <ControlLabels controls={controls} />
                                                     </ExpandableRowContent>
