@@ -55,7 +55,14 @@ export const sortFields = [
     // FIRST_DISCOVERED_SORT_FIELD,
 ];
 
-export const defaultSortOption = { field: CVE_SORT_FIELD, direction: 'desc' } as const;
+export const defaultSortOption = {
+    field: NODE_TOP_CVSS_SORT_FIELD,
+    direction: 'desc',
+    aggregateBy: {
+        aggregateFunc: 'max',
+        distinct: 'false',
+    },
+} as const;
 
 export type CVEsTableProps = {
     querySearchFilter: QuerySearchFilter;
