@@ -28,12 +28,7 @@ import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 
 import ExpandRowTh from 'Components/ExpandRowTh';
-import {
-    CLUSTER_CVE_STATUS_SORT_FIELD,
-    CVE_SORT_FIELD,
-    CVE_TYPE_SORT_FIELD,
-    CVSS_SORT_FIELD,
-} from '../../utils/sortFields';
+import { CVE_SORT_FIELD, CVE_TYPE_SORT_FIELD, CVSS_SORT_FIELD } from '../../utils/sortFields';
 import CVESelectionTh from '../../components/CVESelectionTh';
 import CVESelectionTd from '../../components/CVESelectionTd';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
@@ -50,7 +45,6 @@ const totalClusterCountQuery = gql`
 
 export const sortFields = [
     CVE_SORT_FIELD,
-    CLUSTER_CVE_STATUS_SORT_FIELD,
     CVE_TYPE_SORT_FIELD,
     CVSS_SORT_FIELD,
     // TODO - Needs a BE field implementation
@@ -118,7 +112,7 @@ function CVEsTable({
                     <ExpandRowTh />
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
-                    <Th sort={getSortParams(CLUSTER_CVE_STATUS_SORT_FIELD)}>CVE status</Th>
+                    <Th>CVE status</Th>
                     <Th sort={getSortParams(CVE_TYPE_SORT_FIELD)}>CVE type</Th>
                     <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
                     <TooltipTh
