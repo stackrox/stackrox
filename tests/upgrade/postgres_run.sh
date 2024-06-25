@@ -227,6 +227,8 @@ test_upgrade_paths() {
         info "Upgrade back to latest to run the smoke tests"
         kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
         kubectl -n stackfox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
+        echo "$?"
+        ls -l /noexisto
 
         wait_for_api
 
