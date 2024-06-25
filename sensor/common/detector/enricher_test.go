@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/utils"
@@ -256,8 +257,8 @@ func (s *enricherSuite) TestUpdateImageNoLock() {
 
 		cValue.updateImageNoLock(updatedImage)
 		assert.Len(t, cValue.image.Names, 2)
-		assert.Contains(t, cValue.image.Names, name1)
-		assert.Contains(t, cValue.image.Names, name2)
+		protoassert.SliceContains(t, cValue.image.Names, name1)
+		protoassert.SliceContains(t, cValue.image.Names, name2)
 	})
 
 	s.T().Run("append to names when new one added", func(t *testing.T) {
@@ -273,8 +274,8 @@ func (s *enricherSuite) TestUpdateImageNoLock() {
 
 		cValue.updateImageNoLock(updatedImage)
 		assert.Len(t, cValue.image.Names, 2)
-		assert.Contains(t, cValue.image.Names, name1)
-		assert.Contains(t, cValue.image.Names, name2)
+		protoassert.SliceContains(t, cValue.image.Names, name1)
+		protoassert.SliceContains(t, cValue.image.Names, name2)
 	})
 
 	s.T().Run("append to names when new one added and one removed", func(t *testing.T) {
@@ -290,8 +291,8 @@ func (s *enricherSuite) TestUpdateImageNoLock() {
 
 		cValue.updateImageNoLock(updatedImage)
 		assert.Len(t, cValue.image.Names, 3)
-		assert.Contains(t, cValue.image.Names, name1)
-		assert.Contains(t, cValue.image.Names, name2)
-		assert.Contains(t, cValue.image.Names, name3)
+		protoassert.SliceContains(t, cValue.image.Names, name1)
+		protoassert.SliceContains(t, cValue.image.Names, name2)
+		protoassert.SliceContains(t, cValue.image.Names, name3)
 	})
 }
