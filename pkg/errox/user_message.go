@@ -8,7 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 type userMessage struct {
@@ -57,6 +59,43 @@ func GetUserMessage(err error) string {
 				return GetUserMessage(e.base)
 			}
 			return e.message
+		case *errorhelpers.ErrorList:
+			if e.ToError() == nil {
+				return ""
+			}
+			messages := make([]string, 0, len(e.Errors()))
+			for _, err := range e.Errors() {
+				if message := GetUserMessage(err); message != "" {
+					messages = append(messages, message)
+				}
+			}
+			switch len(messages) {
+			case 0:
+				return fmt.Sprintf("%s error", e.StartString())
+			case 1:
+				return fmt.Sprintf("%s error: %s", e.StartString(), messages[0])
+			default:
+				return fmt.Sprintf("%s errors: [%s]", e.StartString(),
+					strings.Join(messages, ", "))
+			}
+		case *multierror.Error:
+			if e.Len() == 0 {
+				return ""
+			}
+			messages := make([]string, 0, e.Len())
+			for _, err := range e.Errors {
+				if message := GetUserMessage(err); message != "" {
+					messages = append(messages, message)
+				}
+			}
+			switch len(messages) {
+			case 0:
+				return ""
+			case 1:
+				return messages[0]
+			default:
+				return fmt.Sprintf("[%s]", strings.Join(messages, ", "))
+			}
 		case *net.OpError:
 			op := e.Op
 			if e.Net != "" {

@@ -108,6 +108,11 @@ func (e *ErrorList) ErrorStrings() []string {
 	return errors
 }
 
+// StartString returns the string from which the error starts.
+func (e *ErrorList) StartString() string {
+	return e.start
+}
+
 // Errors returns the underlying errors in the error list
 func (e *ErrorList) Errors() []error {
 	return e.errors
