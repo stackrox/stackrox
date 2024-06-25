@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -71,7 +72,7 @@ func (s *signatureDataStoreTestSuite) TestAddSignatureIntegration() {
 	acquiredIntegration, found, err := s.dataStore.GetSignatureIntegration(s.hasReadCtx, savedIntegration.GetId())
 	s.True(found)
 	s.NoError(err)
-	s.Equal(savedIntegration, acquiredIntegration)
+	protoassert.Equal(s.T(), savedIntegration, acquiredIntegration)
 
 	// 2. Name should be unique
 	integration = newSignatureIntegration("name")
@@ -107,7 +108,7 @@ func (s *signatureDataStoreTestSuite) TestUpdateSignatureIntegration() {
 	acquiredIntegration, found, err := s.dataStore.GetSignatureIntegration(s.hasReadCtx, savedIntegration.GetId())
 	s.True(found)
 	s.NoError(err)
-	s.Equal(savedIntegration, acquiredIntegration)
+	protoassert.Equal(s.T(), savedIntegration, acquiredIntegration)
 
 	// 2. Cannot update non-existing integration
 	nonExistingIntegration := newSignatureIntegration("idonotexist")

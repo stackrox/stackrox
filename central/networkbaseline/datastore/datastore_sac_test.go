@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -94,7 +95,7 @@ func (s *networkBaselineDatastoreSACTestSuite) TestGetNetworkBaseline() {
 			s.NoError(getErr)
 			s.Equal(c.ExpectedFound, found)
 			if c.ExpectedFound {
-				s.Equal(testNB, readNetworkBaseline)
+				protoassert.Equal(s.T(), testNB, readNetworkBaseline)
 			} else {
 				s.Nil(readNetworkBaseline)
 			}

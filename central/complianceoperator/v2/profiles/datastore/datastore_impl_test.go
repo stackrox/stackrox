@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -112,7 +113,7 @@ func (s *complianceProfileDataStoreTestSuite) TestUpsertProfile() {
 	retrieveRec1, found, err := s.storage.Get(s.hasReadCtx, rec1.GetId())
 	s.Require().NoError(err)
 	s.Require().True(found)
-	s.Require().Equal(rec1, retrieveRec1)
+	protoassert.Equal(s.T(), rec1, retrieveRec1)
 }
 
 func (s *complianceProfileDataStoreTestSuite) TestDeleteProfileOfCluster() {
@@ -155,7 +156,7 @@ func (s *complianceProfileDataStoreTestSuite) TestDeleteProfileForCluster() {
 	retrieveRec1, found, err := s.storage.Get(s.hasReadCtx, rec1.GetId())
 	s.Require().NoError(err)
 	s.Require().True(found)
-	s.Require().Equal(rec1, retrieveRec1)
+	protoassert.Equal(s.T(), rec1, retrieveRec1)
 
 	s.Require().NoError(s.dataStore.DeleteProfileForCluster(s.hasWriteCtx, profileUID1, testconsts.Cluster1))
 
@@ -249,7 +250,7 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfile() {
 		returnedProfile, found, err := s.dataStore.GetProfile(s.testContexts[testutils.Cluster1ReadWriteCtx], profileID)
 		s.Require().NoError(err)
 		s.Require().True(found)
-		s.Require().Equal(profile, returnedProfile)
+		protoassert.Equal(s.T(), profile, returnedProfile)
 	}
 
 	// Test with no access to cluster 1

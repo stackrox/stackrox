@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -116,7 +117,7 @@ func (s *serviceAccountSACSuite) TestGetServiceAccount() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(account, res)
+				protoassert.Equal(s.T(), account, res)
 			} else {
 				s.False(found)
 				s.Nil(res)

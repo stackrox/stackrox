@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -103,7 +104,7 @@ func (s *declarativeConfigHealthDatastoreSuite) TestUpdateConfigHealth() {
 	receivedConfigHealth, exists, err := s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(configHealth, receivedConfigHealth)
+	protoassert.Equal(s.T(), configHealth, receivedConfigHealth)
 }
 
 func (s *declarativeConfigHealthDatastoreSuite) TestRemoveConfigHealth() {

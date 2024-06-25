@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/assert"
@@ -912,5 +913,5 @@ func (s *roleDataStoreTestSuite) TestGetAndResolveRole() {
 	s.NoError(err)
 	s.Equal(s.existingRole.GetName(), resolvedRole.GetRoleName())
 	s.Equal(s.existingPermissionSet.GetResourceToAccess(), resolvedRole.GetPermissions())
-	s.Equal(s.existingScope, resolvedRole.GetAccessScope())
+	protoassert.Equal(s.T(), s.existingScope, resolvedRole.GetAccessScope())
 }

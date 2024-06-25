@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -156,7 +157,7 @@ func (s *configServiceTestSuite) TestExceptionConfigOps() {
 	// Verify the config was not updated.
 	pCfg, err = s.srv.GetPrivateConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
-	s.Equal(initialCfg.GetPrivateConfig(), pCfg)
+	protoassert.Equal(s.T(), initialCfg.GetPrivateConfig(), pCfg)
 
 	// Verify vulnerability exception configuration was not updated.
 	exceptionCfg, err := s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})

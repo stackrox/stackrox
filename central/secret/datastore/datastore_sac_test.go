@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -111,7 +112,7 @@ func (s *secretDatastoreSACTestSuite) TestGetSecret() {
 			s.NoError(getErr)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(testSecret, readSecret)
+				protoassert.Equal(s.T(), testSecret, readSecret)
 			} else {
 				s.False(found)
 				s.Nil(readSecret)

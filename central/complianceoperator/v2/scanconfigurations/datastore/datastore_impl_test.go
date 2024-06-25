@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -211,7 +212,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfiguration() {
 		} else {
 			s.Require().False(found)
 		}
-		s.Require().Equal(tc.expectedResponse, foundConfig)
+		protoassert.Equal(s.T(), tc.expectedResponse, foundConfig)
 	}
 }
 
@@ -370,7 +371,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurationByName(
 
 	foundConfig, err := s.dataStore.GetScanConfigurationByName(s.testContexts[unrestrictedReadCtx], mockScanName)
 	s.Require().NoError(err)
-	s.Require().Equal(scanConfig, foundConfig)
+	protoassert.Equal(s.T(), scanConfig, foundConfig)
 
 	// Retrieve a record that does not exist
 	foundConfig, err = s.dataStore.GetScanConfigurationByName(s.testContexts[unrestrictedReadCtx], "DOES NOT EXIST")
@@ -515,7 +516,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestUpsertScanConfiguration() {
 			foundConfig, found, err := s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadCtx], configID)
 			s.Require().NoError(err)
 			s.Require().True(found)
-			s.Require().Equal(scanConfig, foundConfig)
+			protoassert.Equal(s.T(), scanConfig, foundConfig)
 
 			// Clean up for the next run
 			_, err = s.dataStore.DeleteScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], configID)
@@ -576,7 +577,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {
 		foundConfig, found, err := s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadCtx], configID)
 		s.Require().NoError(err)
 		s.Require().True(found)
-		s.Require().Equal(scanConfig, foundConfig)
+		protoassert.Equal(s.T(), scanConfig, foundConfig)
 
 		// Add Scan config status
 		for _, cluster := range tc.clusters {

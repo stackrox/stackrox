@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -52,12 +53,12 @@ func (s *SystemInfosStoreSuite) TestStore() {
 	foundSystemInfo, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(systemInfo, foundSystemInfo)
+	protoassert.Equal(s.T(), systemInfo, foundSystemInfo)
 
 	foundSystemInfo, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(systemInfo, foundSystemInfo)
+	protoassert.Equal(s.T(), systemInfo, foundSystemInfo)
 
 	s.NoError(store.Delete(ctx))
 	foundSystemInfo, exists, err = store.Get(ctx)
@@ -74,7 +75,7 @@ func (s *SystemInfosStoreSuite) TestStore() {
 	foundSystemInfo, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(systemInfo, foundSystemInfo)
+	protoassert.Equal(s.T(), systemInfo, foundSystemInfo)
 
 	systemInfo = &storage.SystemInfo{}
 	s.NoError(testutils.FullInit(systemInfo, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -83,5 +84,5 @@ func (s *SystemInfosStoreSuite) TestStore() {
 	foundSystemInfo, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(systemInfo, foundSystemInfo)
+	protoassert.Equal(s.T(), systemInfo, foundSystemInfo)
 }
