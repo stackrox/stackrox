@@ -59,7 +59,11 @@ spec:
         - name: COLLECTOR_CONFIG
           value: '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"}}'
         - name: COLLECTION_METHOD
+          {{- if eq ._rox.collector.collectionMethod "EBPF" }}
           value: CORE_BPF
+          {{- else }}
+          value: {{ default "CORE_BPF" ._rox.collector.collectionMethod }}
+          {{- end }}
         - name: GRPC_SERVER
           value: {{ ._rox.sensor.endpoint }}
         - name: SNI_HOSTNAME
