@@ -27,6 +27,10 @@ func TestWithUserMessage(t *testing.T) {
 			errors.Wrap(WithUserMessage(errors.New("first"), "message"), "second"),
 			"second: message: first",
 		},
+		"with sentinel": {
+			WithUserMessage(NotFound.New("first").New("second"), "message"),
+			"message: second",
+		},
 	}
 
 	for name, test := range tests {
@@ -72,6 +76,10 @@ func TestGetUserMessage(t *testing.T) {
 					"message2"),
 				"sensitive2"),
 			expectedMessage: "message2: message1",
+		},
+		"with sentinel": {
+			WithUserMessage(NotFound.New("first").New("second"), "message"),
+			"message: not found",
 		},
 		"net.AddrError": {
 			WithUserMessage(&net.AddrError{Err: "bad", Addr: "1.2.3.4"},
