@@ -27,8 +27,7 @@ export type ClustersByTypeSummaryCardProps = {
 };
 
 function ClustersByTypeSummaryCard({ clusterCounts }: ClustersByTypeSummaryCardProps) {
-    const counts = clusterCounts ?? { generic: 0, kubernetes: 0, openshift: 0, openshift4: 0 };
-    const { generic, kubernetes, openshift, openshift4 } = counts;
+    const { generic = 0, kubernetes = 0, openshift = 0, openshift4 = 0 } = clusterCounts ?? {};
     const totalCount = generic + kubernetes + openshift + openshift4;
 
     return (
