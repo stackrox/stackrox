@@ -4,11 +4,14 @@ import { Text, Bullseye, Flex, FlexItem, PageSection } from '@patternfly/react-c
 import { CubesIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
+import usePermissions from 'hooks/usePermissions';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 
 import CoveragesPageHeader from './CoveragesPageHeader';
 
 function CoverageEmptyState() {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
     return (
         <>
             <CoveragesPageHeader />
@@ -20,12 +23,14 @@ function CoverageEmptyState() {
                         icon={CubesIcon}
                     >
                         <Flex direction={{ default: 'column' }}>
-                            <FlexItem>
-                                <Text>
-                                    Create a scan schedule to assess profile compliance on selected
-                                    clusters.
-                                </Text>
-                            </FlexItem>
+                            {hasWriteAccessForCompliance && (
+                                <FlexItem>
+                                    <Text>
+                                        Create a scan schedule to assess profile compliance on
+                                        selected clusters.
+                                    </Text>
+                                </FlexItem>
+                            )}
                             <FlexItem>
                                 <Link to={complianceEnhancedSchedulesPath}>
                                     Go to scan schedules
