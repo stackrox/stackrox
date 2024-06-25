@@ -104,7 +104,8 @@ function GenerateDiagnosticBundle(): ReactElement {
     return (
         <Popover
             aria-label="Choose options to generate a diagnostic bundle"
-            headerContent={<h2>Diagnostic bundle</h2>}
+            headerComponent="h2"
+            headerContent="Diagnostic bundle"
             bodyContent={
                 <DiagnosticBundleForm
                     values={values}
