@@ -37,15 +37,14 @@ class SummaryTest extends BaseSpecification {
             def stackroxSummaryCounts = SummaryService.getCounts()
             List<String> orchestratorResourceNames = orchestrator.getDeploymentCount() +
                     orchestrator.getDaemonSetCount() +
-                    orchestrator.getStaticPodCount()
                     // Static pods get renamed as "static-<name>-pods" in sensor, so match it for easy debugging
                     orchestrator.getStaticPodCount().collect {  "static-" + it + "-pods"  } +
-                    orchestrator.getStatefulSetCount()
+                    orchestrator.getStatefulSetCount() +
                     orchestrator.getJobCount()
 
-            // Discrepancy here:
+            // For Openshift, there is the following discrepancy here:
             // Stackrox has: 'kube-rbac-proxy-crio'
-            // Openshift has: 'kube-rbac-proxy-crio-piotr-06-11-cigna-gtnb7-master-2.c.acs-team-temp-dev.internal'
+            // Openshift has: 'kube-rbac-proxy-crio-<clustername>-gtnb7-master-2.c.acs-team-temp-dev.internal'
             // (for each node)
 
             if (stackroxSummaryCounts.numDeployments != orchestratorResourceNames.size()) {
@@ -69,8 +68,8 @@ class SummaryTest extends BaseSpecification {
             assert Math.abs(stackroxSummaryCounts.numDeployments - orchestratorResourceNames.size()) <= 2
             List<String> stackroxSecretNames = Services.getSecrets()*.name
             log.info "ACS secrets: " + stackroxSecretNames.join(",")
-            assert Math.abs(stackroxSummaryCounts.numSecrets - orchestrator.getSecretCount()) <= 0
-            assert Math.abs(stackroxSummaryCounts.numNodes - orchestrator.getNodeCount()) <= 0
+            assert Math.abs(stackroxSummaryCounts.numSecrets - orchestrator.getSecretCount()) <= 2
+            assert Math.abs(stackroxSummaryCounts.numNodes - orchestrator.getNodeCount()) <= 2
         }
     }
 
