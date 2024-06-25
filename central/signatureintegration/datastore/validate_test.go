@@ -42,6 +42,13 @@ var (
 			CertificateIdentity:     ".*",
 		},
 	}
+
+	invalidCosignCertificateVerificationConfig = []*storage.CosignCertificateVerification{
+		{
+			CertificateOidcIssuer: "a(b",
+			CertificateIdentity:   "a(b",
+		},
+	}
 )
 
 func TestValidateSignatureIntegration_Failure(t *testing.T) {
@@ -82,6 +89,11 @@ func TestValidateSignatureIntegration_Failure(t *testing.T) {
 			Id:                 goodID,
 			Name:               goodName,
 			CosignCertificates: badCosignCertificateVerificationConfig,
+		},
+		"invalid regexp for identity and issuer": {
+			Id:                 goodID,
+			Name:               goodName,
+			CosignCertificates: invalidCosignCertificateVerificationConfig,
 		},
 	}
 

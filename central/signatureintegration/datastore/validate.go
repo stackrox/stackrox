@@ -31,14 +31,16 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 		multiErr = multierror.Append(multiErr, err)
 	}
 	if len(integration.GetCosign().GetPublicKeys()) == 0 && len(integration.GetCosignCertificates()) == 0 {
-		multiErr = multierror.Append(multiErr, errors.New("integration must have at least one signature verification config"))
-	} else {
-		if err := validateCosignKeyVerification(integration.GetCosign()); err != nil {
-			multiErr = multierror.Append(multiErr, err)
-		}
-		if err := validateCosignCertificateVerification(integration.GetCosignCertificates()); err != nil {
-			multiErr = multierror.Append(multiErr, err)
-		}
+		multiErr = multierror.Append(multiErr, errors.New("integration must have at least one public key "+
+			"or certificate"))
+		return multiErr
+	}
+
+	if err := validateCosignKeyVerification(integration.GetCosign()); err != nil {
+		multiErr = multierror.Append(multiErr, err)
+	}
+	if err := validateCosignCertificateVerification(integration.GetCosignCertificates()); err != nil {
+		multiErr = multierror.Append(multiErr, err)
 	}
 
 	return multiErr
@@ -47,8 +49,7 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 func validateCosignKeyVerification(config *storage.CosignPublicKeyVerification) error {
 	var multiErr error
 
-	publicKeys := config.GetPublicKeys()
-	for _, publicKey := range publicKeys {
+	for _, publicKey := range config.GetPublicKeys() {
 		if publicKey.GetName() == "" {
 			err := errors.New("public key name should be filled")
 			multiErr = multierror.Append(multiErr, err)
@@ -73,7 +74,7 @@ func validateCosignCertificateVerification(configs []*storage.CosignCertificateV
 		}
 
 		if _, err := regexp.Compile(config.GetCertificateIdentity()); err != nil {
-			multiErr = multierror.Append(multiErr, err)
+			multiErr = multierror.Append(multiErr, errors.Wrap(err, "couldn't parse regex"))
 		}
 
 		if config.GetCertificateOidcIssuer() == "" {
@@ -81,7 +82,7 @@ func validateCosignCertificateVerification(configs []*storage.CosignCertificateV
 		}
 
 		if _, err := regexp.Compile(config.GetCertificateOidcIssuer()); err != nil {
-			multiErr = multierror.Append(multiErr, err)
+			multiErr = multierror.Append(multiErr, errors.Wrap(err, "couldn't parse regex"))
 		}
 
 		if _, err := cryptoutils.UnmarshalCertificatesFromPEM([]byte(config.GetCertificateChainsPemEnc())); err != nil {
