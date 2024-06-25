@@ -223,6 +223,8 @@ test_upgrade_paths() {
         ########################################################################################
         # Upgrade back to latest to run the smoke tests                                        #
         ########################################################################################
+        shopt -o
+        info "Upgrade back to latest to run the smoke tests"
         kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
         kubectl -n stackfox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
 
