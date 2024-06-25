@@ -260,9 +260,9 @@ The following block checks for the validity of the provided init bundle. (`helm 
 */}}
 {{ $operatorInitBundlePresent := hasKey (._rox.metadata).annotations "init-bundle.stackrox.io/name" }}
 {{ $helmInitBundleNotPresent := empty ._rox.ca._cert }}
-{{- if and ($operatorInitBundlePresent) ($helmInitBundleNotPresent) }}
-    {{ include "srox.fail" (list . "Error: It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart. Make sure to provide an init bundle for Helm chart installation.") }}
-{{- else if and (not ($helmInitBundleNotPresent)) ($operatorInitBundlePresent) }}
+{{- if and $operatorInitBundlePresent $helmInitBundleNotPresent }}
+    {{ include "srox.fail" (list . "FATAL: It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart. Make sure to provide an init bundle for Helm chart installation.") }}
+{{- else if and (not $helmInitBundleNotPresent) $operatorInitBundlePresent }}
     {{ include "srox.warn" (list . "It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart. Make sure to provide an init bundle for Helm chart installation.") }}
 {{- else if $helmInitBundleNotPresent }}
     {{ include "srox.fail" (list . "A CA certificate must be specified") }}
