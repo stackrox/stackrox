@@ -187,7 +187,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
 
 	reqDelete := &v2.ResourceByID{
-		Id: "testConfig1",
+		Id: "test-scan",
 	}
 	_, err = service.DeleteComplianceScanConfiguration(ctx, reqDelete)
 	assert.NoError(t, err)
