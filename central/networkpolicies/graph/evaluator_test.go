@@ -2033,7 +2033,7 @@ func TestEvaluateNeighbors(t *testing.T) {
 
 		t.Run(c.name, func(t *testing.T) {
 			graph := g.GetGraph("", testCase.queryDeployments, testCase.clusterDeployments, testCase.networkTree, testCase.nps, false)
-			assert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
+			protoassert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
 		})
 	}
 }
@@ -2135,7 +2135,7 @@ func TestGetApplicable(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			actual := g.GetAppliedPolicies(c.deployments, nil, c.policies)
-			assert.ElementsMatch(t, c.expected, actual)
+			protoassert.ElementsMatch(t, c.expected, actual)
 		})
 	}
 }
@@ -2327,7 +2327,7 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 
 		t.Run(c.name, func(t *testing.T) {
 			graph := g.GetGraph("", nil, testCase.deployments, nil, testCase.nps, true)
-			assert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
+			protoassert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
 		})
 	}
 }

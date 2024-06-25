@@ -394,7 +394,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().ElementsMatch(tc.expectedResp, results.GetScanResults())
+				protoassert.ElementsMatch(s.T(), tc.expectedResp, results.GetScanResults())
 			}
 		})
 	}

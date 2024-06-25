@@ -72,7 +72,7 @@ func TestMultiTree(t *testing.T) {
 		return entity.GetId() != e6.GetId()
 	}).GetId())
 
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3, e6}, multiTree.GetSubnets(networkgraph.InternetExternalSourceID))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3, e6}, multiTree.GetSubnets(networkgraph.InternetExternalSourceID))
 
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3, e6}, multiTree.GetSubnetsForCIDR("32.0.0.0/5"))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3, e6}, multiTree.GetSubnetsForCIDR("32.0.0.0/5"))
 }

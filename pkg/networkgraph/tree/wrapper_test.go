@@ -36,9 +36,9 @@ func TestNetworkTreeWrapper(t *testing.T) {
 	treeWrapper, err := NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1, e2, e3, e4, e5, e6})
 	assert.NoError(t, err)
 
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e4}, treeWrapper.GetSubnets("1"))
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e2}, treeWrapper.GetSubnets("3"))
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{}, treeWrapper.GetSubnets("4"))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e4}, treeWrapper.GetSubnets("1"))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e2}, treeWrapper.GetSubnets("3"))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{}, treeWrapper.GetSubnets("4"))
 	protoassert.Equal(t, e5, treeWrapper.Get("5"))
 	protoassert.Equal(t, e2, treeWrapper.GetSupernet("1"))
 	protoassert.Equal(t, e6, treeWrapper.GetSupernet("5"))
@@ -71,7 +71,7 @@ func TestNetworkTreeWrapper(t *testing.T) {
 	protoassert.Equal(t, e5, treeWrapper.GetSupernet("7"))
 	protoassert.Equal(t, e8, treeWrapper.GetSupernet("3"))
 	protoassert.Equal(t, networkgraph.InternetEntity().ToProto(), treeWrapper.GetSupernet("6"))
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e6, e8}, treeWrapper.GetSubnets(networkgraph.InternetExternalSourceID))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e6, e8}, treeWrapper.GetSubnets(networkgraph.InternetExternalSourceID))
 
 	// Invalid CIDR
 	assert.Error(t, treeWrapper.Insert(testutils.GetExtSrcNetworkEntityInfo("9", "9", "0::0:0:0:0:0:ffff:0:0/0", false)))
@@ -132,10 +132,10 @@ func TestNetworkTreeWrapper(t *testing.T) {
 
 	*/
 	protoassert.Equal(t, e8, treeWrapper.Get("8"))
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e6}, treeWrapper.GetSubnets("8"))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e6}, treeWrapper.GetSubnets("8"))
 	protoassert.Equal(t, networkgraph.InternetEntity().ToProto(), treeWrapper.GetSupernet("8"))
 
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3}, treeWrapper.GetSubnetsForCIDR("35.0.0.0/6"))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3}, treeWrapper.GetSubnetsForCIDR("35.0.0.0/6"))
 
 	protoassert.Equal(t, e3, treeWrapper.GetSupernetForCIDR("35.187.144.0/14"))
 }

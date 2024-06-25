@@ -308,7 +308,7 @@ func (s *SubjectSearcherTestSuite) TestSearcher() {
 
 			v1SearchResults, err := s.subjectSearcher.SearchSubjects(s.ctx, tc.query)
 			s.NoError(err)
-			s.ElementsMatch(s.resultsToV1SearchResults(tc.expected), v1SearchResults)
+			protoassert.ElementsMatch(s.T(), s.resultsToV1SearchResults(tc.expected), v1SearchResults)
 		})
 	}
 }

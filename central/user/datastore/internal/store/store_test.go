@@ -78,5 +78,5 @@ func (s *UserStoreTestSuite) TestUserStore() {
 
 	retrievedUsers, err := s.sto.GetAllUsers()
 	s.NoError(err)
-	s.ElementsMatch(users, retrievedUsers)
+	protoassert.ElementsMatch(s.T(), users, retrievedUsers)
 }
