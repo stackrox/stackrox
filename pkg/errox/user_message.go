@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
@@ -101,6 +102,11 @@ func GetUserMessage(err error) string {
 				op += " " + e.Net
 			}
 			return joinIfNotEmpty(op, GetUserMessage(e.Err))
+		case *registry.HttpStatusError:
+			if e.Response != nil {
+				return "HTTP response: " + e.Response.Status
+			}
+			return "HTTP error"
 		case *net.AddrError:
 			return joinIfNotEmpty("address", e.Err)
 		case *net.DNSError:
