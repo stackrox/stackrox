@@ -5,7 +5,9 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -81,28 +83,65 @@ func TestGetUserMessage(t *testing.T) {
 			WithUserMessage(NotFound.New("first").New("second"), "message"),
 			"message: not found",
 		},
+		"errorlist 0": {
+			errorhelpers.NewErrorListWithErrors("start",
+				[]error{errors.New("secret")}),
+			"start error",
+		},
+		"errorlist 1": {
+			errorhelpers.NewErrorListWithErrors("start",
+				[]error{NotFound}),
+			"start error: not found",
+		},
+		"errorlist 2": {
+			errorhelpers.NewErrorListWithErrors("start",
+				[]error{NotFound, errors.New("secret")}),
+			"start error: not found",
+		},
+		"errorlist 3": {
+			errorhelpers.NewErrorListWithErrors("start",
+				[]error{NotFound, errors.New("secret"), InvalidArgs}),
+			"start errors: [not found, invalid arguments]",
+		},
+		"errorlist 4": {
+			errorhelpers.NewErrorListWithErrors("start", []error{}),
+			"",
+		},
+		"multierror 0": {
+			&multierror.Error{},
+			"",
+		},
+		"multierror 1": {
+			&multierror.Error{Errors: []error{NotFound}},
+			"not found",
+		},
+		"multierror 2": {
+			&multierror.Error{Errors: []error{NotFound, errors.New("secret")}},
+			"not found",
+		},
+		"multierror 3": {
+			&multierror.Error{Errors: []error{NotFound, errors.New("secret"), InvalidArgs}},
+			"[not found, invalid arguments]",
+		},
 		"net.AddrError": {
-			WithUserMessage(&net.AddrError{Err: "bad", Addr: "1.2.3.4"},
-				"message"),
-			"message: address: bad",
+			&net.AddrError{Err: "bad", Addr: "1.2.3.4"},
+			"address: bad",
 		},
 		"net.DNSError": {
-			WithUserMessage(&net.DNSError{Err: "bad", Name: "name", Server: "server"}, "message"),
-			"message: lookup: bad",
+			&net.DNSError{Err: "bad", Name: "name", Server: "server"},
+			"lookup: bad",
 		},
 		"net.OpError with unknown error": {
-			WithUserMessage(&net.OpError{Op: "dial", Net: "tcp",
+			&net.OpError{Op: "dial", Net: "tcp",
 				Err:    errors.New("refused"),
 				Source: &net.IPAddr{IP: net.IPv4(1, 2, 3, 4)}},
-				"message"),
-			"message: dial tcp",
+			"dial tcp",
 		},
 		"net.OpError with net.DNSError": {
-			WithUserMessage(&net.OpError{Op: "dial", Net: "tcp",
+			&net.OpError{Op: "dial", Net: "tcp",
 				Err:    &net.DNSError{Err: "bad", Server: "server"},
 				Source: &net.IPAddr{IP: net.IPv4(1, 2, 3, 4)}},
-				"message"),
-			"message: dial tcp: lookup: bad",
+			"dial tcp: lookup: bad",
 		},
 		"strconv": {
 			func() error { _, err := strconv.Atoi("abc"); return err }(),
