@@ -14,4 +14,3 @@ type: Opaque
 stringData:
   ca.pem: |
     {{- ._rox.ca._cert | nindent 4 }}
-
