@@ -37,7 +37,11 @@ import { getNodeEntityPagePath } from '../../utils/searchUtils';
 import CVESelectionTd from '../../components/CVESelectionTd';
 import CVESelectionTh from '../../components/CVESelectionTh';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
-import { getScoreVersionsForTopCVSS, sortCveDistroList } from '../../utils/sortUtils';
+import {
+    aggregateByCVSS,
+    getScoreVersionsForTopCVSS,
+    sortCveDistroList,
+} from '../../utils/sortUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { QuerySearchFilter, isVulnerabilitySeverityLabel } from '../../types';
 import useNodeCves from './useNodeCves';
@@ -116,11 +120,10 @@ function CVEsTable({
                         Nodes by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    <Th sort={getSortParams(NODE_TOP_CVSS_SORT_FIELD)}>Top CVSS</Th>
-                    <TooltipTh
-                        tooltip="Ratio of the number of nodes affected by this CVE to the total number of nodes"
-                        sort={getSortParams(NODE_COUNT_SORT_FIELD)}
-                    >
+                    <Th sort={getSortParams(NODE_TOP_CVSS_SORT_FIELD, aggregateByCVSS)}>
+                        Top CVSS
+                    </Th>
+                    <TooltipTh tooltip="Ratio of the number of nodes affected by this CVE to the total number of nodes">
                         Affected nodes
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
