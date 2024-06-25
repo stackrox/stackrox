@@ -45,3 +45,69 @@ func checkTLSWithRetry(server *httptest.Server) (bool, error) {
 	)
 	return tls, err
 }
+
+func Test_sanitizeURL(t *testing.T) {
+	const strInvalidChar = `invalid character " " in host name`
+	tests := map[string]struct {
+		URL              string
+		wantURL          string
+		wantErrToContain string
+	}{
+		"Valid URL with scheme, host and port": {
+			URL:              "http://example.com:80/abc",
+			wantURL:          "http://example.com:80/abc",
+			wantErrToContain: "",
+		},
+		"Valid URL with host and port": {
+			URL:              "example.com:80/abc",
+			wantURL:          "tcp://example.com:80/abc",
+			wantErrToContain: "",
+		},
+		"Valid URL with host": {
+			URL:              "example.com",
+			wantURL:          "tcp://example.com",
+			wantErrToContain: "",
+		},
+		"Valid URL with IP as host": {
+			URL:              "192.168.178.1",
+			wantURL:          "tcp://192.168.178.1",
+			wantErrToContain: "",
+		},
+		"URL with scheme, port and space in host": {
+			URL:              "http://exam ple.com:80/abc",
+			wantURL:          "",
+			wantErrToContain: strInvalidChar,
+		},
+		"URL with port and space in host": {
+			URL:              "exam ple.com:80/abc",
+			wantErrToContain: "first path segment in URL cannot contain colon",
+		},
+		"URL with scheme, and space in host": {
+			URL:              "tcp://exam ple.com/abc",
+			wantErrToContain: strInvalidChar,
+		},
+		"URL with leading space in host": {
+			URL:              " example.com",
+			wantErrToContain: strInvalidChar,
+		},
+		"URL with trailing space in host": {
+			URL:              "example.com ",
+			wantErrToContain: strInvalidChar,
+		},
+		"URL with space in host": {
+			URL:              "exam ple.com/abc",
+			wantErrToContain: strInvalidChar,
+		},
+	}
+	for tname, tt := range tests {
+		t.Run(tname, func(t *testing.T) {
+			gotAddr, gotErr := validateWithScheme(tt.URL)
+			if tt.wantErrToContain == "" {
+				assert.NoError(t, gotErr)
+				assert.Equal(t, tt.wantURL, gotAddr)
+			} else {
+				assert.ErrorContains(t, gotErr, tt.wantErrToContain)
+			}
+		})
+	}
+}

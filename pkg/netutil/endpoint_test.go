@@ -79,10 +79,6 @@ func TestParseEndpoint_Valid(t *testing.T) {
 
 func TestParseEndpoint_Invalid(t *testing.T) {
 	invalidEndpoints := []string{
-		// invalid characters in host
-		"www.example.com ",
-		" www.example.com",
-		"www.ex ample.com",
 		// empty zones
 		"www.example.com%",
 		"www.example.com%:80",
