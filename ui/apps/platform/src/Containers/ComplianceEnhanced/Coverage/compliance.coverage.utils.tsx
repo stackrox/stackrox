@@ -17,12 +17,6 @@ import { SearchFilter } from 'types/search';
 
 import { SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 
-// Thresholds for compliance status
-const DANGER_THRESHOLD = 50;
-const WARNING_THRESHOLD = 75;
-
-type LabelColor = LabelProps['color'];
-
 export type ClusterStatusObject = {
     icon: ReactElement;
     statusText: string;
@@ -73,48 +67,6 @@ export function getStatusCounts(checkStats: ComplianceCheckStatusCount[]): {
 
 export function calculateCompliancePercentage(passCount: number, totalCount: number): number {
     return totalCount > 0 ? Math.round((passCount / totalCount) * 100) : 0;
-}
-
-function getComplianceStatus(passPercentage: number): ComplianceStatus {
-    let status: ComplianceStatus = ComplianceStatus.SUCCESS;
-
-    if (passPercentage < DANGER_THRESHOLD) {
-        status = ComplianceStatus.DANGER;
-    } else if (passPercentage < WARNING_THRESHOLD) {
-        status = ComplianceStatus.WARNING;
-    }
-
-    return status;
-}
-
-export function getCompliancePfClassName(passPercentage: number): string {
-    const status = getComplianceStatus(passPercentage);
-
-    if (status === ComplianceStatus.DANGER) {
-        return 'pf-m-danger';
-    }
-    if (status === ComplianceStatus.WARNING) {
-        return 'pf-m-warning';
-    }
-    return '';
-}
-
-export function getComplianceLabelGroupColor(
-    passPercentage: number | undefined
-): LabelColor | undefined {
-    if (passPercentage === undefined) {
-        return undefined;
-    }
-
-    const status = getComplianceStatus(passPercentage);
-
-    if (status === ComplianceStatus.DANGER) {
-        return 'red';
-    }
-    if (status === ComplianceStatus.WARNING) {
-        return 'gold';
-    }
-    return 'blue';
 }
 
 export function sortCheckStats(items: ComplianceCheckStatusCount[]): ComplianceCheckStatusCount[] {
