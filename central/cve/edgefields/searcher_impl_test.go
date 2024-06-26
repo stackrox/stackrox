@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGetCVEEdgeQuery(t *testing.T) {
@@ -114,7 +113,7 @@ func TestSnoozedQueryHandler(t *testing.T) {
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
-			assert.EqualValues(t, c.expected, handleSnoozedCVEQuery(c.ctx, c.incoming))
+			protoassert.Equal(t, c.expected, handleSnoozedCVEQuery(c.ctx, c.incoming))
 		})
 	}
 }

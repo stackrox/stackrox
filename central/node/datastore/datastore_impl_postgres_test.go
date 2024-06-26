@@ -114,7 +114,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 		}
 	}
 	expectedNode := cloneAndUpdateRiskPriority(node)
-	suite.EqualValues(expectedNode, storedNode)
+	protoassert.Equal(suite.T(), expectedNode, storedNode)
 
 	// Exists tests.
 	exists, err = suite.datastore.Exists(allowAllCtx, fixtureconsts.Node1)

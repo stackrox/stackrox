@@ -156,7 +156,7 @@ func (s *debugServiceTestSuite) TestGetNotifiers() {
 	actualNotifiers, err := s.service.getNotifiers(s.noneCtx)
 
 	s.NoError(err)
-	s.EqualValues(expectedNotifiers, actualNotifiers)
+	protoassert.SlicesEqual(s.T(), expectedNotifiers, actualNotifiers.([]*storage.Notifier))
 }
 
 func (s *debugServiceTestSuite) TestGetConfig() {

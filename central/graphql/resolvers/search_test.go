@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
@@ -345,7 +346,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			actual, err := tc.arg.AsV1QueryOrEmpty()
 			assert.NoError(t, err)
-			assert.EqualValues(t, tc.expectedQ, actual)
+			protoassert.Equal(t, tc.expectedQ, actual)
 		})
 	}
 }
