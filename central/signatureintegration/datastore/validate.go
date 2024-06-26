@@ -70,7 +70,7 @@ func validateCosignCertificateVerification(configs []*storage.CosignCertificateV
 
 	for _, config := range configs {
 		if config.GetCertificateIdentity() == "" {
-			multiErr = multierror.Append(multiErr, errors.New("certificate identity should be filled"))
+			multiErr = multierror.Append(multiErr, errors.New("certificate identity must be filled"))
 		}
 
 		if _, err := regexp.Compile(config.GetCertificateIdentity()); err != nil {
@@ -78,14 +78,14 @@ func validateCosignCertificateVerification(configs []*storage.CosignCertificateV
 		}
 
 		if config.GetCertificateOidcIssuer() == "" {
-			multiErr = multierror.Append(multiErr, errors.New("certificate issuer should be filled"))
+			multiErr = multierror.Append(multiErr, errors.New("certificate issuer must be filled"))
 		}
 
 		if _, err := regexp.Compile(config.GetCertificateOidcIssuer()); err != nil {
 			multiErr = multierror.Append(multiErr, errors.Wrap(err, "couldn't parse regex"))
 		}
 
-		if _, err := cryptoutils.UnmarshalCertificatesFromPEM([]byte(config.GetCertificateChainsPemEnc())); err != nil {
+		if _, err := cryptoutils.UnmarshalCertificatesFromPEM([]byte(config.GetCertificateChainPemEnc())); err != nil {
 			multiErr = multierror.Append(multiErr, errors.Wrap(err, "unmarshalling certificate chain PEM"))
 		}
 		if _, err := cryptoutils.UnmarshalCertificatesFromPEM([]byte(config.GetCertificatePemEnc())); err != nil {
