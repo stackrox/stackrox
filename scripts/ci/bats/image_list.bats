@@ -24,3 +24,16 @@ function setup() {
   assert_output --partial "roxctl"
   assert_output --partial "central-db"
 }
+
+@test "get images for rcd test" {
+  local tag
+  tag="$(make --quiet --no-print-directory tag)"
+  local image_list
+  image_list="$(mktemp)"
+  CI_JOB_NAME="master-race-condition-qa-e2e-tests" populate_stackrox_image_list $image_list
+  run cat ${image_list}
+  assert_success
+  assert_output --partial "main"
+  assert_output --partial "roxctl"
+  assert_output --partial "central-db"
+}

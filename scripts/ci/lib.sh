@@ -763,6 +763,7 @@ END
             ;;
         *-race-condition-qa-e2e-tests)
             cat >> "${image_list}" << END
+central-db ${tag}
 main ${tag}-rcd
 roxctl ${tag}
 END
