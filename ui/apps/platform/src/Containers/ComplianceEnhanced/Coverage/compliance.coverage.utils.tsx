@@ -16,6 +16,12 @@ import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfig
 import { SearchFilter } from 'types/search';
 
 import { SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
+import {
+    FAILING_COLOR,
+    MANUAL_COLOR,
+    OTHER_COLOR,
+    PASSING_COLOR,
+} from './compliance.coverage.constants';
 
 export type ClusterStatusObject = {
     icon: ReactElement;
@@ -89,7 +95,7 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
     PASS: {
         icon: (
             <Icon>
-                <CheckCircleIcon color="var(--pf-v5-global--primary-color--100)" />
+                <CheckCircleIcon color={PASSING_COLOR} />
             </Icon>
         ),
         statusText: 'Pass',
@@ -99,7 +105,7 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
     FAIL: {
         icon: (
             <Icon>
-                <SecurityIcon color="var(--pf-v5-global--danger-color--100)" />
+                <SecurityIcon color={FAILING_COLOR} />
             </Icon>
         ),
         statusText: 'Fail',
@@ -109,7 +115,7 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
     ERROR: {
         icon: (
             <Icon>
-                <ExclamationTriangleIcon color="var(--pf-v5-global--disabled-color--100)" />
+                <ExclamationTriangleIcon color={OTHER_COLOR} />
             </Icon>
         ),
         statusText: 'Error',
@@ -119,7 +125,7 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
     INFO: {
         icon: (
             <Icon>
-                <ExclamationCircleIcon color="var(--pf-v5-global--disabled-color--100)" />
+                <ExclamationCircleIcon color={OTHER_COLOR} />
             </Icon>
         ),
         statusText: 'Info',
@@ -130,7 +136,7 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
     MANUAL: {
         icon: (
             <Icon>
-                <WrenchIcon color="var(--pf-v5-global--warning-color--100)" />
+                <WrenchIcon color={MANUAL_COLOR} />
             </Icon>
         ),
         statusText: 'Manual',
@@ -141,7 +147,7 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
     NOT_APPLICABLE: {
         icon: (
             <Icon>
-                <BanIcon color="var(--pf-v5-global--disabled-color--100)" />
+                <BanIcon color={OTHER_COLOR} />
             </Icon>
         ),
         statusText: 'Not Applicable',
@@ -151,7 +157,7 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
     INCONSISTENT: {
         icon: (
             <Icon>
-                <UnknownIcon color="var(--pf-v5-global--disabled-color--100)" />
+                <UnknownIcon color={OTHER_COLOR} />
             </Icon>
         ),
         statusText: 'Inconsistent',
@@ -161,7 +167,7 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
     UNSET_CHECK_STATUS: {
         icon: (
             <Icon>
-                <ResourcesEmptyIcon color="var(--pf-v5-global--disabled-color--100)" />
+                <ResourcesEmptyIcon color={OTHER_COLOR} />
             </Icon>
         ),
         statusText: 'Unset',

@@ -46,7 +46,10 @@ function ProfileDetailsHeader({
         const { description, productType, profileVersion, title } = profileDetails;
 
         return (
-            <Flex className="pf-v5-u-p-md" direction={{ default: 'column' }}>
+            <Flex
+                className="pf-v5-u-p-md pf-v5-u-background-color-100"
+                direction={{ default: 'column' }}
+            >
                 <Flex
                     alignItems={{ default: 'alignItemsFlexStart' }}
                     justifyContent={{ default: 'justifyContentSpaceBetween' }}

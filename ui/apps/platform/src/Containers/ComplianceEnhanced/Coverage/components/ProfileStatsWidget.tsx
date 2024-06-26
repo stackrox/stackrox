@@ -9,7 +9,23 @@ import { ComplianceProfileScanStats } from 'services/ComplianceResultsStatsServi
 import { defaultChartHeight, defaultChartBarWidth } from 'utils/chartUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
+import {
+    FAILING_COLOR,
+    MANUAL_COLOR,
+    OTHER_COLOR,
+    PASSING_COLOR,
+} from '../compliance.coverage.constants';
 import { getStatusCounts } from '../compliance.coverage.utils';
+
+type ChartData = {
+    x: string;
+    y: number;
+    color: string;
+};
+
+type DatumArgs = {
+    datum?: ChartData;
+};
 
 export type ProfileStatsWidgetProps = {
     isLoading: boolean;
@@ -49,37 +65,38 @@ function ProfileStatsWidget({ error, isLoading, profileScanStats }: ProfileStats
             profileScanStats.checkStats
         );
 
-        const data = [
+        const data: ChartData[] = [
             {
                 x: 'Passing',
                 y: passCount / totalCount,
-                color: 'var(--pf-v5-global--primary-color--100)',
+                color: PASSING_COLOR,
             },
             {
                 x: 'Failing',
                 y: failCount / totalCount,
-                color: 'var(--pf-v5-global--danger-color--100)',
+                color: FAILING_COLOR,
             },
             {
                 x: 'Manual',
                 y: manualCount / totalCount,
-                color: 'var(--pf-v5-global--warning-color--100)',
+                color: MANUAL_COLOR,
             },
             {
-                x: 'Mixed',
+                x: 'Other',
                 y: otherCount / totalCount,
-                color: 'var(--pf-v5-global--disabled-color--100)',
+                color: OTHER_COLOR,
             },
         ];
+
         return (
             <div ref={setWidgetContainer}>
                 <Chart
                     ariaDesc="Aging images grouped by date of last update"
                     ariaTitle="Aging images"
                     domainPadding={{ x: [50, 50] }}
-                    padding={{ top: 25, bottom: 65, left: 65, right: 20 }}
+                    padding={{ top: 30, bottom: 65, left: 65, right: 20 }}
                     height={defaultChartHeight}
-                    width={widgetContainerResizeEntry?.contentRect.width}
+                    width={widgetContainerResizeEntry?.contentRect.width ?? 0}
                     containerComponent={<ChartContainer responsive />}
                 >
                     <ChartAxis label="Check status" />
@@ -95,10 +112,12 @@ function ProfileStatsWidget({ error, isLoading, profileScanStats }: ProfileStats
                         data={data}
                         style={{
                             data: {
-                                fill: ({ datum }) => datum.color,
+                                fill: ({ datum }: DatumArgs) => (datum ? datum.color : 'gray'),
                             },
                         }}
-                        labels={({ datum }) => `${Math.round(datum.y * 100)}%`}
+                        labels={({ datum }: DatumArgs) =>
+                            datum ? `${Math.round(datum.y * 100)}%` : ''
+                        }
                         labelComponent={<ChartLabel dy={-10} />}
                     />
                 </Chart>
