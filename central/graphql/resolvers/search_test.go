@@ -452,7 +452,7 @@ func TestImageLabelAutoCompleteSearch(t *testing.T) {
 	require.NoError(t, imageDatastore.UpsertImage(ctx, image))
 
 	request := searchRequest{
-		Query:      fmt.Sprintf("Image Label:"),
+		Query:      "Image Label:",
 		Categories: &[]string{"IMAGES"},
 	}
 	results, err := resolver.SearchAutocomplete(allowAllCtx, request)
@@ -468,7 +468,7 @@ func TestImageLabelAutoCompleteSearch(t *testing.T) {
 	require.NoError(t, imageDatastore.UpsertImage(ctx, image))
 
 	request = searchRequest{
-		Query:      fmt.Sprintf("Image Label:"),
+		Query:      "Image Label:",
 		Categories: &[]string{"IMAGES"},
 	}
 	results, err = resolver.SearchAutocomplete(allowAllCtx, request)
