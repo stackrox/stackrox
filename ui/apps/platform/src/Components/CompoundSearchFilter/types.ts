@@ -293,40 +293,28 @@ export type ImageCVEAttributeInputType = ValueOf<
 // Node CVE search filter
 
 export const nodeCVESearchFilterConfig = {
-    displayName: 'Node CVE',
+    displayName: 'CVE',
     searchCategory: 'NODE_VULNERABILITIES',
     attributes: {
         Name: {
             displayName: 'Name',
-            filterChipLabel: 'Node CVE',
+            filterChipLabel: 'CVE',
             searchTerm: 'CVE',
             inputType: 'autocomplete',
         },
         'Discovered time': {
             displayName: 'Discovered time',
-            filterChipLabel: 'Node CVE discovered time',
+            filterChipLabel: 'CVE discovered time',
             searchTerm: 'CVE Created Time',
             inputType: 'date-picker',
         },
         CVSS: {
             displayName: 'CVSS',
-            filterChipLabel: 'Node CVE CVSS',
+            filterChipLabel: 'CVE CVSS',
             searchTerm: 'CVSS',
             inputType: 'condition-number',
         },
         // TODO: Add Top CVSS
-        Snoozed: {
-            displayName: 'Snoozed',
-            filterChipLabel: 'Node CVE snoozed',
-            searchTerm: 'CVE Snoozed',
-            inputType: 'select',
-            inputProps: {
-                options: [
-                    { label: 'True', value: 'true' },
-                    { label: 'False', value: 'false' },
-                ],
-            },
-        },
     },
 } as const;
 
@@ -345,42 +333,30 @@ export type NodeCVEAttributeInputType = ValueOf<
 // Platform CVE search filter
 
 export const platformCVESearchFilterConfig = {
-    displayName: 'Platform CVE',
+    displayName: 'CVE',
     searchCategory: 'CLUSTER_VULNERABILITIES',
     attributes: {
         Name: {
             displayName: 'Name',
-            filterChipLabel: 'Platform CVE',
+            filterChipLabel: 'CVE',
             searchTerm: 'CVE',
             inputType: 'autocomplete',
         },
         'Discovered time': {
             displayName: 'Discovered time',
-            filterChipLabel: 'Platform CVE discovered time',
+            filterChipLabel: 'CVE discovered time',
             searchTerm: 'CVE Created Time',
             inputType: 'date-picker',
         },
         CVSS: {
             displayName: 'CVSS',
-            filterChipLabel: 'Platform CVE CVSS',
+            filterChipLabel: 'CVE CVSS',
             searchTerm: 'CVSS',
             inputType: 'condition-number',
         },
-        Snoozed: {
-            displayName: 'Snoozed',
-            filterChipLabel: 'Platform CVE snoozed',
-            searchTerm: 'CVE Snoozed',
-            inputType: 'select',
-            inputProps: {
-                options: [
-                    { label: 'True', value: 'true' },
-                    { label: 'False', value: 'false' },
-                ],
-            },
-        },
         Type: {
             displayName: 'Type',
-            filterChipLabel: 'Platform CVE type',
+            filterChipLabel: 'CVE type',
             searchTerm: 'CVE Type',
             inputType: 'select',
             inputProps: {
