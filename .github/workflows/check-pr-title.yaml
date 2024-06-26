@@ -62,13 +62,13 @@ jobs:
             echo '::error::`CHANGELOG.md` task is not checked.'
             exit 1
           fi
-          if [[ "$PR_DESCRIPTION" =~ *'- [x] documentation '* ]]; then
+          if [[ "$PR_DESCRIPTION" = *'- [x] documentation '* ]]; then
             echo "documentation task is checked."
           else
             echo '::error::documentation task is not checked.'
             exit 1
           fi
-          if [[ "$PR_DESCRIPTION" =~ *'- [x] inspected CI results'* ]]; then
+          if [[ "$PR_DESCRIPTION" = *'- [x] inspected CI results'* ]]; then
             echo 'inspected CI results task is checked.'
           else
             echo '::error::inspected CI results task is not checked.'
