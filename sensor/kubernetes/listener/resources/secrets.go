@@ -261,6 +261,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 
 	newIntegrationSet := set.NewStringSet()
 	for registry, dce := range dockerConfig {
+		registry := strings.TrimSpace(registry)
 		if fromDefaultSA {
 			// Store the registry credentials so Sensor can reach it.
 			err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)

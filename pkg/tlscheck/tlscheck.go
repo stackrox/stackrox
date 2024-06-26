@@ -29,10 +29,7 @@ func addrValid(addr string) error {
 
 // CheckTLS checks if the address is using TLS
 func CheckTLS(ctx context.Context, origAddr string) (bool, error) {
-	addr := strings.TrimSpace(origAddr)
-	addr = urlfmt.TrimHTTPPrefixes(addr)
-	// Ellimitate obvious mistakes in the host name
-	addr = strings.TrimSpace(addr)
+	addr := urlfmt.TrimHTTPPrefixes(origAddr)
 	if err := addrValid(addr); err != nil {
 		return false, err
 	}
