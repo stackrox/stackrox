@@ -109,6 +109,13 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 	}
 }
 
+func assertNameIDDescriptionAndProfilesMatch(t *testing.T, expected *v2.ComplianceScanConfigurationStatus, actual *v2.ComplianceScanConfiguration) {
+	assert.Equal(t, expected.GetScanName(), actual.GetScanName())
+	assert.Equal(t, expected.GetId(), actual.GetId())
+	assert.Equal(t, expected.GetScanConfig().GetDescription(), actual.GetScanConfig().GetDescription())
+	assert.Equal(t, expected.GetScanConfig().GetProfiles(), actual.GetScanConfig().GetProfiles())
+}
+
 func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	ctx := context.Background()
 	k8sClient := createK8sClient(t)
@@ -171,7 +178,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	assert.NoError(t, err)
 	require.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
 
-	assert.Equal(t, resp, scanConfigs.GetConfigurations()[0])
+	assertNameIDDescriptionAndProfilesMatch(t, scanConfigs.GetConfigurations()[0], resp)
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
 
@@ -184,7 +191,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
 	assert.NoError(t, err)
 	require.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
-	assert.Equal(t, resp, scanConfigs.GetConfigurations()[0])
+	assertNameIDDescriptionAndProfilesMatch(t, scanConfigs.GetConfigurations()[0], resp)
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
 
@@ -199,7 +206,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	query = &v2.RawQuery{Query: ""}
 	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
 	assert.NoError(t, err)
-	assert.Equal(t, len(scanConfigs.GetConfigurations()), 0)
+	assert.Equal(t, 0, len(scanConfigs.GetConfigurations()))
 }
 
 // ACS API test suite for integration testing for the Compliance Operator.
