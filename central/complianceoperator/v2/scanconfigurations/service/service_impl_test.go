@@ -396,7 +396,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 
 			configs, err := s.service.ListComplianceScanConfigurations(allAccessContext, tc.query)
 			s.Require().NoError(err)
-			s.Require().EqualValues(expectedResp, configs)
+			protoassert.Equal(s.T(), expectedResp, configs)
 		})
 	}
 }
@@ -602,7 +602,7 @@ func (s *ComplianceScanConfigServiceTestSuite) ListComplianceScanConfigProfiles(
 
 			configProfiles, err := s.service.ListComplianceScanConfigProfiles(allAccessContext, tc.query)
 			s.Require().NoError(err)
-			s.Require().EqualValues(expectedResp, configProfiles)
+			protoassert.Equal(s.T(), expectedResp, configProfiles)
 		})
 	}
 }
