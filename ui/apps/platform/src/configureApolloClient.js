@@ -60,6 +60,13 @@ const cache = new InMemoryCache({
         ImageCVECore: {
             keyFields: ['cve'],
         },
+        Cluster: {
+            fields: {
+                status: {
+                    merge: (existing, incoming) => merge({}, existing, incoming),
+                },
+            },
+        },
     },
 });
 
