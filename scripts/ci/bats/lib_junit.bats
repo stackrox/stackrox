@@ -153,6 +153,7 @@ _EO_DETAILS_
     }
     run junit_wrap "Suite" "Test" "failure message" "wrapped_functionality"
     assert_success
+    assert_output --partial "This bit of fn() will have a JUNIT record \o/"
     run cat "${junit_dir}/junit-Suite.xml"
     assert_output --partial 'tests="1"'
     assert_output --partial 'failures="0"'
@@ -178,14 +179,17 @@ _EO_DETAILS_
     assert_equal "${BEFORE}" "after"
 }
 
-@test "JUNIT wrapping functionality - includes output on failure" {
+@test "JUNIT wrapping functionality - includes output in JUNIT record on failure" {
     wrapped_functionality() {
         echo "This bit of fn() will have a JUNIT record \o/"
         not_a_valid_command
     }
     run -127 junit_wrap "Suite" "Test" "failure message" "wrapped_functionality"
+    assert_output --partial "This bit of fn() will have a JUNIT record \o/"
+    assert_output --partial "not_a_valid_command: command not found"
     run cat "${junit_dir}/junit-Suite.xml"
     assert_output --partial "This bit of fn() will have a JUNIT record \o/"
+    assert_output --partial "not_a_valid_command: command not found"
 }
 
 @test "JUNIT wrapping functionality - includes stderr on failure" {
@@ -197,4 +201,17 @@ _EO_DETAILS_
     run cat "${junit_dir}/junit-Suite.xml"
     assert_output --partial "This bit of fn() will have a JUNIT record \o/"
     assert_output --partial "ls: cannot access '/noexisto': No such file or directory"
+}
+
+@test "JUNIT wrapping functionality - halts on failure" {
+    wrapped_functionality() {
+        echo "This bit of fn() will have a JUNIT record \o/"
+        ls -l /noexisto
+        not_a_valid_command
+    }
+    junit_wrap "Suite" "Test" "failure message" "wrapped_functionality"
+    exit_code="$?"
+    assert_output --partial "This bit of fn() will have a JUNIT record \o/"
+    assert_output --partial "ls: cannot access '/noexisto': No such file or directory"
+    refute_output --partial "not_a_valid_command: command not found"
 }

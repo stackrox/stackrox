@@ -1916,13 +1916,15 @@ junit_wrap() {
     local command_output_file
     command_output_file="$(mktemp)"
 
-    if "$@" > "${command_output_file}" 2>&1; then
-        cat "${command_output_file}"
+    local ret_code=0
+    "$@" > "${command_output_file}" 2>&1
+    ret_code="$?"
+    cat "${command_output_file}"
+
+    if [[ "${ret_code}" == "0" ]]; then
         save_junit_success "${class}" "${description}"
         rm -f "${command_output_file}"
     else
-        local ret_code="$?"
-        cat "${command_output_file}"
         local failure_body=""
         if [[ -n "$failure_message" ]]; then
             failure_body="${failure_message}

@@ -69,7 +69,7 @@ test_upgrade() {
 }
 
 test_upgrade_paths() {
-    info "Testing various upgrade paths"
+    info "Testing various legacy upgrade paths"
 
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: test_upgrade_paths <log-output-dir>"
