@@ -96,6 +96,7 @@ func GetSchemeFromURL(endpoint string) string {
 
 // TrimHTTPPrefixes cuts off the http prefixes if they exist on the URL
 func TrimHTTPPrefixes(url string) string {
+	url = strings.TrimPrefix(url, " ")
 	url = strings.TrimPrefix(url, "http://")
 	return strings.TrimPrefix(url, "https://")
 }

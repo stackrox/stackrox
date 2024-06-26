@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -18,15 +19,25 @@ const (
 	timeout = 2 * time.Second
 )
 
+// addrValid validates the URL. It assumes scheme prefixes have been removed
+func addrValid(addr string) error {
+	addrNoScheme := urlfmt.TrimHTTPPrefixes(addr)
+	// url.Parse requires scheme to trigger the correct variant of parsing (it has two)
+	_, err := url.Parse("https://" + addrNoScheme)
+	return err
+}
+
 // CheckTLS checks if the address is using TLS
 func CheckTLS(ctx context.Context, origAddr string) (bool, error) {
 	addr := urlfmt.TrimHTTPPrefixes(origAddr)
-	if addrSplits := strings.SplitN(addr, "/", 2); len(addrSplits) > 0 {
-		addr = addrSplits[0]
+	// Ellimitate obvious mistakes in the host name
+	addr = strings.TrimSpace(addr)
+	if err := addrValid(addr); err != nil {
+		return false, err
 	}
 
-	if strings.Contains(addr, " ") {
-		addr = strings.TrimSpace(addr)
+	if addrSplits := strings.SplitN(addr, "/", 2); len(addrSplits) > 0 {
+		addr = addrSplits[0]
 	}
 
 	host, _, port, err := netutil.ParseEndpoint(addr)
