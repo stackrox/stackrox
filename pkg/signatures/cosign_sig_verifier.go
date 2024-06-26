@@ -34,7 +34,7 @@ const (
 var (
 	errNoImageSHA         = errors.New("no image SHA found")
 	errInvalidHashAlgo    = errox.InvalidArgs.New("invalid hash algorithm used")
-	errNoVerificationData = errors.New("no verification data to verify against")
+	errNoVerificationData = errors.New("verification data not found")
 	errHashCreation       = errox.InvariantViolation.New("creating hash")
 	errCorruptedSignature = errox.InvariantViolation.New("corrupted signature")
 )
@@ -95,14 +95,12 @@ func newCosignSignatureVerifier(config *storage.SignatureIntegration) (*cosignSi
 		}
 
 		var chain []*x509.Certificate
-		if chainsPEM := cosignCert.GetCertificateChainPemEnc(); chainsPEM != "" {
-			chains, err := cryptoutils.UnmarshalCertificatesFromPEM([]byte(chainsPEM))
+		if chainPEM := cosignCert.GetCertificateChainPemEnc(); chainPEM != "" {
+			c, err := cryptoutils.UnmarshalCertificatesFromPEM([]byte(chainPEM))
 			if err != nil {
 				return nil, errox.InvariantViolation.New("failed to unmarshal certificate chain PEM")
 			}
-			if len(chains) > 0 {
-				chain = chains
-			}
+			chain = c
 		}
 
 		certsWithChains = append(certsWithChains, certVerificationData{
