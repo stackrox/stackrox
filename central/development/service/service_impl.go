@@ -53,7 +53,7 @@ func New(sensorConnectionManager connection.Manager, imageDatastore imageDatasto
 		imageDatastore:          imageDatastore,
 		riskManager:             riskManager,
 		sensorConnectionManager: sensorConnectionManager,
-		client:                  client,
+		client:                  client.StandardClient(),
 	}
 }
 
@@ -63,7 +63,7 @@ type serviceImpl struct {
 	sensorConnectionManager connection.Manager
 	imageDatastore          imageDatastore.DataStore
 	riskManager             riskManager.Manager
-	client                  *retryablehttp.Client
+	client                  *http.Client
 }
 
 func (s *serviceImpl) ReplicateImage(ctx context.Context, req *central.ReplicateImageRequest) (*central.Empty, error) {
