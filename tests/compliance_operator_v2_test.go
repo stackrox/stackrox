@@ -121,11 +121,10 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	clusterID := clusters.GetClusters()[0].GetId()
 
 	scanName := fmt.Sprintf("test-%s", uuid.NewV4().String())
-	scanID := uuid.NewDummy().String()
 
 	scanConfig := v2.ComplianceScanConfiguration{
 		ScanName: scanName,
-		Id:       scanID,
+		Id:       "",
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			Description: "test123",
@@ -145,7 +144,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	}
 	modifiedScanConfig := v2.ComplianceScanConfiguration{
 		ScanName: scanName,
-		Id:       scanID,
+		Id:       "",
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			Description: "test456",
@@ -190,7 +189,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
 
 	reqDelete := &v2.ResourceByID{
-		Id: scanID,
+		Id: resp.GetId(),
 	}
 	_, err = service.DeleteComplianceScanConfiguration(ctx, reqDelete)
 	assert.NoError(t, err)
