@@ -162,7 +162,7 @@ test_upgrade_paths() {
     rm ./sensor-remote/*pod-security.yaml
     ./sensor-remote/sensor.sh
     kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$LAST_ROCKS_TAG"
-    kubectl -n stackfox set image deploy/admission-control "*=$REGISTRY/main:$LAST_ROCKS_TAG"
+    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$LAST_ROCKS_TAG"
     kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(make collector-tag)" \
         "compliance=$REGISTRY/main:$LAST_ROCKS_TAG"
 

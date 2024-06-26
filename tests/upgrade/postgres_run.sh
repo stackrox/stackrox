@@ -173,7 +173,7 @@ test_upgrade_paths() {
     # Upgrade to current in order to run any Postgres -> Postgres migrations               #
     ########################################################################################
     kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
-    kubectl -n stackfox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
+    kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
     wait_for_api
 
     # Verify data is still there
