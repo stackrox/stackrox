@@ -19,7 +19,9 @@ import { useQuery } from '@apollo/client';
 import SEARCH_AUTOCOMPLETE_QUERY, {
     SearchAutocompleteQueryResponse,
 } from 'queries/searchAutocomplete';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { ensureString } from '../utils/utils';
+import { useAutocompleteContext } from '../context/AutocompleteContext';
 
 type SearchFilterAutocompleteProps = {
     searchCategory: string;
@@ -78,6 +80,8 @@ function SearchFilterAutocomplete({
     onSearch,
     textLabel,
 }: SearchFilterAutocompleteProps) {
+    const { autocompleteContext } = useAutocompleteContext();
+
     const [isOpen, setIsOpen] = useState(false);
     const [filterValue, setFilterValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -96,11 +100,18 @@ function SearchFilterAutocomplete({
         []
     );
 
+    const autocompleteSearchString = `${searchTerm}:${filterValue ? `r/${filterValue}` : ''}`;
+    const autocompleteContextString = getRequestQueryStringForSearchFilter(autocompleteContext);
+    const autocompleteQuery =
+        autocompleteContextString !== ''
+            ? [autocompleteContextString, autocompleteSearchString].join('+')
+            : autocompleteSearchString;
+
     const { data, loading: isLoading } = useQuery<SearchAutocompleteQueryResponse>(
         SEARCH_AUTOCOMPLETE_QUERY,
         {
             variables: {
-                query: `${searchTerm}:${filterValue ? `r/${filterValue}` : ''}`,
+                query: autocompleteQuery,
                 categories: searchCategory,
             },
         }
