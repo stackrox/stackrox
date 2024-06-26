@@ -61,18 +61,18 @@ jobs:
           if [[ "$PR_DESCRIPTION" =~ '- [x] `CHANGELOG.md` ' | ]]; then
             echo "`CHANGELOG.md` task is checked."
           else
-            echo "`CHANGELOG.md` task is not checked."
+            echo "::error::`CHANGELOG.md` task is not checked."
             exit 1
           fi
           if [[ "$PR_DESCRIPTION" =~ '- [x] documentation ' | ]]; then
             echo "documentation task is checked."
           else
-            echo "documentation task is not checked."
+            echo "::error::documentation task is not checked."
             exit 1
           fi
           if [[ "$PR_DESCRIPTION" =~ '- [x] inspected CI results' | ]]; then
             echo "inspected CI results task is checked."
           else
-            echo "inspected CI results task is not checked."
+            echo "::error::inspected CI results task is not checked."
             exit 1
           fi
