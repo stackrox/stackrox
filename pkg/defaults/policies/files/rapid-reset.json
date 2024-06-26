@@ -35,14 +35,6 @@
               "value": ">=IMPORTANT"
             }
           ]
-        },
-        {
-          "fieldName": "Fixable",
-          "values": [
-            {
-              "value": "true"
-            }
-          ]
         }
       ]
     }
