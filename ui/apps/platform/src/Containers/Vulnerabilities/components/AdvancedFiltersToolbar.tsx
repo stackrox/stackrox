@@ -70,6 +70,10 @@ function AdvancedFiltersToolbar({
     const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
 
     const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig)
+        .concat({
+            displayName: 'CVE snoozed',
+            searchFilterName: 'CVE Snoozed',
+        })
         .concat(
             includeCveSeverityFilters
                 ? makeDefaultFilterDescriptor(defaultFilters, {
