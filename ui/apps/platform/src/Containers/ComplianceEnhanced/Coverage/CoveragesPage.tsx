@@ -1,8 +1,10 @@
-import React, { useContext } from 'react';
+import React, { useCallback, useContext } from 'react';
 import { Route, Switch, useParams } from 'react-router-dom';
 import {
     Bullseye,
     Divider,
+    Flex,
+    FlexItem,
     PageSection,
     Spinner,
     Toolbar,
@@ -24,7 +26,9 @@ import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchF
 import PageTitle from 'Components/PageTitle';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
+import useRestQuery from 'hooks/useRestQuery';
 import useURLSearch from 'hooks/useURLSearch';
+import { getComplianceProfilesStats } from 'services/ComplianceResultsStatsService';
 
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
@@ -34,6 +38,7 @@ import {
 } from './compliance.coverage.routes';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
+import ProfileStatsWidget from './components/ProfileStatsWidget';
 import ScanConfigurationSelect from './components/ScanConfigurationSelect';
 import CoveragesPageHeader from './CoveragesPageHeader';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
@@ -61,6 +66,13 @@ function CoveragesPage() {
         Cluster: getFilteredConfig(clusterSearchFilterConfig, ['Name']),
     };
 
+    const fetchProfilesStats = useCallback(() => getComplianceProfilesStats(), []);
+    const {
+        data: profilesStatsResponse,
+        loading: isLoadingProfilesStats,
+        error: profilesStatsError,
+    } = useRestQuery(fetchProfilesStats);
+
     function handleProfilesToggleChange(selectedProfile: string) {
         navigateWithScanConfigQuery(coverageProfileChecksPath, { profileName: selectedProfile });
     }
@@ -71,6 +83,10 @@ function CoveragesPage() {
 
     const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(
         (profile) => profile.name === profileName
+    );
+
+    const selectedProfileStats = profilesStatsResponse?.scanStats.find(
+        (profile) => profile.profileName === profileName
     );
 
     return (
@@ -100,11 +116,35 @@ function CoveragesPage() {
                             handleToggleChange={handleProfilesToggleChange}
                         />
                         <Divider component="div" />
-                        <ProfileDetailsHeader
-                            isLoading={isLoadingScanConfigProfiles}
-                            profileName={profileName}
-                            profileDetails={selectedProfileDetails}
-                        />
+                        <Flex
+                            alignItems={{ default: 'alignItemsStretch' }}
+                            className="pf-v5-u-background-color-100"
+                            columnGap={{ default: 'columnGapNone' }}
+                            direction={{ default: 'column', md: 'row' }}
+                            flexWrap={{ default: 'nowrap' }}
+                            spaceItems={{ default: 'spaceItemsNone' }}
+                            style={{ minHeight: '260px' }}
+                        >
+                            <FlexItem flex={{ default: 'flex_2' }}>
+                                <ProfileDetailsHeader
+                                    isLoading={isLoadingScanConfigProfiles}
+                                    profileName={profileName}
+                                    profileDetails={selectedProfileDetails}
+                                />
+                            </FlexItem>
+                            <Divider orientation={{ default: 'horizontal', md: 'vertical' }} />
+                            <FlexItem
+                                alignSelf={{ default: 'alignSelfStretch' }}
+                                flex={{ default: 'flex_1' }}
+                                style={{ minWidth: '400px' }}
+                            >
+                                <ProfileStatsWidget
+                                    error={profilesStatsError}
+                                    isLoading={isLoadingProfilesStats}
+                                    profileScanStats={selectedProfileStats}
+                                />
+                            </FlexItem>
+                        </Flex>
                         <Divider component="div" />
                         <PageSection variant="light" className="pf-v5-u-p-0" component="div">
                             <Toolbar>
