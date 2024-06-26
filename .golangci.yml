@@ -21,7 +21,7 @@ issues:
   - pkg/complianceoperator/api
   - scanner/updater/rhel        # TODO(ROX-21539): Remove when CSAF/VEX arrives
   exclude-rules:
-    - path: "(central|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale)/"
+    - path-except: 'central(.+)service_impl\.go'
       linters:
         - wrapcheck
     - path: "(central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale|govulncheck)/"
