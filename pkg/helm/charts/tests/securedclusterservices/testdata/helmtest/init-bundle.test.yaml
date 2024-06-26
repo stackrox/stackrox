@@ -20,7 +20,7 @@ tests:
       ca:
         cert: "certification"
     expect: |
-      .notes | contains("It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart. Make sure to provide an init bundle for Helm chart installation.")
+      .notes | contains("It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart.")
   - name: "Trying with no bundle"
     values:
       ca:
