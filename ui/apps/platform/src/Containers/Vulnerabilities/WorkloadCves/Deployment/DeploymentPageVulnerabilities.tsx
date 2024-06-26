@@ -91,7 +91,7 @@ export const deploymentVulnerabilitiesQuery = gql`
     }
 `;
 
-const defaultSortFields = ['CVE'];
+const defaultSortFields = ['CVE', 'Severity'];
 
 const searchOptions: SearchOption[] = [
     IMAGE_SEARCH_OPTION,
@@ -126,7 +126,7 @@ function DeploymentPageVulnerabilities({
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
-            field: 'CVE',
+            field: 'Severity',
             direction: 'desc',
         },
         onSort: () => setPage(1, 'replace'),
