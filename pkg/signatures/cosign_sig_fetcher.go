@@ -124,7 +124,7 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 				fullImageName, err)
 		}
 
-		// Since we are only focusing on public keys, we are ignoring the certificate / rekor bundles associated with
+		// Since we are only focusing on public keys and certificates, we are ignoring the rekor bundles associated with
 		// the signature.
 		cosignSignatures = append(cosignSignatures, &storage.Signature{
 			Signature: &storage.Signature_Cosign{
