@@ -112,7 +112,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
 
 	actualIntegrations, err := suite.datastore.GetImageIntegrations(suite.hasWriteCtx, &v1.GetImageIntegrationsRequest{})
 	suite.NoError(err)
-	suite.ElementsMatch(integrations, actualIntegrations)
+	protoassert.ElementsMatch(suite.T(), integrations, actualIntegrations)
 }
 
 func testIntegrations(t *testing.T, insertStorage store.Store, retrievalStorage DataStore) {
@@ -234,11 +234,11 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsGetBatch() {
 
 	gotImages, err := suite.datastore.GetImageIntegrations(suite.hasReadCtx, getRequest)
 	suite.NoError(err, "expected no error trying to read with permissions")
-	suite.ElementsMatch(integrationList, gotImages)
+	protoassert.ElementsMatch(suite.T(), integrationList, gotImages)
 
 	gotImages, err = suite.datastore.GetImageIntegrations(suite.hasWriteCtx, getRequest)
 	suite.NoError(err, "expected no error trying to read with permissions")
-	suite.ElementsMatch(integrationList, gotImages)
+	protoassert.ElementsMatch(suite.T(), integrationList, gotImages)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesAdd() {

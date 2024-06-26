@@ -126,7 +126,7 @@ func (s *servicePostgresTestSuite) TestListCloudSources() {
 	// 1. Count cloud sources without providing a query filter.
 	resp, err := s.service.ListCloudSources(s.readCtx, &v1.ListCloudSourcesRequest{})
 	s.Require().NoError(err)
-	s.Assert().Equal(cloudSources, resp.GetCloudSources())
+	protoassert.SlicesEqual(s.T(), cloudSources, resp.GetCloudSources())
 
 	// 2.a. Filter cloud sources based on the name - no match.
 	resp, err = s.service.ListCloudSources(s.readCtx, &v1.ListCloudSourcesRequest{
@@ -144,7 +144,7 @@ func (s *servicePostgresTestSuite) TestListCloudSources() {
 		},
 	})
 	s.Require().NoError(err)
-	s.Assert().Equal([]*v1.CloudSource{cloudSources[0]}, resp.GetCloudSources())
+	protoassert.SlicesEqual(s.T(), []*v1.CloudSource{cloudSources[0]}, resp.GetCloudSources())
 	s.Assert().Equal(secrets.ScrubReplacementStr, resp.GetCloudSources()[0].GetCredentials().GetSecret())
 
 	// 3. Filter cloud sources based on the type.
@@ -154,7 +154,7 @@ func (s *servicePostgresTestSuite) TestListCloudSources() {
 		},
 	})
 	s.Require().NoError(err)
-	s.Assert().Equal(cloudSources[0:25], resp.GetCloudSources())
+	protoassert.SlicesEqual(s.T(), cloudSources[0:25], resp.GetCloudSources())
 }
 
 func (s *servicePostgresTestSuite) TestCreateCloudSource() {

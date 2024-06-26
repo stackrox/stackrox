@@ -242,7 +242,7 @@ func TestWalk(t *testing.T) {
 	assert.NoError(t, store.Walk(ctx, walkFn))
 
 	assert.ElementsMatch(t, walkedNames, injectedNames)
-	assert.ElementsMatch(t, testObjects, walkedObjects)
+	protoassert.ElementsMatch(t, testObjects, walkedObjects)
 }
 
 func TestWalkByQuery(t *testing.T) {
@@ -262,7 +262,7 @@ func TestWalkByQuery(t *testing.T) {
 	}
 
 	assert.NoError(t, store.WalkByQuery(ctx, query, walkFn))
-	assert.ElementsMatch(t, expectedObjects, walkedObjects)
+	protoassert.ElementsMatch(t, expectedObjects, walkedObjects)
 }
 
 func TestGetAll(t *testing.T) {
@@ -275,7 +275,7 @@ func TestGetAll(t *testing.T) {
 
 	fetchedObjects, err := store.GetAll(ctx)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, fetchedObjects, testObjects)
+	protoassert.ElementsMatch(t, fetchedObjects, testObjects)
 }
 
 func TestGetIDs(t *testing.T) {
@@ -341,7 +341,7 @@ func TestGetMany(t *testing.T) {
 
 	fetchedObjects, missingIndices, err := store.GetMany(ctx, identifiersToFetch)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, fetchedObjects, expectedObjects)
+	protoassert.ElementsMatch(t, fetchedObjects, expectedObjects)
 	assert.Equal(t, []int{0}, missingIndices)
 }
 
@@ -366,7 +366,7 @@ func TestGetByQuery(t *testing.T) {
 		testObjects[1],
 		testObjects[3],
 	}
-	assert.ElementsMatch(t, objectsAfter, expectedObjectsAfter)
+	protoassert.ElementsMatch(t, objectsAfter, expectedObjectsAfter)
 }
 
 func TestDeleteByQuery(t *testing.T) {

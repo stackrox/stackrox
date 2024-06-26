@@ -164,7 +164,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	nodes, err := suite.datastore.GetNodesBatch(allowAllCtx, []string{fixtureconsts.Node1, fixtureconsts.Node2})
 	suite.NoError(err)
 	suite.Len(nodes, 2)
-	suite.ElementsMatch([]*storage.Node{expectedNode, newExpectedNode}, nodes)
+	protoassert.ElementsMatch(suite.T(), []*storage.Node{expectedNode, newExpectedNode}, nodes)
 
 	// Delete both nodes.
 	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), fixtureconsts.Node1, storage.RiskSubjectType_NODE).Return(nil)
@@ -631,7 +631,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestGetManyNodeMetadata() {
 	testNode2.Priority = 1
 	testNode3.Scan.Components = nil
 	testNode3.Priority = 1
-	suite.ElementsMatch([]*storage.Node{testNode1, testNode2, testNode3}, storedNodes)
+	protoassert.ElementsMatch(suite.T(), []*storage.Node{testNode1, testNode2, testNode3}, storedNodes)
 }
 
 func getTestNodeForPostgres(id, name string) *storage.Node {

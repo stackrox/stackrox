@@ -216,7 +216,7 @@ func (s *roleDataStoreTestSuite) TestRoleReadOperations() {
 	role, found, err = s.dataStore.GetRole(s.hasReadCtx, s.existingRole.GetName())
 	s.NoError(err)
 	s.True(found)
-	s.Equal(s.existingRole, role, "with READ access existing object is returned")
+	protoassert.Equal(s.T(), s.existingRole, role, "with READ access existing object is returned")
 
 	roles, err := s.dataStore.GetAllRoles(s.hasReadCtx)
 	s.NoError(err)
@@ -227,7 +227,7 @@ func (s *roleDataStoreTestSuite) TestRoleReadOperations() {
 	})
 	s.NoError(err)
 	s.Len(roles, 1)
-	s.ElementsMatch(roles, []*storage.Role{role})
+	protoassert.ElementsMatch(s.T(), roles, []*storage.Role{role})
 
 	roles, err = s.dataStore.GetRolesFiltered(s.hasReadCtx, func(role *storage.Role) bool {
 		return role.GetName() == "non-existing-role"
@@ -439,7 +439,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetReadOperations() {
 	permissionSet, found, err = s.dataStore.GetPermissionSet(s.hasReadCtx, s.existingPermissionSet.GetId())
 	s.NoError(err)
 	s.True(found)
-	s.Equal(s.existingPermissionSet, permissionSet, "with READ access existing object is returned")
+	protoassert.Equal(s.T(), s.existingPermissionSet, permissionSet, "with READ access existing object is returned")
 
 	permissionSets, err := s.dataStore.GetAllPermissionSets(s.hasReadCtx)
 	s.NoError(err)
@@ -450,7 +450,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetReadOperations() {
 	})
 	s.NoError(err)
 	s.Len(permissionSets, 1)
-	s.ElementsMatch(permissionSets, []*storage.PermissionSet{s.existingPermissionSet})
+	protoassert.ElementsMatch(s.T(), permissionSets, []*storage.PermissionSet{s.existingPermissionSet})
 
 	permissionSets, err = s.dataStore.GetPermissionSetsFiltered(s.hasReadCtx, func(permissionSet *storage.PermissionSet) bool {
 		return permissionSet.GetId() == "non-existing permission set"
@@ -687,7 +687,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeReadOperations() {
 	scope, found, err = s.dataStore.GetAccessScope(s.hasReadCtx, s.existingScope.GetId())
 	s.NoError(err)
 	s.True(found)
-	s.Equal(s.existingScope, scope, "with READ access existing object is returned")
+	protoassert.Equal(s.T(), s.existingScope, scope, "with READ access existing object is returned")
 
 	exists, err := s.dataStore.AccessScopeExists(s.hasReadCtx, misplacedScope.GetId())
 	s.NoError(err, "not existing scope for AccessScopeExists() should not return error")
@@ -706,7 +706,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeReadOperations() {
 	})
 	s.NoError(err)
 	s.Len(scopes, 1)
-	s.ElementsMatch(scopes, []*storage.SimpleAccessScope{s.existingScope})
+	protoassert.ElementsMatch(s.T(), scopes, []*storage.SimpleAccessScope{s.existingScope})
 
 	scopes, err = s.dataStore.GetAccessScopesFiltered(s.hasReadCtx, func(accessScope *storage.SimpleAccessScope) bool {
 		return accessScope.GetId() == "non-existing scope"

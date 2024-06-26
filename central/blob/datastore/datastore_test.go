@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -95,12 +96,13 @@ func (s *blobTestSuite) TestSearch() {
 func (s *blobTestSuite) testQuery(ctx context.Context, q *v1.Query, expected []*storage.Blob, errExpected error) {
 	blobs, err := s.datastore.SearchMetadata(ctx, q)
 	s.Require().Equal(err, errExpected)
-	s.Len(blobs, len(expected))
-	s.ElementsMatch(expected, blobs)
+	expectedLength := len(expected)
+	s.Len(blobs, expectedLength)
+	protoassert.ElementsMatch(s.T(), expected, blobs)
 
 	results, err := s.datastore.Search(ctx, q)
 	s.Require().Equal(err, errExpected)
-	s.Len(results, len(expected))
+	s.Len(results, expectedLength)
 	idSet := pkgSearch.ResultsToIDSet(results)
 	for _, e := range expected {
 		s.Contains(idSet, e.GetName())
@@ -108,6 +110,6 @@ func (s *blobTestSuite) testQuery(ctx context.Context, q *v1.Query, expected []*
 
 	ids, err := s.datastore.SearchIDs(ctx, q)
 	s.Require().Equal(err, errExpected)
-	s.Len(ids, len(expected))
+	s.Len(ids, expectedLength)
 	s.ElementsMatch(idSet.AsSlice(), ids)
 }

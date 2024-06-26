@@ -115,7 +115,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
 			// get data and check it
 			batch, err := s.datastore.GetMany(ctx, objIDs)
 			assert.NoError(s.T(), err)
-			assert.ElementsMatch(s.T(), objs, batch)
+			protoassert.ElementsMatch(s.T(), objs, batch)
 
 			// clean up data
 			for i := len(objIDs) - 1; i >= 0; i-- {

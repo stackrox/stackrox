@@ -70,7 +70,7 @@ func (s *declarativeConfigHealthDatastoreSuite) TestGetDeclarativeConfigs() {
 
 	receivedConfigHealths, err := s.datastore.GetDeclarativeConfigs(s.hasReadCtx)
 	s.NoError(err)
-	s.ElementsMatch([]*storage.DeclarativeConfigHealth{configHealth}, receivedConfigHealths)
+	protoassert.ElementsMatch(s.T(), []*storage.DeclarativeConfigHealth{configHealth}, receivedConfigHealths)
 }
 
 func (s *declarativeConfigHealthDatastoreSuite) TestUpdateConfigHealth() {

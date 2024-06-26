@@ -259,20 +259,20 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestGraveyard() {
 	updatedBaseline, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), nil, itemList, true)
 	// The elements should have been removed from the process baseline and put in the graveyard
 	suite.NoError(err)
-	suite.ElementsMatch(baseline.GetElements(), updatedBaseline.GetElementGraveyard())
+	protoassert.ElementsMatch(suite.T(), baseline.GetElements(), updatedBaseline.GetElementGraveyard())
 
 	updatedBaseline, err = suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), itemList, nil, true)
 	suite.NoError(err)
 	// The elements should NOT be added back on to the process baseline because they are in the graveyard and auto = true
 	suite.Empty(updatedBaseline.GetElements())
-	suite.ElementsMatch(baseline.GetElements(), updatedBaseline.GetElementGraveyard())
+	protoassert.ElementsMatch(suite.T(), baseline.GetElements(), updatedBaseline.GetElementGraveyard())
 
 	updatedBaseline, err = suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), itemList, nil, false)
 	suite.NoError(err)
 	// The elements SHOULD be added back on to the process baseline because auto = false
 	suite.Empty(updatedBaseline.GetElementGraveyard())
 	updatedItems := makeItemList(updatedBaseline.GetElements())
-	suite.ElementsMatch(itemList, updatedItems)
+	protoassert.ElementsMatch(suite.T(), itemList, updatedItems)
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) doQuery(q *v1.Query, len int) {
