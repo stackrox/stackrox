@@ -1274,8 +1274,8 @@ record_progress_step() {
             "<this_step_file> <previous_step_file> <JUNIT Class> <JUNIT Description>"
     fi
 
-    local previous_step_file="$1"
-    local this_step_file="$2"
+    local this_step_file="$1"
+    local previous_step_file="$2"
     local junit_class="$3"
     local junit_step_description="$4"
 
