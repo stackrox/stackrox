@@ -178,13 +178,13 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
     MANUAL: {
         icon: (
             <Icon>
-                <WrenchIcon color="var(--pf-v5-global--disabled-color--100)" />
+                <WrenchIcon color="var(--pf-v5-global--warning-color--100)" />
             </Icon>
         ),
         statusText: 'Manual',
         tooltipText:
             'Manual check requires additional organizational or technical knowledge that is not automatable',
-        color: 'grey',
+        color: 'gold',
     },
     NOT_APPLICABLE: {
         icon: (
