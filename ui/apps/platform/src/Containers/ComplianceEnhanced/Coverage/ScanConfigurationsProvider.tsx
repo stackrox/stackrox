@@ -61,9 +61,20 @@ function ScanConfigurationsProvider({ children }: { children: React.ReactNode })
         setSelectedScanConfigName(scanConfigName, historyAction);
     };
 
+    const effectiveScanConfigurationsResponse = scanConfigurationsResponse ?? defaultResponse;
+
+    const { configurations } = effectiveScanConfigurationsResponse;
+
+    const sortedScanConfigurations = configurations.sort((a, b) =>
+        a.scanName.localeCompare(b.scanName)
+    );
+
     const contextValue: ScanConfigurationsContextValue = {
         scanConfigurationsQuery: {
-            response: scanConfigurationsResponse ?? defaultResponse,
+            response: {
+                configurations: sortedScanConfigurations,
+                totalCount: effectiveScanConfigurationsResponse.totalCount,
+            },
             isLoading,
             error,
         },

@@ -32,15 +32,16 @@ import { getComplianceProfileResults } from 'services/ComplianceResultsService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 
+import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import { combineSearchFilterWithScanConfig } from './compliance.coverage.utils';
-import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
+import ScanConfigurationSelect from './components/ScanConfigurationSelect';
+import CoveragesPageHeader from './CoveragesPageHeader';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
-import CoveragesPageHeader from './CoveragesPageHeader';
 import ProfileChecksTable from './ProfileChecksTable';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 
@@ -53,7 +54,8 @@ function ProfileChecksPage() {
     const { profileName } = useParams();
     const { isLoading: isLoadingScanConfigProfiles, scanConfigProfilesResponse } =
         useContext(ComplianceProfilesContext);
-    const { selectedScanConfigName } = useContext(ScanConfigurationsContext);
+    const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
+        useContext(ScanConfigurationsContext);
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { page, perPage, setPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
@@ -105,6 +107,13 @@ function ProfileChecksPage() {
         <>
             <PageTitle title="Compliance coverage - Profile checks" />
             <CoveragesPageHeader />
+            <Divider component="div" />
+            <ScanConfigurationSelect
+                isLoading={scanConfigurationsQuery.isLoading}
+                scanConfigs={scanConfigurationsQuery.response.configurations}
+                selectedScanConfigName={selectedScanConfigName}
+                setSelectedScanConfigName={setSelectedScanConfigName}
+            />
             {!isDisclaimerAccepted && (
                 <ComplianceUsageDisclaimer onAccept={() => setIsDisclaimerAccepted(true)} />
             )}
