@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     PageSection,
     Title,
@@ -19,7 +19,10 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
-import useAnalytics, { GLOBAL_SNOOZE_CVE } from 'hooks/useAnalytics';
+import useAnalytics, {
+    GLOBAL_SNOOZE_CVE,
+    NODE_CVE_ENTITY_CONTEXT_VIEWED,
+} from 'hooks/useAnalytics';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
 import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
@@ -84,7 +87,20 @@ function NodeCvesOverviewPage() {
             entityTab === 'CVE' ? cveDefaultSortOption : nodeDefaultSortOption,
             'replace'
         );
+
+        analyticsTrack({
+            event: NODE_CVE_ENTITY_CONTEXT_VIEWED,
+            properties: {
+                type: entityTab,
+                page: 'Overview',
+            },
+        });
     }
+
+    // Track the current entity tab when the page is initially visited.
+    useEffect(() => {
+        onEntityTabChange(activeEntityTabKey);
+    }, []);
 
     function onClearFilters() {
         setSearchFilter({});
