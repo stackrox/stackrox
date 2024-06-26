@@ -318,9 +318,16 @@ export function addRegexPrefixToFilters(
 export const generatePathWithQuery = (
     pathTemplate: string,
     pathParams: Partial<Record<string, unknown>>,
-    queryParams
-) => {
+    options: {
+        customParams?: string | URLSearchParams | string[][] | Record<string, string>;
+        searchFilter?: SearchFilter;
+    } = {}
+): string => {
+    const { customParams = {}, searchFilter = {} } = options;
     const path = safeGeneratePath(pathTemplate, pathParams, pathTemplate);
-    const searchParams = new URLSearchParams(queryParams).toString();
-    return `${path}?${searchParams}`;
+    const customParamsString = new URLSearchParams(customParams).toString();
+    const searchFilterString = getUrlQueryStringForSearchFilter(searchFilter);
+    const queryParams = [customParamsString, searchFilterString].filter(Boolean).join('&');
+
+    return queryParams ? `${path}?${queryParams}` : path;
 };
