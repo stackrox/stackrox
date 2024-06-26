@@ -766,7 +766,7 @@ func (m *manager) initFromStore() error {
 			return nil
 		})
 	}
-	return pgutils.RetryIfPostgres(walkFn)
+	return pgutils.RetryIfPostgres(context.Background(), walkFn)
 }
 
 func (m *manager) flushBaselineQueue() {

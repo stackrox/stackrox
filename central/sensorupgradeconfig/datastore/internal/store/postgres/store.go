@@ -77,7 +77,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.SensorUpgradeConfig
 		return sac.ErrResourceAccessDenied
 	}
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableUpsert(ctx, obj)
 	})
 }
@@ -119,7 +119,7 @@ func (s *storeImpl) Get(ctx context.Context) (*storage.SensorUpgradeConfig, bool
 		return nil, false, nil
 	}
 
-	return pgutils.Retry3(func() (*storage.SensorUpgradeConfig, bool, error) {
+	return pgutils.Retry3(ctx, func() (*storage.SensorUpgradeConfig, bool, error) {
 		return s.retryableGet(ctx)
 	})
 }
@@ -162,7 +162,7 @@ func (s *storeImpl) Delete(ctx context.Context) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableDelete(ctx)
 	})
 }
