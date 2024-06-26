@@ -1,4 +1,4 @@
-name: "Check PR title"
+name: "Check PR health"
 
 on:
   pull_request_target:
@@ -42,5 +42,37 @@ jobs:
           if [ "$TITLE_LENGTH" -gt "$LENGTH" ]
           then
             echo "::error::Please shorten the PR title from $TITLE_LENGTH to at most $LENGTH characters."
+            exit 1
+          fi
+
+  check-description:
+    runs-on: ubuntu-latest
+    steps:      
+      - name: Check PR description
+        run: |
+          PR_USER=$(jq -r .pull_request.user.url < $GITHUB_EVENT_PATH)
+          if [[ "$PR_USER" = 'https://github.com/apps/dependabot' ]]; then
+            echo "Ignoring dependabot PR."
+            exit 0
+          fi
+
+          PR_DESCRIPTION=$(jq -r .pull_request.body < $GITHUB_EVENT_PATH)
+          
+          if [[ "$PR_DESCRIPTION" =~ '- [x] `CHANGELOG.md` ' | ]]; then
+            echo "`CHANGELOG.md` task is checked."
+          else
+            echo "`CHANGELOG.md` task is not checked."
+            exit 1
+          fi
+          if [[ "$PR_DESCRIPTION" =~ '- [x] documentation ' | ]]; then
+            echo "documentation task is checked."
+          else
+            echo "documentation task is not checked."
+            exit 1
+          fi
+          if [[ "$PR_DESCRIPTION" =~ '- [x] inspected CI results' | ]]; then
+            echo "inspected CI results task is checked."
+          else
+            echo "inspected CI results task is not checked."
             exit 1
           fi
