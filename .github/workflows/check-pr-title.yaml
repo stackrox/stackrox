@@ -13,8 +13,8 @@ jobs:
       - name: Check if the PR title is well dressed
         env:
           CONV: '(build|chore|ci|docs?|feat|fix|perf|refactor|revert|style|tests?)(\([\w\-\.]+\))?!?'
-          JIRA: '([A-Z]+-[0-9]+, ?)*[A-Z]+-[0-9]+'
-          TEXT: ': .+'
+          JIRA: "([A-Z]+-[0-9]+, ?)*[A-Z]+-[0-9]+"
+          TEXT: ": .+"
         run: |
           # Either conventional or JIRA-nnn prefix followed by ': ' and random text:
           REGEX="(($CONV)|($JIRA))($TEXT)"
@@ -36,7 +36,7 @@ jobs:
       - name: Check PR title length
         if: github.event.pull_request.user.login != 'dependabot[bot]'
         env:
-          LENGTH: '70'
+          LENGTH: "70"
         run: |
           TITLE_LENGTH="$(echo -nE "$PR_TITLE" | wc --chars)"
           if [ "$TITLE_LENGTH" -gt "$LENGTH" ]
@@ -47,17 +47,12 @@ jobs:
 
   check-description:
     runs-on: ubuntu-latest
-    steps:      
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    steps:
       - name: Check PR description
+        env:
+          PR_DESCRIPTION: ${{ github.event.pull_request.body }}
         run: |
-          PR_USER=$(jq -r .pull_request.user.url < $GITHUB_EVENT_PATH)
-          if [[ "$PR_USER" = 'https://github.com/apps/dependabot' ]]; then
-            echo "Ignoring dependabot PR."
-            exit 0
-          fi
-
-          PR_DESCRIPTION=$(jq -r .pull_request.body < $GITHUB_EVENT_PATH)
-          
           if [[ "$PR_DESCRIPTION" =~ '- [x] `CHANGELOG.md` ' | ]]; then
             echo "`CHANGELOG.md` task is checked."
           else
