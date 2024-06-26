@@ -17,6 +17,7 @@ import services.SummaryService
 import util.Helpers
 
 import org.junit.Assume
+import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 
@@ -25,6 +26,7 @@ class SummaryTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("COMPATIBILITY")
+    @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
     @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
     def "Verify TopNav counts for Nodes, Deployments, and Secrets"() {
         // https://issues.redhat.com/browse/ROX-6844
