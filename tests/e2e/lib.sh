@@ -347,6 +347,14 @@ deploy_sensor() {
     fi
 }
 
+set_collector_log_level() {
+    collector_config="$(kubectl -n stackrox get daemonset collector -o jsonpath='{.spec.template.spec.containers[?(@.name=="collector")].env[?(@.name=="COLLECTOR_CONFIG")].value}')"
+
+    collector_log_config="$(echo $collector_config | jq '. + {"logLevel": "debug"}')"
+
+    kubectl -n "${sensor_namespace}" set env ds/collector COLLECTOR_CONFIG="${collector_log_config}"
+}
+
 # shellcheck disable=SC2120
 deploy_sensor_via_operator() {
     local sensor_namespace=${1:-stackrox}
@@ -405,6 +413,8 @@ deploy_sensor_via_operator() {
     if [[ -n "${ROX_AFTERGLOW_PERIOD:-}" ]]; then
        kubectl -n "${sensor_namespace}" set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
     fi
+    
+    set_collector_log_level()
 
     if [[ -n "${ROX_PROCESSES_LISTENING_ON_PORT:-}" ]]; then
        kubectl -n "${sensor_namespace}" set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
