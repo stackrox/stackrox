@@ -9,7 +9,7 @@ import { getComplianceClusterStats } from 'services/ComplianceResultsStatsServic
 import { getTableUIState } from 'utils/getTableUIState';
 import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
-import { CLUSTER_QUERY } from './compliance.coverage.constants';
+import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import { combineSearchFilterWithScanConfig } from './compliance.coverage.utils';
 import ProfileClustersTable from './ProfileClustersTable';
