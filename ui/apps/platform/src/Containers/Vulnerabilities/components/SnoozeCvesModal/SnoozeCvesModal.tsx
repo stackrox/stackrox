@@ -20,7 +20,7 @@ export type SnoozeCvesModalProps = {
     action: SnoozeAction;
     cveType: SnoozeableCveType;
     cves: { cve: string }[];
-    onSuccess: () => void;
+    onSuccess: (action: SnoozeAction, duration: ValueOf<typeof durations>) => void;
     onClose: () => void;
 };
 
@@ -40,7 +40,7 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
         },
         onSubmit: (formValues: FormValues, helpers: FormikHelpers<FormValues>) => {
             const callbackOptions = {
-                onSuccess,
+                onSuccess: () => onSuccess(action, formValues.duration),
                 onSettled: () => helpers.setSubmitting(false),
             };
 

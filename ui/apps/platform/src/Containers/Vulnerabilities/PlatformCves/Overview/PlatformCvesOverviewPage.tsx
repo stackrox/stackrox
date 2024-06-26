@@ -16,6 +16,7 @@ import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
+import useAnalytics, { GLOBAL_SNOOZE_CVE } from 'hooks/useAnalytics';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
 import TableEntityToolbar from 'Containers/Vulnerabilities/components/TableEntityToolbar';
@@ -51,6 +52,7 @@ const searchFilterConfig = {
 
 function PlatformCvesOverviewPage() {
     const apolloClient = useApolloClient();
+    const { analyticsTrack } = useAnalytics();
 
     const [activeEntityTabKey] = useURLStringUnion('entityTab', platformEntityTabValues);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -119,7 +121,13 @@ function PlatformCvesOverviewPage() {
             {snoozeModalOptions && (
                 <SnoozeCvesModal
                     {...snoozeModalOptions}
-                    onSuccess={() => {
+                    onSuccess={(action, duration) => {
+                        if (action === 'SNOOZE') {
+                            analyticsTrack({
+                                event: GLOBAL_SNOOZE_CVE,
+                                properties: { type: 'PLATFORM', duration },
+                            });
+                        }
                         // Refresh the data after snoozing/unsnoozing CVEs
                         apolloClient.cache.evict({ fieldName: 'platformCVEs' });
                         apolloClient.cache.evict({ fieldName: 'platformCVECount' });
