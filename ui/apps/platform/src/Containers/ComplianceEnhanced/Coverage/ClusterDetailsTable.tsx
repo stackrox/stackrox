@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
     Pagination,
     Text,
@@ -31,6 +31,7 @@ import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
 import ControlLabels from './components/ControlLabels';
 import StatusIcon from './components/StatusIcon';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
 
 export type ClusterDetailsTableProps = {
     checkResultsCount: number;
@@ -61,6 +62,7 @@ function ClusterDetailsTable({
 }: ClusterDetailsTableProps) {
     /* eslint-disable no-nested-ternary */
     const { page, perPage, setPage, setPerPage } = pagination;
+    const { generatePathWithScanConfig } = useScanConfigRouter();
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
 
     function toggleRow(selectedRowIndex: number) {
@@ -155,10 +157,18 @@ function ClusterDetailsTable({
                                         <Tr>
                                             <Td dataLabel="Check">
                                                 <Link
-                                                    to={`${generatePath(coverageCheckDetailsPath, {
-                                                        checkName,
-                                                        profileName,
-                                                    })}?${TAB_NAV_QUERY}=${DETAILS_TAB}`}
+                                                    to={`${generatePathWithScanConfig(
+                                                        coverageCheckDetailsPath,
+                                                        {
+                                                            checkName,
+                                                            profileName,
+                                                        },
+                                                        {
+                                                            customParams: {
+                                                                [TAB_NAV_QUERY]: DETAILS_TAB,
+                                                            },
+                                                        }
+                                                    )}`}
                                                 >
                                                     {checkName}
                                                 </Link>

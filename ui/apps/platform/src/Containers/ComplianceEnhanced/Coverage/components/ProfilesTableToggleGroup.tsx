@@ -22,7 +22,7 @@ function ProfilesTableToggleGroup({ activeToggle }: ProfilesTableToggleGroupProp
     const handleToggleChange = (resultsView) => {
         const path: CoverageProfilePath =
             resultsView === 'checks' ? coverageProfileChecksPath : coverageProfileClustersPath;
-        navigateWithScanConfigQuery(path, { profileName }, searchFilter);
+        navigateWithScanConfigQuery(path, { profileName }, { searchFilter });
     };
 
     return (

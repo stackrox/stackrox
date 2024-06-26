@@ -1,5 +1,8 @@
 import axios from 'services/instance';
-import { SearchQueryOptions } from 'types/search';
+import { SearchFilter, SearchQueryOptions } from 'types/search';
+import qs from 'qs';
+
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import {
     buildNestedRawQueryParams,
@@ -73,11 +76,14 @@ export function getComplianceClusterStats(
  */
 export function getComplianceProfileCheckStats(
     profileName: string,
-    checkName: string
+    checkName: string,
+    scanConfigSearchFilter: SearchFilter
 ): Promise<ComplianceCheckResultStatusCount> {
+    const query = getRequestQueryStringForSearchFilter(scanConfigSearchFilter);
+    const params = qs.stringify({ query: { query } }, { arrayFormat: 'repeat', allowDots: true });
     return axios
         .get<ListComplianceProfileResults>(
-            `${complianceResultsStatsBaseUrl}/profiles/${profileName}/checks/${checkName}`
+            `${complianceResultsStatsBaseUrl}/profiles/${profileName}/checks/${checkName}?${params}`
         )
         .then((response) => response.data?.profileResults?.[0]);
 }

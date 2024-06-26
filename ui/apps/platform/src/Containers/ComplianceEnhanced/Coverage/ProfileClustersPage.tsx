@@ -38,6 +38,7 @@ import { coverageProfileClustersPath } from './compliance.coverage.routes';
 import { combineSearchFilterWithScanConfig } from './compliance.coverage.utils';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
+import ScanConfigurationSelect from './components/ScanConfigurationSelect';
 import CoveragesPageHeader from './CoveragesPageHeader';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
@@ -53,7 +54,8 @@ function ProfileClustersPage() {
     const { profileName } = useParams();
     const { isLoading: isLoadingScanConfigProfiles, scanConfigProfilesResponse } =
         useContext(ComplianceProfilesContext);
-    const { selectedScanConfigName } = useContext(ScanConfigurationsContext);
+    const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
+        useContext(ScanConfigurationsContext);
     const [currentDatetime, setCurrentDatetime] = useState<Date>(new Date());
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
 
@@ -117,6 +119,13 @@ function ProfileClustersPage() {
         <>
             <PageTitle title="Compliance coverage - Profile clusters" />
             <CoveragesPageHeader />
+            <Divider component="div" />
+            <ScanConfigurationSelect
+                isLoading={scanConfigurationsQuery.isLoading}
+                scanConfigs={scanConfigurationsQuery.response.configurations}
+                selectedScanConfigName={selectedScanConfigName}
+                setSelectedScanConfigName={setSelectedScanConfigName}
+            />
             {!isDisclaimerAccepted && (
                 <ComplianceUsageDisclaimer onAccept={() => setIsDisclaimerAccepted(true)} />
             )}

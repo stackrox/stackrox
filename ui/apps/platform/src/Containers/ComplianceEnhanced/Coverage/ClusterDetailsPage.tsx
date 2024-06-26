@@ -1,15 +1,17 @@
-import React, { useCallback } from 'react';
-import { generatePath, useHistory, useParams } from 'react-router-dom';
+import React, { useCallback, useContext } from 'react';
+import { useParams } from 'react-router-dom';
 import {
     Alert,
     Breadcrumb,
     BreadcrumbItem,
+    Bullseye,
     Divider,
     Flex,
     Label,
     LabelGroup,
     PageSection,
     Skeleton,
+    Spinner,
     Title,
 } from '@patternfly/react-core';
 
@@ -38,11 +40,17 @@ import {
     coverageProfileClustersPath,
     coverageClusterDetailsPath,
 } from './compliance.coverage.routes';
+import { createScanConfigFilter, isScanConfigurationDisabled } from './compliance.coverage.utils';
+import ScanConfigurationSelect from './components/ScanConfigurationSelect';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
+import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
 
 function ClusterDetailsPage() {
-    const history = useHistory();
+    const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
+        useContext(ScanConfigurationsContext);
     const { clusterId, profileName } = useParams();
+    const { generatePathWithScanConfig, navigateWithScanConfigQuery } = useScanConfigRouter();
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { page, perPage, setPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
@@ -53,8 +61,12 @@ function ClusterDetailsPage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const fetchProfilesStats = useCallback(
-        () => listComplianceScanConfigClusterProfiles(clusterId),
-        [clusterId]
+        () =>
+            listComplianceScanConfigClusterProfiles(
+                clusterId,
+                createScanConfigFilter(selectedScanConfigName)
+            ),
+        [clusterId, selectedScanConfigName]
     );
     const {
         data: scanConfigProfilesResponse,
@@ -90,11 +102,10 @@ function ClusterDetailsPage() {
     });
 
     function handleProfilesToggleChange(selectedProfile: string) {
-        const path = generatePath(coverageClusterDetailsPath, {
+        navigateWithScanConfigQuery(coverageClusterDetailsPath, {
             profileName: selectedProfile,
             clusterId,
         });
-        history.push(path);
     }
 
     const onSearch = (payload: OnSearchPayload) => {
@@ -134,9 +145,8 @@ function ClusterDetailsPage() {
             <PageTitle title="Compliance coverage - Cluster" />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItem>Compliance coverage</BreadcrumbItem>
                     <BreadcrumbItemLink
-                        to={generatePath(coverageProfileClustersPath, {
+                        to={generatePathWithScanConfig(coverageProfileClustersPath, {
                             profileName,
                         })}
                     >
@@ -151,6 +161,16 @@ function ClusterDetailsPage() {
                     </BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
+            <Divider component="div" />
+            <ScanConfigurationSelect
+                isLoading={scanConfigurationsQuery.isLoading}
+                scanConfigs={scanConfigurationsQuery.response.configurations}
+                selectedScanConfigName={selectedScanConfigName}
+                isScanConfigDisabled={(config) =>
+                    isScanConfigurationDisabled(config, { clusterId })
+                }
+                setSelectedScanConfigName={setSelectedScanConfigName}
+            />
             <Divider component="div" />
             <PageSection variant="light">
                 <Flex
@@ -180,29 +200,37 @@ function ClusterDetailsPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection>
-                <ProfilesToggleGroup
-                    profileName={profileName}
-                    profiles={scanConfigProfilesResponse?.profiles ?? []}
-                    handleToggleChange={handleProfilesToggleChange}
-                />
-                <Divider component="div" />
-                <ProfileDetailsHeader
-                    isLoading={isLoadingScanConfigProfiles}
-                    profileName={profileName}
-                    profileDetails={selectedProfileDetails}
-                />
-                <Divider component="div" />
-                <ClusterDetailsTable
-                    checkResultsCount={checkResultsResponse?.totalCount ?? 0}
-                    profileName={profileName}
-                    tableState={tableState}
-                    pagination={pagination}
-                    getSortParams={getSortParams}
-                    searchFilterConfig={searchFilterConfig}
-                    searchFilter={searchFilter}
-                    onSearch={onSearch}
-                    onCheckStatusSelect={onCheckStatusSelect}
-                />
+                {isLoadingScanConfigProfiles ? (
+                    <Bullseye>
+                        <Spinner />
+                    </Bullseye>
+                ) : (
+                    <>
+                        <ProfilesToggleGroup
+                            profileName={profileName}
+                            profiles={scanConfigProfilesResponse?.profiles ?? []}
+                            handleToggleChange={handleProfilesToggleChange}
+                        />
+                        <Divider component="div" />
+                        <ProfileDetailsHeader
+                            isLoading={isLoadingScanConfigProfiles}
+                            profileName={profileName}
+                            profileDetails={selectedProfileDetails}
+                        />
+                        <Divider component="div" />
+                        <ClusterDetailsTable
+                            checkResultsCount={checkResultsResponse?.totalCount ?? 0}
+                            profileName={profileName}
+                            tableState={tableState}
+                            pagination={pagination}
+                            getSortParams={getSortParams}
+                            searchFilterConfig={searchFilterConfig}
+                            searchFilter={searchFilter}
+                            onSearch={onSearch}
+                            onCheckStatusSelect={onCheckStatusSelect}
+                        />
+                    </>
+                )}
             </PageSection>
         </>
     );
