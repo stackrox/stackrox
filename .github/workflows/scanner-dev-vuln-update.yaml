@@ -42,18 +42,28 @@ jobs:
 
   run-updater:
     needs:
-      - build-updater
+    - build-updater
     runs-on: ubuntu-latest
     env:
       STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       STACKROX_NVD_API_CALL_INTERVAL: 6s
+
     steps:
     # Checkout to run ./.github/actions/{download,upload}-artifact-with-retry
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ github.event.pull_request.head.sha || github.ref }}
+
+    - name: Set MANUAL_URL
+      id: set-manual-url
+      run: |
+        if [ "${{ github.event_name }}" == "schedule" ]; then
+          echo "MANUAL_URL=https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml" >> "$GITHUB_ENV"
+        else
+          echo "MANUAL_URL=https://raw.githubusercontent.com/stackrox/stackrox/${{ github.event.pull_request.head.sha }}/scanner/updater/manual/vulns.yaml" >> "$GITHUB_ENV"
+        fi
 
     - uses: ./.github/actions/download-artifact-with-retry
       with:
@@ -67,11 +77,11 @@ jobs:
 
     - name: Run updater (single bundle)
       run: |
-        updater export vulns
+        updater export vulns --manual-url "$MANUAL_URL"
 
     - name: Run updater (multi bundle)
       run: |
-        updater export --split bundles
+        updater export --manual-url "$MANUAL_URL" --split bundles
         zip vulns/vulnerabilities.zip bundles/*.json.zst
 
     - uses: ./.github/actions/upload-artifact-with-retry
@@ -83,7 +93,7 @@ jobs:
   upload-vulnerabilities:
     runs-on: ubuntu-latest
     needs:
-      - run-updater
+    - run-updater
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
     - name: Checkout repository
