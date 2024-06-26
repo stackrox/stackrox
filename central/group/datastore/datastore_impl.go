@@ -115,7 +115,7 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, authProviderID string, attrib
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
 	return groups, nil

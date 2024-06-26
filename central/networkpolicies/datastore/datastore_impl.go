@@ -77,7 +77,7 @@ func (ds *datastoreImpl) GetNetworkPolicies(ctx context.Context, clusterID, name
 		return ds.storage.GetByQuery(ctx, getQuery(clusterID, namespace))
 	}
 	var netPols []*storage.NetworkPolicy
-	err := pgutils.RetryIfPostgres(
+	err := pgutils.RetryIfPostgres(ctx,
 		func() error {
 			netPols = netPols[:0]
 			return ds.doForMatching(ctx, clusterID, namespace, func(np *storage.NetworkPolicy) {

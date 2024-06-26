@@ -103,7 +103,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.IntegrationHeal
 //// Interface functions
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.IntegrationHealth) error {
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.upsert(ctx, obj)
 	})
 }

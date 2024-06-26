@@ -315,7 +315,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return err
 	}
 

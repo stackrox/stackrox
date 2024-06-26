@@ -222,8 +222,9 @@ func New(db postgres.DB, clusterID string) FlowStore {
 	partitionCreate := `create table if not exists %s partition of network_flows_v2 
 		for values in ('%s')`
 
-	err = pgutils.Retry(func() error {
-		_, err := db.Exec(context.Background(), fmt.Sprintf(partitionCreate, partitionName, clusterID))
+	ctx := context.Background()
+	err = pgutils.Retry(ctx, func() error {
+		_, err := db.Exec(ctx, fmt.Sprintf(partitionCreate, partitionName, clusterID))
 		return err
 	})
 	if err != nil {
@@ -293,7 +294,7 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableUpsertFlows(ctx, flows, lastUpdateTS)
 	})
 }
@@ -368,7 +369,7 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveFlowsByDeployment, "NetworkFlow")
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableRemoveFlowsForDeployment(ctx, id)
 	})
 }
@@ -417,7 +418,7 @@ func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt st
 func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 
-	return pgutils.Retry3(func() ([]*storage.NetworkFlow, *time.Time, error) {
+	return pgutils.Retry3(ctx, func() ([]*storage.NetworkFlow, *time.Time, error) {
 		return s.retryableGetAllFlows(ctx, since)
 	})
 }
@@ -456,7 +457,7 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *time.Ti
 func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlow")
 
-	return pgutils.Retry3(func() ([]*storage.NetworkFlow, *time.Time, error) {
+	return pgutils.Retry3(ctx, func() ([]*storage.NetworkFlow, *time.Time, error) {
 		return s.retryableGetMatchingFlows(ctx, pred, since)
 	})
 }
@@ -497,7 +498,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 func (s *flowStoreImpl) GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetFlowsForDeployment, "NetworkFlow")
 
-	return pgutils.Retry2(func() ([]*storage.NetworkFlow, error) {
+	return pgutils.Retry2(ctx, func() ([]*storage.NetworkFlow, error) {
 		return s.retryableGetFlowsForDeployment(ctx, deploymentID)
 	})
 }
@@ -557,7 +558,7 @@ func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlow
 func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.delete(ctx, props)
 	})
 }
