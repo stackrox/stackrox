@@ -17,8 +17,7 @@ import ComplianceProfilesProvider, {
     ComplianceProfilesContext,
 } from './ComplianceProfilesProvider';
 import CoverageEmptyState from './CoverageEmptyState';
-import ProfileChecksPage from './ProfileChecksPage';
-import ProfileClustersPage from './ProfileClustersPage';
+import CoveragesPage from './CoveragesPage';
 import ScanConfigurationsProvider from './ScanConfigurationsProvider';
 
 function CoveragePage() {
@@ -48,8 +47,11 @@ function CoverageContent() {
 
     return (
         <Switch>
-            <Route exact path={coverageProfileChecksPath} component={ProfileChecksPage} />
-            <Route exact path={coverageProfileClustersPath} component={ProfileClustersPage} />
+            <Route
+                exact
+                path={[coverageProfileChecksPath, coverageProfileClustersPath]}
+                component={CoveragesPage}
+            />
             <Route exact path={coverageCheckDetailsPath} component={CheckDetailsPage} />
             <Route exact path={coverageClusterDetailsPath} component={ClusterDetailsPage} />
             <Route
