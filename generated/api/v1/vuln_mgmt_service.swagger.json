@@ -571,6 +571,14 @@
         "signaturePayload": {
           "type": "string",
           "format": "byte"
+        },
+        "certPem": {
+          "type": "string",
+          "format": "byte"
+        },
+        "certChainPem": {
+          "type": "string",
+          "format": "byte"
         }
       }
     },
