@@ -50,6 +50,16 @@ func SliceContains[T proto.Message](t testing.TB, slice []T, element T, msgAndAr
 	return assert.Failf(t, "Slice does not contain element", "%q %v", element.String(), msgAndArgs)
 }
 
+func SliceNotContains[T proto.Message](t testing.TB, slice []T, element T, msgAndArgs ...interface{}) bool {
+	t.Helper()
+	for _, e := range slice {
+		if proto.Equal(e, element) {
+			return assert.Failf(t, "Slice contain element", "%q %v", element.String(), msgAndArgs)
+		}
+	}
+	return true
+}
+
 func ElementsMatch[T proto.Message](t testing.TB, expected, actual []T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	areEqual := assert.Len(t, actual, len(expected))
