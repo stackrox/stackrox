@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -138,7 +139,7 @@ func (s *servicePostgresTestSuite) TestExport() {
 			// and timestamps.
 			s.Require().Len(results, len(c.expected))
 			for i := range results {
-				s.Assert().Contains(c.deployments, results[i].Deployment)
+				protoassert.SliceContains(s.T(), c.deployments, results[i].Deployment)
 
 				var imageIDs []string
 				for _, image := range results[i].Images {

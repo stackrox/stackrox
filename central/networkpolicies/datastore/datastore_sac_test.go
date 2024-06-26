@@ -124,9 +124,9 @@ func (s *networkPolicySACSuite) TestGetNetworkPolicies() {
 			policies, err := s.datastore.GetNetworkPolicies(ctx, testconsts.Cluster2, testconsts.NamespaceB)
 			s.NoError(err)
 			if c.ExpectedFound {
-				s.ElementsMatch([]*storage.NetworkPolicy{networkPolicy1}, policies)
+				protoassert.ElementsMatch(s.T(), []*storage.NetworkPolicy{networkPolicy1}, policies)
 			} else {
-				s.ElementsMatch([]*storage.NetworkPolicy{}, policies)
+				s.Empty(policies)
 			}
 		})
 	}

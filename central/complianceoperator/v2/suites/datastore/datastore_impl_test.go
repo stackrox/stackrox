@@ -391,7 +391,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestGetSuitesByCluster() {
 		retrievedObjects, err := s.dataStore.GetSuitesByCluster(tc.testContext, tc.clusterID)
 		s.Require().NoError(err)
 		s.Require().Equal(tc.expectedCount, len(retrievedObjects))
-		s.Require().Equal(tc.expectedResults, retrievedObjects)
+		protoassert.SlicesEqual(s.T(), tc.expectedResults, retrievedObjects)
 	}
 }
 

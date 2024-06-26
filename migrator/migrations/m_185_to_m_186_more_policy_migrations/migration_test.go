@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -147,5 +148,5 @@ func (s *policyMigrationTestSuite) TestPolicyExclusionMigration() {
 			},
 		},
 	}
-	s.ElementsMatch(policy.Exclusions, expectedExclusions, "exclusion do not match after migration")
+	protoassert.ElementsMatch(s.T(), policy.Exclusions, expectedExclusions, "exclusion do not match after migration")
 }

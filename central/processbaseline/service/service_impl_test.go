@@ -331,12 +331,12 @@ func (suite *ProcessBaselineServiceTestSuite) TestUpdateProcessBaseline() {
 					}
 				}
 			}
-			assert.ElementsMatch(t, c.expectedSuccessKeys, successKeys)
+			protoassert.ElementsMatch(t, c.expectedSuccessKeys, successKeys)
 			var errorKeys []*storage.ProcessBaselineKey
 			for _, err := range response.Errors {
 				errorKeys = append(errorKeys, err.GetKey())
 			}
-			assert.ElementsMatch(t, c.expectedErrorKeys, errorKeys)
+			protoassert.ElementsMatch(t, c.expectedErrorKeys, errorKeys)
 		})
 	}
 }

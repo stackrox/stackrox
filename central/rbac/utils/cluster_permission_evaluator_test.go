@@ -10,6 +10,7 @@ import (
 	roleBindingDS "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -220,7 +221,7 @@ func TestClusterPermissionsForSubject(t *testing.T) {
 	}
 
 	evaluator := NewClusterPermissionEvaluator(clusterID, roleStore, bindingStore)
-	assert.Equal(t, expected, evaluator.ForSubject(ctx, inputSubject).ToSlice())
+	protoassert.SlicesEqual(t, expected, evaluator.ForSubject(ctx, inputSubject).ToSlice())
 
 	for _, role := range inputRoles {
 		require.NoError(t, roleStore.RemoveRole(ctx, role.GetId()))

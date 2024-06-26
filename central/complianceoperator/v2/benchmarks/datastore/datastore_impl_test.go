@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -205,6 +206,6 @@ func assertBenchmarks(t *testing.T, expected *storage.ComplianceOperatorBenchmar
 	assert.Equal(t, expected.GetShortName(), actual.GetShortName())
 	assert.Equal(t, len(expected.GetProfiles()), len(actual.GetProfiles()))
 	for _, p := range expected.GetProfiles() {
-		assert.Contains(t, actual.GetProfiles(), p)
+		protoassert.SliceContains(t, actual.GetProfiles(), p)
 	}
 }

@@ -595,7 +595,7 @@ func (s *authServiceAccessControlTestSuite) TestListConfigs() {
 	configs, err := s.svc.ListAuthMachineToMachineConfigs(s.accessCtx, nil)
 	s.NoError(err)
 
-	s.ElementsMatch(configs.GetConfigs(), []*v1.AuthMachineToMachineConfig{config1.GetConfig(), config2.GetConfig()})
+	protoassert.ElementsMatch(s.T(), configs.GetConfigs(), []*v1.AuthMachineToMachineConfig{config1.GetConfig(), config2.GetConfig()})
 }
 
 func (s *authServiceAccessControlTestSuite) TestUpdateExistingConfig() {

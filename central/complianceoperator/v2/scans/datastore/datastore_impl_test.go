@@ -194,7 +194,7 @@ func (s *complianceScanDataStoreTestSuite) TestGetScansByCluster() {
 		retrievedObjects, err := s.dataStore.GetScansByCluster(tc.testContext, tc.clusterID)
 		s.Require().NoError(err)
 		s.Require().Equal(tc.expectedCount, len(retrievedObjects))
-		s.Require().Equal(tc.expectedResults, retrievedObjects)
+		protoassert.SlicesEqual(s.T(), tc.expectedResults, retrievedObjects)
 	}
 }
 

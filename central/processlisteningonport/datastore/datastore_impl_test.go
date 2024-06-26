@@ -2066,7 +2066,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 		},
 	}
 
-	suite.Equal(expectedPlopStorage, newPlopsFromDB)
+	protoassert.SlicesEqual(suite.T(), expectedPlopStorage, newPlopsFromDB)
 }
 
 // TestPLOPAddOpenThenCloseAndOpenSameBatchWithPodUid Sends an open PLOP with a matching indicator.
