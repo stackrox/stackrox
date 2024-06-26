@@ -139,21 +139,21 @@ func getClusterMetadata(ctx context.Context,
 	if err == nil {
 		return clusterMetadataFromName(clusterName, doc)
 	}
-	logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Failed to get EKS cluster metadata from instance tags: %s", err)
+	logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Failed to get EKS cluster metadata from instance tags: %s", err)
 
 	config, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
-		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Failed to get EKS cluster metadata: Obtaining in-cluster Kubernetes config: %s", err)
+		logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Failed to get EKS cluster metadata: Obtaining in-cluster Kubernetes config: %s", err)
 		return nil
 	}
 	k8sClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Failed to get EKS cluster metadata: Creating Kubernetes clientset: %s", err)
+		logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Failed to get EKS cluster metadata: Creating Kubernetes clientset: %s", err)
 		return nil
 	}
 	clusterName, err = getClusterNameFromNodeLabels(ctx, k8sClient)
 	if err != nil {
-		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Failed to get EKS cluster metadata from node labels: %s", err)
+		logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Failed to get EKS cluster metadata from node labels: %s", err)
 		return nil
 	}
 	return clusterMetadataFromName(clusterName, doc)
