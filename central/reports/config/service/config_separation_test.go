@@ -87,7 +87,7 @@ func (s *ServiceLevelConfigSeparationSuite) TestGetReportConfigurations() {
 	// Empty Query
 	res, err := s.service.GetReportConfigurations(s.ctx, &apiV1.RawQuery{Query: ""})
 	s.Require().NoError(err)
-	s.Require().ElementsMatch(s.v1Configs, res.ReportConfigs)
+	protoassert.ElementsMatch(s.T(), s.v1Configs, res.ReportConfigs)
 
 	// Non empty query
 	res, err = s.service.GetReportConfigurations(s.ctx,

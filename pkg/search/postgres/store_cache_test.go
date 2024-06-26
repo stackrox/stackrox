@@ -246,7 +246,7 @@ func TestCachedWalk(t *testing.T) {
 	assert.NoError(t, store.Walk(cachedStoreCtx, walkFn))
 
 	assert.ElementsMatch(t, walkedNames, injectedNames)
-	assert.ElementsMatch(t, testObjects, walkedObjects)
+	protoassert.ElementsMatch(t, testObjects, walkedObjects)
 }
 
 func TestCachedWalkContextCancelation(t *testing.T) {
@@ -300,7 +300,7 @@ func TestCachedWalkByQuery(t *testing.T) {
 		testObjects[3],
 	}
 	assert.ElementsMatch(t, expectedNames, walkedNames)
-	assert.ElementsMatch(t, expectedObjects, walkedObjects)
+	protoassert.ElementsMatch(t, expectedObjects, walkedObjects)
 }
 
 func TestCachedWalkByQueryContextCancelation(t *testing.T) {
@@ -332,7 +332,7 @@ func TestCachedGetAll(t *testing.T) {
 
 	fetchedObjects, err := store.GetAll(cachedStoreCtx)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, fetchedObjects, testObjects)
+	protoassert.ElementsMatch(t, fetchedObjects, testObjects)
 }
 
 func TestCachedGetIDs(t *testing.T) {
@@ -398,7 +398,7 @@ func TestCachedGetMany(t *testing.T) {
 
 	fetchedObjects, missingIndices, err := store.GetMany(cachedStoreCtx, identifiersToFetch)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, fetchedObjects, expectedObjects)
+	protoassert.ElementsMatch(t, fetchedObjects, expectedObjects)
 	assert.Equal(t, []int{0}, missingIndices)
 }
 
@@ -423,7 +423,7 @@ func TestCachedGetByQuery(t *testing.T) {
 		testObjects[1],
 		testObjects[3],
 	}
-	assert.ElementsMatch(t, objectsAfter, expectedObjectsAfter)
+	protoassert.ElementsMatch(t, objectsAfter, expectedObjectsAfter)
 }
 
 func TestCachedDeleteByQuery(t *testing.T) {

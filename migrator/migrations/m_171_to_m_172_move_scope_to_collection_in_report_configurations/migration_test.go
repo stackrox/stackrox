@@ -14,6 +14,7 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -426,8 +427,8 @@ func (s *reportConfigsMigrationTestSuite) TestMigration() {
 		s.True(found)
 		s.Equal(expectedCollection.GetId(), collection.GetId())
 		s.Equal(expectedCollection.GetName(), collection.GetName())
-		s.Equal(expectedCollection.GetResourceSelectors(), collection.GetResourceSelectors())
-		s.Equal(expectedCollection.GetEmbeddedCollections(), collection.GetEmbeddedCollections())
+		protoassert.SlicesEqual(s.T(), expectedCollection.GetResourceSelectors(), collection.GetResourceSelectors())
+		protoassert.SlicesEqual(s.T(), expectedCollection.GetEmbeddedCollections(), collection.GetEmbeddedCollections())
 		return nil
 	})
 	s.NoError(err)

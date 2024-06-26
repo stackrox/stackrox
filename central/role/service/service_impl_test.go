@@ -819,7 +819,7 @@ func (s *serviceImplTestSuite) TestGetClustersForPermissions() {
 				Permissions: c.testedPermissions,
 			})
 			s.NoError(err)
-			s.ElementsMatch(clusterResponse.GetClusters(), c.expectedClusters)
+			protoassert.ElementsMatch(s.T(), clusterResponse.GetClusters(), c.expectedClusters)
 		})
 	}
 }
@@ -919,7 +919,7 @@ func (s *serviceImplTestSuite) TestGetClustersForPermissionsPagination() {
 				Permissions: []string{},
 			})
 			s.NoError(err)
-			s.Equal(clusterResponse.GetClusters(), c.expectedClusters)
+			protoassert.SlicesEqual(s.T(), clusterResponse.GetClusters(), c.expectedClusters)
 		})
 	}
 }
@@ -1042,7 +1042,7 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 			}
 			namespaceResponse, err := s.service.GetNamespacesForClusterAndPermissions(testCtx, request)
 			s.NoError(err)
-			s.ElementsMatch(namespaceResponse.GetNamespaces(), c.expectedNamespaces)
+			protoassert.ElementsMatch(s.T(), namespaceResponse.GetNamespaces(), c.expectedNamespaces)
 		})
 	}
 }

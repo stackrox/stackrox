@@ -336,7 +336,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurations() {
 		scanConfigs, err := s.dataStore.GetScanConfigurations(tc.testContext, tc.query)
 		s.Require().NoError(err)
 		s.Require().Equal(len(tc.expectedResponses), len(scanConfigs))
-		s.Require().Equal(tc.expectedResponses, scanConfigs)
+		protoassert.SlicesEqual(s.T(), tc.expectedResponses, scanConfigs)
 	}
 }
 

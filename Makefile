@@ -779,6 +779,9 @@ roxvet: $(ROXVET_BIN)
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
 	$(SILENT)go list -e ./... \
 	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
+	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)" -donotcompareproto -tags "sql_integration"
+	$(SILENT)go list -e ./... \
+	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
 	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)"
 
 ##########

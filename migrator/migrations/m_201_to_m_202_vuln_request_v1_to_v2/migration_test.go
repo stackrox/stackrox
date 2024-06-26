@@ -13,6 +13,7 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -318,10 +319,10 @@ func (s *migrationTestSuite) verify(expected map[string]*storage.VulnerabilityRe
 	for _, actualReq := range actual {
 		expectedReq := expected[actualReq.GetId()]
 		s.NotNil(expectedReq)
-		s.EqualValues(expectedReq.GetRequesterV2(), actualReq.GetRequesterV2())
-		s.ElementsMatch(expectedReq.GetApproversV2(), actualReq.GetApproversV2())
+		protoassert.Equal(s.T(), expectedReq.GetRequesterV2(), actualReq.GetRequesterV2())
+		protoassert.ElementsMatch(s.T(), expectedReq.GetApproversV2(), actualReq.GetApproversV2())
 		s.EqualValues(expectedReq.GetRequestor(), actualReq.GetRequestor())
-		s.ElementsMatch(expectedReq.GetApprovers(), actualReq.GetApprovers())
+		protoassert.ElementsMatch(s.T(), expectedReq.GetApprovers(), actualReq.GetApprovers())
 		s.EqualValues(expectedReq.GetDeferralReq(), actualReq.GetDeferralReq())
 		s.EqualValues(expectedReq.UpdatedReq, actualReq.UpdatedReq)
 		s.EqualValues(expectedReq.Scope, actualReq.Scope)

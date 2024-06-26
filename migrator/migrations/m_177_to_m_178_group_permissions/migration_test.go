@@ -12,6 +12,7 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -452,5 +453,5 @@ func (s *psMigrationTestSuite) TestMigration() {
 		return nil
 	}))
 
-	s.ElementsMatch(migratedPermissionSets, allPSAfterMigration)
+	protoassert.ElementsMatch(s.T(), migratedPermissionSets, allPSAfterMigration)
 }

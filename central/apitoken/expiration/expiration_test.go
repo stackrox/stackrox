@@ -10,6 +10,7 @@ import (
 	apiTokenDataStore "github.com/stackrox/rox/central/apitoken/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -79,7 +80,7 @@ func (s *apiTokenExpirationNotifierTestSuite) TestSelectTokenAboutToExpire() {
 	s.NoError(err)
 	expectedResult := token
 	expectedResults := []*storage.TokenMetadata{expectedResult}
-	s.ElementsMatch(expectedResults, fetchedTokens)
+	protoassert.ElementsMatch(s.T(), expectedResults, fetchedTokens)
 }
 
 func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectTokenNotAboutToExpire() {
@@ -91,8 +92,7 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectTokenNotAboutToExpir
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
 	s.NoError(err)
-	expectedResults := []*storage.TokenMetadata{}
-	s.ElementsMatch(expectedResults, fetchedTokens)
+	s.Empty(fetchedTokens)
 }
 
 func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectRevokedToken() {
@@ -104,8 +104,7 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectRevokedToken() {
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
 	s.NoError(err)
-	expectedResults := []*storage.TokenMetadata{}
-	s.ElementsMatch(expectedResults, fetchedTokens)
+	s.Empty(fetchedTokens)
 }
 
 func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectExpiredToken() {
@@ -117,8 +116,7 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectExpiredToken() {
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
 	s.NoError(err)
-	expectedResults := []*storage.TokenMetadata{}
-	s.ElementsMatch(expectedResults, fetchedTokens)
+	s.Empty(fetchedTokens)
 }
 
 func (s *apiTokenExpirationNotifierTestSuite) TestLogGeneration() {

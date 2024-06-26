@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -109,22 +110,22 @@ func (s *migrationTestSuite) compareAfter() {
 	profileStore := oldProfileStore.New(s.db.DB)
 	profiles, _, err := profileStore.GetMany(s.ctx, profileIDs)
 	s.Require().NoError(err)
-	s.Require().ElementsMatch(getExpectedProfiles(), profiles)
+	protoassert.ElementsMatch(s.T(), getExpectedProfiles(), profiles)
 
 	ruleStore := oldRuleStore.New(s.db.DB)
 	rules, _, err := ruleStore.GetMany(s.ctx, ruleIDs)
 	s.Require().NoError(err)
-	s.Require().ElementsMatch(getExpectedRules(), rules)
+	protoassert.ElementsMatch(s.T(), getExpectedRules(), rules)
 
 	scanStore := oldScanStore.New(s.db.DB)
 	scans, _, err := scanStore.GetMany(s.ctx, scansIDs)
 	s.Require().NoError(err)
-	s.Require().ElementsMatch(getExpectedScans(), scans)
+	protoassert.ElementsMatch(s.T(), getExpectedScans(), scans)
 
 	resultStore := oldResultsStore.New(s.db.DB)
 	results, _, err := resultStore.GetMany(s.ctx, resultIDs)
 	s.Require().NoError(err)
-	s.Require().ElementsMatch(getExpectedCheckResults(), results)
+	protoassert.ElementsMatch(s.T(), getExpectedCheckResults(), results)
 }
 
 func getOldProfiles() []*storage.ComplianceOperatorProfileV2 {

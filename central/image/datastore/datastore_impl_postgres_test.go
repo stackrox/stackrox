@@ -534,7 +534,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestGetManyImageMetadata() {
 	testImage2.Priority = 1
 	testImage3.Scan.Components = nil
 	testImage3.Priority = 1
-	s.ElementsMatch([]*storage.Image{testImage1, testImage2, testImage3}, storedImages)
+	protoassert.ElementsMatch(s.T(), []*storage.Image{testImage1, testImage2, testImage3}, storedImages)
 }
 
 func getTestImage(id string) *storage.Image {

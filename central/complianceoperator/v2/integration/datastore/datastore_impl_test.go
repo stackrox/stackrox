@@ -190,7 +190,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrationBy
 		s.NoError(err)
 		// Set the ID to the result object if a result is expected.
 		if tc.expectedResult != nil {
-			s.Contains(clusterIntegrations, tc.expectedResult)
+			protoassert.SliceContains(s.T(), clusterIntegrations, tc.expectedResult)
 		} else {
 			s.Nil(clusterIntegrations)
 		}
@@ -243,7 +243,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrations(
 	for _, tc := range testCases {
 		clusterIntegrations, err := s.dataStore.GetComplianceIntegrations(s.testContexts[tc.scopeKey], tc.query)
 		s.NoError(err)
-		s.Equal(tc.expectedResult, clusterIntegrations)
+		protoassert.SlicesEqual(s.T(), tc.expectedResult, clusterIntegrations)
 	}
 }
 
@@ -345,8 +345,8 @@ func (s *complianceIntegrationDataStoreTestSuite) TestRemoveComplianceIntegratio
 	s.NoError(err)
 	s.Equal(len(ids)-1, len(integrations))
 	s.NotContains(integrations, testIntegrations[0])
-	s.Contains(integrations, testIntegrations[1])
-	s.Contains(integrations, testIntegrations[2])
+	protoassert.SliceContains(s.T(), integrations, testIntegrations[1])
+	protoassert.SliceContains(s.T(), integrations, testIntegrations[2])
 }
 
 func (s *complianceIntegrationDataStoreTestSuite) TestCountIntegrations() {

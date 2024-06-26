@@ -69,7 +69,7 @@ func (s *integrationHealthDatastoreTestSuite) TestGetRegistriesAndScanners() {
 
 	receivedIntegrationHealths, err := s.datastore.GetRegistriesAndScanners(s.hasReadCtx)
 	s.NoError(err)
-	s.ElementsMatch([]*storage.IntegrationHealth{integrationHealth}, receivedIntegrationHealths)
+	protoassert.ElementsMatch(s.T(), []*storage.IntegrationHealth{integrationHealth}, receivedIntegrationHealths)
 }
 
 func (s *integrationHealthDatastoreTestSuite) TestGetNotifierPlugins() {
@@ -82,7 +82,7 @@ func (s *integrationHealthDatastoreTestSuite) TestGetNotifierPlugins() {
 
 	receivedIntegrationHealths, err := s.datastore.GetNotifierPlugins(s.hasReadCtx)
 	s.NoError(err)
-	s.ElementsMatch([]*storage.IntegrationHealth{integrationHealth}, receivedIntegrationHealths)
+	protoassert.ElementsMatch(s.T(), []*storage.IntegrationHealth{integrationHealth}, receivedIntegrationHealths)
 }
 
 func (s *integrationHealthDatastoreTestSuite) TestGetBackupPlugins() {
@@ -95,7 +95,7 @@ func (s *integrationHealthDatastoreTestSuite) TestGetBackupPlugins() {
 
 	receivedIntegrationHealths, err := s.datastore.GetBackupPlugins(s.hasReadCtx)
 	s.NoError(err)
-	s.ElementsMatch([]*storage.IntegrationHealth{integrationHealth}, receivedIntegrationHealths)
+	protoassert.ElementsMatch(s.T(), []*storage.IntegrationHealth{integrationHealth}, receivedIntegrationHealths)
 }
 
 func (s *integrationHealthDatastoreTestSuite) TestGetDeclarativeConfigs() {
@@ -108,7 +108,7 @@ func (s *integrationHealthDatastoreTestSuite) TestGetDeclarativeConfigs() {
 
 	receivedIntegrationHealths, err := s.datastore.GetDeclarativeConfigs(s.hasReadCtx)
 	s.NoError(err)
-	s.ElementsMatch([]*storage.IntegrationHealth{integrationHealth}, receivedIntegrationHealths)
+	protoassert.ElementsMatch(s.T(), []*storage.IntegrationHealth{integrationHealth}, receivedIntegrationHealths)
 }
 
 func (s *integrationHealthDatastoreTestSuite) TestUpdateIntegrationHealth() {

@@ -136,7 +136,7 @@ func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*sto
 		return nil
 	})
 	suite.NoError(err)
-	suite.ElementsMatch(foundIndicators, indicators)
+	protoassert.ElementsMatch(suite.T(), foundIndicators, indicators)
 }
 
 func getIndicators() (indicators []*storage.ProcessIndicator, repeatIndicator *storage.ProcessIndicator) {
