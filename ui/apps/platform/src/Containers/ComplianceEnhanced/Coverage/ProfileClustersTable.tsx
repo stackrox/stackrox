@@ -36,6 +36,7 @@ export type ProfileClustersTableProps = {
     profileName: string;
     tableState: TableUIState<ComplianceClusterOverallStats>;
     getSortParams: UseURLSortResult['getSortParams'];
+    onClearFilters: () => void;
 };
 
 function ProfileClustersTable({
@@ -45,6 +46,7 @@ function ProfileClustersTable({
     profileName,
     tableState,
     getSortParams,
+    onClearFilters,
 }: ProfileClustersTableProps) {
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const { page, perPage, setPage, setPerPage } = pagination;
@@ -92,10 +94,7 @@ function ProfileClustersTable({
                         message:
                             'If you have recently created a scan schedule, please wait a few minutes for the results to become available.',
                     }}
-                    filteredEmptyProps={{
-                        title: 'No clusters found',
-                        message: 'Clear all filters and try again',
-                    }}
+                    filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) => (
                         <Tbody>
                             {data.map((clusterInfo) => {
