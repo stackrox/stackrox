@@ -1363,7 +1363,7 @@ func TestEvaluateClusters(t *testing.T) {
 			nodes := graph.GetNodes()
 			require.Len(t, nodes, len(testCase.nodes))
 			for idx, expected := range testCase.nodes {
-				assert.Equalf(t, expected, nodes[idx], "node in pos %d and ID %d doesn't match expected", idx, expected.Entity.Id)
+				protoassert.Equal(t, expected, nodes[idx], "(pod, id): ", idx, expected.Entity.Id)
 			}
 		})
 	}
