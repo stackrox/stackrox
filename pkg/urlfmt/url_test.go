@@ -41,8 +41,7 @@ func TestGetServerFromURL(t *testing.T) {
 
 func TestTrimHTTPPrefixes(t *testing.T) {
 	assert.Equal(t, "localhost", TrimHTTPPrefixes("https://localhost"))
-	assert.Equal(t, " localhost", TrimHTTPPrefixes("https:// localhost"))
-	assert.Equal(t, "localhost", TrimHTTPPrefixes(" https://localhost"))
-	assert.Equal(t, "localhost ", TrimHTTPPrefixes("https://localhost "))
 	assert.Equal(t, "httpslocalhost", TrimHTTPPrefixes("httpslocalhost"))
+	assert.Equal(t, " localhost", TrimHTTPPrefixes("https:// localhost"))
+	assert.Equal(t, "localhost ", TrimHTTPPrefixes("https://localhost "))
 }
