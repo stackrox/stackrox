@@ -53,21 +53,24 @@ jobs:
         env:
           PR_DESCRIPTION: ${{ github.event.pull_request.body }}
         run: |
-          if [[ "$PR_DESCRIPTION" =~ '- [x] `CHANGELOG.md` ' | ]]; then
-            echo "`CHANGELOG.md` task is checked."
+          # shellcheck disable=SC2016
+          if [[ "$PR_DESCRIPTION" = *'- [x] `CHANGELOG.md` '* ]]; then
+            # shellcheck disable=SC2016
+            echo '`CHANGELOG.md` task is checked.'
           else
-            echo "::error::`CHANGELOG.md` task is not checked."
+            # shellcheck disable=SC2016
+            echo '::error::`CHANGELOG.md` task is not checked.'
             exit 1
           fi
-          if [[ "$PR_DESCRIPTION" =~ '- [x] documentation ' | ]]; then
+          if [[ "$PR_DESCRIPTION" =~ *'- [x] documentation '* ]]; then
             echo "documentation task is checked."
           else
-            echo "::error::documentation task is not checked."
+            echo '::error::documentation task is not checked.'
             exit 1
           fi
-          if [[ "$PR_DESCRIPTION" =~ '- [x] inspected CI results' | ]]; then
-            echo "inspected CI results task is checked."
+          if [[ "$PR_DESCRIPTION" =~ *'- [x] inspected CI results'* ]]; then
+            echo 'inspected CI results task is checked.'
           else
-            echo "::error::inspected CI results task is not checked."
+            echo '::error::inspected CI results task is not checked.'
             exit 1
           fi
