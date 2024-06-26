@@ -42,23 +42,32 @@ class SummaryTest extends BaseSpecification {
                     orchestrator.getStatefulSetCount() +
                     orchestrator.getJobCount()
 
+            // For Openshift, there is the following discrepancy here:
+            // Stackrox has: 'kube-rbac-proxy-crio'
+            // Openshift has: 'kube-rbac-proxy-crio-<clustername>-gtnb7-master-2.c.acs-team-temp-dev.internal'
+            // (for each node)
+
             if (stackroxSummaryCounts.numDeployments != orchestratorResourceNames.size()) {
-                log.info "The summary count for deployments does not equate to the orchestrator count."
-                log.info "Stackrox count: ${stackroxSummaryCounts.numDeployments}, " +
+                log.info "The summary count for deployments in ACS does not equal the orchestrator count."
+                log.info "ACS count: ${stackroxSummaryCounts.numDeployments}, " +
                         "orchestrator count ${orchestratorResourceNames.size()}"
                 log.info "This diff may help with debug, however deployment names may be different between APIs"
+                log.info "In this diff, 'removed' means 'missing in orchestrator but given in ACS', " +
+                    "whereas 'added' - the other way round"
                 List<String> stackroxDeploymentNames = Services.getDeployments()*.name
                 Javers javers = JaversBuilder.javers()
                         .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
                         .build()
-                log.info javers.compare(stackroxDeploymentNames, orchestratorResourceNames).prettyPrint()
+                log.info javers.compare(stackroxDeploymentNames.sort(), orchestratorResourceNames.sort()).prettyPrint()
 
                 log.info "Use the full set of deployments to compare manually if diff isn't helpful"
-                log.info "Stackrox deployments: " + stackroxDeploymentNames.join(",")
-                log.info "Orchestrator deployments: " + orchestratorResourceNames.join(",")
+                log.info "ACS deployments: " + stackroxDeploymentNames.sort().join(",")
+                log.info "Orchestrator deployments: " + orchestratorResourceNames.sort().join(",")
             }
 
             assert Math.abs(stackroxSummaryCounts.numDeployments - orchestratorResourceNames.size()) <= 2
+            List<String> stackroxSecretNames = Services.getSecrets()*.name
+            log.info "ACS secrets: " + stackroxSecretNames.join(",")
             assert Math.abs(stackroxSummaryCounts.numSecrets - orchestrator.getSecretCount()) <= 2
             assert Math.abs(stackroxSummaryCounts.numNodes - orchestrator.getNodeCount()) <= 2
         }
