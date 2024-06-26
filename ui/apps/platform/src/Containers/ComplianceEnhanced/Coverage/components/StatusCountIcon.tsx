@@ -24,7 +24,7 @@ function getStatusIcon(status: Status, count: number) {
                 color = 'var(--pf-v5-global--primary-color--100)';
                 break;
             case 'manual':
-                color = 'var(--pf-v5-global--disabled-color--100)';
+                color = 'var(--pf-v5-global--warning-color--100)';
                 break;
             case 'other':
                 color = 'var(--pf-v5-global--disabled-color--100)';
