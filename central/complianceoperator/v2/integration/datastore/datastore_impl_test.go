@@ -324,7 +324,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestRemoveComplianceIntegratio
 	integrations, _, err = s.storage.GetMany(s.hasWriteCtx, ids)
 	s.NoError(err)
 	s.Greater(len(ids), len(integrations))
-	s.NotContains(integrations, testIntegrations[0])
+	protoassert.SliceNotContains(s.T(), integrations, testIntegrations[0])
 }
 
 func (s *complianceIntegrationDataStoreTestSuite) TestRemoveComplianceIntegrationByCluster() {
@@ -344,7 +344,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestRemoveComplianceIntegratio
 	integrations, _, err = s.storage.GetMany(s.hasWriteCtx, ids)
 	s.NoError(err)
 	s.Equal(len(ids)-1, len(integrations))
-	s.NotContains(integrations, testIntegrations[0])
+	protoassert.SliceNotContains(s.T(), integrations, testIntegrations[0])
 	protoassert.SliceContains(s.T(), integrations, testIntegrations[1])
 	protoassert.SliceContains(s.T(), integrations, testIntegrations[2])
 }
