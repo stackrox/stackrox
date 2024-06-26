@@ -31,7 +31,7 @@ type SignatureFetcher interface {
 }
 
 // NewSignatureVerifier creates a new signature verifier capable of verifying signatures against the provided config.
-func NewSignatureVerifier(config *storage.CosignPublicKeyVerification) (SignatureVerifier, error) {
+func NewSignatureVerifier(config *storage.SignatureIntegration) (SignatureVerifier, error) {
 	return newCosignSignatureVerifier(config)
 }
 
@@ -99,7 +99,7 @@ func VerifyAgainstSignatureIntegrations(ctx context.Context, integrations []*sto
 }
 
 func createVerifierFromSignatureIntegration(integration *storage.SignatureIntegration) (SignatureVerifier, error) {
-	verifier, err := NewSignatureVerifier(integration.GetCosign())
+	verifier, err := NewSignatureVerifier(integration)
 	if err != nil {
 		log.Errorf("Error during creation of the signature verifier for signature integration %q: %v",
 			integration.GetId(), err)
