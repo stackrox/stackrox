@@ -47,6 +47,7 @@ export type ClusterDetailsTableProps = {
         checked: boolean,
         selection: string
     ) => void;
+    onClearFilters: () => void;
 };
 
 function ClusterDetailsTable({
@@ -59,6 +60,7 @@ function ClusterDetailsTable({
     searchFilter,
     onSearch,
     onCheckStatusSelect,
+    onClearFilters,
 }: ClusterDetailsTableProps) {
     /* eslint-disable no-nested-ternary */
     const { page, perPage, setPage, setPerPage } = pagination;
@@ -141,10 +143,7 @@ function ClusterDetailsTable({
                     emptyProps={{
                         message: 'No results found for this cluster',
                     }}
-                    filteredEmptyProps={{
-                        title: 'No results found',
-                        message: 'Clear all filters and try again',
-                    }}
+                    filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) => (
                         <>
                             {data.map((checkResult, rowIndex) => {

@@ -42,7 +42,14 @@ function getStatusIcon(status: Status, count: number) {
         case 'manual':
             return <WrenchIcon color={color} />;
         case 'other':
-            return <BarsIcon color={color} />;
+            return (
+                <BarsIcon
+                    color={color}
+                    style={{
+                        transform: 'rotate(90deg)',
+                    }}
+                />
+            );
         default:
             return null;
     }

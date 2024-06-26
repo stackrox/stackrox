@@ -48,6 +48,7 @@ export type CheckDetailsTableProps = {
         checked: boolean,
         selection: string
     ) => void;
+    onClearFilters: () => void;
 };
 
 function CheckDetailsTable({
@@ -61,6 +62,7 @@ function CheckDetailsTable({
     searchFilter,
     onSearch,
     onCheckStatusSelect,
+    onClearFilters,
 }: CheckDetailsTableProps) {
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const { page, perPage, setPage, setPerPage } = pagination;
@@ -126,10 +128,7 @@ function CheckDetailsTable({
                     emptyProps={{
                         message: 'No results found for this check',
                     }}
-                    filteredEmptyProps={{
-                        title: 'No results found',
-                        message: 'Clear all filters and try again',
-                    }}
+                    filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) => (
                         <Tbody>
                             {data.map((clusterInfo) => {

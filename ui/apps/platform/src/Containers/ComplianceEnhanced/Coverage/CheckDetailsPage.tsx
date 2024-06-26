@@ -117,7 +117,7 @@ function CheckDetails() {
         isLoading: isLoadingCheckResults,
         data: checkResultsResponse?.checkResults,
         error: checkResultsError,
-        searchFilter: {},
+        searchFilter,
     });
 
     useEffect(() => {
@@ -129,6 +129,11 @@ function CheckDetails() {
     const onSearch = (payload: OnSearchPayload) => {
         onURLSearch(searchFilter, setSearchFilter, payload);
     };
+
+    function onClearFilters() {
+        setSearchFilter({});
+        setPage(1, 'replace');
+    }
 
     const onCheckStatusSelect = (
         filterType: 'Compliance Check Status',
@@ -208,6 +213,7 @@ function CheckDetails() {
                         searchFilter={searchFilter}
                         onSearch={onSearch}
                         onCheckStatusSelect={onCheckStatusSelect}
+                        onClearFilters={onClearFilters}
                     />
                 )}
                 {activeTabKey === DETAILS_TAB && (

@@ -90,7 +90,7 @@ function ProfileClustersPage() {
         isLoading,
         data: profileClusters?.scanStats,
         error,
-        searchFilter: {},
+        searchFilter,
     });
 
     useEffect(() => {
@@ -110,6 +110,11 @@ function ProfileClustersPage() {
     const onSearch = (payload: OnSearchPayload) => {
         onURLSearch(searchFilter, setSearchFilter, payload);
     };
+
+    function onClearFilters() {
+        setSearchFilter({});
+        setPage(1, 'replace');
+    }
 
     const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(
         (profile) => profile.name === profileName
@@ -184,6 +189,7 @@ function ProfileClustersPage() {
                                 profileName={profileName}
                                 tableState={tableState}
                                 getSortParams={getSortParams}
+                                onClearFilters={onClearFilters}
                             />
                         </PageSection>
                     </>
