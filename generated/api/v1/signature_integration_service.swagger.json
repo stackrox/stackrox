@@ -207,6 +207,28 @@
         }
       }
     },
+    "storageCosignCertificateVerification": {
+      "type": "object",
+      "properties": {
+        "certificatePemEnc": {
+          "type": "string",
+          "description": "PEM encoded certificate to use for verification."
+        },
+        "certificateChainPemEnc": {
+          "type": "string",
+          "description": "PEM encoded certificate chain to use for verification."
+        },
+        "certificateOidcIssuer": {
+          "type": "string",
+          "description": "Certificate OIDC issuer to verify against.\nThis supports regular expressions following the RE2 syntax: https://github.com/google/re2/wiki/Syntax.\nIn case the certificate does not specify an OIDC issuer, you may use '.*' as the OIDC issuer. However,\nit is recommended to use Fulcio compatible certificates according to the specification:\nhttps://github.com/sigstore/fulcio/blob/main/docs/certificate-specification.md."
+        },
+        "certificateIdentity": {
+          "type": "string",
+          "description": "Certificate identity to verify against.\nThis supports regular expressions following the RE2 syntax: https://github.com/google/re2/wiki/Syntax.\nIn case the certificate does not specify an identity, you may use '.*' as the identity. However, it is\nrecommended to use Fulcio compatible certificates according to the specification:\nhttps://github.com/sigstore/fulcio/blob/main/docs/certificate-specification.md."
+        }
+      },
+      "description": "Holds all verification data for verifying certificates attached to cosign signatures.\nIf only the certificate is given, the Fulcio trusted root chain will be assumed and verified against.\nIf only the chain is given, this will be used over the Fulcio trusted root chain for verification.\nIf no certificate or chain is given, the Fulcio trusted root chain will be assumed and verified against."
+    },
     "storageCosignPublicKeyVerification": {
       "type": "object",
       "properties": {
@@ -229,6 +251,12 @@
         },
         "cosign": {
           "$ref": "#/definitions/storageCosignPublicKeyVerification"
+        },
+        "cosignCertificates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageCosignCertificateVerification"
+          }
         }
       }
     },
