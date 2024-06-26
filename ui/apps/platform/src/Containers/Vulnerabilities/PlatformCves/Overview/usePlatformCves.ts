@@ -5,6 +5,7 @@ import { QuerySearchFilter } from '../../types';
 import { getRegexScopedQueryString } from '../../utils/searchUtils';
 
 type PlatformCVE = {
+    id: string;
     cve: string;
     isFixable: boolean;
     cveType: string;
@@ -24,6 +25,7 @@ type PlatformCVE = {
 const cveListQuery = gql`
     query getPlatformCves($query: String, $pagination: Pagination) {
         platformCVEs(query: $query, pagination: $pagination) {
+            id
             cve
             isFixable
             cveType
