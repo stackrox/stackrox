@@ -265,6 +265,9 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 			}
 			existingImg.Names = append(existingImg.Names, request.GetImage().GetName())
 			img = existingImg
+
+			log.Debugf("Scan cache miss for %q, existing image %q (%s)", request.GetImage().GetName().GetFullName(), img.GetName().GetFullName(), imgID)
+
 			// We only want to force re-fetching of signatures and verification data, the additional image name has no
 			// impact on image scan data.
 			fetchOpt = enricher.ForceRefetchSignaturesOnly
