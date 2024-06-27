@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/artifactregistry v1.14.9
 	cloud.google.com/go/compute/metadata v0.3.0
 	cloud.google.com/go/containeranalysis v0.11.6
-	cloud.google.com/go/securitycenter v1.30.0
+	cloud.google.com/go/securitycenter v1.31.0
 	cloud.google.com/go/storage v1.42.0
 	github.com/BurntSushi/toml v1.4.0
 	github.com/ComplianceAsCode/compliance-operator v1.5.0
@@ -455,7 +455,7 @@ require (
 	golang.org/x/mod v0.18.0 // indirect
 	golang.org/x/term v0.21.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240610135401-a8a62080eff3 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240617180043-68d350f18fd4 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240617180043-68d350f18fd4 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
