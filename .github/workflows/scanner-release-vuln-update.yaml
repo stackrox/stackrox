@@ -31,6 +31,8 @@ jobs:
       volumes:
         # The updater makes heavy use of /tmp files.
         - /tmp:/tmp
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     strategy:
       # If one of the versions fails, it should not stop others from succeeding.
       fail-fast: false
@@ -43,14 +45,24 @@ jobs:
       ROX_PRODUCT_TAG: ${{ matrix.tag }}
     steps:
     - name: Free up disk space
-      run: |
-        df --si /
-        docker system prune --force --all
-        sudo rm -rf /usr/local/lib/android || true
-        sudo rm -rf /usr/share/dotnet || true
-        sudo rm -rf /usr/local/.ghcup || true
-        df --si /
       shell: bash
+      run: |
+        set +e
+        set -x
+
+        df -h
+
+        docker system prune --force --all
+        for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
+          rm -rf "/mnt${delete:?}"
+          df -h "/mnt${delete:?}"
+        done
+        
+        df -h
+        
+        for path in /mnt/usr/share /mnt/usr/local/lib /mnt/opt /mnt/opt/hostedtoolcache; do
+          du --threshold=100 -hs "${path}"/* | sort -nr | tail -10
+        done
 
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
