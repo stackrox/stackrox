@@ -109,6 +109,12 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 	}
 }
 
+func assertNameDescriptionAndProfilesMatch(t *testing.T, expected *v2.ComplianceScanConfiguration, actual *v2.ComplianceScanConfigurationStatus) {
+	assert.Equal(t, expected.GetScanName(), actual.GetScanName())
+	assert.Equal(t, expected.GetScanConfig().GetDescription(), actual.GetScanConfig().GetDescription())
+	assert.Equal(t, expected.GetScanConfig().GetProfiles(), actual.GetScanConfig().GetProfiles())
+}
+
 func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	ctx := context.Background()
 	k8sClient := createK8sClient(t)
@@ -173,11 +179,11 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	assert.NotNil(t, matchingConfig)
 	require.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
 
-	assert.Equal(t, scanConfig, matchingConfig)
+	assertNameDescriptionAndProfilesMatch(t, &scanConfig, matchingConfig)
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
 
-	resp, err := service.CreateComplianceScanConfiguration(ctx, &modifiedScanConfig)
+	_, err = service.CreateComplianceScanConfiguration(ctx, &modifiedScanConfig)
 	assert.NoError(t, err)
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 1)
@@ -189,12 +195,12 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	assert.NotNil(t, matchingConfig)
 	require.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
 
-	assert.Equal(t, modifiedScanConfig, matchingConfig)
+	assertNameDescriptionAndProfilesMatch(t, &modifiedScanConfig, matchingConfig)
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
 
 	reqDelete := &v2.ResourceByID{
-		Id: resp.GetId(),
+		Id: matchingConfig.GetId(),
 	}
 	_, err = service.DeleteComplianceScanConfiguration(ctx, reqDelete)
 	assert.NoError(t, err)
