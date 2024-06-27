@@ -38,4 +38,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5"
 	_ "github.com/stackrox/rox/migrator/migrations/m_201_to_m_202_vuln_request_v1_to_v2"
 	_ "github.com/stackrox/rox/migrator/migrations/m_202_to_m_203_vuln_requests_for_suppressed_cves"
+	_ "github.com/stackrox/rox/migrator/migrations/m_203_to_m_204_openshift_policy_exclusions_for_4_5"
 )
