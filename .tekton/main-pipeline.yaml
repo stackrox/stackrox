@@ -220,10 +220,8 @@ spec:
       # TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available.
       - name: smuggle-activation-key
         image: registry.access.redhat.com/ubi8/ubi:latest
-        script: |
-          pwd
-          ls -lisa
-          .konflux/scripts/subscription-manager/subscription-manager-bro.sh smuggle
+        workingDir: /var/workdir/source
+        script: .konflux/scripts/subscription-manager/subscription-manager-bro.sh smuggle
       - name: create-trusted-artifact
         image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:4e39fb97f4444c2946944482df47b39c5bbc195c54c6560b0647635f553ab23d
         args:
@@ -279,11 +277,12 @@ spec:
           - $(params.SOURCE_ARTIFACT)=/var/workdir/source
       - name: fetch-external-networks
         image: registry.access.redhat.com/ubi8-minimal:latest
+        workingDir: /var/workdir/source
         script: |
           #!/usr/bin/env bash
           set -euo pipefail
           microdnf -y install zip
-          image/rhel/fetch-stackrox-data.sh" ".konflux/stackrox-data"
+          image/rhel/fetch-stackrox-data.sh .konflux/stackrox-data
       - name: create-trusted-artifact
         image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:4e39fb97f4444c2946944482df47b39c5bbc195c54c6560b0647635f553ab23d
         args:
