@@ -170,19 +170,22 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 		},
 	}
 
-	resp, err := service.CreateComplianceScanConfiguration(ctx, &scanConfig)
+	_, err = service.CreateComplianceScanConfiguration(ctx, &scanConfig)
 	assert.NoError(t, err)
 
 	query := &v2.RawQuery{Query: ""}
 	scanConfigs, err := service.ListComplianceScanConfigurations(ctx, query)
 	assert.NoError(t, err)
+	matchingConfig := getScanConfig(scanName, scanConfigs.GetConfigurations())
+	assert.NotNil(t, matchingConfig)
 	require.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
 
-	assertNameIDDescriptionAndProfilesMatch(t, scanConfigs.GetConfigurations()[0], resp)
+	//assertNameIDDescriptionAndProfilesMatch(t, matchingConfig, resp)
+	assert.Equal(t, scanConfig, matchingConfig)
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
 
-	resp, err = service.CreateComplianceScanConfiguration(ctx, &modifiedScanConfig)
+	_, err = service.CreateComplianceScanConfiguration(ctx, &modifiedScanConfig)
 	assert.NoError(t, err)
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 1)
@@ -190,8 +193,12 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	query = &v2.RawQuery{Query: ""}
 	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
 	assert.NoError(t, err)
+	matchingConfig = getScanConfig(scanName, scanConfigs.GetConfigurations())
+	assert.NotNil(t, matchingConfig)
 	require.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
-	assertNameIDDescriptionAndProfilesMatch(t, scanConfigs.GetConfigurations()[0], resp)
+
+	//assertNameIDDescriptionAndProfilesMatch(t, matchingConfig, resp)
+	assert.Equal(t, modifiedScanConfig, matchingConfig)
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
 
@@ -206,7 +213,8 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	query = &v2.RawQuery{Query: ""}
 	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(scanConfigs.GetConfigurations()))
+	matchingConfig = getScanConfig(scanName, scanConfigs.GetConfigurations())
+	assert.Nil(t, matchingConfig)
 }
 
 // ACS API test suite for integration testing for the Compliance Operator.
@@ -533,6 +541,17 @@ func getscanConfigID(configName string, scanConfigs []*v2.ComplianceScanConfigur
 
 	}
 	return configID
+}
+
+func getScanConfig(configName string, scanConfigs []*v2.ComplianceScanConfigurationStatus) *v2.ComplianceScanConfigurationStatus {
+	var config *v2.ComplianceScanConfigurationStatus
+	config = nil
+	for i := 0; i < len(scanConfigs); i++ {
+		if scanConfigs[i].GetScanName() == configName {
+			config = scanConfigs[i]
+		}
+	}
+	return config
 }
 
 func TestComplianceV2ScheduleRescan(t *testing.T) {
