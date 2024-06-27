@@ -22,11 +22,7 @@ import { TableUIState } from 'utils/getTableUIState';
 
 import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
-import {
-    calculateCompliancePercentage,
-    getCompliancePfClassName,
-    getStatusCounts,
-} from './compliance.coverage.utils';
+import { calculateCompliancePercentage, getStatusCounts } from './compliance.coverage.utils';
 import ControlLabels from './components/ControlLabels';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
@@ -213,9 +209,6 @@ function ProfileChecksTable({
                                                     measureLocation={
                                                         ProgressMeasureLocation.outside
                                                     }
-                                                    className={getCompliancePfClassName(
-                                                        passPercentage
-                                                    )}
                                                     aria-label={`${checkName} compliance percentage`}
                                                 />
                                                 <Tooltip
