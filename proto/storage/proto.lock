@@ -3224,6 +3224,20 @@
     {
       "protopath": "compliance_integration.proto",
       "def": {
+        "enums": [
+          {
+            "name": "COStatus",
+            "enum_fields": [
+              {
+                "name": "HEALTHY"
+              },
+              {
+                "name": "UNHEALTHY",
+                "integer": 1
+              }
+            ]
+          }
+        ],
         "messages": [
           {
             "name": "ComplianceIntegration",
@@ -3258,6 +3272,11 @@
                 "id": 6,
                 "name": "operator_installed",
                 "type": "bool"
+              },
+              {
+                "id": 7,
+                "name": "operator_status",
+                "type": "COStatus"
               }
             ]
           }
@@ -3725,6 +3744,11 @@
                 "id": 1,
                 "name": "profile_id",
                 "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "profile_ref_id",
+                "type": "string"
               }
             ]
           },
@@ -3959,7 +3983,18 @@
                 "id": 2,
                 "name": "controls",
                 "type": "string",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "control",
+                "type": "string"
               }
             ]
           },
@@ -4120,6 +4155,64 @@
                 "id": 5,
                 "name": "cluster_name",
                 "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorBenchmarkV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "version",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "description",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "provider",
+                "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "short_name",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "profiles",
+                "type": "Profile",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "Profile",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "profile_name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "profile_version",
+                    "type": "string"
+                  }
+                ]
               }
             ]
           },
@@ -7912,6 +8005,16 @@
               {
                 "id": 2,
                 "name": "signature_payload",
+                "type": "bytes"
+              },
+              {
+                "id": 3,
+                "name": "cert_pem",
+                "type": "bytes"
+              },
+              {
+                "id": 4,
+                "name": "cert_chain_pem",
                 "type": "bytes"
               }
             ]
@@ -15245,6 +15348,12 @@
                 "id": 3,
                 "name": "cosign",
                 "type": "CosignPublicKeyVerification"
+              },
+              {
+                "id": 4,
+                "name": "cosign_certificates",
+                "type": "CosignCertificateVerification",
+                "is_repeated": true
               }
             ]
           },
@@ -15273,6 +15382,31 @@
                     "type": "string"
                   }
                 ]
+              }
+            ]
+          },
+          {
+            "name": "CosignCertificateVerification",
+            "fields": [
+              {
+                "id": 1,
+                "name": "certificate_pem_enc",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "certificate_chain_pem_enc",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "certificate_oidc_issuer",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "certificate_identity",
+                "type": "string"
               }
             ]
           }
