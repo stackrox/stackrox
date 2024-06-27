@@ -7,6 +7,7 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.ScopeOuterClass
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.CosignPublicKeyVerification
+import io.stackrox.proto.storage.SignatureIntegrationOuterClass.CosignCertificateVerification
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.SignatureIntegration
 
 import objects.Deployment
@@ -29,6 +30,10 @@ class ImageSignatureVerificationTest extends BaseSpecification {
     static final private String DISTROLESS_AND_TEKTON = "Distroless+Tekton"
     static final private String POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE = "Distroless+Tekton+Unverifiable"
     static final private String SAME_DIGEST = "Same+Digest"
+    static final private String BYOPKI_WILDCARD = "BYOPKI-Wildcard"
+    static final private String BYOPKI_UNVERIFIABLE = "BYOPKI-Unverifiable"
+    static final private String BYOPKI_MATCHING = "BYOPKI-Matching"
+    static final private String BYOPKI_WILDCARD_AND_TEKTON = "BOYPKI-Wildcard+Tekton"
 
     // List of integration names used within tests.
     // NOTE: If you add a new name, make sure to add it here.
@@ -38,6 +43,10 @@ class ImageSignatureVerificationTest extends BaseSpecification {
             UNVERIFIABLE,
             DISTROLESS_AND_TEKTON,
             SAME_DIGEST,
+            BYOPKI_WILDCARD,
+            BYOPKI_UNVERIFIABLE,
+            BYOPKI_MATCHING,
+            BYOPKI_WILDCARD_AND_TEKTON,
     ]
 
     // Public keys used within signature integrations.
@@ -75,6 +84,48 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
 -----END PUBLIC KEY-----""",
     ]
 
+    // Root certificate used within signature integration.
+    // Source: https://vault.bitwarden.com/#/vault?itemId=8551a79b-e774-48bd-bc14-b19a0047c850.
+    static final private String BYOPKI_ROOT_CA = """\
+-----BEGIN CERTIFICATE-----
+MIIFizCCA3OgAwIBAgIUKUP5Gi0K7c0FwuJ8otDaPaXa5fYwDQYJKoZIhvcNAQEL
+BQAwVDELMAkGA1UEBhMCVVMxEDAOBgNVBAcMB1Rlc3RpbmcxDDAKBgNVBAoMA0RF
+VjEQMA4GA1UECwwHVGVzdGluZzETMBEGA1UEAwwKVGVzdGluZyBDQTAgFw0yNDA2
+MjUwNDE3NDBaGA8yMDUxMTExMDA0MTc0MFowVDELMAkGA1UEBhMCVVMxEDAOBgNV
+BAcMB1Rlc3RpbmcxDDAKBgNVBAoMA0RFVjEQMA4GA1UECwwHVGVzdGluZzETMBEG
+A1UEAwwKVGVzdGluZyBDQTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIB
+AMQvEO69CS+dM3bvtFdYxr5imHMLZVyy5drVAFvLKD9SaZzjPQ+VKtZ0zB9TUJrh
+x6sKTlBk+pFg7iY0BYr+FCWRw2QqhT+4fFST2HGlRzSexw7Ah8E67QH+p+1Qypel
+/ae6/4KaH6ijUY5iqySEhMHBVcAdD+s++kbTDQ4MsZCYbt+zdE8KgkI68kAJ6Fpv
+pFw+cFZI5wg8thAR+j1U2rfD8O0E9w0xX+2+iIyHPsfFVN5oyK140Wg43ApZQu7e
+FPLjRa22fFbsgoijouj/74FqINWcxc+ZRzv9HNIwnWt/mBfE0nNvoeqYQFr9nLGu
+O/ZUR954IU+br+OAihMrDgAWU5qSFdgXeITTvxSuN+F+3HGmEQWFo+oP/gYAMM28
+ZtgiKWtOZigZhn7b1sdl0XMOhaR+wHqPvHRYfqXrdz3ektHA9KlXV/8WzTXLWoUV
+snpCqJY9i193X+WsVMbF3sp+Zmdu2QXEmJtNkUd6zvwuZ4S4JyePF5DXoAq2IsoM
++4A4HYisUgAS2ZrWPpvCQ9Z31CO0aMKSgHPSsU1Q9QEg17V420vvg5bqn8Zbedyb
+nzmJ4Vp2Ccc6YIb7QWdr95UJ7JMoNzLzFLoVCa3XFDkeT2stZlzCrKMBhaVYIewr
+OOlTg67Sa77H7JUYfvmE+i9fxqvfs3VZ5S+w4CDy7rLXAgMBAAGjUzBRMB0GA1Ud
+DgQWBBSPppE/33XnVV+YBvL+osCzuD1lHzAfBgNVHSMEGDAWgBSPppE/33XnVV+Y
+BvL+osCzuD1lHzAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4ICAQCm
+sTJmiwRX6w0kM/erc8aMdCOcIW4ofSfNkQMdaW/S9pwgnipEF8eKvvkblKvrN+kf
+CntWIOGqOgaxkWlC0yOTqKwzN162mjvRaflUCEDkwLhjqFsgn1g1coma3AScBDMf
+HnpghLH3AAtxs/eDsbvJa70Ybg/3l2oHTLe6kxsVs5k/zqmvIIxOmSqvNFa/5kGg
+iWBz/1X/mqc2lD5/cgz3UrM7ZMr1r4IhGK095ljKiCA1fTrlQrgSQe/3pGm1ShjP
+mn5LbCiIr+JCrNFRV9ivSL88mLEJqbWx+qLQhwde8C09c7EGxQZKHfCI/QcdE3EG
+UYyRYQzXS4bgpMRBw+l2saGjYWd1EBUl5kj3rCDmtT4u2kln9SwqYMT9ZJ/PMtTQ
+WKQj6qVYXla6XLmED8XWqMY7dDKHoy0XLwgUS5SnD+D68Fqfpt4kzm/RnuuBmQl8
+6+BO9NMNMo0+TOm9ItEouE/GD4TbRu59h0Q+usyidmUF79Cj+6qKLW//KRQyrEKa
+LgH/JNuwVgUip0EnN1wsVXSCVpCIoKKANRkQSIfKJwRzlD0JO5moL225W5gp68Zx
+p6K21vDtW3Cmofa6rpV+ZTd60iyTv5YhVd/h/Gunfm2zLhZKb75aJWpEzwn51QvK
+nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
+-----END CERTIFICATE-----"""
+    static final private String BYOPKI_WILDCARD_ISSUER = ".*"
+    static final private String BYOPKI_WILDCARD_IDENTITY = ".*"
+    static final private String BYOPKI_MATCHING_ISSUER = "https://testing.org"
+    static final private String BYOPKI_MATCHING_IDENTITY = "team-a@testing.org"
+    static final private String BYOPKI_UNVERIFIABLE_ISSUER = "invalid"
+    static final private String BYOPKI_UNVERIFIABLE_IDENTITY = "invalid"
+
     static final private String DISTROLESS_IMAGE_DIGEST =
             "sha256:bc217643f9c04fc8131878d6440dd88cf4444385d45bb25995c8051c29687766"
     static final private String TEKTON_IMAGE_DIGEST =
@@ -87,6 +138,8 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
             "sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534"
     static final private String SAME_DIGEST_WITH_SIGNATURE_IMAGE_DIGEST =
             "sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534"
+    static final private String BYOPKI_IMAGE_DIGEST =
+            "sha256:7b3ccabffc97de872a30dfd234fd972a66d247c8cfc69b0550f276481852627c"
 
     static final private List<String> IMAGE_DIGESTS = [
             DISTROLESS_IMAGE_DIGEST,
@@ -95,6 +148,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
             WITHOUT_SIGNATURE_IMAGE_DIGEST,
             SAME_DIGEST_NO_SIGNATURE_IMAGE_DIGEST,
             SAME_DIGEST_WITH_SIGNATURE_IMAGE_DIGEST,
+            BYOPKI_IMAGE_DIGEST,
     ]
 
     // Deployment holding an image which has a cosign signature that is verifiable with the DISTROLESS_PUBLIC_KEY.
@@ -150,6 +204,15 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
             .addLabel("app", "image-same-digest-with-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
+    // Deployment holding an image with BYOPKI. BYOPKI means that the image signature
+    // also has a certificate and certificate chain attached, which can be used to verify the signature.
+    static final private Deployment BYOPKI_DEPLOYMENT = new Deployment()
+            .setName("byopki")
+            .setImage("quay.io/rhacs-eng/qa-signatures:byopki@" + BYOPKI_IMAGE_DIGEST)
+            .addLabel("app", "image-with-byopki")
+            .setCommand(["sleep", "600"])
+            .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+
     // List of deployments used within the tests. This will be used during setup of the spec / teardown to create /
     // delete all deployments.
     // NOTE: If you add another deployment, make sure to add it here as well.
@@ -160,6 +223,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
             WITHOUT_SIGNATURE_DEPLOYMENT,
             SAME_DIGEST_NO_SIGNATURE,
             SAME_DIGEST_WITH_SIGNATURE,
+            BYOPKI_DEPLOYMENT,
     ]
 
     // Base policy which will be used for creating subsequent policies that have signature integration IDs as values.
@@ -209,6 +273,30 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
         assert sameDigestSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(SAME_DIGEST, sameDigestSignatureIntegrationID)
 
+        // Signature integration "BYOPKI_WILDCARD" which holds the root CA + wildcard regex for
+        // issuer and identity.
+        String byopkiWildcardSignatureIntegrationID = createSignatureIntegration(
+                BYOPKI_WILDCARD, [:], BYOPKI_ROOT_CA, BYOPKI_WILDCARD_IDENTITY, BYOPKI_WILDCARD_ISSUER
+        )
+        assert byopkiWildcardSignatureIntegrationID
+        CREATED_SIGNATURE_INTEGRATIONS.put(BYOPKI_WILDCARD, byopkiWildcardSignatureIntegrationID)
+
+        // Signature integration "BYOPKI_MATCHING" which holds the root CA + matching identity
+        // and issuer.
+        String byopkiMatchingSignatureIntegrationID = createSignatureIntegration(
+                        BYOPKI_MATCHING, [:], BYOPKI_ROOT_CA, BYOPKI_MATCHING_IDENTITY, BYOPKI_MATCHING_ISSUER
+                )
+        assert byopkiMatchingSignatureIntegrationID
+        CREATED_SIGNATURE_INTEGRATIONS.put(BYOPKI_MATCHING, byopkiMatchingSignatureIntegrationID)
+
+        // Signature integration "BYOPKI_UNVERIFIABLE" which holds the root CA + a non-matching
+        // identity and issuer.
+        String byopkiUnverifiableSignatureIntegrationID = createSignatureIntegration(
+                        BYOPKI_UNVERIFIABLE, [:], BYOPKI_ROOT_CA, BYOPKI_UNVERIFIABLE_IDENTITY,
+                        BYOPKI_UNVERIFIABLE_ISSUER)
+        assert byopkiUnverifiableSignatureIntegrationID
+        CREATED_SIGNATURE_INTEGRATIONS.put(BYOPKI_UNVERIFIABLE, byopkiUnverifiableSignatureIntegrationID)
+
         // Signature integration "Distroless+Tekton" which holds both distroless and tekton cosign public keys.
         Map<String,String> mergedKeys = DISTROLESS_PUBLIC_KEY.clone() as Map<String, String>
         mergedKeys.putAll(TEKTON_COSIGN_PUBLIC_KEY.entrySet())
@@ -217,6 +305,15 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
         )
         assert distrolessAndTektonSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(DISTROLESS_AND_TEKTON, distrolessAndTektonSignatureIntegrationID)
+
+        // Signature integartion "BYOPKI-Wildcard+Tekton" which holds both BYOPKI wildcard and Tekton.
+        String byopkiWildcardAndTektonSignatureIntegrationID = createSignatureIntegration(
+                BYOPKI_WILDCARD_AND_TEKTON, TEKTON_COSIGN_PUBLIC_KEY, BYOPKI_ROOT_CA, BYOPKI_WILDCARD_IDENTITY,
+                BYOPKI_WILDCARD_ISSUER
+        )
+        assert byopkiWildcardAndTektonSignatureIntegrationID
+        CREATED_SIGNATURE_INTEGRATIONS.put(BYOPKI_WILDCARD_AND_TEKTON,
+                byopkiWildcardAndTektonSignatureIntegrationID)
 
         // Create all required deployments.
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
@@ -298,6 +395,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
         DISTROLESS                                 | DISTROLESS_DEPLOYMENT        | false
         DISTROLESS                                 | SAME_DIGEST_NO_SIGNATURE     | true
         DISTROLESS                                 | SAME_DIGEST_WITH_SIGNATURE   | true
+        DISTROLESS                                 | BYOPKI_DEPLOYMENT            | true
         // Tekton should create alerts for all deployments except those using tekton images.
         TEKTON                                     | DISTROLESS_DEPLOYMENT        | true
         TEKTON                                     | UNVERIFIABLE_DEPLOYMENT      | true
@@ -305,6 +403,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
         TEKTON                                     | TEKTON_DEPLOYMENT            | false
         TEKTON                                     | SAME_DIGEST_NO_SIGNATURE     | true
         TEKTON                                     | SAME_DIGEST_WITH_SIGNATURE   | true
+        TEKTON                                     | BYOPKI_DEPLOYMENT            | true
         // Unverifiable should create alerts for all deployments.
         UNVERIFIABLE                               | DISTROLESS_DEPLOYMENT        | true
         UNVERIFIABLE                               | TEKTON_DEPLOYMENT            | true
@@ -312,6 +411,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
         UNVERIFIABLE                               | UNVERIFIABLE_DEPLOYMENT      | true
         UNVERIFIABLE                               | SAME_DIGEST_NO_SIGNATURE     | true
         UNVERIFIABLE                               | SAME_DIGEST_WITH_SIGNATURE   | true
+        UNVERIFIABLE                               | BYOPKI_DEPLOYMENT            | true
         // Distroless and tekton should create alerts for all deployments except those using distroless / tekton images.
         DISTROLESS_AND_TEKTON                      | UNVERIFIABLE_DEPLOYMENT      | true
         DISTROLESS_AND_TEKTON                      | WITHOUT_SIGNATURE_DEPLOYMENT | true
@@ -319,6 +419,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
         DISTROLESS_AND_TEKTON                      | DISTROLESS_DEPLOYMENT        | false
         DISTROLESS_AND_TEKTON                      | SAME_DIGEST_NO_SIGNATURE     | true
         DISTROLESS_AND_TEKTON                      | SAME_DIGEST_WITH_SIGNATURE   | true
+        DISTROLESS_AND_TEKTON                      | BYOPKI_DEPLOYMENT            | true
         // Policy with all three integrations should create alerts for all deployments except those using distroless /
         // tekton images.
         POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | UNVERIFIABLE_DEPLOYMENT      | true
@@ -327,6 +428,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
         POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | DISTROLESS_DEPLOYMENT        | false
         POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | SAME_DIGEST_NO_SIGNATURE     | true
         POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | SAME_DIGEST_WITH_SIGNATURE   | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | BYOPKI_DEPLOYMENT            | true
         // Same digest should create alerts for all deployments except those using alt-nginx image.
         SAME_DIGEST                                | UNVERIFIABLE_DEPLOYMENT      | true
         SAME_DIGEST                                | WITHOUT_SIGNATURE_DEPLOYMENT | true
@@ -334,6 +436,40 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
         SAME_DIGEST                                | DISTROLESS_DEPLOYMENT        | true
         SAME_DIGEST                                | SAME_DIGEST_NO_SIGNATURE     | true
         SAME_DIGEST                                | SAME_DIGEST_WITH_SIGNATURE   | false
+        SAME_DIGEST                                | BYOPKI_DEPLOYMENT            | true
+        // BYOPKI wildcard should create alerts for all deployments except the BYOPKI deployment one.
+        BYOPKI_WILDCARD                            | BYOPKI_DEPLOYMENT            | false
+        BYOPKI_WILDCARD                            | UNVERIFIABLE_DEPLOYMENT      | true
+        BYOPKI_WILDCARD                            | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        BYOPKI_WILDCARD                            | TEKTON_DEPLOYMENT            | true
+        BYOPKI_WILDCARD                            | DISTROLESS_DEPLOYMENT        | true
+        BYOPKI_WILDCARD                            | SAME_DIGEST_NO_SIGNATURE     | true
+        BYOPKI_WILDCARD                            | SAME_DIGEST_WITH_SIGNATURE   | true
+        // BYOPKI matching should create alerts for all deployments except the BYOPKI deployment one.
+        BYOPKI_MATCHING                            | BYOPKI_DEPLOYMENT            | false
+        BYOPKI_MATCHING                            | UNVERIFIABLE_DEPLOYMENT      | true
+        BYOPKI_MATCHING                            | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        BYOPKI_MATCHING                            | TEKTON_DEPLOYMENT            | true
+        BYOPKI_MATCHING                            | DISTROLESS_DEPLOYMENT        | true
+        BYOPKI_MATCHING                            | SAME_DIGEST_NO_SIGNATURE     | true
+        BYOPKI_MATCHING                            | SAME_DIGEST_WITH_SIGNATURE   | true
+        // BYOPKI unverifiable should create alerts for all deployments.
+        BYOPKI_UNVERIFIABLE                        | BYOPKI_DEPLOYMENT            | true
+        BYOPKI_UNVERIFIABLE                        | UNVERIFIABLE_DEPLOYMENT      | true
+        BYOPKI_UNVERIFIABLE                        | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        BYOPKI_UNVERIFIABLE                        | TEKTON_DEPLOYMENT            | true
+        BYOPKI_UNVERIFIABLE                        | DISTROLESS_DEPLOYMENT        | true
+        BYOPKI_UNVERIFIABLE                        | SAME_DIGEST_NO_SIGNATURE     | true
+        BYOPKI_UNVERIFIABLE                        | SAME_DIGEST_WITH_SIGNATURE   | true
+        // BYOPKI wildcard + Tekton should create alerts for all deployments except the
+        // BYOPKI one and the Tekton one.
+        BYOPKI_WILDCARD_AND_TEKTON                 | DISTROLESS_DEPLOYMENT        | true
+        BYOPKI_WILDCARD_AND_TEKTON                 | UNVERIFIABLE_DEPLOYMENT      | true
+        BYOPKI_WILDCARD_AND_TEKTON                 | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        BYOPKI_WILDCARD_AND_TEKTON                 | TEKTON_DEPLOYMENT            | false
+        BYOPKI_WILDCARD_AND_TEKTON                 | SAME_DIGEST_NO_SIGNATURE     | true
+        BYOPKI_WILDCARD_AND_TEKTON                 | SAME_DIGEST_WITH_SIGNATURE   | true
+        BYOPKI_WILDCARD_AND_TEKTON                 | BYOPKI_DEPLOYMENT            | false
     }
 
     // Helper which creates a policy builder for a policy which uses the image signature policy criteria.
@@ -354,21 +490,36 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
         return policyBuilder
     }
 
-    // Helper to create a signature integration with given name and public keys.
-    private static String createSignatureIntegration(String integrationName, Map<String, String> namedPublicKeys) {
-        List<CosignPublicKeyVerification.PublicKey> publicKeys = namedPublicKeys.collect {
-            CosignPublicKeyVerification.PublicKey.newBuilder()
-                    .setName(it.key).setPublicKeyPemEnc(it.value)
-                    .build()
-        }
-        String signatureIntegrationID = SignatureIntegrationService.createSignatureIntegration(
-                SignatureIntegration.newBuilder()
-                        .setName(integrationName)
-                        .setCosign(CosignPublicKeyVerification.newBuilder()
-                                .addAllPublicKeys(publicKeys)
-                                .build()
-                        )
+    // Helper to create a signature integration with given name, public keys, chain, identity, and issuer.
+    private static String createSignatureIntegration(
+            String integrationName, Map<String, String> namedPublicKeys, String chain = "",
+            String identity = "", String issuer = "") {
+        SignatureIntegration.Builder builder = SignatureIntegration.newBuilder()
+                .setName(integrationName)
+
+        if (!namedPublicKeys.isEmpty()) {
+            List<CosignPublicKeyVerification.PublicKey> publicKeys = namedPublicKeys.collect {
+                CosignPublicKeyVerification.PublicKey.newBuilder()
+                        .setName(it.key).setPublicKeyPemEnc(it.value)
                         .build()
+            }
+            builder.setCosign(CosignPublicKeyVerification.newBuilder()
+                    .addAllPublicKeys(publicKeys)
+                    .build()
+            )
+        }
+
+        if (chain != "") {
+            CosignCertificateVerification verification = CosignCertificateVerification.newBuilder()
+                    .setCertificateChainPemEnc(chain)
+                    .setCertificateIdentity(identity)
+                    .setCertificateOidcIssuer(issuer)
+                    .build()
+            builder.addCosignCertificates(verification)
+        }
+
+        String signatureIntegrationID = SignatureIntegrationService.createSignatureIntegration(
+            builder.build()
         )
         return signatureIntegrationID
     }
