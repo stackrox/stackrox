@@ -37,6 +37,7 @@ var (
 		policymigrationhelper.NameComparator,
 		policymigrationhelper.DescriptionComparator,
 		policymigrationhelper.PolicySectionComparator,
+		policymigrationhelper.SeverityComparator,
 	}
 
 	// Update the nftables policy only if the existing name, description, rationale, remediation and policy sections haven't changed.
@@ -100,6 +101,10 @@ var (
 		{
 			FieldsToCompare: fieldsToCompare,
 			PolicyFileName:  "privileged.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "rapid-reset.json",
 		},
 	}
 )
