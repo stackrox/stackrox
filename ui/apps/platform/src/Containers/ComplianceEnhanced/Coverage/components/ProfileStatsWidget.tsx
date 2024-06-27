@@ -10,10 +10,10 @@ import { defaultChartHeight, defaultChartBarWidth } from 'utils/chartUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import {
-    FAILING_COLOR,
-    MANUAL_COLOR,
-    OTHER_COLOR,
-    PASSING_COLOR,
+    FAILING_VAR_COLOR,
+    MANUAL_VAR_COLOR,
+    OTHER_VAR_COLOR,
+    PASSING_VAR_COLOR,
 } from '../compliance.coverage.constants';
 import { getStatusCounts } from '../compliance.coverage.utils';
 
@@ -69,30 +69,30 @@ function ProfileStatsWidget({ error, isLoading, profileScanStats }: ProfileStats
             {
                 x: 'Passing',
                 y: passCount / totalCount,
-                color: PASSING_COLOR,
+                color: PASSING_VAR_COLOR,
             },
             {
                 x: 'Failing',
                 y: failCount / totalCount,
-                color: FAILING_COLOR,
+                color: FAILING_VAR_COLOR,
             },
             {
                 x: 'Manual',
                 y: manualCount / totalCount,
-                color: MANUAL_COLOR,
+                color: MANUAL_VAR_COLOR,
             },
             {
                 x: 'Other',
                 y: otherCount / totalCount,
-                color: OTHER_COLOR,
+                color: OTHER_VAR_COLOR,
             },
         ];
 
         return (
             <div ref={setWidgetContainer}>
                 <Chart
-                    ariaDesc="Aging images grouped by date of last update"
-                    ariaTitle="Aging images"
+                    ariaDesc="Percentage of total checks by status"
+                    ariaTitle="Check stats by status"
                     domainPadding={{ x: [50, 50] }}
                     padding={{ top: 30, bottom: 65, left: 65, right: 20 }}
                     height={defaultChartHeight}
@@ -107,12 +107,12 @@ function ProfileStatsWidget({ error, isLoading, profileScanStats }: ProfileStats
                         showGrid
                     />
                     <ChartBar
-                        key="testing"
                         barWidth={defaultChartBarWidth}
                         data={data}
                         style={{
                             data: {
-                                fill: ({ datum }: DatumArgs) => (datum ? datum.color : 'gray'),
+                                fill: ({ datum }: DatumArgs) =>
+                                    datum ? datum.color : OTHER_VAR_COLOR,
                             },
                         }}
                         labels={({ datum }: DatumArgs) =>

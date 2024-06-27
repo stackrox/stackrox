@@ -17,10 +17,14 @@ import { SearchFilter } from 'types/search';
 
 import { SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import {
-    FAILING_COLOR,
-    MANUAL_COLOR,
-    OTHER_COLOR,
-    PASSING_COLOR,
+    FAILING_LABEL_COLOR,
+    FAILING_VAR_COLOR,
+    MANUAL_LABEL_COLOR,
+    MANUAL_VAR_COLOR,
+    OTHER_LABEL_COLOR,
+    OTHER_VAR_COLOR,
+    PASSING_LABEL_COLOR,
+    PASSING_VAR_COLOR,
 } from './compliance.coverage.constants';
 
 export type ClusterStatusObject = {
@@ -95,84 +99,84 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
     PASS: {
         icon: (
             <Icon>
-                <CheckCircleIcon color={PASSING_COLOR} />
+                <CheckCircleIcon color={PASSING_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Pass',
         tooltipText: null,
-        color: 'blue',
+        color: PASSING_LABEL_COLOR,
     },
     FAIL: {
         icon: (
             <Icon>
-                <SecurityIcon color={FAILING_COLOR} />
+                <SecurityIcon color={FAILING_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Fail',
         tooltipText: null,
-        color: 'red',
+        color: FAILING_LABEL_COLOR,
     },
     ERROR: {
         icon: (
             <Icon>
-                <ExclamationTriangleIcon color={OTHER_COLOR} />
+                <ExclamationTriangleIcon color={OTHER_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Error',
         tooltipText: 'Check ran successfully, but could not complete',
-        color: 'grey',
+        color: OTHER_LABEL_COLOR,
     },
     INFO: {
         icon: (
             <Icon>
-                <ExclamationCircleIcon color={OTHER_COLOR} />
+                <ExclamationCircleIcon color={OTHER_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Info',
         tooltipText:
             'Check was successful and found something not severe enough to be considered an error',
-        color: 'grey',
+        color: OTHER_LABEL_COLOR,
     },
     MANUAL: {
         icon: (
             <Icon>
-                <WrenchIcon color={MANUAL_COLOR} />
+                <WrenchIcon color={MANUAL_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Manual',
         tooltipText:
             'Manual check requires additional organizational or technical knowledge that is not automatable',
-        color: 'gold',
+        color: MANUAL_LABEL_COLOR,
     },
     NOT_APPLICABLE: {
         icon: (
             <Icon>
-                <BanIcon color={OTHER_COLOR} />
+                <BanIcon color={OTHER_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Not Applicable',
         tooltipText: 'Check did not run as it is not applicable',
-        color: 'grey',
+        color: OTHER_LABEL_COLOR,
     },
     INCONSISTENT: {
         icon: (
             <Icon>
-                <UnknownIcon color={OTHER_COLOR} />
+                <UnknownIcon color={OTHER_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Inconsistent',
         tooltipText: 'Different nodes report different results',
-        color: 'grey',
+        color: OTHER_LABEL_COLOR,
     },
     UNSET_CHECK_STATUS: {
         icon: (
             <Icon>
-                <ResourcesEmptyIcon color={OTHER_COLOR} />
+                <ResourcesEmptyIcon color={OTHER_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Unset',
         tooltipText: '',
-        color: 'grey',
+        color: OTHER_LABEL_COLOR,
     },
 };
 

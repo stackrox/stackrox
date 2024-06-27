@@ -1,4 +1,4 @@
-import React, { useCallback, useContext } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Route, Switch, useParams } from 'react-router-dom';
 import {
     Bullseye,
@@ -28,7 +28,10 @@ import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLSearch from 'hooks/useURLSearch';
-import { getComplianceProfilesStats } from 'services/ComplianceResultsStatsService';
+import {
+    ComplianceProfileScanStats,
+    getComplianceProfilesStats,
+} from 'services/ComplianceResultsStatsService';
 
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
@@ -58,6 +61,9 @@ function CoveragesPage() {
         useContext(ComplianceProfilesContext);
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
         useContext(ScanConfigurationsContext);
+    const [selectedProfileStats, setSelectedProfileStats] = useState<
+        undefined | ComplianceProfileScanStats
+    >(undefined);
 
     const { searchFilter, setSearchFilter } = useURLSearch();
 
@@ -71,7 +77,23 @@ function CoveragesPage() {
         data: profilesStatsResponse,
         loading: isLoadingProfilesStats,
         error: profilesStatsError,
+        refetch: refetchProfilesStats,
     } = useRestQuery(fetchProfilesStats);
+
+    // Refetch profiles stats when profileName changes to stay more in sync with the data in the table
+    useEffect(() => {
+        setSelectedProfileStats(undefined);
+        refetchProfilesStats();
+    }, [profileName, refetchProfilesStats]);
+
+    useEffect(() => {
+        if (profilesStatsResponse) {
+            const profileStats = profilesStatsResponse.scanStats.find(
+                (profile) => profile.profileName === profileName
+            );
+            setSelectedProfileStats(profileStats);
+        }
+    }, [profilesStatsResponse, profileName]);
 
     function handleProfilesToggleChange(selectedProfile: string) {
         navigateWithScanConfigQuery(coverageProfileChecksPath, { profileName: selectedProfile });
@@ -83,10 +105,6 @@ function CoveragesPage() {
 
     const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(
         (profile) => profile.name === profileName
-    );
-
-    const selectedProfileStats = profilesStatsResponse?.scanStats.find(
-        (profile) => profile.profileName === profileName
     );
 
     return (

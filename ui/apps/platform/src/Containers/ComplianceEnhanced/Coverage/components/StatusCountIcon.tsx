@@ -6,10 +6,10 @@ import pluralize from 'pluralize';
 import IconText from 'Components/PatternFly/IconText/IconText';
 
 import {
-    FAILING_COLOR,
-    MANUAL_COLOR,
-    OTHER_COLOR,
-    PASSING_COLOR,
+    FAILING_VAR_COLOR,
+    MANUAL_VAR_COLOR,
+    OTHER_VAR_COLOR,
+    PASSING_VAR_COLOR,
 } from '../compliance.coverage.constants';
 
 type Status = 'pass' | 'fail' | 'manual' | 'other';
@@ -25,16 +25,16 @@ function getStatusIcon(status: Status, count: number) {
     if (count > 0) {
         switch (status) {
             case 'fail':
-                color = FAILING_COLOR;
+                color = FAILING_VAR_COLOR;
                 break;
             case 'pass':
-                color = PASSING_COLOR;
+                color = PASSING_VAR_COLOR;
                 break;
             case 'manual':
-                color = MANUAL_COLOR;
+                color = MANUAL_VAR_COLOR;
                 break;
             case 'other':
-                color = OTHER_COLOR;
+                color = OTHER_VAR_COLOR;
                 break;
             default:
                 break;
