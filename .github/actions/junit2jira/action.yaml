@@ -33,7 +33,7 @@ runs:
       LOCATION="https://github.com/stackrox/junit2jira/releases/download/$VERSION/junit2jira"
       # Skip downloading release if downloaded already, e.g. when the action is used multiple times.
       if [[ ! -x junit2jira ]]; then
-        curl --retry 5 --silent --show-error --fail --location --output junit2jira "$LOCATION"
+        curl --retry 5 --retry-connrefused --silent --show-error --fail --location --output junit2jira "$LOCATION"
         chmod +x junit2jira
       fi
   - name: Check files
