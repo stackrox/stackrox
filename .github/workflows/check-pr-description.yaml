@@ -1,0 +1,19 @@
+name: "Check PR description"
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize]
+
+jobs:
+  check-description:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    steps:
+      - name: Check PR description
+        env:
+          script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
+        run: |
+          set -uo pipefail
+          echo "${{ github.event.pull_request.body }}" | \
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            check-pr-description
