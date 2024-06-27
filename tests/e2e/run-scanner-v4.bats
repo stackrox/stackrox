@@ -74,7 +74,7 @@ setup_file() {
     echo "EARLIER_ROXCTL_PATH=$EARLIER_ROXCTL_PATH"
     export EARLIER_ROXCTL_PATH
     if [[ ! -e "${EARLIER_ROXCTL_PATH}/roxctl" ]]; then
-        curl --retry 5 -sL "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_MAIN_IMAGE_TAG}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
+        curl --retry 5 --retry-connrefused -sL "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_MAIN_IMAGE_TAG}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
         chmod +x "${EARLIER_ROXCTL_PATH}/roxctl"
     fi
 
