@@ -1347,10 +1347,11 @@
         "INTERNET",
         "LISTEN_ENDPOINT",
         "EXTERNAL_SOURCE",
-        "INTERNAL_ENTITIES"
+        "INTERNAL_ENTITIES",
+        "LEARNED_EXTERNAL_SOURCE"
       ],
       "default": "UNKNOWN_TYPE",
-      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
+      "title": "- EXTERNAL_SOURCE: EXTERNAL_SOURCE is for known CIDR blocks (customer provided, or from built-in well-known list)\n - INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node\n - LEARNED_EXTERNAL_SOURCE: LEARNED_EXTERNAL_SOURCE is for external IPs learned from network monitoring"
     },
     "storagePolicy": {
       "type": "object",
