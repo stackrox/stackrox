@@ -16,7 +16,7 @@ function SnoozeCveToggleButton({
     const isSnoozeFilterActive = searchFilter['CVE Snoozed']?.[0] === 'true';
     const buttonText = isSnoozeFilterActive ? 'Show observed CVEs' : 'Show snoozed CVEs';
     const showCountBadge =
-        snoozedCveCount !== undefined && snoozedCveCount > 0 && !isSnoozeFilterActive;
+        typeof snoozedCveCount === 'number' && snoozedCveCount > 0 && !isSnoozeFilterActive;
     const badgeCount = showCountBadge ? { isRead: true, count: snoozedCveCount } : undefined;
 
     function toggleSnoozeFilter() {
