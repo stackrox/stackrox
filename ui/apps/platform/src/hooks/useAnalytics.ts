@@ -54,27 +54,29 @@ export const LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES = 'Legacy Cluster Download Helm
  */
 type AnalyticsBoolean = 0 | 1;
 
-// search categories and type guards for tracking search filters on the Workload CVE pages
-export const searchCategoriesWithFilter = ['COMPONENT SOURCE', 'SEVERITY', 'FIXABLE'] as const;
+/**
+ * A curated list of filters that we would like to track both the filter category and the
+ * filter value. This list should exclude anything that could be considered sensitive or
+ * specific to a customer environment. This items in this list must also match the casing of
+ * the applied filter _exactly_, otherwise it will be tracked without the filter value.
+ */
+export const searchCategoriesWithFilter = [
+    'Component Source',
+    'SEVERITY',
+    'FIXABLE',
+    'CLUSTER CVE FIXABLE',
+    'CVSS',
+    'Node Top CVSS',
+] as const;
+
 export const isSearchCategoryWithFilter = tupleTypeGuard(searchCategoriesWithFilter);
 export type SearchCategoryWithFilter = UnionFrom<typeof searchCategoriesWithFilter>;
-
-export const searchCategoriesWithoutFilter = [
-    'CVE',
-    'IMAGE',
-    'COMPONENT',
-    'DEPLOYMENT',
-    'NAMESPACE',
-    'CLUSTER',
-] as const;
-export const isSearchCategoryWithoutFilter = tupleTypeGuard(searchCategoriesWithoutFilter);
-export type SearchCategoryWithoutFilter = UnionFrom<typeof searchCategoriesWithoutFilter>;
 
 /**
  * An AnalyticsEvent is either a simple string that represents the event name,
  * or an object with an event name and additional properties.
  */
-type AnalyticsEvent =
+export type AnalyticsEvent =
     | typeof CLUSTER_CREATED
     | typeof INVITE_USERS_MODAL_OPENED
     | typeof INVITE_USERS_SUBMITTED
@@ -87,7 +89,7 @@ type AnalyticsEvent =
               deployments: number;
           };
       }
-    /** Tracks each time network policies are genarated on Network Graph */
+    /** Tracks each time network policies are generated on Network Graph */
     | {
           event: typeof GENERATE_NETWORK_POLICIES;
           properties: {
@@ -137,9 +139,7 @@ type AnalyticsEvent =
      */
     | {
           event: typeof WORKLOAD_CVE_FILTER_APPLIED;
-          properties:
-              | { category: SearchCategoryWithFilter; filter: string }
-              | { category: SearchCategoryWithoutFilter };
+          properties: { category: SearchCategoryWithFilter; filter: string } | { category: string };
       }
     /**
      * Tracks each time the user changes the default filters on the Workload CVE overview page.

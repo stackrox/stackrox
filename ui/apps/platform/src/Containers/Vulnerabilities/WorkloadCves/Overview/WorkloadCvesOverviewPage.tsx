@@ -24,6 +24,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useAnalytics, {
     WATCH_IMAGE_MODAL_OPENED,
     WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
+    WORKLOAD_CVE_FILTER_APPLIED,
 } from 'hooks/useAnalytics';
 import useLocalStorage from 'hooks/useLocalStorage';
 import { SearchFilter } from 'types/search';
@@ -50,6 +51,7 @@ import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/Advanc
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { SearchFilterEntityName } from 'Components/CompoundSearchFilter/types';
 
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import {
     DefaultFilters,
     WorkloadEntityTab,
@@ -167,6 +169,7 @@ function WorkloadCvesOverviewPage() {
     const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
     const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
     const currentVulnerabilityState = useVulnerabilityState();
 
@@ -334,13 +337,10 @@ function WorkloadCvesOverviewPage() {
             searchFilterConfig={searchFilterConfig}
             searchFilter={searchFilter}
             defaultFilters={localStorageValue.preferences.defaultFilters}
-            onFilterChange={(newFilter, { action }) => {
+            onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);
                 pagination.setPage(1, 'replace');
-
-                if (action === 'ADD') {
-                    // TODO - Add analytics tracking ROX-24532
-                }
+                trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
             }}
             includeCveSeverityFilters={isViewingWithCves}
             includeCveStatusFilters={isViewingWithCves}
