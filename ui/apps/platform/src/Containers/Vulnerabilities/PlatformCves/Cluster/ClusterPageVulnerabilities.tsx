@@ -63,15 +63,16 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
         perPage,
         sortOption,
     });
+
     const summaryRequest = useClusterSummaryData(clusterId, query);
 
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
-    const clusterVulnerabilityCount = data?.cluster.clusterVulnerabilityCount ?? 0;
+    const clusterVulnerabilityCount = data?.cluster?.clusterVulnerabilityCount ?? 0;
 
     const tableState = getTableUIState({
         isLoading: loading,
         error,
-        data: data?.cluster.clusterVulnerabilities,
+        data: data?.cluster?.clusterVulnerabilities,
         searchFilter: querySearchFilter,
     });
 

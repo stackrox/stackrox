@@ -80,7 +80,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
     const tableState = getTableUIState({
         isLoading: loading,
         error,
-        data: data?.node.nodeVulnerabilities,
+        data: data?.node?.nodeVulnerabilities,
         searchFilter: querySearchFilter,
     });
 
@@ -129,7 +129,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <Title headingLevel="h2">
-                                    {data ? (
+                                    {data && data.node ? (
                                         `${pluralize(
                                             data.node.nodeVulnerabilityCount,
                                             'result'
