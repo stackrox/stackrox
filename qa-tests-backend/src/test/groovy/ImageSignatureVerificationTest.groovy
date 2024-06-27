@@ -210,6 +210,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
             .setName("byopki")
             .setImage("quay.io/rhacs-eng/qa-signatures:byopki@" + BYOPKI_IMAGE_DIGEST)
             .addLabel("app", "image-with-byopki")
+            .setCommand(["sleep", "600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
     // List of deployments used within the tests. This will be used during setup of the spec / teardown to create /
