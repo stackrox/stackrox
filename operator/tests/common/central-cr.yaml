@@ -6,7 +6,14 @@ spec:
   imagePullSecrets:
   - name: e2e-test-pull-secret
   # Resource settings should be in sync with /deploy/common/local-dev-values.yaml
+  customize:
+    envVars:
+      - name: ROX_MANAGED_CENTRAL
+        value: "true"
   central:
+    exposure:
+      route:
+        enabled: true
     adminPasswordSecret:
       name: admin-pass
     resources:
