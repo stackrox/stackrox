@@ -222,6 +222,16 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         DEPLOYMENTS.each { assert Services.waitForDeployment(it) }
 
+        // Wait until we received metadata from all images we want to test. This will ensure that enrichment
+        // has finalized.
+        withRetry(90, 2) {
+            for (digest in IMAGE_DIGESTS) {
+                ImageOuterClass.Image image = ImageService.getImage(digest, false)
+                assert image
+                assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
+            }
+        }
+
         // Create the policy builders using the signature integration IDs.
         List<Policy.Builder> policyBuilders = []
         for (integrationName in INTEGRATION_NAMES) {
@@ -248,16 +258,6 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
 
         // Reassessing policies will trigger a re-enrichment of images.
         PolicyService.reassessPolicies()
-
-        // Wait until we received metadata from all images we want to test. This will ensure that enrichment
-        // has finalized.
-        withRetry(90, 2) {
-            for (digest in IMAGE_DIGESTS) {
-                ImageOuterClass.Image image = ImageService.getImage(digest, false)
-                assert image
-                assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
-            }
-        }
     }
 
     def cleanupSpec() {
