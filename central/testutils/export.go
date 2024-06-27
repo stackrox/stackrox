@@ -222,7 +222,9 @@ func (h *ExportServicePostgresTestHelper) InjectDataAndRunBenchmark(
 	injectImages bool,
 	benchmark func(b *testing.B),
 ) {
-	datasetSizes := []int{500}
+	// For the standard go benchmark tests, have minimal scale to ensure
+	// the test runs properly.
+	datasetSizes := []int{10}
 	// The test runs by default with a lower scale as smoke test
 	// in the benchmark unit tests. To test at higher scales (takes time),
 	// run the test with ROX_SCALE_TEST set to a non-empty value
