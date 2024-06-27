@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/rox/pkg/protoassert"
 )
 
 func TestPolicySerialization(t *testing.T) {
@@ -16,5 +17,5 @@ func TestPolicySerialization(t *testing.T) {
 	assert.NoError(t, err)
 	conv, err := ConvertPolicyToProto(m)
 	assert.NoError(t, err)
-	assert.Equal(t, obj, conv)
+	protoassert.Equal(t, obj, conv)
 }
