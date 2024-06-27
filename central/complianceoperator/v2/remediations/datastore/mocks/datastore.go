@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -97,6 +98,21 @@ func (m *MockDataStore) GetRemediationsByCluster(ctx context.Context, clusterID 
 func (mr *MockDataStoreMockRecorder) GetRemediationsByCluster(ctx, clusterID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemediationsByCluster", reflect.TypeOf((*MockDataStore)(nil).GetRemediationsByCluster), ctx, clusterID)
+}
+
+// SearchRemediations mocks base method.
+func (m *MockDataStore) SearchRemediations(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorRemediationV2, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchRemediations", ctx, query)
+	ret0, _ := ret[0].([]*storage.ComplianceOperatorRemediationV2)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRemediations indicates an expected call of SearchRemediations.
+func (mr *MockDataStoreMockRecorder) SearchRemediations(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRemediations", reflect.TypeOf((*MockDataStore)(nil).SearchRemediations), ctx, query)
 }
 
 // UpsertRemediation mocks base method.

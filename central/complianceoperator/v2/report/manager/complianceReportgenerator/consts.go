@@ -7,7 +7,7 @@ const (
 		"Passing:{{.Pass}} checks \n" +
 		"Failing:{{.Fail}} checks \n" +
 		"Mixed:{{.Mixed}} checks \n" +
-		"Clusters {{.Clusters}} scanned"
+		"Clusters: {{.Cluster}} scanned"
 
 	defaultSubjectTemplate = "{{.BrandedPrefix}} Compliance Report For {{.ScanConfig}} with {{.Profiles}} Profiles"
 )
