@@ -30,6 +30,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { getComplianceClusterStats } from 'services/ComplianceResultsStatsService';
 import { getTableUIState } from 'utils/getTableUIState';
+import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
@@ -68,8 +69,9 @@ function ProfileClustersPage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const fetchProfileClusters = useCallback(() => {
+        const regexSearchFilter = addRegexPrefixToFilters(searchFilter, [CHECK_NAME_QUERY]);
         const combinedFilter = combineSearchFilterWithScanConfig(
-            searchFilter,
+            regexSearchFilter,
             selectedScanConfigName
         );
         return getComplianceClusterStats(profileName, {
