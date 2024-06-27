@@ -252,6 +252,22 @@
 
 {{ include "srox.initGlobalPrefix" (list $) }}
 
+{{/*
+The following block checks for the validity of the provided init bundle. (`helm install ... -f <init-bundle.yaml>`)
+1. Throw an error if no init bundle was provided
+2. Throw an error if the wrong init-bundle format was provided (user wrongly passed an operator-formatted init-bundle to helm). We detect the presence of an operator init bundle by checking for the Kubernetes secret annotation "init-bundle.stackrox.io/name", that suggests a user has wrongly used `helm install ... -f <operator-init-bundle.yaml>.`
+3. Warn if the user specified both init bundles, e.g. `helm install ... -f <helm-init-bundle.yaml> -f <operator-init-bundle.yaml>`
+*/}}
+{{ $operatorInitBundlePresent := hasKey (._rox.metadata).annotations "init-bundle.stackrox.io/name" }}
+{{ $helmInitBundleNotPresent := empty ._rox.ca._cert }}
+{{- if and $operatorInitBundlePresent $helmInitBundleNotPresent }}
+    {{ include "srox.fail" (list . "It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart. Make sure to provide an init bundle for Helm chart installation.") }}
+{{- else if and (not $helmInitBundleNotPresent) $operatorInitBundlePresent }}
+    {{ include "srox.warn" (list . "It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart.") }}
+{{- else if $helmInitBundleNotPresent }}
+    {{ include "srox.fail" (list . "A CA certificate must be specified") }}
+{{- end }}
+
 {{/* ManagedBy related settings */}}
 {{/* The field `helmManaged` defaults to true, therefore `managedBy` will only be changed to `MANAGER_TYPE_MANUAL` here
      in case it was explicitly set `helmManaged=false`. */}}
