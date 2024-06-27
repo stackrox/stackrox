@@ -225,7 +225,13 @@ function ImagePageVulnerabilities({
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
-                <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
+                <VulnerabilityStateTabs
+                    isBox
+                    onChange={() => {
+                        setSearchFilter({});
+                        setPage(1, 'replace');
+                    }}
+                />
                 <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
                     {isAdvancedFiltersEnabled ? (
                         <AdvancedFiltersToolbar
