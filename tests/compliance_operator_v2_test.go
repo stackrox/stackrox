@@ -109,13 +109,6 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 	}
 }
 
-func assertNameIDDescriptionAndProfilesMatch(t *testing.T, expected *v2.ComplianceScanConfigurationStatus, actual *v2.ComplianceScanConfiguration) {
-	assert.Equal(t, expected.GetScanName(), actual.GetScanName())
-	assert.Equal(t, expected.GetId(), actual.GetId())
-	assert.Equal(t, expected.GetScanConfig().GetDescription(), actual.GetScanConfig().GetDescription())
-	assert.Equal(t, expected.GetScanConfig().GetProfiles(), actual.GetScanConfig().GetProfiles())
-}
-
 func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	ctx := context.Background()
 	k8sClient := createK8sClient(t)
@@ -180,7 +173,6 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	assert.NotNil(t, matchingConfig)
 	require.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
 
-	//assertNameIDDescriptionAndProfilesMatch(t, matchingConfig, resp)
 	assert.Equal(t, scanConfig, matchingConfig)
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
@@ -197,7 +189,6 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	assert.NotNil(t, matchingConfig)
 	require.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
 
-	//assertNameIDDescriptionAndProfilesMatch(t, matchingConfig, resp)
 	assert.Equal(t, modifiedScanConfig, matchingConfig)
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
