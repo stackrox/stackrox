@@ -12,7 +12,7 @@ cat /tmp/prom-perf-machineset-1.yaml \
     | yq 'del(.metadata.annotations)' \
     | yq 'del(.metadata.creationTimestamp)' \
     | yq 'del(.metadata.resourceVersion)' \
-    | yq '.spec.template.spec.providerSpec.value.machineType = "n2-standard-16"' \
+    | yq '.spec.template.spec.providerSpec.value.machineType = "n2-standard-32"' \
     | yq '.spec.replicas = 1' \
     | yq '.spec.template.metadata.labels."machine.openshift.io/cluster-api-machine-role" = "infra"' \
     | yq '.spec.template.metadata.labels."machine.openshift.io/cluster-api-machine-type" = "infra"' \
@@ -28,7 +28,7 @@ cat /tmp/prom-perf-machineset-2.yaml \
     | yq 'del(.metadata.annotations)' \
     | yq 'del(.metadata.creationTimestamp)' \
     | yq 'del(.metadata.resourceVersion)' \
-    | yq '.spec.template.spec.providerSpec.value.machineType = "n2-standard-16"' \
+    | yq '.spec.template.spec.providerSpec.value.machineType = "n2-standard-32"' \
     | yq '.spec.replicas = 1' \
     | yq '.spec.template.metadata.labels."machine.openshift.io/cluster-api-machine-role" = "infra"' \
     | yq '.spec.template.metadata.labels."machine.openshift.io/cluster-api-machine-type" = "infra"' \
