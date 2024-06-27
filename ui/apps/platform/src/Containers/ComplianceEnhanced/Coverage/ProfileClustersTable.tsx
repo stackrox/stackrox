@@ -20,11 +20,7 @@ import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { TableUIState } from 'utils/getTableUIState';
 
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
-import {
-    calculateCompliancePercentage,
-    getCompliancePfClassName,
-    getStatusCounts,
-} from './compliance.coverage.utils';
+import { calculateCompliancePercentage, getStatusCounts } from './compliance.coverage.utils';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
@@ -169,7 +165,6 @@ function ProfileClustersTable({
                                                 id={progressBarId}
                                                 value={passPercentage}
                                                 measureLocation={ProgressMeasureLocation.outside}
-                                                className={getCompliancePfClassName(passPercentage)}
                                                 aria-label={`${clusterName} compliance percentage`}
                                             />
                                             <Tooltip
