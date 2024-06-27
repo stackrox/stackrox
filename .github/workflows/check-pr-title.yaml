@@ -13,8 +13,8 @@ jobs:
       - name: Check if the PR title is well dressed
         env:
           CONV: '(build|chore|ci|docs?|feat|fix|perf|refactor|revert|style|tests?)(\([\w\-\.]+\))?!?'
-          JIRA: "([A-Z]+-[0-9]+, ?)*[A-Z]+-[0-9]+"
-          TEXT: ": .+"
+          JIRA: '([A-Z]+-[0-9]+, ?)*[A-Z]+-[0-9]+'
+          TEXT: ': .+'
         run: |
           # Either conventional or JIRA-nnn prefix followed by ': ' and random text:
           REGEX="(($CONV)|($JIRA))($TEXT)"
@@ -36,7 +36,7 @@ jobs:
       - name: Check PR title length
         if: github.event.pull_request.user.login != 'dependabot[bot]'
         env:
-          LENGTH: "70"
+          LENGTH: '70'
         run: |
           TITLE_LENGTH="$(echo -nE "$PR_TITLE" | wc --chars)"
           if [ "$TITLE_LENGTH" -gt "$LENGTH" ]
@@ -44,48 +44,3 @@ jobs:
             echo "::error::Please shorten the PR title from $TITLE_LENGTH to at most $LENGTH characters."
             exit 1
           fi
-
-  check-description:
-    runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
-    steps:
-      - name: Check PR description
-        env:
-          PR_DESCRIPTION: ${{ github.event.pull_request.body }}
-        run: |
-          # shellcheck disable=SC2016
-          all_of=(
-            '`CHANGELOG.md` '
-            'documentation '
-            'inspected CI results'
-          )
-          for task in "${all_of[@]}"; do
-            if [[ "$PR_DESCRIPTION" != *"- [x] $task"* ]]; then
-              echo "::error::'${task%% }' task is not checked."
-              exit 1
-            fi
-            echo "::debug::'${task%% }' task is checked."
-          done
-
-          any_of=(
-            'added unit tests'
-            'added e2e tests'
-            'added regression tests'
-            'added compatibility tests'
-            'modified existing tests'
-            'contributed **no automated tests**'
-          )
-          for task in "${any_of[@]}"; do
-            if [[ "$PR_DESCRIPTION" = *"- [ ] $task"* ]]; then
-              echo "::error::'${task%% }' task is not checked."
-              exit 1
-            fi
-          done
-          for task in "${any_of[@]}"; do
-            if [[ "$PR_DESCRIPTION" = *"- [x] $task"* ]]; then
-              echo "::debug::at least '$task' task is checked."
-              exit 0
-            fi
-          done
-          echo '::error::none of the automated tests tasks are checked.'
-          exit 1
