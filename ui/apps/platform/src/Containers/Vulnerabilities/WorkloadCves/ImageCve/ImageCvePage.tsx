@@ -402,7 +402,7 @@ function ImageCvePage() {
                     isBox
                     onChange={() => {
                         setSearchFilter({});
-                        setPage(1);
+                        setPage(1, 'replace');
                     }}
                 />
                 <div className="pf-v5-u-background-color-100">
