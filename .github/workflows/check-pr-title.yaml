@@ -1,4 +1,4 @@
-name: "Check PR health"
+name: "Check PR documentation"
 
 on:
   pull_request_target:
@@ -54,23 +54,38 @@ jobs:
           PR_DESCRIPTION: ${{ github.event.pull_request.body }}
         run: |
           # shellcheck disable=SC2016
-          if [[ "$PR_DESCRIPTION" = *'- [x] `CHANGELOG.md` '* ]]; then
-            # shellcheck disable=SC2016
-            echo '`CHANGELOG.md` task is checked.'
-          else
-            # shellcheck disable=SC2016
-            echo '::error::`CHANGELOG.md` task is not checked.'
-            exit 1
-          fi
-          if [[ "$PR_DESCRIPTION" = *'- [x] documentation '* ]]; then
-            echo "documentation task is checked."
-          else
-            echo '::error::documentation task is not checked.'
-            exit 1
-          fi
-          if [[ "$PR_DESCRIPTION" = *'- [x] inspected CI results'* ]]; then
-            echo 'inspected CI results task is checked.'
-          else
-            echo '::error::inspected CI results task is not checked.'
-            exit 1
-          fi
+          all_of=(
+            '`CHANGELOG.md` '
+            'documentation '
+            'inspected CI results'
+          )
+          for task in "${all_of[@]}"; do
+            if [[ "$PR_DESCRIPTION" != *"- [x] $task"* ]]; then
+              echo "::error::'${task%% }' task is not checked."
+              exit 1
+            fi
+            echo "::debug::'${task%% }' task is checked."
+          done
+
+          any_of=(
+            'added unit tests'
+            'added e2e tests'
+            'added regression tests'
+            'added compatibility tests'
+            'modified existing tests'
+            'contributed **no automated tests**'
+          )
+          for task in "${any_of[@]}"; do
+            if [[ "$PR_DESCRIPTION" = *"- [ ] $task"* ]]; then
+              echo "::error::'${task%% }' task is not checked."
+              exit 1
+            fi
+          done
+          for task in "${any_of[@]}"; do
+            if [[ "$PR_DESCRIPTION" = *"- [x] $task"* ]]; then
+              echo "::debug::at least '$task' task is checked."
+              exit 0
+            fi
+          done
+          echo '::error::none of the automated tests tasks are checked.'
+          exit 1
