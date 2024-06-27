@@ -1,6 +1,6 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { Alert, Button } from '@patternfly/react-core';
+import { Alert, Button, Flex, FlexItem } from '@patternfly/react-core';
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 import set from 'lodash/set';
@@ -339,27 +339,35 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                         />
                     )}
                     {!isBlocked && wizardStep === 'DEPLOYMENT' && (
-                        <div className="flex flex-col md:flex-row p-4">
-                            <ClusterDeployment
-                                editing={!!selectedCluster}
-                                createUpgraderSA={createUpgraderSA}
-                                toggleSA={toggleSA}
-                                onFileDownload={onDownload}
-                                isDownloadingBundle={isDownloadingBundle}
-                                clusterCheckedIn={!!selectedCluster?.healthStatus?.lastContact}
-                                managerType={managerType(selectedCluster)}
-                            />
-                            {!!selectedCluster?.id && (
-                                <DownloadHelmValues
-                                    clusterId={selectedCluster.id}
-                                    description={
-                                        selectedCluster?.helmConfig
-                                            ? 'Download the required YAML to update your Helm values.'
-                                            : 'To start managing this cluster with a Helm chart, you can download the cluster’s current configuration values in Helm format.'
-                                    }
+                        <Flex
+                            direction={{ default: 'column', lg: 'row' }}
+                            flexWrap={{ default: 'nowrap' }}
+                            className="pf-v5-u-p-md"
+                        >
+                            <FlexItem flex={{ default: 'flex_1' }}>
+                                <ClusterDeployment
+                                    editing={!!selectedCluster}
+                                    createUpgraderSA={createUpgraderSA}
+                                    toggleSA={toggleSA}
+                                    onFileDownload={onDownload}
+                                    isDownloadingBundle={isDownloadingBundle}
+                                    clusterCheckedIn={!!selectedCluster?.healthStatus?.lastContact}
+                                    managerType={managerType(selectedCluster)}
                                 />
+                            </FlexItem>
+                            {!!selectedCluster?.id && (
+                                <FlexItem flex={{ default: 'flex_1' }}>
+                                    <DownloadHelmValues
+                                        clusterId={selectedCluster.id}
+                                        description={
+                                            selectedCluster?.helmConfig
+                                                ? 'Download the required YAML to update your Helm values.'
+                                                : 'To start managing this cluster with a Helm chart, you can download the cluster’s current configuration values in Helm format.'
+                                        }
+                                    />
+                                </FlexItem>
                             )}
-                        </div>
+                        </Flex>
                     )}
                 </PanelBody>
             </PanelNew>
