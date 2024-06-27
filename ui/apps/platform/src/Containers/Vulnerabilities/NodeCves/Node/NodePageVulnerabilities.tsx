@@ -25,6 +25,8 @@ import {
     nodeCVESearchFilterConfig,
     nodeComponentSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
+import useAnalytics, { NODE_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
@@ -49,6 +51,8 @@ export type NodePageVulnerabilitiesProps = {
 };
 
 function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -90,12 +94,9 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                     className="pf-v5-u-px-sm pf-v5-u-pb-0"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
-                    onFilterChange={(newFilter, { action }) => {
+                    onFilterChange={(newFilter, searchPayload) => {
                         setSearchFilter(newFilter);
-
-                        if (action === 'ADD') {
-                            // TODO - Add analytics tracking ROX-24509
-                        }
+                        trackAppliedFilter(NODE_CVE_FILTER_APPLIED, searchPayload);
                     }}
                 />
                 <SummaryCardLayout isLoading={summaryRequest.loading} error={summaryRequest.error}>
