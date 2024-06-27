@@ -309,14 +309,6 @@
 #  # are applied, and the collector pods won't scheduled onto nodes with taints.
 #  disableTaintTolerations: false
 #
-#  # Configure whether slim Collector images should be used or not. Using slim Collector images
-#  # with the EBPF collection method requires Central to provide the matching eBPF probe. If you
-#  # are running the StackRox Kubernetes Security Platform in offline mode and use EBPF collection
-#  # method, you must download a kernel support package from [stackrox.io](https://install.stackrox.io/collector/support-packages/index.html)
-#  # and upload it to Central for slim Collectors to function. Otherwise, you must ensure that
-#  # Central can access the online probe repository hosted at https://collector-modules.stackrox.io/.
-#  slimMode: false
-#
 #  # Kubernetes image pull policy for Collector.
 #  imagePullPolicy: IfNotPresent
 #
