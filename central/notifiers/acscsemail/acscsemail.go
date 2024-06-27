@@ -73,7 +73,7 @@ func (e *acscsEmail) AlertNotify(ctx context.Context, alert *storage.Alert) erro
 	subject := notifiers.SummaryForAlert(alert)
 	body, err := email.PlainTextAlert(alert, e.notifier.UiEndpoint, e.mitreStore)
 	if err != nil {
-		e.logError("generating email content failed", err)
+		e.logError("Generating email content failed", err)
 		return errors.Wrap(err, "failed to generate email text for alert")
 	}
 
@@ -92,7 +92,7 @@ func (e *acscsEmail) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, c
 	subject := email.NetworkPolicySubject(clusterName)
 	body, err := email.FormatNetworkPolicyYAML(yaml, clusterName)
 	if err != nil {
-		e.logError("generating email content failed", err)
+		e.logError("Generating email content failed", err)
 		return errors.Wrap(err, "failed to format network policy message")
 	}
 
