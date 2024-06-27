@@ -40,7 +40,7 @@ any_of=(
 )
 for task in "${any_of[@]}"; do
   if [[ "$PR_DESCRIPTION" = *"$EOL- [ ] $task"* ]]; then
-    gh_log error "'${task%% }' task is not checked."
+    gh_log error "'$task' task is not checked."
     exit 1
   fi
 done
