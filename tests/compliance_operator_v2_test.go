@@ -177,7 +177,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
 
-	_, err = service.CreateComplianceScanConfiguration(ctx, &modifiedScanConfig)
+	resp, err := service.CreateComplianceScanConfiguration(ctx, &modifiedScanConfig)
 	assert.NoError(t, err)
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 1)
