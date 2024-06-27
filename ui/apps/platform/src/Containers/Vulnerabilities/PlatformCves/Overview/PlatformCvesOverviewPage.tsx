@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     PageSection,
     Title,
@@ -16,7 +16,10 @@ import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import useAnalytics, { GLOBAL_SNOOZE_CVE } from 'hooks/useAnalytics';
+import useAnalytics, {
+    GLOBAL_SNOOZE_CVE,
+    PLATFORM_CVE_ENTITY_CONTEXT_VIEWED,
+} from 'hooks/useAnalytics';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
 import TableEntityToolbar from 'Containers/Vulnerabilities/components/TableEntityToolbar';
@@ -78,7 +81,20 @@ function PlatformCvesOverviewPage() {
             entityTab === 'CVE' ? cveDefaultSortOption : clusterDefaultSortOption,
             'replace'
         );
+
+        analyticsTrack({
+            event: PLATFORM_CVE_ENTITY_CONTEXT_VIEWED,
+            properties: {
+                type: entityTab,
+                page: 'Overview',
+            },
+        });
     }
+
+    // Track the current entity tab when the page is initially visited.
+    useEffect(() => {
+        onEntityTabChange(activeEntityTabKey);
+    }, []);
 
     const { data } = usePlatformCveEntityCounts(querySearchFilter);
 
