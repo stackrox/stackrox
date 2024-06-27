@@ -49,16 +49,12 @@ jobs:
       run: |
         set +e
         set -x
-
         df -h
-
         docker system prune --force --all
         for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
           rm -rf "/mnt${delete:?}"
         done
-        
         df -h
-        
 
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
