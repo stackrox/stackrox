@@ -31,6 +31,7 @@ import useURLSort from 'hooks/useURLSort';
 import { getComplianceProfileResults } from 'services/ComplianceResultsService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
+import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
@@ -66,8 +67,9 @@ function ProfileChecksPage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const fetchProfileChecks = useCallback(() => {
+        const regexSearchFilter = addRegexPrefixToFilters(searchFilter, [CHECK_NAME_QUERY]);
         const combinedFilter = combineSearchFilterWithScanConfig(
-            searchFilter,
+            regexSearchFilter,
             selectedScanConfigName
         );
         return getComplianceProfileResults(profileName, {
