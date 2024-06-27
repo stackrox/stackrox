@@ -400,7 +400,10 @@ function ImageCvePage() {
                 <VulnerabilityStateTabs
                     titleOverrides={{ observed: 'Workloads' }}
                     isBox
-                    onChange={() => setPage(1)}
+                    onChange={() => {
+                        setSearchFilter({});
+                        setPage(1, 'replace');
+                    }}
                 />
                 <div className="pf-v5-u-background-color-100">
                     <div className="pf-v5-u-px-sm">
