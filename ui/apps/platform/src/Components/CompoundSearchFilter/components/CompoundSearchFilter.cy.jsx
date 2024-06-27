@@ -32,10 +32,10 @@ const imageNameResponseMock = {
     },
 };
 
-function Wrapper({ config, onSearch }) {
+function Wrapper({ config, searchFilter, onSearch }) {
     return (
         <div className="pf-v5-u-p-md">
-            <CompoundSearchFilter config={config} onSearch={onSearch} />
+            <CompoundSearchFilter config={config} searchFilter={searchFilter} onSearch={onSearch} />
         </div>
     );
 }
@@ -65,6 +65,33 @@ function mockAutocompleteResponse() {
 
         req.reply(response);
     }).as('autocomplete');
+}
+
+/**
+ * Selects a date in a date-picker component.
+ *
+ * @param {string} month - The full name of the month to select (e.g., "January", "February").
+ * @param {string} day - The day of the month to select (e.g., "01", "15").
+ * @param {string} year - The four-digit year to select (e.g., "2023").
+ *
+ */
+function selectDatePickerDate(month, day, year) {
+    // The date-picker input should be present
+    cy.get('input[aria-label="Filter by date"]').should('exist');
+
+    // Click on the date-picker toggle
+    cy.get('button[aria-label="Filter by date toggle"]').click();
+
+    // Select a month
+    cy.get('div.pf-v5-c-calendar-month__header-month button').click();
+    cy.get(`button.pf-v5-c-menu__item:contains("${month}")`).click();
+
+    // Select a year
+    cy.get('input[aria-label="Select year"]').clear();
+    cy.get('input[aria-label="Select year"]').type(year);
+
+    // Select a day
+    cy.get(`button.pf-v5-c-calendar-month__date:contains("${day}")`).click();
 }
 
 describe(Cypress.spec.relative, () => {
@@ -255,22 +282,9 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.attributeSelectToggle).click();
         cy.get(selectors.attributeSelectItem('Discovered time')).click();
 
-        // The date-picker input should be present
-        cy.get('input[aria-label="Filter by date"]').should('exist');
+        selectDatePickerDate('January', '15', '2034');
 
-        // Click on the date-picker toggle
-        cy.get('button[aria-label="Filter by date toggle"]').click();
-
-        // Select a month
-        cy.get('div.pf-v5-c-calendar-month__header-month button').click();
-        cy.get('button.pf-v5-c-menu__item:contains("January")').click();
-
-        // Select a year
-        cy.get('input[aria-label="Select year"]').clear();
-        cy.get('input[aria-label="Select year"]').type('2034');
-
-        // Select a day
-        cy.get('button.pf-v5-c-calendar-month__date:contains("15")').click();
+        cy.get('button[aria-label="Apply date input to search"]').click();
 
         // Check updated date value
         cy.get('@onSearch').should('have.been.calledWithExactly', {
@@ -278,7 +292,8 @@ describe(Cypress.spec.relative, () => {
             category: 'CVE Created Time',
             value: '01/15/2034',
         });
-        cy.get('input[aria-label="Filter by date"]').should('have.value', '01/15/2034');
+
+        cy.get('input[aria-label="Filter by date"]').should('have.value', '');
     });
 
     it('should display the condition-number input and correctly search for image cvss', () => {

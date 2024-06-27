@@ -25,7 +25,8 @@ import (
 )
 
 type ExportOptions struct {
-	SplitBundles bool
+	SplitBundles  bool
+	ManualVulnURL string
 }
 
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
@@ -40,7 +41,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	bundles := make(map[string][]updates.ManagerOption)
 
 	// Our own updaters.
-	bundles["manual"], err = manualOpts(ctx)
+	bundles["manual"], err = manualOpts(ctx, opts.ManualVulnURL)
 	if err != nil {
 		return fmt.Errorf("initializing: manual: %w", err)
 	}
@@ -116,8 +117,8 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	return nil
 }
 
-func manualOpts(ctx context.Context) ([]updates.ManagerOption, error) {
-	manualSet, err := manual.UpdaterSet(ctx)
+func manualOpts(ctx context.Context, uri string) ([]updates.ManagerOption, error) {
+	manualSet, err := manual.UpdaterSet(ctx, uri)
 	if err != nil {
 		return nil, err
 	}

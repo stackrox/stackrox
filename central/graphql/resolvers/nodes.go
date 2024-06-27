@@ -34,7 +34,7 @@ func init() {
 			"controlStatus(query: String): String!",
 			"controls(query: String): [ComplianceControl!]!",
 			"failingControls(query: String): [ComplianceControl!]!",
-			"nodeCVECountBySeverity(query: String): ResourceTotalCountByCVESeverity!",
+			"nodeCVECountBySeverity(query: String): ResourceCountByCVESeverity!",
 			"nodeComplianceControlCount(query: String) : ComplianceControlCount!",
 			"nodeComponentCount(query: String): Int!",
 			"nodeComponents(query: String, pagination: Pagination): [NodeComponent!]!",
@@ -324,7 +324,7 @@ func (resolver *nodeResolver) getNodeRawQuery() string {
 }
 
 // NodeCVECountBySeverity returns the count of node cves by severity in the node.
-func (resolver *nodeResolver) NodeCVECountBySeverity(ctx context.Context, args RawQuery) (*resourceTotalCountBySeverityResolver, error) {
+func (resolver *nodeResolver) NodeCVECountBySeverity(ctx context.Context, args RawQuery) (*resourceCountBySeverityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeCVECountBySeverity")
 	return resolver.root.NodeCVECountBySeverity(resolver.nodeScopeContext(ctx), args)
 }

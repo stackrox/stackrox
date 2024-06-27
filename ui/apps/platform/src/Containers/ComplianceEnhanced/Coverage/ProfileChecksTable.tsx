@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
     Divider,
     Pagination,
@@ -30,6 +30,7 @@ import {
 import ControlLabels from './components/ControlLabels';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
 
 export type ProfileChecksTableProps = {
     profileChecksResultsCount: number;
@@ -37,6 +38,7 @@ export type ProfileChecksTableProps = {
     pagination: UseURLPaginationResult;
     tableState: TableUIState<ComplianceCheckResultStatusCount>;
     getSortParams: UseURLSortResult['getSortParams'];
+    onClearFilters: () => void;
 };
 
 function ProfileChecksTable({
@@ -45,8 +47,10 @@ function ProfileChecksTable({
     pagination,
     tableState,
     getSortParams,
+    onClearFilters,
 }: ProfileChecksTableProps) {
     /* eslint-disable no-nested-ternary */
+    const { generatePathWithScanConfig } = useScanConfigRouter();
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
     const { page, perPage, setPage, setPerPage } = pagination;
 
@@ -87,15 +91,16 @@ function ProfileChecksTable({
                             Check
                         </Th>
                         <Th modifier="fitContent">Controls</Th>
-                        <Th modifier="fitContent">Fail status</Th>
                         <Th modifier="fitContent">Pass status</Th>
+                        <Th modifier="fitContent">Fail status</Th>
+                        <Th modifier="fitContent">Manual status</Th>
                         <Th modifier="fitContent">Other status</Th>
                         <Th width={40}>Compliance</Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
                     tableState={tableState}
-                    colSpan={6}
+                    colSpan={7}
                     errorProps={{
                         title: 'There was an error loading profile checks',
                     }}
@@ -103,16 +108,18 @@ function ProfileChecksTable({
                         message:
                             'If you have recently created a scan schedule, please wait a few minutes for the results to become available.',
                     }}
-                    filteredEmptyProps={{
-                        title: 'No checks found',
-                        message: 'Clear all filters and try again',
-                    }}
+                    filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) => (
                         <>
                             {data.map((check, rowIndex) => {
                                 const { checkName, rationale, checkStats, controls } = check;
-                                const { passCount, failCount, otherCount, totalCount } =
-                                    getStatusCounts(checkStats);
+                                const {
+                                    passCount,
+                                    failCount,
+                                    manualCount,
+                                    otherCount,
+                                    totalCount,
+                                } = getStatusCounts(checkStats);
                                 const passPercentage = calculateCompliancePercentage(
                                     passCount,
                                     totalCount
@@ -125,10 +132,13 @@ function ProfileChecksTable({
                                         <Tr>
                                             <Td dataLabel="Check">
                                                 <Link
-                                                    to={generatePath(coverageCheckDetailsPath, {
-                                                        checkName,
-                                                        profileName,
-                                                    })}
+                                                    to={generatePathWithScanConfig(
+                                                        coverageCheckDetailsPath,
+                                                        {
+                                                            checkName,
+                                                            profileName,
+                                                        }
+                                                    )}
                                                 >
                                                     {checkName}
                                                 </Link>
@@ -168,6 +178,13 @@ function ProfileChecksTable({
                                                     '-'
                                                 )}
                                             </Td>
+                                            <Td dataLabel="Pass status" modifier="fitContent">
+                                                <StatusCountIcon
+                                                    text="cluster"
+                                                    status="pass"
+                                                    count={passCount}
+                                                />
+                                            </Td>
                                             <Td dataLabel="Fail status" modifier="fitContent">
                                                 <StatusCountIcon
                                                     text="cluster"
@@ -175,11 +192,11 @@ function ProfileChecksTable({
                                                     count={failCount}
                                                 />
                                             </Td>
-                                            <Td dataLabel="Pass status" modifier="fitContent">
+                                            <Td dataLabel="Manual status" modifier="fitContent">
                                                 <StatusCountIcon
                                                     text="cluster"
-                                                    status="pass"
-                                                    count={passCount}
+                                                    status="manual"
+                                                    count={manualCount}
                                                 />
                                             </Td>
                                             <Td dataLabel="Other status" modifier="fitContent">
@@ -217,7 +234,7 @@ function ProfileChecksTable({
                                         </Tr>
                                         {isRowExpanded && (
                                             <Tr isExpanded={isRowExpanded}>
-                                                <Td colSpan={6}>
+                                                <Td colSpan={7}>
                                                     <ExpandableRowContent>
                                                         <ControlLabels controls={controls} />
                                                     </ExpandableRowContent>

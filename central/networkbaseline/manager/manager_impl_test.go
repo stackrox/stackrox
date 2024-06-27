@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -212,7 +213,7 @@ func (suite *ManagerTestSuite) assertBaselinesAre(baselines ...*storage.NetworkB
 		cloned.ObservationPeriodEnd = nil
 		baselinesWithoutObsPeriod = append(baselinesWithoutObsPeriod, cloned)
 	}
-	suite.ElementsMatch(baselinesWithoutObsPeriod, baselines)
+	protoassert.ElementsMatch(suite.T(), baselinesWithoutObsPeriod, baselines)
 }
 
 func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {

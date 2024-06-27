@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -93,7 +94,7 @@ func TestGetPods(t *testing.T) {
 
 			results, err := service.GetPods(ctx, &v1.RawQuery{})
 			assert.NoError(t, err)
-			assert.ElementsMatch(t, results.Pods, c.pods)
+			protoassert.ElementsMatch(t, results.Pods, c.pods)
 		})
 	}
 }

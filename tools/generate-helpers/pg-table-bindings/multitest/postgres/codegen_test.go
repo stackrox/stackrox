@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,7 +42,7 @@ func TestStore(t *testing.T) {
 	dep, exists, err = store.Get(ctx, multiKey.GetKey1())
 	assert.NoError(t, err)
 	assert.True(t, exists)
-	assert.Equal(t, multiKey, dep)
+	protoassert.Equal(t, multiKey, dep)
 
 	// Search is currently unsupported for tables with multiple primary keys
 }

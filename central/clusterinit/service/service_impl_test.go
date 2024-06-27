@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/backend/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -79,7 +80,7 @@ func TestGetInitBundlesShouldReturnBundlesWithImpactedClusters(t *testing.T) {
 	for i, bundle := range bundles.GetItems() {
 		assert.Equal(t, expected[i].GetId(), bundle.GetId())
 		assert.Equal(t, expected[i].GetName(), bundle.GetName())
-		assert.ElementsMatch(t, expected[i].ImpactedClusters, bundle.ImpactedClusters)
+		protoassert.ElementsMatch(t, expected[i].ImpactedClusters, bundle.ImpactedClusters)
 	}
 }
 
@@ -166,7 +167,7 @@ func TestRevokeInitBundles(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.ElementsMatch(t, tc.response.GetInitBundleRevokedIds(), response.GetInitBundleRevokedIds())
-			assert.ElementsMatch(t, tc.response.GetInitBundleRevocationErrors(), response.GetInitBundleRevocationErrors())
+			protoassert.ElementsMatch(t, tc.response.GetInitBundleRevocationErrors(), response.GetInitBundleRevocationErrors())
 		})
 	}
 }

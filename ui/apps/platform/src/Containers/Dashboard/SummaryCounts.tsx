@@ -66,7 +66,11 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
         Alert: violationsBasePath,
         Deployment: `${configManagementPath}/${urlEntityListTypes[resourceTypes.DEPLOYMENT]}`,
         Image: areVMMiscImprovementsEnabled
-            ? generatePathWithQuery(vulnerabilitiesWorkloadCvesPath, {}, { entityTab: 'Image' })
+            ? generatePathWithQuery(
+                  vulnerabilitiesWorkloadCvesPath,
+                  {},
+                  { customParams: { entityTab: 'Image' } }
+              )
             : vulnManagementImagesPath,
         Secret: `${configManagementPath}/${urlEntityListTypes[resourceTypes.SECRET]}`,
     };

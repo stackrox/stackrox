@@ -520,7 +520,7 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWithoutDeploymentQuery() {
 	actualResp, err := suite.tested.GetNetworkPolicies(suite.requestContext, request)
 
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(neps, actualResp.GetNetworkPolicies(), "response should be policies read from store")
+	protoassert.SlicesEqual(suite.T(), neps, actualResp.GetNetworkPolicies(), "response should be policies read from store")
 }
 
 func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
@@ -566,7 +566,7 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 	actualResp, err := suite.tested.GetNetworkPolicies(suite.requestContext, request)
 
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedPolicies, actualResp.GetNetworkPolicies(), "response should be policies applied to deployments")
+	protoassert.SlicesEqual(suite.T(), expectedPolicies, actualResp.GetNetworkPolicies(), "response should be policies applied to deployments")
 }
 
 func (suite *ServiceTestSuite) TestGetAllNetworkPoliciesForNamespace() {
@@ -590,7 +590,7 @@ func (suite *ServiceTestSuite) TestGetAllNetworkPoliciesForNamespace() {
 	actualResp, err := suite.tested.GetNetworkPolicies(suite.requestContext, request)
 
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(neps, actualResp.GetNetworkPolicies(), "response should be policies read from store")
+	protoassert.SlicesEqual(suite.T(), neps, actualResp.GetNetworkPolicies(), "response should be policies read from store")
 }
 
 func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment() {
@@ -727,7 +727,7 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 				&v1.ResourceByID{Id: deps[0].GetId()})
 			suite.NoError(err, "expected GetAllowedPeersFromCurrentPolicyForDeployment to succeed")
 
-			suite.ElementsMatch(resp.GetAllowedPeers(), testCase.expectedAllowedPeers)
+			protoassert.ElementsMatch(suite.T(), resp.GetAllowedPeers(), testCase.expectedAllowedPeers)
 		})
 	}
 }

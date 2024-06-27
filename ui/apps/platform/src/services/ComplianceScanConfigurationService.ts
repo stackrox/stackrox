@@ -1,8 +1,9 @@
 import axios from 'services/instance';
 import qs from 'qs';
 
-import { ApiSortOption } from 'types/search';
+import { ApiSortOption, SearchFilter } from 'types/search';
 import { SlimUser } from 'types/user.proto';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import { ComplianceProfileSummary, complianceV2Url } from './ComplianceCommon';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
@@ -99,7 +100,7 @@ export type ListComplianceScanConfigsClusterProfileResponse = {
  * Fetches a list of scan configurations.
  */
 export function listComplianceScanConfigurations(
-    sortOption: ApiSortOption,
+    sortOption?: ApiSortOption,
     page?: number,
     pageSize?: number
 ): Promise<ListComplianceScanConfigurationsResponse> {
@@ -201,10 +202,14 @@ export function runComplianceReport(scanConfigId: string): Promise<ComplianceRun
 /**
  * Fetches all profiles that are included in a scan configuration.
  */
-export function listComplianceScanConfigProfiles(): Promise<ListComplianceScanConfigsProfileResponse> {
+export function listComplianceScanConfigProfiles(
+    scanConfigSearchFilter: SearchFilter
+): Promise<ListComplianceScanConfigsProfileResponse> {
+    const query = getRequestQueryStringForSearchFilter(scanConfigSearchFilter);
+    const params = qs.stringify({ query }, { arrayFormat: 'repeat', allowDots: true });
     return axios
         .get<ListComplianceScanConfigsProfileResponse>(
-            `${complianceScanConfigBaseUrl}/profiles/collection`
+            `${complianceScanConfigBaseUrl}/profiles/collection?${params}`
         )
         .then((response) => response.data);
 }
@@ -213,11 +218,14 @@ export function listComplianceScanConfigProfiles(): Promise<ListComplianceScanCo
  * Fetches all profiles that are included in a scan configuration on a specific cluster.
  */
 export function listComplianceScanConfigClusterProfiles(
-    clusterId: string
+    clusterId: string,
+    scanConfigSearchFilter: SearchFilter
 ): Promise<ListComplianceScanConfigsClusterProfileResponse> {
+    const query = getRequestQueryStringForSearchFilter(scanConfigSearchFilter);
+    const params = qs.stringify({ query: { query } }, { arrayFormat: 'repeat', allowDots: true });
     return axios
         .get<ListComplianceScanConfigsClusterProfileResponse>(
-            `${complianceScanConfigBaseUrl}/clusters/${clusterId}/profiles/collection`
+            `${complianceScanConfigBaseUrl}/clusters/${clusterId}/profiles/collection?${params}`
         )
         .then((response) => response.data);
 }

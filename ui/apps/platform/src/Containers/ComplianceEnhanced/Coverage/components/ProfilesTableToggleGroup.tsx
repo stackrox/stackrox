@@ -1,19 +1,28 @@
 import React from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
-import { complianceEnhancedCoveragePath } from 'routePaths';
+import useURLSearch from 'hooks/useURLSearch';
+import {
+    coverageProfileChecksPath,
+    coverageProfileClustersPath,
+    CoverageProfilePath,
+} from '../compliance.coverage.routes';
+import useScanConfigRouter from '../hooks/useScanConfigRouter';
 
 export type ProfilesTableToggleGroupProps = {
     activeToggle: 'checks' | 'clusters';
 };
 
 function ProfilesTableToggleGroup({ activeToggle }: ProfilesTableToggleGroupProps) {
+    const { navigateWithScanConfigQuery } = useScanConfigRouter();
     const { profileName } = useParams();
-    const history = useHistory();
+    const { searchFilter } = useURLSearch();
 
     const handleToggleChange = (resultsView) => {
-        history.push(`${complianceEnhancedCoveragePath}/profiles/${profileName}/${resultsView}`);
+        const path: CoverageProfilePath =
+            resultsView === 'checks' ? coverageProfileChecksPath : coverageProfileClustersPath;
+        navigateWithScanConfigQuery(path, { profileName }, { searchFilter });
     };
 
     return (

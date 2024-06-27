@@ -1,8 +1,10 @@
 import React, { useCallback, useContext } from 'react';
-import { generatePath, useHistory, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
+    Bullseye,
     Divider,
     PageSection,
+    Spinner,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
@@ -28,25 +30,32 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { getComplianceProfileResults } from 'services/ComplianceResultsService';
 import { getTableUIState } from 'utils/getTableUIState';
+import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 
-import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
+import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
+import { combineSearchFilterWithScanConfig } from './compliance.coverage.utils';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
-import ProfilesToggleGroup from './ProfilesToggleGroup';
+import ScanConfigurationSelect from './components/ScanConfigurationSelect';
 import CoveragesPageHeader from './CoveragesPageHeader';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
+import ProfilesToggleGroup from './ProfilesToggleGroup';
 import ProfileChecksTable from './ProfileChecksTable';
+import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 
 function ProfileChecksPage() {
     const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useBooleanLocalStorage(
         COMPLIANCE_DISCLAIMER_KEY,
         false
     );
+    const { navigateWithScanConfigQuery } = useScanConfigRouter();
     const { profileName } = useParams();
-    const history = useHistory();
     const { isLoading: isLoadingScanConfigProfiles, scanConfigProfilesResponse } =
         useContext(ComplianceProfilesContext);
+    const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
+        useContext(ScanConfigurationsContext);
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { page, perPage, setPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
@@ -56,10 +65,18 @@ function ProfileChecksPage() {
     });
     const { searchFilter, setSearchFilter } = useURLSearch();
 
-    const fetchProfileChecks = useCallback(
-        () => getComplianceProfileResults(profileName, { sortOption, page, perPage, searchFilter }),
-        [page, perPage, profileName, sortOption, searchFilter]
-    );
+    const fetchProfileChecks = useCallback(() => {
+        const combinedFilter = combineSearchFilterWithScanConfig(
+            searchFilter,
+            selectedScanConfigName
+        );
+        return getComplianceProfileResults(profileName, {
+            sortOption,
+            page,
+            perPage,
+            searchFilter: combinedFilter,
+        });
+    }, [page, perPage, profileName, sortOption, searchFilter, selectedScanConfigName]);
     const { data: profileChecks, loading: isLoading, error } = useRestQuery(fetchProfileChecks);
 
     const searchFilterConfig = {
@@ -71,32 +88,20 @@ function ProfileChecksPage() {
         isLoading,
         data: profileChecks?.profileResults,
         error,
-        searchFilter: {},
+        searchFilter,
     });
 
-    // @TODO: Consider making a function to make this more reusable
     const onSearch = (payload: OnSearchPayload) => {
-        const { action, category, value } = payload;
-        const currentSelection = searchFilter[category] || [];
-        let newSelection = !Array.isArray(currentSelection) ? [currentSelection] : currentSelection;
-        if (action === 'ADD') {
-            newSelection.push(value);
-        } else if (action === 'REMOVE') {
-            newSelection = newSelection.filter((datum) => datum !== value);
-        } else {
-            // Do nothing
-        }
-        setSearchFilter({
-            ...searchFilter,
-            [category]: newSelection,
-        });
+        onURLSearch(searchFilter, setSearchFilter, payload);
     };
 
     function handleProfilesToggleChange(selectedProfile: string) {
-        const path = generatePath(coverageProfileChecksPath, {
-            profileName: selectedProfile,
-        });
-        history.push(path);
+        navigateWithScanConfigQuery(coverageProfileChecksPath, { profileName: selectedProfile });
+    }
+
+    function onClearFilters() {
+        setSearchFilter({});
+        setPage(1, 'replace');
     }
 
     const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(
@@ -107,59 +112,75 @@ function ProfileChecksPage() {
         <>
             <PageTitle title="Compliance coverage - Profile checks" />
             <CoveragesPageHeader />
+            <Divider component="div" />
+            <ScanConfigurationSelect
+                isLoading={scanConfigurationsQuery.isLoading}
+                scanConfigs={scanConfigurationsQuery.response.configurations}
+                selectedScanConfigName={selectedScanConfigName}
+                setSelectedScanConfigName={setSelectedScanConfigName}
+            />
             {!isDisclaimerAccepted && (
                 <ComplianceUsageDisclaimer onAccept={() => setIsDisclaimerAccepted(true)} />
             )}
             <PageSection variant="default">
-                <ProfilesToggleGroup
-                    profileName={profileName}
-                    profiles={scanConfigProfilesResponse.profiles}
-                    handleToggleChange={handleProfilesToggleChange}
-                />
-                <Divider component="div" />
-                <ProfileDetailsHeader
-                    isLoading={isLoadingScanConfigProfiles}
-                    profileName={profileName}
-                    profileDetails={selectedProfileDetails}
-                />
-                <Divider component="div" />
-                <PageSection variant="light" className="pf-v5-u-p-0" component="div">
-                    <Toolbar>
-                        <ToolbarContent>
-                            <ToolbarGroup className="pf-v5-u-w-100">
-                                <ToolbarItem className="pf-v5-u-flex-1">
-                                    <CompoundSearchFilter
-                                        config={searchFilterConfig}
-                                        searchFilter={searchFilter}
-                                        onSearch={onSearch}
-                                    />
-                                </ToolbarItem>
-                            </ToolbarGroup>
-                            <ToolbarGroup className="pf-v5-u-w-100">
-                                <SearchFilterChips
-                                    filterChipGroupDescriptors={[
-                                        {
-                                            displayName: 'Profile Check',
-                                            searchFilterName: CHECK_NAME_QUERY,
-                                        },
-                                        {
-                                            displayName: 'Cluster',
-                                            searchFilterName: CLUSTER_QUERY,
-                                        },
-                                    ]}
-                                />
-                            </ToolbarGroup>
-                        </ToolbarContent>
-                    </Toolbar>
-                    <Divider />
-                    <ProfileChecksTable
-                        profileChecksResultsCount={profileChecks?.totalCount ?? 0}
-                        profileName={profileName}
-                        pagination={pagination}
-                        tableState={tableState}
-                        getSortParams={getSortParams}
-                    />
-                </PageSection>
+                {isLoadingScanConfigProfiles ? (
+                    <Bullseye>
+                        <Spinner />
+                    </Bullseye>
+                ) : (
+                    <>
+                        <ProfilesToggleGroup
+                            profileName={profileName}
+                            profiles={scanConfigProfilesResponse.profiles}
+                            handleToggleChange={handleProfilesToggleChange}
+                        />
+                        <Divider component="div" />
+                        <ProfileDetailsHeader
+                            isLoading={isLoadingScanConfigProfiles}
+                            profileName={profileName}
+                            profileDetails={selectedProfileDetails}
+                        />
+                        <Divider component="div" />
+                        <PageSection variant="light" className="pf-v5-u-p-0" component="div">
+                            <Toolbar>
+                                <ToolbarContent>
+                                    <ToolbarGroup className="pf-v5-u-w-100">
+                                        <ToolbarItem className="pf-v5-u-flex-1">
+                                            <CompoundSearchFilter
+                                                config={searchFilterConfig}
+                                                searchFilter={searchFilter}
+                                                onSearch={onSearch}
+                                            />
+                                        </ToolbarItem>
+                                    </ToolbarGroup>
+                                    <ToolbarGroup className="pf-v5-u-w-100">
+                                        <SearchFilterChips
+                                            filterChipGroupDescriptors={[
+                                                {
+                                                    displayName: 'Profile Check',
+                                                    searchFilterName: CHECK_NAME_QUERY,
+                                                },
+                                                {
+                                                    displayName: 'Cluster',
+                                                    searchFilterName: CLUSTER_QUERY,
+                                                },
+                                            ]}
+                                        />
+                                    </ToolbarGroup>
+                                </ToolbarContent>
+                            </Toolbar>
+                            <Divider />
+                            <ProfileChecksTable
+                                profileChecksResultsCount={profileChecks?.totalCount ?? 0}
+                                profileName={profileName}
+                                pagination={pagination}
+                                tableState={tableState}
+                                getSortParams={getSortParams}
+                                onClearFilters={onClearFilters}
+                            />
+                        </PageSection>
+                    </>
+                )}
             </PageSection>
         </>
     );

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -82,10 +83,10 @@ func TestGroupNetworkPolicies(t *testing.T) {
 
 	assert.Len(t, ingressPolicies, 1)
 	assert.Len(t, egressPolicies, 2)
-	assert.ElementsMatch(t, []*storage.NetworkPolicy{policy1, policy3}, ingressPolicies["ns1"])
-	assert.ElementsMatch(t, []*storage.NetworkPolicy{policy2, policy3}, egressPolicies["ns1"])
+	protoassert.ElementsMatch(t, []*storage.NetworkPolicy{policy1, policy3}, ingressPolicies["ns1"])
+	protoassert.ElementsMatch(t, []*storage.NetworkPolicy{policy2, policy3}, egressPolicies["ns1"])
 	assert.Empty(t, ingressPolicies["ns2"])
-	assert.ElementsMatch(t, []*storage.NetworkPolicy{policy4}, egressPolicies["ns2"])
+	protoassert.ElementsMatch(t, []*storage.NetworkPolicy{policy4}, egressPolicies["ns2"])
 }
 
 func TestHasMatchingPolicy_Success(t *testing.T) {

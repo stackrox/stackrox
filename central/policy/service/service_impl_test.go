@@ -89,7 +89,7 @@ func (s *PolicyServiceTestSuite) compareErrorsToExpected(expectedErrors []*v1.Ex
 	// actual errors == expected errors ignoring order
 	s.Len(exportErrors.GetErrors(), len(expectedErrors))
 	for _, expected := range expectedErrors {
-		s.Contains(exportErrors.GetErrors(), expected)
+		protoassert.SliceContains(s.T(), exportErrors.GetErrors(), expected)
 	}
 }
 
@@ -175,8 +175,8 @@ func (s *PolicyServiceTestSuite) TestExportedPolicyHasNoSortFields() {
 
 func (s *PolicyServiceTestSuite) TestPoliciesHaveNoUnexpectedSORTFields() {
 	expectedSORTFields := set.NewStringSet("SORTLifecycleStage", "SORTEnforcement", "SORTName")
-	var policy storage.Policy
-	policyType := reflect.TypeOf(policy)
+	var policy *storage.Policy
+	policyType := reflect.TypeOf(policy).Elem()
 	numFields := policyType.NumField()
 	for i := 0; i < numFields; i++ {
 		fieldName := policyType.Field(i).Name
@@ -285,7 +285,7 @@ func (s *PolicyServiceTestSuite) TestImportPolicy() {
 	s.Require().Len(resp.GetResponses(), 1)
 	policyResp := resp.GetResponses()[0]
 	resultPolicy := policyResp.GetPolicy()
-	s.Equal(importedPolicy.GetPolicySections(), resultPolicy.GetPolicySections())
+	protoassert.SlicesEqual(s.T(), importedPolicy.GetPolicySections(), resultPolicy.GetPolicySections())
 }
 
 func (s *PolicyServiceTestSuite) testScopes(query string, mockClusters []*storage.Cluster, expectedScopes ...*storage.Scope) {
@@ -299,7 +299,7 @@ func (s *PolicyServiceTestSuite) testScopes(query string, mockClusters []*storag
 	s.Empty(response.GetAlteredSearchTerms())
 	s.False(response.GetHasNestedFields())
 	s.NotNil(response.GetPolicy())
-	s.ElementsMatch(expectedScopes, response.GetPolicy().GetScope())
+	protoassert.ElementsMatch(s.T(), expectedScopes, response.GetPolicy().GetScope())
 }
 
 func (s *PolicyServiceTestSuite) testMalformedScope(query string) {
@@ -336,7 +336,7 @@ func (s *PolicyServiceTestSuite) testPolicyGroups(query string, expectedPolicyGr
 	s.NotNil(response.GetPolicy())
 	s.Require().Len(response.GetPolicy().GetPolicySections(), 1)
 	policyGroups := response.GetPolicy().GetPolicySections()[0].GetPolicyGroups()
-	s.ElementsMatch(expectedPolicyGroups, policyGroups)
+	protoassert.ElementsMatch(s.T(), expectedPolicyGroups, policyGroups)
 
 	// These tests do not explicitly expect scopes so we should ensure that there are not scopes
 	s.Nil(response.GetPolicy().GetScope())
@@ -681,7 +681,7 @@ func (s *PolicyServiceTestSuite) TestUnconvertableFields() {
 	s.NotNil(response.GetPolicy())
 	s.Require().Len(response.GetPolicy().GetPolicySections(), 1)
 	policyGroups := response.GetPolicy().GetPolicySections()[0].GetPolicyGroups()
-	s.ElementsMatch(expectedPolicyGroup, policyGroups)
+	protoassert.ElementsMatch(s.T(), expectedPolicyGroup, policyGroups)
 }
 
 func (s *PolicyServiceTestSuite) TestNoConvertableFields() {
@@ -735,7 +735,7 @@ func (s *PolicyServiceTestSuite) TestMakePolicyWithCombinations() {
 	s.False(response.GetHasNestedFields())
 	s.Empty(response.GetAlteredSearchTerms())
 	s.Len(response.GetPolicy().GetPolicySections(), 1)
-	s.ElementsMatch(expectedPolicyGroups, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups())
+	protoassert.ElementsMatch(s.T(), expectedPolicyGroups, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups())
 }
 
 func (s *PolicyServiceTestSuite) TestEnvironmentXLifecycle() {
@@ -758,7 +758,7 @@ func (s *PolicyServiceTestSuite) TestEnvironmentXLifecycle() {
 	s.NoError(err)
 	s.False(response.GetHasNestedFields())
 	s.Empty(response.GetAlteredSearchTerms())
-	s.ElementsMatch(expectedPolicyGroup, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups())
+	protoassert.ElementsMatch(s.T(), expectedPolicyGroup, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups())
 	expectedLifecycleStages := []storage.LifecycleStage{storage.LifecycleStage_DEPLOY}
 	s.ElementsMatch(expectedLifecycleStages, response.GetPolicy().GetLifecycleStages())
 }
@@ -790,7 +790,7 @@ func (s *PolicyServiceTestSuite) TestMitreVectors() {
 		Id: "policy1",
 	})
 	s.NoError(err)
-	s.ElementsMatch([]*storage.MitreAttackVector{
+	protoassert.ElementsMatch(s.T(), []*storage.MitreAttackVector{
 		getFakeVector("tactic1", "tech1"),
 		getFakeVector("tactic2", "tech2"),
 	}, response.GetVectors())

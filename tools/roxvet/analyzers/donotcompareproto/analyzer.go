@@ -44,18 +44,34 @@ var (
 	)
 
 	bannedAssertFunctions = set.NewFrozenStringSet(
-	// "(*github.com/stretchr/testify/assert.Assertions).Contains",
-	// "(*github.com/stretchr/testify/assert.Assertions).Equal",
-	// "(*github.com/stretchr/testify/assert.Assertions).NotEqual",
-	// "(*github.com/stretchr/testify/require.Assertions).Contains",
-	// "(*github.com/stretchr/testify/require.Assertions).Equal",
-	// "(*github.com/stretchr/testify/require.Assertions).NotEqual",
-	// "github.com/stretchr/testify/assert.Contains",
-	// "github.com/stretchr/testify/assert.Equal",
-	// "github.com/stretchr/testify/assert.NotEqual",
-	// "github.com/stretchr/testify/require.Contains",
-	// "github.com/stretchr/testify/require.Equal",
-	// "github.com/stretchr/testify/require.NotEqual",
+		"(*github.com/stretchr/testify/assert.Assertions).Contains",
+		"(*github.com/stretchr/testify/assert.Assertions).ElementsMatch",
+		"(*github.com/stretchr/testify/assert.Assertions).Equal",
+		"(*github.com/stretchr/testify/assert.Assertions).EqualValues",
+		"(*github.com/stretchr/testify/assert.Assertions).Equalf",
+		"(*github.com/stretchr/testify/assert.Assertions).NotContains",
+		"(*github.com/stretchr/testify/assert.Assertions).NotEqual",
+		"(*github.com/stretchr/testify/require.Assertions).Contains",
+		"(*github.com/stretchr/testify/require.Assertions).ElementsMatch",
+		"(*github.com/stretchr/testify/require.Assertions).Equal",
+		"(*github.com/stretchr/testify/require.Assertions).EqualValues",
+		"(*github.com/stretchr/testify/require.Assertions).Equalf",
+		"(*github.com/stretchr/testify/require.Assertions).NotContains",
+		"(*github.com/stretchr/testify/require.Assertions).NotEqual",
+		"github.com/stretchr/testify/assert.Contains",
+		"github.com/stretchr/testify/assert.ElementsMatch",
+		"github.com/stretchr/testify/assert.Equal",
+		"github.com/stretchr/testify/assert.EqualValues",
+		"github.com/stretchr/testify/assert.Equalf",
+		"github.com/stretchr/testify/assert.NotContains",
+		"github.com/stretchr/testify/assert.NotEqual",
+		"github.com/stretchr/testify/require.Contains",
+		"github.com/stretchr/testify/require.ElementsMatch",
+		"github.com/stretchr/testify/require.Equal",
+		"github.com/stretchr/testify/require.EqualValues",
+		"github.com/stretchr/testify/require.Equalf",
+		"github.com/stretchr/testify/require.NotContains",
+		"github.com/stretchr/testify/require.NotEqual",
 	)
 )
 
@@ -83,7 +99,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			return
 		}
 
-		for _, arg := range call.Args {
+		for _, arg := range call.Args[:min(len(call.Args), 3)] {
 			typ := pass.TypesInfo.Types[arg].Type
 			if typ == nil {
 				continue
@@ -93,6 +109,11 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				continue
 			}
 			comparedTypeString := typ.String()
+
+			// Ignore Contains that check keys in map
+			if strings.Contains(name, "Contains") && strings.HasPrefix(comparedTypeString, "map[string]") {
+				continue
+			}
 
 			for _, protoPkg := range protoPkgs {
 				for modifier, r := range replacements {

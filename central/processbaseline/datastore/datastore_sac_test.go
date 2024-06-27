@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -162,7 +163,7 @@ func (s *processBaselineSACTestSuite) TestGetProcessBaseline() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.Require().True(found)
-				s.Equal(processBaseline, res)
+				protoassert.Equal(s.T(), processBaseline, res)
 			} else {
 				s.False(found)
 				s.Nil(res)

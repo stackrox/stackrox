@@ -167,7 +167,7 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return err
 	}
 
@@ -266,7 +266,7 @@ func (ds *datastoreImpl) GetClustersForSAC(ctx context.Context) ([]*storage.Clus
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
 
@@ -301,7 +301,7 @@ func (ds *datastoreImpl) WalkClusters(ctx context.Context, fn func(obj *storage.
 			return fn(clonedCluster)
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return err
 	}
 	return nil
@@ -1058,7 +1058,7 @@ func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluste
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
 	return clusters, nil

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/protoassert"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
@@ -1362,7 +1363,7 @@ func TestEvaluateClusters(t *testing.T) {
 			nodes := graph.GetNodes()
 			require.Len(t, nodes, len(testCase.nodes))
 			for idx, expected := range testCase.nodes {
-				assert.Equalf(t, expected, nodes[idx], "node in pos %d and ID %d doesn't match expected", idx, expected.Entity.Id)
+				protoassert.Equal(t, expected, nodes[idx], "(pod, id): ", idx, expected.Entity.Id)
 			}
 		})
 	}
@@ -2032,7 +2033,7 @@ func TestEvaluateNeighbors(t *testing.T) {
 
 		t.Run(c.name, func(t *testing.T) {
 			graph := g.GetGraph("", testCase.queryDeployments, testCase.clusterDeployments, testCase.networkTree, testCase.nps, false)
-			assert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
+			protoassert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
 		})
 	}
 }
@@ -2134,7 +2135,7 @@ func TestGetApplicable(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			actual := g.GetAppliedPolicies(c.deployments, nil, c.policies)
-			assert.ElementsMatch(t, c.expected, actual)
+			protoassert.ElementsMatch(t, c.expected, actual)
 		})
 	}
 }
@@ -2326,7 +2327,7 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 
 		t.Run(c.name, func(t *testing.T) {
 			graph := g.GetGraph("", nil, testCase.deployments, nil, testCase.nps, true)
-			assert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
+			protoassert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
 		})
 	}
 }
@@ -2368,5 +2369,5 @@ func TestGetApplyingPoliciesPerDeployment(t *testing.T) {
 	}
 
 	resultMap := evaluator.GetApplyingPoliciesPerDeployment(deployments, nil, networkPolicies)
-	assert.Equal(t, expectedResults, resultMap)
+	protoassert.MapSliceEqual(t, expectedResults, resultMap)
 }

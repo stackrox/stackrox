@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -202,7 +203,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 		if c.pass {
 			suite.NoError(err)
 			suite.True(found)
-			suite.Equal(c.entity, actual)
+			protoassert.Equal(suite.T(), c.entity, actual)
 		} else {
 			suite.False(found)
 			suite.Nil(actual)
@@ -278,7 +279,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntitiesBatchOps() {
 		actual, found, err := suite.ds.GetEntity(suite.globalReadAccessCtx, entity.GetInfo().GetId())
 		suite.NoError(err)
 		suite.True(found)
-		suite.Equal(entity, actual)
+		protoassert.Equal(suite.T(), entity, actual)
 	}
 
 	// Delete
@@ -430,14 +431,14 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
 	actuals, err := suite.ds.GetAllEntities(cluster1ReadCtx)
 	suite.NoError(err)
-	suite.ElementsMatch([]*storage.NetworkEntity{entity1, entity2}, actuals)
+	protoassert.ElementsMatch(suite.T(), []*storage.NetworkEntity{entity1, entity2}, actuals)
 
 	// All resources accessible
 	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
 	actuals, err = suite.ds.GetAllEntities(suite.globalReadAccessCtx)
 	suite.NoError(err)
 	suite.Len(actuals, 5)
-	suite.ElementsMatch([]*storage.NetworkEntity{entity1, entity2, entity3, entity4, defaultEntity}, actuals)
+	protoassert.ElementsMatch(suite.T(), []*storage.NetworkEntity{entity1, entity2, entity3, entity4, defaultEntity}, actuals)
 
 	// Test Deletion
 	cases = []struct {

@@ -15,6 +15,7 @@ import (
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -86,21 +87,21 @@ func (s *ServiceLevelConfigSeparationSuite) TestGetReportConfigurations() {
 	// Empty Query
 	res, err := s.service.GetReportConfigurations(s.ctx, &apiV1.RawQuery{Query: ""})
 	s.Require().NoError(err)
-	s.Require().ElementsMatch(s.v1Configs, res.ReportConfigs)
+	protoassert.ElementsMatch(s.T(), s.v1Configs, res.ReportConfigs)
 
 	// Non empty query
 	res, err = s.service.GetReportConfigurations(s.ctx,
 		&apiV1.RawQuery{Query: fmt.Sprintf("Report Name:%s", s.v1Configs[0].Name)})
 	s.Require().NoError(err)
 	s.Require().Equal(1, len(res.ReportConfigs))
-	s.Require().Equal(s.v1Configs[0], res.ReportConfigs[0])
+	protoassert.Equal(s.T(), s.v1Configs[0], res.ReportConfigs[0])
 }
 
 func (s *ServiceLevelConfigSeparationSuite) TestGetReportConfiguration() {
 	// returns v1 config
 	res, err := s.service.GetReportConfiguration(s.ctx, &apiV1.ResourceByID{Id: s.v1Configs[0].Id})
 	s.Require().NoError(err)
-	s.Require().Equal(s.v1Configs[0], res.ReportConfig)
+	protoassert.Equal(s.T(), s.v1Configs[0], res.ReportConfig)
 
 	// error on requesting v2 config
 	_, err = s.service.GetReportConfiguration(s.ctx, &apiV1.ResourceByID{Id: s.v2Configs[0].Id})

@@ -168,7 +168,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPatch() {
 
 			persistedCertificates, err := tc.fixture.repo.ensureServiceCertificates(ctx, tc.fixture.certificates)
 
-			s.Equal(tc.persistedCertificates, persistedCertificates)
+			protoassert.SlicesEqual(s.T(), tc.persistedCertificates, persistedCertificates)
 			s.ErrorIs(err, tc.expectedErr)
 		})
 	}
@@ -234,7 +234,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsUnknownServiceT
 	persistedCertificates, err := fixture.repo.ensureServiceCertificates(ctx, fixture.certificates)
 	// Not fails and skips unknown service type
 	s.NoError(err)
-	s.Equal(emptyPersistedCertificates, persistedCertificates)
+	protoassert.SlicesEqual(s.T(), emptyPersistedCertificates, persistedCertificates)
 
 	_, err = fixture.secretsClient.Get(ctx, unknownServiceType.String()+"-secret", metav1.GetOptions{})
 	s.ErrorContains(err, "not found")
@@ -246,7 +246,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsMissingServiceT
 
 	persistedCertificates, err := fixture.repo.ensureServiceCertificates(context.Background(), fixture.certificates)
 
-	s.Equal(emptyPersistedCertificates, persistedCertificates)
+	protoassert.SlicesEqual(s.T(), emptyPersistedCertificates, persistedCertificates)
 	s.NoError(err)
 }
 
@@ -256,7 +256,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsNoCertificate
 	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
 	persistedCertificates, err := repo.ensureServiceCertificates(context.Background(), nil)
-	s.Equal(emptyPersistedCertificates, persistedCertificates)
+	protoassert.SlicesEqual(s.T(), emptyPersistedCertificates, persistedCertificates)
 	s.NoError(err)
 }
 
@@ -279,7 +279,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureServiceCertificateMi
 
 	persistedCertificates, err := repo.ensureServiceCertificates(context.Background(), certificates)
 
-	s.Equal(certificates.ServiceCerts, persistedCertificates)
+	protoassert.SlicesEqual(s.T(), certificates.ServiceCerts, persistedCertificates)
 	s.NoError(err)
 }
 
@@ -292,7 +292,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureServiceCertificatesF
 
 	persistedCertificates, err := repo.ensureServiceCertificates(ctx, scannersCertificateSet)
 	s.NoError(err)
-	s.Equal(scannersCertificateSet.ServiceCerts, persistedCertificates)
+	protoassert.SlicesEqual(s.T(), scannersCertificateSet.ServiceCerts, persistedCertificates)
 	expectedSecretNames := []string{scannerSecretName, scannerDbSecretName, scannerV4IndexerSecretName, scannerV4DbSecretName}
 	for _, secretName := range expectedSecretNames {
 		_, err = secretsClient.Get(ctx, secretName, metav1.GetOptions{})
@@ -313,7 +313,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertificatesScannerV
 
 	persistedCertificates, err := repo.ensureServiceCertificates(context.Background(), scannersCertificateSet)
 	s.NoError(err)
-	s.Equal(scannerV2Certificates, persistedCertificates)
+	protoassert.SlicesEqual(s.T(), scannerV2Certificates, persistedCertificates)
 	_, err = secretsClient.Get(ctx, scannerSecretName, metav1.GetOptions{})
 	s.NoError(err)
 	_, err = secretsClient.Get(ctx, scannerDbSecretName, metav1.GetOptions{})

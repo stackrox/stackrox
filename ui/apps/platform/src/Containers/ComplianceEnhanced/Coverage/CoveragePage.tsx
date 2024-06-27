@@ -16,27 +16,23 @@ import ClusterDetailsPage from './ClusterDetailsPage';
 import ComplianceProfilesProvider, {
     ComplianceProfilesContext,
 } from './ComplianceProfilesProvider';
+import CoverageEmptyState from './CoverageEmptyState';
 import ProfileChecksPage from './ProfileChecksPage';
 import ProfileClustersPage from './ProfileClustersPage';
+import ScanConfigurationsProvider from './ScanConfigurationsProvider';
 
 function CoveragePage() {
     return (
-        <ComplianceProfilesProvider>
-            <CoverageContent />
-        </ComplianceProfilesProvider>
+        <ScanConfigurationsProvider>
+            <ComplianceProfilesProvider>
+                <CoverageContent />
+            </ComplianceProfilesProvider>
+        </ScanConfigurationsProvider>
     );
 }
 
 function CoverageContent() {
     const { scanConfigProfilesResponse, isLoading, error } = useContext(ComplianceProfilesContext);
-
-    if (isLoading) {
-        return (
-            <Bullseye>
-                <Spinner />
-            </Bullseye>
-        );
-    }
 
     if (error) {
         return (
@@ -46,9 +42,8 @@ function CoverageContent() {
         );
     }
 
-    if (scanConfigProfilesResponse.totalCount === 0) {
-        // TODO: Add a message for when there are no profiles
-        return <div>No profiles, create a scan schedule</div>;
+    if (!isLoading && scanConfigProfilesResponse.totalCount === 0) {
+        return <CoverageEmptyState />;
     }
 
     return (
@@ -70,8 +65,16 @@ function CoverageContent() {
 }
 
 function ProfilesRedirectHandler() {
-    const { scanConfigProfilesResponse } = useContext(ComplianceProfilesContext);
+    const { scanConfigProfilesResponse, isLoading } = useContext(ComplianceProfilesContext);
     const firstProfile = scanConfigProfilesResponse.profiles[0];
+
+    if (isLoading) {
+        return (
+            <Bullseye>
+                <Spinner />
+            </Bullseye>
+        );
+    }
 
     return (
         <Redirect to={`${complianceEnhancedCoveragePath}/profiles/${firstProfile.name}/checks`} />

@@ -43,10 +43,13 @@ on:
       next-milestone:
         description: Next milestone (A.B.C[-N]-rc.`D+1`)
         value: ${{format('{0}.{1}{2}-rc.{3}', jobs.parse.outputs.release, jobs.parse.outputs.patch, jobs.parse.outputs.dash-name, jobs.parse.outputs.next-rc)}}
-      next-release-patch:
+      next-minor-release:
+        description: Next Release (A.`B+1`)
+        value: ${{format('{0}.{1}', jobs.parse.outputs.major, jobs.parse.outputs.next-minor)}}
+      next-patch-release:
         description: Next Release.patch (A.B.`C+1`)
         value: ${{format('{0}.{1}', jobs.parse.outputs.release, jobs.parse.outputs.next-patch)}}
-      next-named-release-patch:
+      next-named-patch-release:
         description: Next Release.patch-name (A.B.`C+1`[-N])
         value: ${{format('{0}.{1}{2}', jobs.parse.outputs.release, jobs.parse.outputs.next-patch, jobs.parse.outputs.dash-name)}}
 
@@ -56,12 +59,15 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       release: ${{steps.parse.outputs.release}}
+      major: ${{steps.parse.outputs.major}}
+      minor: ${{steps.parse.outputs.minor}}
       patch: ${{steps.parse.outputs.patch}}
       rc: ${{steps.parse.outputs.rc}}
       name: ${{steps.parse.outputs.name}}
-      next-rc: ${{steps.parse.outputs.next-rc}}
       dash-name: ${{steps.parse.outputs.dash-name}}
       next-patch: ${{steps.parse.outputs.next-patch}}
+      next-minor: ${{steps.parse.outputs.next-minor}}
+      next-rc: ${{steps.parse.outputs.next-rc}}
     steps:
       - name: Parse version
         id: parse
@@ -77,7 +83,7 @@ jobs:
           import re
           import sys
 
-          RELEASE=r'(?P<release>\d+\.\d+)'
+          RELEASE=r'(?P<release>(?P<major>\d+)\.(?P<minor>\d+))'
           PATCH=r'(?P<patch>\d+)'
           NAME=r'(-(?P<name>\w+(-\w+)*))'
           RC=r'(-rc\.(?P<rc>\d+))'
@@ -113,12 +119,15 @@ jobs:
 
           data = {
               'release': m.group('release'),
+              'major': m.group('major'),
+              'minor': m.group('minor'),
               'patch': patch,
-              'next-patch': int(patch)+1,
+              'rc': rc,
               'name': name,
               'dash-name': f'-{name}' if name else '',
-              'rc': rc,
-              'next-rc': rc+1
+              'next-minor': int(m.group('minor'))+1,
+              'next-patch': int(patch)+1,
+              'next-rc': rc+1,
           }
 
           with open(os.environ.get('GITHUB_OUTPUT'), mode='a') as f:

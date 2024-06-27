@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -113,7 +114,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 		}
 	}
 	expectedNode := cloneAndUpdateRiskPriority(node)
-	suite.EqualValues(expectedNode, storedNode)
+	protoassert.Equal(suite.T(), expectedNode, storedNode)
 
 	// Exists tests.
 	exists, err = suite.datastore.Exists(allowAllCtx, fixtureconsts.Node1)
@@ -133,7 +134,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	// Node is updated.
 	expectedNode.LastUpdated = storedNode.GetLastUpdated()
 	// Scan data is unchanged.
-	suite.Equal(expectedNode, storedNode)
+	protoassert.Equal(suite.T(), expectedNode, storedNode)
 
 	newNode := node.Clone()
 	newNode.Id = fixtureconsts.Node2
@@ -152,7 +153,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	suite.NoError(err)
 	suite.NotNil(storedNode)
 	newExpectedNode := cloneAndUpdateRiskPriority(newNode)
-	suite.Equal(newExpectedNode, storedNode)
+	protoassert.Equal(suite.T(), newExpectedNode, storedNode)
 
 	// Count nodes.
 	count, err := suite.datastore.CountNodes(allowAllCtx)
@@ -163,7 +164,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	nodes, err := suite.datastore.GetNodesBatch(allowAllCtx, []string{fixtureconsts.Node1, fixtureconsts.Node2})
 	suite.NoError(err)
 	suite.Len(nodes, 2)
-	suite.ElementsMatch([]*storage.Node{expectedNode, newExpectedNode}, nodes)
+	protoassert.ElementsMatch(suite.T(), []*storage.Node{expectedNode, newExpectedNode}, nodes)
 
 	// Delete both nodes.
 	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), fixtureconsts.Node1, storage.RiskSubjectType_NODE).Return(nil)
@@ -217,7 +218,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicSearch() {
 		}
 	}
 	expectedNode := cloneAndUpdateRiskPriority(node)
-	suite.Equal(expectedNode, nodes[0])
+	protoassert.Equal(suite.T(), expectedNode, nodes[0])
 
 	// Upsert new node.
 	newNode := getTestNodeForPostgres(fixtureconsts.Node2, "name2")
@@ -242,7 +243,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicSearch() {
 	nodes, err = suite.datastore.SearchRawNodes(scopedCtx, pkgSearch.EmptyQuery())
 	suite.NoError(err)
 	suite.Len(nodes, 1)
-	suite.Equal(expectedNode, nodes[0])
+	protoassert.Equal(suite.T(), expectedNode, nodes[0])
 
 	suite.deleteTestNodes(allowAllCtx)
 
@@ -462,7 +463,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 		}
 	}
 	expectedNode := cloneAndUpdateRiskPriority(testNode)
-	suite.Equal(expectedNode, storedNode)
+	protoassert.Equal(suite.T(), expectedNode, storedNode)
 
 	// Verify that new scan with less components cleans up the old relations correctly.
 	testNode.Scan.ScanTime = protocompat.TimestampNow()
@@ -480,7 +481,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.NoError(err)
 	suite.True(found)
 	expectedNode = cloneAndUpdateRiskPriority(testNode)
-	suite.Equal(expectedNode, storedNode)
+	protoassert.Equal(suite.T(), expectedNode, storedNode)
 
 	// Verify orphaned node components are removed.
 	count, err := suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -499,7 +500,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.NoError(err)
 	suite.True(found)
 	expectedNode = cloneAndUpdateRiskPriority(testNode2)
-	suite.Equal(expectedNode, storedNode)
+	protoassert.Equal(suite.T(), expectedNode, storedNode)
 
 	// Verify that number of node components remains unchanged since both nodes have same components.
 	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -519,7 +520,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.NoError(err)
 	suite.True(found)
 	expectedNode = cloneAndUpdateRiskPriority(testNode2)
-	suite.Equal(expectedNode, storedNode)
+	protoassert.Equal(suite.T(), expectedNode, storedNode)
 
 	// Set all components to contain same cve.
 	for _, component := range testNode2.GetScan().GetComponents() {
@@ -540,7 +541,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 		}
 	}
 	expectedNode = cloneAndUpdateRiskPriority(testNode2)
-	suite.Equal(expectedNode, storedNode)
+	protoassert.Equal(suite.T(), expectedNode, storedNode)
 
 	// Verify orphaned node components are removed.
 	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -562,7 +563,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.NoError(err)
 	suite.True(found)
 	expectedNode = cloneAndUpdateRiskPriority(testNode2)
-	suite.Equal(expectedNode, storedNode)
+	protoassert.Equal(suite.T(), expectedNode, storedNode)
 
 	// Verify orphaned node components are removed.
 	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -584,7 +585,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.NoError(err)
 	suite.True(found)
 	expectedNode = cloneAndUpdateRiskPriority(testNode2)
-	suite.Equal(expectedNode, storedNode)
+	protoassert.Equal(suite.T(), expectedNode, storedNode)
 
 	// Verify no components exist.
 	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -630,7 +631,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestGetManyNodeMetadata() {
 	testNode2.Priority = 1
 	testNode3.Scan.Components = nil
 	testNode3.Priority = 1
-	suite.ElementsMatch([]*storage.Node{testNode1, testNode2, testNode3}, storedNodes)
+	protoassert.ElementsMatch(suite.T(), []*storage.Node{testNode1, testNode2, testNode3}, storedNodes)
 }
 
 func getTestNodeForPostgres(id, name string) *storage.Node {

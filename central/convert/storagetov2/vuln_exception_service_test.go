@@ -4,35 +4,35 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/convert/testutils"
-	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/rox/pkg/protoassert"
 )
 
 func TestVulnerabilityException(t *testing.T) {
-	assert.EqualValues(
+	protoassert.Equal(
 		t,
 		testutils.GetTestVulnDeferralExceptionFull(t),
 		VulnerabilityException(testutils.GetTestVulnDeferralRequestFull(t)),
 	)
 
-	assert.EqualValues(
+	protoassert.Equal(
 		t,
 		testutils.GetTestVulnFPExceptionFull(t),
 		VulnerabilityException(testutils.GetTestVulnFPRequestFull(t)),
 	)
 
-	assert.EqualValues(
+	protoassert.Equal(
 		t,
 		testutils.GetTestVulnExceptionNoComments(t),
 		VulnerabilityException(testutils.GetTestVulnRequestNoComments(t)),
 	)
 
-	assert.EqualValues(
+	protoassert.Equal(
 		t,
 		testutils.GetTestVulnExceptionNoUsers(t),
 		VulnerabilityException(testutils.GetTestVulnRequestNoUsers(t)),
 	)
 
-	assert.EqualValues(
+	protoassert.Equal(
 		t,
 		testutils.GetTestVulnExceptionWithUpdate(t),
 		VulnerabilityException(testutils.GetTestVulnRequestWithUpdate(t)),

@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -53,12 +54,12 @@ func (s *NotifierEncConfigsStoreSuite) TestStore() {
 	foundNotifierEncConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(notifierEncConfig, foundNotifierEncConfig)
+	protoassert.Equal(s.T(), notifierEncConfig, foundNotifierEncConfig)
 
 	foundNotifierEncConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(notifierEncConfig, foundNotifierEncConfig)
+	protoassert.Equal(s.T(), notifierEncConfig, foundNotifierEncConfig)
 
 	s.NoError(store.Delete(ctx))
 	foundNotifierEncConfig, exists, err = store.Get(ctx)
@@ -75,7 +76,7 @@ func (s *NotifierEncConfigsStoreSuite) TestStore() {
 	foundNotifierEncConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(notifierEncConfig, foundNotifierEncConfig)
+	protoassert.Equal(s.T(), notifierEncConfig, foundNotifierEncConfig)
 
 	notifierEncConfig = &storage.NotifierEncConfig{}
 	s.NoError(testutils.FullInit(notifierEncConfig, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -84,5 +85,5 @@ func (s *NotifierEncConfigsStoreSuite) TestStore() {
 	foundNotifierEncConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(notifierEncConfig, foundNotifierEncConfig)
+	protoassert.Equal(s.T(), notifierEncConfig, foundNotifierEncConfig)
 }

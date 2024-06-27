@@ -10,6 +10,8 @@ message SignatureIntegration {
   string name = 2; // @gotags: sql:"unique"
 
   CosignPublicKeyVerification cosign = 3;
+
+  repeated CosignCertificateVerification cosign_certificates = 4;
 }
 
 message CosignPublicKeyVerification {
@@ -18,4 +20,27 @@ message CosignPublicKeyVerification {
     string public_key_pem_enc = 2;
   }
   repeated PublicKey public_keys = 3;
+}
+
+// Holds all verification data for verifying certificates attached to cosign signatures.
+// If only the certificate is given, the Fulcio trusted root chain will be assumed and verified against.
+// If only the chain is given, this will be used over the Fulcio trusted root chain for verification.
+// If no certificate or chain is given, the Fulcio trusted root chain will be assumed and verified against.
+message CosignCertificateVerification {
+  // PEM encoded certificate to use for verification.
+  string certificate_pem_enc = 1;
+  // PEM encoded certificate chain to use for verification.
+  string certificate_chain_pem_enc = 2;
+  // Certificate OIDC issuer to verify against.
+  // This supports regular expressions following the RE2 syntax: https://github.com/google/re2/wiki/Syntax.
+  // In case the certificate does not specify an OIDC issuer, you may use '.*' as the OIDC issuer. However,
+  // it is recommended to use Fulcio compatible certificates according to the specification:
+  // https://github.com/sigstore/fulcio/blob/main/docs/certificate-specification.md.
+  string certificate_oidc_issuer = 3;
+  // Certificate identity to verify against.
+  // This supports regular expressions following the RE2 syntax: https://github.com/google/re2/wiki/Syntax.
+  // In case the certificate does not specify an identity, you may use '.*' as the identity. However, it is
+  // recommended to use Fulcio compatible certificates according to the specification:
+  // https://github.com/sigstore/fulcio/blob/main/docs/certificate-specification.md.
+  string certificate_identity = 4;
 }

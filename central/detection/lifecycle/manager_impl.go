@@ -119,7 +119,7 @@ func (m *managerImpl) buildIndicatorFilter() {
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		utils.Should(errors.Wrap(err, "error building indicator filter"))
 	}
 

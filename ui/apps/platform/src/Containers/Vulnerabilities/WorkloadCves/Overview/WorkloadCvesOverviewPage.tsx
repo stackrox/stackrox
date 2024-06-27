@@ -13,7 +13,6 @@ import { gql, useApolloClient, useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import difference from 'lodash/difference';
 import isEmpty from 'lodash/isEmpty';
-import { Link } from 'react-router-dom';
 
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -48,6 +47,9 @@ import {
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
+import LinkShim from 'Components/PatternFly/LinkShim';
+import { SearchFilterEntityName } from 'Components/CompoundSearchFilter/types';
+
 import {
     DefaultFilters,
     WorkloadEntityTab,
@@ -128,10 +130,25 @@ function mergeDefaultAndLocalFilters(
     return { ...filter, SEVERITY, FIXABLE };
 }
 
+function getSearchFilterEntityByTab(
+    entityTab: WorkloadEntityTab
+): SearchFilterEntityName | undefined {
+    switch (entityTab) {
+        case 'CVE':
+            return 'Image CVE';
+        case 'Image':
+            return 'Image';
+        case 'Deployment':
+            return 'Deployment';
+        default:
+            return undefined;
+    }
+}
+
 const searchFilterConfig = {
     Image: imageSearchFilterConfig,
-    ImageCVE: imageCVESearchFilterConfig,
-    ImageComponent: imageComponentSearchFilterConfig,
+    'Image CVE': imageCVESearchFilterConfig,
+    'Image Component': imageComponentSearchFilterConfig,
     Deployment: deploymentSearchFilterConfig,
     Namespace: namespaceSearchFilterConfig,
     Cluster: clusterSearchFilterConfig,
@@ -163,6 +180,9 @@ function WorkloadCvesOverviewPage() {
         'observedCveMode',
         observedCveModeValues
     );
+
+    const defaultSearchFilterEntity = getSearchFilterEntityByTab(activeEntityTabKey);
+
     const isViewingWithCves = observedCveMode === 'WITH_CVES';
 
     // If the user is viewing observed CVEs, we need to scope the query based on
@@ -324,6 +344,7 @@ function WorkloadCvesOverviewPage() {
             }}
             includeCveSeverityFilters={isViewingWithCves}
             includeCveStatusFilters={isViewingWithCves}
+            defaultSearchFilterEntity={defaultSearchFilterEntity}
         />
     ) : (
         <WorkloadCveFilterToolbar
@@ -425,11 +446,13 @@ function WorkloadCvesOverviewPage() {
                                                 spaceItems={{ default: 'spaceItemsSm' }}
                                             >
                                                 {hasReadAccessForNamespaces && (
-                                                    <Link to={vulnerabilityNamespaceViewPath}>
-                                                        <Button variant="secondary">
-                                                            Prioritize by namespace view
-                                                        </Button>
-                                                    </Link>
+                                                    <Button
+                                                        variant="secondary"
+                                                        href={vulnerabilityNamespaceViewPath}
+                                                        component={LinkShim}
+                                                    >
+                                                        Prioritize by namespace view
+                                                    </Button>
                                                 )}
                                                 {isFixabilityFiltersEnabled && (
                                                     <DefaultFilterModal

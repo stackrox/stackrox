@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	foundTestSingleKeyStruct, exists, err = store.Get(ctx, testSingleKeyStruct.GetKey())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(testSingleKeyStruct, foundTestSingleKeyStruct)
+	protoassert.Equal(s.T(), testSingleKeyStruct, foundTestSingleKeyStruct)
 
 	testSingleKeyStructCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	foundTestSingleKeyStruct, exists, err = store.Get(ctx, testSingleKeyStruct.GetKey())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(testSingleKeyStruct, foundTestSingleKeyStruct)
+	protoassert.Equal(s.T(), testSingleKeyStruct, foundTestSingleKeyStruct)
 
 	s.NoError(store.Delete(ctx, testSingleKeyStruct.GetKey()))
 	foundTestSingleKeyStruct, exists, err = store.Get(ctx, testSingleKeyStruct.GetKey())
@@ -102,7 +103,7 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	s.NoError(store.UpsertMany(ctx, testSingleKeyStructs))
 	allTestSingleKeyStruct, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch(testSingleKeyStructs, allTestSingleKeyStruct)
+	protoassert.ElementsMatch(s.T(), testSingleKeyStructs, allTestSingleKeyStruct)
 
 	testSingleKeyStructCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

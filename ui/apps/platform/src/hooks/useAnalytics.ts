@@ -31,7 +31,11 @@ export const COLLECTION_CREATED = 'Collection Created';
 export const VULNERABILITY_REPORT_CREATED = 'Vulnerability Report Created';
 export const VULNERABILITY_REPORT_DOWNLOAD_GENERATED = 'Vulnerability Report Download Generated';
 export const VULNERABILITY_REPORT_SENT_MANUALLY = 'Vulnerability Report Sent Manually';
+
+// Node and Platform CVEs
 export const GLOBAL_SNOOZE_CVE = 'Global Snooze CVE';
+export const NODE_CVE_ENTITY_CONTEXT_VIEWED = 'Node CVE Entity Context View';
+export const PLATFORM_CVE_ENTITY_CONTEXT_VIEWED = 'Platform CVE Entity Context View';
 
 // cluster-init-bundles
 export const CREATE_INIT_BUNDLE_CLICKED = 'Create Init Bundle Clicked';
@@ -195,6 +199,28 @@ type AnalyticsEvent =
           properties: {
               type: 'NODE' | 'PLATFORM';
               duration: string;
+          };
+      }
+    /**
+     * Tracks each view of a CVE entity context (CVE or Node). This is
+     * controlled by the entity tabs on the Overview page.
+     */
+    | {
+          event: typeof NODE_CVE_ENTITY_CONTEXT_VIEWED;
+          properties: {
+              type: 'CVE' | 'Node';
+              page: 'Overview';
+          };
+      }
+    /**
+     * Tracks each view of a CVE entity context (CVE or Cluster). This is
+     * controlled by the entity tabs on the Overview page.
+     */
+    | {
+          event: typeof PLATFORM_CVE_ENTITY_CONTEXT_VIEWED;
+          properties: {
+              type: 'CVE' | 'Cluster';
+              page: 'Overview';
           };
       }
     /**

@@ -1,5 +1,5 @@
 import React from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
     Divider,
     Pagination,
@@ -27,6 +27,7 @@ import {
 } from './compliance.coverage.utils';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
 
 export type ProfileClustersTableProps = {
     currentDatetime: Date;
@@ -35,6 +36,7 @@ export type ProfileClustersTableProps = {
     profileName: string;
     tableState: TableUIState<ComplianceClusterOverallStats>;
     getSortParams: UseURLSortResult['getSortParams'];
+    onClearFilters: () => void;
 };
 
 function ProfileClustersTable({
@@ -44,7 +46,9 @@ function ProfileClustersTable({
     profileName,
     tableState,
     getSortParams,
+    onClearFilters,
 }: ProfileClustersTableProps) {
+    const { generatePathWithScanConfig } = useScanConfigRouter();
     const { page, perPage, setPage, setPerPage } = pagination;
 
     return (
@@ -69,17 +73,20 @@ function ProfileClustersTable({
             <Table>
                 <Thead>
                     <Tr>
-                        <Th sort={getSortParams('Cluster')}>Cluster</Th>
-                        <Th>Last scanned</Th>
-                        <Th>Fail status</Th>
-                        <Th>Pass status</Th>
-                        <Th>Other status</Th>
-                        <Th width={30}>Compliance</Th>
+                        <Th sort={getSortParams('Cluster')} width={50}>
+                            Cluster
+                        </Th>
+                        <Th modifier="fitContent">Last scanned</Th>
+                        <Th modifier="fitContent">Pass status</Th>
+                        <Th modifier="fitContent">Fail status</Th>
+                        <Th modifier="fitContent">Manual status</Th>
+                        <Th modifier="fitContent">Other status</Th>
+                        <Th width={50}>Compliance</Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
                     tableState={tableState}
-                    colSpan={6}
+                    colSpan={7}
                     errorProps={{
                         title: 'There was an error loading profile clusters',
                     }}
@@ -87,10 +94,7 @@ function ProfileClustersTable({
                         message:
                             'If you have recently created a scan schedule, please wait a few minutes for the results to become available.',
                     }}
-                    filteredEmptyProps={{
-                        title: 'No clusters found',
-                        message: 'Clear all filters and try again',
-                    }}
+                    filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) => (
                         <Tbody>
                             {data.map((clusterInfo) => {
@@ -99,8 +103,13 @@ function ProfileClustersTable({
                                     lastScanTime,
                                     checkStats,
                                 } = clusterInfo;
-                                const { passCount, failCount, otherCount, totalCount } =
-                                    getStatusCounts(checkStats);
+                                const {
+                                    passCount,
+                                    failCount,
+                                    manualCount,
+                                    otherCount,
+                                    totalCount,
+                                } = getStatusCounts(checkStats);
                                 const passPercentage = calculateCompliancePercentage(
                                     passCount,
                                     totalCount
@@ -115,15 +124,25 @@ function ProfileClustersTable({
                                     <Tr key={clusterId}>
                                         <Td dataLabel="Cluster">
                                             <Link
-                                                to={generatePath(coverageClusterDetailsPath, {
-                                                    clusterId,
-                                                    profileName,
-                                                })}
+                                                to={generatePathWithScanConfig(
+                                                    coverageClusterDetailsPath,
+                                                    {
+                                                        clusterId,
+                                                        profileName,
+                                                    }
+                                                )}
                                             >
                                                 {clusterName}
                                             </Link>
                                         </Td>
                                         <Td dataLabel="Last scanned">{firstDiscoveredAsPhrase}</Td>
+                                        <Td dataLabel="Pass status">
+                                            <StatusCountIcon
+                                                text="check"
+                                                status="pass"
+                                                count={passCount}
+                                            />
+                                        </Td>
                                         <Td dataLabel="Fail status">
                                             <StatusCountIcon
                                                 text="check"
@@ -131,11 +150,11 @@ function ProfileClustersTable({
                                                 count={failCount}
                                             />
                                         </Td>
-                                        <Td dataLabel="Pass status">
+                                        <Td dataLabel="Manual status" modifier="fitContent">
                                             <StatusCountIcon
                                                 text="check"
-                                                status="pass"
-                                                count={passCount}
+                                                status="manual"
+                                                count={manualCount}
                                             />
                                         </Td>
                                         <Td dataLabel="Other status">

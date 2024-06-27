@@ -4,22 +4,24 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/views/common"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 type nodeCVECoreResponse struct {
-	CVE                        string     `db:"cve"`
-	CVEIDs                     []string   `db:"cve_id"`
-	TopCVSS                    float32    `db:"cvss_max"`
-	NodeCount                  int        `db:"node_id_count"`
-	NodesWithCriticalSeverity  int        `db:"critical_severity_count"`
-	NodesWithImportantSeverity int        `db:"important_severity_count"`
-	NodesWithModerateSeverity  int        `db:"moderate_severity_count"`
-	NodesWithLowSeverity       int        `db:"low_severity_count"`
-	NodeIDs                    []string   `db:"node_id"`
-	OperatingSystemCount       int        `db:"operating_system_count"`
-	FirstDiscoveredInSystem    *time.Time `db:"cve_created_time_min"`
+	CVE                               string     `db:"cve"`
+	CVEIDs                            []string   `db:"cve_id"`
+	TopCVSS                           float32    `db:"cvss_max"`
+	NodeCount                         int        `db:"node_id_count"`
+	NodesWithCriticalSeverity         int        `db:"critical_severity_count"`
+	FixableNodesWithCriticalSeverity  int        `db:"fixable_critical_severity_count"`
+	NodesWithImportantSeverity        int        `db:"important_severity_count"`
+	FixableNodesWithImportantSeverity int        `db:"fixable_important_severity_count"`
+	NodesWithModerateSeverity         int        `db:"moderate_severity_count"`
+	FixableNodesWithModerateSeverity  int        `db:"fixable_moderate_severity_count"`
+	NodesWithLowSeverity              int        `db:"low_severity_count"`
+	FixableNodesWithLowSeverity       int        `db:"fixable_low_severity_count"`
+	NodeIDs                           []string   `db:"node_id"`
+	OperatingSystemCount              int        `db:"operating_system_count"`
+	FirstDiscoveredInSystem           *time.Time `db:"cve_created_time_min"`
 }
 
 // GetCVE returns the CVE identifier
@@ -45,10 +47,14 @@ func (c *nodeCVECoreResponse) GetNodeCount() int {
 // GetNodeCountBySeverity returns the number of nodeMap of each severity level
 func (c *nodeCVECoreResponse) GetNodeCountBySeverity() common.ResourceCountByCVESeverity {
 	return &countByNodeCVESeverity{
-		CriticalSeverityCount:  c.NodesWithCriticalSeverity,
-		ImportantSeverityCount: c.NodesWithImportantSeverity,
-		ModerateSeverityCount:  c.NodesWithModerateSeverity,
-		LowSeverityCount:       c.NodesWithLowSeverity,
+		CriticalSeverityCount:         c.NodesWithCriticalSeverity,
+		FixableCriticalSeverityCount:  c.FixableNodesWithCriticalSeverity,
+		ImportantSeverityCount:        c.NodesWithImportantSeverity,
+		FixableImportantSeverityCount: c.FixableNodesWithImportantSeverity,
+		ModerateSeverityCount:         c.NodesWithModerateSeverity,
+		FixableModerateSeverityCount:  c.FixableNodesWithModerateSeverity,
+		LowSeverityCount:              c.NodesWithLowSeverity,
+		FixableLowSeverityCount:       c.FixableNodesWithLowSeverity,
 	}
 }
 
@@ -72,48 +78,65 @@ type nodeCVECoreCount struct {
 }
 
 type countByNodeCVESeverity struct {
-	CriticalSeverityCount  int `db:"critical_severity_count"`
-	ImportantSeverityCount int `db:"important_severity_count"`
-	ModerateSeverityCount  int `db:"moderate_severity_count"`
-	LowSeverityCount       int `db:"low_severity_count"`
+	CriticalSeverityCount         int `db:"critical_severity_count"`
+	FixableCriticalSeverityCount  int `db:"fixable_critical_severity_count"`
+	ImportantSeverityCount        int `db:"important_severity_count"`
+	FixableImportantSeverityCount int `db:"fixable_important_severity_count"`
+	ModerateSeverityCount         int `db:"moderate_severity_count"`
+	FixableModerateSeverityCount  int `db:"fixable_moderate_severity_count"`
+	LowSeverityCount              int `db:"low_severity_count"`
+	FixableLowSeverityCount       int `db:"fixable_low_severity_count"`
 }
 
 // NewCountByNodeCVESeverity creates and returns a node resource count by CVE severity.
-func NewCountByNodeCVESeverity(critical, important, moderate, low int) common.ResourceCountByCVESeverity {
+func NewCountByNodeCVESeverity(
+	critical, fixableCritical,
+	important, fixableImportant,
+	moderate, fixableModerate,
+	low, fixableLow int) common.ResourceCountByCVESeverity {
 	return &countByNodeCVESeverity{
-		CriticalSeverityCount:  critical,
-		ImportantSeverityCount: important,
-		ModerateSeverityCount:  moderate,
-		LowSeverityCount:       low,
+		CriticalSeverityCount:         critical,
+		FixableCriticalSeverityCount:  fixableCritical,
+		ImportantSeverityCount:        important,
+		FixableImportantSeverityCount: fixableImportant,
+		ModerateSeverityCount:         moderate,
+		FixableModerateSeverityCount:  fixableModerate,
+		LowSeverityCount:              low,
+		FixableLowSeverityCount:       fixableLow,
 	}
 }
 
 func (c *countByNodeCVESeverity) GetCriticalSeverityCount() common.ResourceCountByFixability {
 	return &resourceCountByFixability{
-		total: c.CriticalSeverityCount,
+		total:   c.CriticalSeverityCount,
+		fixable: c.FixableCriticalSeverityCount,
 	}
 }
 
 func (c *countByNodeCVESeverity) GetImportantSeverityCount() common.ResourceCountByFixability {
 	return &resourceCountByFixability{
-		total: c.ImportantSeverityCount,
+		total:   c.ImportantSeverityCount,
+		fixable: c.FixableImportantSeverityCount,
 	}
 }
 
 func (c *countByNodeCVESeverity) GetModerateSeverityCount() common.ResourceCountByFixability {
 	return &resourceCountByFixability{
-		total: c.ModerateSeverityCount,
+		total:   c.ModerateSeverityCount,
+		fixable: c.FixableModerateSeverityCount,
 	}
 }
 
 func (c *countByNodeCVESeverity) GetLowSeverityCount() common.ResourceCountByFixability {
 	return &resourceCountByFixability{
-		total: c.LowSeverityCount,
+		total:   c.LowSeverityCount,
+		fixable: c.FixableLowSeverityCount,
 	}
 }
 
 type resourceCountByFixability struct {
-	total int
+	total   int
+	fixable int
 }
 
 func (c *resourceCountByFixability) GetTotal() int {
@@ -121,8 +144,7 @@ func (c *resourceCountByFixability) GetTotal() int {
 }
 
 func (c *resourceCountByFixability) GetFixable() int {
-	utils.Should(errox.NotImplemented)
-	return 0
+	return c.fixable
 }
 
 type nodeResponse struct {

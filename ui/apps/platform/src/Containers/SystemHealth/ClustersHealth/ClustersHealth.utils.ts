@@ -28,19 +28,21 @@ export function getCertificateExpirationCounts(
     const counts = getClusterStatusCountsObject();
 
     clusters.forEach((cluster) => {
-        switch (cluster.healthStatus.overallHealthStatus) {
-            case 'UNAVAILABLE':
-            case 'UNINITIALIZED': {
-                counts[cluster.healthStatus.overallHealthStatus] += 1;
-                break;
-            }
-            default: {
-                const { certExpiryStatus } = cluster.status;
-                const key = getCredentialExpirationStatus(
-                    certExpiryStatus as CertExpiryStatus,
-                    currentDatetime
-                );
-                counts[key] += 1;
+        if (cluster && cluster.healthStatus) {
+            switch (cluster.healthStatus?.overallHealthStatus) {
+                case 'UNAVAILABLE':
+                case 'UNINITIALIZED': {
+                    counts[cluster.healthStatus.overallHealthStatus] += 1;
+                    break;
+                }
+                default: {
+                    const { certExpiryStatus } = cluster.status || {};
+                    const key = getCredentialExpirationStatus(
+                        certExpiryStatus as CertExpiryStatus,
+                        currentDatetime
+                    );
+                    counts[key] += 1;
+                }
             }
         }
     });
@@ -52,24 +54,26 @@ export function getSensorUpgradeCounts(clusters: Cluster[]): ClusterStatusCounts
     const counts = getClusterStatusCountsObject();
 
     clusters.forEach((cluster) => {
-        switch (cluster.healthStatus.overallHealthStatus) {
-            case 'UNAVAILABLE':
-            case 'UNINITIALIZED': {
-                counts[cluster.healthStatus.overallHealthStatus] += 1;
-                break;
-            }
-            default: {
-                const { upgradeStatus } = cluster.status;
-                const upgradeState = findUpgradeState(upgradeStatus);
-                /* eslint-disable no-nested-ternary */
-                const key =
-                    upgradeState?.type === 'current'
-                        ? 'HEALTHY'
-                        : upgradeState?.type === 'failure'
-                          ? 'UNHEALTHY'
-                          : 'DEGRADED';
-                /* eslint-enable no-nested-ternary */
-                counts[key] += 1;
+        if (cluster && cluster.healthStatus) {
+            switch (cluster.healthStatus.overallHealthStatus) {
+                case 'UNAVAILABLE':
+                case 'UNINITIALIZED': {
+                    counts[cluster.healthStatus.overallHealthStatus] += 1;
+                    break;
+                }
+                default: {
+                    const { upgradeStatus } = cluster.status || {};
+                    const upgradeState = findUpgradeState(upgradeStatus);
+                    /* eslint-disable no-nested-ternary */
+                    const key =
+                        upgradeState?.type === 'current'
+                            ? 'HEALTHY'
+                            : upgradeState?.type === 'failure'
+                              ? 'UNHEALTHY'
+                              : 'DEGRADED';
+                    /* eslint-enable no-nested-ternary */
+                    counts[key] += 1;
+                }
             }
         }
     });
@@ -81,7 +85,9 @@ export function getClusterStatusCounts(clusters: Cluster[]): ClusterStatusCounts
     const counts = getClusterStatusCountsObject();
 
     clusters.forEach((cluster) => {
-        counts[cluster.healthStatus.overallHealthStatus] += 1;
+        if (cluster && cluster.healthStatus) {
+            counts[cluster.healthStatus.overallHealthStatus] += 1;
+        }
     });
 
     return counts;
@@ -99,7 +105,9 @@ export function getClusterBecauseOfStatusCounts(
     const counts = getClusterStatusCountsObject();
 
     clusters.forEach((cluster) => {
-        counts[cluster.healthStatus[key]] += 1;
+        if (cluster && cluster.healthStatus) {
+            counts[cluster.healthStatus[key]] += 1;
+        }
     });
 
     return counts;

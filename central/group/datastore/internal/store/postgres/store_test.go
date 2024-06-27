@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *GroupsStoreSuite) TestStore() {
 	foundGroup, exists, err = store.Get(ctx, group.GetProps().GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(group, foundGroup)
+	protoassert.Equal(s.T(), group, foundGroup)
 
 	groupCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -81,7 +82,7 @@ func (s *GroupsStoreSuite) TestStore() {
 	foundGroup, exists, err = store.Get(ctx, group.GetProps().GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(group, foundGroup)
+	protoassert.Equal(s.T(), group, foundGroup)
 
 	s.NoError(store.Delete(ctx, group.GetProps().GetId()))
 	foundGroup, exists, err = store.Get(ctx, group.GetProps().GetId())
@@ -102,7 +103,7 @@ func (s *GroupsStoreSuite) TestStore() {
 	s.NoError(store.UpsertMany(ctx, groups))
 	allGroup, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch(groups, allGroup)
+	protoassert.ElementsMatch(s.T(), groups, allGroup)
 
 	groupCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

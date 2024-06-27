@@ -338,7 +338,7 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 	} {
 		actual := convertVulnResponseToNodeScan(testCase.req, testCase.resp)
 		assert.ElementsMatch(t, testCase.expectedNotes, actual.Notes)
-		assert.ElementsMatch(t, testCase.expectedComponents, actual.Components)
+		protoassert.ElementsMatch(t, testCase.expectedComponents, actual.Components)
 	}
 }
 
@@ -482,5 +482,5 @@ func TestConvertFeatures(t *testing.T) {
 	}
 
 	converted := convertFeatures(metadata, features, "")
-	assert.Equal(t, expectedFeatures, converted)
+	protoassert.SlicesEqual(t, expectedFeatures, converted)
 }

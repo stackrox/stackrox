@@ -32,6 +32,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Slim/Full Collector images have been deprecated and will be removed in a
   future release. The two image flavors are now functionally identical (neither contain any kernel drivers.)
 - The field `error` returned for failed API calls has been deprecated, and it will be removed in a future release. Instead of using the `error` field, use the `message` field. The `message` field contains the same information as the `error` field.
+- The `/v1/summary/counts` API has been deprecated in 4.5 and will be removed in the future.
 
 ### Technical Changes
 
@@ -57,6 +58,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - This was already enabled for development builds of StackRox, but now it may be configured for release builds, too.
   - This defaults to `true` for development builds, and `false` for release builds.
 - Deployment bundles created with roxctl do not contain PodSecurityPolicies (PSPs) anymore by default. When deploying to pre-1.25 Kubernetes clusters with PSPs enabled the --enable-pod-security-policies flag needs to be specified when invoking roxctl for generating deployment bundles.
+- ROX-24725: Enhances Sensor's image scan event handling when `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is `true` so only one simultaneous scan request is allowed per unique image.
+  - Also increases the chances of scan cache hits when multiple names for the same image have been observed.
+  - This enhancement is enabled by default when `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is `true` on Sensor, it can be disabled by setting `ROX_SENSOR_SINGLE_SCAN` to `false` on Sensor.
 
 ## [4.4.0]
 

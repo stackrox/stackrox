@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
@@ -480,7 +481,7 @@ func (s *authServiceAccessControlTestSuite) TestGetConfig() {
 	getConfigResp, err := s.svc.GetAuthMachineToMachineConfig(s.accessCtx,
 		&v1.ResourceByID{Id: addConfigResp.GetConfig().GetId()})
 	s.NoError(err)
-	s.Equal(addConfigResp.GetConfig(), getConfigResp.GetConfig())
+	protoassert.Equal(s.T(), addConfigResp.GetConfig(), getConfigResp.GetConfig())
 }
 
 func (s *authServiceAccessControlTestSuite) TestGetConfigNonExisting() {
@@ -594,7 +595,7 @@ func (s *authServiceAccessControlTestSuite) TestListConfigs() {
 	configs, err := s.svc.ListAuthMachineToMachineConfigs(s.accessCtx, nil)
 	s.NoError(err)
 
-	s.ElementsMatch(configs.GetConfigs(), []*v1.AuthMachineToMachineConfig{config1.GetConfig(), config2.GetConfig()})
+	protoassert.ElementsMatch(s.T(), configs.GetConfigs(), []*v1.AuthMachineToMachineConfig{config1.GetConfig(), config2.GetConfig()})
 }
 
 func (s *authServiceAccessControlTestSuite) TestUpdateExistingConfig() {
@@ -639,7 +640,7 @@ func (s *authServiceAccessControlTestSuite) TestUpdateExistingConfig() {
 	updatedConfig, err := s.svc.GetAuthMachineToMachineConfig(s.accessCtx, &v1.ResourceByID{Id: config.GetConfig().GetId()})
 	s.NoError(err)
 
-	s.Equal(config.GetConfig(), updatedConfig.GetConfig())
+	protoassert.Equal(s.T(), config.GetConfig(), updatedConfig.GetConfig())
 }
 
 func (s *authServiceAccessControlTestSuite) TestUpdateAddConfig() {
@@ -775,7 +776,7 @@ func (s *authServiceAccessControlTestSuite) TestUpdateRollback() {
 	})
 	s.Error(err)
 	s.NotContains(err.Error(), "rollback")
-	s.Equal(v1tostorage.AuthM2MConfig(newConfig), s.mockExchangerFactory.currentExchangerConfig)
+	protoassert.Equal(s.T(), v1tostorage.AuthM2MConfig(newConfig), s.mockExchangerFactory.currentExchangerConfig)
 }
 
 func (s *authServiceAccessControlTestSuite) addRoles() {

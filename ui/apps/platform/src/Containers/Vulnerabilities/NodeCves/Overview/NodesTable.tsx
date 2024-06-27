@@ -39,6 +39,7 @@ export type NodesTableProps = {
     pagination: ReturnType<typeof useURLPagination>;
     sortOption: ApiSortOption;
     getSortParams: UseURLSortResult['getSortParams'];
+    onClearFilters: () => void;
 };
 
 function NodesTable({
@@ -47,6 +48,7 @@ function NodesTable({
     pagination,
     sortOption,
     getSortParams,
+    onClearFilters,
 }: NodesTableProps) {
     const { page, perPage } = pagination;
 
@@ -93,6 +95,7 @@ function NodesTable({
                 tableState={tableState}
                 colSpan={5}
                 emptyProps={{ message: 'No CVEs have been reported for your scanned nodes' }}
+                filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
                     data.map((node) => {
                         const {

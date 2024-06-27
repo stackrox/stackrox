@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/mock"
 	pkgmocks "github.com/stackrox/rox/pkg/mocks/github.com/jackc/pgx/v5/mocks"
 	"github.com/stackrox/rox/pkg/postgres/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
@@ -89,9 +90,10 @@ func (s *debugServiceTestSuite) TestGetGroups() {
 	}
 	s.groupsMock.EXPECT().GetAll(gomock.Any()).Return(expectedGroups, nil)
 	actualGroups, err := s.service.getGroups(s.noneCtx)
-
+	ag, ok := actualGroups.([]*storage.Group)
+	s.Require().True(ok)
 	s.NoError(err)
-	s.Equal(expectedGroups, actualGroups)
+	protoassert.SlicesEqual(s.T(), expectedGroups, ag)
 }
 
 func (s *debugServiceTestSuite) TestGetRoles() {
@@ -154,7 +156,7 @@ func (s *debugServiceTestSuite) TestGetNotifiers() {
 	actualNotifiers, err := s.service.getNotifiers(s.noneCtx)
 
 	s.NoError(err)
-	s.EqualValues(expectedNotifiers, actualNotifiers)
+	protoassert.SlicesEqual(s.T(), expectedNotifiers, actualNotifiers.([]*storage.Notifier))
 }
 
 func (s *debugServiceTestSuite) TestGetConfig() {
@@ -174,9 +176,11 @@ func (s *debugServiceTestSuite) TestGetConfig() {
 	}
 	s.configMock.EXPECT().GetConfig(gomock.Any()).Return(expectedConfig, nil)
 	actualConfig, err := s.service.getConfig(s.noneCtx)
+	ac, ok := actualConfig.(*storage.Config)
+	s.Require().True(ok)
 
 	s.NoError(err)
-	s.Equal(expectedConfig, actualConfig)
+	protoassert.Equal(s.T(), expectedConfig, ac)
 }
 
 func (s *debugServiceTestSuite) TestGetBundle() {

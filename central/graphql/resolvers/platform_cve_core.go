@@ -27,7 +27,7 @@ func init() {
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("PlatformCVECore",
 			[]string{
-				"clusterCountByPlatformType: ClusterCountByPlatformType!",
+				"clusterCountByType: ClusterCountByType!",
 				"clusterCount: Int!",
 				"clusters(pagination: Pagination): [Cluster!]!",
 				"clusterVulnerability: ClusterVulnerability!",
@@ -185,9 +185,9 @@ func (resolver *platformCVECoreResolver) CVSS(_ context.Context) float64 {
 	return float64(resolver.data.GetCVSS())
 }
 
-// ClusterCountByPlatformType returns the number of clusters of each type affected by the given platform cve
-func (resolver *platformCVECoreResolver) ClusterCountByPlatformType(ctx context.Context) (*clusterCountByPlatformTypeResolver, error) {
-	return resolver.root.wrapClusterCountByPlatformTypeWithContext(ctx, resolver.data.GetClusterCountByPlatformType(), nil)
+// ClusterCountByType returns the number of clusters of each type affected by the given platform cve
+func (resolver *platformCVECoreResolver) ClusterCountByType(ctx context.Context) (*clusterCountByTypeResolver, error) {
+	return resolver.root.wrapClusterCountByTypeWithContext(ctx, resolver.data.GetClusterCountByPlatformType(), nil)
 }
 
 // ClusterCount returns the number of clusters affected by the given platform cve

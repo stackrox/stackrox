@@ -122,7 +122,7 @@ func getOrphanedIDs(ctx context.Context, pool postgres.DB, query string) ([]stri
 
 // GetOrphanedAlertIDs returns the alert IDs for alerts that are orphaned, so they can be resolved.
 func GetOrphanedAlertIDs(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) ([]string, error) {
-	return pgutils.Retry2(func() ([]string, error) {
+	return pgutils.Retry2(ctx, func() ([]string, error) {
 		ctx, cancel := context.WithTimeout(ctx, orphanedTimeout)
 		defer cancel()
 
@@ -133,7 +133,7 @@ func GetOrphanedAlertIDs(ctx context.Context, pool postgres.DB, orphanWindow tim
 
 // GetOrphanedPodIDs returns the pod IDs for pods that are orphaned, so they can be removed.
 func GetOrphanedPodIDs(ctx context.Context, pool postgres.DB) ([]string, error) {
-	return pgutils.Retry2(func() ([]string, error) {
+	return pgutils.Retry2(ctx, func() ([]string, error) {
 		ctx, cancel := context.WithTimeout(ctx, orphanedTimeout)
 		defer cancel()
 
@@ -143,7 +143,7 @@ func GetOrphanedPodIDs(ctx context.Context, pool postgres.DB) ([]string, error) 
 
 // GetOrphanedNodeIDs returns the node ids that have a cluster that has been removed.
 func GetOrphanedNodeIDs(ctx context.Context, pool postgres.DB) ([]string, error) {
-	return pgutils.Retry2(func() ([]string, error) {
+	return pgutils.Retry2(ctx, func() ([]string, error) {
 		ctx, cancel := context.WithTimeout(ctx, orphanedTimeout)
 		defer cancel()
 
@@ -153,7 +153,7 @@ func GetOrphanedNodeIDs(ctx context.Context, pool postgres.DB) ([]string, error)
 
 // GetOrphanedProcessIDsByDeployment returns the process ids that have a deployment that has been removed.
 func GetOrphanedProcessIDsByDeployment(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) ([]string, error) {
-	return pgutils.Retry2(func() ([]string, error) {
+	return pgutils.Retry2(ctx, func() ([]string, error) {
 		ctx, cancel := context.WithTimeout(ctx, orphanedTimeout)
 		defer cancel()
 
@@ -164,7 +164,7 @@ func GetOrphanedProcessIDsByDeployment(ctx context.Context, pool postgres.DB, or
 
 // GetOrphanedProcessIDsByPod returns the process ids that have a pod that has been removed.
 func GetOrphanedProcessIDsByPod(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) ([]string, error) {
-	return pgutils.Retry2(func() ([]string, error) {
+	return pgutils.Retry2(ctx, func() ([]string, error) {
 		ctx, cancel := context.WithTimeout(ctx, orphanedTimeout)
 		defer cancel()
 

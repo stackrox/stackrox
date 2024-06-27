@@ -1,11 +1,13 @@
 import React from 'react';
 import noop from 'lodash/noop';
-import { Toolbar, ToolbarGroup, ToolbarContent, Flex } from '@patternfly/react-core';
+import { Toolbar, ToolbarGroup, ToolbarContent } from '@patternfly/react-core';
 import useURLSearch from 'hooks/useURLSearch';
 import { SearchFilter } from 'types/search';
-import { Globe } from 'react-feather';
 
-import SearchFilterChips, { SearchFilterChipsProps } from 'Components/PatternFly/SearchFilterChips';
+import SearchFilterChips, {
+    FilterChip,
+    SearchFilterChipsProps,
+} from 'Components/PatternFly/SearchFilterChips';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useAnalytics, {
     WORKLOAD_CVE_FILTER_APPLIED,
@@ -21,23 +23,6 @@ import FilterAutocomplete, {
 } from '../../components/FilterAutocomplete';
 import CVESeverityDropdown from '../../components/CVESeverityDropdown';
 import CVEStatusDropdown from '../../components/CVEStatusDropdown';
-
-type FilterChipProps = {
-    isGlobal?: boolean;
-    name: string;
-};
-
-function FilterChip({ isGlobal, name }: FilterChipProps) {
-    if (isGlobal) {
-        return (
-            <Flex alignItems={{ default: 'alignItemsCenter' }} flexWrap={{ default: 'nowrap' }}>
-                <Globe height="15px" />
-                {name}
-            </Flex>
-        );
-    }
-    return <Flex>{name}</Flex>;
-}
 
 const emptyDefaultFilters = {
     SEVERITY: [],

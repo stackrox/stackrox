@@ -75,9 +75,10 @@ export type NodeVulnerability = {
 export type CVEsTableProps = {
     tableState: TableUIState<NodeVulnerability>;
     getSortParams: UseURLSortResult['getSortParams'];
+    onClearFilters: () => void;
 };
 
-function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
+function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps) {
     const COL_SPAN = 6;
     const expandedRowSet = useSet<string>();
 
@@ -103,6 +104,7 @@ function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
                 tableState={tableState}
                 colSpan={COL_SPAN}
                 emptyProps={{ message: 'No CVEs were detected for this node' }}
+                filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
                     data.map((nodeVulnerability, rowIndex) => {
                         const { cve, cvss, scoreVersion, nodeComponents } = nodeVulnerability;

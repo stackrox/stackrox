@@ -1,5 +1,5 @@
 import React from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
     Pagination,
     Toolbar,
@@ -29,6 +29,7 @@ import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import { CHECK_STATUS_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
 import StatusIcon from './components/StatusIcon';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
 
 export const tabContentIdForResults = 'check-details-Results-tab-section';
 
@@ -47,6 +48,7 @@ export type CheckDetailsTableProps = {
         checked: boolean,
         selection: string
     ) => void;
+    onClearFilters: () => void;
 };
 
 function CheckDetailsTable({
@@ -60,7 +62,9 @@ function CheckDetailsTable({
     searchFilter,
     onSearch,
     onCheckStatusSelect,
+    onClearFilters,
 }: CheckDetailsTableProps) {
+    const { generatePathWithScanConfig } = useScanConfigRouter();
     const { page, perPage, setPage, setPerPage } = pagination;
 
     return (
@@ -124,10 +128,7 @@ function CheckDetailsTable({
                     emptyProps={{
                         message: 'No results found for this check',
                     }}
-                    filteredEmptyProps={{
-                        title: 'No results found',
-                        message: 'Clear all filters and try again',
-                    }}
+                    filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) => (
                         <Tbody>
                             {data.map((clusterInfo) => {
@@ -146,10 +147,13 @@ function CheckDetailsTable({
                                     <Tr key={clusterId}>
                                         <Td dataLabel="Cluster">
                                             <Link
-                                                to={generatePath(coverageClusterDetailsPath, {
-                                                    clusterId,
-                                                    profileName,
-                                                })}
+                                                to={generatePathWithScanConfig(
+                                                    coverageClusterDetailsPath,
+                                                    {
+                                                        clusterId,
+                                                        profileName,
+                                                    }
+                                                )}
                                             >
                                                 {clusterName}
                                             </Link>

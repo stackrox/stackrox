@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/suite"
@@ -353,5 +354,5 @@ func (s *UpdaterTestSuite) assertEqual(expected expectedInfo, actual *central.Co
 			TotalReadyPods: expected.ready,
 		}
 	}
-	s.EqualValues(expectedVal, actual)
+	protoassert.Equal(s.T(), expectedVal, actual)
 }

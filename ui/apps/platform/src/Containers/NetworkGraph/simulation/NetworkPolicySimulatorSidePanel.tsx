@@ -436,41 +436,7 @@ function NetworkPolicySimulatorSidePanel({
                                                 component={TextVariants.h2}
                                                 className="pf-v5-u-font-size-lg"
                                             >
-                                                Generate network policies from the baseline
-                                                <Popover
-                                                    showClose={false}
-                                                    bodyContent={
-                                                        <div>
-                                                            <p className="pf-v5-u-mb-sm">
-                                                                A baseline is considered the trusted
-                                                                traffic (incoming and outgoing) for
-                                                                a given entity, like a cluster,
-                                                                namespace, or deployment.
-                                                            </p>
-                                                            <p className="pf-v5-u-mb-sm">
-                                                                It is automatically generated for
-                                                                every deployment, by collecting
-                                                                incoming and outgoing traffic during
-                                                                its first hour of existence.
-                                                            </p>
-                                                            <p>
-                                                                In addition, a user can modify the
-                                                                baseline by adding or removing any
-                                                                active flows that have been observed
-                                                                over a period of time.
-                                                            </p>
-                                                        </div>
-                                                    }
-                                                >
-                                                    <button
-                                                        type="button"
-                                                        aria-label="More info on network baselines"
-                                                        onClick={(e) => e.preventDefault()}
-                                                        className="pf-v5-u-mx-sm pf-v5-u-mt-xs"
-                                                    >
-                                                        <HelpIcon />
-                                                    </button>
-                                                </Popover>
+                                                Generate network policies from the traffic
                                             </Text>
                                         </TextContent>
                                     </StackItem>
@@ -478,11 +444,9 @@ function NetworkPolicySimulatorSidePanel({
                                         <TextContent>
                                             <Text component={TextVariants.p}>
                                                 Generate a set of recommended network policies based
-                                                on your cluster baseline. Cluster baseline is the
-                                                aggregation of the baselines of the deployments that
-                                                belong to the cluster. Only deployments that are
-                                                part of the current scope will be included in
-                                                generated policies.
+                                                on your cluster&apos;s traffic. Only deployments
+                                                that are part of the current scope will be included
+                                                in generated policies.
                                             </Text>
                                         </TextContent>
                                     </StackItem>

@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -475,22 +476,22 @@ func TestEffectiveAccessScopeForSimpleAccessScope(t *testing.T) {
 		t.Run(tc.desc+"detail: HIGH", func(t *testing.T) {
 			resHigh, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_HIGH)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedHigh, resHigh)
+			protoassert.Equal(t, tc.expectedHigh, resHigh)
 		})
 		t.Run(tc.desc+"detail: STANDARD", func(t *testing.T) {
 			resStandard, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_STANDARD)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedStandard, resStandard)
+			protoassert.Equal(t, tc.expectedStandard, resStandard)
 		})
 		t.Run(tc.desc+"detail: MINIMAL", func(t *testing.T) {
 			resMinimal, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedMinimal, resMinimal)
+			protoassert.Equal(t, tc.expectedMinimal, resMinimal)
 		})
 		t.Run(tc.desc+"unknown detail maps to STANDARD", func(t *testing.T) {
 			resUnknown, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, 42)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedStandard, resUnknown)
+			protoassert.Equal(t, tc.expectedStandard, resUnknown)
 		})
 	}
 }
@@ -818,7 +819,7 @@ func (s *serviceImplTestSuite) TestGetClustersForPermissions() {
 				Permissions: c.testedPermissions,
 			})
 			s.NoError(err)
-			s.ElementsMatch(clusterResponse.GetClusters(), c.expectedClusters)
+			protoassert.ElementsMatch(s.T(), clusterResponse.GetClusters(), c.expectedClusters)
 		})
 	}
 }
@@ -918,7 +919,7 @@ func (s *serviceImplTestSuite) TestGetClustersForPermissionsPagination() {
 				Permissions: []string{},
 			})
 			s.NoError(err)
-			s.Equal(clusterResponse.GetClusters(), c.expectedClusters)
+			protoassert.SlicesEqual(s.T(), clusterResponse.GetClusters(), c.expectedClusters)
 		})
 	}
 }
@@ -1041,7 +1042,7 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 			}
 			namespaceResponse, err := s.service.GetNamespacesForClusterAndPermissions(testCtx, request)
 			s.NoError(err)
-			s.ElementsMatch(namespaceResponse.GetNamespaces(), c.expectedNamespaces)
+			protoassert.ElementsMatch(s.T(), namespaceResponse.GetNamespaces(), c.expectedNamespaces)
 		})
 	}
 }

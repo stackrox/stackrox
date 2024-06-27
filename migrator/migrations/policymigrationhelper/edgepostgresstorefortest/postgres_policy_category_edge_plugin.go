@@ -34,7 +34,7 @@ type storeImpl struct {
 }
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.upsert(ctx, obj)
 	})
 }

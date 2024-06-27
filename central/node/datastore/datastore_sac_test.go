@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -200,7 +201,7 @@ func (s *nodeDatastoreSACSuite) TestGetNode() {
 
 				// Priority can have updated value, and we want to ignore it.
 				fetchedNode.Priority = s.testNodes[nodeID].Priority
-				s.Equal(s.testNodes[nodeID], fetchedNode)
+				protoassert.Equal(s.T(), s.testNodes[nodeID], fetchedNode)
 			} else {
 				s.False(found)
 				s.Nil(fetchedNode)

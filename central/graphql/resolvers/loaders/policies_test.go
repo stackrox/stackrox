@@ -87,7 +87,7 @@ func (suite *PolicyLoaderTestSuite) TestFromIDs() {
 	// Get a preloaded policy from id.
 	policies, err := loader.FromIDs(suite.ctx, []string{policy1, policy2})
 	suite.NoError(err)
-	suite.Equal([]*storage.Policy{
+	protoassert.SlicesEqual(suite.T(), []*storage.Policy{
 		loader.loaded[policy1],
 		loader.loaded[policy2],
 	}, policies)
@@ -100,7 +100,7 @@ func (suite *PolicyLoaderTestSuite) TestFromIDs() {
 
 	policies, err = loader.FromIDs(suite.ctx, []string{policy1, policy2, policy3})
 	suite.NoError(err)
-	suite.Equal([]*storage.Policy{
+	protoassert.SlicesEqual(suite.T(), []*storage.Policy{
 		loader.loaded[policy1],
 		loader.loaded[policy2],
 		thirdPolicy,
@@ -109,7 +109,7 @@ func (suite *PolicyLoaderTestSuite) TestFromIDs() {
 	// Above call should now be preloaded.
 	policies, err = loader.FromIDs(suite.ctx, []string{policy1, policy2, policy3})
 	suite.NoError(err)
-	suite.Equal([]*storage.Policy{
+	protoassert.SlicesEqual(suite.T(), []*storage.Policy{
 		loader.loaded[policy1],
 		loader.loaded[policy2],
 		loader.loaded[policy3],
@@ -140,7 +140,7 @@ func (suite *PolicyLoaderTestSuite) TestFromQuery() {
 
 	policies, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.Policy{
+	protoassert.SlicesEqual(suite.T(), []*storage.Policy{
 		loader.loaded[policy1],
 		loader.loaded[policy2],
 	}, policies)
@@ -166,7 +166,7 @@ func (suite *PolicyLoaderTestSuite) TestFromQuery() {
 
 	policies, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.Policy{
+	protoassert.SlicesEqual(suite.T(), []*storage.Policy{
 		loader.loaded[policy1],
 		loader.loaded[policy2],
 		thirdPolicy,
@@ -188,7 +188,7 @@ func (suite *PolicyLoaderTestSuite) TestFromQuery() {
 
 	policies, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.Policy{
+	protoassert.SlicesEqual(suite.T(), []*storage.Policy{
 		loader.loaded[policy1],
 		loader.loaded[policy2],
 		loader.loaded[policy3],

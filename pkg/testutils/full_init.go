@@ -14,6 +14,10 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+const seededInitializerSeed = 810526520374890380
+
+var seededRand = rand.New(rand.NewSource(seededInitializerSeed))
+
 // BasicTypeInitializer prescribes how to initialize a struct field with a given type.
 type BasicTypeInitializer interface {
 	Value(kind reflect.Kind, fieldPath []reflect.StructField) interface{}
@@ -45,20 +49,17 @@ func (simpleInitializer) Value(kind reflect.Kind, _ []reflect.StructField) inter
 type uniqueInitializer struct{}
 
 func (uniqueInitializer) Value(kind reflect.Kind, _ []reflect.StructField) interface{} {
-	// seed rand
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-
 	switch kind {
 	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return r.Int31()
+		return seededRand.Int31()
 	case reflect.Int8, reflect.Uint8:
 		// We are using Uint8 for bytes that become varchars.  Need to ensure that we return a
 		// non-zero number within the Uint8 range of values.
-		return r.Intn(100) + 1
+		return seededRand.Intn(100) + 1
 	case reflect.Float32, reflect.Float64:
-		return r.Float32()
+		return seededRand.Float32()
 	case reflect.Complex64, reflect.Complex128:
-		return complex(r.Float32(), 1.0)
+		return complex(seededRand.Float32(), 1.0)
 	case reflect.Bool:
 		return true
 	case reflect.String:
@@ -119,7 +120,7 @@ func fullInitRecursive(val reflect.Value, init BasicTypeInitializer, fieldFilter
 
 	case reflect.Ptr:
 		if _, ok := seenTypes[val.Type().Elem()]; !ok {
-			if val.Type().String() == "*types.Timestamp" {
+			if val.Type() == types.TimestampPtrType {
 				initTime(val, init)
 			} else {
 				val.Set(reflect.New(val.Type().Elem()))

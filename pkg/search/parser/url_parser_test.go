@@ -125,5 +125,5 @@ func TestParseURLQueryConjunctionQuery(t *testing.T) {
 
 	actual, _, err := ParseURLQuery(vals)
 	assert.NoError(t, err)
-	assert.EqualValues(t, expectedQuery, actual)
+	protoassert.Equal(t, expectedQuery, actual)
 }

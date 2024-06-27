@@ -268,7 +268,7 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 			} else {
 				assert.ErrorContains(t, err, tt.wantErr)
 			}
-			assert.Equal(t, tt.want, got)
+			protoassert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -731,7 +731,7 @@ func Test_toProtoV4Contents(t *testing.T) {
 				assert.Nil(t, got)
 				assert.ErrorContains(t, err, tt.wantErr)
 			} else {
-				assert.EqualValues(t, tt.want, got)
+				protoassert.Equal(t, tt.want, got)
 				assert.NoError(t, err)
 			}
 		})
@@ -1082,7 +1082,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			protoassert.MapEqual(t, tt.want, got)
 		})
 	}
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -194,7 +195,7 @@ func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 	s.NoError(err)
 	actual, err := srv.GetDatabaseBackupStatus(ctx, &v1.Empty{})
 	s.NoError(err)
-	s.EqualValues(expected, actual)
+	protoassert.Equal(s.T(), expected, actual)
 }
 
 func (s *serviceImplTestSuite) TestGetCentralCapabilities() {

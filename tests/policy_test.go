@@ -184,7 +184,7 @@ func compareErrorsToExpected(t *testing.T, expectedErrors []*v1.ExportPolicyErro
 	// actual errors == expected errors ignoring order
 	require.Len(t, exportErrors.GetErrors(), len(expectedErrors))
 	for _, expected := range expectedErrors {
-		require.Contains(t, exportErrors.GetErrors(), expected)
+		protoassert.SliceContains(t, exportErrors.GetErrors(), expected)
 	}
 }
 
@@ -696,7 +696,7 @@ func verifyConvertSearchToPolicy(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, response.GetAlteredSearchTerms())
 	require.Len(t, response.GetPolicy().GetPolicySections(), 1)
-	require.ElementsMatch(t, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups(), mockPolicySection.GetPolicyGroups())
+	protoassert.ElementsMatch(t, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups(), mockPolicySection.GetPolicyGroups())
 }
 
 func verifyConvertInvalidSearchToPolicyFails(t *testing.T) {

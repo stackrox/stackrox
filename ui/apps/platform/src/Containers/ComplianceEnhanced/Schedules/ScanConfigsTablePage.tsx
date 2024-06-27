@@ -47,8 +47,7 @@ import { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
-import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
-import { SCAN_CONFIG_NAME_QUERY } from './compliance.scanConfigs.constants';
+import { DEFAULT_COMPLIANCE_PAGE_SIZE, SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import {
     formatScanSchedule,

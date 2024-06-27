@@ -13,9 +13,11 @@ import (
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/sigstore/cosign/v2/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
 	"github.com/sigstore/cosign/v2/pkg/oci"
 	"github.com/sigstore/cosign/v2/pkg/oci/static"
+	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sigstore/sigstore/pkg/signature/payload"
 	"github.com/stackrox/rox/generated/storage"
@@ -30,15 +32,25 @@ const (
 )
 
 var (
-	errNoImageSHA            = errors.New("no image SHA found")
-	errInvalidHashAlgo       = errox.InvalidArgs.New("invalid hash algorithm used")
-	errNoKeysToVerifyAgainst = errors.New("no keys to verify against")
-	errHashCreation          = errox.InvariantViolation.New("creating hash")
-	errCorruptedSignature    = errox.InvariantViolation.New("corrupted signature")
+	errNoImageSHA         = errors.New("no image SHA found")
+	errInvalidHashAlgo    = errox.InvalidArgs.New("invalid hash algorithm used")
+	errNoVerificationData = errors.New("verification data not found")
+	errHashCreation       = errox.InvariantViolation.New("creating hash")
+	errCorruptedSignature = errox.InvariantViolation.New("corrupted signature")
 )
 
 type cosignSignatureVerifier struct {
 	parsedPublicKeys []crypto.PublicKey
+	certs            []certVerificationData
+
+	verifierOpts []cosign.CheckOpts
+}
+
+type certVerificationData struct {
+	cert           *x509.Certificate
+	chain          []*x509.Certificate
+	oidcIssuerExpr string
+	identityExpr   string
 }
 
 var _ SignatureVerifier = (*cosignSignatureVerifier)(nil)
@@ -51,8 +63,8 @@ func IsValidPublicKeyPEMBlock(keyBlock *pem.Block, rest []byte) bool {
 // newCosignSignatureVerifier creates a public key verifier with the given Cosign configuration. The provided public keys
 // MUST be valid PEM encoded ones.
 // It will return an error if the provided public keys could not be parsed.
-func newCosignSignatureVerifier(config *storage.CosignPublicKeyVerification) (*cosignSignatureVerifier, error) {
-	publicKeys := config.GetPublicKeys()
+func newCosignSignatureVerifier(config *storage.SignatureIntegration) (*cosignSignatureVerifier, error) {
+	publicKeys := config.GetCosign().GetPublicKeys()
 	parsedKeys := make([]crypto.PublicKey, 0, len(publicKeys))
 	for _, publicKey := range publicKeys {
 		// We expect the key to be PEM encoded. There should be no rest returned after decoding.
@@ -68,7 +80,38 @@ func newCosignSignatureVerifier(config *storage.CosignPublicKeyVerification) (*c
 		parsedKeys = append(parsedKeys, parsedKey)
 	}
 
-	return &cosignSignatureVerifier{parsedPublicKeys: parsedKeys}, nil
+	cosignCerts := config.GetCosignCertificates()
+	certsWithChains := make([]certVerificationData, 0, len(cosignCerts))
+	for _, cosignCert := range cosignCerts {
+		var cert *x509.Certificate
+		if certPEM := cosignCert.GetCertificatePemEnc(); certPEM != "" {
+			certs, err := cryptoutils.UnmarshalCertificatesFromPEM([]byte(certPEM))
+			if err != nil {
+				return nil, errox.InvariantViolation.New("failed to unmarshal certificate from PEM")
+			}
+			if len(certs) != 0 {
+				cert = certs[0]
+			}
+		}
+
+		var chain []*x509.Certificate
+		if chainPEM := cosignCert.GetCertificateChainPemEnc(); chainPEM != "" {
+			c, err := cryptoutils.UnmarshalCertificatesFromPEM([]byte(chainPEM))
+			if err != nil {
+				return nil, errox.InvariantViolation.New("failed to unmarshal certificate chain PEM")
+			}
+			chain = c
+		}
+
+		certsWithChains = append(certsWithChains, certVerificationData{
+			chain:          chain,
+			cert:           cert,
+			oidcIssuerExpr: cosignCert.GetCertificateOidcIssuer(),
+			identityExpr:   cosignCert.GetCertificateIdentity(),
+		})
+	}
+
+	return &cosignSignatureVerifier{parsedPublicKeys: parsedKeys, certs: certsWithChains}, nil
 }
 
 // VerifySignature implements the SignatureVerifier interface.
@@ -76,23 +119,10 @@ func newCosignSignatureVerifier(config *storage.CosignPublicKeyVerification) (*c
 // as well as the claim verification of the payload of the signature.
 func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	image *storage.Image) (storage.ImageSignatureVerificationResult_Status, []string, error) {
-	// Short circuit if we do not have any public keys configured to verify against.
-	if len(c.parsedPublicKeys) == 0 {
-		return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, nil, errNoKeysToVerifyAgainst
+	// Short-circuit if we, for some reason, do not have anything to verify against.
+	if len(c.parsedPublicKeys) == 0 && len(c.certs) == 0 {
+		return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, nil, errNoVerificationData
 	}
-
-	var opts cosign.CheckOpts
-
-	// By default, verify the claim within the payload that is specified with the simple signing format.
-	// Right now, we are not supporting any additional annotations within the claim.
-	opts.ClaimVerifier = cosign.SimpleClaimVerifier
-
-	// With the latest version of cosign, by default signatures will be uploaded to rekor. This means that also during
-	// verification, an entry in the transparency log will be expected and verified.
-	// Since currently this is not the case in what we support / offer, explicitly disable this for now until we enable
-	// and expect this to be the case.
-	opts.IgnoreTlog = true
-	opts.IgnoreSCT = true
 
 	sigs, hash, err := retrieveVerificationDataFromImage(image)
 	if err != nil {
@@ -100,14 +130,16 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	}
 
 	var allVerifyErrs error
-	for _, key := range c.parsedPublicKeys {
-		// For now, only supporting SHA256 as algorithm.
-		v, err := signature.LoadVerifier(key, crypto.SHA256)
-		if err != nil {
-			allVerifyErrs = multierror.Append(allVerifyErrs, errors.Wrap(err, "creating verifier"))
-			continue
-		}
-		opts.SigVerifier = v
+	if err := c.createVerifierOpts(); err != nil {
+		// Fail open here instead of closed. During the creation of verifier opts for certificates, if one is given,
+		// verification of the subject & identity will be done. Thus, it could always fail if things aren't signed
+		// appropriately. In case we have a signature integration with a mix of keys & certificates to verify against,
+		// let's first try to go through any options that might have been successfully created (i.e. the key ones)
+		// and attempt to verify the signature.
+		allVerifyErrs = multierror.Append(allVerifyErrs, err)
+	}
+
+	for _, opts := range c.verifierOpts {
 		verifiedImageReferences, err := verifyImageSignatures(ctx, sigs, hash, image, opts)
 		if err == nil && len(verifiedImageReferences) != 0 {
 			return storage.ImageSignatureVerificationResult_VERIFIED, verifiedImageReferences, nil
@@ -116,6 +148,105 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	}
 
 	return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, nil, allVerifyErrs
+}
+
+func (c *cosignSignatureVerifier) createVerifierOpts() error {
+	var verifierErrs error
+
+	for _, key := range c.parsedPublicKeys {
+		// For now, only supporting SHA256 as algorithm.
+		v, err := signature.LoadVerifier(key, crypto.SHA256)
+		if err != nil {
+			verifierErrs = multierror.Append(verifierErrs, errors.Wrap(err, "creating verifier"))
+			continue
+		}
+		opts := defaultCosignCheckOpts()
+		opts.SigVerifier = v
+		c.verifierOpts = append(c.verifierOpts, opts)
+	}
+
+	for _, certs := range c.certs {
+		opts, err := cosignCheckOptsFromCert(certs)
+		if err != nil {
+			verifierErrs = multierror.Append(verifierErrs, errors.Wrap(err, "creating cosign check opts"))
+			continue
+		}
+		c.verifierOpts = append(c.verifierOpts, opts)
+	}
+
+	return verifierErrs
+}
+
+func defaultCosignCheckOpts() cosign.CheckOpts {
+	return cosign.CheckOpts{
+		ClaimVerifier: cosign.SimpleClaimVerifier,
+		// With the latest version of cosign, by default signatures will be uploaded to rekor.
+		// This means that also during verification, an entry in the transparency log will be expected and verified.
+		// Since currently this is not the case in what we support / offer, explicitly disable this for now
+		// until we enable and expect this to be the case.
+		IgnoreSCT:  true,
+		IgnoreTlog: true,
+	}
+}
+
+func cosignCheckOptsFromCert(cert certVerificationData) (cosign.CheckOpts, error) {
+	opts := defaultCosignCheckOpts()
+
+	// Skip verifying the identities when the wildcard matching logic being used. This fixes an issue
+	// with verifying the identity which will yield an error when using the wildcard expressions _and_ the certificate
+	// to verify has no identities associated with it (i.e. within the BYOPKI use-case).
+	if cert.oidcIssuerExpr != ".*" && cert.identityExpr != ".*" {
+		opts.Identities = []cosign.Identity{{
+			IssuerRegExp:  cert.oidcIssuerExpr,
+			SubjectRegExp: cert.identityExpr,
+		}}
+	}
+
+	var err error
+	// - If we have both cert and chain, we use both to verify the public key and the root.
+	// - If we only have the cert, we assume the fulcio trusted root.
+	// - If we only have the chain, we use this as the trusted root to verify certificates, if any.
+	// - If none is given, we set the fulcio roots.
+	switch {
+	case cert.cert != nil && len(cert.chain) > 0:
+		v, err := cosign.ValidateAndUnpackCertWithChain(cert.cert, cert.chain, &opts)
+		if err != nil {
+			return opts, err
+		}
+		opts.SigVerifier = v
+		return opts, nil
+
+	case cert.cert != nil:
+		opts.RootCerts, err = fulcio.GetRoots()
+		if err != nil {
+			return opts, err
+		}
+		opts.IntermediateCerts, err = fulcio.GetIntermediates()
+		if err != nil {
+			return opts, err
+		}
+		v, err := cosign.ValidateAndUnpackCert(cert.cert, &opts)
+		if err != nil {
+			return opts, err
+		}
+		opts.SigVerifier = v
+		return opts, nil
+
+	case len(cert.chain) > 0:
+		pool := x509.NewCertPool()
+		for _, caCert := range cert.chain {
+			pool.AddCert(caCert)
+		}
+		opts.RootCerts = pool
+		return opts, nil
+
+	default:
+		opts.RootCerts, err = fulcio.GetRoots()
+		if err != nil {
+			return opts, err
+		}
+		return opts, nil
+	}
 }
 
 func verifyImageSignatures(ctx context.Context, signatures []oci.Signature, imageHash gcrv1.Hash, image *storage.Image,
@@ -184,7 +315,8 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 		}
 		b64Sig := base64.StdEncoding.EncodeToString(imgSig.GetCosign().GetRawSignature())
 
-		sig, err := static.NewSignature(imgSig.GetCosign().GetSignaturePayload(), b64Sig)
+		sig, err := static.NewSignature(imgSig.GetCosign().GetSignaturePayload(), b64Sig,
+			static.WithCertChain(imgSig.GetCosign().GetCertPem(), imgSig.GetCosign().GetCertChainPem()))
 		if err != nil {
 			// Theoretically, this error should never happen, as the only error currently occurs when using options,
 			// which we do not use _yet_. When introducing support for rekor bundles, this could potentially error.

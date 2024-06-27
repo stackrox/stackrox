@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -169,7 +170,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 	s.Require().NoError(err)
 	// ID will be added to the record and returned.  Add it to the validation object
 	request.Id = uuid.NewDummy().String()
-	s.Require().Equal(request, config)
+	protoassert.Equal(s.T(), request, config)
 
 	// reset for error testing
 	request = getTestAPIRec()
@@ -395,7 +396,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 
 			configs, err := s.service.ListComplianceScanConfigurations(allAccessContext, tc.query)
 			s.Require().NoError(err)
-			s.Require().EqualValues(expectedResp, configs)
+			protoassert.Equal(s.T(), expectedResp, configs)
 		})
 	}
 }
@@ -511,7 +512,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 			} else {
 				s.Require().Equal(tc.expectedErr.Error(), err.Error())
 			}
-			s.Require().Equal(tc.expectedResp, config)
+			protoassert.Equal(s.T(), tc.expectedResp, config)
 		})
 	}
 }
@@ -601,7 +602,7 @@ func (s *ComplianceScanConfigServiceTestSuite) ListComplianceScanConfigProfiles(
 
 			configProfiles, err := s.service.ListComplianceScanConfigProfiles(allAccessContext, tc.query)
 			s.Require().NoError(err)
-			s.Require().EqualValues(expectedResp, configProfiles)
+			protoassert.Equal(s.T(), expectedResp, configProfiles)
 		})
 	}
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
     Pagination,
     Text,
@@ -31,6 +31,7 @@ import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
 import ControlLabels from './components/ControlLabels';
 import StatusIcon from './components/StatusIcon';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
 
 export type ClusterDetailsTableProps = {
     checkResultsCount: number;
@@ -46,6 +47,7 @@ export type ClusterDetailsTableProps = {
         checked: boolean,
         selection: string
     ) => void;
+    onClearFilters: () => void;
 };
 
 function ClusterDetailsTable({
@@ -58,9 +60,11 @@ function ClusterDetailsTable({
     searchFilter,
     onSearch,
     onCheckStatusSelect,
+    onClearFilters,
 }: ClusterDetailsTableProps) {
     /* eslint-disable no-nested-ternary */
     const { page, perPage, setPage, setPerPage } = pagination;
+    const { generatePathWithScanConfig } = useScanConfigRouter();
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
 
     function toggleRow(selectedRowIndex: number) {
@@ -139,10 +143,7 @@ function ClusterDetailsTable({
                     emptyProps={{
                         message: 'No results found for this cluster',
                     }}
-                    filteredEmptyProps={{
-                        title: 'No results found',
-                        message: 'Clear all filters and try again',
-                    }}
+                    filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) => (
                         <>
                             {data.map((checkResult, rowIndex) => {
@@ -155,10 +156,18 @@ function ClusterDetailsTable({
                                         <Tr>
                                             <Td dataLabel="Check">
                                                 <Link
-                                                    to={`${generatePath(coverageCheckDetailsPath, {
-                                                        checkName,
-                                                        profileName,
-                                                    })}?${TAB_NAV_QUERY}=${DETAILS_TAB}`}
+                                                    to={`${generatePathWithScanConfig(
+                                                        coverageCheckDetailsPath,
+                                                        {
+                                                            checkName,
+                                                            profileName,
+                                                        },
+                                                        {
+                                                            customParams: {
+                                                                [TAB_NAV_QUERY]: DETAILS_TAB,
+                                                            },
+                                                        }
+                                                    )}`}
                                                 >
                                                     {checkName}
                                                 </Link>
