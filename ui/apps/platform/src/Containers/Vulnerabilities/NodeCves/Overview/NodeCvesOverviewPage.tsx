@@ -32,6 +32,7 @@ import {
     nodeCVESearchFilterConfig,
     clusterSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
+import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
@@ -80,6 +81,7 @@ function NodeCvesOverviewPage() {
     const hasLegacySnoozeAbility = useHasLegacySnoozeAbility();
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
+    const snoozedCveCount = useSnoozedCveCount('Node');
 
     function onEntityTabChange(entityTab: 'CVE' | 'Node') {
         pagination.setPage(1);
@@ -172,6 +174,7 @@ function NodeCvesOverviewPage() {
                         <SnoozeCveToggleButton
                             searchFilter={searchFilter}
                             setSearchFilter={setSearchFilter}
+                            snoozedCveCount={snoozedCveCount}
                         />
                     </FlexItem>
                 </Flex>
