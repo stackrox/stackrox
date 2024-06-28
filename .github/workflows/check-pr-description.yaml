@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Check PR description
         env:
+          ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+          GH_TOKEN: ${{ github.token }}
           script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
           PR_DESCRIPTION: ${{ github.event.pull_request.body }}
         run: |
