@@ -134,7 +134,7 @@ func (s *fakeSplunk) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	body := r.Body
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 	bodyData, err := io.ReadAll(body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -150,5 +150,6 @@ func (s *fakeSplunk) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/text")
 	w.WriteHeader(200)
-	w.Write([]byte("ok"))
+	_, err := w.Write([]byte("ok"))
+	assert.NoError(s.tb, err)
 }
