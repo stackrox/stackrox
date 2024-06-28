@@ -150,6 +150,6 @@ func (s *fakeSplunk) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/text")
 	w.WriteHeader(200)
-	_, err := w.Write([]byte("ok"))
+	_, err = w.Write([]byte("ok"))
 	assert.NoError(s.tb, err)
 }
