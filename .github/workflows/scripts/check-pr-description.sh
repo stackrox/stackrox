@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-PR_DESCRIPTION=$(cat)
+PR_DESCRIPTION="$1"
 
 EOL='
 '
@@ -25,7 +25,7 @@ all_of=(
 )
 for task in "${all_of[@]}"; do
   if [[ "$PR_DESCRIPTION" = *"$EOL- [x] $task"* ]]; then
-    gh_log debug "'${task%% }' task is checked."
+    gh_log notice "'${task%% }' task is checked."
   else
     gh_log error "'${task%% }' task is not checked."
     fail="true"
@@ -50,7 +50,7 @@ done
 found="false"
 for task in "${any_of[@]}"; do
   if [[ "$PR_DESCRIPTION" = *"$EOL- [x] $task"* ]]; then
-    gh_log debug "'$task' task is checked."
+    gh_log notice "'$task' task is checked."
     found="true"
   fi
 done
