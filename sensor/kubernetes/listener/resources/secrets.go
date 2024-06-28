@@ -260,8 +260,12 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	isGlobalPullSecret := secret.GetNamespace() == openshiftConfigNamespace && secret.GetName() == openshiftConfigPullSecret
 
 	newIntegrationSet := set.NewStringSet()
-	for registryAddr, dce := range dockerConfig {
-		registryAddr = strings.TrimSpace(registryAddr)
+	for registryAddress, dce := range dockerConfig {
+		registryAddr := strings.TrimSpace(registryAddress)
+		if registryAddr != registryAddress {
+			log.Warnf("Spaces have been trimmed from registry adress %q found in secret %s/%s",
+				registryAddress, secret.GetNamespace(), secret.GetName())
+		}
 		if fromDefaultSA {
 			// Store the registry credentials so Sensor can reach it.
 			err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registryAddr, dce)
