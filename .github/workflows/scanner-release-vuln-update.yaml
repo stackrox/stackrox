@@ -31,6 +31,8 @@ jobs:
       volumes:
         # The updater makes heavy use of /tmp files.
         - /tmp:/tmp
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     strategy:
       # If one of the versions fails, it should not stop others from succeeding.
       fail-fast: false
@@ -42,12 +44,17 @@ jobs:
       ROX_PRODUCT_VERSION: ${{ matrix.version }}
       ROX_PRODUCT_TAG: ${{ matrix.tag }}
     steps:
-    - name: Recover docker image cache space
-      run: |
-        df --si /
-        docker system prune --force --all
-        df --si /
+    - name: Free up disk space
       shell: bash
+      run: |
+        set +e
+        set -x
+        df -h
+        docker system prune --force --all
+        for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
+          rm -rf "/mnt${delete:?}"
+        done
+        df -h
 
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
