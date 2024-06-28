@@ -132,7 +132,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest) (*storage.Image, error) {
 	log.Infof("GetImage %q", request.String())
 	log.Warn("Returning error")
-	return nil, status.Error(codes.Unknown, "Unknown error")
+	return nil, status.Error(codes.Unavailable, "Unknown error")
 }
 
 // CountImages counts the number of images that match the input query.

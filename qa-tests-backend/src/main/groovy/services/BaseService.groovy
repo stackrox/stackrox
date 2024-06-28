@@ -1,6 +1,5 @@
 package services
 
-import com.google.common.reflect.ClassPath
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
 import groovy.util.logging.Slf4j
@@ -26,12 +25,6 @@ import util.Keys
 @CompileStatic
 @Slf4j
 class BaseService {
-
-    private static final ClassLoader LOADER = Thread.currentThread().getContextClassLoader()
-    private static final String API_PKG = "io.stackrox.proto.api"
-    private static final String GRPC_SERVICE_CLASS_NAME_SUFFIX = "ServiceGrpc"
-    private static final String FIELD_NAME = "SERVICE_NAME"
-
     static final String BASIC_AUTH_USERNAME = Env.mustGetUsername()
     static final String BASIC_AUTH_PASSWORD = Env.mustGetPassword()
 
@@ -135,7 +128,8 @@ class BaseService {
 
             transportChannel = NettyChannelBuilder
                     .forAddress(Env.mustGetHostname(), Env.mustGetPort())
-                    .defaultServiceConfig(getServiceConfig())
+                    .disableServiceConfigLookUp()
+                    .defaultServiceConfig(serviceConfig)
                     .maxRetryAttempts(3)
                     .enableRetry()
                     .negotiationType(NegotiationType.TLS)
@@ -156,7 +150,7 @@ class BaseService {
     private static Map<String, ?> getServiceConfig() {
         return ["methodConfig": [
                 [
-                        "name"       : getGrpcServicesList(),
+                        "name"       : [["service": ""]],
                         "timeout"    : "30.0s",
                         "retryPolicy": [
                                 "maxAttempts"         : "3",
@@ -170,19 +164,12 @@ class BaseService {
                                         "INTERNAL",
                                         "RESOURCE_EXHAUSTED",
                                         "UNAVAILABLE",
+                                        "UNAUTHENTICATED",
                                         "UNKNOWN",
                                 ]
                         ]
                 ]
         ]]
-    }
-
-    private static List<LinkedHashMap<String, String>> getGrpcServicesList() {
-        return ClassPath.from(LOADER)
-                .getTopLevelClassesRecursive(API_PKG)
-                .findAll { it.name.endsWith(GRPC_SERVICE_CLASS_NAME_SUFFIX) }
-                .collect { it.load().getField(FIELD_NAME).get("").toString() }
-                .collect { ["service": it] }
     }
 
     static Channel getChannel() {
