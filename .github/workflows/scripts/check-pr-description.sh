@@ -7,11 +7,13 @@ PR_DESCRIPTION=$(cat)
 EOL='
 '
 
+fail="false"
+
 none_of=('change me!')
 for pattern in "${none_of[@]}"; do
   if [[ "$PR_DESCRIPTION" = *"$EOL$pattern"* ]]; then
     gh_log error "'${pattern}' found."
-    exit 1
+    fail="true"
   fi
 done
 
@@ -22,11 +24,11 @@ all_of=(
   'inspected CI results'
 )
 for task in "${all_of[@]}"; do
-  if [[ "$PR_DESCRIPTION" != *"$EOL- \[x\] $task".* ]]; then
+  if [[ "$PR_DESCRIPTION" = *"$EOL- [x] $task"* ]]; then
     gh_log debug "'${task%% }' task is checked."
   else
     gh_log error "'${task%% }' task is not checked."
-    exit 1
+    fail="true"
   fi
 done
 
@@ -41,14 +43,20 @@ any_of=(
 for task in "${any_of[@]}"; do
   if [[ "$PR_DESCRIPTION" = *"$EOL- [ ] $task"* ]]; then
     gh_log error "'$task' task is not checked."
-    exit 1
+    fail="true"
   fi
 done
+
+found="false"
 for task in "${any_of[@]}"; do
   if [[ "$PR_DESCRIPTION" = *"$EOL- [x] $task"* ]]; then
-    gh_log debug "at least '$task' task is checked."
-    exit 0
+    gh_log debug "'$task' task is checked."
+    found="true"
   fi
 done
-gh_log error 'none of the automated tests tasks are checked.'
-exit 1
+
+[[ "$found" = "false" ]] && gh_log error 'none of the automated tests tasks are checked.'
+
+if [[ "$fail" = "true" ]]; then
+    exit 1
+fi
