@@ -26,7 +26,10 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import { Pagination as PaginationParam } from 'services/types';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
-import useAnalytics, { WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED } from 'hooks/useAnalytics';
+import useAnalytics, {
+    WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
+    WORKLOAD_CVE_FILTER_APPLIED,
+} from 'hooks/useAnalytics';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
@@ -41,6 +44,7 @@ import {
     namespaceSearchFilterConfig,
     clusterSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import {
     SearchOption,
     IMAGE_SEARCH_OPTION,
@@ -196,6 +200,7 @@ function ImageCvePage() {
     const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
     const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
     const currentVulnerabilityState = useVulnerabilityState();
 
     const urlParams = useParams();
@@ -412,13 +417,10 @@ function ImageCvePage() {
                                 className="pf-v5-u-py-md"
                                 searchFilterConfig={searchFilterConfig}
                                 searchFilter={searchFilter}
-                                onFilterChange={(newFilter, { action }) => {
+                                onFilterChange={(newFilter, searchPayload) => {
                                     setSearchFilter(newFilter);
                                     setPage(1, 'replace');
-
-                                    if (action === 'ADD') {
-                                        // TODO - Add analytics tracking ROX-24532
-                                    }
+                                    trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
                                 }}
                             />
                         ) : (
