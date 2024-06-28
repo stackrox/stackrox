@@ -86,20 +86,14 @@ func (s *watcherSuite) waitForResourcesCreation(resources ...string) {
 	s.Eventually(func() bool {
 		// The context is ignored in the fake client, so we can simply pass context.Background
 		list, err := s.dynamicClient.Resource(gvr).List(context.Background(), metav1.ListOptions{})
-		if err != nil || len(list.Items) != len(resources) {
-			return false
-		}
-		return true
+		return err == nil && len(list.Items) == len(resources)
 	}, defaultTimeout, time.Millisecond, "the expected resources were not created on time: %v", resources)
 }
 
 func (s *watcherSuite) waitForResourcesRemoval() {
 	s.Eventually(func() bool {
 		list, err := s.dynamicClient.Resource(gvr).List(context.Background(), metav1.ListOptions{})
-		if err != nil || len(list.Items) > 0 {
-			return false
-		}
-		return true
+		return err == nil && len(list.Items) == 0
 	}, defaultTimeout, time.Millisecond, "the resources were not removed on time")
 }
 
