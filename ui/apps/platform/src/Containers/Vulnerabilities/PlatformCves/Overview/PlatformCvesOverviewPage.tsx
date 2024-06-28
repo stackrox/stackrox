@@ -31,6 +31,7 @@ import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 
 import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
+import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
 import { clusterSearchFilterConfig, platformCVESearchFilterConfig } from '../../searchFilterConfig';
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
@@ -74,6 +75,7 @@ function PlatformCvesOverviewPage() {
     const hasLegacySnoozeAbility = useHasLegacySnoozeAbility();
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
+    const snoozedCveCount = useSnoozedCveCount('Platform');
 
     function onEntityTabChange(entityTab: 'CVE' | 'Cluster') {
         pagination.setPage(1);
@@ -168,6 +170,7 @@ function PlatformCvesOverviewPage() {
                         <SnoozeCveToggleButton
                             searchFilter={searchFilter}
                             setSearchFilter={setSearchFilter}
+                            snoozedCveCount={snoozedCveCount}
                         />
                     </FlexItem>
                 </Flex>
