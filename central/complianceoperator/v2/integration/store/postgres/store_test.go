@@ -82,11 +82,6 @@ func (s *ComplianceIntegrationsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, complianceIntegration))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceIntegration), sac.ErrResourceAccessDenied)
 
-	foundComplianceIntegration, exists, err = store.Get(ctx, complianceIntegration.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), complianceIntegration, foundComplianceIntegration)
-
 	s.NoError(store.Delete(ctx, complianceIntegration.GetId()))
 	foundComplianceIntegration, exists, err = store.Get(ctx, complianceIntegration.GetId())
 	s.NoError(err)

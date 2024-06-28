@@ -89,11 +89,6 @@ func (s *ComplianceOperatorClusterScanConfigStatusesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, complianceOperatorClusterScanConfigStatus))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorClusterScanConfigStatus), sac.ErrResourceAccessDenied)
 
-	foundComplianceOperatorClusterScanConfigStatus, exists, err = store.Get(ctx, complianceOperatorClusterScanConfigStatus.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), complianceOperatorClusterScanConfigStatus, foundComplianceOperatorClusterScanConfigStatus)
-
 	s.NoError(store.Delete(ctx, complianceOperatorClusterScanConfigStatus.GetId()))
 	foundComplianceOperatorClusterScanConfigStatus, exists, err = store.Get(ctx, complianceOperatorClusterScanConfigStatus.GetId())
 	s.NoError(err)

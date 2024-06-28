@@ -82,11 +82,6 @@ func (s *ComplianceRunMetadataStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, complianceRunMetadata))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceRunMetadata), sac.ErrResourceAccessDenied)
 
-	foundComplianceRunMetadata, exists, err = store.Get(ctx, complianceRunMetadata.GetRunId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), complianceRunMetadata, foundComplianceRunMetadata)
-
 	s.NoError(store.Delete(ctx, complianceRunMetadata.GetRunId()))
 	foundComplianceRunMetadata, exists, err = store.Get(ctx, complianceRunMetadata.GetRunId())
 	s.NoError(err)

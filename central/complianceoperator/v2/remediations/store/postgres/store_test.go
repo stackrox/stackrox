@@ -89,11 +89,6 @@ func (s *ComplianceOperatorRemediationV2StoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, complianceOperatorRemediationV2))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorRemediationV2), sac.ErrResourceAccessDenied)
 
-	foundComplianceOperatorRemediationV2, exists, err = store.Get(ctx, complianceOperatorRemediationV2.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), complianceOperatorRemediationV2, foundComplianceOperatorRemediationV2)
-
 	s.NoError(store.Delete(ctx, complianceOperatorRemediationV2.GetId()))
 	foundComplianceOperatorRemediationV2, exists, err = store.Get(ctx, complianceOperatorRemediationV2.GetId())
 	s.NoError(err)

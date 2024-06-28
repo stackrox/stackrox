@@ -86,11 +86,6 @@ func (s *HashesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, hash))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, hash), sac.ErrResourceAccessDenied)
 
-	foundHash, exists, err = store.Get(ctx, hash.GetClusterId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), hash, foundHash)
-
 	s.NoError(store.Delete(ctx, hash.GetClusterId()))
 	foundHash, exists, err = store.Get(ctx, hash.GetClusterId())
 	s.NoError(err)

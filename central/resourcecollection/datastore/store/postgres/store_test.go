@@ -80,11 +80,6 @@ func (s *CollectionsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, resourceCollection))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, resourceCollection), sac.ErrResourceAccessDenied)
 
-	foundResourceCollection, exists, err = store.Get(ctx, resourceCollection.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), resourceCollection, foundResourceCollection)
-
 	s.NoError(store.Delete(ctx, resourceCollection.GetId()))
 	foundResourceCollection, exists, err = store.Get(ctx, resourceCollection.GetId())
 	s.NoError(err)

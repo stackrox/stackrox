@@ -79,11 +79,6 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, policyCategory))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, policyCategory), sac.ErrResourceAccessDenied)
 
-	foundPolicyCategory, exists, err = store.Get(ctx, policyCategory.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), policyCategory, foundPolicyCategory)
-
 	s.NoError(store.Delete(ctx, policyCategory.GetId()))
 	foundPolicyCategory, exists, err = store.Get(ctx, policyCategory.GetId())
 	s.NoError(err)

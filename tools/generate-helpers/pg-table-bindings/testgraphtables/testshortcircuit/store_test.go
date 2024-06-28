@@ -79,11 +79,6 @@ func (s *TestShortCircuitsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, testShortCircuit))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, testShortCircuit), sac.ErrResourceAccessDenied)
 
-	foundTestShortCircuit, exists, err = store.Get(ctx, testShortCircuit.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), testShortCircuit, foundTestShortCircuit)
-
 	s.NoError(store.Delete(ctx, testShortCircuit.GetId()))
 	foundTestShortCircuit, exists, err = store.Get(ctx, testShortCircuit.GetId())
 	s.NoError(err)

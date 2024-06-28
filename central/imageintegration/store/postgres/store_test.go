@@ -79,11 +79,6 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, imageIntegration))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, imageIntegration), sac.ErrResourceAccessDenied)
 
-	foundImageIntegration, exists, err = store.Get(ctx, imageIntegration.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), imageIntegration, foundImageIntegration)
-
 	s.NoError(store.Delete(ctx, imageIntegration.GetId()))
 	foundImageIntegration, exists, err = store.Get(ctx, imageIntegration.GetId())
 	s.NoError(err)

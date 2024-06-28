@@ -82,11 +82,6 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, deployment))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, deployment), sac.ErrResourceAccessDenied)
 
-	foundDeployment, exists, err = store.Get(ctx, deployment.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), deployment, foundDeployment)
-
 	s.NoError(store.Delete(ctx, deployment.GetId()))
 	foundDeployment, exists, err = store.Get(ctx, deployment.GetId())
 	s.NoError(err)

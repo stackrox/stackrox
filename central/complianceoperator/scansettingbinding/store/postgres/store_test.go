@@ -79,11 +79,6 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, complianceOperatorScanSettingBinding))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorScanSettingBinding), sac.ErrResourceAccessDenied)
 
-	foundComplianceOperatorScanSettingBinding, exists, err = store.Get(ctx, complianceOperatorScanSettingBinding.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), complianceOperatorScanSettingBinding, foundComplianceOperatorScanSettingBinding)
-
 	s.NoError(store.Delete(ctx, complianceOperatorScanSettingBinding.GetId()))
 	foundComplianceOperatorScanSettingBinding, exists, err = store.Get(ctx, complianceOperatorScanSettingBinding.GetId())
 	s.NoError(err)

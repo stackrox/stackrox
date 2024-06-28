@@ -79,11 +79,6 @@ func (s *BlobsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, blob))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, blob), sac.ErrResourceAccessDenied)
 
-	foundBlob, exists, err = store.Get(ctx, blob.GetName())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), blob, foundBlob)
-
 	s.NoError(store.Delete(ctx, blob.GetName()))
 	foundBlob, exists, err = store.Get(ctx, blob.GetName())
 	s.NoError(err)

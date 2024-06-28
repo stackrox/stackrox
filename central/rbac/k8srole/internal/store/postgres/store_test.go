@@ -82,11 +82,6 @@ func (s *K8sRolesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, k8SRole))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, k8SRole), sac.ErrResourceAccessDenied)
 
-	foundK8SRole, exists, err = store.Get(ctx, k8SRole.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), k8SRole, foundK8SRole)
-
 	s.NoError(store.Delete(ctx, k8SRole.GetId()))
 	foundK8SRole, exists, err = store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)

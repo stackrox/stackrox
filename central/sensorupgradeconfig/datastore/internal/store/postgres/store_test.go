@@ -56,11 +56,6 @@ func (s *SensorUpgradeConfigsStoreSuite) TestStore() {
 	s.True(exists)
 	protoassert.Equal(s.T(), sensorUpgradeConfig, foundSensorUpgradeConfig)
 
-	foundSensorUpgradeConfig, exists, err = store.Get(ctx)
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), sensorUpgradeConfig, foundSensorUpgradeConfig)
-
 	s.NoError(store.Delete(ctx))
 	foundSensorUpgradeConfig, exists, err = store.Get(ctx)
 	s.NoError(err)

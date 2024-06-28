@@ -79,11 +79,6 @@ func (s *RolesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, role))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, role), sac.ErrResourceAccessDenied)
 
-	foundRole, exists, err = store.Get(ctx, role.GetName())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), role, foundRole)
-
 	s.NoError(store.Delete(ctx, role.GetName()))
 	foundRole, exists, err = store.Get(ctx, role.GetName())
 	s.NoError(err)

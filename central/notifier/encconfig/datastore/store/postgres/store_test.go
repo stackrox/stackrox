@@ -56,11 +56,6 @@ func (s *NotifierEncConfigsStoreSuite) TestStore() {
 	s.True(exists)
 	protoassert.Equal(s.T(), notifierEncConfig, foundNotifierEncConfig)
 
-	foundNotifierEncConfig, exists, err = store.Get(ctx)
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), notifierEncConfig, foundNotifierEncConfig)
-
 	s.NoError(store.Delete(ctx))
 	foundNotifierEncConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
