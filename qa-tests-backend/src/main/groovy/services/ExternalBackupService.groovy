@@ -21,6 +21,7 @@ class ExternalBackupService extends BaseService {
             String bucket = Env.mustGetAWSS3BucketName(),
             String region = Env.mustGetAWSS3BucketRegion(),
             String endpoint = "",
+            Boolean useIam = false,
             String accessKeyId = Env.mustGetAWSAccessKeyID(),
             String accessKey = Env.mustGetAWSSecretAccessKey())  {
         S3Config s3Config = S3Config.newBuilder()
@@ -28,7 +29,7 @@ class ExternalBackupService extends BaseService {
                 .setBucket(bucket)
                 .setRegion(region)
                 .setEndpoint(endpoint)
-                .setUseIam(false)
+                .setUseIam(useIam)
                 .setAccessKeyId(accessKeyId)
                 .setSecretAccessKey(accessKey)
                 .build()

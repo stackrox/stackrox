@@ -5,24 +5,29 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	awsS3 "github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	awsS3 "github.com/aws/aws-sdk-go-v2/service/s3"
+	s3Types "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/smithy-go"
+	// smithyHttp "github.com/aws/smithy-go/transport/http"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 const (
@@ -34,8 +39,8 @@ var log = logging.LoggerForModule()
 
 type s3 struct {
 	integration *storage.ExternalBackup
-	uploader    *s3manager.Uploader
-	svc         *awsS3.S3
+	client      *awsS3.Client
+	uploader    *manager.Uploader
 }
 
 func validate(conf *storage.S3Config) error {
@@ -60,48 +65,55 @@ func validate(conf *storage.S3Config) error {
 }
 
 func newS3(integration *storage.ExternalBackup) (*s3, error) {
-	s3Config, ok := integration.Config.(*storage.ExternalBackup_S3)
+	backupConfig, ok := integration.Config.(*storage.ExternalBackup_S3)
 	if !ok {
 		return nil, errors.New("S3 configuration required")
 	}
-	conf := s3Config.S3
-	if err := validate(conf); err != nil {
+	if err := validate(backupConfig.S3); err != nil {
 		return nil, err
 	}
 
-	awsConfig := &aws.Config{
-		Region:     aws.String(conf.GetRegion()),
-		HTTPClient: &http.Client{Transport: proxy.RoundTripper()},
+	awsOpts := []func(*config.LoadOptions) error{
+		config.WithRegion(backupConfig.S3.GetRegion()),
+		config.WithHTTPClient(&http.Client{Transport: proxy.RoundTripper()}),
+		config.WithClientLogMode(aws.LogSigning | aws.LogRequest),
 	}
-
-	endpoint := conf.GetEndpoint()
-	if endpoint != "" {
-		awsConfig.Endpoint = aws.String(endpoint)
+	if !backupConfig.S3.GetUseIam() {
+		awsOpts = append(awsOpts,
+			config.WithCredentialsProvider(
+				credentials.NewStaticCredentialsProvider(
+					backupConfig.S3.GetAccessKeyId(), backupConfig.S3.GetSecretAccessKey(), "",
+				),
+			),
+		)
 	}
-
-	if !conf.GetUseIam() {
-		awsConfig.Credentials = credentials.NewStaticCredentials(conf.GetAccessKeyId(), conf.GetSecretAccessKey(), "")
-	}
-	sess, err := session.NewSession(awsConfig)
+	awsConfig, err := config.LoadDefaultConfig(context.Background(), awsOpts...)
 	if err != nil {
 		return nil, err
 	}
+	endpoint := backupConfig.S3.GetEndpoint()
+	if endpoint != "" {
+		s3URL := fmt.Sprintf("https://%s", urlfmt.TrimHTTPPrefixes(endpoint))
+		if _, err := url.Parse(s3URL); err != nil {
+			return nil, errox.InvalidArgs.CausedByf("invalid URL %q", endpoint)
+		}
+		awsConfig.BaseEndpoint = aws.String(s3URL)
+	}
+	client := awsS3.NewFromConfig(awsConfig, func(o *awsS3.Options) {
+		// Google Cloud Storage alters the Accept-Encoding header, which breaks the v2 request signature.
+		// See https://github.com/aws/aws-sdk-go-v2/issues/1816.
+		if strings.Contains(endpoint, "storage.googleapis.com") {
+			ignoreSigningHeaders(o, []string{"Accept-Encoding"})
+		}
+	})
 	return &s3{
 		integration: integration,
-		uploader:    s3manager.NewUploader(sess),
-		svc:         awsS3.New(sess),
+		client:      client,
+		uploader:    manager.NewUploader(client),
 	}, nil
 }
 
-func (s *s3) send(duration time.Duration, ui *s3manager.UploadInput) error {
-	ctx, cancel := context.WithTimeout(context.Background(), duration)
-	defer cancel()
-
-	_, err := s.uploader.UploadWithContext(aws.Context(ctx), ui)
-	return err
-}
-
-func sortS3Objects(objects []*awsS3.Object) {
+func sortS3Objects(objects []s3Types.Object) {
 	sort.SliceStable(objects, func(i, j int) bool {
 		o1, o2 := objects[i], objects[j]
 		if o2.LastModified == nil {
@@ -115,28 +127,31 @@ func sortS3Objects(objects []*awsS3.Object) {
 	})
 }
 
-func (s *s3) pruneBackupsIfNecessary() error {
-	objects, err := s.svc.ListObjects(&awsS3.ListObjectsInput{
+func (s *s3) pruneBackupsIfNecessary(ctx context.Context) error {
+	objects, err := s.client.ListObjects(ctx, &awsS3.ListObjectsInput{
 		Bucket: aws.String(s.integration.GetS3().GetBucket()),
 		Prefix: aws.String(s.prefixKey("backup")),
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to list objects for s3 bucket")
+		return s.createError("failed to list objects for s3 bucket", err)
 	}
 	sortS3Objects(objects.Contents)
 
-	var objectsToRemove []*awsS3.Object
+	var objectsToRemove []s3Types.Object
 	if len(objects.Contents) > int(s.integration.GetBackupsToKeep()) {
 		objectsToRemove = objects.Contents[s.integration.GetBackupsToKeep():]
 	}
 
-	for _, o := range objectsToRemove {
-		_, err := s.svc.DeleteObject(&awsS3.DeleteObjectInput{
+	for _, obj := range objectsToRemove {
+		_, err := s.client.DeleteObject(ctx, &awsS3.DeleteObjectInput{
 			Bucket: aws.String(s.integration.GetS3().GetBucket()),
-			Key:    o.Key,
+			Key:    obj.Key,
 		})
 		if err != nil {
-			return errors.Wrapf(err, "failed to remove backup %q from bucket %q", *o.Key, s.integration.GetS3().GetBucket())
+			return s.createError(
+				fmt.Sprintf("failed to remove backup %q from bucket %q", *obj.Key, s.integration.GetS3().GetBucket()),
+				err,
+			)
 		}
 	}
 	return nil
@@ -154,34 +169,38 @@ func (s *s3) Backup(reader io.ReadCloser) error {
 	}()
 
 	log.Info("Starting S3 Backup")
+	ctx, cancel := context.WithTimeout(context.Background(), backupMaxTimeout)
+	defer cancel()
+
 	formattedTime := time.Now().Format("2006-01-02T15:04:05")
 	key := fmt.Sprintf("backup_%s.zip", formattedTime)
 	formattedKey := s.prefixKey(key)
-	ui := &s3manager.UploadInput{
+	if _, err := s.uploader.Upload(ctx, &awsS3.PutObjectInput{
 		Bucket: aws.String(s.integration.GetS3().GetBucket()),
 		Key:    aws.String(formattedKey),
 		Body:   reader,
-	}
-	if err := s.send(backupMaxTimeout, ui); err != nil {
+	}); err != nil {
 		return s.createError(fmt.Sprintf("error creating backup in bucket %q with key %q",
 			s.integration.GetS3().GetBucket(), formattedKey), err)
 	}
 	log.Info("Successfully backed up to S3")
-	return s.pruneBackupsIfNecessary()
+	return s.pruneBackupsIfNecessary(ctx)
 }
 
 func (s *s3) Test() error {
+	ctx, cancel := context.WithTimeout(context.Background(), testMaxTimeout)
+	defer cancel()
+
 	formattedKey := s.prefixKey("test")
-	ui := &s3manager.UploadInput{
+	if _, err := s.uploader.Upload(ctx, &awsS3.PutObjectInput{
 		Bucket: aws.String(s.integration.GetS3().GetBucket()),
 		Key:    aws.String(formattedKey),
 		Body:   strings.NewReader("This is a test of the StackRox integration with this bucket"),
-	}
-	if err := s.send(testMaxTimeout, ui); err != nil {
+	}); err != nil {
 		return s.createError(fmt.Sprintf("error creating test object %q in bucket %q",
 			formattedKey, s.integration.GetS3().GetBucket()), err)
 	}
-	_, err := s.svc.DeleteObject(&awsS3.DeleteObjectInput{
+	_, err := s.client.DeleteObject(ctx, &awsS3.DeleteObjectInput{
 		Bucket: aws.String(s.integration.GetS3().GetBucket()),
 		Key:    aws.String(formattedKey),
 	})
@@ -193,12 +212,11 @@ func (s *s3) Test() error {
 }
 
 func (s *s3) createError(msg string, err error) error {
-	if awsErr, _ := err.(awserr.Error); awsErr != nil {
-		if awsErr.Message() != "" {
-			msg = fmt.Sprintf("%s (code: %s; message: %s)", msg, awsErr.Code(), awsErr.Message())
-		} else {
-			msg = fmt.Sprintf("%s (code: %s)", msg, awsErr.Code())
-		}
+	if awsErr, _ := err.(smithy.APIError); awsErr != nil {
+		msg = fmt.Sprintf(
+			"%s (code: %s; message: %s; fault: %s)",
+			msg, awsErr.ErrorCode(), awsErr.ErrorMessage(), awsErr.ErrorFault(),
+		)
 	}
 	log.Errorf("S3 backup error: %v", err)
 	return errors.New(msg)
