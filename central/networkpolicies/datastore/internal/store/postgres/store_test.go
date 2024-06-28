@@ -82,11 +82,6 @@ func (s *NetworkpoliciesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, networkPolicy))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, networkPolicy), sac.ErrResourceAccessDenied)
 
-	foundNetworkPolicy, exists, err = store.Get(ctx, networkPolicy.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), networkPolicy, foundNetworkPolicy)
-
 	s.NoError(store.Delete(ctx, networkPolicy.GetId()))
 	foundNetworkPolicy, exists, err = store.Get(ctx, networkPolicy.GetId())
 	s.NoError(err)

@@ -56,11 +56,6 @@ func (s *InstallationInfosStoreSuite) TestStore() {
 	s.True(exists)
 	protoassert.Equal(s.T(), installationInfo, foundInstallationInfo)
 
-	foundInstallationInfo, exists, err = store.Get(ctx)
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), installationInfo, foundInstallationInfo)
-
 	s.NoError(store.Delete(ctx))
 	foundInstallationInfo, exists, err = store.Get(ctx)
 	s.NoError(err)

@@ -79,11 +79,6 @@ func (s *APITokensStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, tokenMetadata))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, tokenMetadata), sac.ErrResourceAccessDenied)
 
-	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), tokenMetadata, foundTokenMetadata)
-
 	s.NoError(store.Delete(ctx, tokenMetadata.GetId()))
 	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)

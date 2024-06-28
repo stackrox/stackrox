@@ -56,11 +56,6 @@ func (s *DelegatedRegistryConfigsStoreSuite) TestStore() {
 	s.True(exists)
 	protoassert.Equal(s.T(), delegatedRegistryConfig, foundDelegatedRegistryConfig)
 
-	foundDelegatedRegistryConfig, exists, err = store.Get(ctx)
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), delegatedRegistryConfig, foundDelegatedRegistryConfig)
-
 	s.NoError(store.Delete(ctx))
 	foundDelegatedRegistryConfig, exists, err = store.Get(ctx)
 	s.NoError(err)

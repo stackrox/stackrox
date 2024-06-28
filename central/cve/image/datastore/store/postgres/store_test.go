@@ -79,11 +79,6 @@ func (s *ImageCvesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, imageCVE))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, imageCVE), sac.ErrResourceAccessDenied)
 
-	foundImageCVE, exists, err = store.Get(ctx, imageCVE.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), imageCVE, foundImageCVE)
-
 	s.NoError(store.Delete(ctx, imageCVE.GetId()))
 	foundImageCVE, exists, err = store.Get(ctx, imageCVE.GetId())
 	s.NoError(err)

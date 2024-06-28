@@ -79,11 +79,6 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, simpleAccessScope))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, simpleAccessScope), sac.ErrResourceAccessDenied)
 
-	foundSimpleAccessScope, exists, err = store.Get(ctx, simpleAccessScope.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), simpleAccessScope, foundSimpleAccessScope)
-
 	s.NoError(store.Delete(ctx, simpleAccessScope.GetId()))
 	foundSimpleAccessScope, exists, err = store.Get(ctx, simpleAccessScope.GetId())
 	s.NoError(err)

@@ -79,11 +79,6 @@ func (s *DeclarativeConfigHealthsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, declarativeConfigHealth))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, declarativeConfigHealth), sac.ErrResourceAccessDenied)
 
-	foundDeclarativeConfigHealth, exists, err = store.Get(ctx, declarativeConfigHealth.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), declarativeConfigHealth, foundDeclarativeConfigHealth)
-
 	s.NoError(store.Delete(ctx, declarativeConfigHealth.GetId()))
 	foundDeclarativeConfigHealth, exists, err = store.Get(ctx, declarativeConfigHealth.GetId())
 	s.NoError(err)

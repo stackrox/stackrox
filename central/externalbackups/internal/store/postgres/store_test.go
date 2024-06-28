@@ -79,11 +79,6 @@ func (s *ExternalBackupsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, externalBackup))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, externalBackup), sac.ErrResourceAccessDenied)
 
-	foundExternalBackup, exists, err = store.Get(ctx, externalBackup.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), externalBackup, foundExternalBackup)
-
 	s.NoError(store.Delete(ctx, externalBackup.GetId()))
 	foundExternalBackup, exists, err = store.Get(ctx, externalBackup.GetId())
 	s.NoError(err)

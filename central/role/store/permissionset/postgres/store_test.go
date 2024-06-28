@@ -79,11 +79,6 @@ func (s *PermissionSetsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, permissionSet))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, permissionSet), sac.ErrResourceAccessDenied)
 
-	foundPermissionSet, exists, err = store.Get(ctx, permissionSet.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), permissionSet, foundPermissionSet)
-
 	s.NoError(store.Delete(ctx, permissionSet.GetId()))
 	foundPermissionSet, exists, err = store.Get(ctx, permissionSet.GetId())
 	s.NoError(err)

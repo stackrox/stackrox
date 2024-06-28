@@ -64,11 +64,6 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.True(exists)
 	protoassert.Equal(s.T(), {{$name}}, found{{.TrimmedType|upperCamelCase}})
 
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx)
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), {{$name}}, found{{.TrimmedType|upperCamelCase}})
-
 	s.NoError(store.Delete(ctx))
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx)
 	s.NoError(err)

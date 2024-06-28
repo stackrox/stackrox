@@ -79,11 +79,6 @@ func (s *SecuredUnitsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, securedUnits))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, securedUnits), sac.ErrResourceAccessDenied)
 
-	foundSecuredUnits, exists, err = store.Get(ctx, securedUnits.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), securedUnits, foundSecuredUnits)
-
 	s.NoError(store.Delete(ctx, securedUnits.GetId()))
 	foundSecuredUnits, exists, err = store.Get(ctx, securedUnits.GetId())
 	s.NoError(err)
