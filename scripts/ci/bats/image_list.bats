@@ -17,7 +17,7 @@ function setup() {
   tag="$(make --quiet --no-print-directory tag)"
   local image_list
   image_list="$(mktemp)"
-  CI_JOB_NAME="branch-ci-stackrox-stackrox-master-merge-gke-upgrade-tests" populate_stackrox_image_list $image_list
+  CI_JOB_NAME="branch-ci-stackrox-stackrox-master-merge-gke-upgrade-tests" populate_stackrox_image_list "$image_list"
   run cat "${image_list}"
   assert_success
   assert_output --partial "main ${tag}"
@@ -30,7 +30,7 @@ function setup() {
   tag="$(make --quiet --no-print-directory tag)"
   local image_list
   image_list="$(mktemp)"
-  CI_JOB_NAME="master-race-condition-qa-e2e-tests" populate_stackrox_image_list $image_list
+  CI_JOB_NAME="master-race-condition-qa-e2e-tests" populate_stackrox_image_list "$image_list"
   run cat "${image_list}"
   assert_success
   assert_output --partial "main ${tag}-rcd"
