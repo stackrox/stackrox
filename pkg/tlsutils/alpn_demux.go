@@ -1,6 +1,7 @@
 package tlsutils
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -31,7 +32,8 @@ type ListenerControl interface {
 type ALPNDemuxConfig struct {
 	MaxCloseWait time.Duration // Maximum time to wait for a Close to succeed before no longer accepting
 	// connections on sub-listeners.
-	OnHandshakeError func(net.Conn, error) // If non-nil, called whenever there is a TLS handshake error.
+	OnHandshakeError    func(net.Conn, error) // If non-nil, called whenever there is a TLS handshake error.
+	TLSHandshakeTimeout time.Duration         // maximum time allowed for the TLS handshake to finish
 }
 
 // ALPNDemux takes in a single listener, and demultiplexes it onto an arbitrary number of listeners based on the
@@ -70,11 +72,18 @@ func ALPNDemux(tlsListener net.Listener, listenersByProto map[string]*net.Listen
 		chanByProtoMap[proto] = ch
 	}
 
+	tlsHandshakeTimeout := config.TLSHandshakeTimeout
+	if tlsHandshakeTimeout == 0 {
+		// arbitrary value
+		tlsHandshakeTimeout = 2 * time.Second
+	}
+
 	l := &alpnDemuxListener{
-		lis:     tlsListener,
-		closed:  concurrency.NewErrorSignal(),
-		chanMap: chanByProtoMap,
-		cfg:     config,
+		lis:                 tlsListener,
+		closed:              concurrency.NewErrorSignal(),
+		chanMap:             chanByProtoMap,
+		cfg:                 config,
+		tlsHandshakeTimeout: tlsHandshakeTimeout,
 	}
 	go l.run()
 
@@ -89,10 +98,11 @@ func ALPNDemux(tlsListener net.Listener, listenersByProto map[string]*net.Listen
 }
 
 type alpnDemuxListener struct {
-	lis     net.Listener
-	closed  concurrency.ErrorSignal
-	chanMap map[string]chan<- net.Conn
-	cfg     ALPNDemuxConfig
+	lis                 net.Listener
+	closed              concurrency.ErrorSignal
+	chanMap             map[string]chan<- net.Conn
+	cfg                 ALPNDemuxConfig
+	tlsHandshakeTimeout time.Duration
 }
 
 func (l *alpnDemuxListener) Addr() net.Addr {
@@ -155,7 +165,9 @@ func (l *alpnDemuxListener) doDispatch(conn net.Conn) error {
 		return ErrNoTLSConn
 	}
 
-	if err := tlsConn.Handshake(); err != nil {
+	ctx, cancel := context.WithTimeoutCause(context.Background(), l.tlsHandshakeTimeout, errors.New("TLS handshake timeout"))
+	defer cancel()
+	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		return err
 	}
 

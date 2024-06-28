@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"net"
+	"time"
 
 	"google.golang.org/grpc/credentials"
 )
@@ -30,13 +31,15 @@ func (c credsFromConn) ClientHandshake(_ context.Context, _ string, _ net.Conn) 
 func (c credsFromConn) ServerHandshake(rawConn net.Conn) (net.Conn, credentials.AuthInfo, error) {
 	tlsConn, _ := rawConn.(interface {
 		net.Conn
-		Handshake() error
+		HandshakeContext(ctx context.Context) error
 		ConnectionState() tls.ConnectionState
 	})
 	if tlsConn == nil {
 		return rawConn, nil, nil
 	}
-	if err := tlsConn.Handshake(); err != nil {
+	ctx, cancel := context.WithTimeoutCause(context.Background(), 2*time.Second, errors.New("TLS handshake timeout"))
+	defer cancel()
+	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		log.Debugf("TLS handshake error from %q: %v", rawConn.RemoteAddr(), err)
 		return nil, nil, err
 	}
