@@ -133,6 +133,7 @@ create_cluster() {
     # The "cluster" secondary range is for pods ("--cluster-ipv4-cidr").
     # The "services" secondary range is for ClusterIP services ("--services-ipv4-cidr").
     # See https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips#cluster_sizing.
+    # We specify secondary subnet IP so that GKE default (34.118.224.0) is not used. (ROX-22431)
 
     REGION=us-central1
     NUM_NODES="${NUM_NODES:-3}"
@@ -172,7 +173,7 @@ create_cluster() {
             --disk-size="${DISK_SIZE_GB}GB" \
             --create-subnetwork range=/28 \
             --cluster-ipv4-cidr=/20 \
-            --services-ipv4-cidr=/24 \
+            --services-ipv4-cidr=10.0.0.0/24 \
             --enable-ip-alias \
             --enable-network-policy \
             --no-enable-autorepair \
