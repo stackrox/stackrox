@@ -32,7 +32,8 @@ type SearchFilterAutocompleteProps = {
 
 function getSelectOptions(
     data: SearchAutocompleteQueryResponse | undefined,
-    isLoading: boolean
+    isLoading: boolean,
+    filterValue: string
 ): SelectOptionProps[] {
     if (isLoading) {
         return [
@@ -63,9 +64,8 @@ function getSelectOptions(
 
     return [
         {
-            isDisabled: false,
-            children: `No results found`,
-            value: 'no results',
+            value: filterValue,
+            children: `Add "${filterValue}"`,
         },
     ];
 }
@@ -106,7 +106,11 @@ function SearchFilterAutocomplete({
         }
     );
 
-    const selectOptions: SelectOptionProps[] = getSelectOptions(data, isLoading || isTyping);
+    const selectOptions: SelectOptionProps[] = getSelectOptions(
+        data,
+        isLoading || isTyping,
+        filterValue
+    );
 
     const onToggleClick = () => {
         setIsOpen(!isOpen);
@@ -116,7 +120,7 @@ function SearchFilterAutocomplete({
         _event: React.MouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
-        if (value && value !== 'no results') {
+        if (value) {
             onChange(ensureString(value));
             setFilterValue('');
         }
@@ -127,6 +131,11 @@ function SearchFilterAutocomplete({
 
     const onTextInputChange = (_event: React.FormEvent<HTMLInputElement>, value: string) => {
         onChange(value);
+        if (!isOpen) {
+            setIsOpen(true);
+        } else if (isOpen && value === '') {
+            setIsOpen(false);
+        }
         setFilterValueDebounced(value);
         setIsTyping(true);
     };
@@ -167,14 +176,14 @@ function SearchFilterAutocomplete({
         switch (event.key) {
             // Select the first available option
             case 'Enter':
-                if (isOpen && focusedItem.value !== 'no results') {
-                    const newValue = String(focusedItem.children);
+                if (isOpen) {
+                    const newValue = ensureString(focusedItem.value);
                     onChange(newValue);
                     onSearch(newValue);
                     setFilterValue('');
                 }
 
-                setIsOpen((prevIsOpen) => !prevIsOpen);
+                setIsOpen(false);
                 setFocusedItemIndex(null);
                 setActiveItem(null);
 
@@ -254,6 +263,7 @@ function SearchFilterAutocomplete({
                         <SelectOption
                             key={option.value || option.children}
                             isFocused={focusedItemIndex === index}
+                            isSelected={false}
                             className={option.className}
                             onClick={() => {
                                 onChange(option.value);
