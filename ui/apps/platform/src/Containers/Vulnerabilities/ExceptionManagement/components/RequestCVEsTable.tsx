@@ -22,7 +22,7 @@ import DateDistance from 'Components/DateDistance';
 import {
     aggregateByCVSS,
     aggregateByCreatedTime,
-    aggregateByImageSha,
+    aggregateByDistinctCount,
     getScoreVersionsForTopCVSS,
     sortCveDistroList,
     getWorkloadSortFields,
@@ -104,7 +104,7 @@ function RequestCVEsTable({
                             <Th sort={getSortParams('CVE')}>CVE</Th>
                             <Th>Images by severity</Th>
                             <Th sort={getSortParams('CVSS', aggregateByCVSS)}>CVSS</Th>
-                            <Th sort={getSortParams('Image sha', aggregateByImageSha)}>
+                            <Th sort={getSortParams('Image sha', aggregateByDistinctCount)}>
                                 Affected images
                             </Th>
                             <Th sort={getSortParams('CVE Created Time', aggregateByCreatedTime)}>
