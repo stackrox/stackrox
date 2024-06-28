@@ -21,6 +21,12 @@ jobs:
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             check-pr-description "$PR_DESCRIPTION"
 
+  check-template-change:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
       - name: Check if PR template has changed
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -30,8 +36,7 @@ jobs:
           if gh pr view --repo "$GITHUB_REPOSITORY" "$PR_NUMBER" \
             --json files -q '.files[]|.path' | grep "$PR_TEMPLATE"; then
 
-            echo "::notice file=$PR_TEMPLATE::PR template changed."
-            # shellcheck disable=SC2016
-            echo ':warning: The PR template has been modified in the PR.
-          Please check if `.github/workflow/check-pr-description.sh` is up to date.' >> "$GITHUB_STEP_SUMMARY"
+            echo "::notice file=$PR_TEMPLATE,title=Action required::Please check if" \
+            '.github/workflows/scripts/check-pr-description.sh' \
+            'needs and update as well.'
           fi

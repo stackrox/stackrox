@@ -25,7 +25,7 @@ all_of=(
 )
 for task in "${all_of[@]}"; do
   if [[ "$PR_DESCRIPTION" = *"$EOL- [x] $task"* ]]; then
-    gh_log notice "'${task%% }' task is checked."
+    gh_log debug "'${task%% }' task is checked."
   else
     gh_log error "'${task%% }' task is not checked."
     fail="true"
@@ -50,12 +50,12 @@ done
 found="false"
 for task in "${any_of[@]}"; do
   if [[ "$PR_DESCRIPTION" = *"$EOL- [x] $task"* ]]; then
-    gh_log notice "'$task' task is checked."
+    gh_log debug "'$task' task is checked."
     found="true"
   fi
 done
 
-[[ "$found" = "false" ]] && gh_log error 'none of the automated tests tasks are checked.'
+[[ "$found" = "false" ]] && gh_log error 'None of the automated tests tasks are checked.'
 
 if [[ "$fail" = "true" ]]; then
     exit 1
