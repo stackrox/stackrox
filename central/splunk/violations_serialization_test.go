@@ -62,9 +62,10 @@ func (s *violationSerializationTestSuite) TestViolationSerialization() {
 	// Query server
 	client := server.Client()
 	client.Timeout = 5 * time.Second
-	requestBody := bytes.NewBufferString("" /*`{"from_checkpoint":"2000-01-01T00:00:000Z__2024-06-26T22:00:000Z__"}`*/)
-	req, err := http.NewRequest(http.MethodPost, server.URL+"?from_checkpoint=2000-01-01T00:00:00Z__2024-06-26T22:00:00Z", requestBody)
-	s.Require().NoError(err)
+	requestBody := bytes.NewBufferString("")
+	queryString := "?from_checkpoint=2000-01-01T00:00:00Z__2024-06-26T22:00:00Z"
+	req, reqErr := http.NewRequest(http.MethodPost, server.URL+queryString, requestBody)
+	s.Require().NoError(reqErr)
 	resp, err := client.Do(req)
 	s.Require().NoError(err)
 
