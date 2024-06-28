@@ -172,7 +172,6 @@ spec:
     taskRef:
       name: determine-image-tag-oci-ta
 
-  # TODO: move to oci-ta
   - name: copy-subscription-manager-activation-key
     params:
       - name: SOURCE_ARTIFACT
@@ -233,7 +232,6 @@ spec:
           - name: IMAGE_EXPIRES_AFTER
             value: $(params.ociArtifactExpiresAfter)
 
-  # TODO: move to oci-ta
   - name: fetch-external-networks
     params:
       - name: SOURCE_ARTIFACT
@@ -338,11 +336,6 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    # TODO: ensure order of tasks
-    runAfter:
-    - copy-subscription-manager-activation-key
-    - prefetch-dependencies
-    - fetch-external-networks
     taskRef:
       params:
       - name: name
