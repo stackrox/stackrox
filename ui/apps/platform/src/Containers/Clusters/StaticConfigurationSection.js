@@ -44,9 +44,18 @@ const StaticConfigurationSection = ({
     isManagerTypeNonConfigurable,
     handleChange,
 }) => {
+    const filteredRuntimeOptions = runtimeOptions.filter((option) => {
+        // EBPF has been removed for secured clusters >= 4.5, but
+        // needs to be displayed for clusters on older versions.
+        //
+        // If the manager type is configurable (i.e. not helm or operator)
+        // we don't want EBPF as a selectable option, so filter it out,
+        // otherwise include all options so it is displayed correctly.
+        return isManagerTypeNonConfigurable || option.value !== 'EBPF';
+    });
     // curry the change handlers for the select inputs
     const onCollectionMethodChange = getSelectComparison(
-        runtimeOptions,
+        filteredRuntimeOptions,
         'collectionMethod',
         selectedCluster,
         handleChange
@@ -167,7 +176,7 @@ const StaticConfigurationSection = ({
                         Collection Method
                     </label>
                     <Select
-                        options={runtimeOptions}
+                        options={filteredRuntimeOptions}
                         placeholder="Select a runtime option"
                         onChange={onCollectionMethodChange}
                         className={selectElementClassName}
