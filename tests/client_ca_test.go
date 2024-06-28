@@ -225,7 +225,10 @@ func TestClientCARequested(t *testing.T) {
 
 	conn, err := tls.Dial("tcp", centralgrpc.RoxAPIEndpoint(t), tlsConf)
 	require.NoError(t, err, "could not connect to central")
-	_ = conn.Handshake()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	_ = conn.HandshakeContext(ctx)
 	_ = conn.Close()
 
 	found := false
