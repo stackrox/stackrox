@@ -66,18 +66,35 @@ func newFakeCRD(name string) *unstructured.Unstructured {
 	}
 }
 
-func (s *watcherSuite) createFakeCRDs(ctx context.Context, names ...string) {
+func (s *watcherSuite) createFakeCRDs(names ...string) {
 	for _, name := range names {
-		_, err := s.dynamicClient.Resource(gvr).Create(ctx, newFakeCRD(name), metav1.CreateOptions{})
-		s.Assert().NoError(err)
+		// The context is ignored in the fake client, so we can simply pass context.Background
+		_, err := s.dynamicClient.Resource(gvr).Create(context.Background(), newFakeCRD(name), metav1.CreateOptions{})
+		s.Require().NoError(err)
 	}
 }
 
-func (s *watcherSuite) removeFakeCRDs(ctx context.Context, names ...string) {
+func (s *watcherSuite) removeFakeCRDs(names ...string) {
 	for _, name := range names {
-		err := s.dynamicClient.Resource(gvr).Delete(ctx, name, metav1.DeleteOptions{})
-		s.Assert().NoError(err)
+		// The context is ignored in the fake client, so we can simply pass context.Background
+		err := s.dynamicClient.Resource(gvr).Delete(context.Background(), name, metav1.DeleteOptions{})
+		s.Require().NoError(err)
 	}
+}
+
+func (s *watcherSuite) waitForResourcesCreation(resources ...string) {
+	s.Eventually(func() bool {
+		// The context is ignored in the fake client, so we can simply pass context.Background
+		list, err := s.dynamicClient.Resource(gvr).List(context.Background(), metav1.ListOptions{})
+		return err == nil && len(list.Items) == len(resources)
+	}, defaultTimeout, time.Millisecond, "the expected resources were not created on time: %v", resources)
+}
+
+func (s *watcherSuite) waitForResourcesRemoval() {
+	s.Eventually(func() bool {
+		list, err := s.dynamicClient.Resource(gvr).List(context.Background(), metav1.ListOptions{})
+		return err == nil && len(list.Items) == 0
+	}, defaultTimeout, time.Millisecond, "the resources were not removed on time")
 }
 
 func (s *watcherSuite) Test_CreateDeleteCRD() {
@@ -112,7 +129,7 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 				close(callbackC)
 			}()
 			// Create fake CRDs before starting the watcher
-			s.createFakeCRDs(context.Background(), tCase.resourcesToCreateBeforeWatch...)
+			s.createFakeCRDs(tCase.resourcesToCreateBeforeWatch...)
 			w := s.createWatcher(&stopSig)
 			for _, rName := range tCase.resourcesToCreateBeforeWatch {
 				s.Assert().NoError(w.AddResourceToWatch(rName))
@@ -123,7 +140,9 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 			s.Assert().NoError(w.Watch(callbackC))
 
 			// Create fake CRDs after starting the watcher
-			s.createFakeCRDs(context.Background(), tCase.resourcesToCreateAfterWatch...)
+			s.createFakeCRDs(tCase.resourcesToCreateAfterWatch...)
+			// Wait for all resources to be created
+			s.waitForResourcesCreation(append(tCase.resourcesToCreateBeforeWatch, tCase.resourcesToCreateAfterWatch...)...)
 
 			select {
 			case <-time.NewTimer(defaultTimeout).C:
@@ -139,8 +158,10 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 				}
 			}
 
-			s.removeFakeCRDs(context.Background(), tCase.resourcesToCreateBeforeWatch...)
-			s.removeFakeCRDs(context.Background(), tCase.resourcesToCreateAfterWatch...)
+			s.removeFakeCRDs(tCase.resourcesToCreateBeforeWatch...)
+			s.removeFakeCRDs(tCase.resourcesToCreateAfterWatch...)
+			// Wait for all resources to be removed
+			s.waitForResourcesRemoval()
 
 			select {
 			case <-time.NewTimer(defaultTimeout).C:
