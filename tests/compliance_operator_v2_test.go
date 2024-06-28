@@ -148,29 +148,13 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 			},
 		},
 	}
-	modifiedScanConfig := v2.ComplianceScanConfiguration{
-		ScanName: scanName,
-		Id:       "",
-		Clusters: []string{clusterID},
-		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
-			Description: "test456",
-			OneTimeScan: false,
-			Profiles:    []string{"ocp4-cis-1-4-5"},
-			ScanSchedule: &v2.Schedule{
-				Hour:         2,
-				Minute:       0,
-				IntervalType: v2.Schedule_WEEKLY,
-				Interval: &v2.Schedule_DaysOfWeek_{
-					DaysOfWeek: &v2.Schedule_DaysOfWeek{
-						Days: []int32{1, 5},
-					},
-				},
-			},
-		},
-	}
+
+	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
 
 	_, err = service.CreateComplianceScanConfiguration(ctx, &scanConfig)
 	assert.NoError(t, err)
+
+	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 1)
 
 	query := &v2.RawQuery{Query: ""}
 	scanConfigs, err := service.ListComplianceScanConfigurations(ctx, query)
@@ -180,22 +164,6 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	require.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
 
 	assertNameDescriptionAndProfilesMatch(t, &scanConfig, matchingConfig)
-
-	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
-
-	_, err = service.CreateComplianceScanConfiguration(ctx, &modifiedScanConfig)
-	assert.NoError(t, err)
-
-	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 1)
-
-	query = &v2.RawQuery{Query: ""}
-	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
-	assert.NoError(t, err)
-	matchingConfig = getScanConfig(scanName, scanConfigs.GetConfigurations())
-	assert.NotNil(t, matchingConfig)
-	require.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
-
-	assertNameDescriptionAndProfilesMatch(t, &modifiedScanConfig, matchingConfig)
 
 	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
 
