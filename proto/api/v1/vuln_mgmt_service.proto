@@ -30,13 +30,12 @@ message VulnMgmtExportWorkloadsResponse {
 
 // VulnMgmtService APIs are used to manage workload vulnerabilities.
 service VulnMgmtService {
-  // Streams vulnerability data upon request. Each entry consists of a deployment and the associated
-  // container images. The response is structured as
-  // {
-  //   {"result": {"deployment": {...}, "images": [...]}},
-  //   {"result": {"deployment": {...}, "images": [...]}},
-  //   ...
-  // }
+  // Streams vulnerability data upon request. Each entry consists of a deployment and the associated container images.
+  //
+  // The response is structured as:
+  // {"result": {"deployment": {...}, "images": [...]}}
+  // ...
+  // {"result": {"deployment": {...}, "images": [...]}}
   rpc VulnMgmtExportWorkloads(VulnMgmtExportWorkloadsRequest) returns (stream VulnMgmtExportWorkloadsResponse) {
     option (google.api.http) = {get: "/v1/export/vuln-mgmt/workloads"};
   }

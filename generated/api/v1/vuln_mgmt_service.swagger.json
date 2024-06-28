@@ -13,7 +13,8 @@
   "paths": {
     "/v1/export/vuln-mgmt/workloads": {
       "get": {
-        "summary": "Streams vulnerability data upon request. Each entry consists of a deployment and the associated\ncontainer images. The response is structured as\n{\n  {\"result\": {\"deployment\": {...}, \"images\": [...]}},\n  {\"result\": {\"deployment\": {...}, \"images\": [...]}},\n  ...\n}",
+        "summary": "Streams vulnerability data upon request. Each entry consists of a deployment and the associated container images.",
+        "description": "The response is structured as:\n{\"result\": {\"deployment\": {...}, \"images\": [...]}}\n...\n{\"result\": {\"deployment\": {...}, \"images\": [...]}}",
         "operationId": "VulnMgmtService_VulnMgmtExportWorkloads",
         "responses": {
           "200": {
