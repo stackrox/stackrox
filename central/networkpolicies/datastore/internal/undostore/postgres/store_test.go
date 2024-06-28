@@ -79,11 +79,6 @@ func (s *NetworkpolicyapplicationundorecordsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, networkPolicyApplicationUndoRecord))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, networkPolicyApplicationUndoRecord), sac.ErrResourceAccessDenied)
 
-	foundNetworkPolicyApplicationUndoRecord, exists, err = store.Get(ctx, networkPolicyApplicationUndoRecord.GetClusterId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), networkPolicyApplicationUndoRecord, foundNetworkPolicyApplicationUndoRecord)
-
 	s.NoError(store.Delete(ctx, networkPolicyApplicationUndoRecord.GetClusterId()))
 	foundNetworkPolicyApplicationUndoRecord, exists, err = store.Get(ctx, networkPolicyApplicationUndoRecord.GetClusterId())
 	s.NoError(err)

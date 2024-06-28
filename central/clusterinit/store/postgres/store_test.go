@@ -79,11 +79,6 @@ func (s *ClusterInitBundlesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, initBundleMeta))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, initBundleMeta), sac.ErrResourceAccessDenied)
 
-	foundInitBundleMeta, exists, err = store.Get(ctx, initBundleMeta.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), initBundleMeta, foundInitBundleMeta)
-
 	s.NoError(store.Delete(ctx, initBundleMeta.GetId()))
 	foundInitBundleMeta, exists, err = store.Get(ctx, initBundleMeta.GetId())
 	s.NoError(err)

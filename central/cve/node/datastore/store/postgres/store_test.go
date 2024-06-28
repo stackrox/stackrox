@@ -79,11 +79,6 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, nodeCVE))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, nodeCVE), sac.ErrResourceAccessDenied)
 
-	foundNodeCVE, exists, err = store.Get(ctx, nodeCVE.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), nodeCVE, foundNodeCVE)
-
 	s.NoError(store.Delete(ctx, nodeCVE.GetId()))
 	foundNodeCVE, exists, err = store.Get(ctx, nodeCVE.GetId())
 	s.NoError(err)

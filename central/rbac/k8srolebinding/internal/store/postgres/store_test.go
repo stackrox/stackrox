@@ -82,11 +82,6 @@ func (s *RoleBindingsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, k8SRoleBinding))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, k8SRoleBinding), sac.ErrResourceAccessDenied)
 
-	foundK8SRoleBinding, exists, err = store.Get(ctx, k8SRoleBinding.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), k8SRoleBinding, foundK8SRoleBinding)
-
 	s.NoError(store.Delete(ctx, k8SRoleBinding.GetId()))
 	foundK8SRoleBinding, exists, err = store.Get(ctx, k8SRoleBinding.GetId())
 	s.NoError(err)

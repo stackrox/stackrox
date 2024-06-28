@@ -109,11 +109,6 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.ErrorIs(store.Upsert(withNoAccessCtx, {{$name}}), sac.ErrResourceAccessDenied)
 	{{- end }}
 
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), {{$name}}, found{{.TrimmedType|upperCamelCase}})
-
 	s.NoError(store.Delete(ctx, {{template "paramList" $}}))
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)

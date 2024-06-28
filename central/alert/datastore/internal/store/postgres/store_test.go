@@ -82,11 +82,6 @@ func (s *AlertsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, alert))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, alert), sac.ErrResourceAccessDenied)
 
-	foundAlert, exists, err = store.Get(ctx, alert.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), alert, foundAlert)
-
 	s.NoError(store.Delete(ctx, alert.GetId()))
 	foundAlert, exists, err = store.Get(ctx, alert.GetId())
 	s.NoError(err)

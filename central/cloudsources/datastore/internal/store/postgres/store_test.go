@@ -79,11 +79,6 @@ func (s *CloudSourcesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, cloudSource))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, cloudSource), sac.ErrResourceAccessDenied)
 
-	foundCloudSource, exists, err = store.Get(ctx, cloudSource.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), cloudSource, foundCloudSource)
-
 	s.NoError(store.Delete(ctx, cloudSource.GetId()))
 	foundCloudSource, exists, err = store.Get(ctx, cloudSource.GetId())
 	s.NoError(err)

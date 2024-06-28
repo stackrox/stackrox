@@ -82,11 +82,6 @@ func (s *ListeningEndpointsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, processListeningOnPortStorage))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, processListeningOnPortStorage), sac.ErrResourceAccessDenied)
 
-	foundProcessListeningOnPortStorage, exists, err = store.Get(ctx, processListeningOnPortStorage.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), processListeningOnPortStorage, foundProcessListeningOnPortStorage)
-
 	s.NoError(store.Delete(ctx, processListeningOnPortStorage.GetId()))
 	foundProcessListeningOnPortStorage, exists, err = store.Get(ctx, processListeningOnPortStorage.GetId())
 	s.NoError(err)

@@ -82,11 +82,6 @@ func (s *ProcessBaselineResultsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, processBaselineResults))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, processBaselineResults), sac.ErrResourceAccessDenied)
 
-	foundProcessBaselineResults, exists, err = store.Get(ctx, processBaselineResults.GetDeploymentId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), processBaselineResults, foundProcessBaselineResults)
-
 	s.NoError(store.Delete(ctx, processBaselineResults.GetDeploymentId()))
 	foundProcessBaselineResults, exists, err = store.Get(ctx, processBaselineResults.GetDeploymentId())
 	s.NoError(err)

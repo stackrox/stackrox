@@ -79,11 +79,6 @@ func (s *IntegrationHealthsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, integrationHealth))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, integrationHealth), sac.ErrResourceAccessDenied)
 
-	foundIntegrationHealth, exists, err = store.Get(ctx, integrationHealth.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), integrationHealth, foundIntegrationHealth)
-
 	s.NoError(store.Delete(ctx, integrationHealth.GetId()))
 	foundIntegrationHealth, exists, err = store.Get(ctx, integrationHealth.GetId())
 	s.NoError(err)

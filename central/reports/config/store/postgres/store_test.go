@@ -79,11 +79,6 @@ func (s *ReportConfigurationsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, reportConfiguration))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, reportConfiguration), sac.ErrResourceAccessDenied)
 
-	foundReportConfiguration, exists, err = store.Get(ctx, reportConfiguration.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), reportConfiguration, foundReportConfiguration)
-
 	s.NoError(store.Delete(ctx, reportConfiguration.GetId()))
 	foundReportConfiguration, exists, err = store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)

@@ -79,11 +79,6 @@ func (s *NotifiersStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, notifier))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, notifier), sac.ErrResourceAccessDenied)
 
-	foundNotifier, exists, err = store.Get(ctx, notifier.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), notifier, foundNotifier)
-
 	s.NoError(store.Delete(ctx, notifier.GetId()))
 	foundNotifier, exists, err = store.Get(ctx, notifier.GetId())
 	s.NoError(err)

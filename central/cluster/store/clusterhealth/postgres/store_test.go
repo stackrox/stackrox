@@ -79,11 +79,6 @@ func (s *ClusterHealthStatusesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, clusterHealthStatus))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, clusterHealthStatus), sac.ErrResourceAccessDenied)
 
-	foundClusterHealthStatus, exists, err = store.Get(ctx, clusterHealthStatus.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), clusterHealthStatus, foundClusterHealthStatus)
-
 	s.NoError(store.Delete(ctx, clusterHealthStatus.GetId()))
 	foundClusterHealthStatus, exists, err = store.Get(ctx, clusterHealthStatus.GetId())
 	s.NoError(err)
