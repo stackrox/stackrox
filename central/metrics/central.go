@@ -146,8 +146,8 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "k8s_event_processing_duration",
-		Help:      "Time taken to fully process an event from Kubernetes",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+		Help:      "Time taken in milliseconds to fully process an event from Kubernetes",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 12),
 	}, []string{"Action", "Resource", "Dispatcher"})
 
 	clusterMetricsNodeCountGaugeVec = prometheus.NewGaugeVec(prometheus.GaugeOpts{
