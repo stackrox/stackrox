@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"os"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
@@ -20,10 +21,13 @@ import (
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sigstore/sigstore/pkg/signature/payload"
+	"github.com/sigstore/sigstore/pkg/tuf"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -38,6 +42,21 @@ var (
 	errHashCreation       = errox.InvariantViolation.New("creating hash")
 	errCorruptedSignature = errox.InvariantViolation.New("corrupted signature")
 )
+
+var (
+	once sync.Once
+)
+
+func setupTufRootDir() {
+	once.Do(func() {
+		// TufRoot sets the location of where to store the TUF roots.
+		// When using Fulcio roots to verify signatures, the roots will be persisted within a temporary directory.
+		// When running Central within a container, we are in a read-only file system. Set the path here explicitly
+		// to a writeable directory. Unfortunately this has to be done via environment variable, since no option
+		// is exposed on the TUF library to set this otherwise.
+		utils.Should(os.Setenv(tuf.TufRootEnv, "/tmp/tuf-roots"))
+	})
+}
 
 type cosignSignatureVerifier struct {
 	parsedPublicKeys []crypto.PublicKey
@@ -64,6 +83,8 @@ func IsValidPublicKeyPEMBlock(keyBlock *pem.Block, rest []byte) bool {
 // MUST be valid PEM encoded ones.
 // It will return an error if the provided public keys could not be parsed.
 func newCosignSignatureVerifier(config *storage.SignatureIntegration) (*cosignSignatureVerifier, error) {
+	setupTufRootDir()
+
 	publicKeys := config.GetCosign().GetPublicKeys()
 	parsedKeys := make([]crypto.PublicKey, 0, len(publicKeys))
 	for _, publicKey := range publicKeys {
