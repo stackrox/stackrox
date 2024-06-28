@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 
 import {
     visitNetworkGraph,
@@ -13,6 +14,13 @@ describe('Network Graph deployment sidebar', () => {
     withAuth();
 
     it('should render a graph when cluster and namespace are selected', () => {
+        // Skipping this test due to an issue in GKE-latest that is not easily fixable, and will
+        // cause failures 100% of the time. See ROX-23907, ROX-22431.
+        // TODO - remove this skip when ROX-22431 is resolved.
+        if (!hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         visitNetworkGraph();
 
         checkNetworkGraphEmptyState();
