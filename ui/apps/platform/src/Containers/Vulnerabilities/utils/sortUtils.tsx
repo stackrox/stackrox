@@ -7,7 +7,7 @@ export const aggregateByCVSS: SortAggregate = {
     aggregateFunc: 'max',
 };
 
-export const aggregateByImageSha: SortAggregate = {
+export const aggregateByDistinctCount: SortAggregate = {
     aggregateFunc: 'count',
     distinct: 'true',
 };
