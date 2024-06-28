@@ -19,11 +19,14 @@ const (
 	timeout = 2 * time.Second
 )
 
-// addrValid validates the URL. It assumes scheme prefixes have been removed
+// addrValid validates the URL.
+// It returns an error if addr contains scheme prefix.
 func addrValid(addr string) error {
-	addrNoScheme := urlfmt.TrimHTTPPrefixes(addr)
+	if strings.Contains(addr, "://") {
+		return fmt.Errorf("URL %q should not contain scheme prefix", addr)
+	}
 	// url.Parse requires scheme to trigger the correct variant of parsing (it has two)
-	_, err := url.Parse("https://" + addrNoScheme)
+	_, err := url.Parse("https://" + addr)
 	return err
 }
 

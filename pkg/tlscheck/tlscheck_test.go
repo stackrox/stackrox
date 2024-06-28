@@ -14,7 +14,11 @@ import (
 
 func Test_addrValid(t *testing.T) {
 	badAddrs := []string{
+		// should not contain scheme prefix
+		"http://example.com",
+		"tcp://example.com",
 		"http://exam ple.com:80/abc",
+		// should not contain illegal characters
 		"exam ple.com:80/abc",
 		" example.com",
 		"example.com ",
@@ -28,14 +32,9 @@ func Test_addrValid(t *testing.T) {
 	}
 
 	goodAddrs := []string{
-		"http://example.com:80/abc",
 		"example.com:80/abc",
 		"127.0.0.1:8080",
-		"https://example.com/repo/path",
-		"https://[1::]:80",
-		"https://1::",
-		"https://[1::]:80/path",
-		"https://1::/path",
+		"example.com/repo/path",
 		"1::",
 		"1::/path",
 		"[1::]:80",
