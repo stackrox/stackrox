@@ -8,47 +8,30 @@ jobs:
   check-description:
     runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' }}
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Check PR description
         env:
           ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
-          GH_TOKEN: ${{ github.token }}
           script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
           PR_DESCRIPTION: ${{ github.event.pull_request.body }}
         run: |
           set -uo pipefail
-          echo "$PR_DESCRIPTION" | \
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
-            check-pr-description
+            check-pr-description "$PR_DESCRIPTION"
 
       - name: Check if PR template has changed
-        id: check_template_change
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const prNumber = context.payload.pull_request.number;
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            
-            const changedFiles = await github.paginate(
-              github.pulls.listFiles,
-              {
-                owner,
-                repo,
-                pull_number: prNumber,
-                per_page: 100,
-              }
-            );
-  
-            const filePaths = changedFiles.map(file => file.filename);
-            const fileToCheck = ".github/pull_request_template.md";
-  
-            const fileChanged = filePaths.includes(fileToCheck);
-            return { fileChanged };
-  
-      - name: Print warning if template changed
-        if: steps.check_template_change.outputs.result == 'true'
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TEMPLATE: ".github/pull_request_template.md"
         run: |
-          # shellcheck disable=SC2016
-          echo ':warning: The PR template has been modified in the PR.
-          Please check if `.github/workflow/check-pr-description.sh` is up to date.' >> "$GITHUB_SUMMARY"
+          set -uo pipefail
+          if gh pr view --repo "$GITHUB_REPOSITORY" "$PR_NUMBER" \
+            --json files -q '.files[]|.path' | grep "$PR_TEMPLATE"; then
+
+            echo "::notice file=$PR_TEMPLATE::PR template changed."
+            # shellcheck disable=SC2016
+            echo ':warning: The PR template has been modified in the PR.
+          Please check if `.github/workflow/check-pr-description.sh` is up to date.' >> "$GITHUB_STEP_SUMMARY"
+          fi
