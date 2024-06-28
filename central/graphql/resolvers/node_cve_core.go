@@ -195,6 +195,7 @@ func (resolver *Resolver) NodeCVECount(ctx context.Context, q RawQuery) (int32, 
 	if err != nil {
 		return 0, err
 	}
+	query = tryUnsuppressedQuery(query)
 
 	count, err := resolver.NodeCVEView.Count(ctx, query)
 	if err != nil {
@@ -218,6 +219,7 @@ func (resolver *Resolver) NodeCVEs(ctx context.Context, q PaginatedQuery) ([]*no
 	if err != nil {
 		return nil, err
 	}
+	query = tryUnsuppressedQuery(query)
 
 	cves, err := resolver.NodeCVEView.Get(ctx, query)
 	ret, err := resolver.wrapNodeCVECoresWithContext(ctx, cves, err)
@@ -246,6 +248,7 @@ func (resolver *Resolver) NodeCVECountBySeverity(ctx context.Context, q RawQuery
 	if err != nil {
 		return nil, err
 	}
+	query = tryUnsuppressedQuery(query)
 
 	response, err := resolver.NodeCVEView.CountBySeverity(ctx, query)
 	if err != nil {
