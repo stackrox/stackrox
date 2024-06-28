@@ -132,7 +132,13 @@ function CVEsTable({
                     <Th sort={getSortParams(NODE_TOP_CVSS_SORT_FIELD, aggregateByCVSS)}>
                         Top CVSS
                     </Th>
-                    <TooltipTh tooltip="Ratio of the number of nodes affected by this CVE to the total number of nodes">
+                    <TooltipTh
+                        tooltip="Ratio of the number of nodes affected by this CVE to the total number of nodes"
+                        sort={getSortParams('Node ID', {
+                            aggregateFunc: 'count',
+                            distinct: 'true',
+                        })}
+                    >
                         Affected nodes
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
