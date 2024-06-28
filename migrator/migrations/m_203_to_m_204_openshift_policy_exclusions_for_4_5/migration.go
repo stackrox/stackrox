@@ -47,6 +47,10 @@ var (
 		},
 		{
 			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "exec-iptables-root.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
 			PolicyFileName:  "host_network.json",
 		},
 		{
@@ -64,10 +68,6 @@ var (
 		{
 			FieldsToCompare: fieldsToCompare,
 			PolicyFileName:  "secret_env.json",
-		},
-		{
-			FieldsToCompare: fieldsToCompare,
-			PolicyFileName:  "exec-iptables-root.json",
 		},
 	}
 )

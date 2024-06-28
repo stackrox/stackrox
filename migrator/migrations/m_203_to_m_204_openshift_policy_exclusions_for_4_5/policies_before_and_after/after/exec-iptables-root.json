@@ -37,8 +37,7 @@
           "namespace": "openshift-kni-infra"
         }
       }
-    }
-  ,
+    },
     {
       "name": "Don't alert on haproxy-* deployment in openshift-vsphere-infra namespace",
       "deployment": {
