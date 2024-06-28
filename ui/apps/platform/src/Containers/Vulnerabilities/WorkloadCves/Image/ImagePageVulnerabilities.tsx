@@ -34,6 +34,8 @@ import {
     imageComponentSearchFilterConfig,
     imageCVESearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import {
     SearchOption,
     IMAGE_CVE_SEARCH_OPTION,
@@ -121,6 +123,9 @@ function ImagePageVulnerabilities({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
     const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
+
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
     const currentVulnerabilityState = useVulnerabilityState();
 
@@ -238,13 +243,10 @@ function ImagePageVulnerabilities({
                             className="pf-v5-u-pt-lg pf-v5-u-pb-0"
                             searchFilterConfig={searchFilterConfig}
                             searchFilter={searchFilter}
-                            onFilterChange={(newFilter, { action }) => {
+                            onFilterChange={(newFilter, searchPayload) => {
                                 setSearchFilter(newFilter);
                                 setPage(1, 'replace');
-
-                                if (action === 'ADD') {
-                                    // TODO - Add analytics tracking ROX-24532
-                                }
+                                trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
                             }}
                         />
                     ) : (

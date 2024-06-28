@@ -12,7 +12,6 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useAnalytics, {
     WORKLOAD_CVE_FILTER_APPLIED,
     isSearchCategoryWithFilter,
-    isSearchCategoryWithoutFilter,
 } from 'hooks/useAnalytics';
 import { searchValueAsArray } from 'utils/searchUtils';
 
@@ -56,7 +55,7 @@ function WorkloadCveFilterToolbar({
                 event: WORKLOAD_CVE_FILTER_APPLIED,
                 properties: { category, filter },
             });
-        } else if (isSearchCategoryWithoutFilter(category)) {
+        } else {
             analyticsTrack({
                 event: WORKLOAD_CVE_FILTER_APPLIED,
                 properties: { category },
