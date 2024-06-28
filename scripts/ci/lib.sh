@@ -763,6 +763,7 @@ END
             ;;
         *-race-condition-qa-e2e-tests)
             cat >> "${image_list}" << END
+central-db ${tag}
 main ${tag}-rcd
 roxctl ${tag}
 END
@@ -776,17 +777,12 @@ END
             ;;
         *)
             cat >> "${image_list}" << END
+central-db ${tag}
 main ${tag}
 roxctl ${tag}
 END
             ;;
     esac
-
-    if [[ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]]; then
-            cat >> "${image_list}" << END
-central-db ${tag}
-END
-    fi
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
             cat >> "${image_list}" << END
