@@ -1562,7 +1562,13 @@
               },
               {
                 "name": "EBPF",
-                "integer": 3
+                "integer": 3,
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "name": "CORE_BPF",

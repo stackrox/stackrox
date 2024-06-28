@@ -299,12 +299,7 @@
 ## Collector specific configuration.
 #collector:
 #
-#  # If enabled, the value provided in `collectionMethod` is applied to the collector configuration.
-#  # Otherwise, the default collection method is used.
-#  forceCollectionMethod: false
-#
-#  # Collection method to use when `forceCollectionMethod` is `true`. Can be one of:
-#  #   - EBPF
+#  # Collection method to use. Can be one of:
 #  #   - CORE_BPF
 #  #   - NO_COLLECTION
 #  collectionMethod: CORE_BPF
@@ -313,14 +308,6 @@
 #  # and the collector pods can schedule onto all nodes with taints. If `true`, no tolerations
 #  # are applied, and the collector pods won't scheduled onto nodes with taints.
 #  disableTaintTolerations: false
-#
-#  # Configure whether slim Collector images should be used or not. Using slim Collector images
-#  # with the EBPF collection method requires Central to provide the matching eBPF probe. If you
-#  # are running the StackRox Kubernetes Security Platform in offline mode and use EBPF collection
-#  # method, you must download a kernel support package from [stackrox.io](https://install.stackrox.io/collector/support-packages/index.html)
-#  # and upload it to Central for slim Collectors to function. Otherwise, you must ensure that
-#  # Central can access the online probe repository hosted at https://collector-modules.stackrox.io/.
-#  slimMode: false
 #
 #  # Kubernetes image pull policy for Collector.
 #  imagePullPolicy: IfNotPresent

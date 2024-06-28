@@ -26,11 +26,15 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The `ROX_SCANNER_V4_NODE_JS_SUPPORT` environment variable is removed.
   - This flag originally allowed users to configure if Scanner V4 should support Node.js.
   - This is replaced with `ROX_SCANNER_V4_PARTIAL_NODE_JS_SUPPORT`.
+- ROX-23155: EBPF collection has been removed. If EBPF is configured, it
+  will be automatically converted to CORE_BPF. forceCollection no longer has an
+  effect.
 
 ### Deprecated Features
 
-- Slim/Full Collector images have been deprecated and will be removed in a
+- ROX-23155: Slim/Full Collector images have been deprecated and will be removed in a
   future release. The two image flavors are now functionally identical (neither contain any kernel drivers.)
+- ROX-23155: Kernel support packages and driver download functionality have been deprecated and will be removed in ACS 4.7 or later.
 - The field `error` returned for failed API calls has been deprecated, and it will be removed in a future release. Instead of using the `error` field, use the `message` field. The `message` field contains the same information as the `error` field.
 - The `/v1/summary/counts` API has been deprecated in 4.5 and will be removed in the future.
 
