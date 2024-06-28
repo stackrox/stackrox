@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
@@ -43,14 +44,16 @@ var (
 
 // New creates a new Service.
 func New(sensorConnectionManager connection.Manager, imageDatastore imageDatastore.DataStore, riskManager riskManager.Manager) Service {
+	client := retryablehttp.NewClient()
+	client.HTTPClient = &http.Client{
+		Timeout:   20 * time.Second,
+		Transport: proxy.RoundTripper(),
+	}
 	return &serviceImpl{
 		imageDatastore:          imageDatastore,
 		riskManager:             riskManager,
 		sensorConnectionManager: sensorConnectionManager,
-		client: http.Client{
-			Timeout:   20 * time.Second,
-			Transport: proxy.RoundTripper(),
-		},
+		client:                  client.StandardClient(),
 	}
 }
 
@@ -60,7 +63,7 @@ type serviceImpl struct {
 	sensorConnectionManager connection.Manager
 	imageDatastore          imageDatastore.DataStore
 	riskManager             riskManager.Manager
-	client                  http.Client
+	client                  *http.Client
 }
 
 func (s *serviceImpl) ReplicateImage(ctx context.Context, req *central.ReplicateImageRequest) (*central.Empty, error) {
