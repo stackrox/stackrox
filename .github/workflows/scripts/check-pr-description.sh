@@ -55,7 +55,10 @@ for task in "${any_of[@]}"; do
   fi
 done
 
-[[ "$found" = "false" ]] && gh_log error 'None of the automated tests tasks are checked.'
+if [[ "$found" = "false" ]]; then
+    gh_log error 'None of the automated tests tasks are checked.'
+    fail="true"
+fi
 
 if [[ "$fail" = "true" ]]; then
     exit 1
