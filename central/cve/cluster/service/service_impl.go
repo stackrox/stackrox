@@ -81,7 +81,7 @@ func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.Unsuppress
 	if !features.VulnMgmtLegacySnooze.Enabled() {
 		return nil, errors.Wrapf(errox.NotFound, "Feature %s is disabled", features.VulnMgmtLegacySnooze.Name())
 	}
-	
+
 	if len(request.GetCves()) == 0 {
 		return nil, errox.InvalidArgs.CausedBy("no cves provided to un-snooze")
 	}
