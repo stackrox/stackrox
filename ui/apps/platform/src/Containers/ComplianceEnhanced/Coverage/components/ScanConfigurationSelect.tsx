@@ -106,6 +106,7 @@ function ScanConfigurationSelect({
             <Button
                 variant="link"
                 icon={<TimesCircleIcon />}
+                isDisabled={!selectedScanConfigName}
                 onClick={() => setSelectedScanConfigName(undefined)}
             >
                 Reset filter
