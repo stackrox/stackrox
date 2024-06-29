@@ -21,6 +21,7 @@ export type CompoundSearchFilterProps = {
     defaultEntity?: SearchFilterEntityName;
     defaultAttribute?: SearchFilterAttributeName;
     searchFilter: SearchFilter;
+    additionalContextFilter?: SearchFilter;
     onSearch: ({ action, category, value }: OnSearchPayload) => void;
 };
 
@@ -29,6 +30,7 @@ function CompoundSearchFilter({
     defaultEntity,
     defaultAttribute,
     searchFilter,
+    additionalContextFilter,
     onSearch,
 }: CompoundSearchFilterProps) {
     const [selectedEntity, setSelectedEntity] = useState<SelectedEntity>(() => {
@@ -97,6 +99,7 @@ function CompoundSearchFilter({
                     setInputValue(value);
                 }}
                 searchFilter={searchFilter}
+                additionalContextFilter={additionalContextFilter}
                 onSearch={(payload) => {
                     const { action, category, value } = payload;
                     const shouldSearch =

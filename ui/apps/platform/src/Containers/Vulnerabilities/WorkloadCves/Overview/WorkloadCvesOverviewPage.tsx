@@ -50,7 +50,6 @@ import { VulnerabilityState } from 'types/cve.proto';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { SearchFilterEntityName } from 'Components/CompoundSearchFilter/types';
-import { AutocompleteContextProvider } from 'Components/CompoundSearchFilter/context/AutocompleteContext';
 
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import {
@@ -337,6 +336,9 @@ function WorkloadCvesOverviewPage() {
             className="pf-v5-u-py-md"
             searchFilterConfig={searchFilterConfig}
             searchFilter={searchFilter}
+            additionalContextFilter={
+                isViewingWithCves ? { 'Image CVE Count': '>0'} : {'Image CVE Count': '0'} 
+            }
             defaultFilters={localStorageValue.preferences.defaultFilters}
             onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);
@@ -371,9 +373,7 @@ function WorkloadCvesOverviewPage() {
     );
 
     return (
-        <AutocompleteContextProvider
-            value={isViewingWithCves ? { 'Image CVE Count': ['>0'] } : { 'Image CVE Count': ['0'] }}
-        >
+        <>
             <PageTitle title="Workload CVEs Overview" />
             <PageSection
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
@@ -539,7 +539,7 @@ function WorkloadCvesOverviewPage() {
                 }}
                 onWatchedImagesChange={onWatchedImagesChange}
             />
-        </AutocompleteContextProvider>
+        </>
     );
 }
 

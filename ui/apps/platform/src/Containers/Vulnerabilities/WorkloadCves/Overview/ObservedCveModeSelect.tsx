@@ -10,7 +10,6 @@ import {
 } from '@patternfly/react-core';
 import { SecurityIcon, UnknownIcon } from '@patternfly/react-icons';
 
-import { useAutocompleteContext } from 'Components/CompoundSearchFilter/context/AutocompleteContext';
 import { ObservedCveMode, isObservedCveMode, observedCveModeValues } from '../../types';
 import { getViewStateDescription, getViewStateTitle } from './string.utils';
 
@@ -26,7 +25,6 @@ function ObservedCveModeSelect({
     setObservedCveMode,
 }: ObservedCveModeSelectProps) {
     const [isCveModeSelectOpen, setIsCveModeSelectOpen] = useState(false);
-    const { setAutocompleteContext } = useAutocompleteContext();
 
     const isViewingWithCves = observedCveMode === 'WITH_CVES';
 
@@ -44,12 +42,6 @@ function ObservedCveModeSelect({
                 if (isObservedCveMode(value)) {
                     setObservedCveMode(value);
                     setIsCveModeSelectOpen(false);
-                    // change the search filter autocomplete context for advanced filters
-                    setAutocompleteContext(
-                        value === 'WITH_CVES'
-                            ? { 'Image CVE Count': ['>0'] }
-                            : { 'Image CVE Count': ['0'] }
-                    );
                 }
             }}
             onOpenChange={(isOpen) => setIsCveModeSelectOpen(isOpen)}

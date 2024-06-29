@@ -20,8 +20,8 @@ import SEARCH_AUTOCOMPLETE_QUERY, {
     SearchAutocompleteQueryResponse,
 } from 'queries/searchAutocomplete';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { SearchFilter } from 'types/search';
 import { ensureString } from '../utils/utils';
-import { useAutocompleteContext } from '../context/AutocompleteContext';
 
 type SearchFilterAutocompleteProps = {
     searchCategory: string;
@@ -30,6 +30,8 @@ type SearchFilterAutocompleteProps = {
     onChange: (value: string) => void;
     onSearch: (value: string) => void;
     textLabel: string;
+    searchFilter: SearchFilter;
+    additionalContextFilter?: SearchFilter;
 };
 
 function getSelectOptions(
@@ -79,9 +81,9 @@ function SearchFilterAutocomplete({
     onChange,
     onSearch,
     textLabel,
+    searchFilter,
+    additionalContextFilter,
 }: SearchFilterAutocompleteProps) {
-    const { autocompleteContext } = useAutocompleteContext();
-
     const [isOpen, setIsOpen] = useState(false);
     const [filterValue, setFilterValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -101,7 +103,10 @@ function SearchFilterAutocomplete({
     );
 
     const autocompleteSearchString = `${searchTerm}:${filterValue ? `r/${filterValue}` : ''}`;
-    const autocompleteContextString = getRequestQueryStringForSearchFilter(autocompleteContext);
+    const autocompleteContextString = getRequestQueryStringForSearchFilter({
+        ...searchFilter,
+        ...additionalContextFilter,
+    });
     const autocompleteQuery =
         autocompleteContextString !== ''
             ? [autocompleteContextString, autocompleteSearchString].join('+')
