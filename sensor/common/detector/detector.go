@@ -232,6 +232,7 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 				if !isMostRecentUpdate {
 					continue
 				}
+				d.enforcer.ProcessAlertResults(result.action, storage.LifecycleStage_DEPLOY, alertResults)
 			}
 			select {
 			case <-d.serializerStopper.Flow().StopRequested():
