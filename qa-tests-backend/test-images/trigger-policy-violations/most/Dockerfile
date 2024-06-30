@@ -1,4 +1,4 @@
-FROM centos
+FROM registry.access.redhat.com/ubi8/ubi:8.2
 
 WORKDIR /
 
@@ -20,6 +20,9 @@ EXPOSE 22/tcp
 
 # For: Wget in Image
 RUN yum -y install wget
+
+# For: Curl in Image
+RUN yum -y install curl
 
 # For: Insecure specified in CMD
 CMD ["/bin/bash", "-x", "trigger-violations-insecure.sh"]
