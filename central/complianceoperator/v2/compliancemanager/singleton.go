@@ -5,6 +5,7 @@ import (
 	compIntegration "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	ssbDatastore "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -17,7 +18,7 @@ var (
 // Singleton returns the compliance operator manager
 func Singleton() Manager {
 	once.Do(func() {
-		manager = New(connection.ManagerSingleton(), compIntegration.Singleton(), compScanSetting.Singleton(), clusterDatastore.Singleton(), profileDatastore.Singleton())
+		manager = New(connection.ManagerSingleton(), compIntegration.Singleton(), compScanSetting.Singleton(), clusterDatastore.Singleton(), profileDatastore.Singleton(), ssbDatastore.Singleton())
 	})
 	return manager
 }
