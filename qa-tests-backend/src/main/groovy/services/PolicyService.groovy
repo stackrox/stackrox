@@ -74,6 +74,12 @@ class PolicyService extends BaseService {
         }
     }
 
+    static Policy getPolicy(String name) {
+        return getPolicyClient().getPolicy(getResourceByID(
+                getPolicies().find { it.name == name }.id
+        ))
+    }
+
     static Policy clonePolicy(String name, String newPolicyName) {
         Policy policy = getPolicyClient().getPolicy(getResourceByID(
                 getPolicies().find { it.name == name }.id
