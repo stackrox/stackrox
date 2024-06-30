@@ -59,16 +59,25 @@ func managedFieldsTransformer(obj interface{}) (interface{}, error) {
 func (k *listenerImpl) handleAllEvents() {
 	defer k.mayCreateHandlers.Signal()
 	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), noResyncPeriod)
+	concurrency.WithLock(&k.sifLock, func() {
+		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, sif)
+	})
 
 	// Create informer factories for needed orchestrators.
 	var osAppsFactory osAppsExtVersions.SharedInformerFactory
 	if k.client.OpenshiftApps() != nil {
 		osAppsFactory = osAppsExtVersions.NewSharedInformerFactory(k.client.OpenshiftApps(), noResyncPeriod)
+		concurrency.WithLock(&k.sifLock, func() {
+			k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osAppsFactory)
+		})
 	}
 
 	var osRouteFactory osRouteExtVersions.SharedInformerFactory
 	if k.client.OpenshiftRoute() != nil {
 		osRouteFactory = osRouteExtVersions.NewSharedInformerFactory(k.client.OpenshiftRoute(), noResyncPeriod)
+		concurrency.WithLock(&k.sifLock, func() {
+			k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osRouteFactory)
+		})
 	}
 
 	// We want creates to be treated as updates while existing objects are loaded.
@@ -81,7 +90,11 @@ func (k *listenerImpl) handleAllEvents() {
 	var crdSharedInformerFactory dynamicinformer.DynamicSharedInformerFactory
 	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer, complianceSuiteInformer, complianceRemediationInformer cache.SharedIndexInformer
 	var profileLister cache.GenericLister
-	crdWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod))
+	dynamicSif := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
+	concurrency.WithLock(&k.sifLock, func() {
+		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, dynamicSif)
+	})
+	crdWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
 	coAvailabilityChecker := complianceOperatorAvailabilityChecker.NewComplianceOperatorAvailabilityChecker()
 	if err := coAvailabilityChecker.AppendToCRDWatcher(crdWatcher); err != nil {
 		log.Errorf("Unable to add the Resource to the CRD Watcher: %v", err)
@@ -105,6 +118,9 @@ func (k *listenerImpl) handleAllEvents() {
 	if coAvailabilityChecker.Available(k.client) {
 		log.Info("initializing compliance operator informers")
 		crdSharedInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
+		concurrency.WithLock(&k.sifLock, func() {
+			k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, crdSharedInformerFactory)
+		})
 		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResult.GroupVersionResource()).Informer()
 		complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Informer()
 		profileLister = crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Lister()
@@ -175,6 +191,9 @@ func (k *listenerImpl) handleAllEvents() {
 			log.Errorf("Checking API resources for group %q: %v", osConfigGroupVersion, err)
 		} else {
 			osConfigFactory = osConfigExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), noResyncPeriod)
+			concurrency.WithLock(&k.sifLock, func() {
+				k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osConfigFactory)
+			})
 
 			if listenerUtils.ResourceExists(resourceList, osClusterOperatorsResourceName, osConfigGroupVersion) {
 				log.Infof("Initializing %q informer", osClusterOperatorsResourceName)
@@ -201,6 +220,9 @@ func (k *listenerImpl) handleAllEvents() {
 			log.Errorf("Checking API resources for group %q: %v", osOperatorAlphaGroupVersion, err)
 		} else {
 			osOperatorFactory = osOperatorExtVersions.NewSharedInformerFactory(k.client.OpenshiftOperator(), noResyncPeriod)
+			concurrency.WithLock(&k.sifLock, func() {
+				k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osOperatorFactory)
+			})
 
 			if listenerUtils.ResourceExists(resourceList, osImageContentSourcePoliciesResourceName, osOperatorAlphaGroupVersion) {
 				log.Infof("Initializing %q informer", osImageContentSourcePoliciesResourceName)
