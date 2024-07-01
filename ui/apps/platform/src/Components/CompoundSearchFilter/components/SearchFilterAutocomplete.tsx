@@ -109,6 +109,8 @@ function SearchFilterAutocomplete({
         ...additionalContextFilter,
     };
     const filteredSearchContext = Object.keys(searchContext).reduce((acc, key) => {
+        // Autocomplete requests for some filters never return results if there is a 'Fixable' search filter
+        // included in the query.
         if (key !== 'FIXABLE') {
             acc[key] = searchContext[key];
         }
