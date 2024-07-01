@@ -151,7 +151,6 @@ class BaseService {
         return ["methodConfig": [
                 [
                         "name"       : [["service": ""]],
-                        "timeout"    : "30.0s",
                         "retryPolicy": [
                                 "maxAttempts"         : "3",
                                 "initialBackoff"      : "1s",
@@ -164,7 +163,6 @@ class BaseService {
                                         "INTERNAL",
                                         "RESOURCE_EXHAUSTED",
                                         "UNAVAILABLE",
-                                        "UNAUTHENTICATED",
                                         "UNKNOWN",
                                 ]
                         ]

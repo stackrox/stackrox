@@ -15,11 +15,11 @@ repositories {
     mavenCentral()
 }
 
-def grpcVersion = '1.57.2'
+def grpcVersion = '1.65.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
 def protocVersion = '3.25.3'
 def protobufVersion = '3.25.3'
-def nettyTcNativeVersion = '2.0.61.Final'
+def nettyTcNativeVersion = '2.0.65.Final'
 def fabric8Version = '6.12.1'
 def jacksonVersion = '2.14.2'
 
