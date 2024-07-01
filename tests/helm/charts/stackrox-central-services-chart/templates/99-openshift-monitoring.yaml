@@ -1,0 +1,149 @@
+{{- include "srox.init" . -}}
+
+{{- if and ._rox.monitoring ._rox.monitoring.openshift ._rox.monitoring.openshift.enabled -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: central-prometheus-k8s
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "central-prometheus-k8s") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "role" "central-prometheus-k8s") | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - services
+  - endpoints
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: central-prometheus-k8s
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "central-prometheus-k8s") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "central-prometheus-k8s") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: central-prometheus-k8s
+subjects:
+- kind: ServiceAccount
+  name: prometheus-k8s
+  namespace: openshift-monitoring
+
+---
+
+{{- /*
+The ServiceMonitor is placed into the openshift-monitoring namespace to comply with the
+OpenShift monitoring namespace label requirements. This is an exception to the rule
+that leaking resources into system namespaces should be avoided.
+*/}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: "central-monitor-{{ .Release.Namespace }}"
+  namespace: openshift-monitoring
+  labels:
+    {{- include "srox.labels" (list . "servicemonitor" (print "central-monitor-" .Release.Namespace)) | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "servicemonitor" (print "central-monitor-" .Release.Namespace)) | nindent 4 }}
+spec:
+  endpoints:
+  - interval: 30s
+    path: metrics
+    port: monitoring-tls
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: "central.{{ .Release.Namespace }}.svc"
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: central
+  namespaceSelector:
+    matchNames:
+      - "{{ .Release.Namespace }}"
+
+---
+
+{{- /*
+TODO(ROX-22188): Switch to a ClusterRoleBinding to avoid leaking to kube-system namespace.
+*/}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "rhacs-central-auth-reader-{{ .Release.Namespace }}"
+  namespace: kube-system
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" (print "rhacs-central-auth-reader-" .Release.Namespace)) | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" (print "rhacs-central-auth-reader-" .Release.Namespace)) | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+  - kind: ServiceAccount
+    name: central
+    namespace: "{{ .Release.Namespace }}"
+
+---
+
+{{- /*
+The PrometheusRule is placed into the openshift-monitoring namespace to comply with the
+OpenShift monitoring namespace label requirements. This is an exception to the rule
+that leaking resources into system namespaces should be avoided.
+Note that we have an exception for this resource for the SRE webhook validation for
+managed OpenShift clusters.
+*/}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: "central-telemeter-{{ .Release.Namespace }}"
+  namespace: openshift-monitoring
+  labels:
+    {{- include "srox.labels" (list . "prometheusrule" (print "central-telemeter-" .Release.Namespace )) | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "prometheusrule" (print "central-telemeter-" .Release.Namespace )) | nindent 4 }}
+spec:
+  groups:
+    - name: rhacs.telemeter
+      rules:
+        - expr: |
+            max by (build, central_id, central_version, hosting, install_method) (
+              rox_central_info{branding="RHACS"}
+            )
+          record: rhacs:telemetry:rox_central_info
+
+        - expr: |
+            max by (central_id) (
+              rox_central_secured_clusters{branding="RHACS"}
+            )
+          record: rhacs:telemetry:rox_central_secured_clusters
+
+        - expr: |
+            max by (central_id) (
+              rox_central_secured_nodes{branding="RHACS"}
+            )
+          record: rhacs:telemetry:rox_central_secured_nodes
+
+        - expr: |
+            max by (central_id) (
+              rox_central_secured_vcpus{branding="RHACS"}
+            )
+          record: rhacs:telemetry:rox_central_secured_vcpus
+
+{{- end -}}

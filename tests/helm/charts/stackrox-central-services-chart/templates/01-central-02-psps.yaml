@@ -1,0 +1,80 @@
+{{- include "srox.init" . -}}
+
+{{- if ._rox.system.enablePodSecurityPolicies }}
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "srox.globalResourceName" (list . "stackrox-central-psp") }}
+  labels:
+    {{- include "srox.labels" (list . "clusterrole" "stackrox-central-psp") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox-central-psp") | nindent 4 }}
+rules:
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    resourceNames:
+      - {{ include "srox.globalResourceName" (list . "stackrox-central") }}
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-central-psp
+  namespace: {{.Release.Namespace}}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "stackrox-central-psp") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "stackrox-central-psp") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "srox.globalResourceName" (list . "stackrox-central-psp") }}
+subjects:
+  - kind: ServiceAccount
+    name: central
+    namespace: {{.Release.Namespace}}
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: {{ include "srox.globalResourceName" (list . "stackrox-central") }}
+  labels:
+    {{- include "srox.labels" (list . "podsecuritypolicy" "stackrox-central") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "podsecuritypolicy" "stackrox-central") | nindent 4 }}
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+    - 'hostPath'
+  {{ if ._rox.central.persistence.hostPath -}}
+  allowedHostPaths:
+    - pathPrefix: {{ ._rox.central.persistence.hostPath }}
+  {{- end}}
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 4000
+        max: 4000
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 4000
+        max: 4000
+{{- end }}

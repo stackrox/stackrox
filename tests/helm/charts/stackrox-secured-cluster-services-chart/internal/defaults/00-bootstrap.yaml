@@ -1,0 +1,15 @@
+# If we are being linted, magically apply settings that will not cause linting to break.
+{{- if eq .Release.Name "test-release" }}
+{{- include "srox.warn" (list . "You are using a release name that is reserved for tests. In order to allow linting to work, certain checks have been relaxed. If you are deploying to a real environment, we recommend that you choose a different release name.") }}
+allowNonstandardNamespace: true
+allowNonstandardReleaseName: true
+clusterName: test-cluster-for-lint
+{{- end }}
+---
+
+_namespace: {{ default .Release.Namespace ._rox.meta.namespaceOverride }}
+
+---
+meta:
+  useLookup: true
+  fileOverrides: {}

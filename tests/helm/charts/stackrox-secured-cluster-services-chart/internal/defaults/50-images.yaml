@@ -1,0 +1,124 @@
+# This file contains the default image (registry + name + tag) settings) for all StackRox Secured Cluster
+# Services.
+
+# Initialize default meta values
+image:
+  registry: quay.io/rhacs-eng
+  main:
+    name: main
+    pullPolicy: IfNotPresent
+  collector:
+    name: collector
+    slimName: collector
+  scanner:
+    name: scanner-slim
+    tag: 2.33.x-76-g631dea9898
+  scannerDb:
+    name: scanner-db-slim
+    tag: 2.33.x-76-g631dea9898
+  scannerV4:
+    name: scanner-v4
+    tag: 4.4.x-888-gab9a2a7df1
+  scannerV4DB:
+    name: scanner-v4-db
+    tag: 4.4.x-888-gab9a2a7df1
+---
+# Add registry defaults
+image:
+  main:
+    registry: {{ ._rox.image.registry }}
+  collector:
+    registry: {{ if or (eq ._rox.image.registry "stackrox.io") (eq ._rox.image.registry "registry.connect.redhat.com") }}collector.stackrox.io{{ else }}{{ ._rox.image.registry }}{{ end }}
+  scanner:
+    registry: {{ ._rox.image.registry }}
+  scannerDb:
+    registry: {{ ._rox.image.registry }}
+  scannerV4:
+    registry: {{ ._rox.image.registry }}
+  scannerV4DB:
+    registry: {{ ._rox.image.registry }}
+---
+# Default to collector slim mode. If configured registry equals the default we can assume the cluster has internet connectivity.
+collector:
+  slimMode: {{ eq ._rox.image.collector.registry "quay.io/rhacs-eng" }}
+---
+# Configure repository (registry + name)
+image:
+  main:
+    repository: {{ list ._rox.image.main.registry ._rox.image.main.name | compact | join "/" }}
+  collector:
+    {{- if ._rox.collector.slimMode }}
+    repository: {{ list ._rox.image.collector.registry ._rox.image.collector.slimName | compact | join "/" }}
+    {{- else }}
+    repository: {{ list ._rox.image.collector.registry ._rox.image.collector.name | compact | join "/" }}
+    {{- end }}
+  scanner:
+    repository: {{ list ._rox.image.scanner.registry ._rox.image.scanner.name | compact | join "/" }}
+  scannerDb:
+    repository: {{ list ._rox.image.scannerDb.registry ._rox.image.scannerDb.name | compact | join "/" }}
+  scannerV4:
+    repository: {{ list ._rox.image.scannerV4.registry ._rox.image.scannerV4.name | compact | join "/" }}
+  scannerV4DB:
+    repository: {{ list ._rox.image.scannerV4DB.registry ._rox.image.scannerV4DB.name | compact | join "/" }}
+---
+# Configure collector slim image full ref
+image:
+  collector:
+    {{- if and ._rox.collector.slimMode ._rox.image.collector.slim.fullRef }}
+    fullRef: {{ ._rox.image.collector.slim.fullRef }}
+    {{- else if and (not ._rox.collector.slimMode) ._rox.image.collector.full.fullRef }}
+    fullRef: {{ ._rox.image.collector.full.fullRef }}
+    {{- end }}
+---
+# Apply fullRef and configurations to images
+image:
+  main:
+    {{- if or ._rox.image.main.tag ._rox.image.main.fullRef }}
+      {{- include "srox.warn" (list . "You have specified an explicit main image (tag). This will prevent the main image from being updated correctly when upgrading to a newer version of this chart.") }}
+    {{- else }}
+    _abbrevImageRef: {{ ._rox.image.main.repository }}
+    {{- end }}
+    tag: 4.4.x-888-gab9a2a7df1
+  collector:
+    {{- if or ._rox.image.collector.tag ._rox.image.collector.fullRef }}
+      {{- include "srox.warn" (list . "You have specified an explicit collector image tag. This will prevent the collector image from being updated correctly when upgrading to a newer version of this chart.") }}
+      {{- if ._rox.collector.slimMode }}
+        {{- include "srox.warn" (list . "You have specified an explicit collector image tag. The slim collector setting will not have any effect.") }}
+      {{- end }}
+    {{- else }}
+    _abbrevImageRef: {{ ._rox.image.collector.repository }}
+    {{- end }}
+---
+# Configure tags and pull policies
+image:
+  collector:
+    {{- if ._rox.collector.slimMode }}
+    tag: "3.18.x-295-ga8d6e55a31-slim"
+    pullPolicy: IfNotPresent
+    {{- else }}
+    tag: "3.18.x-295-ga8d6e55a31-latest"
+    pullPolicy: Always
+    {{- end }}
+---
+# Add fullRef references to images
+# TODO(ROX-9261): Add support for image pull policy to scanner slim
+image:
+  main:
+    fullRef: "{{ printf "%s:%s" ._rox.image.main.repository ._rox.image.main.tag }}"
+  collector:
+    fullRef: "{{ printf "%s:%s" ._rox.image.collector.repository ._rox.image.collector.tag }}"
+  scanner:
+    fullRef: "{{ printf "%s:%s" ._rox.image.scanner.repository ._rox.image.scanner.tag }}"
+  scannerDb:
+    fullRef: "{{ printf "%s:%s" ._rox.image.scannerDb.repository ._rox.image.scannerDb.tag }}"
+  scannerV4:
+    fullRef: "{{ printf "%s:%s" ._rox.image.scannerV4.repository ._rox.image.scannerV4.tag }}"
+  scannerV4DB:
+    fullRef: "{{ printf "%s:%s" ._rox.image.scannerV4DB.repository ._rox.image.scannerV4DB.tag }}"
+collector:
+  imagePullPolicy: {{ ._rox.image.collector.pullPolicy }}
+  complianceImagePullPolicy: {{ ._rox.image.main.pullPolicy }}
+sensor:
+  imagePullPolicy: {{ ._rox.image.main.pullPolicy }}
+admissionControl:
+  imagePullPolicy: {{ ._rox.image.main.pullPolicy }}

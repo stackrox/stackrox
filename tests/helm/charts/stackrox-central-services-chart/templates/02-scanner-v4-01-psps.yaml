@@ -1,0 +1,72 @@
+{{- include "srox.init" . -}}
+{{- if and (or ._rox.scannerV4._indexerEnabled ._rox.scannerV4._matcherEnabled) ._rox.system.enablePodSecurityPolicies }}
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "srox.globalResourceName" (list . "stackrox-scanner-v4-psp") }}
+  labels:
+    {{- include "srox.labels" (list . "clusterrole" "stackrox-scanner-v4-psp") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox-scanner-v4-psp") | nindent 4 }}
+rules:
+- apiGroups:
+  - policy
+  resources:
+  - podsecuritypolicies
+  resourceNames:
+  - {{ include "srox.globalResourceName" (list . "stackrox-scanner-v4") }}
+  verbs:
+  - use
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-scanner-v4-psp
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "stackrox-scanner-v4-psp") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "stackrox-scanner-v4-psp") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "srox.globalResourceName" (list . "stackrox-scanner-v4-psp") }}
+subjects:
+- kind: ServiceAccount
+  name: scanner-v4
+  namespace: {{ .Release.Namespace }}
+
+---
+
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: {{ include "srox.globalResourceName" (list . "stackrox-scanner-v4") }}
+  labels:
+    {{- include "srox.labels" (list . "podsecuritypolicy" "stackrox-scanner-v4") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "podsecuritypolicy" "stackrox-scanner-v4") | nindent 4 }}
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  volumes:
+  - 'configMap'
+  - 'emptyDir'
+  - 'projected'
+  - 'secret'
+  - 'downwardAPI'
+  - 'persistentVolumeClaim'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+{{- end }}

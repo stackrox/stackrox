@@ -1,0 +1,50 @@
+{{- include "srox.init" . -}}
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admission-control
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "serviceaccount" "admission-control") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "serviceaccount" "admission-control") | nindent 4 }}
+imagePullSecrets:
+{{- range $secretName := ._rox.mainImagePullSecrets._names }}
+- name: {{ quote $secretName }}
+{{- end }}
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: watch-config
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "watch-config") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "role" "watch-config") | nindent 4 }}
+rules:
+  - apiGroups: ['']
+    resources: ['configmaps']
+    verbs: ['get', 'list', 'watch']
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: admission-control-watch-config
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "admission-control-watch-config") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "admission-control-watch-config") | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: admission-control
+    namespace: {{ ._rox._namespace }}
+roleRef:
+  kind: Role
+  name: watch-config
+  apiGroup: rbac.authorization.k8s.io

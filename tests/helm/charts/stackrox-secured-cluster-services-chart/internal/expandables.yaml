@@ -1,0 +1,61 @@
+imagePullSecrets:
+  username: true
+  password: true
+mainImagePullSecrets:
+  username: true
+  password: true
+collectorImagePullSecrets:
+  username: true
+  password: true
+ca:
+  cert: true
+sensor:
+  serviceTLS:
+    cert: true
+    key: true
+  resources: true
+  nodeSelector: true
+admissionControl:
+  serviceTLS:
+    cert: true
+    key: true
+  resources: true
+  nodeSelector: true
+collector:
+  serviceTLS:
+    cert: true
+    key: true
+  resources: true
+  complianceResources: true
+  nodeScanningResources: true
+  nodeSelector: true
+scanner:
+  resources: true
+  dbResources: true
+  nodeSelector: true
+  dbNodeSelector: true
+  dbPassword:
+    value: true
+  serviceTLS:
+    cert: true
+    key: true
+  dbServiceTLS:
+    cert: true
+    key: true
+scannerV4:
+  indexer:
+    nodeSelector: true
+    resources: true
+    serviceTLS:
+      cert: true
+      key: true
+  db:
+    postgresConfig: true
+    hbaConfig: true
+    password:
+      value: true
+    nodeSelector: true
+    resources: true
+    serviceTLS:
+      cert: true
+      key: true

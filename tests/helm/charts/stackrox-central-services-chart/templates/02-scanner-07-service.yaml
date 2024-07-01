@@ -1,0 +1,99 @@
+{{- include "srox.init" . -}}
+
+{{- if not ._rox.scanner.disable -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: scanner
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "service" "scanner") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "service" "scanner") | nindent 4 }}
+spec:
+  ports:
+    - name: https-scanner
+      port: 8080
+      targetPort: 8080
+    - name: grpcs-scanner
+      port: 8443
+      targetPort: 8443
+    {{ if ._rox.scanner.exposeMonitoring -}}
+    - name: monitoring
+      port: 9090
+      targetPort: monitoring
+    {{- end}}
+  selector:
+    app: scanner
+  type: ClusterIP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: scanner-db
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "service" "scanner-db") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "service" "scanner-db") | nindent 4 }}
+spec:
+  ports:
+    - name: tcp-db
+      port: 5432
+      targetPort: 5432
+  selector:
+    app: scanner-db
+  type: ClusterIP
+
+{{ if ._rox.env.istio }}
+---
+
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: scanner-internal-no-istio-mtls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "destinationrule" "scanner-internal-no-istio-mtls") | nindent 4 }}
+  annotations:
+    stackrox.io/description: "Disable Istio mTLS for ports 8080 and 8443, since StackRox services use built-in mTLS."
+    {{- include "srox.annotations" (list . "destinationrule" "scanner-internal-no-istio-mtls") | nindent 4 }}
+spec:
+  host: scanner.{{ .Release.Namespace }}.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+    - port:
+        number: 8080
+      tls:
+        mode: DISABLE
+    - port:
+        number: 8443
+      tls:
+        mode: DISABLE
+
+---
+
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: scanner-db-internal-no-istio-mtls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "destinationrule" "scanner-db-internal-no-istio-mtls") | nindent 4 }}
+  annotations:
+    stackrox.io/description: "Disable Istio mTLS for port 5432, since StackRox services use built-in mTLS."
+    {{- include "srox.annotations" (list . "destinationrule" "scanner-db-internal-no-istio-mtls") | nindent 4 }}
+spec:
+  host: scanner-db.{{ .Release.Namespace }}.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+    - port:
+        number: 5432
+      tls:
+        mode: DISABLE
+{{ end }}
+
+{{ end -}}

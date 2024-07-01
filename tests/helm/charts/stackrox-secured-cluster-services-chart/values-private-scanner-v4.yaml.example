@@ -1,0 +1,37 @@
+# # Private configuration options for Scanner V4 configured as part of the
+# # secured-cluster-services Helm chart.
+#
+# scannerV4:
+#
+#   # Configuration for the indexer component:
+#   indexer:
+#     # Internal "scanner-v4-indexer.<namespace>.svc" service TLS certificate for the Scanner V4 indexer deployment.
+#     # Omit to auto-generate (initial deployment) or use existing (upgrade).
+#     serviceTLS:
+#       cert: |
+#         -----BEGIN CERTIFICATE-----
+#         <PEM-encoded Scanner V4 indexer service certificate>
+#         -----END CERTIFICATE-----
+#       key: |
+#         -----BEGIN RSA PRIVATE KEY-----
+#         <PEM-encoded Scanner V4 indexer service cert private key>
+#         -----END RSA PRIVATE KEY----
+#
+#  # Configuration for the DB component:
+#  db:
+#     # The password to be used for authenticating database access. If this setting is omitted, a password will
+#     # be automatically generated upon initial deployment and the existing password will be used upon upgrades.
+#     password:
+#       value: <scanner database password value>
+#
+#     # Internal "scanner-v4-db.<namespace>.svc" service TLS certificate for the Scanner V4 db deployment.
+#     # Omit to auto-generate (initial deployment) or use existing (upgrade).
+#     serviceTLS:
+#       cert: |
+#         -----BEGIN CERTIFICATE-----
+#         <PEM-encoded Scanner V4 db service certificate>
+#         -----END CERTIFICATE-----
+#       key: |
+#         -----BEGIN RSA PRIVATE KEY-----
+#         <PEM-encoded Scanner V4 db service cert private key>
+#         -----END RSA PRIVATE KEY----
