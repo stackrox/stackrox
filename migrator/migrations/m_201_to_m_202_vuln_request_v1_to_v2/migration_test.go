@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/m_201_to_m_202_vuln_request_v1_to_v2/schema"
 	"github.com/stackrox/rox/migrator/migrations/m_201_to_m_202_vuln_request_v1_to_v2/store"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	ts               = timestamp.TimestampNow()
+	ts               = protocompat.TimestampNow()
 	globalImageScope = &storage.VulnerabilityRequest_Scope{
 		Info: &storage.VulnerabilityRequest_Scope_ImageScope{
 			ImageScope: &storage.VulnerabilityRequest_Scope_Image{
