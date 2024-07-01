@@ -3,8 +3,10 @@
 """
 Run version compatibility tests
 """
+import json
 import logging
 import os
+import requests
 import subprocess
 import sys
 
@@ -32,11 +34,45 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
-central_chart_versions = get_latest_helm_chart_versions(
-    "stackrox-central-services", 2)
-sensor_chart_versions = get_latest_helm_chart_versions(
-    "stackrox-secured-cluster-services", 3
+'''
+get_supported_versions() {
+
+    mapfile -t supported_versions < <(
+        curl -fsS "https://access.redhat.com/product-life-cycles/api/v1/products?name=Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes" |
+jq -r '.data[0].versions[] | select(.type == "Full Support") | .name'
 )
+
+nversions="${#supported_versions[@]}"
+for ((i = nversions - 1; i >= 0; i = i - 1)); do
+echo "${supported_versions[$i]}"
+done
+
+echo "$release"
+}
+'''
+
+
+def get_supported_versions():
+    supported_central = []
+    supported_sensor = []
+    response = requests.get("https://access.redhat.com/product-life-cycles/api/v1/products?name=Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes")
+    data = json.loads(response.text)
+    versions = data["data"][0]["versions"]
+    for version in versions:
+        if version["type"] == "Full Support":
+            major = version["name"].split('.')[0]
+            minor = version["name"].split('.')[1]
+            supported_central.append(get_latest_helm_chart_version_for_specific_release(
+                "stackrox-central-services", Release(major=major, minor=minor)
+            ))
+            supported_sensor.append(get_latest_helm_chart_version_for_specific_release(
+                "stackrox-secured-cluster-services", Release(major=major, minor=minor)
+            ))
+    return supported_central, supported_sensor
+
+
+central_chart_versions, sensor_chart_versions = get_supported_versions()
+
 makefile_path = Path(__file__).parent.parent.parent.parent
 latest_tag = subprocess.check_output(
     ["make", "tag", "-C", makefile_path, "--quiet", "--no-print-director"],
