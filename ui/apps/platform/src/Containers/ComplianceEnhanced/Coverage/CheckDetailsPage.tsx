@@ -26,6 +26,7 @@ import {
     getComplianceProfileCheckResult,
 } from 'services/ComplianceResultsService';
 import { getTableUIState } from 'utils/getTableUIState';
+import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
 import CheckDetailsHeader from './CheckDetailsHeader';
 import CheckDetailsTable, { tabContentIdForResults } from './CheckDetailsTable';
@@ -92,8 +93,9 @@ function CheckDetails() {
     } = useRestQuery(fetchCheckDetails);
 
     const fetchCheckResults = useCallback(() => {
+        const regexSearchFilter = addRegexPrefixToFilters(searchFilter, [CLUSTER_QUERY]);
         const combinedFilter = combineSearchFilterWithScanConfig(
-            searchFilter,
+            regexSearchFilter,
             selectedScanConfigName
         );
         return getComplianceProfileCheckResult(profileName, checkName, {

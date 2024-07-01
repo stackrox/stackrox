@@ -10,7 +10,7 @@ import { getTableUIState } from 'utils/getTableUIState';
 import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
-import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
+import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import { combineSearchFilterWithScanConfig } from './compliance.coverage.utils';
 import ProfileChecksTable from './ProfileChecksTable';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
@@ -29,7 +29,10 @@ function ProfileChecksPage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const fetchProfileChecks = useCallback(() => {
-        const regexSearchFilter = addRegexPrefixToFilters(searchFilter, [CHECK_NAME_QUERY]);
+        const regexSearchFilter = addRegexPrefixToFilters(searchFilter, [
+            CHECK_NAME_QUERY,
+            CLUSTER_QUERY,
+        ]);
         const combinedFilter = combineSearchFilterWithScanConfig(
             regexSearchFilter,
             selectedScanConfigName

@@ -30,7 +30,10 @@ function ProfileClustersPage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const fetchProfileClusters = useCallback(() => {
-        const regexSearchFilter = addRegexPrefixToFilters(searchFilter, [CHECK_NAME_QUERY]);
+        const regexSearchFilter = addRegexPrefixToFilters(searchFilter, [
+            CHECK_NAME_QUERY,
+            CLUSTER_QUERY,
+        ]);
         const combinedFilter = combineSearchFilterWithScanConfig(
             regexSearchFilter,
             selectedScanConfigName

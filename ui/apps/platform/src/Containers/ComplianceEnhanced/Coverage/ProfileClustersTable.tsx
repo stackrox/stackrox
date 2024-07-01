@@ -10,7 +10,7 @@ import {
     ToolbarItem,
     Tooltip,
 } from '@patternfly/react-core';
-import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
@@ -66,127 +66,135 @@ function ProfileClustersTable({
                 </ToolbarContent>
             </Toolbar>
             <Divider />
-            <Table>
-                <Thead>
-                    <Tr>
-                        <Th sort={getSortParams('Cluster')} width={50}>
-                            Cluster
-                        </Th>
-                        <Th modifier="fitContent">Last scanned</Th>
-                        <Th modifier="fitContent">Pass status</Th>
-                        <Th modifier="fitContent">Fail status</Th>
-                        <Th modifier="fitContent">Manual status</Th>
-                        <Th modifier="fitContent">Other status</Th>
-                        <Th width={50}>Compliance</Th>
-                    </Tr>
-                </Thead>
-                <TbodyUnified
-                    tableState={tableState}
-                    colSpan={7}
-                    errorProps={{
-                        title: 'There was an error loading profile clusters',
-                    }}
-                    emptyProps={{
-                        message:
-                            'If you have recently created a scan schedule, please wait a few minutes for the results to become available.',
-                    }}
-                    filteredEmptyProps={{ onClearFilters }}
-                    renderer={({ data }) => (
-                        <Tbody>
-                            {data.map((clusterInfo) => {
-                                const {
-                                    cluster: { clusterId, clusterName },
-                                    lastScanTime,
-                                    checkStats,
-                                } = clusterInfo;
-                                const {
-                                    passCount,
-                                    failCount,
-                                    manualCount,
-                                    otherCount,
-                                    totalCount,
-                                } = getStatusCounts(checkStats);
-                                const passPercentage = calculateCompliancePercentage(
-                                    passCount,
-                                    totalCount
-                                );
-                                const progressBarId = `progress-bar-${clusterId}`;
-                                const firstDiscoveredAsPhrase = getDistanceStrictAsPhrase(
-                                    lastScanTime,
-                                    currentDatetime
-                                );
+            <InnerScrollContainer>
+                <Table>
+                    <Thead>
+                        <Tr>
+                            <Th sort={getSortParams('Cluster')} modifier="fitContent" width={10}>
+                                Cluster
+                            </Th>
+                            <Th modifier="fitContent">Last scanned</Th>
+                            <Th modifier="fitContent">Pass status</Th>
+                            <Th modifier="fitContent">Fail status</Th>
+                            <Th modifier="fitContent">Manual status</Th>
+                            <Th modifier="fitContent">Other status</Th>
+                            <Th modifier="fitContent" width={10}>
+                                Compliance
+                            </Th>
+                        </Tr>
+                    </Thead>
+                    <TbodyUnified
+                        tableState={tableState}
+                        colSpan={7}
+                        errorProps={{
+                            title: 'There was an error loading profile clusters',
+                        }}
+                        emptyProps={{
+                            message:
+                                'If you have recently created a scan schedule, please wait a few minutes for the results to become available.',
+                        }}
+                        filteredEmptyProps={{ onClearFilters }}
+                        renderer={({ data }) => (
+                            <Tbody>
+                                {data.map((clusterInfo) => {
+                                    const {
+                                        cluster: { clusterId, clusterName },
+                                        lastScanTime,
+                                        checkStats,
+                                    } = clusterInfo;
+                                    const {
+                                        passCount,
+                                        failCount,
+                                        manualCount,
+                                        otherCount,
+                                        totalCount,
+                                    } = getStatusCounts(checkStats);
+                                    const passPercentage = calculateCompliancePercentage(
+                                        passCount,
+                                        totalCount
+                                    );
+                                    const progressBarId = `progress-bar-${clusterId}`;
+                                    const firstDiscoveredAsPhrase = getDistanceStrictAsPhrase(
+                                        lastScanTime,
+                                        currentDatetime
+                                    );
 
-                                return (
-                                    <Tr key={clusterId}>
-                                        <Td dataLabel="Cluster">
-                                            <Link
-                                                to={generatePathWithScanConfig(
-                                                    coverageClusterDetailsPath,
-                                                    {
-                                                        clusterId,
-                                                        profileName,
+                                    return (
+                                        <Tr key={clusterId}>
+                                            <Td dataLabel="Cluster" modifier="fitContent">
+                                                <Link
+                                                    to={generatePathWithScanConfig(
+                                                        coverageClusterDetailsPath,
+                                                        {
+                                                            clusterId,
+                                                            profileName,
+                                                        }
+                                                    )}
+                                                >
+                                                    {clusterName}
+                                                </Link>
+                                            </Td>
+                                            <Td dataLabel="Last scanned" modifier="fitContent">
+                                                {firstDiscoveredAsPhrase}
+                                            </Td>
+                                            <Td dataLabel="Pass status" modifier="fitContent">
+                                                <StatusCountIcon
+                                                    text="check"
+                                                    status="pass"
+                                                    count={passCount}
+                                                />
+                                            </Td>
+                                            <Td dataLabel="Fail status" modifier="fitContent">
+                                                <StatusCountIcon
+                                                    text="check"
+                                                    status="fail"
+                                                    count={failCount}
+                                                />
+                                            </Td>
+                                            <Td dataLabel="Manual status" modifier="fitContent">
+                                                <StatusCountIcon
+                                                    text="check"
+                                                    status="manual"
+                                                    count={manualCount}
+                                                />
+                                            </Td>
+                                            <Td dataLabel="Other status" modifier="fitContent">
+                                                <StatusCountIcon
+                                                    text="check"
+                                                    status="other"
+                                                    count={otherCount}
+                                                />
+                                            </Td>
+                                            <Td dataLabel="Compliance">
+                                                <Progress
+                                                    id={progressBarId}
+                                                    value={passPercentage}
+                                                    measureLocation={
+                                                        ProgressMeasureLocation.outside
                                                     }
-                                                )}
-                                            >
-                                                {clusterName}
-                                            </Link>
-                                        </Td>
-                                        <Td dataLabel="Last scanned">{firstDiscoveredAsPhrase}</Td>
-                                        <Td dataLabel="Pass status">
-                                            <StatusCountIcon
-                                                text="check"
-                                                status="pass"
-                                                count={passCount}
-                                            />
-                                        </Td>
-                                        <Td dataLabel="Fail status">
-                                            <StatusCountIcon
-                                                text="check"
-                                                status="fail"
-                                                count={failCount}
-                                            />
-                                        </Td>
-                                        <Td dataLabel="Manual status" modifier="fitContent">
-                                            <StatusCountIcon
-                                                text="check"
-                                                status="manual"
-                                                count={manualCount}
-                                            />
-                                        </Td>
-                                        <Td dataLabel="Other status">
-                                            <StatusCountIcon
-                                                text="check"
-                                                status="other"
-                                                count={otherCount}
-                                            />
-                                        </Td>
-                                        <Td dataLabel="Compliance">
-                                            <Progress
-                                                id={progressBarId}
-                                                value={passPercentage}
-                                                measureLocation={ProgressMeasureLocation.outside}
-                                                aria-label={`${clusterName} compliance percentage`}
-                                            />
-                                            <Tooltip
-                                                content={
-                                                    <div>
-                                                        {`${passCount} / ${totalCount} checks are passing for this cluster`}
-                                                    </div>
-                                                }
-                                                triggerRef={() =>
-                                                    document.getElementById(
-                                                        progressBarId
-                                                    ) as HTMLButtonElement
-                                                }
-                                            />
-                                        </Td>
-                                    </Tr>
-                                );
-                            })}
-                        </Tbody>
-                    )}
-                />
-            </Table>
+                                                    aria-label={`${clusterName} compliance percentage`}
+                                                />
+                                                <Tooltip
+                                                    content={
+                                                        <div>
+                                                            {`${passCount} / ${totalCount} checks are passing for this cluster`}
+                                                        </div>
+                                                    }
+                                                    triggerRef={() =>
+                                                        document.getElementById(
+                                                            progressBarId
+                                                        ) as HTMLButtonElement
+                                                    }
+                                                />
+                                            </Td>
+                                        </Tr>
+                                    );
+                                })}
+                            </Tbody>
+                        )}
+                    />
+                </Table>
+            </InnerScrollContainer>
         </>
     );
 }
