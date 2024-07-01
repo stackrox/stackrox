@@ -883,7 +883,8 @@ class Kubernetes implements OrchestratorMain {
             PodList podList = ns == null ? client.pods().list() : client.pods().inNamespace(ns).list()
             podList.items.each {
                 if (it.getMetadata().getOwnerReferences().size() == 0 || isKubeProxyPod(it)) {
-                    staticPods.add(it.metadata.name)
+                    // Sensor tracks all kube-proxy pods as one with name `static-kube-proxy-pods`
+                    isKubeProxyPod(it) ? staticPods.add("static-kube-proxy-pods") : staticPods.add(it.metadata.name)
                 }
             }
             return staticPods
@@ -892,10 +893,7 @@ class Kubernetes implements OrchestratorMain {
 
     static boolean isKubeProxyPod(Pod pod) {
         String label = pod.getMetadata().getLabels()["component"]
-        if (pod.getMetadata().getNamespace() == "kube-system" && label == "kube-proxy") {
-            return true
-        }
-        return false
+        return pod.getMetadata().getNamespace() == "kube-system" && label == "kube-proxy"
     }
 
     /*
