@@ -14,7 +14,7 @@ import {
     Flex,
     debounce,
 } from '@patternfly/react-core';
-import { ArrowRightIcon, TimesIcon } from '@patternfly/react-icons';
+import { ArrowRightIcon, SearchIcon, TimesIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import SEARCH_AUTOCOMPLETE_QUERY, {
     SearchAutocompleteQueryResponse,
@@ -225,8 +225,8 @@ function SearchFilterAutocomplete({
                     isExpanded={isOpen}
                     aria-controls="select-typeahead-listbox"
                     aria-label={textLabel}
+                    icon={<SearchIcon />}
                 />
-
                 <TextInputGroupUtilities>
                     {!!value && (
                         <Button
