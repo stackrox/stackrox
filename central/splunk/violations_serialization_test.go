@@ -118,6 +118,7 @@ func (s *violationSerializationTestSuite) TestViolationSerialization() {
 }`
 
 	respBodyData, err := io.ReadAll(respBody)
+	s.NoError(err)
 	s.JSONEq(expectedViolationResponse, string(respBodyData))
 }
 

@@ -49,7 +49,7 @@ func TestRESTHandler(t *testing.T) {
 			resp, err := http.Get(server.URL)
 			assert.NoError(t, err)
 			respBody := resp.Body
-			defer respBody.Close()
+			defer func() { _ = respBody.Close() }()
 			respData, err := io.ReadAll(respBody)
 			assert.NoError(t, err)
 			assert.JSONEq(t, testCase.expectedResponse, string(respData))
