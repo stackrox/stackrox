@@ -21,7 +21,6 @@ from post_tests import PostClusterTest, FinalPost
 from runners import ClusterTestSetsRunner
 from clusters import GKECluster
 from get_latest_helm_chart_versions import (
-    get_latest_helm_chart_versions,
     get_latest_helm_chart_version_for_specific_release,
 )
 
@@ -33,28 +32,12 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
-'''
-get_supported_versions() {
-
-    mapfile -t supported_versions < <(
-        curl -fsS "https://access.redhat.com/product-life-cycles/api/v1/products?name=Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes" |
-jq -r '.data[0].versions[] | select(.type == "Full Support") | .name'
-)
-
-nversions="${#supported_versions[@]}"
-for ((i = nversions - 1; i >= 0; i = i - 1)); do
-echo "${supported_versions[$i]}"
-done
-
-echo "$release"
-}
-'''
-
 
 def get_supported_versions():
     supported_central = []
     supported_sensor = []
-    response = requests.get("https://access.redhat.com/product-life-cycles/api/v1/products?name=Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes")
+    response = requests.get("https://access.redhat.com/product-life-cycles/api/v1/products?name="
+                            "Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes")
     data = json.loads(response.text)
     versions = data["data"][0]["versions"]
     for version in versions:
