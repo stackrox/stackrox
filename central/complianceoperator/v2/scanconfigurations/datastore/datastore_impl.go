@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"slices"
 
 	"github.com/pkg/errors"
 	statusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
@@ -356,7 +357,8 @@ func (d *datastoreImpl) GetProfilesNamesFromOperatorScanSettings(ctx context.Con
 	return profileNames, err
 }
 
-// GetProfilesNames gets the list of distinct profile names for the query
+// GetProfilesNames gets the list of all distinct profile names which were configured either via StackRox or directly
+// in Compliance Operator for the query.
 func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]string, error) {
 	var err error
 	q, err = withSACFilter(ctx, resources.Compliance, q)
@@ -364,8 +366,30 @@ func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]st
 		return nil, err
 	}
 
-	clonedQuery := q.Clone()
+	// get all profiles configured in StackRox compliance schedules
+	resultProfileNames, err := d.getScanConfigProfileNames(ctx, q)
+	if err != nil {
+		return nil, err
+	}
 
+	// get all profiles configured via Compliance Operator, not managed by StackRox
+	scanProfileNames, err := d.GetProfilesNamesFromOperatorScanSettings(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	// merge profile name lists
+	for _, scanProfileName := range scanProfileNames {
+		if !slices.Contains[[]string, string](resultProfileNames, scanProfileName) {
+			resultProfileNames = append(resultProfileNames, scanProfileName)
+		}
+	}
+
+	return resultProfileNames, err
+}
+
+func (d *datastoreImpl) getScanConfigProfileNames(ctx context.Context, q *v1.Query) ([]string, error) {
+	clonedQuery := q.Clone()
 	// Build the select and group by on distinct profile name
 	clonedQuery.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ComplianceOperatorConfigProfileName).Distinct().Proto(),
@@ -379,19 +403,19 @@ func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]st
 	clonedQuery.Pagination = q.GetPagination()
 
 	var results []*distinctProfileName
-	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, d.db, schema.ComplianceOperatorScanConfigurationV2Schema, clonedQuery)
+	results, err := pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, d.db, schema.ComplianceOperatorScanConfigurationV2Schema, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
 	if len(results) == 0 {
 		return nil, nil
 	}
-	profileNames := make([]string, 0, len(results))
-	for _, result := range results {
-		profileNames = append(profileNames, result.ProfileName)
-	}
 
-	return profileNames, err
+	resultProfileNames := make([]string, 0, len(results))
+	for _, result := range results {
+		resultProfileNames = append(resultProfileNames, result.ProfileName)
+	}
+	return resultProfileNames, nil
 }
 
 type distinctProfileCount struct {
