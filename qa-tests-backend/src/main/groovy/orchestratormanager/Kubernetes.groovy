@@ -877,19 +877,25 @@ class Kubernetes implements OrchestratorMain {
 
     Set<String> getStaticPodCount(String ns = null) {
         return evaluateWithRetry(2, 3) {
-            // This method assumes that a static pod name will contain the node name that the pod is running on
-            def nodeNames = client.nodes().list().items.collect { it.metadata.name }
+            // This method assumes that a static pod will either have no OwnerReferences or
+            // it will be a kube-proxy pod
             Set<String> staticPods = [] as Set
             PodList podList = ns == null ? client.pods().list() : client.pods().inNamespace(ns).list()
             podList.items.each {
-                for (String node : nodeNames) {
-                    if (it.metadata.name.contains(node)) {
-                        staticPods.add(it.metadata.name[0..it.metadata.name.indexOf(node) - 2])
-                    }
+                if (it.getMetadata().getOwnerReferences().size() == 0 || isKubeProxyPod(it)) {
+                    staticPods.add(it.metadata.name)
                 }
             }
             return staticPods
         }
+    }
+
+    static boolean isKubeProxyPod(Pod pod) {
+        String label = pod.getMetadata().getLabels()["component"]
+        if (pod.getMetadata().getNamespace() == "kube-system" && label == "kube-proxy") {
+            return true
+        }
+        return false
     }
 
     /*
