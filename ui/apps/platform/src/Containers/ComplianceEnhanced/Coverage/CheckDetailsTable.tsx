@@ -126,7 +126,8 @@ function CheckDetailsTable({
                         title: 'There was an error loading results for this check',
                     }}
                     emptyProps={{
-                        message: 'No results found for this check',
+                        message:
+                            'If you have recently created a scan schedule, please wait a few minutes for the results to become available.',
                     }}
                     filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) => (

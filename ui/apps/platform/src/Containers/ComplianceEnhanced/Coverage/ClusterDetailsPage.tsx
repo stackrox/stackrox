@@ -31,11 +31,12 @@ import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getComplianceProfileClusterResults } from 'services/ComplianceResultsService';
 import { listComplianceScanConfigClusterProfiles } from 'services/ComplianceScanConfigurationService';
+import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
 import ClusterDetailsTable from './ClusterDetailsTable';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
-import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
+import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import {
     coverageProfileClustersPath,
     coverageClusterDetailsPath,
@@ -74,16 +75,18 @@ function ClusterDetailsPage() {
         error: scanConfigProfilesError,
     } = useRestQuery(fetchProfilesStats);
 
-    const fetchCheckResults = useCallback(
-        () =>
-            getComplianceProfileClusterResults(profileName, clusterId, {
-                page,
-                perPage,
-                sortOption,
-                searchFilter,
-            }),
-        [clusterId, page, perPage, profileName, sortOption, searchFilter]
-    );
+    const fetchCheckResults = useCallback(() => {
+        const regexSearchFilter = addRegexPrefixToFilters(searchFilter, [
+            CHECK_NAME_QUERY,
+            CLUSTER_QUERY,
+        ]);
+        return getComplianceProfileClusterResults(profileName, clusterId, {
+            page,
+            perPage,
+            sortOption,
+            searchFilter: regexSearchFilter,
+        });
+    }, [clusterId, page, perPage, profileName, sortOption, searchFilter]);
     const {
         data: checkResultsResponse,
         loading: isLoadingCheckResults,

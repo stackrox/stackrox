@@ -141,7 +141,8 @@ function ClusterDetailsTable({
                         title: 'There was an error loading results for this cluster',
                     }}
                     emptyProps={{
-                        message: 'No results found for this cluster',
+                        message:
+                            'If you have recently created a scan schedule, please wait a few minutes for the results to become available.',
                     }}
                     filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) => (
