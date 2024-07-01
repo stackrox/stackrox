@@ -173,7 +173,7 @@ create_cluster() {
             --disk-size="${DISK_SIZE_GB}GB" \
             --create-subnetwork range=/28 \
             --cluster-ipv4-cidr=/20 \
-            --services-ipv4-cidr=10.0.0.0/24 \
+            --services-ipv4-cidr=192.168.0.0/24 \
             --enable-ip-alias \
             --enable-network-policy \
             --no-enable-autorepair \
