@@ -55,10 +55,6 @@ var (
 		},
 		{
 			FieldsToCompare: fieldsToCompare,
-			PolicyFileName:  "impersonated_secret_access.json",
-		},
-		{
-			FieldsToCompare: fieldsToCompare,
 			PolicyFileName:  "root_user.json",
 		},
 		{
