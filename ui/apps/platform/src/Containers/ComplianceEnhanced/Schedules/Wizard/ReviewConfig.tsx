@@ -18,7 +18,7 @@ import { ComplianceIntegration } from 'services/ComplianceIntegrationService';
 
 import {
     convertFormikParametersToSchedule,
-    customBodyDefault,
+    getBodyDefault,
     getSubjectDefault,
     ScanConfigFormValues,
 } from '../compliance.scanConfigs.utils';
@@ -95,8 +95,11 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                 />
                 {isComplianceReportingEnabled && (
                     <NotifierConfigurationView
-                        customBodyDefault={customBodyDefault}
-                        customSubjectDefault={getSubjectDefault(formikValues.parameters.name)}
+                        customBodyDefault={getBodyDefault(formikValues.profiles)}
+                        customSubjectDefault={getSubjectDefault(
+                            formikValues.parameters.name,
+                            formikValues.profiles
+                        )}
                         notifierConfigurations={formikValues.report.notifierConfigurations}
                     />
                 )}
