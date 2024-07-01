@@ -15,7 +15,7 @@ settings=(
     --set clusterName=perf-test
     --set enableOpenShiftMonitoring=true
     --set exposeMonitoring=true
-    --set collector.collectionMethod=EBPF
+    --set collector.collectionMethod=CORE_BPF
     --set collector.forceCollectionMethod=true
 )
 

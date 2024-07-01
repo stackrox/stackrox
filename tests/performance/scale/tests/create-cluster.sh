@@ -5,7 +5,8 @@ export INFRA_NAME=$1
 
 export ARTIFACTS_DIR="/tmp/artifacts-${INFRA_NAME}"
 
-infractl create openshift-4-perf-scale "${INFRA_NAME}" --arg master-node-type=n2-standard-16 --arg worker-node-type=c2-standard-8 --description "Perf testing cluster" --download-dir="${ARTIFACTS_DIR}" --arg openshift-version=ocp/4.11.0
+infractl create openshift-4-perf-scale "${INFRA_NAME}" --arg master-node-type=n2-standard-16 --arg worker-node-type=c2-standard-8 --description "Perf testing cluster" --download-dir="${ARTIFACTS_DIR}"
+#infractl create openshift-4-perf-scale "${INFRA_NAME}" --arg master-node-type=n2-standard-16 --arg worker-node-type=c2-standard-8 --description "Perf testing cluster" --download-dir="${ARTIFACTS_DIR}" --arg openshift-version=ocp/4.11.0
 #infractl create openshift-4-perf-scale "${INFRA_NAME}" --arg master-node-type=n2-standard-16 --description "Perf testing cluster" --download-dir="${ARTIFACTS_DIR}" --arg openshift-version=ocp/4.11.0
 
 export KUBECONFIG="${ARTIFACTS_DIR}/kubeconfig"
