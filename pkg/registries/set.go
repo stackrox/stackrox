@@ -10,6 +10,7 @@ import (
 //go:generate mockgen-wrapper
 type Set interface {
 	GetAll() []types.ImageRegistry
+	GetAllUnique() []types.ImageRegistry
 	Match(image *storage.ImageName) bool
 	GetRegistryMetadataByImage(image *storage.Image) *types.Config
 	GetRegistryByImage(image *storage.Image) types.Registry

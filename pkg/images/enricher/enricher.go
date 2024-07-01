@@ -152,7 +152,7 @@ func New(cvesSuppressor CVESuppressor, cvesSuppressorV2 CVESuppressor, is integr
 		integrations:     is,
 
 		// number of consecutive errors per registry or scanner to ascertain health of the integration
-		errorsPerRegistry:         make(map[registryTypes.ImageRegistry]int32, len(is.RegistrySet().GetAll())),
+		errorsPerRegistry:         make(map[registryTypes.ImageRegistry]int32),
 		errorsPerScanner:          make(map[scannerTypes.ImageScannerWithDataSource]int32, len(is.ScannerSet().GetAll())),
 		integrationHealthReporter: healthReporter,
 
