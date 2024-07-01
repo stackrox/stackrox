@@ -717,6 +717,9 @@ jobs:
       - name: Scan images for vulnerabilities
         run: |
           release_tag=$(make tag)
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+              release_tag="latest"
+          fi
           if [[ ${{ matrix.image }} =~ "operator" ]]; then
             release_tag=$(make -C operator --silent tag)
           fi
