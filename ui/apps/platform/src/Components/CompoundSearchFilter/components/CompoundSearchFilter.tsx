@@ -66,6 +66,7 @@ function CompoundSearchFilter({
     return (
         <Split className="pf-v5-u-flex-grow-1">
             <EntitySelector
+                menuToggleClassName="pf-v5-u-flex-shrink-0"
                 selectedEntity={selectedEntity}
                 onChange={(value) => {
                     setSelectedEntity(value as SearchFilterEntityName);
@@ -79,6 +80,7 @@ function CompoundSearchFilter({
                 config={config}
             />
             <AttributeSelector
+                menuToggleClassName="pf-v5-u-flex-shrink-0"
                 selectedEntity={selectedEntity}
                 selectedAttribute={selectedAttribute}
                 onChange={(value) => {
