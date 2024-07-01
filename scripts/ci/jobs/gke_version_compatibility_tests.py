@@ -6,12 +6,11 @@ Run version compatibility tests
 import json
 import logging
 import os
-import requests
 import subprocess
 import sys
-
 from collections import namedtuple
 from pathlib import Path
+import requests
 
 from pre_tests import (
     PreSystemTests,
