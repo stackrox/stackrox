@@ -54,4 +54,7 @@ const (
 
 	// NetworkGraphInternalEntitiesSupported identifies the capability of Central (UI) to display internal entities in the network graph.
 	NetworkGraphInternalEntitiesSupported = "NetworkGraphInternalEntitiesSupported"
+
+	// NetworkGraphLearnedExternalEntitiesSupported identifies the capability of Central to receive learned external entities.
+	NetworkGraphLearnedExternalEntitiesSupported = "NetworkGraphLearnedExternalEntitiesSupported"
 )

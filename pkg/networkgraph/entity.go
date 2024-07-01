@@ -1,8 +1,11 @@
 package networkgraph
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -30,6 +33,9 @@ var (
 type Entity struct {
 	Type storage.NetworkEntityInfo_Type
 	ID   string
+
+	// Specific to LearnedExternalSource
+	LearnedExternalSourceAddress net.IPNetwork
 }
 
 // ToProto converts the Entity struct to a storage.NetworkEntityInfo proto.
@@ -42,6 +48,10 @@ func (e Entity) ToProto() *storage.NetworkEntityInfo {
 
 // EntityFromProto converts a storage.NetworkEntityInfo proto to an Entity struct.
 func EntityFromProto(protoEnt *storage.NetworkEntityInfo) Entity {
+	if protoEnt.Type == storage.NetworkEntityInfo_LEARNED_EXTERNAL_SOURCE {
+		return LearnedExternalEntity(net.IPNetworkFromCIDR(protoEnt.GetExternalSource().GetCidr()))
+	}
+
 	return Entity{
 		Type: protoEnt.GetType(),
 		ID:   protoEnt.GetId(),
@@ -69,6 +79,18 @@ func InternalEntities() Entity {
 	return Entity{
 		ID:   InternalSourceID,
 		Type: storage.NetworkEntityInfo_INTERNAL_ENTITIES,
+	}
+}
+
+// LearnedExternalEntity returns an external network entity carrying information about its IP address.
+func LearnedExternalEntity(address net.IPNetwork) Entity {
+	id, err := externalsrcs.NewGlobalScopedScopedID(address.String())
+	utils.Should(errors.Wrapf(err, "generating id for network %s", address.String()))
+
+	return Entity{
+		Type:                         storage.NetworkEntityInfo_LEARNED_EXTERNAL_SOURCE,
+		ID:                           id.String(),
+		LearnedExternalSourceAddress: address,
 	}
 }
 
