@@ -1,11 +1,11 @@
 name: Scanner NVD update
 
 on:
-  pull_request:
-    paths:
+  push:
+    branches:
     - 'yli3/**'
   schedule:
-  - cron: "0 */6 * * *"
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 jobs:
@@ -21,9 +21,9 @@ jobs:
         python-version: '3.10'
 
     - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2

@@ -41,7 +41,7 @@ def get_dates(year, interval):
 def fetch_data(start, end):
     index, total = 0, 0
     logging.info(f"Fetching page from {start} to {end}")
-    backoff_time = 1
+    backoff_time = 10
     max_retries = 3
 
     while total == 0 or index < total:
