@@ -337,7 +337,7 @@ function WorkloadCvesOverviewPage() {
             searchFilterConfig={searchFilterConfig}
             searchFilter={searchFilter}
             additionalContextFilter={
-                isViewingWithCves ? { 'Image CVE Count': '>0'} : {'Image CVE Count': '0'} 
+                isViewingWithCves ? { 'Image CVE Count': '>0'} : { 'Image CVE Count': '0'} 
             }
             defaultFilters={localStorageValue.preferences.defaultFilters}
             onFilterChange={(newFilter, searchPayload) => {

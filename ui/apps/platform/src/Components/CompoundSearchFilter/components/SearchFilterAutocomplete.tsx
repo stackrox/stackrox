@@ -103,10 +103,19 @@ function SearchFilterAutocomplete({
     );
 
     const autocompleteSearchString = `${searchTerm}:${filterValue ? `r/${filterValue}` : ''}`;
-    const autocompleteContextString = getRequestQueryStringForSearchFilter({
+
+    const searchContext = {
         ...searchFilter,
         ...additionalContextFilter,
-    });
+    };
+    const filteredSearchContext = Object.keys(searchContext).reduce((acc, key) => {
+        if (key !== 'FIXABLE') {
+            acc[key] = searchContext[key];
+        }
+        return acc;
+    }, {});
+    const autocompleteContextString = getRequestQueryStringForSearchFilter(filteredSearchContext);
+
     const autocompleteQuery =
         autocompleteContextString !== ''
             ? [autocompleteContextString, autocompleteSearchString].join('+')
