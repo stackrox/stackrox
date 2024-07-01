@@ -13,7 +13,6 @@ import (
 	configStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	pgScanStore "github.com/stackrox/rox/central/complianceoperator/v2/scans/store/postgres"
-
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -660,10 +659,6 @@ func (s *complianceScanConfigDataStoreTestSuite) TestClusterStatus() {
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNamesFromOperatorScanSettings() {
-	// TODO: add scansettingbinding
-	// TODO: add scansetting distinct by profile names. references profile id.
-	// TODO: get profile id
-	// get profile_ref_id
 	profileId := uuid.NewV4().String()
 	profile1 := &storage.ComplianceOperatorProfileV2{
 		ProfileId:    profileId,
@@ -688,6 +683,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNamesFromOperato
 	results, err := s.dataStore.GetProfilesNamesFromOperatorScanSettings(s.testContexts[unrestrictedReadWriteCtx], nil)
 	s.Require().NoError(err)
 	s.Len(results, 1)
+	s.Equal("ocp-cis4", results[0])
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNames() {

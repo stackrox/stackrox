@@ -312,6 +312,10 @@ func (ds *datastoreImpl) RemoveClusterFromScanConfig(ctx context.Context, cluste
 	return nil
 }
 
+type distinctProfileNameScanConfig struct {
+	ProfileName string `db:"compliance_profile_name"`
+}
+
 type distinctProfileName struct {
 	ProfileName string `db:"compliance_config_profile_name"`
 }
@@ -336,8 +340,8 @@ func (d *datastoreImpl) GetProfilesNamesFromOperatorScanSettings(ctx context.Con
 
 	clonedQuery.Pagination = q.GetPagination()
 
-	var results []*distinctProfileName
-	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, d.db, schema.ComplianceOperatorScanV2Schema, clonedQuery)
+	var results []*distinctProfileNameScanConfig
+	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileNameScanConfig](ctx, d.db, schema.ComplianceOperatorScanV2Schema, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
