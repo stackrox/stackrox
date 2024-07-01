@@ -175,6 +175,7 @@ create_cluster() {
             --services-ipv4-cidr=/24 \
             --enable-ip-alias \
             --enable-network-policy \
+            --logging=WORKLOAD,SYSTEM,SCHEDULER,CONTROLLER_MANAGER \
             --no-enable-autorepair \
             "${VERSION_ARGS[@]}" \
             --image-type "${GCP_IMAGE_TYPE}" \
