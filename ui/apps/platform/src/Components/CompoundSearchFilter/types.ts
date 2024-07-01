@@ -175,6 +175,12 @@ export const clusterSearchFilterConfig = {
             searchTerm: 'Cluster Type',
             inputType: 'autocomplete',
         },
+        'Platform Type': {
+            displayName: 'Platform Type',
+            filterChipLabel: 'Platform type',
+            searchTerm: 'Cluster Platform Type',
+            inputType: 'autocomplete',
+        },
     },
 } as const;
 

@@ -121,7 +121,7 @@ function ClustersTable({
                         CVEs
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th sort={getSortParams(CLUSTER_TYPE_SORT_FIELD)}>Cluster type</Th>
+                    <Th sort={getSortParams(CLUSTER_TYPE_SORT_FIELD)}>Platform type</Th>
                     <Th sort={getSortParams(CLUSTER_KUBERNETES_VERSION_SORT_FIELD)}>
                         Kubernetes version
                     </Th>
@@ -144,7 +144,7 @@ function ClustersTable({
                                 <Td dataLabel="CVEs">
                                     {pluralize(clusterVulnerabilityCount, 'CVE')}
                                 </Td>
-                                <Td dataLabel="Cluster type">{displayClusterType(type)}</Td>
+                                <Td dataLabel="Platform type">{displayClusterType(type)}</Td>
                                 <Td dataLabel="Kubernetes version">
                                     {status?.orchestratorMetadata?.version ?? 'Unavailable'}
                                 </Td>
