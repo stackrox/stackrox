@@ -183,13 +183,6 @@ func (i *imageScanCommand) Construct(_ []string, cmd *cobra.Command, f *printer.
 		return common.ErrInvalidCommandOption.CausedBy(err)
 	}
 
-	// There is a case where cobra is not printing the deprecation warning to stderr, when a deprecated flag is not
-	// specified, but has default values. So, when --format is left with default values and --output is not specified,
-	// we manually print the deprecation note. We do not need to do this when i.e. --format csv is used, because
-	// then a deprecated flag will be explicitly used and cobra will take over the printing of the deprecation note.
-	if !cmd.Flag("format").Changed && !cmd.Flag("output").Changed {
-		i.env.Logger().WarnfLn("Flag --format has been deprecated, %s", deprecationNote)
-	}
 	// Only create the printer when the old, deprecated output format is not used
 	// TODO(ROX-8303): This can be removed once the old output format is fully deprecated
 	if f.OutputFormat != "" {
