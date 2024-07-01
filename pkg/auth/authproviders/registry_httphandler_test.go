@@ -350,14 +350,11 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationMissingRequiredAtt
 		"callback activated for user without role should issue an explicit message")
 }
 
-func TestGetSerializedAuthStatusData(t *testing.T) {
-	var nilAuthStatus *v1.AuthStatus
-	_, err := getSerializedAuthStatusData(nilAuthStatus)
-	assert.Error(t, err)
+var (
+	expiresTime      = time.Date(2020, time.December, 31, 23, 59, 59, 999999999, time.UTC)
+	expiresTimestamp = protocompat.ConvertTimeToTimestampOrNil(&expiresTime)
 
-	expiresTime := time.Date(2020, time.December, 31, 23, 59, 59, 999999999, time.UTC)
-	expiresTimestamp := protocompat.ConvertTimeToTimestampOrNil(&expiresTime)
-	authStatus := &v1.AuthStatus{
+	testAuthStatus = &v1.AuthStatus{
 		Id: &v1.AuthStatus_UserId{
 			UserId: "admin",
 		},
@@ -374,7 +371,30 @@ func TestGetSerializedAuthStatusData(t *testing.T) {
 				{
 					Name: "Admin",
 					ResourceToAccess: map[string]storage.Access{
-						"Administration": storage.Access_READ_WRITE_ACCESS,
+						"Access":                           storage.Access_READ_WRITE_ACCESS,
+						"Administration":                   storage.Access_READ_WRITE_ACCESS,
+						"Alert":                            storage.Access_READ_WRITE_ACCESS,
+						"CVE":                              storage.Access_READ_WRITE_ACCESS,
+						"Cluster":                          storage.Access_READ_WRITE_ACCESS,
+						"Compliance":                       storage.Access_READ_WRITE_ACCESS,
+						"Deployment":                       storage.Access_READ_WRITE_ACCESS,
+						"DeploymentExtension":              storage.Access_READ_WRITE_ACCESS,
+						"Detection":                        storage.Access_READ_WRITE_ACCESS,
+						"Image":                            storage.Access_READ_WRITE_ACCESS,
+						"Integration":                      storage.Access_READ_WRITE_ACCESS,
+						"K8sRole":                          storage.Access_READ_WRITE_ACCESS,
+						"K8sRoleBinding":                   storage.Access_READ_WRITE_ACCESS,
+						"K8sSubject":                       storage.Access_READ_WRITE_ACCESS,
+						"Namespace":                        storage.Access_READ_WRITE_ACCESS,
+						"NetworkGraph":                     storage.Access_READ_WRITE_ACCESS,
+						"NetworkPolicy":                    storage.Access_READ_WRITE_ACCESS,
+						"Node":                             storage.Access_READ_WRITE_ACCESS,
+						"Secret":                           storage.Access_READ_WRITE_ACCESS,
+						"ServiceAccount":                   storage.Access_READ_WRITE_ACCESS,
+						"VulnerabilityManagementApprovals": storage.Access_READ_WRITE_ACCESS,
+						"VulnerabilityManagementRequests":  storage.Access_READ_WRITE_ACCESS,
+						"WatchedImages":                    storage.Access_READ_WRITE_ACCESS,
+						"WorkflowAdministration":           storage.Access_READ_WRITE_ACCESS,
 					},
 				},
 			},
@@ -391,11 +411,71 @@ func TestGetSerializedAuthStatusData(t *testing.T) {
 		},
 		IdpToken: "abcdefghijklmnopqrstuvwxyz0123456789",
 	}
-	expectedSerializedAuthStatus := `{
+
+	expectedSerializedTestAuthStatus = `{
+	"authProvider":{
+		"id": "adaaaaaa-cccc-4011-0000-111111111111",
+		"name": "Login with username/password",
+		"type": "basic"
+	},
+	"expires": "2020-12-31T23:59:59.999999999Z",
+	"idpToken": "abcdefghijklmnopqrstuvwxyz0123456789",
+	"userAttributes": [
+		{
+			"key": "role",
+			"values": ["Admin"]
+		},
+		{
+			"key": "username",
+			"values": ["admin"]
+		}
+	],
+	"userId": "admin",
+	"userInfo": {
+		"roles": [
+			{
+				"name": "Admin",
+				"resourceToAccess": {
+					"Access": "READ_WRITE_ACCESS",
+					"Administration": "READ_WRITE_ACCESS",
+					"Alert": "READ_WRITE_ACCESS",
+					"CVE": "READ_WRITE_ACCESS",
+					"Cluster": "READ_WRITE_ACCESS",
+					"Compliance": "READ_WRITE_ACCESS",
+					"Deployment": "READ_WRITE_ACCESS",
+					"DeploymentExtension": "READ_WRITE_ACCESS",
+					"Detection": "READ_WRITE_ACCESS",
+					"Image": "READ_WRITE_ACCESS",
+					"Integration": "READ_WRITE_ACCESS",
+					"K8sRole": "READ_WRITE_ACCESS",
+					"K8sRoleBinding": "READ_WRITE_ACCESS",
+					"K8sSubject": "READ_WRITE_ACCESS",
+					"Namespace": "READ_WRITE_ACCESS",
+					"NetworkGraph": "READ_WRITE_ACCESS",
+					"NetworkPolicy": "READ_WRITE_ACCESS",
+					"Node": "READ_WRITE_ACCESS",
+					"Secret": "READ_WRITE_ACCESS",
+					"ServiceAccount": "READ_WRITE_ACCESS",
+					"VulnerabilityManagementApprovals": "READ_WRITE_ACCESS",
+					"VulnerabilityManagementRequests": "READ_WRITE_ACCESS",
+					"WatchedImages": "READ_WRITE_ACCESS",
+					"WorkflowAdministration": "READ_WRITE_ACCESS"
+				}
+			}
+		],
+		"username": "admin"
+	}
 }`
-	buf, err := getSerializedAuthStatusData(authStatus)
+)
+
+func TestGetSerializedAuthStatusData(t *testing.T) {
+	var nilAuthStatus *v1.AuthStatus
+	_, err := getSerializedAuthStatusData(nilAuthStatus)
+	assert.Error(t, err)
+
+	buf, err := getSerializedAuthStatusData(testAuthStatus)
 	assert.NoError(t, err)
-	assert.JSONEq(t, expectedSerializedAuthStatus, buf.String())
+	assert.JSONEq(t, expectedSerializedTestAuthStatus, buf.String())
 }
 
 /*****************************************************
