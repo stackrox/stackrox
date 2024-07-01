@@ -35,13 +35,13 @@ export type IntegrationPageProps = {
 
 function IntegrationPage({ title, name, traits, children }: IntegrationPageProps): ReactElement {
     const permissions = useIntegrationPermissions();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
     const {
         pageState,
         params: { source, type, id },
     } = usePageState();
     const typeLabel = getIntegrationLabel(source, type);
-    const isTechPreview = isFeatureFlagEnabled('ROX_SCANNER_V4') && type === 'scannerv4';
+    // There is currently nothing relevant in Tech Preview.
+    const isTechPreview = false;
 
     const integrationsListPath = `${integrationsPath}/${source}/${type}`;
     const integrationEditPath = `${integrationsPath}/${source}/${type}/edit/${id as string}`;

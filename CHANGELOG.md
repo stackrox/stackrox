@@ -18,6 +18,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-24173: A new export API `/v1/export/vuln-mgmt/workloads` for workload vulnerabilities has been added. It provides a performant way of exporting both deployments and images in a single query which will hold all relevant data for vulnerability management.
 - ROX-21768: Scanner V4 may now be configured to return partial Node.js results via `ROX_SCANNER_V4_PARTIAL_NODE_JS_SUPPORT` (default is `false`).
   - Scanner v2 (aka StackRox Scanner) always returned partial results for programming languages such that only packages with known vulnerabilities were returned. This flag allows users to enable this functionality in Scanner V4 for Node.js, only.
+- Scanner V4 is out of Tech Preview and is now Generally Available.
+  - StackRox Scanner (Scanner v2) continues to be the default scanner until a future release, but it is recommended to use Scanner V4 for more accurate image scan results.
 
 ### Removed Features
 
