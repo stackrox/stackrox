@@ -143,6 +143,8 @@ linters-settings:
     ignoreSigRegexps:
       - utils\.Should
       - errox\..+\.CausedBy(f)?
+      - errox\.ConcealSensitive
+      - errox\.MakeSensitive
       - retry\.MakeRetryable
       - policy\.NewErr.*
 

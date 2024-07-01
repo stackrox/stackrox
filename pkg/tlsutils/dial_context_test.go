@@ -3,10 +3,12 @@ package tlsutils
 import (
 	"context"
 	"crypto/tls"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 )
@@ -29,7 +31,9 @@ func TestDialContextError(t *testing.T) {
 
 			assert.NotContains(t, err.Error(), "127.0.0.1")
 			assert.NotContains(t, err.Error(), "10001")
-			assert.Equal(t, 1, observedLogs.Len())
+			require.Equal(t, 1, observedLogs.Len())
+			errMessage := observedLogs.All()[0].ContextMap()["error"].(string)
+			assert.True(t, strings.Contains(errMessage, "127.0.0.1") || strings.Contains(errMessage, "10001"))
 		})
 	}
 }
