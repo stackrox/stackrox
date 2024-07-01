@@ -27,6 +27,8 @@ import {
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import useURLSort from 'hooks/useURLSort';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import useAnalytics, { NODE_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import {
@@ -67,6 +69,9 @@ const defaultNodeCveSummary = {
 };
 
 function NodeCvePage() {
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
+
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
@@ -130,12 +135,9 @@ function NodeCvePage() {
                     className="pf-v5-u-pt-lg pf-v5-u-pb-0 pf-v5-u-px-sm"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
-                    onFilterChange={(newFilter, { action }) => {
+                    onFilterChange={(newFilter, searchPayload) => {
                         setSearchFilter(newFilter);
-
-                        if (action === 'ADD') {
-                            // TODO - Add analytics tracking
-                        }
+                        trackAppliedFilter(NODE_CVE_FILTER_APPLIED, searchPayload);
                     }}
                 />
                 <SummaryCardLayout

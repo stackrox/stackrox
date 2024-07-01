@@ -22,6 +22,7 @@ import useURLSort from 'hooks/useURLSort';
 import useAnalytics, {
     GLOBAL_SNOOZE_CVE,
     NODE_CVE_ENTITY_CONTEXT_VIEWED,
+    NODE_CVE_FILTER_APPLIED,
 } from 'hooks/useAnalytics';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
@@ -33,6 +34,7 @@ import {
     clusterSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
 import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
@@ -63,6 +65,7 @@ const searchFilterConfig = {
 function NodeCvesOverviewPage() {
     const apolloClient = useApolloClient();
     const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
     const [activeEntityTabKey] = useURLStringUnion('entityTab', nodeEntityTabValues);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -120,12 +123,9 @@ function NodeCvesOverviewPage() {
         <AdvancedFiltersToolbar
             searchFilter={searchFilter}
             searchFilterConfig={searchFilterConfig}
-            onFilterChange={(newFilter, { action }) => {
+            onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);
-
-                if (action === 'ADD') {
-                    // TODO - Add analytics tracking ROX-24509
-                }
+                trackAppliedFilter(NODE_CVE_FILTER_APPLIED, searchPayload);
             }}
         />
     );
