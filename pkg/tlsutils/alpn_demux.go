@@ -72,18 +72,11 @@ func ALPNDemux(tlsListener net.Listener, listenersByProto map[string]*net.Listen
 		chanByProtoMap[proto] = ch
 	}
 
-	tlsHandshakeTimeout := config.TLSHandshakeTimeout
-	if tlsHandshakeTimeout == 0 {
-		// arbitrary value
-		tlsHandshakeTimeout = 2 * time.Second
-	}
-
 	l := &alpnDemuxListener{
-		lis:                 tlsListener,
-		closed:              concurrency.NewErrorSignal(),
-		chanMap:             chanByProtoMap,
-		cfg:                 config,
-		tlsHandshakeTimeout: tlsHandshakeTimeout,
+		lis:     tlsListener,
+		closed:  concurrency.NewErrorSignal(),
+		chanMap: chanByProtoMap,
+		cfg:     config,
 	}
 	go l.run()
 
@@ -98,11 +91,10 @@ func ALPNDemux(tlsListener net.Listener, listenersByProto map[string]*net.Listen
 }
 
 type alpnDemuxListener struct {
-	lis                 net.Listener
-	closed              concurrency.ErrorSignal
-	chanMap             map[string]chan<- net.Conn
-	cfg                 ALPNDemuxConfig
-	tlsHandshakeTimeout time.Duration
+	lis     net.Listener
+	closed  concurrency.ErrorSignal
+	chanMap map[string]chan<- net.Conn
+	cfg     ALPNDemuxConfig
 }
 
 func (l *alpnDemuxListener) Addr() net.Addr {
@@ -165,7 +157,8 @@ func (l *alpnDemuxListener) doDispatch(conn net.Conn) error {
 		return ErrNoTLSConn
 	}
 
-	ctx, cancel := context.WithTimeoutCause(context.Background(), l.tlsHandshakeTimeout, errors.New("TLS handshake timeout"))
+	ctx, cancel := context.WithTimeoutCause(context.Background(), l.cfg.TLSHandshakeTimeout,
+		errors.New("TLS handshake timeout"))
 	defer cancel()
 	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		return err
