@@ -30,6 +30,7 @@ import io.fabric8.kubernetes.api.model.Namespace
 import io.fabric8.kubernetes.api.model.NamespaceBuilder
 import io.fabric8.kubernetes.api.model.ObjectFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.ObjectMeta
+import io.fabric8.kubernetes.api.model.OwnerReference
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.PodBuilder
 import io.fabric8.kubernetes.api.model.PodList
@@ -117,6 +118,17 @@ class Kubernetes implements OrchestratorMain {
     final int maxWaitTimeSeconds = 90
     final int lbWaitTimeSeconds = 600
     final int intervalTime = 1
+    final List<String> trackedDeploymentLikeResources = [
+            "Deployment",
+            "ReplicaSet",
+            "StatefulSet",
+            "DaemonSet",
+            "ReplicationController",
+            "Pod",
+            "CronJob",
+            "Job",
+            "DeploymentConfig",
+    ]
     String namespace
     KubernetesClient client
 
@@ -882,10 +894,16 @@ class Kubernetes implements OrchestratorMain {
             Set<String> staticPods = [] as Set
             PodList podList = ns == null ? client.pods().list() : client.pods().inNamespace(ns).list()
             podList.items.each {
-                if (it.getMetadata().getOwnerReferences().size() == 0 || isKubeProxyPod(it)) {
-                    // Sensor tracks all kube-proxy pods as one with name `static-kube-proxy-pods`
-                    isKubeProxyPod(it) ? staticPods.add("static-kube-proxy-pods") : staticPods.add(it.metadata.name)
+                if (!isRunning(it)) {
+                    return
                 }
+                if (it.getMetadata().getOwnerReferences().size() > 0) {
+                        if (!isKubeProxyPod(it) && ownerIsTracked(it.getMetadata())) {
+                            return
+                        }
+                }
+                // Sensor tracks all kube-proxy pods as one with name `static-kube-proxy-pods`
+                isKubeProxyPod(it) ? staticPods.add("static-kube-proxy-pods") : staticPods.add(it.metadata.name)
             }
             return staticPods
         }
@@ -894,6 +912,19 @@ class Kubernetes implements OrchestratorMain {
     static boolean isKubeProxyPod(Pod pod) {
         String label = pod.getMetadata().getLabels()["component"]
         return pod.getMetadata().getNamespace() == "kube-system" && label == "kube-proxy"
+    }
+
+    static boolean isRunning(Pod pod) {
+        return pod.getStatus().getPhase() == "Running"
+    }
+
+    boolean ownerIsTracked(ObjectMeta obj) {
+        for (OwnerReference ref in obj.getOwnerReferences()) {
+            if (!trackedDeploymentLikeResources.contains(ref.kind)) {
+                return false
+            }
+        }
+        return true
     }
 
     /*
