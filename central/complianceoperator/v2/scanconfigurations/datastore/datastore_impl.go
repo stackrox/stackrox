@@ -316,6 +316,42 @@ type distinctProfileName struct {
 	ProfileName string `db:"compliance_config_profile_name"`
 }
 
+func (d *datastoreImpl) GetProfilesNamesFromOperatorScanSettings(ctx context.Context, q *v1.Query) ([]string, error) {
+	var err error
+	q, err = withSACFilter(ctx, resources.Compliance, q)
+	if err != nil {
+		return nil, err
+	}
+
+	clonedQuery := q.Clone()
+
+	clonedQuery.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ComplianceOperatorProfileName).Distinct().Proto(),
+	}
+	clonedQuery.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorProfileName.String(),
+		},
+	}
+
+	clonedQuery.Pagination = q.GetPagination()
+
+	var results []*distinctProfileName
+	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, d.db, schema.ComplianceOperatorScanV2Schema, clonedQuery)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, nil
+	}
+	profileNames := make([]string, 0, len(results))
+	for _, result := range results {
+		profileNames = append(profileNames, result.ProfileName)
+	}
+
+	return profileNames, err
+}
+
 // GetProfilesNames gets the list of distinct profile names for the query
 func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]string, error) {
 	var err error

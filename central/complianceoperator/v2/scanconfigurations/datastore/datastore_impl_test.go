@@ -6,9 +6,15 @@ import (
 	"context"
 	"testing"
 
+	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+	pgProfileStore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scanStatusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	configStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
+	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+	pgScanStore "github.com/stackrox/rox/central/complianceoperator/v2/scans/store/postgres"
+
+	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -62,6 +68,8 @@ type complianceScanConfigDataStoreTestSuite struct {
 	storage          configStore.Store
 	statusStorage    scanStatusStore.Store
 	scanConfigDSMock *scanConfigMocks.MockDataStore
+	profileDS        profileDS.DataStore
+	scanDS           scanDS.DataStore
 
 	clusterID1 string
 	clusterID2 string
@@ -77,11 +85,18 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupSuite() {
 
 func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
+	s.T().Setenv("POSTGRES_PORT", "5433")
 	s.db = pgtest.ForT(s.T())
 
 	s.storage = configStore.New(s.db)
 	s.statusStorage = scanStatusStore.New(s.db)
 	s.scanConfigDSMock = scanConfigMocks.NewMockDataStore(s.mockCtrl)
+
+	profileStorage := pgProfileStore.New(s.db)
+	s.profileDS = profileDS.New(profileStorage, s.db, nil)
+
+	scanStorage := pgScanStore.New(s.db)
+	s.scanDS = scanDS.New(scanStorage)
 
 	s.dataStore = New(s.storage, s.statusStorage, s.db.DB)
 	s.clusterID1 = testconsts.Cluster1
@@ -642,6 +657,37 @@ func (s *complianceScanConfigDataStoreTestSuite) TestClusterStatus() {
 
 	// No access to read clusters so should return an error
 	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[complianceWriteNoClusterCtx], configID1, fixtureconsts.Cluster1, "testing status", ""))
+}
+
+func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNamesFromOperatorScanSettings() {
+	// TODO: add scansettingbinding
+	// TODO: add scansetting distinct by profile names. references profile id.
+	// TODO: get profile id
+	// get profile_ref_id
+	profileId := uuid.NewV4().String()
+	profile1 := &storage.ComplianceOperatorProfileV2{
+		ProfileId:    profileId,
+		ClusterId:    s.clusterID1,
+		ProfileRefId: internaltov2storage.BuildProfileRefID(s.clusterID1, profileId, ""),
+		Name:         "ocp-cis4",
+	}
+	s.Require().NoError(s.profileDS.UpsertProfile(s.testContexts[unrestrictedReadWriteCtx], profile1))
+
+	configID4 := uuid.NewV4().String()
+	operatorScanConfig4 := &storage.ComplianceOperatorScanV2{
+		Id:             configID4,
+		ScanConfigName: "scan-config",
+		ClusterId:      s.clusterID1,
+		Profile: &storage.ProfileShim{
+			ProfileId:    profile1.ProfileId,
+			ProfileRefId: profile1.ProfileRefId,
+		},
+	}
+	s.Require().NoError(s.scanDS.UpsertScan(s.testContexts[unrestrictedReadWriteCtx], operatorScanConfig4))
+
+	results, err := s.dataStore.GetProfilesNamesFromOperatorScanSettings(s.testContexts[unrestrictedReadWriteCtx], nil)
+	s.Require().NoError(err)
+	s.Len(results, 1)
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNames() {
