@@ -167,13 +167,8 @@ export type AnalyticsEvent =
     | {
           event: typeof WORKLOAD_CVE_DEFERRAL_EXCEPTION_REQUESTED;
           properties:
-              | {
-                    expiryType: 'TIME';
-                    expiresOn: string | null;
-                }
-              | {
-                    expiryType: 'ALL_CVE_FIXABLE' | 'ANY_CVE_FIXABLE';
-                };
+              | { expiryType: 'CUSTOM_DATE' | 'TIME'; expiryDays: number }
+              | { expiryType: 'ALL_CVE_FIXABLE' | 'ANY_CVE_FIXABLE' | 'INDEFINITE' };
       }
     | {
           event: typeof WORKLOAD_CVE_FALSE_POSITIVE_EXCEPTION_REQUESTED;

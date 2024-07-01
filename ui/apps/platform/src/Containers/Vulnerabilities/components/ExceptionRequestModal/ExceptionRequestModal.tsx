@@ -1,13 +1,13 @@
 import React from 'react';
 import { Alert, Modal, ModalBoxBody, pluralize } from '@patternfly/react-core';
 import { FormikHelpers } from 'formik';
+import dateFns from 'date-fns';
 
 import {
     UpdateVulnerabilityExceptionRequest,
     VulnerabilityException,
     createDeferralVulnerabilityException,
     createFalsePositiveVulnerabilityException,
-    isDeferralException,
     updateVulnerabilityException,
 } from 'services/VulnerabilityExceptionService';
 import useRestMutation from 'hooks/useRestMutation';
@@ -27,6 +27,26 @@ import {
     formValuesToFalsePositiveRequest,
 } from './utils';
 import ExceptionRequestForm, { ExceptionRequestFormProps } from './ExceptionRequestForm';
+
+function normalizeExpiryForAnalytics(
+    expiry: DeferralValues['expiry']
+):
+    | { expiryType: 'CUSTOM_DATE' | 'TIME'; expiryDays: number }
+    | { expiryType: 'ALL_CVE_FIXABLE' | 'ANY_CVE_FIXABLE' | 'INDEFINITE' } {
+    if (!expiry) {
+        return { expiryType: 'INDEFINITE' };
+    }
+    const expiryType = expiry.type;
+
+    if (expiry.type === 'CUSTOM_DATE') {
+        return { expiryType, expiryDays: dateFns.differenceInDays(expiry.date, new Date()) };
+    }
+    if (expiry.type === 'TIME') {
+        return { expiryType, expiryDays: expiry.days };
+    }
+
+    return { expiryType: expiry.type };
+}
 
 export type ExceptionRequestModalOptions = {
     type: CveExceptionRequestType;
@@ -64,27 +84,18 @@ function ExceptionRequestModal({
     const createFalsePositiveMutation = useRestMutation(createFalsePositiveVulnerabilityException);
     const updateRequestMutation = useRestMutation(updateVulnerabilityException);
 
-    const onSuccess = (exception: VulnerabilityException) => {
-        const payload = isDeferralException(exception)
-            ? ({
-                  event: WORKLOAD_CVE_DEFERRAL_EXCEPTION_REQUESTED,
-                  properties: exception.deferralRequest.expiry,
-              } as const)
-            : ({
-                  event: WORKLOAD_CVE_FALSE_POSITIVE_EXCEPTION_REQUESTED,
-                  properties: {},
-              } as const);
-
-        analyticsTrack(payload);
-
-        return onExceptionRequestSuccess(exception);
-    };
-
     function onDeferralSubmit(formValues: DeferralValues, helpers: FormikHelpers<DeferralValues>) {
         if (formValues.expiry) {
             const payload = formValuesToDeferralRequest(formValues, formValues.expiry);
             const callbackOptions = {
-                onSuccess,
+                onSuccess: (exception: VulnerabilityException) => {
+                    const properties = normalizeExpiryForAnalytics(formValues.expiry);
+                    analyticsTrack({
+                        event: WORKLOAD_CVE_DEFERRAL_EXCEPTION_REQUESTED,
+                        properties,
+                    });
+                    return onExceptionRequestSuccess(exception);
+                },
                 onError: () => helpers.setSubmitting(false),
             };
             if (isUpdate) {
@@ -111,7 +122,13 @@ function ExceptionRequestModal({
     ) {
         const payload = formValuesToFalsePositiveRequest(formValues);
         const callbackOptions = {
-            onSuccess,
+            onSuccess: (exception: VulnerabilityException) => {
+                analyticsTrack({
+                    event: WORKLOAD_CVE_FALSE_POSITIVE_EXCEPTION_REQUESTED,
+                    properties: {},
+                });
+                return onExceptionRequestSuccess(exception);
+            },
             onError: () => helpers.setSubmitting(false),
         };
         if (isUpdate) {
