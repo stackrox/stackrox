@@ -15,7 +15,9 @@ import (
 // Usually, `(*grpc.Server).Serve` expects a raw TCP listener, which is then wrapped into a `tls.Listener` by means of
 // the transport credentials returned by `credentials.NewTLS`. This struct makes it possible to invoke `Serve` with a
 // TLS listener.
-type credsFromConn struct{}
+type credsFromConn struct {
+	tlsHandshakeTimeout time.Duration
+}
 
 func (c credsFromConn) Info() credentials.ProtocolInfo {
 	return credentials.ProtocolInfo{
@@ -37,7 +39,11 @@ func (c credsFromConn) ServerHandshake(rawConn net.Conn) (net.Conn, credentials.
 	if tlsConn == nil {
 		return rawConn, nil, nil
 	}
-	ctx, cancel := context.WithTimeoutCause(context.Background(), 2*time.Second, errors.New("TLS handshake timeout"))
+	if c.tlsHandshakeTimeout == 0 {
+		log.Debugf("TLS handshake timeout not set. Using 2s default")
+		c.tlsHandshakeTimeout = 2 * time.Second
+	}
+	ctx, cancel := context.WithTimeoutCause(context.Background(), c.tlsHandshakeTimeout, errors.New("TLS handshake timeout"))
 	defer cancel()
 	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		log.Debugf("TLS handshake error from %q: %v", rawConn.RemoteAddr(), err)
