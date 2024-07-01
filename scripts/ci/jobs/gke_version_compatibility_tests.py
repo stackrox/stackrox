@@ -59,7 +59,7 @@ def get_supported_versions():
     data = json.loads(response.text)
     versions = data["data"][0]["versions"]
     for version in versions:
-        if version["type"] == "Full Support":
+        if version["type"] != "End of life":
             major = version["name"].split('.')[0]
             minor = version["name"].split('.')[1]
             supported_central.append(get_latest_helm_chart_version_for_specific_release(
