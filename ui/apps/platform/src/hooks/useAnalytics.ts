@@ -4,7 +4,6 @@ import { Telemetry } from 'types/config.proto';
 
 import { selectors } from 'reducers';
 import { UnionFrom, tupleTypeGuard } from 'utils/type.utils';
-import { ExceptionExpiry } from 'services/VulnerabilityExceptionService';
 
 // Event Name Constants
 // clusters

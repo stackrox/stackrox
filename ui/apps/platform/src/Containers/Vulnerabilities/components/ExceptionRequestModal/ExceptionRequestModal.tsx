@@ -8,7 +8,6 @@ import {
     createDeferralVulnerabilityException,
     createFalsePositiveVulnerabilityException,
     isDeferralException,
-    isFalsePositiveException,
     updateVulnerabilityException,
 } from 'services/VulnerabilityExceptionService';
 import useRestMutation from 'hooks/useRestMutation';
