@@ -163,10 +163,11 @@
         "ADMISSION_CONTROL_SERVICE",
         "SCANNER_V4_INDEXER_SERVICE",
         "SCANNER_V4_MATCHER_SERVICE",
-        "SCANNER_V4_DB_SERVICE"
+        "SCANNER_V4_DB_SERVICE",
+        "SCANNER_V4_SERVICE"
       ],
       "default": "UNKNOWN_SERVICE",
-      "title": "Next available tag: 16"
+      "title": "Next available tag: 17"
     },
     "v1Authorities": {
       "type": "object",
