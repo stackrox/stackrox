@@ -15,6 +15,7 @@ export type AttributeSelectorProps = {
     selectedAttribute: SelectedAttribute;
     onChange: AttributeSelectorOnChange;
     config: PartialCompoundSearchFilterConfig;
+    menuToggleClassName?: string;
 };
 
 function AttributeSelector({
@@ -22,6 +23,7 @@ function AttributeSelector({
     selectedAttribute,
     onChange,
     config,
+    menuToggleClassName,
 }: AttributeSelectorProps) {
     if (!selectedEntity) {
         return null;
@@ -35,6 +37,7 @@ function AttributeSelector({
 
     return (
         <SimpleSelect
+            menuToggleClassName={menuToggleClassName}
             value={selectedAttribute}
             onChange={onChange}
             ariaLabelMenu="compound search filter attribute selector menu"
