@@ -56,6 +56,29 @@ func managedFieldsTransformer(obj interface{}) (interface{}, error) {
 	return obj, nil
 }
 
+// handleAllEvents starts the dispatchers for all the kubernetes resources
+// tracked by Sensor. For each dispatcher, we wait until it is fully synced,
+// meaning we received and processed the initial resources from the cluster.
+//
+// This is a synchronous process and can be time-consuming. Sensor is in an
+// unready state until all resource dispatchers finish syncing, so keep them
+// quick. Also, the go-client documentation recommends swift processing, see
+//
+//	https://github.com/kubernetes/client-go/blob/592d891671b2a09e5f81781b28ebe078d8115e41/tools/cache/shared_informer.go#L128-L132).
+//
+// We did some stress testing to determine what would happen if a dispatcher is
+// blocked for long periods of time. The results indicated that Sensor recovers
+// eventually, but we should not take this as a valid reason to disregard the
+// previous paragraph because the tests were focused on the startup of secrets
+// and there are many unknowns regarding other resources. Plus, having this
+// function take long is not ideal since other components of Sensor rely on the
+// dispatchers to be synced, see e.g.
+//
+//	https://github.com/stackrox/stackrox/pull/11662)
+//
+// The order in the startup process is important since some resources depend on
+// others. For example, the pod's informer needs to sync before the deployment's
+// since the PodLister is used to populate the image ids of deployments.
 func (k *listenerImpl) handleAllEvents() {
 	defer k.mayCreateHandlers.Signal()
 	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), noResyncPeriod)
