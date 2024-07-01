@@ -19,6 +19,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useAnalytics, {
     GLOBAL_SNOOZE_CVE,
     PLATFORM_CVE_ENTITY_CONTEXT_VIEWED,
+    PLATFORM_CVE_FILTER_APPLIED,
 } from 'hooks/useAnalytics';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
@@ -32,6 +33,7 @@ import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import { clusterSearchFilterConfig, platformCVESearchFilterConfig } from '../../searchFilterConfig';
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
@@ -57,6 +59,7 @@ const searchFilterConfig = {
 function PlatformCvesOverviewPage() {
     const apolloClient = useApolloClient();
     const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
     const [activeEntityTabKey] = useURLStringUnion('entityTab', platformEntityTabValues);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -115,12 +118,9 @@ function PlatformCvesOverviewPage() {
             searchFilter={searchFilter}
             searchFilterConfig={searchFilterConfig}
             cveStatusFilterField="CLUSTER CVE FIXABLE"
-            onFilterChange={(newFilter, { action }) => {
+            onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);
-
-                if (action === 'ADD') {
-                    // TODO - Add analytics tracking ROX-24509
-                }
+                trackAppliedFilter(PLATFORM_CVE_FILTER_APPLIED, searchPayload);
             }}
             includeCveSeverityFilters={false}
         />

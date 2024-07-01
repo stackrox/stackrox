@@ -32,6 +32,8 @@ import { DynamicTableLabel } from 'Components/DynamicIcon';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import useURLSort from 'hooks/useURLSort';
 import { getDateTime } from 'utils/dateUtils';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import useAnalytics, { PLATFORM_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import {
@@ -57,6 +59,9 @@ const searchFilterConfig = {
 };
 
 function PlatformCvePage() {
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
+
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
@@ -151,12 +156,9 @@ function PlatformCvePage() {
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
                     cveStatusFilterField="CLUSTER CVE FIXABLE"
-                    onFilterChange={(newFilter, { action }) => {
+                    onFilterChange={(newFilter, searchPayload) => {
                         setSearchFilter(newFilter);
-
-                        if (action === 'ADD') {
-                            // TODO - Add analytics tracking ROX-24509
-                        }
+                        trackAppliedFilter(PLATFORM_CVE_FILTER_APPLIED, searchPayload);
                     }}
                     includeCveSeverityFilters={false}
                 />

@@ -34,7 +34,9 @@ export const VULNERABILITY_REPORT_SENT_MANUALLY = 'Vulnerability Report Sent Man
 
 // Node and Platform CVEs
 export const GLOBAL_SNOOZE_CVE = 'Global Snooze CVE';
+export const NODE_CVE_FILTER_APPLIED = 'Node CVE Filter Applied';
 export const NODE_CVE_ENTITY_CONTEXT_VIEWED = 'Node CVE Entity Context View';
+export const PLATFORM_CVE_FILTER_APPLIED = 'Platform CVE Filter Applied';
 export const PLATFORM_CVE_ENTITY_CONTEXT_VIEWED = 'Platform CVE Entity Context View';
 
 // cluster-init-bundles
@@ -132,13 +134,16 @@ export type AnalyticsEvent =
           };
       }
     /**
-     * Tracks each time the user applies a filter on a Workload page.
-     * This is controlled by the main search bar on all Workload CVE pages.
+     * Tracks each time the user applies a filter on a VM page.
+     * This is controlled by the main search bar on all VM CVE pages.
      * We only track the value of the applied filter when it does not represent
      * specifics of a customer environment.
      */
     | {
-          event: typeof WORKLOAD_CVE_FILTER_APPLIED;
+          event:
+              | typeof WORKLOAD_CVE_FILTER_APPLIED
+              | typeof NODE_CVE_FILTER_APPLIED
+              | typeof PLATFORM_CVE_FILTER_APPLIED;
           properties: { category: SearchCategoryWithFilter; filter: string } | { category: string };
       }
     /**
