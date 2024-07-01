@@ -1349,6 +1349,7 @@ class Kubernetes implements OrchestratorMain {
                                 getDaemonSetCount(it.metadata.name) +
                                 getStaticPodCount(it.metadata.name) +
                                 getStatefulSetCount(it.metadata.name) +
+                                getCronJobCount(it.metadata.name) +
                                 getJobCount(it.metadata.name),
                         secretsCount: getSecretCount(it.metadata.name),
                         networkPolicyCount: getNetworkPolicyCount(it.metadata.name)
@@ -1802,6 +1803,14 @@ class Kubernetes implements OrchestratorMain {
             createClusterRoleBinding(generatePspRoleBinding(namespace))
         }
     }
+    /*
+        CronJobs
+     */
+    List<String> getCronJobCount(String ns) {
+        return evaluateWithRetry(2, 3) {
+            return client.batch().v1().cronjobs().inNamespace(ns).list().getItems().collect {it.metadata.name }
+        }
+    }
 
     /*
         Jobs
@@ -1809,7 +1818,7 @@ class Kubernetes implements OrchestratorMain {
 
     List<String> getJobCount(String ns) {
         return evaluateWithRetry(2, 3) {
-            return client.batch().v1().jobs().inNamespace(ns).list().getItems().collect { it.metadata.name }
+            return client.batch().v1().jobs().inNamespace(ns).list().getItems().findAll({it.getMetadata().getOwnerReferences().size() == 0}).collect{it.metadata.name}
         }
     }
 
