@@ -173,7 +173,10 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 				"":                      &httpLis,
 			}
 
-			tlsutils.ALPNDemux(lis, protoMap, tlsutils.ALPNDemuxConfig{OnHandshakeError: tlsHandshakeErrorHandler})
+			tlsutils.ALPNDemux(lis, protoMap, tlsutils.ALPNDemuxConfig{
+				OnHandshakeError:    tlsHandshakeErrorHandler,
+				TLSHandshakeTimeout: env.TLSHandshakeTimeout.DurationSetting(),
+			})
 		}
 	}
 
