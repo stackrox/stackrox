@@ -1,4 +1,4 @@
-FROM nginx:1.7.9
+FROM nginx:1.27.0
 
 ADD trigger-violations.sh /trigger-violations-insecure.sh
 
