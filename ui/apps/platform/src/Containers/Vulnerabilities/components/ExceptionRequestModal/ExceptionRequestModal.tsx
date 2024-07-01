@@ -7,10 +7,16 @@ import {
     VulnerabilityException,
     createDeferralVulnerabilityException,
     createFalsePositiveVulnerabilityException,
+    isDeferralException,
+    isFalsePositiveException,
     updateVulnerabilityException,
 } from 'services/VulnerabilityExceptionService';
 import useRestMutation from 'hooks/useRestMutation';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useAnalytics, {
+    WORKLOAD_CVE_DEFERRAL_EXCEPTION_REQUESTED,
+    WORKLOAD_CVE_FALSE_POSITIVE_EXCEPTION_REQUESTED,
+} from 'hooks/useAnalytics';
 import { CveExceptionRequestType } from '../../types';
 import {
     DeferralValues,
@@ -47,6 +53,7 @@ function ExceptionRequestModal({
     onExceptionRequestSuccess,
     onClose,
 }: ExceptionRequestModalProps) {
+    const { analyticsTrack } = useAnalytics();
     const cveCountText = pluralize(cves.length, 'workload CVE');
     const titleAction = isUpdate ? 'Update' : 'Request';
     const title =
@@ -58,11 +65,27 @@ function ExceptionRequestModal({
     const createFalsePositiveMutation = useRestMutation(createFalsePositiveVulnerabilityException);
     const updateRequestMutation = useRestMutation(updateVulnerabilityException);
 
+    const onSuccess = (exception: VulnerabilityException) => {
+        const payload = isDeferralException(exception)
+            ? ({
+                  event: WORKLOAD_CVE_DEFERRAL_EXCEPTION_REQUESTED,
+                  properties: exception.deferralRequest.expiry,
+              } as const)
+            : ({
+                  event: WORKLOAD_CVE_FALSE_POSITIVE_EXCEPTION_REQUESTED,
+                  properties: {},
+              } as const);
+
+        analyticsTrack(payload);
+
+        return onExceptionRequestSuccess(exception);
+    };
+
     function onDeferralSubmit(formValues: DeferralValues, helpers: FormikHelpers<DeferralValues>) {
         if (formValues.expiry) {
             const payload = formValuesToDeferralRequest(formValues, formValues.expiry);
             const callbackOptions = {
-                onSuccess: onExceptionRequestSuccess,
+                onSuccess,
                 onError: () => helpers.setSubmitting(false),
             };
             if (isUpdate) {
@@ -89,7 +112,7 @@ function ExceptionRequestModal({
     ) {
         const payload = formValuesToFalsePositiveRequest(formValues);
         const callbackOptions = {
-            onSuccess: onExceptionRequestSuccess,
+            onSuccess,
             onError: () => helpers.setSubmitting(false),
         };
         if (isUpdate) {
