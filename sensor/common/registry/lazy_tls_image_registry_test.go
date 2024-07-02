@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	imgTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
 	regMocks "github.com/stackrox/rox/pkg/registries/types/mocks"
@@ -24,7 +25,7 @@ func TestNoPanics(t *testing.T) {
 		lazyRegistry.Config()
 		lazyRegistry.DataSource()
 		lazyRegistry.Match(nil)
-		lazyRegistry.Metadata(nil)
+		_, _ = lazyRegistry.Metadata(nil)
 		lazyRegistry.Name()
 		lazyRegistry.Source()
 	})
@@ -162,12 +163,12 @@ func TestMetadata(t *testing.T) {
 		m, err := reg.Metadata(img)
 		require.NoError(t, err)
 		assert.True(t, reg.initialized)
-		assert.Equal(t, fakeMetadata, m)
+		protoassert.Equal(t, fakeMetadata, m)
 
 		mockReg.EXPECT().Metadata(img).Return(fakeMetadata, nil)
 		m, err = reg.Metadata(img)
 		require.NoError(t, err)
-		assert.Equal(t, fakeMetadata, m)
+		protoassert.Equal(t, fakeMetadata, m)
 	})
 }
 
