@@ -14,10 +14,10 @@ import (
 	"testing"
 
 	"github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
-	"github.com/google/go-cmp/cmp"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestConfigure(t *testing.T) {
@@ -334,9 +334,7 @@ func TestEnrich(t *testing.T) {
 	if err := json.Unmarshal(es[0], &got); err != nil {
 		t.Error(err)
 	}
-	if !cmp.Equal(got, want) {
-		t.Error(cmp.Diff(got, want))
-	}
+	assert.Equal(t, want, got)
 }
 
 func newFakeGetter(t *testing.T, path string) driver.EnrichmentGetter {

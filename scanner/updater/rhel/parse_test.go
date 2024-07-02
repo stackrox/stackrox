@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCVEDefFromUnpatched(t *testing.T) {
@@ -187,9 +187,7 @@ func TestAllKnownOpenShift4CPEs(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !cmp.Equal(cpes, test.expected) {
-				t.Fatal(cmp.Diff(cpes, test.expected))
-			}
+			assert.Equal(t, test.expected, cpes)
 		})
 	}
 }

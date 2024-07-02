@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
@@ -370,9 +369,7 @@ func TestUpdater_Import(t *testing.T) {
 		err := u.Import(ctx, nil)
 
 		assert.NoError(t, err)
-		if !cmp.Equal(gotVulns, want[1].V) {
-			t.Error(cmp.Diff(gotVulns, want[1].V))
-		}
+		assert.Equal(t, want[1].V, gotVulns)
 	})
 
 	t.Run("when new vuln and enrichment operations then update", func(t *testing.T) {
@@ -458,9 +455,7 @@ func TestUpdater_Import(t *testing.T) {
 		err := u.Import(ctx, nil)
 
 		assert.NoError(t, err)
-		if !cmp.Equal(got, want) {
-			t.Error(cmp.Diff(got, want))
-		}
+		assert.Equal(t, want, got)
 	})
 
 	t.Run("when iteration fails then stop and return the error", func(t *testing.T) {
@@ -543,8 +538,6 @@ func TestUpdater_Import(t *testing.T) {
 		err := u.Import(ctx, nil)
 
 		assert.Error(t, err, "iterating on vulnerabilities: fake error")
-		if !cmp.Equal(got, want) {
-			t.Error(cmp.Diff(got, want))
-		}
+		assert.Equal(t, want, got)
 	})
 }

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestManifestLoad(t *testing.T) {
@@ -64,7 +64,5 @@ func TestManifestLoad(t *testing.T) {
 	if err := got.Load(f); err != nil {
 		t.Error(err)
 	}
-	if !cmp.Equal(got, want) {
-		t.Error(cmp.Diff(got, want))
-	}
+	assert.Equal(t, want, got)
 }
