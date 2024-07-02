@@ -33,9 +33,7 @@ function ImageIntegrationsSection(): ReactElement {
                         label={label}
                         linkTo={getIntegrationsListPath(source, type)}
                         numIntegrations={countIntegrations(type)}
-                        isTechPreview={
-                            isFeatureFlagEnabled('ROX_SCANNER_V4') && type === 'scannerv4'
-                        }
+                        isTechPreview={false}
                     />
                 );
             })}
