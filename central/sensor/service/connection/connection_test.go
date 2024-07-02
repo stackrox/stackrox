@@ -2,6 +2,7 @@ package connection
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
@@ -131,30 +133,21 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 		}
 	}
 
-	s.Require().NotEqual(0, len(complianceRequests))
-	containsTestScanConfig := false
-	for _, request := range complianceRequests {
-		scanConfigs := request.GetSyncScanConfigs().GetScanConfigs()
-		if len(scanConfigs) > 0 {
-			match := true
-			updateScan := scanConfigs[0].GetUpdateScan()
-			profiles := updateScan.GetScanSettings().GetProfiles()
-			if "TestConfigName" != updateScan.GetScanSettings().GetScanName() {
-				match = false
-			} else if 1 != len(profiles) {
-				match = false
-			} else if "TestProfileName" != profiles[0] {
-				match = false
-			} else if "2 1 * * *" != updateScan.GetCron() {
-				match = false
-			}
-			if match {
-				containsTestScanConfig = true
-			}
+	s.Assert().Equal(1, len(complianceRequests))
+	for _, scr := range complianceRequests {
+		s.Require().Len(scr.GetSyncScanConfigs().GetScanConfigs(), len(scanConfigs))
+		for _, sc := range scr.GetSyncScanConfigs().GetScanConfigs() {
+			s.Require().NotNil(sc.GetUpdateScan())
+			idx := slices.IndexFunc(scanConfigs, func(slice *storage.ComplianceOperatorScanConfigurationV2) bool {
+				return slice.GetScanConfigName() == sc.GetUpdateScan().GetScanSettings().GetScanName()
+			})
+			s.Require().NotEqual(-1, idx)
+			s.Assert().Equal(scanConfigs[idx].GetScanConfigName(), sc.GetUpdateScan().GetScanSettings().GetScanName())
+			cron, err := schedule.ConvertToCronTab(scanConfigs[idx].GetSchedule())
+			s.Require().NoError(err)
+			s.Assert().Equal(cron, sc.GetUpdateScan().GetCron())
 		}
 	}
-
-	s.True(containsTestScanConfig)
 }
 
 func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeBelowMinimumVersion() {
