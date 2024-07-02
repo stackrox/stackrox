@@ -27,6 +27,9 @@ var (
 	protoPkgs = []string{
 		"*github.com/stackrox/scanner/generated",
 		"*github.com/stackrox/rox/generated/",
+		// Support oneof fields. All oneof interfaces have naming pattern "is<FieldName>".
+		"github.com/stackrox/scanner/generated/storage.is",
+		"github.com/stackrox/rox/generated/storage.is",
 	}
 
 	replacements = map[string]string{
