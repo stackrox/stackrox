@@ -139,7 +139,8 @@ type AdmissionControlComponentSpec struct {
 	// Maximum timeout period for admission review, upon which admission review will fail open.
 	// Use it to set request timeouts when you enable inline image scanning.
 	// The default kubectl timeout is 30 seconds; taking padding into account, this should not exceed 25 seconds.
-	//+kubebuilder:default=20
+	// On OpenShift webhook timeouts cannot exceed 13 seconds, hence with padding this value shall not exceed 10 seconds.
+	//+kubebuilder:default=10
 	//+kubebuilder:validation:Minimum=1
 	//+kubebuilder:validation:Maximum=25
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
