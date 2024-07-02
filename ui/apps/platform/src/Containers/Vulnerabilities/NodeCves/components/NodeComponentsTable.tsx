@@ -29,7 +29,11 @@ export const nodeComponentFragment = gql`
         name
         source
         version
-        fixedIn
+        nodeVulnerabilities(query: $query) {
+            severity
+            isFixable
+            fixedByVersion
+        }
     }
 `;
 
@@ -37,7 +41,11 @@ export type NodeComponent = {
     name: string;
     source: string;
     version: string;
-    fixedIn: string;
+    nodeVulnerabilities: {
+        severity: string;
+        isFixable: boolean;
+        fixedByVersion: string;
+    }[];
 };
 
 const sortFields = ['Component', 'Type'];
@@ -63,20 +71,25 @@ function NodeComponentsTable({ data }: NodeComponentsTableProps) {
                     <Th sort={getSortParams('Component')}>Component</Th>
                     <Th sort={getSortParams('Type')}>Type</Th>
                     <Th>Version</Th>
-                    <Th>Fixed in</Th>
+                    <Th>CVE fixed in</Th>
                 </Tr>
             </Thead>
             <Tbody>
-                {sortedData.map(({ name, source, version, fixedIn }) => (
-                    <Tr key={name}>
-                        <Td dataLabel="Component">{name}</Td>
-                        <Td dataLabel="Type">{source}</Td>
-                        <Td dataLabel="Version">{version}</Td>
-                        <Td dataLabel="Fixed in">
-                            {fixedIn || <VulnerabilityFixableIconText isFixable={false} />}
-                        </Td>
-                    </Tr>
-                ))}
+                {sortedData.map(({ name, source, version, nodeVulnerabilities }) => {
+                    const fixedByVersion = nodeVulnerabilities?.[0]?.fixedByVersion;
+                    return (
+                        <Tr key={name}>
+                            <Td dataLabel="Component">{name}</Td>
+                            <Td dataLabel="Type">{source}</Td>
+                            <Td dataLabel="Version">{version}</Td>
+                            <Td dataLabel="CVE fixed in">
+                                {fixedByVersion || (
+                                    <VulnerabilityFixableIconText isFixable={false} />
+                                )}
+                            </Td>
+                        </Tr>
+                    );
+                })}
             </Tbody>
         </Table>
     );

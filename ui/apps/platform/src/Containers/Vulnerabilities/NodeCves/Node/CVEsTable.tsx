@@ -49,11 +49,6 @@ export const nodeVulnerabilityFragment = gql`
         scoreVersion
         nodeComponents(query: $query) {
             ...NodeComponentFragment
-            nodeVulnerabilities(query: $query) {
-                severity
-                isFixable
-                fixedByVersion
-            }
         }
     }
 `;
@@ -63,13 +58,7 @@ export type NodeVulnerability = {
     summary: string;
     cvss: number;
     scoreVersion: string;
-    nodeComponents: (NodeComponent & {
-        nodeVulnerabilities: {
-            severity: string;
-            isFixable: boolean;
-            fixedByVersion: string;
-        }[];
-    })[];
+    nodeComponents: NodeComponent[];
 };
 
 export type CVEsTableProps = {
