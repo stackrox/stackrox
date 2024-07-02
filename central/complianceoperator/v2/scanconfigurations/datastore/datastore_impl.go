@@ -321,7 +321,7 @@ type distinctProfileName struct {
 	ProfileName string `db:"compliance_config_profile_name"`
 }
 
-func (d *datastoreImpl) GetProfilesNamesFromOperatorScanSettings(ctx context.Context, q *v1.Query) ([]string, error) {
+func (d *datastoreImpl) getProfilesNamesFromOperatorScanSettings(ctx context.Context, q *v1.Query) ([]string, error) {
 	var err error
 	q, err = withSACFilter(ctx, resources.Compliance, q)
 	if err != nil {
@@ -339,7 +339,7 @@ func (d *datastoreImpl) GetProfilesNamesFromOperatorScanSettings(ctx context.Con
 		},
 	}
 
-	clonedQuery.Pagination = q.GetPagination()
+	//clonedQuery.Pagination = q.GetPagination()
 
 	var results []*distinctProfileNameScanConfig
 	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileNameScanConfig](ctx, d.db, schema.ComplianceOperatorScanV2Schema, clonedQuery)
@@ -373,10 +373,12 @@ func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]st
 	}
 
 	// get all profiles configured via Compliance Operator, not managed by StackRox
-	scanProfileNames, err := d.GetProfilesNamesFromOperatorScanSettings(ctx, q)
+	scanProfileNames, err := d.getProfilesNamesFromOperatorScanSettings(ctx, q)
 	if err != nil {
 		return nil, err
 	}
+
+	q.GetPagination().GetSortOptions()
 
 	// merge profile name lists
 	for _, scanProfileName := range scanProfileNames {
@@ -384,6 +386,15 @@ func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]st
 			resultProfileNames = append(resultProfileNames, scanProfileName)
 		}
 	}
+
+	slices.Sort[[]string, string](resultProfileNames)
+	if q.GetPagination().Limit > int32(len(resultProfileNames)-1) {
+		q.GetPagination().Limit = int32(len(resultProfileNames) - 1)
+	}
+	if q.GetPagination().Offset > int32(len(resultProfileNames)-1) {
+		q.GetPagination().Offset = int32(len(resultProfileNames) - 1)
+	}
+	resultProfileNames = resultProfileNames[q.GetPagination().Offset:q.GetPagination().Limit]
 
 	return resultProfileNames, err
 }
@@ -400,7 +411,7 @@ func (d *datastoreImpl) getScanConfigProfileNames(ctx context.Context, q *v1.Que
 		},
 	}
 
-	clonedQuery.Pagination = q.GetPagination()
+	//clonedQuery.Pagination = q.GetPagination()
 
 	var results []*distinctProfileName
 	results, err := pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, d.db, schema.ComplianceOperatorScanConfigurationV2Schema, clonedQuery)

@@ -53,10 +53,6 @@ type DataStore interface {
 	// GetProfilesNames gets the list of distinct profile names for the query
 	GetProfilesNames(ctx context.Context, q *v1.Query) ([]string, error)
 
-	// GetProfilesNamesFromOperatorScanSettings returns distinct profile names for configured objects defined in secured clusters
-	// by compliance operator.
-	GetProfilesNamesFromOperatorScanSettings(ctx context.Context, q *v1.Query) ([]string, error)
-
 	// CountDistinctProfiles returns count of distinct profiles matching query
 	CountDistinctProfiles(ctx context.Context, q *v1.Query) (int, error)
 }
