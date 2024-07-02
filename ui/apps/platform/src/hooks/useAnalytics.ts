@@ -27,6 +27,10 @@ export const WATCH_IMAGE_SUBMITTED = 'Watch Image Submitted';
 export const WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED = 'Workload CVE Entity Context View';
 export const WORKLOAD_CVE_FILTER_APPLIED = 'Workload CVE Filter Applied';
 export const WORKLOAD_CVE_DEFAULT_FILTERS_CHANGED = 'Workload CVE Default Filters Changed';
+export const WORKLOAD_CVE_DEFERRAL_EXCEPTION_REQUESTED =
+    'Workload CVE Deferral Exception Requested';
+export const WORKLOAD_CVE_FALSE_POSITIVE_EXCEPTION_REQUESTED =
+    'Workload CVE False Positive Exception Requested';
 export const COLLECTION_CREATED = 'Collection Created';
 export const VULNERABILITY_REPORT_CREATED = 'Vulnerability Report Created';
 export const VULNERABILITY_REPORT_DOWNLOAD_GENERATED = 'Vulnerability Report Download Generated';
@@ -159,6 +163,16 @@ export type AnalyticsEvent =
               CVE_STATUS_FIXABLE: AnalyticsBoolean;
               CVE_STATUS_NOT_FIXABLE: AnalyticsBoolean;
           };
+      }
+    | {
+          event: typeof WORKLOAD_CVE_DEFERRAL_EXCEPTION_REQUESTED;
+          properties:
+              | { expiryType: 'CUSTOM_DATE' | 'TIME'; expiryDays: number }
+              | { expiryType: 'ALL_CVE_FIXABLE' | 'ANY_CVE_FIXABLE' | 'INDEFINITE' };
+      }
+    | {
+          event: typeof WORKLOAD_CVE_FALSE_POSITIVE_EXCEPTION_REQUESTED;
+          properties: Record<string, never>;
       }
     /**
      * Tracks each time the user creates a collection.
