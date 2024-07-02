@@ -14,6 +14,7 @@ import {
 import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import { SearchFilter } from 'types/search';
+import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 import { SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import {
@@ -213,4 +214,8 @@ export function isScanConfigurationDisabled(
     }
 
     return false;
+}
+
+export function getTimeDifferenceAsPhrase(iso8601: string | null, date: Date) {
+    return iso8601 ? getDistanceStrictAsPhrase(iso8601, date) : 'Scanning now';
 }
