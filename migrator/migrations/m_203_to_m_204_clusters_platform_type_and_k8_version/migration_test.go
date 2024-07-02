@@ -6,16 +6,25 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/generated/storage"
+	oldSchema "github.com/stackrox/rox/migrator/migrations/m_203_to_m_204_clusters_platform_type_and_k8_version/schema/old"
+	previousStore "github.com/stackrox/rox/migrator/migrations/m_203_to_m_204_clusters_platform_type_and_k8_version/store/previous"
+	updatedStore "github.com/stackrox/rox/migrator/migrations/m_203_to_m_204_clusters_platform_type_and_k8_version/store/updated"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 type migrationTestSuite struct {
 	suite.Suite
 
-	db *pghelper.TestPostgres
+	db  *pghelper.TestPostgres
 	ctx context.Context
 }
 
@@ -23,23 +32,29 @@ func TestMigration(t *testing.T) {
 	suite.Run(t, new(migrationTestSuite))
 }
 
-
 func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pghelper.ForT(s.T(), false)
-	// TODO(dont-merge): Create the schemas and tables required for the pre-migration dataset push to DB
+
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), oldSchema.CreateTableClustersStmt)
 }
 
 func (s *migrationTestSuite) TearDownSuite() {
 	s.db.Teardown(s.T())
 }
 
-
-
 func (s *migrationTestSuite) TestMigration() {
-	// TODO(dont-merge): instantiate any store required for the pre-migration dataset push to DB
+	clusters := []*storage.Cluster{
+		s.getTestCluster("generic-1", storage.ClusterType_GENERIC_CLUSTER, "9.0"),
+		s.getTestCluster("generic-2", storage.ClusterType_GENERIC_CLUSTER, "9.0"),
+		s.getTestCluster("kubernetes-1", storage.ClusterType_KUBERNETES_CLUSTER, "9.0"),
+		s.getTestCluster("kubernetes-2", storage.ClusterType_KUBERNETES_CLUSTER, "9.5"),
+		s.getTestCluster("openshift-1", storage.ClusterType_OPENSHIFT_CLUSTER, "9.5"),
+		s.getTestCluster("openshift4-1", storage.ClusterType_OPENSHIFT4_CLUSTER, "9.5"),
+	}
 
-	// TODO(dont-merge): push the pre-migration dataset to DB
+	prevStore := previousStore.New(s.db)
+	require.NoError(s.T(), prevStore.UpsertMany(s.ctx, clusters))
 
 	dbs := &types.Databases{
 		GormDB:     s.db.GetGormDB(),
@@ -49,15 +64,46 @@ func (s *migrationTestSuite) TestMigration() {
 
 	s.Require().NoError(migration.Run(dbs))
 
-	// TODO(dont-merge): instantiate any store required for the post-migration dataset pull from DB
+	newStore := updatedStore.New(s.db)
+	result, err := newStore.GetByQuery(s.ctx, search.EmptyQuery())
+	assert.NoError(s.T(), err)
+	assert.ElementsMatch(s.T(), collectIDs(clusters...), collectIDs(result...))
 
-	// TODO(dont-merge): pull the post-migration dataset from DB
+	result, err = newStore.GetByQuery(s.ctx,
+		search.NewQueryBuilder().AddExactMatches(search.ClusterPlatformType, storage.ClusterType_KUBERNETES_CLUSTER.String()).ProtoQuery())
+	assert.NoError(s.T(), err)
+	assert.ElementsMatch(s.T(), collectIDs(clusters[2], clusters[3]), collectIDs(result...))
 
-	// TODO(dont-merge): validate that the post-migration dataset has the expected content
+	result, err = newStore.GetByQuery(s.ctx,
+		search.NewQueryBuilder().AddExactMatches(search.ClusterPlatformType, storage.ClusterType_OPENSHIFT4_CLUSTER.String()).ProtoQuery())
+	assert.NoError(s.T(), err)
+	assert.ElementsMatch(s.T(), collectIDs(clusters[5]), collectIDs(result...))
 
-	// TODO(dont-merge): validate that pre-migration queries and statements execute against the
-	// post-migration database to ensure backwards compatibility
-
+	result, err = newStore.GetByQuery(s.ctx,
+		search.NewQueryBuilder().AddExactMatches(search.ClusterKubernetesVersion, "9.5").ProtoQuery())
+	assert.NoError(s.T(), err)
+	assert.ElementsMatch(s.T(), collectIDs(clusters[3], clusters[4], clusters[5]), collectIDs(result...))
 }
 
-// TODO(dont-merge): remove any pending TODO
+func collectIDs(objs ...*storage.Cluster) []string {
+	var ids []string
+	for _, obj := range objs {
+		ids = append(ids, obj.GetId())
+	}
+	return ids
+}
+
+func (s *migrationTestSuite) getTestCluster(name string, platformType storage.ClusterType, k8sVersion string) *storage.Cluster {
+	return &storage.Cluster{
+		Id:        uuid.NewV4().String(),
+		Name:      name,
+		Type:      platformType,
+		Labels:    map[string]string{"key": "val"},
+		MainImage: "quay.io/stackrox-io/main",
+		Status: &storage.ClusterStatus{
+			OrchestratorMetadata: &storage.OrchestratorMetadata{
+				Version: k8sVersion,
+			},
+		},
+	}
+}
