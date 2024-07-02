@@ -10,6 +10,8 @@ import shutil
 import subprocess
 from typing import List
 
+from common import log_print
+
 
 class PostTestsConstants:
     API_TIMEOUT = 5 * 60
@@ -44,7 +46,7 @@ class RunWithBestEffortMixin:
         self.failed_commands: List[List[str]] = []
 
     def run_with_best_effort(self, args: List[str], timeout: int):
-        print(f"Running post command: {args}")
+        log_print(f"Running post command: {args}")
         runs_ok = False
         try:
             subprocess.run(
@@ -54,7 +56,7 @@ class RunWithBestEffortMixin:
             )
             runs_ok = True
         except Exception as err:
-            print(f"Exception raised in {args}, {err}")
+            log_print(f"Exception raised in {args}, {err}")
             self.failed_commands.append(args)
             self.exitstatus = 1
         return runs_ok
@@ -62,7 +64,7 @@ class RunWithBestEffortMixin:
     def handle_run_failure(self):
         if self.exitstatus != 0:
             for args in self.failed_commands:
-                print(f"Post failure in: {args}")
+                log_print(f"Post failure in: {args}")
             raise RuntimeError(f"Post failed: exit {self.exitstatus}")
 
 
@@ -105,7 +107,7 @@ class StoreArtifacts(RunWithBestEffortMixin):
     def _store_osci_artifacts(self):
         for source in self.dirs_to_store_to_osci_artifacts:
             if not os.path.exists(source):
-                print(f"Skipping missing artifact: {source}")
+                log_print(f"Skipping missing artifact: {source}")
                 continue
             self._store_osci_artifact(source)
 
@@ -131,7 +133,7 @@ class StoreArtifacts(RunWithBestEffortMixin):
         # similar to run_with_best_effort(), save any failure until all post
         # steps are complete.
         except Exception as err:
-            print(f"Exception with artifact copy of {source}, {err}")
+            log_print(f"Exception with artifact copy of {source}, {err}")
             self.failed_commands.append(["artifact copy", source])
             self.exitstatus = 1
 
