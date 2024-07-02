@@ -55,7 +55,7 @@ var (
 		},
 	})
 
-	configNameRegexp = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]*[a-z0-9]?$`)
+	configNameRegexp = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$`)
 
 	reservedConfigNames = []string{"default", "default-auto-apply"}
 )
@@ -343,7 +343,11 @@ func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {
 		return errors.Wrap(errox.InvalidArgs, "At least one cluster is required for a scan configuration")
 	}
 
-	if req.GetScanConfig() == nil || len(req.GetScanConfig().GetProfiles()) == 0 {
+	if req.GetScanConfig() == nil {
+		return errors.Wrap(errox.InvalidArgs, "The scan configuration is nil.")
+	}
+
+	if len(req.GetScanConfig().GetProfiles()) == 0 {
 		return errors.Wrap(errox.InvalidArgs, "At least one profile is required for a scan configuration")
 	}
 
