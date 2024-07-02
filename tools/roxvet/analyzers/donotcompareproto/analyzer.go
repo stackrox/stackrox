@@ -40,6 +40,7 @@ var (
 
 	bannedEqualFunctions = set.NewFrozenStringSet(
 		"github.com/google/go-cmp/cmp.Equal",
+		"github.com/google/go-cmp/cmp.Diff",
 		"reflect.DeepEqual",
 	)
 

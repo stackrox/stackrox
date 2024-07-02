@@ -13,13 +13,12 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"reflect"
 	"slices"
 	"testing"
 	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
@@ -27,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -182,7 +182,7 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	authStatus, err := getAuthStatus(t, tlsConfWithLeaf, "")
 	require.NoError(t, err)
 	validateAuthStatusResponseForClientCert(t, leafCert, authStatus)
-	assert.Empty(t, cmp.Diff(createdAuthProvider, authStatus.GetAuthProvider(), cmpopts.IgnoreFields(storage.AuthProvider{}, "Config")))
+	validateEqualExceptFields(t, createdAuthProvider, authStatus.GetAuthProvider(), "config")
 
 	// Simulate the flow used in the browser, where the certs are exchanged for a token.
 	token := getTokenForUserPKIAuthProvider(t, createdAuthProvider.GetId(), tlsConfWithLeaf)
@@ -198,9 +198,25 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	// Token plus matching cert => things should work.
 	authStatusWithToken, err := getAuthStatus(t, tlsConfWithLeaf, token)
 	require.NoError(t, err)
-	assert.Empty(t, cmp.Diff(createdAuthProvider, authStatusWithToken.GetAuthProvider(),
-		cmpopts.IgnoreFields(storage.AuthProvider{}, "Config", "Validated", "Active", "LastUpdated")))
+	validateEqualExceptFields(t, createdAuthProvider, authStatusWithToken.GetAuthProvider(),
+		"Config", "Validated", "Active", "LastUpdated")
 	validateAuthStatusResponseForClientCert(t, leafCert, authStatusWithToken)
+}
+
+func validateEqualExceptFields(t *testing.T, a, b *storage.AuthProvider, ignore ...string) bool {
+	t.Helper()
+	x := copyAndResetFields(a, ignore...)
+	y := copyAndResetFields(b, ignore...)
+	return protoassert.Equal(t, x, y)
+}
+
+func copyAndResetFields(a *storage.AuthProvider, fields ...string) *storage.AuthProvider {
+	x := a.Clone()
+	elem := reflect.ValueOf(&x).Elem()
+	for _, f := range fields {
+		elem.FieldByName(f).SetZero()
+	}
+	return x
 }
 
 func TestClientCARequested(t *testing.T) {
