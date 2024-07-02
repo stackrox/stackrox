@@ -1,6 +1,7 @@
 package tlsutils
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -31,7 +32,8 @@ type ListenerControl interface {
 type ALPNDemuxConfig struct {
 	MaxCloseWait time.Duration // Maximum time to wait for a Close to succeed before no longer accepting
 	// connections on sub-listeners.
-	OnHandshakeError func(net.Conn, error) // If non-nil, called whenever there is a TLS handshake error.
+	OnHandshakeError    func(net.Conn, error) // If non-nil, called whenever there is a TLS handshake error.
+	TLSHandshakeTimeout time.Duration         // maximum time allowed for the TLS handshake to finish
 }
 
 // ALPNDemux takes in a single listener, and demultiplexes it onto an arbitrary number of listeners based on the
@@ -155,7 +157,10 @@ func (l *alpnDemuxListener) doDispatch(conn net.Conn) error {
 		return ErrNoTLSConn
 	}
 
-	if err := tlsConn.Handshake(); err != nil {
+	ctx, cancel := context.WithTimeoutCause(context.Background(), l.cfg.TLSHandshakeTimeout,
+		errors.New("TLS handshake timeout"))
+	defer cancel()
+	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		return err
 	}
 
