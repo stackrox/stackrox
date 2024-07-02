@@ -216,12 +216,6 @@ export function isScanConfigurationDisabled(
     return false;
 }
 
-export function getTimeDifferenceAsPhrase(iso8601: string, date: Date) {
-    // If initial numeric time is zero before initial scan on creation of scan schedule,
-    // return 0 seconds ago instead of 54 years ago (that is, since beginning of Unix epoch).
-    if (iso8601.slice(0, 10) === '1970-01-01') {
-        return '0 seconds ago';
-    }
-
-    return getDistanceStrictAsPhrase(iso8601, date);
+export function getTimeDifferenceAsPhrase(iso8601: string | null, date: Date) {
+    return iso8601 ? getDistanceStrictAsPhrase(iso8601, date) : 'Scanning now';
 }
