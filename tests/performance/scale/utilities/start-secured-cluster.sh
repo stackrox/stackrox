@@ -15,6 +15,8 @@ settings=(
     --set clusterName=perf-test
     --set enableOpenShiftMonitoring=true
     --set exposeMonitoring=true
+    --set collector.collectionMethod=CORE_BPF
+    --set collector.forceCollectionMethod=true
 )
 
 if [[ -n ${collector_image_tag:-} ]]; then

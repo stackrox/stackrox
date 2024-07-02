@@ -14,6 +14,7 @@ settings=(
     --set central.adminPassword.value="$admin_password"
     --set enableOpenShiftMonitoring=true
     --set central.db.enabled=true
+    --set central.persistence.none=true
 )
 
 if [[ -n ${DOCKER_USERNAME:-} ]]; then
