@@ -2323,6 +2323,7 @@ class Kubernetes implements OrchestratorMain {
         Container container = new Container(
                 name: deployment.containerName ? deployment.containerName : deployment.name,
                 image: deployment.image,
+                imagePullPolicy: "ifNotPresent",
                 command: deployment.command,
                 args: deployment.args,
                 ports: depPorts,
