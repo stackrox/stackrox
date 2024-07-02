@@ -270,17 +270,17 @@ func (s *handlerTestSuite) TestServeHTTP_v4_Offline_Get() {
 	// No scanner defs found.
 	req := s.getRequestWithVersionedFile(t, "4.3.0")
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 
 	// No mapping json file
 	req = s.getRequestWithJSONFile(t, "name2repos")
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 
 	// No mapping json file
 	req = s.getRequestWithJSONFile(t, "repo2cpe")
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 
 	tempDir := t.TempDir()
 	filePath := tempDir + "/test.zip"
