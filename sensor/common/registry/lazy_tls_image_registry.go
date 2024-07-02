@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// LazyTLSCheckRegistry is a wrapper around an ImageRegistry that
+// lazyTLSCheckRegistry is a wrapper around an ImageRegistry that
 // will perform a TLS check on first Metadata invocation.
 type lazyTLSCheckRegistry struct {
 	// source, dataSource, etc. mirror post initialization fields

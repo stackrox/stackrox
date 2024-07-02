@@ -67,6 +67,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - This enhancement is enabled by default when `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is `true` on Sensor, it can be disabled by setting `ROX_SENSOR_SINGLE_SCAN` to `false` on Sensor.
 - ROX-21651, ROX-22364, ROX-22365:  Further enhancements to the ACS and Compliance Operator integration are now available under the heading "Compliance (2.0)". Updates include improved views by profiles, limited control information and on demand reporting.  As part of the enhancements the APIs were updated and the count APIs were removed.  This feature remains in Tech Preview.
 - ROX-21288: The default timeout setting for ACS' admission controller webhooks has been reduced from 20 seconds to 10 seconds, which will result in an effective timeout within the ValidatingWebhookConfiguration of 12 seconds. This change has been motivated by the fact that OpenShift unconditionally caps webhook timeouts at 13 seconds. On non-OpenShift Kubernetes longer webhook timeouts are supported. Users currently depending on longer timeouts, for example because of enabled inline image scanning within webhooks, might need to specify a longer timeout explicitly, which can be done in the `SecuredCluster` CR (`admissionControl.timeoutSeconds`), in Helm (`admissionControl.dynamic.timeout`) or within a sensor deployment bundle (`ValidatingWebhookConfiguration` manifest within the file `admission-controller.yaml`).
+- Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered.
+  - To revert back to synchronous TLS checks set `ROX_SENSOR_LAZY_TLS_CHECKS` to `false`.
 
 ## [4.4.0]
 

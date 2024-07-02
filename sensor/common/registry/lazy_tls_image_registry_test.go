@@ -192,9 +192,9 @@ func TestSource(t *testing.T) {
 func TestTest(t *testing.T) {
 	reg := &lazyTLSCheckRegistry{}
 	if !buildinfo.ReleaseBuild {
-		require.PanicsWithError(t, "not implemented", func() { reg.Test() })
+		require.PanicsWithError(t, "not implemented", func() { _ = reg.Test() })
 	} else {
-		assert.NotPanics(t, func() { reg.Test() })
+		assert.NotPanics(t, func() { _ = reg.Test() })
 	}
 }
 
