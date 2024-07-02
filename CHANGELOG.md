@@ -10,6 +10,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 
 ### Added Features
+
 - ROX-18689: ACS will qualify the registry (and path) of images from the container runtime when env var `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is set to `true` on both Central and Sensor.
   - This enables support for CRI-O's unqualified search registries and short name aliases ([more info](https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md)).
 - ROX-23852: `roxctl image scan` now has the option to filter by vulnerability severities using the `--severity` flag.
@@ -67,6 +68,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - This enhancement is enabled by default when `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is `true` on Sensor, it can be disabled by setting `ROX_SENSOR_SINGLE_SCAN` to `false` on Sensor.
 - ROX-21651, ROX-22364, ROX-22365:  Further enhancements to the ACS and Compliance Operator integration are now available under the heading "Compliance (2.0)". Updates include improved views by profiles, limited control information and on demand reporting.  As part of the enhancements the APIs were updated and the count APIs were removed.  This feature remains in Tech Preview.
 - ROX-21288: The default timeout setting for ACS' admission controller webhooks has been reduced from 20 seconds to 10 seconds, which will result in an effective timeout within the ValidatingWebhookConfiguration of 12 seconds. This change has been motivated by the fact that OpenShift unconditionally caps webhook timeouts at 13 seconds. On non-OpenShift Kubernetes longer webhook timeouts are supported. Users currently depending on longer timeouts, for example because of enabled inline image scanning within webhooks, might need to specify a longer timeout explicitly, which can be done in the `SecuredCluster` CR (`admissionControl.timeoutSeconds`), in Helm (`admissionControl.dynamic.timeout`) or within a sensor deployment bundle (`ValidatingWebhookConfiguration` manifest within the file `admission-controller.yaml`).
+- ROX-24471: Scanner V4 Matcher memory requirements were updates to align with the current consumption (see ROX-24355).
 
 ## [4.4.0]
 
