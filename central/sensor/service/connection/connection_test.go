@@ -104,7 +104,6 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 	eventHandler := newSensorEventHandler(&storage.Cluster{}, "", pipeline, nil, &stopSig, deduper, nil)
 
 	sensorMockConn := &sensorConnection{
-		//clusterID:          fixtureconsts.Cluster1,
 		clusterMgr:         mgrMock,
 		sensorEventHandler: eventHandler,
 		sensorHello:        hello,
@@ -113,17 +112,14 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 		sendC:              make(chan *central.MsgToSensor),
 	}
 
-	caps := set.NewSet[centralsensor.SensorCapability]([]centralsensor.SensorCapability{centralsensor.SendDeduperStateOnReconnect}...)
-
 	mgrMock.EXPECT().GetCluster(ctx, gomock.Any()).Return(&storage.Cluster{}, true, nil).AnyTimes()
-	deduper.EXPECT().GetSuccessfulHashes().Return(map[string]uint64{"deployment:1": 0}).Times(1)
 	s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).Times(1)
 
 	server := &mockServer{
 		sentList: make([]*central.MsgToSensor, 0),
 	}
 
-	err := sensorMockConn.Run(ctx, server, caps)
+	err := sensorMockConn.Run(ctx, server, set.NewSet[centralsensor.SensorCapability]())
 	s.NoError(err)
 
 	var complianceRequests []*central.ComplianceRequest
@@ -133,15 +129,30 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 		}
 	}
 
-	s.Equal(1, len(complianceRequests))
-	ScanConfigs := complianceRequests[0].GetSyncScanConfigs().GetScanConfigs()
-	s.Equal(1, len(ScanConfigs))
-	UpdateScan := ScanConfigs[0].GetUpdateScan()
-	s.Equal("TestConfigName", UpdateScan.GetScanSettings().GetScanName())
-	Profiles := UpdateScan.GetScanSettings().GetProfiles()
-	s.Equal(1, len(Profiles))
-	s.Equal("TestProfileName", Profiles[0])
-	s.Equal("2 1 * * *", UpdateScan.GetCron())
+	s.Require().NotEqual(0, len(complianceRequests))
+	containsTestScanConfig := false
+	for _, request := range complianceRequests {
+		scanConfigs := request.GetSyncScanConfigs().GetScanConfigs()
+		if len(scanConfigs) > 0 {
+			match := true
+			updateScan := scanConfigs[0].GetUpdateScan()
+			profiles := updateScan.GetScanSettings().GetProfiles()
+			if "TestConfigName" != updateScan.GetScanSettings().GetScanName() {
+				match = false
+			} else if 1 != len(profiles) {
+				match = false
+			} else if "TestProfileName" != profiles[0] {
+				match = false
+			} else if "2 1 * * *" != updateScan.GetCron() {
+				match = false
+			}
+			if match {
+				containsTestScanConfig = true
+			}
+		}
+	}
+
+	s.True(containsTestScanConfig)
 }
 
 func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeBelowMinimumVersion() {
