@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/tools/roxvet/analyzers/structuredlogs"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckedifassign"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/undeferredmutexunlocks"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/unmarshalreplace"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/unusedroxctlargs"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/validateimports"
 	"golang.org/x/tools/go/analysis/unitchecker"
@@ -40,6 +41,7 @@ func main() {
 		structuredlogs.Analyzer,
 		uncheckedifassign.Analyzer,
 		undeferredmutexunlocks.Analyzer,
+		unmarshalreplace.Analyzer,
 		unusedroxctlargs.Analyzer,
 		validateimports.Analyzer,
 	)
