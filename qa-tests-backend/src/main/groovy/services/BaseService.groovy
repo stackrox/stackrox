@@ -130,7 +130,7 @@ class BaseService {
                     .forAddress(Env.mustGetHostname(), Env.mustGetPort())
                     // Here be dragons.
                     // Enabling retries in grpc java lib is more complicated then we thought.
-                    // Tired:
+                    // Tried:
                     // - https://github.com/stackrox/stackrox/pull/11652
                     // - https://github.com/stackrox/stackrox/pull/7636
                     // - https://github.com/stackrox/stackrox/pull/4921
