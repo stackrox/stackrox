@@ -133,11 +133,9 @@ tests:
         scanner.mode: ""
 
 - name: "scanner V4 with deprecated PodSecurityPolicies disabled"
-  values:
-    scannerV4:
-      disable: false
-    system:
-      enablePodSecurityPolicies: false
+  set:
+    scannerV4.disable: false
+    system.enablePodSecurityPolicies: false
   expect: |
     .podsecuritypolicys["stackrox-scanner-v4"] | assertThat(. == null)
     .rolebindings["stackrox-scanner-v4-psp"] | assertThat(. == null)
@@ -145,10 +143,8 @@ tests:
 
 - name: "scanner with deprecated PodSecurityPolicies enabled"
   set:
-    scannerV4:
-      disable: false
-    system:
-      enablePodSecurityPolicies: true
+    scannerV4.disable: false
+    system.enablePodSecurityPolicies: true
   expect: |
     .podsecuritypolicys["stackrox-scanner-v4"] | assertThat(. != null)
     .rolebindings["stackrox-scanner-v4-psp"] | assertThat(. != null)
