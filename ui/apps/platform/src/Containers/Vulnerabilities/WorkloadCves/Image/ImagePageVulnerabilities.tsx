@@ -36,6 +36,7 @@ import {
 } from 'Components/CompoundSearchFilter/types';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
+import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
 import {
     SearchOption,
     IMAGE_CVE_SEARCH_OPTION,
@@ -121,13 +122,13 @@ function ImagePageVulnerabilities({
     pagination,
 }: ImagePageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
     const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
     const currentVulnerabilityState = useVulnerabilityState();
+    const hasRequestExceptionsAbility = useHasRequestExceptionsAbility();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -179,7 +180,7 @@ function ImagePageVulnerabilities({
         createExceptionModalActions,
     } = useExceptionRequestModal();
 
-    const showDeferralUI = isUnifiedDeferralsEnabled && currentVulnerabilityState === 'OBSERVED';
+    const showDeferralUI = hasRequestExceptionsAbility && currentVulnerabilityState === 'OBSERVED';
     const canSelectRows = showDeferralUI;
 
     const createTableActions = showDeferralUI ? createExceptionModalActions : undefined;

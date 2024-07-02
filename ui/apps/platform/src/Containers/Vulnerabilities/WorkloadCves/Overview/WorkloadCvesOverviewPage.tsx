@@ -164,7 +164,6 @@ function WorkloadCvesOverviewPage() {
     const hasReadAccessForNamespaces = hasReadWriteAccess('Namespace');
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
     const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
     const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
@@ -478,7 +477,6 @@ function WorkloadCvesOverviewPage() {
                                     workloadCvesScopedQueryString={workloadCvesScopedQueryString}
                                     isFiltered={isFiltered}
                                     vulnerabilityState={currentVulnerabilityState}
-                                    isUnifiedDeferralsEnabled={isUnifiedDeferralsEnabled}
                                 />
                             )}
                             {activeEntityTabKey === 'Image' && (
