@@ -1213,6 +1213,83 @@ _EO_DETAILS_
     else
         save_junit_skipped "${stackrox_deployed[@]}"
     fi
+
+    record_job_specific_progress
+}
+
+record_job_specific_progress() {
+    case "$CI_JOB_NAME" in
+    *gke-upgrade-tests)
+        record_upgrade_test_progess
+        ;;
+    *)
+        info "No job specific progress markers are saved for: ${CI_JOB_NAME}"
+        ;;
+    esac
+}
+
+record_upgrade_test_progess() {
+    # Record the progress of the upgrade test. This order is tightly coupled to
+    # the order of execution in .openshift-ci/ci_tests.py UpgradeTest and the
+    # files listed below. This is essentially a check for the existence of state
+    # tracking files that the upgrade test leaves in its wake as it progresses.
+
+    # tests/upgrade/postgres_sensor_run.sh
+    record_progress_step "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" "${STATE_DEPLOYED}" \
+        "postgres_sensor_run" "roxctl sensor bundle test"
+    record_progress_step "${UPGRADE_PROGRESS_UPGRADER}" "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" \
+        "postgres_sensor_run" "bin/upgrader tests"
+
+    # tests/upgrade/legacy_to_postgres_run.sh
+    record_progress_step "${UPGRADE_PROGRESS_LEGACY_PREP}" "${UPGRADE_PROGRESS_UPGRADER}" \
+        "legacy_to_postgres_run" "Preparation for legacy to postgres testing"
+    record_progress_step "${UPGRADE_PROGRESS_LEGACY_ROCKSDB_CENTRAL}" "${UPGRADE_PROGRESS_LEGACY_PREP}" \
+        "legacy_to_postgres_run" "Deployed an earlier rocksdb central"
+    record_progress_step "${UPGRADE_PROGRESS_LEGACY_TO_RELEASE}" "${UPGRADE_PROGRESS_LEGACY_ROCKSDB_CENTRAL}" \
+        "legacy_to_postgres_run" "Helm upgrade to latest postgres release from rocksdb"
+    record_progress_step "${UPGRADE_PROGRESS_RELEASE_BACK_TO_LEGACY}" "${UPGRADE_PROGRESS_LEGACY_TO_RELEASE}" \
+        "legacy_to_postgres_run" "Rollback to rocksdb"
+
+    # tests/upgrade/postgres_run.sh
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_PREP}" "${UPGRADE_PROGRESS_RELEASE_BACK_TO_LEGACY}" \
+        "postgres_run" "Preparation for postgres testing"
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}" "${UPGRADE_PROGRESS_POSTGRES_PREP}" \
+        "postgres_run" "Deployed earlier postgres central"
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_BOUNCE}" "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}" \
+        "postgres_run" "Bounced central"
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}" "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_BOUNCE}" \
+        "postgres_run" "Bounced central-db"
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_MIGRATIONS}" "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}" \
+        "postgres_run" "Test migrations with an upgrade to current"
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_ROLLBACK}" "${UPGRADE_PROGRESS_POSTGRES_MIGRATIONS}" \
+        "postgres_run" "Test rollback to earlier postgres"
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_SMOKE_TESTS}" "${UPGRADE_PROGRESS_POSTGRES_ROLLBACK}" \
+        "postgres_run" "Smoke tests"
+}
+
+record_progress_step() {
+    if [[ "$#" -ne 4 ]]; then
+        die "Missing args. Usage: record_upgrade_test_progess " \
+            "<this_step_file> <previous_step_file> <JUNIT Class> <JUNIT Description>"
+    fi
+
+    local this_step_file="$1"
+    local previous_step_file="$2"
+    local junit_class="$3"
+    local junit_step_description="$4"
+
+    if [[ -f "${previous_step_file}" ]] && [[ -f "${this_step_file}" ]]; then
+        save_junit_success "${junit_class}" "${junit_step_description}"
+    elif [[ -f "${previous_step_file}" ]]; then
+        save_junit_failure "${junit_class}" "${junit_step_description}" "See build.log for error details."
+    elif [[ -f "${this_step_file}" ]]; then
+        die "ERROR: This step file exists but the previous step does not. " \
+            "This indicates a change in the order of test execution that needs to be resolved " \
+            "against the record steps. " \
+            "this: ${this_step_file}, previous: ${previous_step_file}"
+    else
+        save_junit_skipped "${junit_class}" "${junit_step_description}"
+    fi
 }
 
 setup_automation_flavor_e2e_cluster() {
