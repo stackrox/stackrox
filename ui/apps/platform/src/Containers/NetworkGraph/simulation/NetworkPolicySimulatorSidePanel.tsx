@@ -70,7 +70,7 @@ export type NetworkPolicySimulatorSidePanelProps = {
 const tabs = {
     SIMULATE_NETWORK_POLICIES: 'Simulate network policies',
     VIEW_ACTIVE_YAMLS: 'View active YAMLS',
-};
+}; // space in visible text, but id has underscore!
 
 function NetworkPolicySimulatorSidePanel({
     simulator,
@@ -410,12 +410,12 @@ function NetworkPolicySimulatorSidePanel({
                 <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
                     <Tab
                         eventKey={tabs.SIMULATE_NETWORK_POLICIES}
-                        tabContentId={tabs.SIMULATE_NETWORK_POLICIES}
+                        tabContentId="Simulate_network_policies"
                         title={<TabTitleText>{tabs.SIMULATE_NETWORK_POLICIES}</TabTitleText>}
                     />
                     <Tab
                         eventKey={tabs.VIEW_ACTIVE_YAMLS}
-                        tabContentId={tabs.VIEW_ACTIVE_YAMLS}
+                        tabContentId="View_active_YAMLS"
                         title={<TabTitleText>{tabs.VIEW_ACTIVE_YAMLS}</TabTitleText>}
                     />
                 </Tabs>
@@ -423,7 +423,7 @@ function NetworkPolicySimulatorSidePanel({
             <StackItem isFilled style={{ overflow: 'auto' }}>
                 <TabContent
                     eventKey={tabs.SIMULATE_NETWORK_POLICIES}
-                    id={tabs.SIMULATE_NETWORK_POLICIES}
+                    id="Simulate_network_policies"
                     hidden={activeKeyTab !== tabs.SIMULATE_NETWORK_POLICIES}
                 >
                     <div className="pf-v5-u-p-lg pf-v5-u-h-100">
@@ -508,7 +508,7 @@ function NetworkPolicySimulatorSidePanel({
                 </TabContent>
                 <TabContent
                     eventKey={tabs.VIEW_ACTIVE_YAMLS}
-                    id={tabs.VIEW_ACTIVE_YAMLS}
+                    id="View_active_YAMLS"
                     hidden={activeKeyTab !== tabs.VIEW_ACTIVE_YAMLS}
                 >
                     <ViewActiveYAMLs

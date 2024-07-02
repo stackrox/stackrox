@@ -93,7 +93,7 @@ function NamespaceSideBar({ namespaceId, nodes, edges, onNodeSelect }: Namespace
                     />
                     <Tab
                         eventKey="Network policies"
-                        tabContentId="Network policies"
+                        tabContentId="Network_policies"
                         title={<TabTitleText>Network policies</TabTitleText>}
                     />
                 </Tabs>
@@ -108,7 +108,7 @@ function NamespaceSideBar({ namespaceId, nodes, edges, onNodeSelect }: Namespace
                 </TabContent>
                 <TabContent
                     eventKey="Network policies"
-                    id="Network policies"
+                    id="Network_policies"
                     hidden={activeKeyTab !== 'Network policies'}
                     className="pf-v5-u-h-100"
                 >
