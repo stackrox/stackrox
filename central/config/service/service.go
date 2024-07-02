@@ -17,7 +17,7 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
-	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
@@ -33,9 +33,9 @@ var (
 			// This endpoint should therefore remain public.
 			"/v1.ConfigService/GetPublicConfig",
 		},
-               or.Or(
-                   user.With(permissions.View(resources.VulnerabilityManagementRequests)),
-                   user.With(permissions.View(resources.Administration))): {
+		or.Or(
+			user.With(permissions.View(resources.VulnerabilityManagementRequests)),
+			user.With(permissions.View(resources.Administration))): {
 			"/v1.ConfigService/GetVulnerabilityExceptionConfig",
 		},
 		user.With(permissions.View(resources.Administration)): {
