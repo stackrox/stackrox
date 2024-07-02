@@ -9,6 +9,7 @@
         "postcss.config.js",
         "tailwind.config.js",
         "cypress/**/*",
+        "eslint-plugins/**/*",
         "src/**/*"
     ],
     "exclude": [],
