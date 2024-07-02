@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -151,7 +151,7 @@ func (cmd *scannerDownloadDBCommand) versionFromCentral() (string, error) {
 	defer utils.IgnoreError(resp.Body.Close)
 
 	var metadata v1.Metadata
-	if err := jsonpb.Unmarshal(resp.Body, &metadata); err != nil {
+	if err := jsonutil.JSONReaderToProto(resp.Body, &metadata); err != nil {
 		cmd.env.Logger().WarnfLn("error reading metadata from central: %v", err)
 		return "", err
 	}

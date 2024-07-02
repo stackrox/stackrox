@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
@@ -328,7 +328,7 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "expected 200 status code for ping request")
 	var pong v1.PongMessage
-	assert.NoError(t, jsonpb.Unmarshal(resp.Body, &pong), "expected response for ping request to be unmarshalable into Pong protobuf")
+	assert.NoError(t, jsonutil.JSONReaderToProto(resp.Body, &pong), "expected response for ping request to be unmarshalable into Pong protobuf")
 
 	resp, err = client.Get(fmt.Sprintf("%s://%s/v1/auth/status", scheme, targetHost))
 	if !assert.NoError(t, err, "expected HTTP request to succeed at the transport level") {
@@ -342,7 +342,7 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 	}
 
 	var authStatus v1.AuthStatus
-	if !assert.NoError(t, jsonpb.Unmarshal(resp.Body, &authStatus), "expected response for auth status request to be unmarshalable into auth status PB") {
+	if !assert.NoError(t, jsonutil.JSONReaderToProto(resp.Body, &authStatus), "expected response for auth status request to be unmarshalable into auth status PB") {
 		return
 	}
 	c.verifyAuthStatus(t, testCtx, &authStatus)
