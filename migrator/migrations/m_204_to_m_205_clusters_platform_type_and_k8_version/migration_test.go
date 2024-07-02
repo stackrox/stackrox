@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	oldSchema "github.com/stackrox/rox/migrator/migrations/m_203_to_m_204_clusters_platform_type_and_k8_version/schema/old"
-	previousStore "github.com/stackrox/rox/migrator/migrations/m_203_to_m_204_clusters_platform_type_and_k8_version/store/previous"
-	updatedStore "github.com/stackrox/rox/migrator/migrations/m_203_to_m_204_clusters_platform_type_and_k8_version/store/updated"
+	oldSchema "github.com/stackrox/rox/migrator/migrations/m_204_to_m_205_clusters_platform_type_and_k8_version/schema/old"
+	previousStore "github.com/stackrox/rox/migrator/migrations/m_204_to_m_205_clusters_platform_type_and_k8_version/store/previous"
+	updatedStore "github.com/stackrox/rox/migrator/migrations/m_204_to_m_205_clusters_platform_type_and_k8_version/store/updated"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"

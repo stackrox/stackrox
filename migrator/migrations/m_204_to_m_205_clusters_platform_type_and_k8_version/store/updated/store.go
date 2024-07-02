@@ -1,4 +1,4 @@
-package previous
+package updated
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	oldSchema "github.com/stackrox/rox/migrator/migrations/m_203_to_m_204_clusters_platform_type_and_k8_version/schema/old"
+	newSchema "github.com/stackrox/rox/migrator/migrations/m_204_to_m_205_clusters_platform_type_and_k8_version/schema/new"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	schema         = oldSchema.ClustersSchema
+	schema         = newSchema.ClustersSchema
 	targetResource = resources.Cluster
 )
 
@@ -25,7 +25,6 @@ type storeType = storage.Cluster
 
 // Store is the interface to interact with the storage for storage.Cluster
 type Store interface {
-	UpsertMany(ctx context.Context, objs []*storeType) error
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 }
 
@@ -83,12 +82,14 @@ func insertIntoClusters(batch *pgx.Batch, obj *storage.Cluster) error {
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
+		obj.GetType(),
 		pgutils.EmptyOrMap(obj.GetLabels()),
 		obj.GetStatus().GetProviderMetadata().GetCluster().GetType(),
+		obj.GetStatus().GetOrchestratorMetadata().GetVersion(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO clusters (Id, Name, Labels, Status_ProviderMetadata_Cluster_Type, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, Status_ProviderMetadata_Cluster_Type = EXCLUDED.Status_ProviderMetadata_Cluster_Type, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO clusters (Id, Name, Type, Labels, Status_ProviderMetadata_Cluster_Type, Status_OrchestratorMetadata_Version, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Labels = EXCLUDED.Labels, Status_ProviderMetadata_Cluster_Type = EXCLUDED.Status_ProviderMetadata_Cluster_Type, Status_OrchestratorMetadata_Version = EXCLUDED.Status_OrchestratorMetadata_Version, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
