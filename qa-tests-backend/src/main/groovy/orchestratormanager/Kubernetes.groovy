@@ -889,8 +889,8 @@ class Kubernetes implements OrchestratorMain {
 
     Set<String> getStaticPodCount(String ns = null) {
         return evaluateWithRetry(2, 3) {
-            // This method assumes that a static pod will either have no OwnerReferences or
-            // it will be a kube-proxy pod
+            // This method assumes that a static pod will either have no OwnerReferences,
+            // it will have a owner not tracked by ACS, or it will be a kube-proxy pod
             Set<String> staticPods = [] as Set
             PodList podList = ns == null ? client.pods().list() : client.pods().inNamespace(ns).list()
             podList.items.each {
