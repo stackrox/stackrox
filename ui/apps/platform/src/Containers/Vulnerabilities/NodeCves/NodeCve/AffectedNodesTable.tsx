@@ -58,8 +58,6 @@ export const affectedNodeFragment = gql`
             nodeVulnerabilities(query: $query) {
                 vulnerabilityId: id
                 cve
-                severity
-                fixedByVersion
                 cvss
                 scoreVersion
             }
