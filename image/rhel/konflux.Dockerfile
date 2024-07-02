@@ -63,6 +63,8 @@ FROM registry.access.redhat.com/ubi8/nodejs-18:latest AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
+USER root
+
 COPY . .
 
 # This installs yarn from Cachi2 and makes `yarn` executable available.
