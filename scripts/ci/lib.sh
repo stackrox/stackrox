@@ -1901,6 +1901,19 @@ Author: \($author_name)\($slack_mention).",
          "${webhook_url}"
 }
 
+# junit_wrap() - runs a command and creates a JUNIT record if the command
+# succeeds or fails. Some output of the command is included in the failure
+# JUNIT.
+#
+# WARNING: If this is used to wrap a bash function and not a separate binary
+# or script file there are two side effects that may not be expected:
+#
+# 1. errexit is not propagated to the function context and the function will
+#    continue on error. This is contrary to the typical approach from `set -e`
+#    used throughout this repo.
+# 2. exports are not propagated back to the calling context because the command
+#    runs in a subshell.
+
 junit_wrap() {
     if [[ "$#" -lt 4 ]]; then
         die "missing args. usage: junit_wrap <class> <description> <failure_message> <command> [ args ]"

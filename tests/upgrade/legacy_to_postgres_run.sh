@@ -63,6 +63,7 @@ test_upgrade() {
     setup_deployment_env false false
     setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
+    touch "${UPGRADE_PROGRESS_LEGACY_PREP}"
 
     test_upgrade_paths "$log_output_dir"
 
@@ -102,6 +103,8 @@ test_upgrade_paths() {
     cd "$TEST_ROOT"
     download_roxctl "${LAST_POSTGRES_TAG}"
 
+    touch "${UPGRADE_PROGRESS_LEGACY_ROCKSDB_CENTRAL}"
+
     ########################################################################################
     # Use helm to upgrade to current Postgres release.                                     #
     ########################################################################################
@@ -121,6 +124,8 @@ test_upgrade_paths() {
     # Add some Postgres Access Scopes.  These should not survive a rollback.
     createPostgresScopes
     checkForPostgresAccessScopes
+
+    touch "${UPGRADE_PROGRESS_LEGACY_TO_RELEASE}"
 
     ########################################################################################
     # Flip the Postgres flag to go back to RocksDB                                         #
@@ -175,6 +180,8 @@ test_upgrade_paths() {
     CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test || touch FAIL
     store_qa_test_results "upgrade-paths-smoke-tests"
     [[ ! -f FAIL ]] || die "Smoke tests failed"
+
+    touch "${UPGRADE_PROGRESS_RELEASE_BACK_TO_LEGACY}"
 
     collect_and_check_stackrox_logs "$log_output_dir" "02_final_back_to_Rocks"
 }

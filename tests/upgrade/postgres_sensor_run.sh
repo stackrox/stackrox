@@ -75,7 +75,11 @@ test_upgrade() {
     touch "${STATE_DEPLOYED}"
 
     test_sensor_bundle
+    touch "${UPGRADE_PROGRESS_SENSOR_BUNDLE}"
+
     test_upgrader
+    touch "${UPGRADE_PROGRESS_UPGRADER}"
+
     remove_existing_stackrox_resources
 }
 
