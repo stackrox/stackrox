@@ -904,6 +904,68 @@ func (s *TranslationTestSuite) TestTranslate() {
 	}
 }
 
+func TestTranslatePartialMatch(t *testing.T) {
+	type args struct {
+		sc platform.SecuredCluster
+	}
+
+	tests := map[string]struct {
+		args args
+		want chartutil.Values
+	}{
+		"disabled network policies": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						Network: &platform.GlobalNetworkSpec{
+							Policies: platform.NetworkPoliciesDisabled,
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"network.enableNetworkPolicies": false,
+			},
+		},
+		"enabled network policies": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						Network: &platform.GlobalNetworkSpec{
+							Policies: platform.NetworkPoliciesEnabled,
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"network.enableNetworkPolicies": true,
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			wantAsValues, err := translation.ToHelmValues(tt.want)
+			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
+
+			client := newDefaultFakeClientWithCentral(t) // Provide default objects and central for detection
+			translator := New(client, client)
+			got, err := translator.translate(context.Background(), tt.args.sc)
+			assert.NoError(t, err)
+
+			wantFlattened, err := flatten.Flatten(wantAsValues, "", flatten.DotStyle)
+			assert.NoError(t, err)
+			for key, wantValue := range wantFlattened {
+				gotValue, err := got.PathValue(key)
+				assert.NoError(t, err)
+				assert.Equal(t, wantValue, gotValue)
+			}
+		})
+	}
+}
+
 func toUnstructured(sc platform.SecuredCluster) (*unstructured.Unstructured, error) {
 	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sc)
 	if err != nil {

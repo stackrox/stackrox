@@ -1156,6 +1156,72 @@ func TestTranslate(t *testing.T) {
 	}
 }
 
+func TestTranslatePartialMatch(t *testing.T) {
+	type args struct {
+		c platform.Central
+	}
+
+	tests := map[string]struct {
+		args args
+		want chartutil.Values
+	}{
+		"disabled network policies": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Network: &platform.GlobalNetworkSpec{
+							Policies: platform.NetworkPoliciesDisabled,
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"network.enableNetworkPolicies": false,
+			},
+		},
+		"enabled network policies": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Network: &platform.GlobalNetworkSpec{
+							Policies: NetworkPoliciesEnabled,
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"network.enableNetworkPolicies": true,
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			wantAsValues, err := translation.ToHelmValues(tt.want)
+			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
+
+			client := fkClient.NewClientBuilder().Build()
+			translator := New(client)
+			got, err := translator.translate(context.Background(), tt.args.c)
+			assert.NoError(t, err)
+
+			wantFlattened, err := flatten.Flatten(wantAsValues, "", flatten.DotStyle)
+			assert.NoError(t, err)
+			for key, wantValue := range wantFlattened {
+				gotValue, err := got.PathValue(key)
+				assert.NoError(t, err)
+				assert.Equal(t, wantValue, gotValue)
+			}
+		})
+	}
+}
+
 func makeSecret(name string, stringData map[string]string) *corev1.Secret {
 	data := map[string][]byte{}
 	for key, val := range stringData {
