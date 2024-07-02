@@ -30,6 +30,7 @@ import io.fabric8.kubernetes.api.model.Namespace
 import io.fabric8.kubernetes.api.model.NamespaceBuilder
 import io.fabric8.kubernetes.api.model.ObjectFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.ObjectMeta
+import io.fabric8.kubernetes.api.model.OwnerReference
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.PodBuilder
 import io.fabric8.kubernetes.api.model.PodList
@@ -117,6 +118,17 @@ class Kubernetes implements OrchestratorMain {
     final int maxWaitTimeSeconds = 90
     final int lbWaitTimeSeconds = 600
     final int intervalTime = 1
+    final List<String> trackedDeploymentLikeResources = [
+            "Deployment",
+            "ReplicaSet",
+            "StatefulSet",
+            "DaemonSet",
+            "ReplicationController",
+            "Pod",
+            "CronJob",
+            "Job",
+            "DeploymentConfig",
+    ]
     String namespace
     KubernetesClient client
 
@@ -877,19 +889,42 @@ class Kubernetes implements OrchestratorMain {
 
     Set<String> getStaticPodCount(String ns = null) {
         return evaluateWithRetry(2, 3) {
-            // This method assumes that a static pod name will contain the node name that the pod is running on
-            def nodeNames = client.nodes().list().items.collect { it.metadata.name }
+            // This method assumes that a static pod will either have no OwnerReferences,
+            // it will have a owner not tracked by ACS, or it will be a kube-proxy pod
             Set<String> staticPods = [] as Set
             PodList podList = ns == null ? client.pods().list() : client.pods().inNamespace(ns).list()
             podList.items.each {
-                for (String node : nodeNames) {
-                    if (it.metadata.name.contains(node)) {
-                        staticPods.add(it.metadata.name[0..it.metadata.name.indexOf(node) - 2])
-                    }
+                if (!isRunning(it)) {
+                    return
                 }
+                if (it.getMetadata().getOwnerReferences().size() > 0) {
+                        if (!isKubeProxyPod(it) && ownerIsTracked(it.getMetadata())) {
+                            return
+                        }
+                }
+                // Sensor tracks all kube-proxy pods as one with name `static-kube-proxy-pods`
+                isKubeProxyPod(it) ? staticPods.add("static-kube-proxy-pods") : staticPods.add(it.metadata.name)
             }
             return staticPods
         }
+    }
+
+    static boolean isKubeProxyPod(Pod pod) {
+        String label = pod.getMetadata().getLabels()["component"]
+        return pod.getMetadata().getNamespace() == "kube-system" && label == "kube-proxy"
+    }
+
+    static boolean isRunning(Pod pod) {
+        return pod.getStatus().getPhase() == "Running"
+    }
+
+    boolean ownerIsTracked(ObjectMeta obj) {
+        for (OwnerReference ref in obj.getOwnerReferences()) {
+            if (!trackedDeploymentLikeResources.contains(ref.kind)) {
+                return false
+            }
+        }
+        return true
     }
 
     /*
@@ -1314,6 +1349,7 @@ class Kubernetes implements OrchestratorMain {
                                 getDaemonSetCount(it.metadata.name) +
                                 getStaticPodCount(it.metadata.name) +
                                 getStatefulSetCount(it.metadata.name) +
+                                getCronJobCount(it.metadata.name) +
                                 getJobCount(it.metadata.name),
                         secretsCount: getSecretCount(it.metadata.name),
                         networkPolicyCount: getNetworkPolicyCount(it.metadata.name)
@@ -1767,6 +1803,14 @@ class Kubernetes implements OrchestratorMain {
             createClusterRoleBinding(generatePspRoleBinding(namespace))
         }
     }
+    /*
+        CronJobs
+     */
+    List<String> getCronJobCount(String ns) {
+        return evaluateWithRetry(2, 3) {
+            return client.batch().v1().cronjobs().inNamespace(ns).list().getItems().collect { it.metadata.name }
+        }
+    }
 
     /*
         Jobs
@@ -1774,7 +1818,9 @@ class Kubernetes implements OrchestratorMain {
 
     List<String> getJobCount(String ns) {
         return evaluateWithRetry(2, 3) {
-            return client.batch().v1().jobs().inNamespace(ns).list().getItems().collect { it.metadata.name }
+            return client.batch().v1().jobs().inNamespace(ns).list().getItems()
+                    .findAll { it.getMetadata().getOwnerReferences().size() == 0 }
+                    .collect { it.metadata.name }
         }
     }
 
