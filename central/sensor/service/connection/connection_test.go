@@ -112,7 +112,7 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 		sendC:              make(chan *central.MsgToSensor),
 	}
 
-	mgrMock.EXPECT().GetCluster(ctx, gomock.Any()).Return(&storage.Cluster{}, true, nil).AnyTimes()
+	mgrMock.EXPECT().GetCluster(ctx, gomock.Any()).Return(&storage.Cluster{}, true, nil).Times(2)
 	s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).Times(1)
 
 	server := &mockServer{
