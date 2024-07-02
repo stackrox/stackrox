@@ -5,7 +5,7 @@
 # Additionally, the script returns no-zero if it detects any other changes to the git repo.
 #
 # If this script is not called and does not fail the build, things like `make tag` will produce `-dirty` suffix
-# (as in `4.3.x-63-g09e5188ab9-dirty`) which gets embedded as the version attribute in built binaries.
+# (as in `4.3.0-63-g09e5188ab9-dirty`) which gets embedded as the version attribute in built binaries.
 #
 # The script MUST be executed only from within the Dockerfile (not outside of it) because binaries are built inside.
 

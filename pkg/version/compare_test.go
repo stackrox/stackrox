@@ -334,6 +334,13 @@ func TestCompareAnyVersion(t *testing.T) {
 			versionB:       "3.0.61.1",
 			expectedResult: 1,
 		},
+		{
+			// Even though 4.6.1 > 4.6.0, dev builds are always considered greater than release builds
+			// with the same x.y (i.e. major and minor) numbers.
+			versionA:       "4.6.1",
+			versionB:       "4.6.0-3-gabc1233456",
+			expectedResult: -1,
+		},
 	}
 
 	for _, testCase := range testCases {
