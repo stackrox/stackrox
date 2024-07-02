@@ -535,8 +535,11 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 			ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
 				UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
 					ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-						ScanName: scanConfig.GetScanConfigName(),
-						Profiles: profiles,
+						ScanName:               scanConfig.GetScanConfigName(),
+						Profiles:               profiles,
+						StrictNodeScan:         scanConfig.GetStrictNodeScan(),
+						AutoApplyRemediations:  scanConfig.GetAutoApplyRemediations(),
+						AutoUpdateRemediations: scanConfig.GetAutoUpdateRemediations(),
 					},
 					Cron: cron,
 				},
@@ -753,12 +756,14 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		}
 	}
 
-	scanMsg, err := c.getScanConfigurationMsg(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "unable to get scan config for %q", c.clusterID)
-	}
-	if err := server.Send(scanMsg); err != nil {
-		return errors.Wrapf(err, "unable to sync config to cluster %q", c.clusterID)
+	if features.ComplianceEnhancements.Enabled() && connectionCapabilities.Contains(centralsensor.ComplianceV2Integrations) {
+		scanMsg, err := c.getScanConfigurationMsg(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get scan config for %q", c.clusterID)
+		}
+		if err := server.Send(scanMsg); err != nil {
+			return errors.Wrapf(err, "unable to sync config to cluster %q", c.clusterID)
+		}
 	}
 
 	metrics.IncrementSensorConnect(c.clusterID, c.sensorHello.GetSensorState().String())
