@@ -201,7 +201,7 @@ func (rs *Store) RemoveSecretID(id string) bool {
 // UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
 func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string, dce config.DockerConfigEntry) error {
 	var err error
-	var secure bool
+	secure := true
 	if !features.SensorLazyTLSChecks.Enabled() {
 		var skip bool
 		secure, skip, err = rs.tlsCheckCache.CheckTLS(ctx, registry)
@@ -260,7 +260,7 @@ func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namesp
 // UpsertGlobalRegistry will store a new registry with the given credentials into the global registry store.
 func (rs *Store) UpsertGlobalRegistry(ctx context.Context, registry string, dce config.DockerConfigEntry) error {
 	var err error
-	var secure bool
+	secure := true
 	if !features.SensorLazyTLSChecks.Enabled() {
 		var skip bool
 		secure, skip, err = rs.tlsCheckCache.CheckTLS(ctx, registry)
