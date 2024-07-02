@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	autoscalingV1 "k8s.io/api/autoscaling/v1"
 	extscheme "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme"
+	errors2 "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,7 +34,43 @@ import (
 )
 
 const (
-	coNamespace = "openshift-compliance"
+	coNamespace       = "openshift-compliance"
+	stackroxNamespace = "stackrox"
+)
+
+var (
+	scanName        = "sync-test"
+	initialProfiles = []string{"ocp4-cis"}
+	updatedProfiles = []string{"ocp4-cis-1-4", "ocp4-cis-node-1-4"}
+	initialSchedule = &v2.Schedule{
+		Hour:         12,
+		Minute:       0,
+		IntervalType: v2.Schedule_DAILY,
+		Interval: &v2.Schedule_DaysOfWeek_{
+			DaysOfWeek: &v2.Schedule_DaysOfWeek{
+				Days: []int32{0, 1, 2, 3, 4, 5, 6},
+			},
+		},
+	}
+	updatedSchedule = &v2.Schedule{
+		Hour:         1,
+		Minute:       30,
+		IntervalType: v2.Schedule_DAILY,
+		Interval: &v2.Schedule_DaysOfWeek_{
+			DaysOfWeek: &v2.Schedule_DaysOfWeek{
+				Days: []int32{2, 3, 4},
+			},
+		},
+	}
+	scanConfig = v2.ComplianceScanConfiguration{
+		ScanName: scanName,
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			Description:  scanName,
+			OneTimeScan:  false,
+			Profiles:     initialProfiles,
+			ScanSchedule: initialSchedule,
+		},
+	}
 )
 
 func scaleToN(ctx context.Context, client kubernetes.Interface, deploymentName string, namespace string, replicas int32) (err error) {
@@ -176,71 +213,113 @@ func assertNameDescriptionAndProfilesMatch(t *testing.T, expected *v2.Compliance
 	assert.Equal(t, expected.GetScanConfig().GetProfiles(), actual.GetScanConfig().GetProfiles())
 }
 
+func assertResourceDoesExist(ctx context.Context, t *testing.T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
+	client := createDynamicClient(t)
+	require.Eventually(t, func() bool {
+		return client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj) == nil
+	}, 60*time.Second, 10*time.Millisecond)
+	return obj
+}
+
+func assertResourceDoesNotExist(ctx context.Context, t *testing.T, resourceName string, namespace string, obj dynclient.Object) {
+	client := createDynamicClient(t)
+	require.Eventually(t, func() bool {
+		err := client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj)
+		return errors2.IsNotFound(err)
+	}, 60*time.Second, 10*time.Millisecond)
+}
+
+func cleanUpResourcesAndWait(ctx context.Context, t *testing.T, resourceName string, namespace string) {
+	client := createDynamicClient(t)
+	scanSetting := &complianceoperatorv1.ScanSetting{}
+	scanSettingBinding := &complianceoperatorv1.ScanSettingBinding{}
+	err := client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, scanSetting)
+	if err == nil {
+		_ = client.Delete(ctx, scanSetting)
+	}
+	err = client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, scanSettingBinding)
+	if err == nil {
+		_ = client.Delete(ctx, scanSettingBinding)
+	}
+}
+
 func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	ctx := context.Background()
 	k8sClient := createK8sClient(t)
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
+	// Create the ScanConfiguration service
 	service := v2.NewComplianceScanConfigurationServiceClient(conn)
+
+	// Get cluster ID
 	serviceCluster := v1.NewClustersServiceClient(conn)
 	clusters, err := serviceCluster.GetClusters(ctx, &v1.GetClustersRequest{})
 	assert.NoError(t, err)
+	require.Greater(t, len(clusters.GetClusters()), 0)
 	clusterID := clusters.GetClusters()[0].GetId()
 
-	scanName := fmt.Sprintf("test-%s", uuid.NewV4().String())
+	// Set the cluster ID
+	scanConfig.Clusters = []string{clusterID}
 
-	scanConfig := v2.ComplianceScanConfiguration{
-		ScanName: scanName,
-		Id:       "",
-		Clusters: []string{clusterID},
-		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
-			Description: "test123",
-			OneTimeScan: false,
-			Profiles:    []string{"ocp4-cis-1-4"},
-			ScanSchedule: &v2.Schedule{
-				Hour:         2,
-				Minute:       0,
-				IntervalType: v2.Schedule_WEEKLY,
-				Interval: &v2.Schedule_DaysOfWeek_{
-					DaysOfWeek: &v2.Schedule_DaysOfWeek{
-						Days: []int32{4, 3},
-					},
-				},
-			},
-		},
-	}
+	// Scale down Sensor
+	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 0))
 
-	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
-
-	_, err = service.CreateComplianceScanConfiguration(ctx, &scanConfig)
+	// Create ScanConfig in Central
+	res, err := service.CreateComplianceScanConfiguration(ctx, &scanConfig)
 	assert.NoError(t, err)
 
-	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 1)
+	// Cleanup just in case the test fails
+	t.Cleanup(func() {
+		reqDelete := &v2.ResourceByID{
+			Id: res.GetId(),
+		}
+		_, _ = service.DeleteComplianceScanConfiguration(ctx, reqDelete)
+		cleanUpResourcesAndWait(ctx, t, scanName, coNamespace)
+	})
 
-	query := &v2.RawQuery{Query: ""}
-	scanConfigs, err := service.ListComplianceScanConfigurations(ctx, query)
+	// Scale up Sensor
+	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 1))
+
+	// Assert the ScanSetting and the ScanSettingBinding are created
+	scanSetting := &complianceoperatorv1.ScanSetting{}
+	scanSettingBinding := &complianceoperatorv1.ScanSettingBinding{}
+	assertResourceDoesExist(ctx, t, scanName, coNamespace, scanSetting)
+	assertResourceDoesExist(ctx, t, scanName, coNamespace, scanSettingBinding)
+
+	// Scale down Sensor
+	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 0))
+
+	// Update the ScanConfig in Central
+	scanConfig.Id = res.GetId()
+	scanConfig.ScanConfig.Profiles = updatedProfiles
+	scanConfig.ScanConfig.ScanSchedule = updatedSchedule
+	_, err = service.UpdateComplianceScanConfiguration(ctx, &scanConfig)
 	assert.NoError(t, err)
-	matchingConfig := getScanConfig(scanName, scanConfigs.GetConfigurations())
-	assert.NotNil(t, matchingConfig)
-	require.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
 
-	assertNameDescriptionAndProfilesMatch(t, &scanConfig, matchingConfig)
+	// Scale up Sensor
+	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 1))
 
-	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 0)
+	// Assert the ScanSetting and the ScanSettingBinding are updated
+	scanSetting = &complianceoperatorv1.ScanSetting{}
+	scanSettingBinding = &complianceoperatorv1.ScanSettingBinding{}
+	assertResourceDoesExist(ctx, t, scanName, coNamespace, scanSetting)
+	assertResourceDoesExist(ctx, t, scanName, coNamespace, scanSettingBinding)
 
+	// Scale down Sensor
+	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 0))
+
+	// Delete the ScanConfig in Central
 	reqDelete := &v2.ResourceByID{
-		Id: matchingConfig.GetId(),
+		Id: res.GetId(),
 	}
 	_, err = service.DeleteComplianceScanConfiguration(ctx, reqDelete)
-	assert.NoError(t, err)
 
-	scaleToN(ctx, k8sClient, "deploy/sensor", "stackrox", 1)
+	// Scale up Sensor
+	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 1))
 
-	query = &v2.RawQuery{Query: ""}
-	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
-	assert.NoError(t, err)
-	matchingConfig = getScanConfig(scanName, scanConfigs.GetConfigurations())
-	assert.Nil(t, matchingConfig)
+	// Assert the ScanSetting and the ScanSettingBinding are deleted
+	assertResourceDoesNotExist(ctx, t, scanName, coNamespace, scanSetting)
+	assertResourceDoesNotExist(ctx, t, scanName, coNamespace, scanSettingBinding)
 }
 
 // ACS API test suite for integration testing for the Compliance Operator.
