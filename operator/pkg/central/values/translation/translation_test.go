@@ -1161,6 +1161,9 @@ func TestTranslatePartialMatch(t *testing.T) {
 		c platform.Central
 	}
 
+	networkPoliciesEnabled := platform.NetworkPoliciesEnabled
+	networkPoliciesDisabled := platform.NetworkPoliciesDisabled
+
 	tests := map[string]struct {
 		args args
 		want chartutil.Values
@@ -1173,7 +1176,7 @@ func TestTranslatePartialMatch(t *testing.T) {
 					},
 					Spec: platform.CentralSpec{
 						Network: &platform.GlobalNetworkSpec{
-							Policies: platform.NetworkPoliciesDisabled,
+							Policies: &networkPoliciesDisabled,
 						},
 					},
 				},
@@ -1190,7 +1193,7 @@ func TestTranslatePartialMatch(t *testing.T) {
 					},
 					Spec: platform.CentralSpec{
 						Network: &platform.GlobalNetworkSpec{
-							Policies: NetworkPoliciesEnabled,
+							Policies: &networkPoliciesEnabled,
 						},
 					},
 				},
