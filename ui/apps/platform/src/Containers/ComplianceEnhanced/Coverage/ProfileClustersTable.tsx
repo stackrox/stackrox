@@ -16,11 +16,14 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { ComplianceClusterOverallStats } from 'services/ComplianceCommon';
-import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { TableUIState } from 'utils/getTableUIState';
 
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
-import { calculateCompliancePercentage, getStatusCounts } from './compliance.coverage.utils';
+import {
+    calculateCompliancePercentage,
+    getStatusCounts,
+    getTimeDifferenceAsPhrase,
+} from './compliance.coverage.utils';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
@@ -114,7 +117,7 @@ function ProfileClustersTable({
                                         totalCount
                                     );
                                     const progressBarId = `progress-bar-${clusterId}`;
-                                    const firstDiscoveredAsPhrase = getDistanceStrictAsPhrase(
+                                    const lastScanTimeAsPhrase = getTimeDifferenceAsPhrase(
                                         lastScanTime,
                                         currentDatetime
                                     );
@@ -135,7 +138,7 @@ function ProfileClustersTable({
                                                 </Link>
                                             </Td>
                                             <Td dataLabel="Last scanned" modifier="fitContent">
-                                                {firstDiscoveredAsPhrase}
+                                                {lastScanTimeAsPhrase}
                                             </Td>
                                             <Td dataLabel="Pass status" modifier="fitContent">
                                                 <StatusCountIcon
