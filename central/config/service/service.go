@@ -33,10 +33,12 @@ var (
 			// This endpoint should therefore remain public.
 			"/v1.ConfigService/GetPublicConfig",
 		},
+		user.With(permissions.View(resources.VulnerabilityManagementRequests)): {
+			"/v1.ConfigService/GetVulnerabilityExceptionConfig",
+		},
 		user.With(permissions.View(resources.Administration)): {
 			"/v1.ConfigService/GetConfig",
 			"/v1.ConfigService/GetPrivateConfig",
-			"/v1.ConfigService/GetVulnerabilityExceptionConfig",
 		},
 		user.With(permissions.Modify(resources.Administration)): {
 			"/v1.ConfigService/PutConfig",
