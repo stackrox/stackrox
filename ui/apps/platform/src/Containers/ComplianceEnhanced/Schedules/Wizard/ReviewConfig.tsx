@@ -110,7 +110,7 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                     isInline
                 >
                     Compliance Operator runs a new scan schedule immediately upon creation, but does
-                    not rununtil scheduled time when you save changes to an existing scan schedule.
+                    not run until scheduled time when you save changes to an existing scan schedule.
                 </Alert>
             </Flex>
         </>
