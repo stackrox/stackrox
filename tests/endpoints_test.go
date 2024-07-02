@@ -135,9 +135,13 @@ func (c *endpointsTestCase) Run(t *testing.T, testCtx *endpointsTestContext) {
 func (c *endpointsTestCase) verifyDialResult(t *testing.T, conn *tls.Conn, err error) {
 	if conn != nil {
 		defer utils.IgnoreError(conn.Close)
+	} else {
+		t.Error("conn is nil")
 	}
 	if err == nil {
-		err = conn.Handshake()
+		ctx, cancel := context.WithTimeoutCause(context.Background(), 2*time.Second, errors.New("TLS handshake timeout"))
+		defer cancel()
+		err = conn.HandshakeContext(ctx)
 	}
 
 	if !c.expectConnectFailure {
