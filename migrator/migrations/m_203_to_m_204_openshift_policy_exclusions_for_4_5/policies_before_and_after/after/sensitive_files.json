@@ -4,9 +4,7 @@
   "description": "Alert on deployments mounting sensitive host directories",
   "rationale": "Mounting system directories from host implies container access to sensitive files on the host. This expands the attack surface of the container and gives an intruder an opportunity to break containment if the host is not properly secured.",
   "remediation": "Ensure that deployments do not mount sensitive host directories, or exclude this deployment if host mount is required.",
-  "categories": [
-    "Security Best Practices"
-  ],
+  "categories": [],
   "lifecycleStages": [
     "DEPLOY"
   ],
