@@ -12,17 +12,6 @@
     "RUNTIME"
   ],
   "eventSource": "DEPLOYMENT_EVENT",
-  "exclusions": [
-    {
-      "name": "Don't alert on deployment machine-config-daemon in openshift-machine-config-operator namespace",
-      "deployment": {
-        "name": "machine-config-daemon",
-        "scope": {
-          "namespace": "openshift-machine-config-operator"
-        }
-      }
-    }
-  ],
   "severity": "HIGH_SEVERITY",
   "policyVersion": "1.1",
   "policySections": [
