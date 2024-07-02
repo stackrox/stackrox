@@ -108,7 +108,7 @@ function RuleGroups({
                                             direction="up"
                                             isCreatable
                                             variant="typeahead"
-                                            placeholderText="Select or enter a key"
+                                            placeholderText="Create or select a key"
                                         >
                                             {augmentedRuleKeys.map((ruleKey) => (
                                                 <SelectOption key={ruleKey} value={ruleKey} />
@@ -123,7 +123,8 @@ function RuleGroups({
                                                             : 'default'
                                                     }
                                                 >
-                                                    {errors[index]?.props?.key ?? ''}
+                                                    {errors[index]?.props?.key ??
+                                                        'Create or select a key'}
                                                 </HelperTextItem>
                                             </HelperText>
                                         </FormHelperText>
