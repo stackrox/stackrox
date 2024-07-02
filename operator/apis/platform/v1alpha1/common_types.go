@@ -324,3 +324,11 @@ type OpenShiftMonitoring struct {
 func (m *GlobalMonitoring) IsOpenShiftMonitoringDisabled() bool {
 	return m != nil && m.OpenShiftMonitoring != nil && !m.OpenShiftMonitoring.Enabled
 }
+
+// GlobalSystemSpec defines settings related to Helm chart system parameters. The corresponding Helm flag
+// lives in the global scoope `.system`.
+type GlobalSystemSpec struct {
+	//+kubebuilder:default=true
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	EnableNetworkPolicies *bool `json:"enableNetworkPolicies,omitempty"`
+}

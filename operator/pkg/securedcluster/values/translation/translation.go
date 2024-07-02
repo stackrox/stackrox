@@ -138,6 +138,10 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		v.SetStringValue("registryOverride", sc.Spec.RegistryOverride)
 	}
 
+	if sc.Spec.System != nil {
+		v.AddChild("system", getSystemComponentValues(sc.Spec.System))
+	}
+
 	return v.Build()
 }
 
@@ -420,4 +424,12 @@ func createConfigFingerprint(sc platform.SecuredCluster) (string, error) {
 		return "", errors.Wrap(err, "marshaling SecuredCluster spec")
 	}
 	return fmt.Sprintf("%x", sha256.Sum256(specAsYaml)), nil
+}
+
+func getSystemComponentValues(s *platform.GlobalSystemSpec) *translation.ValuesBuilder {
+	sv := translation.NewValuesBuilder()
+	if s.EnableNetworkPolicies != nil {
+		sv.SetBoolValue("enableNetworkPolicies", *s.EnableNetworkPolicies)
+	}
+	return &sv
 }
