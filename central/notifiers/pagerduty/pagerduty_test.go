@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -92,4 +93,24 @@ func TestMarshalingAlert(t *testing.T) {
 			require.True(t, reflect.DeepEqual(alert, unmarshaledAlert))
 		})
 	}
+}
+
+func TestMarshalUnmarshalAlert(t *testing.T) {
+	rawAlert := fixtures.GetSerializationTestAlert()
+	alert := (*marshalableAlert)(rawAlert)
+	marshaled, err := alert.MarshalJSON()
+	require.NoError(t, err)
+	assert.JSONEq(t, fixtures.GetJSONSerializedTestAlert(), string(marshaled))
+
+	decodedAlert := &marshalableAlert{}
+	err = decodedAlert.UnmarshalJSON(marshaled)
+	assert.NoError(t, err)
+	decodedProtoAlert := (*storage.Alert)(decodedAlert)
+	protoassert.Equal(t, rawAlert, decodedProtoAlert)
+}
+
+func TestMarshalAlertError(t *testing.T) {
+	var alert *marshalableAlert
+	_, err := alert.MarshalJSON()
+	assert.Error(t, err)
 }
