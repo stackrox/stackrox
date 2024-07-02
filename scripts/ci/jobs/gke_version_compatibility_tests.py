@@ -3,13 +3,14 @@
 """
 Run version compatibility tests
 """
+import json
 import logging
 import os
 import subprocess
 import sys
-
 from collections import namedtuple
 from pathlib import Path
+import requests
 
 from pre_tests import PreSystemTests
 from ci_tests import QaE2eTestCompatibility
@@ -17,7 +18,6 @@ from post_tests import PostClusterTest, FinalPost
 from runners import ClusterTestSetsRunner
 from clusters import GKECluster
 from get_latest_helm_chart_versions import (
-    get_latest_helm_chart_versions,
     get_latest_helm_chart_version_for_specific_release,
 )
 
@@ -30,11 +30,29 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 
-central_chart_versions = get_latest_helm_chart_versions(
-    "stackrox-central-services", 2)
-sensor_chart_versions = get_latest_helm_chart_versions(
-    "stackrox-secured-cluster-services", 3
-)
+
+def get_supported_versions():
+    supported_central = []
+    supported_sensor = []
+    response = requests.get("https://access.redhat.com/product-life-cycles/api/v1/products?name="
+                            "Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes")
+    data = json.loads(response.text)
+    versions = data["data"][0]["versions"]
+    for version in versions:
+        if version["type"] != "End of life":
+            major = version["name"].split('.')[0]
+            minor = version["name"].split('.')[1]
+            supported_central.append(get_latest_helm_chart_version_for_specific_release(
+                "stackrox-central-services", Release(major=major, minor=minor)
+            ))
+            supported_sensor.append(get_latest_helm_chart_version_for_specific_release(
+                "stackrox-secured-cluster-services", Release(major=major, minor=minor)
+            ))
+    return supported_central, supported_sensor
+
+
+central_chart_versions, sensor_chart_versions = get_supported_versions()
+
 makefile_path = Path(__file__).parent.parent.parent.parent
 latest_tag = subprocess.check_output(
     ["make", "tag", "-C", makefile_path, "--quiet", "--no-print-director"],
