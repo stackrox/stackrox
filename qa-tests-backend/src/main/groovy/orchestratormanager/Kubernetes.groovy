@@ -1808,7 +1808,7 @@ class Kubernetes implements OrchestratorMain {
      */
     List<String> getCronJobCount(String ns) {
         return evaluateWithRetry(2, 3) {
-            return client.batch().v1().cronjobs().inNamespace(ns).list().getItems().collect {it.metadata.name }
+            return client.batch().v1().cronjobs().inNamespace(ns).list().getItems().collect { it.metadata.name }
         }
     }
 
@@ -1818,7 +1818,9 @@ class Kubernetes implements OrchestratorMain {
 
     List<String> getJobCount(String ns) {
         return evaluateWithRetry(2, 3) {
-            return client.batch().v1().jobs().inNamespace(ns).list().getItems().findAll({it.getMetadata().getOwnerReferences().size() == 0}).collect{it.metadata.name}
+            return client.batch().v1().jobs().inNamespace(ns).list().getItems()
+                    .findAll { it.getMetadata().getOwnerReferences().size() == 0 }
+                    .collect { it.metadata.name }
         }
     }
 
