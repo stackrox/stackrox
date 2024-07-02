@@ -13,15 +13,6 @@
   ],
   "exclusions": [
     {
-      "name": "Don't alert on deployment gcp-cloud-controller-manager in openshift-cloud-controller-manager namespace",
-      "deployment": {
-        "name": "gcp-cloud-controller-manager",
-        "scope": {
-          "namespace": "openshift-cloud-controller-manager"
-        }
-      }
-    },
-    {
       "name": "Don't alert on deployment haproxy-* in openshift-vsphere-infra namespace",
       "deployment": {
         "name": "haproxy-.*",
