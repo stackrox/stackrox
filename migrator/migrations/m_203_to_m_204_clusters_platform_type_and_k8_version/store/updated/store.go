@@ -33,12 +33,11 @@ func New(db postgres.DB) Store {
 	// Use of pgSearch.NewGenericStoreWithCache can be dangerous with high cardinality stores,
 	// and be the source of memory pressure. Think twice about the need for in-memory caching
 	// of the whole store.
-	return pgSearch.NewGenericStoreWithCache[storeType, *storeType](
+	return pgSearch.NewGenericStore[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
 		insertIntoClusters,
-		nil,
 		nil,
 		nil,
 		nil,
