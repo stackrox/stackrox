@@ -111,7 +111,11 @@ class SummaryTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
     def "Verify namespace details"() {
+        // https://issues.redhat.com/browse/ROX-6844
+        Assume.assumeFalse(ClusterService.isOpenShift4())
+
         given:
         "fetch the list of namespace"
 
