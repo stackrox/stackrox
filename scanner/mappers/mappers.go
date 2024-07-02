@@ -167,9 +167,6 @@ func toProtoV4Contents(
 		}
 	}
 	var packages []*v4.Package
-	if pkgFixedBy == nil {
-		pkgFixedBy = map[string]string{}
-	}
 	for _, ccP := range pkgs {
 		pkg, err := toProtoV4Package(ccP)
 		if err != nil {
@@ -612,6 +609,7 @@ func filterPackages(packages map[string]*claircore.Package, environments map[str
 	}
 }
 
+// pkgFixedBy unmarshals and returns the package-fixed-by enrichment, if it exists.
 func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, error) {
 	enrichmentsList := enrichments[fixedby.Type]
 	if len(enrichmentsList) == 0 {
