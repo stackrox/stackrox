@@ -12,11 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// lazyTLSCheckRegistry is a wrapper around an ImageRegistry that
-// will perform a TLS check on first Metadata invocation.
+// lazyTLSCheckRegistry is a wrapper around a registry that performs
+// TLS checks on first Metadata invocation.
 type lazyTLSCheckRegistry struct {
-	// source, dataSource, etc. mirror post initialization fields
-	// from pkg/registries/docker.  These fields should be provided
+	// source, dataSource, etc. mirror post initialization fields from
+	// pkg/registries/docker/docker.go. These fields are provided
 	// during construction and are assumed to be valid.
 	source           *storage.ImageIntegration
 	dataSource       *storage.DataSource
@@ -31,7 +31,7 @@ type lazyTLSCheckRegistry struct {
 	// registry is populated after successful initialization.
 	registry types.Registry
 
-	// tlsCheckCache is used to perform and cache the TLS checks.
+	// tlsCheckCache performs and caches registry TLS checks.
 	tlsCheckCache *tlsCheckCacheImpl
 
 	// initialized tracks whether lazy initialization has completed.
