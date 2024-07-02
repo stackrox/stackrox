@@ -1,6 +1,7 @@
 package protocompat
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -104,6 +105,13 @@ func TestMarshalTextString(t *testing.T) {
 ` + `cluster_id: "aaaaaaaa-bbbb-4011-0000-111111111111"
 ` + `cluster_name: "Cluster 1"
 `
+	// String output is not guarantied.
+	// Info: https://pkg.go.dev/google.golang.org/protobuf@v1.34.1/encoding/prototext#Format
+	// There is randomization added to output to ensure that library users
+	// are not relaying on stable output format.
+	// Info: https://go-review.googlesource.com/c/protobuf/+/151340
+	asString = strings.Replace(asString, ":  ", ": ", -1)
+
 	assert.Equal(t, expectedString, asString)
 }
 

@@ -13,7 +13,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/audit"
@@ -39,6 +39,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	// All our gRPC servers should support gzip
 	_ "google.golang.org/grpc/encoding/gzip"
@@ -384,16 +385,29 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	}
 
 	gwMux := runtime.NewServeMux(
-		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{EmitDefaults: true}),
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+			MarshalOptions: protojson.MarshalOptions{
+				EmitUnpopulated: true,
+			},
+			UnmarshalOptions: protojson.UnmarshalOptions{
+				DiscardUnknown: true,
+			},
+		}),
 		runtime.WithMetadata(a.requestInfoHandler.AnnotateMD),
 		runtime.WithOutgoingHeaderMatcher(allowCookiesHeaderMatcher),
 		runtime.WithMarshalerOption(
 			"application/json+pretty",
 			&runtime.JSONPb{
-				Indent:       "  ",
-				EmitDefaults: true,
+				MarshalOptions: protojson.MarshalOptions{
+					Indent:          "  ",
+					EmitUnpopulated: true,
+				},
+				UnmarshalOptions: protojson.UnmarshalOptions{
+					DiscardUnknown: true,
+				},
 			},
 		),
+		runtime.WithErrorHandler(errorHandler),
 	)
 	if localConn != nil {
 		for _, service := range a.apiServices {

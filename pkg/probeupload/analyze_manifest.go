@@ -14,7 +14,7 @@ func AnalyzeManifest(mf *v1.ProbeUploadManifest) (int64, error) {
 		if !IsValidFilePath(f.GetName()) {
 			errs.AddString(f.GetName())
 		} else {
-			totalSize += f.GetSize_()
+			totalSize += f.GetSize()
 		}
 	}
 

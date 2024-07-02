@@ -3,7 +3,7 @@ package protocompat
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )

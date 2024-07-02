@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/auth/datastore"
 	"github.com/stackrox/rox/central/auth/m2m"

@@ -1,17 +1,24 @@
 package grpc
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 	"time"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
 )
 
 type APIServerSuite struct {
@@ -152,4 +159,47 @@ type testHandler struct {
 func (h *testHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	h.received.Signal()
 	_, _ = w.Write([]byte("Hello!"))
+}
+
+// Testing server error response from gRPC Gateway.
+type pingServiceTestErrorImpl struct {
+	v1.UnimplementedPingServiceServer
+}
+
+func (s *pingServiceTestErrorImpl) RegisterServiceServer(grpcServer *grpc.Server) {
+	v1.RegisterPingServiceServer(grpcServer, s)
+}
+
+func (s *pingServiceTestErrorImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return v1.RegisterPingServiceHandler(ctx, mux, conn)
+}
+
+func (s *pingServiceTestErrorImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+}
+
+func (s *pingServiceTestErrorImpl) Ping(context.Context, *v1.Empty) (*v1.PongMessage, error) {
+	return nil, errors.Wrap(errox.InvalidArgs, "missing argument")
+}
+
+func (a *APIServerSuite) Test_GRPS_Server_Error_Response() {
+	url := "https://localhost:8080/v1/ping"
+	jsonPayload := `{"code":3, "details":[], "error":"missing argument: invalid arguments", "message":"missing argument: invalid arguments"}`
+
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+	api := NewAPI(defaultConf())
+	grpcServiceHandler := &pingServiceTestErrorImpl{}
+	api.Register(grpcServiceHandler)
+	a.Assert().NoError(api.Start().Wait())
+	a.T().Cleanup(func() { api.Stop() })
+
+	resp, err := http.Get(url)
+	a.Require().NoError(err)
+
+	body, err := io.ReadAll(resp.Body)
+	a.Require().NoError(err)
+
+	bodyStr := string(body)
+	a.Assert().JSONEq(jsonPayload, bodyStr)
 }

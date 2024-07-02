@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	cluster "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/convert"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/datastore"

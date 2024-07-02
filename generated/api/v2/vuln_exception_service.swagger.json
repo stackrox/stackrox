@@ -1,0 +1,822 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v2/vuln_exception_service.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "VulnerabilityExceptionService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/vulnerability-exceptions": {
+      "get": {
+        "summary": "ListVulnerabilityExceptions returns a list of vulnerability exceptions.",
+        "operationId": "VulnerabilityExceptionService_ListVulnerabilityExceptions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListVulnerabilityExceptionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      }
+    },
+    "/v2/vulnerability-exceptions/deferral": {
+      "post": {
+        "summary": "CreateDeferVulnerabilityException creates an exception request to defer specified vulnerabilities.\nOnce an exception is created, it remains in the PENDING state until the approval. The exception is enforced\nonly after it is approved. Once the exception expires, it is garbage collected as per the retention configuration\n`.expiredVulnReqRetentionDurationDays` (GET`/v1/config/`)",
+        "operationId": "VulnerabilityExceptionService_CreateDeferVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2CreateDeferVulnerabilityExceptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2CreateDeferVulnerabilityExceptionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      }
+    },
+    "/v2/vulnerability-exceptions/false-positive": {
+      "post": {
+        "summary": "CreateFalsePositiveVulnerabilityException creates an exception request to mark specified vulnerabilities as false positive.\nOnce an exception is created, it remains in the PENDING state until the approval. The exception is enforced only after it is approved.",
+        "operationId": "VulnerabilityExceptionService_CreateFalsePositiveVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2CreateFalsePositiveVulnerabilityExceptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2CreateFalsePositiveVulnerabilityExceptionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      }
+    },
+    "/v2/vulnerability-exceptions/{id}": {
+      "get": {
+        "summary": "GetVulnerabilityException returns the vulnerability exception with specified ID.",
+        "operationId": "VulnerabilityExceptionService_GetVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2GetVulnerabilityExceptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteVulnerabilityException deletes a vulnerability exception. Only pending exceptions and pending updates\nto an enforced exception can be deleted. To revert an exception use cancel API. All exceptions are retained\nin the system according to the retention configuration.",
+        "operationId": "VulnerabilityExceptionService_DeleteVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      },
+      "patch": {
+        "summary": "UpdateVulnerabilityException updates an existing vulnerability exception. The update is enforced only once it is approved.\nCurrently only the following can be updated:\n- CVEs and expiry of the deferral exceptions\n- CVEs of the false positive exception",
+        "operationId": "VulnerabilityExceptionService_UpdateVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2UpdateVulnerabilityExceptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "REQUIRED. The ID of vulnerability exception to be updated.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/VulnerabilityExceptionServiceUpdateVulnerabilityExceptionBody"
+            }
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      }
+    },
+    "/v2/vulnerability-exceptions/{id}/approve": {
+      "post": {
+        "summary": "ApproveVulnerabilityException approves a vulnerability exception. Once approved, the exception is enforced.\nThe associated vulnerabilities are excluded from policy evaluation and risk evaluation, and the vulnerabilities\nmay not appear in certain APIs responses by default.",
+        "operationId": "VulnerabilityExceptionService_ApproveVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ApproveVulnerabilityExceptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "REQUIRED. The ID of vulnerability exception to be approved.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/VulnerabilityExceptionServiceApproveVulnerabilityExceptionBody"
+            }
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      }
+    },
+    "/v2/vulnerability-exceptions/{id}/cancel": {
+      "post": {
+        "summary": "CancelVulnerabilityException cancels a vulnerability exception. Once cancelled, an approved exception is no longer\nenforced. Cancelled exceptions are garbage collected as per the retention configuration\n`.expiredVulnReqRetentionDurationDays` (GET `/v1/config/`).",
+        "operationId": "VulnerabilityExceptionService_CancelVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2CancelVulnerabilityExceptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      }
+    },
+    "/v2/vulnerability-exceptions/{id}/deny": {
+      "post": {
+        "summary": "DenyVulnerabilityException denies a vulnerability exception. Denied exceptions are inactive and are garbage\ncollected as per the retention configuration `.expiredVulnReqRetentionDurationDays` (GET`/v1/config/`)",
+        "operationId": "VulnerabilityExceptionService_DenyVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2DenyVulnerabilityExceptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "REQUIRED. The ID of vulnerability exception to be denied.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/VulnerabilityExceptionServiceDenyVulnerabilityExceptionBody"
+            }
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "ExceptionExpiryExpiryType": {
+      "type": "string",
+      "enum": [
+        "TIME",
+        "ALL_CVE_FIXABLE",
+        "ANY_CVE_FIXABLE"
+      ],
+      "default": "TIME"
+    },
+    "ScopeImage": {
+      "type": "object",
+      "properties": {
+        "registry": {
+          "type": "string"
+        },
+        "remote": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        }
+      }
+    },
+    "VulnerabilityExceptionScope": {
+      "type": "object",
+      "properties": {
+        "imageScope": {
+          "$ref": "#/definitions/ScopeImage",
+          "description": "This field can be used to apply the exception to selected images."
+        }
+      }
+    },
+    "VulnerabilityExceptionServiceApproveVulnerabilityExceptionBody": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string",
+          "description": "REQUIRED. The rationale for approving the exception."
+        }
+      }
+    },
+    "VulnerabilityExceptionServiceDenyVulnerabilityExceptionBody": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string",
+          "description": "REQUIRED. The rationale for denying the exception."
+        }
+      }
+    },
+    "VulnerabilityExceptionServiceUpdateVulnerabilityExceptionBody": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string",
+          "description": "REQUIRED. The rationale for updating the exception."
+        },
+        "deferralUpdate": {
+          "$ref": "#/definitions/v2DeferralUpdate",
+          "description": "Use this field to update a deferral exception."
+        },
+        "falsePositiveUpdate": {
+          "$ref": "#/definitions/v2FalsePositiveUpdate",
+          "description": "Use this field to update a false-positive exception."
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v2AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v2Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v2Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
+    "v2ApproveVulnerabilityExceptionResponse": {
+      "type": "object",
+      "properties": {
+        "exception": {
+          "$ref": "#/definitions/v2VulnerabilityException"
+        }
+      }
+    },
+    "v2CancelVulnerabilityExceptionResponse": {
+      "type": "object",
+      "properties": {
+        "exception": {
+          "$ref": "#/definitions/v2VulnerabilityException"
+        }
+      }
+    },
+    "v2Comment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "user": {
+          "$ref": "#/definitions/v2SlimUser"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v2CreateDeferVulnerabilityExceptionRequest": {
+      "type": "object",
+      "properties": {
+        "cves": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "REQUIRED. The CVEs to which the exception should be applied."
+        },
+        "comment": {
+          "type": "string",
+          "description": "REQUIRED. The rationale for creating the exception."
+        },
+        "scope": {
+          "$ref": "#/definitions/VulnerabilityExceptionScope",
+          "description": "REQUIRED. The scope of enforcement of the exception."
+        },
+        "exceptionExpiry": {
+          "$ref": "#/definitions/v2ExceptionExpiry",
+          "description": "REQUIRED. The type of expiry to be enforced for the request."
+        }
+      },
+      "title": "next available tag: 6"
+    },
+    "v2CreateDeferVulnerabilityExceptionResponse": {
+      "type": "object",
+      "properties": {
+        "exception": {
+          "$ref": "#/definitions/v2VulnerabilityException"
+        }
+      }
+    },
+    "v2CreateFalsePositiveVulnerabilityExceptionRequest": {
+      "type": "object",
+      "properties": {
+        "cves": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "REQUIRED. The CVEs to which the exception should be applied."
+        },
+        "scope": {
+          "$ref": "#/definitions/VulnerabilityExceptionScope",
+          "description": "REQUIRED. The scope of enforcement of the exception."
+        },
+        "comment": {
+          "type": "string",
+          "description": "REQUIRED. The rationale for creating the exception."
+        }
+      }
+    },
+    "v2CreateFalsePositiveVulnerabilityExceptionResponse": {
+      "type": "object",
+      "properties": {
+        "exception": {
+          "$ref": "#/definitions/v2VulnerabilityException"
+        }
+      }
+    },
+    "v2DeferralRequest": {
+      "type": "object",
+      "properties": {
+        "expiry": {
+          "$ref": "#/definitions/v2ExceptionExpiry"
+        }
+      }
+    },
+    "v2DeferralUpdate": {
+      "type": "object",
+      "properties": {
+        "cves": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Use this field to update the CVEs of a deferral exception."
+        },
+        "expiry": {
+          "$ref": "#/definitions/v2ExceptionExpiry",
+          "description": "Use this field to update the exception expiry."
+        }
+      }
+    },
+    "v2DenyVulnerabilityExceptionResponse": {
+      "type": "object",
+      "properties": {
+        "exception": {
+          "$ref": "#/definitions/v2VulnerabilityException"
+        }
+      }
+    },
+    "v2Empty": {
+      "type": "object"
+    },
+    "v2ExceptionExpiry": {
+      "type": "object",
+      "properties": {
+        "expiryType": {
+          "$ref": "#/definitions/ExceptionExpiryExpiryType",
+          "description": "This field can be used only for deferral requests. It indicates the type of expiry set for the request.\n`TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.\n`ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.\n`ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable."
+        },
+        "expiresOn": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Indicates the timestamp when the exception expires. This field is REQUIRED only if the expiry type is set to TIME."
+        }
+      }
+    },
+    "v2ExceptionStatus": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "APPROVED",
+        "DENIED",
+        "APPROVED_PENDING_UPDATE"
+      ],
+      "default": "PENDING",
+      "description": "Indicates the status of a request.\n\n - PENDING: Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.\n - APPROVED: Indicates that the request has been approved by the approver.\n - DENIED: Indicates that the request has been denied by the approver.\n - APPROVED_PENDING_UPDATE: Indicates that the original request was approved, but an update is still pending an approval or denial."
+    },
+    "v2FalsePositiveRequest": {
+      "type": "object"
+    },
+    "v2FalsePositiveUpdate": {
+      "type": "object",
+      "properties": {
+        "cves": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Use this field to update the CVEs of a false-positive exception."
+        }
+      }
+    },
+    "v2GetVulnerabilityExceptionResponse": {
+      "type": "object",
+      "properties": {
+        "exception": {
+          "$ref": "#/definitions/v2VulnerabilityException"
+        }
+      }
+    },
+    "v2ListVulnerabilityExceptionsResponse": {
+      "type": "object",
+      "properties": {
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2VulnerabilityException"
+          }
+        }
+      }
+    },
+    "v2Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v2SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2SlimUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v2SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v2AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2UpdateVulnerabilityExceptionResponse": {
+      "type": "object",
+      "properties": {
+        "exception": {
+          "$ref": "#/definitions/v2VulnerabilityException"
+        }
+      }
+    },
+    "v2VulnerabilityException": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "Auto-generated display name of the exception."
+        },
+        "targetState": {
+          "$ref": "#/definitions/v2VulnerabilityState",
+          "description": "Indicates the state that the vulnerabilities will move to once the exception is enforced."
+        },
+        "status": {
+          "$ref": "#/definitions/v2ExceptionStatus",
+          "description": "Indicates the status of the exception."
+        },
+        "expired": {
+          "type": "boolean",
+          "description": "If set to `true`, this field indicates that the exception is no longer enforced."
+        },
+        "requester": {
+          "$ref": "#/definitions/v2SlimUser"
+        },
+        "approvers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2SlimUser"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2Comment"
+          }
+        },
+        "scope": {
+          "$ref": "#/definitions/VulnerabilityExceptionScope",
+          "description": "Indicates the scope of enforcement of the exception."
+        },
+        "deferralRequest": {
+          "$ref": "#/definitions/v2DeferralRequest"
+        },
+        "falsePositiveRequest": {
+          "$ref": "#/definitions/v2FalsePositiveRequest"
+        },
+        "cves": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Indicates the CVEs to which the exception applies."
+        },
+        "deferralUpdate": {
+          "$ref": "#/definitions/v2DeferralUpdate",
+          "description": "If set, indicates the update to be applied to the original deferral exception."
+        },
+        "falsePositiveUpdate": {
+          "$ref": "#/definitions/v2FalsePositiveUpdate",
+          "description": "If set, indicates the update to be applied to the original false-positive exception."
+        }
+      },
+      "description": "Next available tag: 16\nVulnerabilityException represents a vulnerability exception such as deferral and false-positive."
+    },
+    "v2VulnerabilityState": {
+      "type": "string",
+      "enum": [
+        "OBSERVED",
+        "DEFERRED",
+        "FALSE_POSITIVE"
+      ],
+      "default": "OBSERVED",
+      "description": "VulnerabilityState are the possible applicable to CVE. By default all vulnerabilities are in observed state.\n\n - OBSERVED: This is the default state and indicates that the CVE is not excluded from policy evaluation and risk evaluation.\n\n[Default state]\n - DEFERRED: Indicates that the vulnerability is deferred. A deferred CVE is excluded from policy evaluation and risk evaluation.\n - FALSE_POSITIVE: Indicates that the vulnerability is a false-positive. A false-positive CVE is excluded from policy evaluation and risk evaluation."
+    }
+  }
+}

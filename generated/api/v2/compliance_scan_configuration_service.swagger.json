@@ -4,6 +4,11 @@
     "title": "api/v2/compliance_scan_configuration_service.proto",
     "version": "version not set"
   },
+  "tags": [
+    {
+      "name": "ComplianceScanConfigurationService"
+    }
+  ],
   "consumes": [
     "application/json"
   ],
@@ -25,7 +30,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -99,7 +104,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -132,7 +137,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -214,7 +219,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -290,7 +295,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -323,7 +328,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -352,7 +357,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -381,7 +386,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -397,7 +402,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2ComplianceScanConfiguration"
+              "$ref": "#/definitions/ComplianceScanConfigurationServiceUpdateComplianceScanConfigurationBody"
             }
           }
         ],
@@ -420,7 +425,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -458,24 +463,36 @@
       },
       "title": "Additional scan status gathered from ComplianceSuite"
     },
+    "ComplianceScanConfigurationServiceUpdateComplianceScanConfigurationBody": {
+      "type": "object",
+      "properties": {
+        "scanName": {
+          "type": "string"
+        },
+        "scanConfig": {
+          "$ref": "#/definitions/v2BaseComplianceScanConfigurationSettings"
+        },
+        "clusters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 5"
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
-        "typeUrl": {
+        "@type": {
           "type": "string"
-        },
-        "value": {
-          "type": "string",
-          "format": "byte"
         }
-      }
+      },
+      "additionalProperties": {}
     },
-    "runtimeError": {
+    "rpcStatus": {
       "type": "object",
       "properties": {
-        "error": {
-          "type": "string"
-        },
         "code": {
           "type": "integer",
           "format": "int32"
@@ -486,6 +503,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
@@ -533,6 +551,7 @@
         "notifiers": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2NotifierConfiguration"
           }
         }
@@ -606,6 +625,7 @@
         "standards": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
         }
@@ -679,6 +699,7 @@
         "clusterStatus": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2ClusterScanStatus"
           }
         },
@@ -736,6 +757,7 @@
         "profiles": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2ComplianceProfileSummary"
           }
         },
@@ -751,6 +773,7 @@
         "profiles": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2ComplianceProfileSummary"
           }
         },
@@ -766,6 +789,7 @@
         "configurations": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2ComplianceScanConfigurationStatus"
           }
         },
@@ -803,6 +827,7 @@
         "sortOptions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2SortOption"
           },
           "description": "This field is under development. It is not supported on any REST APIs."
@@ -819,7 +844,7 @@
           "$ref": "#/definitions/v2Pagination"
         }
       },
-      "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
     },
     "v2Schedule": {
       "type": "object",

@@ -3,6 +3,7 @@ package admissioncontroller
 import (
 	"compress/gzip"
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -170,7 +171,7 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 			},
 		},
 		Data: map[string]string{
-			admissioncontrol.LastUpdateTimeDataKey:  settings.GetTimestamp().String(),
+			admissioncontrol.LastUpdateTimeDataKey:  settings.GetTimestamp().AsTime().Format(time.RFC3339Nano),
 			admissioncontrol.CacheVersionDataKey:    settings.GetCacheVersion(),
 			admissioncontrol.CentralEndpointDataKey: settings.GetCentralEndpoint(),
 			admissioncontrol.ClusterIDDataKey:       settings.GetClusterId(),

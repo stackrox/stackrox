@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	iiDStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
