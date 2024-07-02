@@ -32,6 +32,7 @@ import {
     ComplianceProfileScanStats,
     getComplianceProfilesStats,
 } from 'services/ComplianceResultsStatsService';
+import { defaultChartHeight } from 'utils/chartUtils';
 
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
@@ -72,7 +73,19 @@ function CoveragesPage() {
         Cluster: getFilteredConfig(clusterSearchFilterConfig, ['Name']),
     };
 
-    const fetchProfilesStats = useCallback(() => getComplianceProfilesStats(), []);
+    const fetchProfilesStats = useCallback(async () => {
+        const response = await getComplianceProfilesStats();
+        // Prevents a page shift when only relying on the useEffect below. Otherwise, stats will be finished loading
+        // but selectedProfileStats will be undefined for a moment causing the widget container to not render.
+        if (response) {
+            const profileStats = response.scanStats.find(
+                (profile) => profile.profileName === profileName
+            );
+            setSelectedProfileStats(profileStats);
+        }
+        return response;
+    }, [profileName]);
+
     const {
         data: profilesStatsResponse,
         loading: isLoadingProfilesStats,
@@ -141,7 +154,6 @@ function CoveragesPage() {
                             direction={{ default: 'column', md: 'row' }}
                             flexWrap={{ default: 'nowrap' }}
                             spaceItems={{ default: 'spaceItemsNone' }}
-                            style={{ minHeight: '260px' }}
                         >
                             <FlexItem flex={{ default: 'flex_2' }}>
                                 <ProfileDetailsHeader
@@ -150,18 +162,29 @@ function CoveragesPage() {
                                     profileDetails={selectedProfileDetails}
                                 />
                             </FlexItem>
-                            <Divider orientation={{ default: 'horizontal', md: 'vertical' }} />
-                            <FlexItem
-                                alignSelf={{ default: 'alignSelfStretch' }}
-                                flex={{ default: 'flex_1' }}
-                                style={{ minWidth: '400px' }}
-                            >
-                                <ProfileStatsWidget
-                                    error={profilesStatsError}
-                                    isLoading={isLoadingProfilesStats}
-                                    profileScanStats={selectedProfileStats}
-                                />
-                            </FlexItem>
+                            {(selectedProfileStats ||
+                                isLoadingProfilesStats ||
+                                profilesStatsError) && (
+                                <>
+                                    <Divider
+                                        orientation={{ default: 'horizontal', md: 'vertical' }}
+                                    />
+                                    <FlexItem
+                                        alignSelf={{ default: 'alignSelfStretch' }}
+                                        flex={{ default: 'flex_1' }}
+                                        style={{
+                                            minWidth: '400px',
+                                            minHeight: `${defaultChartHeight}px`,
+                                        }}
+                                    >
+                                        <ProfileStatsWidget
+                                            error={profilesStatsError}
+                                            isLoading={isLoadingProfilesStats}
+                                            profileScanStats={selectedProfileStats}
+                                        />
+                                    </FlexItem>
+                                </>
+                            )}
                         </Flex>
                         <Divider component="div" />
                         <PageSection variant="light" className="pf-v5-u-p-0" component="div">
