@@ -492,10 +492,13 @@ class IntegrationsTest extends BaseSpecification {
     @Unroll
     @Tag("Integration")
     def "Verify AWS S3 Integration: #integrationName"() {
+        setup:
+        Assume.assumeTrue(!integrationName.contains("IAM") || ClusterService.isEKS())
+
         when:
         "the integration is tested"
         def backup = ExternalBackupService.getS3IntegrationConfig(integrationName, bucket, region, endpoint,
-                accessKeyId, accesskey)
+                useIam, accessKeyId, accesskey)
 
         then:
         "verify test integration"
@@ -506,16 +509,18 @@ class IntegrationsTest extends BaseSpecification {
         "configurations are:"
 
         integrationName       | bucket                       | region                         |
-                endpoint                                             | accessKeyId            |
+                endpoint                                             | useIam | accessKeyId            |
                 accesskey
         "S3 with endpoint"    | Env.mustGetAWSS3BucketName() | Env.mustGetAWSS3BucketRegion() |
-                "s3.${Env.mustGetAWSS3BucketRegion()}.amazonaws.com" | Env.mustGetAWSAccessKeyID() |
+                "s3.${Env.mustGetAWSS3BucketRegion()}.amazonaws.com" | false | Env.mustGetAWSAccessKeyID() |
                 Env.mustGetAWSSecretAccessKey()
         "S3 without endpoint" | Env.mustGetAWSS3BucketName() | Env.mustGetAWSS3BucketRegion() |
-                ""                                                   | Env.mustGetAWSAccessKeyID() |
+                ""                                                   | false | Env.mustGetAWSAccessKeyID() |
                 Env.mustGetAWSSecretAccessKey()
+        "S3 with IAM role"    | Env.mustGetAWSS3BucketName() | Env.mustGetAWSS3BucketRegion() |
+                ""                                                   | true  | ""             | ""
         "GCS"                 | Env.mustGetGCSBucketName()   | "us-east-1"                    |
-                "storage.googleapis.com"                             | Env.mustGetGCPAccessKeyID() |
+                "storage.googleapis.com"                             | false | Env.mustGetGCPAccessKeyID() |
                 Env.mustGetGCPAccessKey()
     }
 
