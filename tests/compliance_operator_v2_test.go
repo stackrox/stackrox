@@ -221,6 +221,15 @@ func assertResourceDoesExist(ctx context.Context, t *testing.T, resourceName str
 	return obj
 }
 
+func assertResourceWasUpdated(ctx context.Context, t *testing.T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
+	client := createDynamicClient(t)
+	oldResourceVersion := obj.GetResourceVersion()
+	require.Eventually(t, func() bool {
+		return client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj) == nil && obj.GetResourceVersion() != oldResourceVersion
+	}, 60*time.Second, 10*time.Millisecond)
+	return obj
+}
+
 func assertResourceDoesNotExist(ctx context.Context, t *testing.T, resourceName string, namespace string, obj dynclient.Object) {
 	client := createDynamicClient(t)
 	require.Eventually(t, func() bool {
@@ -240,6 +249,22 @@ func cleanUpResourcesAndWait(ctx context.Context, t *testing.T, resourceName str
 	err = client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, scanSettingBinding)
 	if err == nil {
 		_ = client.Delete(ctx, scanSettingBinding)
+	}
+}
+
+func assertScanSetting(t *testing.T, scanConfig v2.ComplianceScanConfiguration, scanSetting *complianceoperatorv1.ScanSetting) {
+	require.NotNil(t, scanSetting)
+	cron, err := schedule.ConvertToCronTab(service.ConvertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()))
+	require.NoError(t, err)
+	assert.Equal(t, scanConfig.GetScanName(), scanSetting.GetName())
+	assert.Equal(t, cron, scanSetting.ComplianceSuiteSettings.Schedule)
+}
+
+func assertScanSettingBinding(t *testing.T, scanConfig v2.ComplianceScanConfiguration, scanSettingBinding *complianceoperatorv1.ScanSettingBinding) {
+	require.NotNil(t, scanSettingBinding)
+	assert.Equal(t, scanConfig.GetScanName(), scanSettingBinding.GetName())
+	for _, profile := range scanSettingBinding.Profiles {
+		assert.Contains(t, scanConfig.GetScanConfig().GetProfiles(), profile.Name)
 	}
 }
 
@@ -285,6 +310,8 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	scanSettingBinding := &complianceoperatorv1.ScanSettingBinding{}
 	assertResourceDoesExist(ctx, t, scanName, coNamespace, scanSetting)
 	assertResourceDoesExist(ctx, t, scanName, coNamespace, scanSettingBinding)
+	assertScanSetting(t, scanConfig, scanSetting)
+	assertScanSettingBinding(t, scanConfig, scanSettingBinding)
 
 	// Scale down Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 0))
@@ -300,10 +327,10 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 1))
 
 	// Assert the ScanSetting and the ScanSettingBinding are updated
-	scanSetting = &complianceoperatorv1.ScanSetting{}
-	scanSettingBinding = &complianceoperatorv1.ScanSettingBinding{}
-	assertResourceDoesExist(ctx, t, scanName, coNamespace, scanSetting)
-	assertResourceDoesExist(ctx, t, scanName, coNamespace, scanSettingBinding)
+	assertResourceWasUpdated(ctx, t, scanName, coNamespace, scanSetting)
+	assertResourceWasUpdated(ctx, t, scanName, coNamespace, scanSettingBinding)
+	assertScanSetting(t, scanConfig, scanSetting)
+	assertScanSettingBinding(t, scanConfig, scanSettingBinding)
 
 	// Scale down Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 0))
