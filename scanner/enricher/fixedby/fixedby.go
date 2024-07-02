@@ -90,15 +90,13 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 		fixedBy.Package = &p
 
 		// Set the Distribution.
-		// Just use the first one, as we only support single-distribution images.
+		// If we cannot identify the distribution, then use a dummy one,
+		// as we still want to support language-level packages.
+		fixedBy.Distribution = &claircore.Distribution{}
 		for _, d := range vr.Distributions {
+			// Just use the first one, as we only support single-distribution images.
 			fixedBy.Distribution = d
 			break
-		}
-		// If we could not identify the distribution, then just use a dummy one.
-		// Do not fail here, as we still want to support language-level packages.
-		if fixedBy.Distribution == nil {
-			fixedBy.Distribution = &claircore.Distribution{}
 		}
 
 		// Set the Repository.
