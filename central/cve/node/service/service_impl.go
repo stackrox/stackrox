@@ -5,10 +5,12 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/and"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -55,6 +57,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // SuppressCVEs suppresses CVEs from policy workflow and API endpoints that include cve in the responses.
 func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVERequest) (*v1.Empty, error) {
+	if !features.VulnMgmtLegacySnooze.Enabled() {
+		return nil, errors.Wrapf(errox.NotFound, "Feature %s is disabled", features.VulnMgmtLegacySnooze.Name())
+	}
+
 	if len(request.GetCves()) == 0 {
 		return nil, errox.InvalidArgs.CausedBy("no cves provided to snooze")
 	}
@@ -72,6 +78,10 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 
 // UnsuppressCVEs un-suppresses given node CVEs.
 func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.UnsuppressCVERequest) (*v1.Empty, error) {
+	if !features.VulnMgmtLegacySnooze.Enabled() {
+		return nil, errors.Wrapf(errox.NotFound, "Feature %s is disabled", features.VulnMgmtLegacySnooze.Name())
+	}
+
 	if len(request.GetCves()) == 0 {
 		return nil, errox.InvalidArgs.CausedBy("no cves provided to un-snooze")
 	}
