@@ -26,14 +26,12 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type VulnMgmtServiceClient interface {
-	// Streams vulnerability data upon request. Each entry consists of a deployment and the associated
-	// container images. The response is structured as
+	// Streams vulnerability data upon request. Each entry consists of a deployment and the associated container images.
 	//
-	//	{
-	//	  {"result": {"deployment": {...}, "images": [...]}},
-	//	  {"result": {"deployment": {...}, "images": [...]}},
-	//	  ...
-	//	}
+	// The response is structured as:
+	// {"result": {"deployment": {...}, "images": [...]}}
+	// ...
+	// {"result": {"deployment": {...}, "images": [...]}}
 	VulnMgmtExportWorkloads(ctx context.Context, in *VulnMgmtExportWorkloadsRequest, opts ...grpc.CallOption) (VulnMgmtService_VulnMgmtExportWorkloadsClient, error)
 }
 
@@ -81,14 +79,12 @@ func (x *vulnMgmtServiceVulnMgmtExportWorkloadsClient) Recv() (*VulnMgmtExportWo
 // All implementations should embed UnimplementedVulnMgmtServiceServer
 // for forward compatibility
 type VulnMgmtServiceServer interface {
-	// Streams vulnerability data upon request. Each entry consists of a deployment and the associated
-	// container images. The response is structured as
+	// Streams vulnerability data upon request. Each entry consists of a deployment and the associated container images.
 	//
-	//	{
-	//	  {"result": {"deployment": {...}, "images": [...]}},
-	//	  {"result": {"deployment": {...}, "images": [...]}},
-	//	  ...
-	//	}
+	// The response is structured as:
+	// {"result": {"deployment": {...}, "images": [...]}}
+	// ...
+	// {"result": {"deployment": {...}, "images": [...]}}
 	VulnMgmtExportWorkloads(*VulnMgmtExportWorkloadsRequest, VulnMgmtService_VulnMgmtExportWorkloadsServer) error
 }
 
