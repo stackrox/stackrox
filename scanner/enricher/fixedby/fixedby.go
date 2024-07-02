@@ -90,7 +90,7 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 		fixedBy.Package = &p
 
 		// Set the Distribution.
-		// If we cannot not identify the distribution, then just use a dummy one,
+		// If we cannot identify the distribution, then use a dummy one,
 		// as we still want to support language-level packages.
 		fixedBy.Distribution = &claircore.Distribution{}
 		for _, d := range vr.Distributions {

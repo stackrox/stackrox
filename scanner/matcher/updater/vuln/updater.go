@@ -559,12 +559,7 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.fetch")
 
 	var resp *http.Response
-	defer func() {
-		if resp != nil && resp.Body != nil {
-			utils.IgnoreError(resp.Body.Close)
-		}
-	}()
-	var err error
+	defer closeResponse(resp)
 	// After this loop, either resp != nil or we will have returned an error.
 	for attempt := 1; attempt <= u.retryMax; attempt++ {
 		zlog.Info(ctx).
@@ -581,8 +576,8 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 			req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
 		}
 		resp, err = u.client.Do(req)
-		// If the vuln URL is unavailable and when we haven't exhausted our connection refused attempts, retry.
-		if isConnectionRefused(err) && attempt < u.retryMax {
+		// If we haven't exhausted our connection refused attempts and the vuln URL is unavailable, retry.
+		if attempt < u.retryMax && isConnectionRefused(err) {
 			zlog.Error(ctx).
 				Err(err).
 				Str("delay", u.retryDelay.String()).
@@ -590,7 +585,7 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 			time.Sleep(u.retryDelay) // Wait for retryDelay before retrying
 			continue
 		}
-		// If there is some other kind of error or when we have exhausted our retry attempts, do not retry.
+		// If we have exhausted our retry attempts or there is some other kind of error, do not retry.
 		if err != nil {
 			return nil, time.Time{}, err
 		}
@@ -644,6 +639,12 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 
 func jitter() time.Duration {
 	return jitterMinutes[random.Intn(len(jitterMinutes))]
+}
+
+func closeResponse(resp *http.Response) {
+	if resp != nil && resp.Body != nil {
+		utils.IgnoreError(resp.Body.Close)
+	}
 }
 
 func isConnectionRefused(err error) bool {
