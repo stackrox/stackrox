@@ -8,82 +8,72 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
-// LazyTLSCheckRegistry is a wrapper around ImageRegistry that
-// will perform a TLS check on first use instead of
-// expecting a TLS check to have been done prior.
-type LazyTLSCheckRegistry struct {
-	// source represents the registry to create, however
-	// the insecure flag associated with the underlying config is
-	// assumed to be uninitialized.
-	source *storage.ImageIntegration
+// LazyTLSCheckRegistry is a wrapper around an ImageRegistry that
+// will perform a TLS check on first Metadata invocation.
+type lazyTLSCheckRegistry struct {
+	// source, dataSource, etc. mirror post initialization fields
+	// from pkg/registries/docker.  These fields should be provided
+	// during construction and are assumed to be valid.
+	source           *storage.ImageIntegration
+	dataSource       *storage.DataSource
+	dockerConfig     *storage.DockerConfig
+	url              string
+	registryHostname string
 
-	// creater is responsible for creating the underlying registry
-	// based on imageIntegration when ready to do so.
+	// creater creates the underlying registry from source during
+	// initialization.
 	creator types.Creator
 
-	dataSource *storage.DataSource
+	// registry is populated after successful initialization.
+	registry types.Registry
 
-	// once is used to control the lazy initialization of the underlying
-	// registry
-	once sync.Once
-
-	// initError will be populated if initialization of the underlying
-	// registry fails.  If non nil will be returned or will alter
-	// the return of the implemented ImageRegistry methods.
-	initError error
-
-	// checkTLSFunc is the function used to lazily check the TLS support
-	// of the registry.
+	// tlsCheckCache is used to perform and cache the TLS checks.
 	tlsCheckCache *tlsCheckCacheImpl
 
-	// registry is the underlying registry that is only populated after
-	// successful lazy initialization.
-	registry types.Registry
+	// initialized tracks whether lazy initialization has completed.
+	initialized      bool
+	initializedMutex sync.Mutex
+
+	// initError holds the most recent initializatino error.
+	initError error
 }
 
-var _ types.ImageRegistry = (*LazyTLSCheckRegistry)(nil)
+var _ types.ImageRegistry = (*lazyTLSCheckRegistry)(nil)
 
-func (l *LazyTLSCheckRegistry) Config() *types.Config {
-	// TODO: Find better way (in registry store) to determine if a hostname matches so
-	// that initialization is NOT performed here and can be deferred to the first Metadata
-	// call (ideal).
-	// May have to dupe this logic:
-	// https://github.com/stackrox/stackrox/blob/cb378f5d1341323c887d07868598d64a8a82d214/pkg/registries/docker/docker.go#L79
-	l.lazyInit()
-	if l.initError != nil {
-		log.Debugf("Returning nil config for %q due to init error: %v", l.source.GetId(), l.initError)
-		return nil
+// Config will NOT trigger an initialization, however after successful
+// initialization the values may change.
+func (l *lazyTLSCheckRegistry) Config() *types.Config {
+	if l.registry != nil {
+		return l.registry.Config()
 	}
 
-	return l.registry.Config()
+	return &types.Config{
+		Username:         l.dockerConfig.GetUsername(),
+		Password:         l.dockerConfig.GetPassword(),
+		Insecure:         l.dockerConfig.GetInsecure(),
+		URL:              l.url,
+		RegistryHostname: l.registryHostname,
+	}
 }
 
-func (l *LazyTLSCheckRegistry) DataSource() *storage.DataSource {
+func (l *lazyTLSCheckRegistry) DataSource() *storage.DataSource {
 	return l.dataSource
 }
 
-func (l *LazyTLSCheckRegistry) HTTPClient() *http.Client {
-	l.lazyInit()
-	if l.initError != nil {
-		log.Debugf("Returning nil http client for %q due to init error: %v", l.source.GetId(), l.initError)
-		return nil
-	}
-
-	return l.registry.HTTPClient()
+func (l *lazyTLSCheckRegistry) HTTPClient() *http.Client {
+	utils.Should(errors.New("not implemented"))
+	return nil
 }
 
-func (l *LazyTLSCheckRegistry) Match(image *storage.ImageName) bool {
-	l.lazyInit()
-	if l.initError != nil {
-		return false
-	}
-
-	return l.registry.Match(image)
+func (l *lazyTLSCheckRegistry) Match(image *storage.ImageName) bool {
+	return urlfmt.TrimHTTPPrefixes(l.registryHostname) == image.GetRegistry()
 }
 
-func (l *LazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
+func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
 	l.lazyInit()
 	if l.initError != nil {
 		return nil, l.initError
@@ -92,73 +82,57 @@ func (l *LazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMet
 	return l.registry.Metadata(image)
 }
 
-func (l *LazyTLSCheckRegistry) Name() string {
+func (l *lazyTLSCheckRegistry) Name() string {
 	return l.source.GetName()
 }
 
-func (l *LazyTLSCheckRegistry) Source() *storage.ImageIntegration {
-	l.lazyInit()
+func (l *lazyTLSCheckRegistry) Source() *storage.ImageIntegration {
 	return l.source
 }
 
-func (l *LazyTLSCheckRegistry) Test() error {
-	l.lazyInit()
+func (l *lazyTLSCheckRegistry) Test() error {
+	utils.Should(errors.New("not implemented"))
+	return nil
+}
+
+func (l *lazyTLSCheckRegistry) lazyInit() {
+	if l.initialized {
+		return
+	}
+
+	l.initializedMutex.Lock()
+	defer l.initializedMutex.Unlock()
+
+	// Short-circuit if another goroutine completed initialization.
+	if l.initialized {
+		return
+	}
+
+	// Do the TLS check.
+	secure, skip, err := l.tlsCheckCache.CheckTLS(context.Background(), l.dockerConfig.GetEndpoint())
+	if err != nil {
+		log.Warnf("Lazy TLS check failed for %q (%s): %v", l.source.GetName(), l.source.GetId(), err)
+		l.initError = err
+		return
+	}
+
+	if skip {
+		l.initError = errors.New("tls check skipped due to previous TLS check errors")
+		return
+	}
+
+	// If we got here assume that initialization has completed, any errors encountered
+	// are no longer temporal so do not try to repeat initialization.
+	l.initialized = true
+
+	// Update the underlying config (also updates source due to being a reference).
+	l.dockerConfig.Insecure = !secure
+
+	// Create the registry.
+	l.registry, l.initError = l.creator(l.source)
 	if l.initError != nil {
-		return l.initError
+		log.Warnf("Lazy init failed for %q (%s), secure: %t: %v", l.source.GetName(), l.source.GetId(), secure, l.initError)
+	} else {
+		log.Debugf("Lazy init success for %q (%s), secure: %t", l.source.GetName(), l.source.GetId(), secure)
 	}
-
-	return l.registry.Test()
-}
-
-func (l *LazyTLSCheckRegistry) lazyInit() {
-	l.once.Do(func() {
-		log.Debugf("Lazily initializing registry %q (%s)", l.source.GetName(), l.source.GetId())
-
-		// Get the registry endpoint.
-		dockerCfg, err := extractDockerConfig(l.source)
-		if err != nil {
-			l.initError = err
-			return
-		}
-
-		// Do the TLS check.
-		secure, skip, err := l.tlsCheckCache.CheckTLS(context.Background(), dockerCfg.GetEndpoint())
-		if err != nil {
-			l.initError = err
-			return
-		}
-
-		if skip {
-			l.initError = errors.New("tls check skipped due to previous TLS check errors")
-			return
-		}
-
-		// Update the underlying config.
-		dockerCfg.Insecure = !secure
-
-		// Create the registry.
-		l.registry, err = l.creator(l.source)
-		if err != nil {
-			l.initError = err
-			return
-		}
-	})
-}
-
-func extractDockerConfig(ii *storage.ImageIntegration) (*storage.DockerConfig, error) {
-	if ii == nil {
-		return nil, errors.New("nil image integration")
-	}
-
-	protoCfg := ii.GetIntegrationConfig()
-	if protoCfg == nil {
-		return nil, errors.New("nil image integration config")
-	}
-
-	cfg, ok := protoCfg.(*storage.ImageIntegration_Docker)
-	if !ok || cfg == nil {
-		return nil, errors.New("nil docker config")
-	}
-
-	return cfg.Docker, nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
@@ -71,19 +72,22 @@ func NewRegistryStore(checkTLSFunc CheckTLS) *Store {
 	if checkTLSFunc == nil {
 		checkTLSFunc = tlscheck.CheckTLS
 	}
-	tlsCheckCache := NewTLSCheckCache(checkTLSFunc)
+	tlsCheckCache := newTLSCheckCache(checkTLSFunc)
 
 	defaultFactory := registries.NewFactory(registries.FactoryOptions{
 		CreatorFuncs: registries.AllCreatorFuncsWithoutRepoList,
 	})
 
-	lazyFactory := NewLazyFactory(defaultFactory, tlsCheckCache)
+	factory := defaultFactory
+	if features.SensorLazyTLSChecks.Enabled() {
+		factory = newLazyFactory(tlsCheckCache)
+	}
 
 	store := &Store{
-		factory: lazyFactory,
+		factory: factory,
 		store:   make(map[string]registries.Set),
 		globalRegistries: registries.NewSet(
-			lazyFactory,
+			factory,
 			types.WithMetricsHandler(metrics.Singleton()),
 			types.WithGCPTokenManager(gcp.Singleton()),
 		),
@@ -148,7 +152,7 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 	return regs
 }
 
-func createImageIntegration(registry string, dce config.DockerConfigEntry, name string) *storage.ImageIntegration {
+func createImageIntegration(registry string, dce config.DockerConfigEntry, secure bool, name string) *storage.ImageIntegration {
 	registryType := types.DockerType
 	if rhelFactory.RedHatRegistryEndpoints.Contains(urlfmt.TrimHTTPPrefixes(registry)) {
 		registryType = types.RedHatType
@@ -164,6 +168,7 @@ func createImageIntegration(registry string, dce config.DockerConfigEntry, name 
 				Endpoint: registry,
 				Username: dce.Username,
 				Password: dce.Password,
+				Insecure: !secure,
 			},
 		},
 	}
@@ -195,13 +200,28 @@ func (rs *Store) RemoveSecretID(id string) bool {
 
 // UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
 func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string, dce config.DockerConfigEntry) error {
+	var err error
+	var secure bool
+	if !features.SensorLazyTLSChecks.Enabled() {
+		var skip bool
+		secure, skip, err = rs.tlsCheckCache.CheckTLS(ctx, registry)
+		if err != nil {
+			return err
+		}
+
+		if skip {
+			log.Debugf("Skipping upsert for %q from %q due to previous TLS check error", registry, namespace)
+			return nil
+		}
+	}
+
 	regs := rs.getRegistries(namespace)
 
 	// remove http/https prefixes from registry, matching may fail otherwise, the created registry.url will have
 	// the appropriate prefix
 	registry = urlfmt.TrimHTTPPrefixes(registry)
 	name := genIntegrationName(pullSecretNamePrefix, namespace, registry)
-	err := regs.UpdateImageIntegration(createImageIntegration(registry, dce, name))
+	err = regs.UpdateImageIntegration(createImageIntegration(registry, dce, secure, name))
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
@@ -239,8 +259,23 @@ func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namesp
 
 // UpsertGlobalRegistry will store a new registry with the given credentials into the global registry store.
 func (rs *Store) UpsertGlobalRegistry(ctx context.Context, registry string, dce config.DockerConfigEntry) error {
+	var err error
+	var secure bool
+	if !features.SensorLazyTLSChecks.Enabled() {
+		var skip bool
+		secure, skip, err = rs.tlsCheckCache.CheckTLS(ctx, registry)
+		if err != nil {
+			return err
+		}
+
+		if skip {
+			log.Debugf("Skipping upsert for global registry %q due to previous TLS check error", registry)
+			return nil
+		}
+	}
+
 	name := genIntegrationName(globalRegNamePrefix, "", registry)
-	err := rs.globalRegistries.UpdateImageIntegration(createImageIntegration(registry, dce, name))
+	err = rs.globalRegistries.UpdateImageIntegration(createImageIntegration(registry, dce, secure, name))
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}

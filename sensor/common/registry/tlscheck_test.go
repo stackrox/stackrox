@@ -11,7 +11,7 @@ func TestCheckTLS(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("secure", func(t *testing.T) {
-		c := NewTLSCheckCache(alwaysSecureCheckTLS)
+		c := newTLSCheckCache(alwaysSecureCheckTLS)
 		secure, skip, err := c.CheckTLS(ctx, "fake")
 		assert.True(t, secure)
 		assert.False(t, skip)
@@ -27,7 +27,7 @@ func TestCheckTLS(t *testing.T) {
 	})
 
 	t.Run("insecure", func(t *testing.T) {
-		c := NewTLSCheckCache(alwaysInsecureCheckTLS)
+		c := newTLSCheckCache(alwaysInsecureCheckTLS)
 		secure, skip, err := c.CheckTLS(ctx, "fake")
 		assert.False(t, secure)
 		assert.False(t, skip)
@@ -35,7 +35,6 @@ func TestCheckTLS(t *testing.T) {
 		assert.Len(t, c.results.GetAll(), 1)
 
 		// Ensure the results do not change when attempted again / using cache
-		c = NewTLSCheckCache(alwaysInsecureCheckTLS)
 		secure, skip, err = c.CheckTLS(ctx, "fake")
 		assert.False(t, secure)
 		assert.False(t, skip)
@@ -44,7 +43,7 @@ func TestCheckTLS(t *testing.T) {
 	})
 
 	t.Run("error", func(t *testing.T) {
-		c := NewTLSCheckCache(alwaysFailCheckTLS)
+		c := newTLSCheckCache(alwaysFailCheckTLS)
 		secure, skip, err := c.CheckTLS(ctx, "fake")
 		assert.False(t, secure)
 		assert.False(t, skip)
