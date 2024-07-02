@@ -41,3 +41,31 @@ Cypress.on(
         !err.message.includes("Uncaught SyntaxError: Unexpected token '<'") &&
         !err.message.includes("Uncaught SyntaxError: Unexpected token '<'")
 );
+
+const throttleToFast3G = () => {
+    cy.log('**Throttle To Fast 3G**')
+        .then(() => {
+            return Cypress.automation('remote:debugger:protocol',
+                {
+                    command: 'Network.enable',
+                })
+        })
+        .then(() => {
+            // Values from:
+            // https://github.com/puppeteer/puppeteer/blob/main/packages/puppeteer-core/src/cdp/PredefinedNetworkConditions.ts
+            return Cypress.automation('remote:debugger:protocol',
+                {
+                    command: 'Network.emulateNetworkConditions',
+                    params: {
+                        offline: false,
+                        latency: 150 * 3.75,
+                        downloadThroughput: ((1.6 * 1000 * 1000) / 8) * 0.9,
+                        uploadThroughput: ((750 * 1000) / 8) * 0.9,
+                    },
+                })
+        })
+}
+
+beforeEach(() => {
+    throttleToFast3G()
+})
