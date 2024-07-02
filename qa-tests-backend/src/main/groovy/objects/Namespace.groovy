@@ -3,8 +3,8 @@ package objects
 class Namespace {
     def uid
     def name
-    def labels
-    def deploymentCount
+    Map<String,String> labels
+    List<Tuple> deploymentCount
     def secretsCount
     def networkPolicyCount
 }
