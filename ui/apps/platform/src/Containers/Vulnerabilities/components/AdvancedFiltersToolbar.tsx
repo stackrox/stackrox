@@ -49,6 +49,7 @@ type AdvancedFiltersToolbarProps = {
     includeCveSeverityFilters?: boolean;
     includeCveStatusFilters?: boolean;
     defaultSearchFilterEntity?: SearchFilterEntityName;
+    additionalContextFilter?: SearchFilter;
     // TODO We need to be able to apply the autocomplete search context to the advanced filters component @see FilterAutocomplete.tsx
     // autocompleteSearchContext?: unknown;
 };
@@ -63,6 +64,7 @@ function AdvancedFiltersToolbar({
     includeCveSeverityFilters = true,
     includeCveStatusFilters = true,
     defaultSearchFilterEntity,
+    additionalContextFilter,
     // TODO We need to be able to apply the autocomplete search context to the advanced filters component
     // autocompleteSearchContext,
 }: AdvancedFiltersToolbarProps) {
@@ -120,6 +122,7 @@ function AdvancedFiltersToolbar({
                     <CompoundSearchFilter
                         config={searchFilterConfig}
                         searchFilter={searchFilter}
+                        additionalContextFilter={additionalContextFilter}
                         onSearch={onFilterApplied}
                         defaultEntity={defaultSearchFilterEntity}
                     />
