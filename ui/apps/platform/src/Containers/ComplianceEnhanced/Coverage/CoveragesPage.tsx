@@ -74,6 +74,7 @@ function CoveragesPage() {
     };
 
     const fetchProfilesStats = useCallback(async () => {
+        setSelectedProfileStats(undefined);
         const response = await getComplianceProfilesStats();
         // Prevents a page shift when only relying on the useEffect below. Otherwise, stats will be finished loading
         // but selectedProfileStats will be undefined for a moment causing the widget container to not render.
@@ -87,7 +88,6 @@ function CoveragesPage() {
     }, [profileName]);
 
     const {
-        data: profilesStatsResponse,
         loading: isLoadingProfilesStats,
         error: profilesStatsError,
         refetch: refetchProfilesStats,
@@ -95,18 +95,8 @@ function CoveragesPage() {
 
     // Refetch profiles stats when profileName changes to stay more in sync with the data in the table
     useEffect(() => {
-        setSelectedProfileStats(undefined);
         refetchProfilesStats();
     }, [profileName, refetchProfilesStats]);
-
-    useEffect(() => {
-        if (profilesStatsResponse) {
-            const profileStats = profilesStatsResponse.scanStats.find(
-                (profile) => profile.profileName === profileName
-            );
-            setSelectedProfileStats(profileStats);
-        }
-    }, [profilesStatsResponse, profileName]);
 
     function handleProfilesToggleChange(selectedProfile: string) {
         navigateWithScanConfigQuery(coverageProfileChecksPath, { profileName: selectedProfile });
