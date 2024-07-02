@@ -39,9 +39,8 @@ tests:
         .networkpolicys["central-monitoring-tls"] | assertThat(. != null)
 
     - name: "network policies are disabled"
-      values:
-        system:
-          enableNetworkPolicies: false
+      set:
+        network.enableNetworkPolicies: false
       expect: |
         .networkpolicys["central-monitoring-tls"] | assertThat(. == null)
 
@@ -114,9 +113,8 @@ tests:
           ]
 
     - name: "network policies are disabled"
-      values:
-        system:
-          enableNetworkPolicies: false
+      set:
+        network.enableNetworkPolicies: false
       expect: |
         .networkpolicys["central-monitoring-tls"] | assertThat(. == null)
         .networkpolicys["scanner-v4-matcher-monitoring-tls"] | assertThat(. == null)

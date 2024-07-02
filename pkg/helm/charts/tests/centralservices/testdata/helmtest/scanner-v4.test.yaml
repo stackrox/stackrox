@@ -144,7 +144,7 @@ tests:
     .clusterroles["stackrox-scanner-v4-psp"] | assertThat(. == null)
 
 - name: "scanner with deprecated PodSecurityPolicies enabled"
-  values:
+  set:
     scannerV4:
       disable: false
     system:
@@ -155,22 +155,18 @@ tests:
     .clusterroles["stackrox-scanner-v4-psp"] | assertThat(. != null)
 
 - name: "scanner with network policies enabled"
-  values:
-    scannerV4:
-      disable: false
-    system:
-      enableNetworkPolicies: true
+  set:
+    scannerV4.disable: false
+    network.enableNetworkPolicies: true
   expect: |
     .networkpolicys["scanner-v4-indexer"] | assertThat(. != null)
     .networkpolicys["scanner-v4-matcher"] | assertThat(. != null)
     .networkpolicys["scanner-v4-db"] | assertThat(. != null)
 
 - name: "scanner with network policies disabled"
-  values:
-    scannerV4:
-      disable: false
-    system:
-      enableNetworkPolicies: false
+  set:
+    scannerV4.disable: false
+    network.enableNetworkPolicies: false
   expect: |
     .networkpolicys["scanner-v4-indexer"] | assertThat(. == null)
     .networkpolicys["scanner-v4-matcher"] | assertThat(. == null)

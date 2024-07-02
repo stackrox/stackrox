@@ -41,12 +41,12 @@ tests:
 
 - name: "network policies enabled"
   set:
-    system.enableNetworkPolicies: true
+    network.enableNetworkPolicies: true
   expect: |
     .networkpolicys["sensor"] | assertThat(. != null)
 
 - name: "network policies disabled"
   set:
-    system.enableNetworkPolicies: false
+    network.enableNetworkPolicies: false
   expect: |
     .networkpolicys["sensor"] | assertThat(. == null)
