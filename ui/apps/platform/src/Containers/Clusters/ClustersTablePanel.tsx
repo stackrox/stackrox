@@ -53,11 +53,11 @@ import {
     clustersBasePath,
     clustersDelegatedScanningPath,
     clustersDiscoveredClustersPath,
+    clustersInitBundlesPath,
     clustersSecureClusterPath,
 } from 'routePaths';
 
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
-import ManageTokensButton from './Components/ManageTokensButton';
 import SecureClusterModal from './InitBundles/SecureClusterModal';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
@@ -380,8 +380,12 @@ function ClustersTablePanel({
                             )}
                             {hasAdminRole && (
                                 <ToolbarItem>
-                                    <Button variant="secondary">
-                                        <ManageTokensButton />
+                                    <Button
+                                        variant="secondary"
+                                        component={LinkShim}
+                                        href={clustersInitBundlesPath}
+                                    >
+                                        Init bundles
                                     </Button>
                                 </ToolbarItem>
                             )}

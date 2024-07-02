@@ -1,15 +1,11 @@
 import React, { ReactElement } from 'react';
-import { Alert, Button } from '@patternfly/react-core';
+import { Alert, Button, Flex, FlexItem, Switch, Text, Title } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
 import { CheckCircle } from 'react-feather';
 import { ClipLoader } from 'react-spinners';
 
-import CollapsibleCard from 'Components/CollapsibleCard';
-import ToggleSwitch from 'Components/ToggleSwitch';
 import { ClusterManagerType } from 'types/cluster.proto';
 import useAnalytics, { LEGACY_CLUSTER_DOWNLOAD_YAML } from 'hooks/useAnalytics';
-
-const baseClass = 'py-6';
 
 export type ClusterDeploymentProps = {
     clusterCheckedIn: boolean;
@@ -43,66 +39,57 @@ function ClusterDeployment({
         managerTypeTitle = 'Cluster labels have been saved';
         managerTypeText = 'All other cluster settings are managed by the Helm chart.';
     }
+    // Without FlexItem element, Button stretches to column width.
     return (
-        <div className="md:max-w-sm">
-            <div className="md:pr-4">
-                {editing && clusterCheckedIn && (
-                    <Alert variant="info" isInline title={managerTypeTitle} component="h3">
-                        {managerTypeText}
-                    </Alert>
-                )}
-                {managerType !== 'MANAGER_TYPE_KUBERNETES_OPERATOR' && (
-                    <div className={baseClass}>
-                        <CollapsibleCard title="1. Download files">
-                            <div className="w-full h-full p-3 leading-normal">
-                                <div className="border-b pb-3 mb-3 border-primary-300">
-                                    Download the required configuration files, keys, and scripts.
-                                </div>
-                                <div className="flex items-center pb-2">
-                                    <label
-                                        htmlFor="createUpgraderSA"
-                                        className="py-2 text-base-600 flex w-full"
-                                    >
-                                        Configure cluster to allow future automatic upgrades
-                                    </label>
-                                    <ToggleSwitch
-                                        id="createUpgraderSA"
-                                        toggleHandler={toggleSA}
-                                        enabled={createUpgraderSA}
-                                    />
-                                </div>
-                                <div className="flex justify-center px-3">
-                                    <Button
-                                        variant="secondary"
-                                        icon={<DownloadIcon />}
-                                        onClick={() => {
-                                            onFileDownload();
-                                            analyticsTrack(LEGACY_CLUSTER_DOWNLOAD_YAML);
-                                        }}
-                                        isDisabled={isDownloadingBundle}
-                                        isLoading={isDownloadingBundle}
-                                    >
-                                        Download YAML file and keys
-                                    </Button>
-                                </div>
-                                <div className="py-2 text-xs text-center text-base-600">
-                                    <p className="pb-2">
-                                        Modify the YAML files to suit your environment if needed.
-                                    </p>
-                                    <p>Do not reuse this bundle for more than one cluster.</p>
-                                </div>
-                            </div>
-                        </CollapsibleCard>
-                        <div className="mt-4">
-                            <CollapsibleCard title="2. Deploy">
-                                <div className="w-full h-full p-3 leading-normal">
-                                    Use the deploy script inside the bundle to set up your cluster.
-                                </div>
-                            </CollapsibleCard>
-                        </div>
-                    </div>
-                )}
-            </div>
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
+            {editing && clusterCheckedIn && (
+                <Alert variant="info" isInline title={managerTypeTitle} component="div">
+                    {managerTypeText}
+                </Alert>
+            )}
+            {managerType !== 'MANAGER_TYPE_KUBERNETES_OPERATOR' && (
+                <>
+                    <Title headingLevel="h2">Download manifest bundle</Title>
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsMd' }}
+                    >
+                        <Title headingLevel="h3">1. Download files</Title>
+                        <Text>Download the required configuration files, keys, and scripts.</Text>
+                        <Switch
+                            label="Cluster is configured to allow future automatic upgrades"
+                            labelOff="Click to configure cluster to allow future automatic upgrades"
+                            onChange={toggleSA}
+                            isChecked={createUpgraderSA}
+                        />
+                        <Flex
+                            direction={{ default: 'column' }}
+                            spaceItems={{ default: 'spaceItemsSm' }}
+                        >
+                            <FlexItem>
+                                <Button
+                                    variant="secondary"
+                                    icon={<DownloadIcon />}
+                                    onClick={() => {
+                                        onFileDownload();
+                                        analyticsTrack(LEGACY_CLUSTER_DOWNLOAD_YAML);
+                                    }}
+                                    isDisabled={isDownloadingBundle}
+                                    isLoading={isDownloadingBundle}
+                                >
+                                    Download YAML file and keys
+                                </Button>
+                            </FlexItem>
+                            <Text>Modify the YAML files to suit your environment if needed.</Text>
+                            <Text>Do not reuse this bundle for more than one cluster.</Text>
+                        </Flex>
+                    </Flex>
+                    <Flex direction={{ default: 'column' }}>
+                        <Title headingLevel="h3">2. Deploy</Title>
+                        <Text>Use the deploy script inside the bundle to set up your cluster.</Text>
+                    </Flex>
+                </>
+            )}
             {(!editing || !clusterCheckedIn) && (
                 <div className="flex flex-col text-primary-500 p-4">
                     {clusterCheckedIn ? (
@@ -126,7 +113,7 @@ function ClusterDeployment({
                     )}
                 </div>
             )}
-        </div>
+        </Flex>
     );
 }
 
