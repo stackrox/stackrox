@@ -214,12 +214,6 @@ export const nodeSearchFilterConfig = {
             searchTerm: 'Operating System',
             inputType: 'text',
         },
-        'Top CVSS': {
-            displayName: 'Top CVSS',
-            filterChipLabel: 'Node top CVSS',
-            searchTerm: 'Node Top CVSS',
-            inputType: 'condition-number',
-        },
         Label: {
             displayName: 'Label',
             filterChipLabel: 'Node label',
