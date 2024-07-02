@@ -3,7 +3,6 @@ package docker
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/docker/distribution/manifest/manifestlist"
@@ -75,11 +74,7 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 	transports ...registry.Transport,
 ) (*Registry, error) {
 	url := cfg.formatURL()
-	// if the registryServer endpoint contains docker.io then the image will be docker.io/namespace/repo:tag
-	registryServer := urlfmt.GetServerFromURL(url)
-	if strings.Contains(cfg.Endpoint, "docker.io") {
-		registryServer = "docker.io"
-	}
+	registryServer := RegistryServer(cfg.Endpoint, url)
 
 	var transport registry.Transport
 	if len(transports) == 0 || transports[0] == nil {

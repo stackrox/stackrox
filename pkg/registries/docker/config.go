@@ -48,11 +48,26 @@ func (c *Config) SetCredentials(username string, password string) {
 }
 
 func (c *Config) formatURL() string {
-	endpoint := c.Endpoint
+	return FormatURL(c.Endpoint)
+}
+
+// FormatURL will return a formatted URL from a given registry endpoint.
+func FormatURL(endpoint string) string {
 	if strings.EqualFold(endpoint, "https://docker.io") || strings.EqualFold(endpoint, "docker.io") {
 		endpoint = "https://registry-1.docker.io"
 	}
 	return urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+}
+
+// RegistryServer returns the registry hostname from either the
+// registry endpoint or formatted registry URL.
+func RegistryServer(endpoint string, url string) string {
+	// if the registryServer endpoint contains docker.io then the image will be docker.io/namespace/repo:tag
+	if strings.Contains(endpoint, "docker.io") {
+		return "docker.io"
+	}
+
+	return urlfmt.GetServerFromURL(url)
 }
 
 // DefaultTransport returns the default transport based on the configuration.

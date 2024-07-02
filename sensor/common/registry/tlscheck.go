@@ -35,7 +35,7 @@ type tlsCheckCacheImpl struct {
 	checkTLSFunc CheckTLS
 }
 
-func NewTLSCheckCache(checkTLSFunc CheckTLS) *tlsCheckCacheImpl {
+func newTLSCheckCache(checkTLSFunc CheckTLS) *tlsCheckCacheImpl {
 	return &tlsCheckCacheImpl{
 		results:      expiringcache.NewExpiringCache(tlsCheckTTL),
 		checkTLSFunc: checkTLSFunc,

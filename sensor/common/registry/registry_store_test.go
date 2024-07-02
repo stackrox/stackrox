@@ -11,9 +11,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/docker/config"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -128,21 +130,37 @@ func TestRegistryStore_MultipleSecretsSameRegistry(t *testing.T) {
 	assert.Equal(t, reg.Config().Password, dceB.Password)
 }
 
-// TODO: repurpose this test to verify that metadata call returns an error instead
-// func TestRegistryStore_FailUpsertCheckTLS(t *testing.T) {
-// 	ctx := context.Background()
-// 	regStore := NewRegistryStore(alwaysFailCheckTLS)
-// 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
-// 	ns := "namespace"
+func TestRegistryStore_FailUpsertCheckTLS(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.SensorLazyTLSChecks, false)
 
-// 	// upsert that fails TLS check should error out and NOT perform an upsert
-// 	assert.Error(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
-// 	assert.Nil(t, regStore.store[ns])
+	ctx := context.Background()
+	regStore := NewRegistryStore(alwaysFailCheckTLS)
+	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+	ns := "namespace"
 
-// 	// a subsequent upsert should not return an error and also NOT perform an upsert
-// 	assert.NoError(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
-// 	assert.Nil(t, regStore.store[ns])
-// }
+	// upsert that fails TLS check should error out and NOT perform an upsert
+	assert.Error(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
+	assert.Nil(t, regStore.store[ns])
+
+	// a subsequent upsert should not return an error and also NOT perform an upsert
+	assert.NoError(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
+	assert.Nil(t, regStore.store[ns])
+}
+
+func TestRegistryStore_LazyNoFailUpsertCheckTLS(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.SensorLazyTLSChecks, true)
+
+	ctx := context.Background()
+	regStore := NewRegistryStore(alwaysFailCheckTLS)
+	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+	ns := "namespace"
+
+	// Upsert should NOT fail on lazy TLS check
+	assert.NoError(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
+	regs := regStore.store[ns]
+	allRegs := regs.GetAll()
+	require.Len(t, allRegs, 1)
+}
 
 func TestRegistryStore_GlobalStore(t *testing.T) {
 	ctx := context.Background()
@@ -164,26 +182,41 @@ func TestRegistryStore_GlobalStore(t *testing.T) {
 	assert.Zero(t, len(regStore.store), "non-global store should not have been modified")
 }
 
-// TODO: repurpose this test to verify that metadata call returns an error instead
-// func TestRegistryStore_GlobalStoreFailUpsertCheckTLS(t *testing.T) {
-// 	ctx := context.Background()
-// 	regStore := NewRegistryStore(alwaysFailCheckTLS)
-// 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+func TestRegistryStore_GlobalStoreFailUpsertCheckTLS(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.SensorLazyTLSChecks, false)
 
-// 	// upsert that fails TLS check should error out and NOT perform an upsert
-// 	require.Error(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
-// 	assert.True(t, regStore.globalRegistries.IsEmpty(), "global store should not be populated")
+	ctx := context.Background()
+	regStore := NewRegistryStore(alwaysFailCheckTLS)
+	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
 
-// 	// a subsequent upsert should not return an error and also NOT perform an upsert
-// 	require.NoError(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
-// 	assert.True(t, regStore.globalRegistries.IsEmpty(), "global store should not be populated")
-// }
+	// upsert that fails TLS check should error out and NOT perform an upsert
+	require.Error(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
+	assert.True(t, regStore.globalRegistries.IsEmpty(), "global store should not be populated")
+
+	// a subsequent upsert should not return an error and also NOT perform an upsert
+	require.NoError(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
+	assert.True(t, regStore.globalRegistries.IsEmpty(), "global store should not be populated")
+}
+
+func TestRegistryStore_GlobalStoreLazyNoFailUpsertCheckTLS(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.SensorLazyTLSChecks, true)
+
+	ctx := context.Background()
+	regStore := NewRegistryStore(alwaysFailCheckTLS)
+	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+
+	// upsert that fails TLS check should error out and NOT perform an upsert
+	require.NoError(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
+	require.False(t, regStore.globalRegistries.IsEmpty())
+	allRegs := regStore.globalRegistries.GetAll()
+	require.Len(t, allRegs, 1)
+}
 
 func TestRegistryStore_CreateImageIntegrationType(t *testing.T) {
-	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, "")
+	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, false, "")
 	assert.Equal(t, ii.Type, types.DockerType)
 
-	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, "")
+	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, true, "")
 	assert.Equal(t, ii.Type, types.RedHatType)
 }
 
