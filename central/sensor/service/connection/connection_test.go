@@ -88,6 +88,8 @@ func (c *mockServer) Recv() (*central.MsgFromSensor, error) {
 }
 
 func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
+	// ROX_COMPLIANCE_ENHANCEMENTS is set to 'true' by default but just in case
+	s.T().Setenv(features.ComplianceEnhancements.EnvVar(), "true")
 
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -119,7 +121,7 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 		sentList: make([]*central.MsgToSensor, 0),
 	}
 
-	err := sensorMockConn.Run(ctx, server, set.NewSet[centralsensor.SensorCapability]())
+	err := sensorMockConn.Run(ctx, server, set.NewSet[centralsensor.SensorCapability](centralsensor.ComplianceV2Integrations))
 	s.NoError(err)
 
 	var complianceRequests []*central.ComplianceRequest
@@ -268,7 +270,6 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 				sensorEventHandler: eventHandler,
 				sensorHello:        hello,
 				hashDeduper:        deduper,
-				scanSettingDS:      s.scanConfigDS,
 			}
 
 			server := &mockServer{
@@ -278,7 +279,6 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 
 			caps := set.NewSet[centralsensor.SensorCapability](tc.givenSensorCapabilities...)
 
-			s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).AnyTimes()
 			mgrMock.EXPECT().GetCluster(ctx, gomock.Any()).Return(&storage.Cluster{}, true, nil).AnyTimes()
 			if tc.expectDeduperStateSent {
 				deduper.EXPECT().GetSuccessfulHashes().Return(tc.expectDeduperStateContents).Times(1)
@@ -365,16 +365,14 @@ func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
 	mgrMock := clusterMgrMock.NewMockClusterManager(ctrl)
 
 	sensorMockConn := &sensorConnection{
-		clusterID:     clusterID,
-		clusterMgr:    mgrMock,
-		scanSettingDS: s.scanConfigDS,
+		clusterID:  clusterID,
+		clusterMgr: mgrMock,
 	}
 	server := &mockServer{
 		sentList: make([]*central.MsgToSensor, 0),
 	}
 	caps := set.NewSet(centralsensor.AuditLogEventsCap)
 
-	s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).Times(1)
 	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
 
 	s.NoError(sensorMockConn.Run(ctx, server, caps))
@@ -468,9 +466,7 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 		clusterMgr:                 mgrMock,
 		delegatedRegistryConfigMgr: deleRegMgr,
 		imageIntegrationMgr:        iiMgr,
-		scanSettingDS:              s.scanConfigDS,
 	}
-	s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).AnyTimes()
 	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
 	iiMgr.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).AnyTimes()
 
@@ -560,9 +556,7 @@ func (s *testSuite) TestImageIntegrationsOnRun() {
 		clusterMgr:                 mgrMock,
 		delegatedRegistryConfigMgr: deleRegMgr,
 		imageIntegrationMgr:        iiMgr,
-		scanSettingDS:              s.scanConfigDS,
 	}
-	s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).AnyTimes()
 	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
 	deleRegMgr.EXPECT().GetConfig(ctx).AnyTimes()
 
