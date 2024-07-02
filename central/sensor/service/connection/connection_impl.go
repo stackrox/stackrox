@@ -520,7 +520,7 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 		return nil, err
 	}
 
-	var reformatedConfigs []*central.ApplyComplianceScanConfigRequest
+	var reformattedConfigs []*central.ApplyComplianceScanConfigRequest
 	for _, scanConfig := range scanConfigs {
 		var profiles []string
 		for _, profile := range scanConfig.GetProfiles() {
@@ -542,7 +542,7 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 				},
 			},
 		}
-		reformatedConfigs = append(reformatedConfigs, &scanConfigRequest)
+		reformattedConfigs = append(reformattedConfigs, &scanConfigRequest)
 	}
 
 	return &central.MsgToSensor{
@@ -550,7 +550,7 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 			ComplianceRequest: &central.ComplianceRequest{
 				Request: &central.ComplianceRequest_SyncScanConfigs{
 					SyncScanConfigs: &central.SyncComplianceScanConfigRequest{
-						ScanConfigs: reformatedConfigs,
+						ScanConfigs: reformattedConfigs,
 					},
 				},
 			},
@@ -753,8 +753,6 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		}
 	}
 
-	metrics.IncrementSensorConnect(c.clusterID, c.sensorHello.GetSensorState().String())
-
 	scanMsg, err := c.getScanConfigurationMsg(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "unable to get scan config for %q", c.clusterID)
@@ -762,6 +760,8 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 	if err := server.Send(scanMsg); err != nil {
 		return errors.Wrapf(err, "unable to sync config to cluster %q", c.clusterID)
 	}
+
+	metrics.IncrementSensorConnect(c.clusterID, c.sensorHello.GetSensorState().String())
 
 	c.runRecv(ctx, server)
 	return c.stopSig.Err()
