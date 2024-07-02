@@ -214,12 +214,6 @@ export const nodeSearchFilterConfig = {
             searchTerm: 'Operating System',
             inputType: 'text',
         },
-        'Top CVSS': {
-            displayName: 'Top CVSS',
-            filterChipLabel: 'Node top CVSS',
-            searchTerm: 'Node Top CVSS',
-            inputType: 'condition-number',
-        },
         Label: {
             displayName: 'Label',
             filterChipLabel: 'Node label',
@@ -231,12 +225,6 @@ export const nodeSearchFilterConfig = {
             filterChipLabel: 'Node annotation',
             searchTerm: 'Node Annotation',
             inputType: 'autocomplete',
-        },
-        'Join time': {
-            displayName: 'Join time',
-            filterChipLabel: 'Node join time',
-            searchTerm: 'Node Join Time',
-            inputType: 'date-picker',
         },
         'Scan time': {
             displayName: 'Scan time',
