@@ -336,6 +336,7 @@ function WorkloadCvesOverviewPage() {
             className="pf-v5-u-py-md"
             searchFilterConfig={searchFilterConfig}
             searchFilter={searchFilter}
+            additionalContextFilter={{ 'Image CVE Count': isViewingWithCves ? '>0' : '0' }}
             defaultFilters={localStorageValue.preferences.defaultFilters}
             onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);

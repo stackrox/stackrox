@@ -19,6 +19,8 @@ import { useQuery } from '@apollo/client';
 import SEARCH_AUTOCOMPLETE_QUERY, {
     SearchAutocompleteQueryResponse,
 } from 'queries/searchAutocomplete';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { SearchFilter } from 'types/search';
 import { ensureString } from '../utils/utils';
 
 type SearchFilterAutocompleteProps = {
@@ -28,6 +30,8 @@ type SearchFilterAutocompleteProps = {
     onChange: (value: string) => void;
     onSearch: (value: string) => void;
     textLabel: string;
+    searchFilter: SearchFilter;
+    additionalContextFilter?: SearchFilter;
 };
 
 function getSelectOptions(
@@ -77,6 +81,8 @@ function SearchFilterAutocomplete({
     onChange,
     onSearch,
     textLabel,
+    searchFilter,
+    additionalContextFilter,
 }: SearchFilterAutocompleteProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [filterValue, setFilterValue] = useState('');
@@ -96,11 +102,32 @@ function SearchFilterAutocomplete({
         []
     );
 
+    const autocompleteSearchString = `${searchTerm}:${filterValue ? `r/${filterValue}` : ''}`;
+
+    const searchContext = {
+        ...searchFilter,
+        ...additionalContextFilter,
+    };
+    const filteredSearchContext = Object.keys(searchContext).reduce((acc, key) => {
+        // Autocomplete requests for some filters never return results if there is a 'Fixable' search filter
+        // included in the query.
+        if (key !== 'FIXABLE') {
+            acc[key] = searchContext[key];
+        }
+        return acc;
+    }, {});
+    const autocompleteContextString = getRequestQueryStringForSearchFilter(filteredSearchContext);
+
+    const autocompleteQuery =
+        autocompleteContextString !== ''
+            ? [autocompleteContextString, autocompleteSearchString].join('+')
+            : autocompleteSearchString;
+
     const { data, loading: isLoading } = useQuery<SearchAutocompleteQueryResponse>(
         SEARCH_AUTOCOMPLETE_QUERY,
         {
             variables: {
-                query: `${searchTerm}:${filterValue ? `r/${filterValue}` : ''}`,
+                query: autocompleteQuery,
                 categories: searchCategory,
             },
         }
