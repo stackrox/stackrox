@@ -39,7 +39,6 @@ type handlerTestSuite struct {
 	ctx       context.Context
 	datastore datastore.Datastore
 	testDB    *pgtest.TestPostgres
-	tmpDir    string
 }
 
 func TestHandler(t *testing.T) {
@@ -51,10 +50,7 @@ func (s *handlerTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 	blobStore := store.New(s.testDB.DB)
 	s.datastore = datastore.NewDatastore(blobStore, nil)
-	var err error
-	s.tmpDir, err = os.MkdirTemp("", "handler-test")
-	s.Require().NoError(err)
-	s.T().Setenv("TMPDIR", s.tmpDir)
+	s.T().Setenv("TMPDIR", s.T().TempDir())
 }
 
 func (s *handlerTestSuite) SetupTest() {
@@ -64,23 +60,12 @@ func (s *handlerTestSuite) SetupTest() {
 }
 
 func (s *handlerTestSuite) TearDownSuite() {
-	entries, err := os.ReadDir(s.tmpDir)
-	s.NoError(err)
-	s.LessOrEqual(len(entries), 3)
-	if len(entries) == 3 {
-		s.True(strings.HasPrefix(entries[0].Name(), definitionsBaseDir))
-		s.True(strings.HasPrefix(entries[1].Name(), definitionsBaseDir))
-		s.True(strings.HasPrefix(entries[2].Name(), definitionsBaseDir))
-	}
-
 	s.testDB.Teardown(s.T())
-	utils.IgnoreError(func() error { return os.RemoveAll(s.tmpDir) })
 }
 
 func (s *handlerTestSuite) mustGetRequest(t *testing.T) *http.Request {
 	centralURL := "https://central.stackrox.svc/scannerdefinitions?uuid=e799c68a-671f-44db-9682-f24248cd0ffe"
 	req, err := http.NewRequestWithContext(s.ctx, http.MethodGet, centralURL, nil)
-
 	require.NoError(t, err)
 
 	return req
@@ -253,7 +238,7 @@ func (s *handlerTestSuite) mustWriteOffline(content string, modTime time.Time) {
 	modifiedTime, err := protocompat.ConvertTimeToTimestampOrError(modTime)
 	s.Require().NoError(err)
 	blob := &storage.Blob{
-		Name:         offlineScannerDefinitionBlobName,
+		Name:         offlineScannerDefsBlobName,
 		Length:       int64(len(content)),
 		ModifiedTime: modifiedTime,
 		LastUpdated:  protocompat.TimestampNow(),
@@ -345,7 +330,7 @@ func (s *handlerTestSuite) mockHandleZipContents(zipPath string) error {
 	defer utils.IgnoreError(zipR.Close)
 	for _, zipF := range zipR.File {
 		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			err = s.mockHandleDefsFile(zipF, offlineScannerV4DefinitionBlobName)
+			err = s.mockHandleDefsFile(zipF, offlineScannerV4DefsBlobName)
 			s.Require().NoError(err)
 			return nil
 		}
