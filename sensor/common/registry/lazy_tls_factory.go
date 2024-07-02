@@ -13,8 +13,6 @@ import (
 )
 
 var (
-	// lazyEligableIntegrationTypes represents registry types that
-	// are eligible for lazy initialization.
 	lazyEligibleCreators = []types.CreatorWrapper{
 		dockerFactory.CreatorWithoutRepoList,
 		rhelFactory.CreatorWithoutRepoList,
@@ -43,7 +41,7 @@ func newLazyFactory(tlsCheckCache *tlsCheckCacheImpl) registries.Factory {
 }
 
 // CreateRegistry performs aggressive up front validation so that errors can
-// be surfaced, otherwise errors may be lost if encountered during lazy initialization.
+// be surfaced, otherwise errors may be lost during lazy initialization.
 func (e *lazyFactory) CreateRegistry(source *storage.ImageIntegration, options ...types.CreatorOption) (types.ImageRegistry, error) {
 	if source == nil {
 		return nil, errors.New("image integration is nil")
