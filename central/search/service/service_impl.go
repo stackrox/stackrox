@@ -14,6 +14,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	complianceSearch "github.com/stackrox/rox/central/compliance/search"
+	benchmarkDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
@@ -65,20 +66,21 @@ type SearchFunc func(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, erro
 
 func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 	searchfuncs := map[v1.SearchCategory]SearchFunc{
-		v1.SearchCategory_ALERTS:             s.alerts.SearchAlerts,
-		v1.SearchCategory_DEPLOYMENTS:        s.deployments.SearchDeployments,
-		v1.SearchCategory_IMAGES:             s.images.SearchImages,
-		v1.SearchCategory_POLICIES:           s.policies.SearchPolicies,
-		v1.SearchCategory_SECRETS:            s.secrets.SearchSecrets,
-		v1.SearchCategory_NAMESPACES:         s.namespaces.SearchResults,
-		v1.SearchCategory_NODES:              s.nodes.SearchNodes,
-		v1.SearchCategory_CLUSTERS:           s.clusters.SearchResults,
-		v1.SearchCategory_SERVICE_ACCOUNTS:   s.serviceaccounts.SearchServiceAccounts,
-		v1.SearchCategory_ROLES:              s.roles.SearchRoles,
-		v1.SearchCategory_ROLEBINDINGS:       s.bindings.SearchRoleBindings,
-		v1.SearchCategory_SUBJECTS:           service.NewSubjectSearcher(s.bindings).SearchSubjects,
-		v1.SearchCategory_IMAGE_INTEGRATIONS: s.imageIntegrations.SearchImageIntegrations,
-		v1.SearchCategory_POLICY_CATEGORIES:  s.categories.SearchPolicyCategories,
+		v1.SearchCategory_ALERTS:                s.alerts.SearchAlerts,
+		v1.SearchCategory_DEPLOYMENTS:           s.deployments.SearchDeployments,
+		v1.SearchCategory_IMAGES:                s.images.SearchImages,
+		v1.SearchCategory_POLICIES:              s.policies.SearchPolicies,
+		v1.SearchCategory_SECRETS:               s.secrets.SearchSecrets,
+		v1.SearchCategory_NAMESPACES:            s.namespaces.SearchResults,
+		v1.SearchCategory_NODES:                 s.nodes.SearchNodes,
+		v1.SearchCategory_CLUSTERS:              s.clusters.SearchResults,
+		v1.SearchCategory_SERVICE_ACCOUNTS:      s.serviceaccounts.SearchServiceAccounts,
+		v1.SearchCategory_ROLES:                 s.roles.SearchRoles,
+		v1.SearchCategory_ROLEBINDINGS:          s.bindings.SearchRoleBindings,
+		v1.SearchCategory_SUBJECTS:              service.NewSubjectSearcher(s.bindings).SearchSubjects,
+		v1.SearchCategory_IMAGE_INTEGRATIONS:    s.imageIntegrations.SearchImageIntegrations,
+		v1.SearchCategory_POLICY_CATEGORIES:     s.categories.SearchPolicyCategories,
+		v1.SearchCategory_COMPLIANCE_BENCHMARKS: s.benchmarkStore.SearchBenchmarks,
 	}
 
 	return searchfuncs
@@ -86,22 +88,23 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 
 func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Searcher {
 	searchers := map[v1.SearchCategory]search.Searcher{
-		v1.SearchCategory_ALERTS:             s.alerts,
-		v1.SearchCategory_DEPLOYMENTS:        s.deployments,
-		v1.SearchCategory_IMAGES:             s.images,
-		v1.SearchCategory_POLICIES:           s.policies,
-		v1.SearchCategory_SECRETS:            s.secrets,
-		v1.SearchCategory_NAMESPACES:         s.namespaces,
-		v1.SearchCategory_NODES:              s.nodes,
-		v1.SearchCategory_COMPLIANCE:         s.aggregator,
-		v1.SearchCategory_RISKS:              s.risks,
-		v1.SearchCategory_CLUSTERS:           s.clusters,
-		v1.SearchCategory_SERVICE_ACCOUNTS:   s.serviceaccounts,
-		v1.SearchCategory_ROLES:              s.roles,
-		v1.SearchCategory_ROLEBINDINGS:       s.bindings,
-		v1.SearchCategory_SUBJECTS:           service.NewSubjectSearcher(s.bindings),
-		v1.SearchCategory_IMAGE_INTEGRATIONS: s.imageIntegrations,
-		v1.SearchCategory_POLICY_CATEGORIES:  s.categories,
+		v1.SearchCategory_ALERTS:                s.alerts,
+		v1.SearchCategory_DEPLOYMENTS:           s.deployments,
+		v1.SearchCategory_IMAGES:                s.images,
+		v1.SearchCategory_POLICIES:              s.policies,
+		v1.SearchCategory_SECRETS:               s.secrets,
+		v1.SearchCategory_NAMESPACES:            s.namespaces,
+		v1.SearchCategory_NODES:                 s.nodes,
+		v1.SearchCategory_COMPLIANCE:            s.aggregator,
+		v1.SearchCategory_RISKS:                 s.risks,
+		v1.SearchCategory_CLUSTERS:              s.clusters,
+		v1.SearchCategory_SERVICE_ACCOUNTS:      s.serviceaccounts,
+		v1.SearchCategory_ROLES:                 s.roles,
+		v1.SearchCategory_ROLEBINDINGS:          s.bindings,
+		v1.SearchCategory_SUBJECTS:              service.NewSubjectSearcher(s.bindings),
+		v1.SearchCategory_IMAGE_INTEGRATIONS:    s.imageIntegrations,
+		v1.SearchCategory_POLICY_CATEGORIES:     s.categories,
+		v1.SearchCategory_COMPLIANCE_BENCHMARKS: s.benchmarkStore,
 	}
 
 	return searchers
@@ -135,6 +138,7 @@ type serviceImpl struct {
 	aggregator        aggregation.Aggregator
 	authorizer        authz.Authorizer
 	imageIntegrations imageIntegrationDataStore.DataStore
+	benchmarkStore    benchmarkDS.DataStore
 }
 
 func handleMatch(fieldPath, value string) string {

@@ -6,6 +6,7 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
+	benchmarkDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -39,6 +40,7 @@ type Service interface {
 // Builder provides the interface to build a search service.
 type Builder interface {
 	WithAlertStore(store alertDataStore.DataStore) Builder
+	WithComplianceBenchmarkStore(store benchmarkDS.DataStore) Builder
 	WithDeploymentStore(store deploymentDataStore.DataStore) Builder
 	WithImageStore(store imageDataStore.DataStore) Builder
 	WithPolicyStore(store policyDataStore.DataStore) Builder
@@ -58,21 +60,22 @@ type Builder interface {
 }
 
 type serviceBuilder struct {
-	alerts            alertDataStore.DataStore
-	deployments       deploymentDataStore.DataStore
-	images            imageDataStore.DataStore
-	policies          policyDataStore.DataStore
-	secrets           secretDataStore.DataStore
-	serviceAccounts   serviceAccountDataStore.DataStore
-	nodes             nodeDataStore.DataStore
-	namespaces        namespaceDataStore.DataStore
-	risks             riskDataStore.DataStore
-	roles             roleDataStore.DataStore
-	bindings          roleBindingDataStore.DataStore
-	clusters          clusterDataStore.DataStore
-	categories        categoryDataStore.DataStore
-	aggregator        aggregation.Aggregator
-	imageIntegrations imageIntegrationDataStore.DataStore
+	alerts                   alertDataStore.DataStore
+	complianceBenchmarkStore benchmarkDS.DataStore
+	deployments              deploymentDataStore.DataStore
+	images                   imageDataStore.DataStore
+	policies                 policyDataStore.DataStore
+	secrets                  secretDataStore.DataStore
+	serviceAccounts          serviceAccountDataStore.DataStore
+	nodes                    nodeDataStore.DataStore
+	namespaces               namespaceDataStore.DataStore
+	risks                    riskDataStore.DataStore
+	roles                    roleDataStore.DataStore
+	bindings                 roleBindingDataStore.DataStore
+	clusters                 clusterDataStore.DataStore
+	categories               categoryDataStore.DataStore
+	aggregator               aggregation.Aggregator
+	imageIntegrations        imageIntegrationDataStore.DataStore
 }
 
 // NewBuilder returns an instance of a builder to build a search service
@@ -82,6 +85,11 @@ func NewBuilder() Builder {
 
 func (b *serviceBuilder) WithAlertStore(store alertDataStore.DataStore) Builder {
 	b.alerts = store
+	return b
+}
+
+func (b *serviceBuilder) WithComplianceBenchmarkStore(store benchmarkDS.DataStore) Builder {
+	b.complianceBenchmarkStore = store
 	return b
 }
 
