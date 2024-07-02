@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -83,6 +84,21 @@ func (m *MockDataStore) GetBenchmarksByProfileName(ctx context.Context, profileN
 func (mr *MockDataStoreMockRecorder) GetBenchmarksByProfileName(ctx, profileName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBenchmarksByProfileName", reflect.TypeOf((*MockDataStore)(nil).GetBenchmarksByProfileName), ctx, profileName)
+}
+
+// SearchBenchmarks mocks base method.
+func (m *MockDataStore) SearchBenchmarks(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchBenchmarks", ctx, q)
+	ret0, _ := ret[0].([]*v1.SearchResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchBenchmarks indicates an expected call of SearchBenchmarks.
+func (mr *MockDataStoreMockRecorder) SearchBenchmarks(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchBenchmarks", reflect.TypeOf((*MockDataStore)(nil).SearchBenchmarks), ctx, q)
 }
 
 // UpsertBenchmark mocks base method.

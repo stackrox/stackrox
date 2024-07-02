@@ -10,6 +10,8 @@ import (
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
+	benchmarkStorage "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/store/postgres"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
@@ -37,6 +39,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -94,6 +97,7 @@ type SearchOperationsTestSuite struct {
 }
 
 func (s *SearchOperationsTestSuite) SetupTest() {
+	s.T().Setenv("POSTGRES_PORT", "5433")
 	s.mockCtrl = gomock.NewController(s.T())
 	testingDB := pgtest.ForT(s.T())
 	s.pool = testingDB.DB
@@ -402,4 +406,21 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 	})
 	s.NoError(err)
 	s.Len(results.GetResults(), 0)
+}
+
+func (s *SearchOperationsTestSuite) TestBenchmarkAutoComplete() {
+	allAccess := sac.WithAllAccess(context.Background())
+
+	benchmarkDS := benchmarksDS.New(benchmarkStorage.New(s.pool))
+	builder := NewBuilder().WithComplianceBenchmarkStore(benchmarkDS)
+	service := builder.Build()
+
+	benchmarksQuery := search.NewQueryBuilder().AddStrings(search.ComplianceOperatorBenchmarkName, "ocp-cis4").Query()
+
+	results, err := service.Search(allAccess, &v1.RawSearchRequest{
+		Query:      benchmarksQuery,
+		Categories: []v1.SearchCategory{v1.SearchCategory_COMPLIANCE_BENCHMARKS},
+	})
+	require.NoError(s.T(), err)
+	s.Len(results, 1)
 }
