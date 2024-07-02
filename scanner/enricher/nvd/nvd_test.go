@@ -331,9 +331,8 @@ func TestEnrich(t *testing.T) {
 		}},
 	}
 	got := map[string][]map[string]interface{}{}
-	if err := json.Unmarshal(es[0], &got); err != nil {
-		t.Error(err)
-	}
+	err = json.Unmarshal(es[0], &got)
+	assert.NoError(t, err)
 	assert.Equal(t, want, got)
 }
 

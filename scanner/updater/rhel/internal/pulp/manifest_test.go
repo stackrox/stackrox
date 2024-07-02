@@ -61,8 +61,7 @@ func TestManifestLoad(t *testing.T) {
 	defer f.Close()
 
 	var got Manifest
-	if err := got.Load(f); err != nil {
-		t.Error(err)
-	}
+	err = got.Load(f)
+	assert.NoError(t, err)
 	assert.Equal(t, want, got)
 }

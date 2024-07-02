@@ -183,10 +183,7 @@ func TestAllKnownOpenShift4CPEs(t *testing.T) {
 	for _, test := range table {
 		t.Run(test.cpe, func(t *testing.T) {
 			cpes, err := allKnownOpenShift4CPEs(test.cpe)
-			if err != nil {
-				t.Fatal(err)
-			}
-
+			assert.NoError(t, err)
 			assert.Equal(t, test.expected, cpes)
 		})
 	}
