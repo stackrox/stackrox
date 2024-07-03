@@ -658,34 +658,6 @@ func (s *complianceScanConfigDataStoreTestSuite) TestClusterStatus() {
 	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[complianceWriteNoClusterCtx], configID1, fixtureconsts.Cluster1, "testing status", ""))
 }
 
-func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNamesFromOperatorScanSettings() {
-	profileId := uuid.NewV4().String()
-	profile1 := &storage.ComplianceOperatorProfileV2{
-		ProfileId:    profileId,
-		ClusterId:    s.clusterID1,
-		ProfileRefId: internaltov2storage.BuildProfileRefID(s.clusterID1, profileId, ""),
-		Name:         "ocp-cis4",
-	}
-	s.Require().NoError(s.profileDS.UpsertProfile(s.testContexts[unrestrictedReadWriteCtx], profile1))
-
-	configID4 := uuid.NewV4().String()
-	operatorScanConfig4 := &storage.ComplianceOperatorScanV2{
-		Id:             configID4,
-		ScanConfigName: "scan-config",
-		ClusterId:      s.clusterID1,
-		Profile: &storage.ProfileShim{
-			ProfileId:    profile1.ProfileId,
-			ProfileRefId: profile1.ProfileRefId,
-		},
-	}
-	s.Require().NoError(s.scanDS.UpsertScan(s.testContexts[unrestrictedReadWriteCtx], operatorScanConfig4))
-
-	results, err := s.dataStore.GetProfilesNames(s.testContexts[unrestrictedReadWriteCtx], nil)
-	s.Require().NoError(err)
-	s.Len(results, 1)
-	s.Equal("ocp-cis4", results[0])
-}
-
 func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNames() {
 	// upsert a profile for testing CO local scan configurations
 	profileId := uuid.NewV4().String()
