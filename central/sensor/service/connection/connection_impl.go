@@ -757,10 +757,12 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 	}
 
 	if features.ComplianceEnhancements.Enabled() && connectionCapabilities.Contains(centralsensor.ComplianceV2Integrations) {
+		log.Infof("Sensor (%s) can sync scan configuration: sending sending scan configuration", c.clusterID)
 		scanMsg, err := c.getScanConfigurationMsg(ctx)
 		if err != nil {
 			return errors.Wrapf(err, "unable to get scan config for %q", c.clusterID)
 		}
+		log.Infof("sending %d scan configs to sensor", len(scanMsg.GetComplianceRequest().GetSyncScanConfigs().GetScanConfigs()))
 		if err := server.Send(scanMsg); err != nil {
 			return errors.Wrapf(err, "unable to sync config to cluster %q", c.clusterID)
 		}
