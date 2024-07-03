@@ -184,6 +184,14 @@ func assertResourceWasUpdated(ctx context.Context, t *testing.T, resourceName st
 	return obj
 }
 
+func assertResourceDoesNotExist(ctx context.Context, t *testing.T, resourceName string, namespace string, obj dynclient.Object) {
+	client := createDynamicClient(t)
+	require.Eventually(t, func() bool {
+		err := client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj)
+		return errors2.IsNotFound(err)
+	}, 60*time.Second, 10*time.Millisecond)
+}
+
 func assertScanSetting(t *testing.T, scanConfig v2.ComplianceScanConfiguration, scanSetting *complianceoperatorv1.ScanSetting) {
 	require.NotNil(t, scanSetting)
 	cron, err := schedule.ConvertToCronTab(service.ConvertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()))
@@ -208,73 +216,12 @@ func assertScanSettingBinding(t *testing.T, scanConfig v2.ComplianceScanConfigur
 	assert.Equal(t, scanSettingBinding.Annotations["owner"], "stackrox")
 }
 
-func assertNameDescriptionAndProfilesMatch(t *testing.T, expected *v2.ComplianceScanConfiguration, actual *v2.ComplianceScanConfigurationStatus) {
-	assert.Equal(t, expected.GetScanName(), actual.GetScanName())
-	assert.Equal(t, expected.GetScanConfig().GetDescription(), actual.GetScanConfig().GetDescription())
-	assert.Equal(t, expected.GetScanConfig().GetProfiles(), actual.GetScanConfig().GetProfiles())
-}
-
 func waitForDeploymentReady(ctx context.Context, t *testing.T, name string, namespace string, numReplicas int32) {
 	client := createDynamicClient(t)
 	require.Eventually(t, func() bool {
 		deployment := &appsv1.Deployment{}
 		return client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, deployment) == nil && deployment.Status.ReadyReplicas == numReplicas
 	}, 60*time.Second, 10*time.Millisecond)
-}
-
-func assertResourceDoesExist(ctx context.Context, t *testing.T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
-	client := createDynamicClient(t)
-	require.Eventually(t, func() bool {
-		return client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj) == nil
-	}, 60*time.Second, 10*time.Millisecond)
-	return obj
-}
-
-func assertResourceWasUpdated(ctx context.Context, t *testing.T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
-	client := createDynamicClient(t)
-	oldResourceVersion := obj.GetResourceVersion()
-	require.Eventually(t, func() bool {
-		return client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj) == nil && obj.GetResourceVersion() != oldResourceVersion
-	}, 60*time.Second, 10*time.Millisecond)
-	return obj
-}
-
-func assertResourceDoesNotExist(ctx context.Context, t *testing.T, resourceName string, namespace string, obj dynclient.Object) {
-	client := createDynamicClient(t)
-	require.Eventually(t, func() bool {
-		err := client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj)
-		return errors2.IsNotFound(err)
-	}, 60*time.Second, 10*time.Millisecond)
-}
-
-func cleanUpResourcesAndWait(ctx context.Context, t *testing.T, resourceName string, namespace string) {
-	client := createDynamicClient(t)
-	scanSetting := &complianceoperatorv1.ScanSetting{}
-	scanSettingBinding := &complianceoperatorv1.ScanSettingBinding{}
-	err := client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, scanSetting)
-	if err == nil {
-		_ = client.Delete(ctx, scanSetting)
-	}
-	err = client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, scanSettingBinding)
-	if err == nil {
-		_ = client.Delete(ctx, scanSettingBinding)
-	}
-}
-
-func assertScanSetting(t *testing.T, scanConfig v2.ComplianceScanConfiguration, scanSetting *complianceoperatorv1.ScanSetting) {
-	require.NotNil(t, scanSetting)
-	cron, err := schedule.ConvertToCronTab(service.ConvertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()))
-	require.NoError(t, err)
-	assert.Equal(t, scanConfig.GetScanName(), scanSetting.GetName())
-	assert.Equal(t, cron, scanSetting.ComplianceSuiteSettings.Schedule)
-}
-
-func assertScanSettingBinding(t *testing.T, scanConfig v2.ComplianceScanConfiguration, scanSettingBinding *complianceoperatorv1.ScanSettingBinding) {
-	require.NotNil(t, scanSettingBinding)
-	assert.Equal(t, scanConfig.GetScanName(), scanSettingBinding.GetName())
-	for _, profile := range scanSettingBinding.Profiles {
-		assert.Contains(t, scanConfig.GetScanConfig().GetProfiles(), profile.Name)
-	}
 }
 
 func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
@@ -773,17 +720,6 @@ func getscanConfigID(configName string, scanConfigs []*v2.ComplianceScanConfigur
 
 	}
 	return configID
-}
-
-func getScanConfig(configName string, scanConfigs []*v2.ComplianceScanConfigurationStatus) *v2.ComplianceScanConfigurationStatus {
-	var config *v2.ComplianceScanConfigurationStatus
-	config = nil
-	for i := 0; i < len(scanConfigs); i++ {
-		if scanConfigs[i].GetScanName() == configName {
-			config = scanConfigs[i]
-		}
-	}
-	return config
 }
 
 func TestComplianceV2ScheduleRescan(t *testing.T) {
