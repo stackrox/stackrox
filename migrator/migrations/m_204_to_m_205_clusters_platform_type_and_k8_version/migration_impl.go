@@ -67,7 +67,7 @@ func populatePlatformTypeAndK8sVersionColumns(ctx context.Context, database *gor
 			Clauses(clause.OnConflict{UpdateAll: true}).
 			Model(newSchema.CreateTableClustersStmt.GormModel).
 			CreateInBatches(&updatedClusters, batchSize).Error; err != nil {
-			return errors.Wrapf(err, "failed to upsert all converted objects")
+			return errors.Wrap(err, "failed to upsert all converted objects")
 		}
 	}
 	log.Infof("Populated cluster type and k8s version columns for %d clusters", count)
