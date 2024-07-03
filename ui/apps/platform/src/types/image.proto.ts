@@ -26,6 +26,7 @@ export const sourceTypes = [
     'JAVA',
     'RUBY',
     'NODEJS',
+    'GO',
     'DOTNETCORERUNTIME',
     'INFRASTRUCTURE',
 ] as const;
@@ -36,6 +37,7 @@ export const sourceTypeLabels: Record<SourceType, string> = {
     JAVA: 'Java',
     RUBY: 'Ruby',
     NODEJS: 'Node js',
+    GO: 'Go',
     DOTNETCORERUNTIME: 'Dotnet Core Runtime',
     INFRASTRUCTURE: 'Infrastructure',
 };
