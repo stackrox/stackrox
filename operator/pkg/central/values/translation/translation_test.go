@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jeremywohl/flatten"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/central/common"
 	"github.com/stackrox/rox/operator/pkg/central/extensions"

@@ -434,7 +434,7 @@ spec:
                 description: Network configuration.
                 properties:
                   policies:
-                    default: true
+                    default: Enabled
                     description: NetworkPolicies is a type for network sub-struct.
                     enum:
                     - Enabled
