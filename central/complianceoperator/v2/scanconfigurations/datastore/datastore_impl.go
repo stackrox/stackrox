@@ -388,7 +388,7 @@ func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]st
 	slices.Sort[[]string, string](resultProfileNames)
 
 	// doing pagination in the app-layer because doing a SQL directly is not supported in the current data-model.
-	if q.GetPagination() != nil {
+	if q.GetPagination() != nil && len(resultProfileNames) > 0 {
 		if q.GetPagination().Limit > int32(len(resultProfileNames)) {
 			q.GetPagination().Limit = int32(len(resultProfileNames))
 		}
