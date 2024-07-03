@@ -199,6 +199,8 @@ function ScanConfigOptions(): ReactElement {
                                                     onBlur: formik.handleBlur,
                                                     name: 'parameters.time',
                                                 }}
+                                                invalidFormatErrorMessage="" // error messaging is handled by FormLabelGroup
+                                                invalidMinMaxErrorMessage=""
                                             />
                                         </FormLabelGroup>
                                     </FlexItem>
