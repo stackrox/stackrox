@@ -265,7 +265,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'node-cves': {
         featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_NODE_PLATFORM_CVES']),
-        resourceAccessRequirements: everyResource(['Node']),
+        resourceAccessRequirements: everyResource(['Cluster', 'Node']),
     },
     'platform-cves': {
         featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_NODE_PLATFORM_CVES']),

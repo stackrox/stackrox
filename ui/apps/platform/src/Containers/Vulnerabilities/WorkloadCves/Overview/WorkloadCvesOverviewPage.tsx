@@ -159,12 +159,11 @@ const searchFilterConfig = {
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
 
-    const { hasReadWriteAccess } = usePermissions();
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
-    const hasReadAccessForNamespaces = hasReadWriteAccess('Namespace');
+    const hasReadAccessForNamespaces = hasReadAccess('Namespace');
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
     const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
     const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
@@ -478,7 +477,6 @@ function WorkloadCvesOverviewPage() {
                                     workloadCvesScopedQueryString={workloadCvesScopedQueryString}
                                     isFiltered={isFiltered}
                                     vulnerabilityState={currentVulnerabilityState}
-                                    isUnifiedDeferralsEnabled={isUnifiedDeferralsEnabled}
                                 />
                             )}
                             {activeEntityTabKey === 'Image' && (
