@@ -58,7 +58,7 @@ func (p *process) determineImage() (string, error) {
 	return "", errors.New("no sensor container found in sensor deployment")
 }
 
-func (p *process) createDeployment(serviceAccountName string, sensorDeployment *appsV1.Deployment) (*appsV1.Deployment, error) {
+func (p *process) createDeployment(serviceAccountName string, sensorDeployment *appsV1.Deployment, sensorNamespace string) (*appsV1.Deployment, error) {
 	image, err := p.determineImage()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to determine image")
@@ -70,7 +70,7 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      upgraderDeploymentName,
-			Namespace: namespaces.StackRox,
+			Namespace: sensorNamespace,
 			Labels: map[string]string{
 				"app":             upgraderDeploymentName,
 				processIDLabelKey: p.trigger.GetUpgradeProcessId(),
@@ -86,7 +86,7 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 			},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace: namespaces.StackRox,
+					Namespace: sensorNamespace,
 					Labels: map[string]string{
 						"app":             upgraderDeploymentName,
 						processIDLabelKey: p.trigger.GetUpgradeProcessId(),
