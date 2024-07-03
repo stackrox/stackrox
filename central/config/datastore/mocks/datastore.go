@@ -85,6 +85,21 @@ func (mr *MockDataStoreMockRecorder) GetPublicConfig() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublicConfig", reflect.TypeOf((*MockDataStore)(nil).GetPublicConfig))
 }
 
+// GetVulnerabilityExceptionConfig mocks base method.
+func (m *MockDataStore) GetVulnerabilityExceptionConfig(ctx context.Context) (*storage.VulnerabilityExceptionConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVulnerabilityExceptionConfig", ctx)
+	ret0, _ := ret[0].(*storage.VulnerabilityExceptionConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetVulnerabilityExceptionConfig indicates an expected call of GetVulnerabilityExceptionConfig.
+func (mr *MockDataStoreMockRecorder) GetVulnerabilityExceptionConfig(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVulnerabilityExceptionConfig", reflect.TypeOf((*MockDataStore)(nil).GetVulnerabilityExceptionConfig), ctx)
+}
+
 // UpsertConfig mocks base method.
 func (m *MockDataStore) UpsertConfig(arg0 context.Context, arg1 *storage.Config) error {
 	m.ctrl.T.Helper()
