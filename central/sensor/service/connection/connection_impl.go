@@ -526,8 +526,7 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 		for _, profile := range scanConfig.GetProfiles() {
 			profiles = append(profiles, profile.GetProfileName())
 		}
-		var cron string
-		cron, err = schedule.ConvertToCronTab(scanConfig.GetSchedule())
+		cron, err := schedule.ConvertToCronTab(scanConfig.GetSchedule())
 		if err != nil {
 			return nil, err
 		}
