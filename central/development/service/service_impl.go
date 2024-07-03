@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"crypto/x509"
+	"encoding/pem"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -108,15 +110,22 @@ func (s *serviceImpl) ReconciliationStatsByCluster(context.Context, *central.Emp
 }
 
 func (s *serviceImpl) URLHasValidCert(_ context.Context, req *central.URLHasValidCertRequest) (*central.URLHasValidCertResponse, error) {
-	if !strings.HasPrefix(req.GetUrl(), "https://") {
-		return nil, errors.Wrapf(errox.InvalidArgs, "url %q must start with https", req.GetUrl())
+	u, err := url.Parse(req.GetUrl())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "invalid url %s", err.Error())
 	}
-	_, err := s.client.Get(req.GetUrl())
+
+	if req.CertPEM == "" {
+		_, err = s.client.Get(req.GetUrl())
+	} else {
+		err = verifyProvidedCert(req, u)
+	}
 	if err == nil {
 		return &central.URLHasValidCertResponse{
 			Result: central.URLHasValidCertResponse_REQUEST_SUCCEEDED,
 		}, nil
 	}
+
 	errStr := err.Error()
 	if strings.Contains(errStr, x509Err) {
 		return &central.URLHasValidCertResponse{
@@ -134,6 +143,29 @@ func (s *serviceImpl) URLHasValidCert(_ context.Context, req *central.URLHasVali
 		Result:  central.URLHasValidCertResponse_OTHER_GET_ERROR,
 		Details: errStr,
 	}, nil
+}
+
+func verifyProvidedCert(req *central.URLHasValidCertRequest, u *url.URL) error {
+	block, _ := pem.Decode([]byte(req.GetCertPEM()))
+	if block == nil {
+		return errors.Wrap(errox.InvalidArgs, "failed to decode certificate")
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return errors.Wrapf(errox.InvalidArgs, "failed to parse certificate %s", err.Error())
+	}
+	pool, err := x509.SystemCertPool()
+	if err != nil {
+		return errors.Wrapf(errox.ServerError, "failed to get system cert pool %s", err.Error())
+	}
+
+	opts := x509.VerifyOptions{
+		DNSName: u.Host,
+		Roots:   pool,
+	}
+
+	_, err = cert.Verify(opts)
+	return err
 }
 
 func (s *serviceImpl) EnvVars(_ context.Context, _ *central.Empty) (*central.EnvVarsResponse, error) {
