@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	autoscalingV1 "k8s.io/api/autoscaling/v1"
 	extscheme "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme"
 	errors2 "k8s.io/apimachinery/pkg/api/errors"
@@ -213,6 +214,14 @@ func assertNameDescriptionAndProfilesMatch(t *testing.T, expected *v2.Compliance
 	assert.Equal(t, expected.GetScanConfig().GetProfiles(), actual.GetScanConfig().GetProfiles())
 }
 
+func waitForDeploymentReady(ctx context.Context, t *testing.T, name string, namespace string, numReplicas int32) {
+	client := createDynamicClient(t)
+	require.Eventually(t, func() bool {
+		deployment := &appsv1.Deployment{}
+		return client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, deployment) == nil && deployment.Status.ReadyReplicas == numReplicas
+	}, 60*time.Second, 10*time.Millisecond)
+}
+
 func assertResourceDoesExist(ctx context.Context, t *testing.T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
 	client := createDynamicClient(t)
 	require.Eventually(t, func() bool {
@@ -288,6 +297,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 
 	// Scale down Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 0))
+	waitForDeploymentReady(ctx, t, "sensor", stackroxNamespace, 0)
 
 	// Create ScanConfig in Central
 	res, err := service.CreateComplianceScanConfiguration(ctx, &scanConfig)
@@ -304,6 +314,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 
 	// Scale up Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 1))
+	waitForDeploymentReady(ctx, t, "sensor", stackroxNamespace, 1)
 
 	// Assert the ScanSetting and the ScanSettingBinding are created
 	scanSetting := &complianceoperatorv1.ScanSetting{}
@@ -315,6 +326,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 
 	// Scale down Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 0))
+	waitForDeploymentReady(ctx, t, "sensor", stackroxNamespace, 0)
 
 	// Update the ScanConfig in Central
 	scanConfig.Id = res.GetId()
@@ -325,6 +337,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 
 	// Scale up Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 1))
+	waitForDeploymentReady(ctx, t, "sensor", stackroxNamespace, 1)
 
 	// Assert the ScanSetting and the ScanSettingBinding are updated
 	assertResourceWasUpdated(ctx, t, scanName, coNamespace, scanSetting)
@@ -334,6 +347,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 
 	// Scale down Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 0))
+	waitForDeploymentReady(ctx, t, "sensor", stackroxNamespace, 0)
 
 	// Delete the ScanConfig in Central
 	reqDelete := &v2.ResourceByID{
@@ -343,6 +357,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 
 	// Scale up Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 1))
+	waitForDeploymentReady(ctx, t, "sensor", stackroxNamespace, 1)
 
 	// Assert the ScanSetting and the ScanSettingBinding are deleted
 	assertResourceDoesNotExist(ctx, t, scanName, coNamespace, scanSetting)
