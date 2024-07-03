@@ -73,7 +73,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - Pre-existing deferrals and false positive requests will be migrated to 'Exception Management'. 
     - Pre-existing globally snoozed Image CVEs will be migrated to create equivalent approved deferrals under 'Exception Management'.
     - `/v1/cve/requests` APIs (deprecated in 4.3.0) for managing vulnerability exceptions are now replaced with new `/v2/vulnerability-exceptions/` APIs.
-- ROX-22251: The ability to snooze Node and Platform CVEs (deprecated in 4.3.0) is no longer enabled by default and can be enabled by setting `ROX_VULN_MGMT_LEGACY_SNOOZE` to `true` on Central.
+- ROX-22251: The ability to snooze Node and Platform CVEs is no longer enabled by default and can be enabled by setting `ROX_VULN_MGMT_LEGACY_SNOOZE` to `true` on Central.
 
 ## [4.4.0]
 
