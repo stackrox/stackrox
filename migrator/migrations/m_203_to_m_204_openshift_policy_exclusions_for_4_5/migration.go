@@ -55,6 +55,10 @@ var (
 		},
 		{
 			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "passwd_binaries.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
 			PolicyFileName:  "root_user.json",
 		},
 		{
