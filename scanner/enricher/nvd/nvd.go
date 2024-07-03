@@ -59,6 +59,7 @@ type Enricher struct {
 	feed         *url.URL
 	apiKey       string
 	callInterval time.Duration
+	feedPath     string
 }
 
 // Config is the configuration for Enricher.
@@ -66,6 +67,10 @@ type Config struct {
 	FeedRoot     *string `json:"feed_root" yaml:"feed_root"`
 	APIKey       *string `json:"api_key" yaml:"api_key"`
 	CallInterval *string `json:"call_interval" yaml:"call_interval"`
+
+	// FeedPath fetch NVD API v2 records from JSON files within a zip archive,
+	// instead of fetching from the NVD URL.
+	FeedPath *string `json:"feed_path" `
 }
 
 // NewFactory creates a Factory for the NVD enricher.
@@ -82,6 +87,22 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 	e.c = c
 	if err := f(&cfg); err != nil {
 		return err
+	}
+	// If a feed path is specified, we ignore the remote fetching configuration
+	// parameters (they will not be used).
+	if cfg.FeedPath != nil {
+		st, err := os.Stat(*cfg.FeedPath)
+		if err != nil {
+			return err
+		}
+		if !st.Mode().IsRegular() {
+			return fmt.Errorf("feed file is not a regular file: %s", *cfg.FeedPath)
+		}
+		e.feedPath = *cfg.FeedPath
+		zlog.Info(ctx).
+			Str("feed_path", e.feedPath).
+			Msg("enricher configured with feed path")
+		return nil
 	}
 	if cfg.APIKey != nil {
 		e.apiKey = *cfg.APIKey

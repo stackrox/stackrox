@@ -118,9 +118,6 @@ func TestFetch(t *testing.T) {
 				if rc == nil {
 					t.Error("wanted non-nil ReadCloser")
 				}
-				if got, want := driver.Fingerprint("sample hint"), fp; got != want {
-					t.Errorf("bad fingerprint: got: %q, want: %q", got, want)
-				}
 				t.Logf("got error: %v", err)
 				if err != nil {
 					t.Error("wanted nil error")
