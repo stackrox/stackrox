@@ -3,6 +3,7 @@ package jsonutil
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -120,4 +121,16 @@ func TestNoErrorOnUnknownAttribute(t *testing.T) {
 	err = JSONReaderToProto(bytes.NewReader(jsonBytes), &proto)
 	assert.NoError(t, err)
 	assert.Equal(t, "6500", proto.GetId())
+}
+
+func TestProtoToJSONOptCompact(t *testing.T) {
+	testResource := &v1.ResourceByID{Id: "test"}
+
+	strRes, err := ProtoToJSON(testResource)
+	assert.NoError(t, err)
+	assert.Len(t, strings.Split(strRes, "\n"), 3)
+
+	strRes, err = ProtoToJSON(testResource, OptCompact)
+	assert.NoError(t, err)
+	assert.Len(t, strings.Split(strRes, "\n"), 1)
 }
