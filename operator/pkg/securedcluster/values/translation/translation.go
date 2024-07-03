@@ -138,6 +138,10 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		v.SetStringValue("registryOverride", sc.Spec.RegistryOverride)
 	}
 
+	if sc.Spec.Network != nil {
+		v.AddChild("network", translation.GetGlobalNetwork(sc.Spec.Network))
+	}
+
 	return v.Build()
 }
 
