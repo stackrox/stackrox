@@ -157,12 +157,12 @@ func (s *serviceImpl) GetVulnerabilityExceptionConfig(ctx context.Context, _ *v1
 	if !features.UnifiedCVEDeferral.Enabled() {
 		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", features.UnifiedCVEDeferral.EnvVar())
 	}
-	privateConfig, err := s.datastore.GetPrivateConfig(ctx)
+	vmExceptionConfig, err := s.datastore.GetVulnerabilityExceptionConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &v1.GetVulnerabilityExceptionConfigResponse{
-		Config: storagetov1.VulnerabilityExceptionConfig(privateConfig.GetVulnerabilityExceptionConfig()),
+		Config: storagetov1.VulnerabilityExceptionConfig(vmExceptionConfig),
 	}, nil
 }
 
