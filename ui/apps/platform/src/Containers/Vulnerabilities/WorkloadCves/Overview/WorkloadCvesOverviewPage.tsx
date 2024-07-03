@@ -159,9 +159,9 @@ const searchFilterConfig = {
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
 
-    const { hasReadWriteAccess } = usePermissions();
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
-    const hasReadAccessForNamespaces = hasReadWriteAccess('Namespace');
+    const hasReadAccessForNamespaces = hasReadAccess('Namespace');
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
