@@ -101,7 +101,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     @Tag("Integration")
-    @Ignore("ROX-15348")
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
@@ -120,8 +119,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         boolean hasProcessViolation = false
         def port = splunkDeployment.splunkPortForward.getLocalPort()
         for (int i = 0; i < 15; i++) {
-            log.info "Attempt ${i} to get violations from Splunk"
-            def searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
+            log.info "Attempt ${i} to get raw violations from Splunk"
+            def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
             TimeUnit.SECONDS.sleep(15)
             Response response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
@@ -134,17 +133,57 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             }
             hasNetworkViolation = results.any { isNetworkViolation(it) }
             hasProcessViolation = results.any { isProcessViolation(it) }
+            // TODO: Remove debug log
+            log.info "Found violations in Splunk: \n${results}"
+            log.info "hasNetworkViolation: ${hasNetworkViolation}\nhasProcessViolation: ${hasProcessViolation}"
+            // TODO: /Remove debug log
             if (hasNetworkViolation && hasProcessViolation) {
                 log.info "Success!"
                 break
             }
         }
 
+        // FIXME: After we know that violations are there, POST to manually run the conversion cronjob
+        // OR: Edit the conversion cronjob to run every 20 seconds in setup()
+
+        // Check for Alerts
+        List<Map<String, String>> alerts = Collections.emptyList()
+        boolean hasNetworkAlert = false
+        boolean hasProcessAlert = false
+        for (int i = 0; i < 41; i++) { // FIXME: We must try for at least 10 minutes, as the conversion cron runs every 5 minutes. Try calling the search manually.
+            log.info "Attempt ${i} to get Alerts from Splunk"
+            def v_searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
+            TimeUnit.SECONDS.sleep(15)
+            Response v_response = SplunkUtil.getSearchResults(port, v_searchId)
+            // We should have at least one violation in the response
+            if (v_response == null) {
+                continue
+            }
+            alerts = v_response.getBody().jsonPath().getList("results")
+            if (alerts.isEmpty()) {
+                continue
+            }
+            hasNetworkAlert = alerts.any { isNetworkViolation(it) }
+            hasProcessAlert = alerts.any { isProcessViolation(it) }
+            // TODO: Remove debug log
+            log.info "Found Alerts in Splunk: \n${results}"
+            log.info "hasNetworkAlert: ${hasNetworkAlert}\nhasProcessAlert: ${hasProcessAlert}"
+            // TODO: /Remove debug log
+            if (hasNetworkAlert && hasProcessAlert) {
+                log.info "Success!"
+                break
+            }
+
+        }
+
         then:
         "StackRox violations are in Splunk"
         assert !results.isEmpty()
+        assert !alerts.isEmpty()
         assert hasNetworkViolation
         assert hasProcessViolation
+        assert hasNetworkAlert
+        assert hasProcessAlert
         for (result in results) {
             validateCimMappings(result)
         }
