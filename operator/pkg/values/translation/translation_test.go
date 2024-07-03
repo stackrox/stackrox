@@ -717,3 +717,55 @@ func TestSetScannerV4DisableValue(t *testing.T) {
 		})
 	}
 }
+
+func TestGetNetworkComponentValues(t *testing.T) {
+	networkPoliciesEnabled := platform.NetworkPoliciesEnabled
+	networkPoliciesDisabled := platform.NetworkPoliciesDisabled
+
+	tests := map[string]struct {
+		network platform.GlobalNetworkSpec
+		want    chartutil.Values
+		wantErr bool
+	}{
+		"unset network policies": {
+			network: platform.GlobalNetworkSpec{},
+			want:    map[string]interface{}{},
+			wantErr: false,
+		},
+		"disabled network policies": {
+			network: platform.GlobalNetworkSpec{
+				Policies: &networkPoliciesDisabled,
+			},
+			want: map[string]interface{}{
+				"enableNetworkPolicies": false,
+			},
+			wantErr: false,
+		},
+		"enabled network policies": {
+			network: platform.GlobalNetworkSpec{
+				Policies: &networkPoliciesEnabled,
+			},
+			want: map[string]interface{}{
+				"enableNetworkPolicies": true,
+			},
+			wantErr: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			network := tt.network
+			values, err := GetGlobalNetwork(&network).Build()
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+			wantAsValues, err := ToHelmValues(tt.want)
+			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
+
+			assert.Equal(t, wantAsValues, values)
+		})
+	}
+}
