@@ -101,21 +101,6 @@ func (mr *MockDataStoreMockRecorder) GetProfilesNames(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfilesNames", reflect.TypeOf((*MockDataStore)(nil).GetProfilesNames), ctx, q)
 }
 
-// GetProfilesNamesFromOperatorScanSettings mocks base method.
-func (m *MockDataStore) GetProfilesNamesFromOperatorScanSettings(ctx context.Context, q *v1.Query) ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "getProfilesNamesFromOperatorScanSettings", ctx, q)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetProfilesNamesFromOperatorScanSettings indicates an expected call of GetProfilesNamesFromOperatorScanSettings.
-func (mr *MockDataStoreMockRecorder) GetProfilesNamesFromOperatorScanSettings(ctx, q any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "getProfilesNamesFromOperatorScanSettings", reflect.TypeOf((*MockDataStore)(nil).GetProfilesNamesFromOperatorScanSettings), ctx, q)
-}
-
 // GetScanConfigClusterStatus mocks base method.
 func (m *MockDataStore) GetScanConfigClusterStatus(ctx context.Context, scanConfigID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error) {
 	m.ctrl.T.Helper()
