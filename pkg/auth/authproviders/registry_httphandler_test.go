@@ -478,6 +478,35 @@ func TestGetSerializedAuthStatusData(t *testing.T) {
 	assert.JSONEq(t, expectedSerializedTestAuthStatus, buf.String())
 }
 
+func TestUserMetadataURLError(t *testing.T) {
+	var nilAuthStatus *v1.AuthStatus
+	const testRedirectURL = "test://Redirect/URL"
+	const testClientState = "testClientState"
+	const testType = "testType"
+	const testMode = false
+	registry := &registryImpl{
+		redirectURL: testRedirectURL,
+	}
+	responseURL := registry.userMetadataURL(
+		nilAuthStatus,
+		testType,
+		testClientState,
+		testMode,
+	)
+	errorText := "Marshal called with nil"
+	expectedErr := errors.New(errorText)
+	expectedURL := &url.URL{
+		Path: testRedirectURL,
+		Fragment: url.Values{
+			testQueryParameter:  {strconv.FormatBool(testMode)},
+			errorQueryParameter: {expectedErr.Error()},
+			typeQueryParameter:  {testType},
+			stateQueryParameter: {testClientState},
+		}.Encode(),
+	}
+	assert.Equal(t, expectedURL, responseURL)
+}
+
 /*****************************************************
 * Elements needed for the tests                      *
 * - AuthResponse generator                           *

@@ -1,6 +1,7 @@
 package user
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -102,4 +103,35 @@ func TestExtractUserLogFields_NilTransformed(t *testing.T) {
 		Type: "",
 	}))
 	assert.Contains(t, fields, logging.Any("userAttributes", user.GetUserAttributes()))
+}
+
+func TestProtoToJSONServiceIdentity(t *testing.T) {
+	_ = t
+	const svcIdentityID = "ecabcdef-bbbb-4011-0000-111111111111"
+	const initBundleID = "ebaaaaaa-bbbb-4011-0000-111111111111"
+	const serialString = "12345678901"
+	const svcIdentityType = storage.ServiceType_CENTRAL_SERVICE
+	testServiceIdentity := &storage.ServiceIdentity{
+		SerialStr: serialString,
+		Srl: &storage.ServiceIdentity_Serial{
+			Serial: int64(12345678901),
+		},
+		Id:           svcIdentityID,
+		Type:         svcIdentityType,
+		InitBundleId: initBundleID,
+	}
+	serialized := protoToJSON(testServiceIdentity)
+	expectedSerialized := `{` +
+		`"serialStr":"` + serialString + `",` +
+		`"serial":"` + serialString + `",` +
+		`"id":"` + svcIdentityID + `",` +
+		`"type":"` + storage.ServiceType_name[int32(svcIdentityType)] + `",` +
+		`"initBundleId":"` + initBundleID + `"` +
+		`}`
+	assert.JSONEq(t, expectedSerialized, serialized)
+	assert.Len(t, strings.Split(serialized, "\n"), 1)
+	// The compact form should not contain any whitespace around JSON tokens
+	// (e.g. '{', '"', ':', ',', '}')
+	assert.NotRegexp(t, "[:{,}\"]\\s", serialized)
+	assert.NotRegexp(t, "\\s[:{,}\"]", serialized)
 }

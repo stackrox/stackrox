@@ -88,7 +88,6 @@ func (r *registryImpl) userMetadataURL(user *v1.AuthStatus, typ, clientState str
 	if err != nil {
 		return r.errorURL(err, typ, clientState, testMode)
 	}
-	log.Info(buf.String())
 
 	return &url.URL{
 		Path: r.redirectURL,
