@@ -1168,6 +1168,36 @@ func TestTranslatePartialMatch(t *testing.T) {
 		args args
 		want chartutil.Values
 	}{
+		"unset network": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{},
+				},
+			},
+			want: chartutil.Values{
+				"network":                       nil,
+				"network.enableNetworkPolicies": nil,
+			},
+		},
+		"unset network policies": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Network: &platform.GlobalNetworkSpec{},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"network":                       nil,
+				"network.enableNetworkPolicies": nil,
+			},
+		},
 		"disabled network policies": {
 			args: args{
 				c: platform.Central{
@@ -1218,8 +1248,12 @@ func TestTranslatePartialMatch(t *testing.T) {
 			assert.NoError(t, err)
 			for key, wantValue := range wantFlattened {
 				gotValue, err := got.PathValue(key)
-				assert.NoError(t, err)
-				assert.Equal(t, wantValue, gotValue)
+				if wantValue == nil {
+					assert.Error(t, err) // The value should not exist
+				} else {
+					assert.NoError(t, err)
+					assert.Equal(t, wantValue, gotValue)
+				}
 			}
 		})
 	}

@@ -394,6 +394,8 @@ func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.Scanner
 
 func getNetworkComponentValues(s *platform.GlobalNetworkSpec) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
-	sv.SetBoolValue("enableNetworkPolicies", s.IsNetworkPoliciesEnabled())
+	if s.Policies != nil {
+		sv.SetBoolValue("enableNetworkPolicies", s.IsNetworkPoliciesEnabled())
+	}
 	return &sv
 }
