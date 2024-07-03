@@ -49,7 +49,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	if err != nil {
 		return fmt.Errorf("initializing updater: rhel: %w", err)
 	}
-	bundles["nvd"] = nvdOpts()
+	//bundles["nvd"] = nvdOpts()
 
 	// ClairCore updaters.
 	for _, uSet := range []string{
@@ -62,6 +62,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		"rhcc",
 		"ubuntu",
 		"osv",
+		"clair.cvss",
 	} {
 		bundles[uSet] = []updates.ManagerOption{updates.WithEnabled([]string{uSet})}
 	}
