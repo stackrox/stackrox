@@ -77,7 +77,10 @@ func (m *handlerImpl) Stop(_ error) {
 func (m *handlerImpl) Notify(_ common.SensorComponentEvent) {}
 
 func (m *handlerImpl) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{centralsensor.ComplianceV2ScanConfigSync}
+	if syncScanConfigsOnStartup.BooleanSetting() {
+		return []centralsensor.SensorCapability{centralsensor.ComplianceV2ScanConfigSync}
+	}
+	return nil
 }
 
 func (m *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
