@@ -139,7 +139,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	}
 
 	if sc.Spec.Network != nil {
-		v.AddChild("network", getNetworkComponentValues(sc.Spec.Network))
+		v.AddChild("network", translation.GetGlobalNetwork(sc.Spec.Network))
 	}
 
 	return v.Build()
@@ -424,10 +424,4 @@ func createConfigFingerprint(sc platform.SecuredCluster) (string, error) {
 		return "", errors.Wrap(err, "marshaling SecuredCluster spec")
 	}
 	return fmt.Sprintf("%x", sha256.Sum256(specAsYaml)), nil
-}
-
-func getNetworkComponentValues(s *platform.GlobalNetworkSpec) *translation.ValuesBuilder {
-	sv := translation.NewValuesBuilder()
-	sv.SetBoolValue("enableNetworkPolicies", s.IsNetworkPoliciesEnabled())
-	return &sv
 }

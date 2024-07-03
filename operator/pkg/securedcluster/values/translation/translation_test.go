@@ -909,17 +909,46 @@ func TestTranslatePartialMatch(t *testing.T) {
 		sc platform.SecuredCluster
 	}
 
+	networkPoliciesEnabled := platform.NetworkPoliciesEnabled
+	networkPoliciesDisabled := platform.NetworkPoliciesDisabled
+
 	tests := map[string]struct {
 		args args
 		want chartutil.Values
 	}{
+		"unset network": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec:       platform.SecuredClusterSpec{},
+				},
+			},
+			want: chartutil.Values{
+				"network":                       nil,
+				"network.enableNetworkPolicies": nil,
+			},
+		},
+		"unset network policies": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						Network: &platform.GlobalNetworkSpec{},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"network":                       nil,
+				"network.enableNetworkPolicies": nil,
+			},
+		},
 		"disabled network policies": {
 			args: args{
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
 						Network: &platform.GlobalNetworkSpec{
-							Policies: platform.NetworkPoliciesDisabled,
+							Policies: &networkPoliciesDisabled,
 						},
 					},
 				},
@@ -934,7 +963,7 @@ func TestTranslatePartialMatch(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
 						Network: &platform.GlobalNetworkSpec{
-							Policies: platform.NetworkPoliciesEnabled,
+							Policies: &networkPoliciesEnabled,
 						},
 					},
 				},
@@ -957,10 +986,15 @@ func TestTranslatePartialMatch(t *testing.T) {
 
 			wantFlattened, err := flatten.Flatten(wantAsValues, "", flatten.DotStyle)
 			assert.NoError(t, err)
+
 			for key, wantValue := range wantFlattened {
 				gotValue, err := got.PathValue(key)
-				assert.NoError(t, err)
-				assert.Equal(t, wantValue, gotValue)
+				if wantValue == nil {
+					assert.Error(t, err) // The value should not exist
+				} else {
+					assert.NoError(t, err)
+					assert.Equal(t, wantValue, gotValue)
+				}
 			}
 		})
 	}

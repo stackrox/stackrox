@@ -111,7 +111,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	v.AddChild("customize", &customize)
 
 	if c.Spec.Network != nil {
-		v.AddChild("network", getNetworkComponentValues(c.Spec.Network))
+		v.AddChild("network", translation.GetGlobalNetwork(c.Spec.Network))
 	}
 
 	return v.Build()
@@ -389,13 +389,5 @@ func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.Scanner
 		sv.SetBoolValue("exposeMonitoring", s.Monitoring.IsEnabled())
 	}
 
-	return &sv
-}
-
-func getNetworkComponentValues(s *platform.GlobalNetworkSpec) *translation.ValuesBuilder {
-	sv := translation.NewValuesBuilder()
-	if s.Policies != nil {
-		sv.SetBoolValue("enableNetworkPolicies", s.IsNetworkPoliciesEnabled())
-	}
 	return &sv
 }
