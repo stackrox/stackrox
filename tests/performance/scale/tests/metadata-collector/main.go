@@ -64,6 +64,7 @@ var (
 	workerNodesCount             = newMetadataIntField("workerNodesCount", true, "number of worker nodes on the test cluster")
 	workerNodesKernelVersion     = newMetadataStringField("workerNodesKernelVersion", false, "kernel version used on the worker nodes on the test cluster")
 	workerNodesType              = newMetadataStringField("workerNodesType", true, "type of the worker nodes used on the test cluster")
+	testName                     = newMetadataStringField("testName", false, "The name of the test. Multiple tests that differ by the number namespaces, deployments, and pods can have the same name")
 
 	allMetadata = make(map[string]interface{}, len(metadataFields))
 )

@@ -6,11 +6,7 @@ json_tests_file=~/perf-tests.json
 
 utilities_dir=${HOME}/stackrox/tests/performance/scale/utilities
 
-
-
 json_tests="$(jq .perfTests "$json_tests_file" --raw-output)"
-
-echo "$json_tests" | jq
 
 cd ${HOME}/stackrox/tests/performance/scale/tests/kube-burner/cluster-density
 
@@ -33,20 +29,5 @@ for ((i = 0; i < ntests; i = i + 1)); do
 	num_namespaces="$(echo $version | jq .numNamespaces)"
 	num_deployments="$(echo $version | jq .numDeployments)"
 	num_pods="$(echo $version | jq .numPods)"
-	echo "num_namespaces= $num_namespaces"
-	echo "num_deployments= $num_deployments"
-	echo "num_pods= $num_pods"
 	./run-workload.sh --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces "${num_namespaces}" --num-deployments "${num_deployments}" --num-pods "${num_pods}"
 done
-
-
-#
-##./run-workload.sh --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces 10 --num-deployments 5 --num-pods 1
-##./run-workload.sh --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces 100 --num-deployments 5 --num-pods 1
-##./run-workload.sh --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces 200 --num-deployments 5 --num-pods 1
-##./run-workload.sh --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces 500 --num-deployments 5 --num-pods 1
-#
-#./run-workload.sh --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces 1250 --num-deployments 20 --num-pods 1
-#./run-workload.sh --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces 1000 --num-deployments 6 --num-pods 4
-#./run-workload.sh --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces 800 --num-deployments 10 --num-pods 3
-#./run-workload.sh --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces 950 --num-deployments 9 --num-pods 3

@@ -19,7 +19,8 @@ curl --silent --location "https://github.com/cloud-bulldozer/kube-burner/release
 
 tar -zxvf "./kube-burner/kube-burner-${KUBE_BURNER_VERSION}.tar.gz" --directory ./kube-burner
 
-export KUBE_BURNER_PATH="$(pwd)/kube-burner/kube-burner"
+KUBE_BURNER_PATH="$(pwd)/kube-burner/kube-burner"
+export KUBE_BURNER_PATH=$KUBE_BURNER_PATH
 echo "export KUBE_BURNER_PATH=$KUBE_BURNER_PATH" >> ~/.bashrc
 
 sudo cp "${HOME}/oc" /usr/bin

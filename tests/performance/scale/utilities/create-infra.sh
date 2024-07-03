@@ -7,10 +7,11 @@ lifespan=$3
 num_worker_nodes=${4:-3}
 
 does_cluster_exist() {
+    local name=$1
     return "$(infractl get "$name" &> /dev/null; echo $?)"
 }
 
-if does_cluster_exist; then
+if "$(does_cluster_exist $name)"; then
     echo "A cluster with the name '${name}' already exists"
 else
     echo "Creating an infra cluster with name '$name' and flavor '$flavor'"
