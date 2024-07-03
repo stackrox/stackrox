@@ -241,14 +241,15 @@ describe(Cypress.spec.relative, () => {
         const imageComponenSourceSelectItems =
             'div[aria-label="Filter by source select menu"] ul li';
 
-        cy.get(imageComponenSourceSelectItems).should('have.length', 7);
+        cy.get(imageComponenSourceSelectItems).should('have.length', 8);
         cy.get(imageComponenSourceSelectItems).eq(0).should('have.text', 'OS');
         cy.get(imageComponenSourceSelectItems).eq(1).should('have.text', 'Python');
         cy.get(imageComponenSourceSelectItems).eq(2).should('have.text', 'Java');
         cy.get(imageComponenSourceSelectItems).eq(3).should('have.text', 'Ruby');
         cy.get(imageComponenSourceSelectItems).eq(4).should('have.text', 'Node js');
-        cy.get(imageComponenSourceSelectItems).eq(5).should('have.text', 'Dotnet Core Runtime');
-        cy.get(imageComponenSourceSelectItems).eq(6).should('have.text', 'Infrastructure');
+        cy.get(imageComponenSourceSelectItems).eq(5).should('have.text', 'Go');
+        cy.get(imageComponenSourceSelectItems).eq(6).should('have.text', 'Dotnet Core Runtime');
+        cy.get(imageComponenSourceSelectItems).eq(7).should('have.text', 'Infrastructure');
 
         cy.get(imageComponenSourceSelectItems).eq(1).click();
         cy.get('@onSearch').should('have.been.calledWithExactly', {
