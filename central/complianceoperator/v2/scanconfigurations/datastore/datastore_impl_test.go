@@ -85,7 +85,6 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupSuite() {
 
 func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	s.T().Setenv("POSTGRES_PORT", "5433")
 	s.db = pgtest.ForT(s.T())
 
 	s.storage = configStore.New(s.db)
