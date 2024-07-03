@@ -755,7 +755,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		}
 	}
 
-	if features.ComplianceEnhancements.Enabled() {
+	if features.ComplianceEnhancements.Enabled() && connectionCapabilities.Contains(centralsensor.ComplianceV2ScanConfigSync) {
 		log.Infof("Sensor (%s) can sync scan configuration: sending sending scan configuration", c.clusterID)
 		scanMsg, err := c.getScanConfigurationMsg(ctx)
 		if err != nil {

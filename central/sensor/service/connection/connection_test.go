@@ -123,7 +123,7 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 		sentList: make([]*central.MsgToSensor, 0),
 	}
 
-	err := sensorMockConn.Run(ctx, server, set.NewSet[centralsensor.SensorCapability](centralsensor.ComplianceV2Integrations))
+	err := sensorMockConn.Run(ctx, server, set.NewSet[centralsensor.SensorCapability](centralsensor.ComplianceV2ScanConfigSync))
 	s.NoError(err)
 
 	var complianceRequests []*central.ComplianceRequest
