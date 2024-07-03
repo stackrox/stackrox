@@ -20,7 +20,6 @@ import { Traits } from 'types/traits.proto';
 import { TraitsOriginLabel } from 'Containers/AccessControl/TraitsOriginLabel';
 import { isUserResource } from 'Containers/AccessControl/traits';
 import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getIntegrationLabel } from './utils/integrationsList';
 import { getEditDisabledMessage, getIsMachineAccessConfig } from './utils/integrationUtils';
 import usePageState from './hooks/usePageState';

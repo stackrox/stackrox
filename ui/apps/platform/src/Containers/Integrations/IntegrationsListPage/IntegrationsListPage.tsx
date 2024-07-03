@@ -22,7 +22,6 @@ import { actions as cloudSourcesActions } from 'reducers/cloudSources';
 import { integrationsPath } from 'routePaths';
 
 import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIntegrations from '../hooks/useIntegrations';
 import { getIntegrationLabel } from '../utils/integrationsList';
 import {
