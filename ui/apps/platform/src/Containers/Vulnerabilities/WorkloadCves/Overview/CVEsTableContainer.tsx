@@ -11,6 +11,7 @@ import useMap from 'hooks/useMap';
 import { VulnerabilityState } from 'types/cve.proto';
 
 import { getTableUIState } from 'utils/getTableUIState';
+import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import CVEsTable, { ImageCVE, cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import { VulnerabilitySeverityLabel } from '../../types';
@@ -31,7 +32,6 @@ export type CVEsTableContainerProps = {
     sort: ReturnType<typeof useURLSort>;
     workloadCvesScopedQueryString: string;
     isFiltered: boolean;
-    isUnifiedDeferralsEnabled: boolean; // TODO Remove this when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
 };
 
 function CVEsTableContainer({
@@ -43,7 +43,6 @@ function CVEsTableContainer({
     sort,
     workloadCvesScopedQueryString,
     isFiltered,
-    isUnifiedDeferralsEnabled,
 }: CVEsTableContainerProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
     const { page, perPage } = pagination;
@@ -67,6 +66,8 @@ function CVEsTableContainer({
 
     const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
 
+    const hasRequestExceptionsAbility = useHasRequestExceptionsAbility();
+
     const selectedCves = useMap<string, ExceptionRequestModalProps['cves'][number]>();
     const {
         exceptionRequestModalOptions,
@@ -75,7 +76,7 @@ function CVEsTableContainer({
         closeModals,
         createExceptionModalActions,
     } = useExceptionRequestModal();
-    const showDeferralUI = isUnifiedDeferralsEnabled && vulnerabilityState === 'OBSERVED';
+    const showDeferralUI = hasRequestExceptionsAbility && vulnerabilityState === 'OBSERVED';
     const canSelectRows = showDeferralUI;
 
     const createTableActions = showDeferralUI ? createExceptionModalActions : undefined;
