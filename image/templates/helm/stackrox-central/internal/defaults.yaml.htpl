@@ -316,11 +316,13 @@ defaults:
     exposeMonitoring: false
 [<- end >]
 
+  network:
+    enableNetworkPolicies: true
+
   system:
     [<- if not .AutoSensePodSecurityPolicies >]
     enablePodSecurityPolicies: [< .EnablePodSecurityPolicies >]
     [<- end >]
-    enableNetworkPolicies: true
 
 pvcDefaults:
   claimName: "stackrox-db"

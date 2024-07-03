@@ -119,7 +119,7 @@ collector:
 auditLogs:
   disableCollection: {{ ne ._rox.env.openshift 4 }}
 
-system:
+network:
   enableNetworkPolicies: true
 
 enableOpenShiftMonitoring: false
