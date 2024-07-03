@@ -36,6 +36,7 @@ import SyslogIntegrationForm from './Forms/SyslogIntegrationForm';
 import TeamsIntegrationForm from './Forms/TeamsIntegrationForm';
 // external backups
 import S3IntegrationForm from './Forms/S3IntegrationForm';
+import S3CompatibleIntegrationForm from './Forms/S3CompatibleIntegrationForm';
 import GcsIntegrationForm from './Forms/GcsIntegrationForm';
 // auth plugins
 import ApiTokenIntegrationForm from './Forms/ApiTokenIntegrationForm';
@@ -97,6 +98,7 @@ const ComponentFormMap = {
     },
     backups: {
         s3: S3IntegrationForm,
+        s3compatible: S3CompatibleIntegrationForm,
         gcs: GcsIntegrationForm,
     },
     authProviders: {
