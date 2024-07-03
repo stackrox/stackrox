@@ -4,23 +4,53 @@ import (
 	"context"
 	"testing"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
+)
+
+var (
+	expectedMatchFieldQuery = &v1.Query{
+		Query: &v1.Query_BaseQuery{
+			BaseQuery: &v1.BaseQuery{
+				Query: &v1.BaseQuery_MatchFieldQuery{
+					MatchFieldQuery: &v1.MatchFieldQuery{
+						Field: "Cluster ID",
+						Value: "\"clusterID\"",
+					},
+				},
+			},
+		},
+	}
+
+	expectedMatchNoneQuery = &v1.Query{
+		Query: &v1.Query_BaseQuery{
+			BaseQuery: &v1.BaseQuery{
+				Query: &v1.BaseQuery_MatchNoneQuery{
+					MatchNoneQuery: &v1.MatchNoneQuery{},
+				},
+			},
+		},
+	}
 )
 
 func TestGetReadWriteSACQuery(t *testing.T) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), createTestReadMultipleResourcesSomeWithNamespaceScope(t))
 	got, err := GetReadWriteSACQuery(ctx, metadata("Cluster", permissions.ClusterScope))
-	assert.Equal(t, `base_query:<match_field_query:<field:"Cluster ID" value:"\"clusterID\"" > > `, got.String())
+	protoassert.Equal(t, expectedMatchFieldQuery, got)
 	assert.NoError(t, err)
+
 	got, err = GetReadWriteSACQuery(ctx, metadata("Namespace", permissions.NamespaceScope))
-	assert.Equal(t, `base_query:<match_none_query:<> > `, got.String())
+	protoassert.Equal(t, expectedMatchNoneQuery, got)
 	assert.NoError(t, err)
+
 	got, err = GetReadSACQuery(sac.WithNoAccess(context.Background()), metadata("Integration", permissions.GlobalScope))
-	assert.Equal(t, `base_query:<match_none_query:<> > `, got.String())
+	protoassert.Equal(t, expectedMatchNoneQuery, got)
 	assert.NoError(t, err)
+
 	got, err = GetReadWriteSACQuery(sac.WithNoAccess(context.Background()), metadata("Integration", permissions.GlobalScope))
 	assert.Nil(t, got)
 	assert.ErrorIs(t, err, sac.ErrResourceAccessDenied)
