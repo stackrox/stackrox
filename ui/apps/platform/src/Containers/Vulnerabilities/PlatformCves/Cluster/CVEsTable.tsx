@@ -33,6 +33,7 @@ export const defaultSortOption = { field: CVSS_SORT_FIELD, direction: 'desc' } a
 
 export const clusterVulnerabilityFragment = gql`
     fragment ClusterVulnerabilityFragment on ClusterVulnerability {
+        id
         cve
         isFixable
         cvss
@@ -43,6 +44,7 @@ export const clusterVulnerabilityFragment = gql`
 `;
 
 export type ClusterVulnerability = {
+    id: string;
     cve: string;
     isFixable: boolean;
     cvss: number;
@@ -85,8 +87,15 @@ function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps
                 filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
                     data.map((clusterVulnerability, rowIndex) => {
-                        const { cve, isFixable, vulnerabilityType, cvss, scoreVersion, summary } =
-                            clusterVulnerability;
+                        const {
+                            id,
+                            cve,
+                            isFixable,
+                            vulnerabilityType,
+                            cvss,
+                            scoreVersion,
+                            summary,
+                        } = clusterVulnerability;
                         const isExpanded = expandedRowSet.has(cve);
 
                         return (
@@ -100,9 +109,7 @@ function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps
                                         }}
                                     />
                                     <Td dataLabel="CVE" modifier="nowrap">
-                                        <Link to={getPlatformEntityPagePath('CVE', cve)}>
-                                            {cve}
-                                        </Link>
+                                        <Link to={getPlatformEntityPagePath('CVE', id)}>{cve}</Link>
                                     </Td>
                                     <Td dataLabel="CVE status">
                                         <VulnerabilityFixableIconText isFixable={isFixable} />
