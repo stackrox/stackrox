@@ -1,11 +1,6 @@
 package common
 
-import "github.com/stackrox/rox/pkg/namespaces"
-
 const (
-	// Namespace is the namespace in which the upgrader operates
-	Namespace = namespaces.StackRox
-
 	// UpgradeProcessIDLabelKey is the key of a label storing the ID of the current upgrade process. This is used to
 	// ensure state does not get mixed up even if an upgrader process is terminated abruptly, e.g., by deleting the
 	// deployment (but not other objects).

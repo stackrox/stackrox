@@ -15,10 +15,9 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/protoutils"
-	"github.com/stackrox/rox/pkg/satoken"
 	"github.com/stackrox/rox/pkg/sensor/queue"
+	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
@@ -178,17 +177,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0, &coReadySignal)
 	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater, &coReadySignal))
 
-	sensorNamespace, err := satoken.LoadNamespaceFromFile()
-	if err != nil {
-		log.Errorf("Failed to determine namespace from service account token file: %s", err)
-	}
-	if sensorNamespace == "" {
-		sensorNamespace = os.Getenv("POD_NAMESPACE")
-	}
-	if sensorNamespace == "" {
-		sensorNamespace = namespaces.StackRox
-		log.Warnf("Unable to determine Sensor namespace, defaulting to %s", sensorNamespace)
-	}
+	sensorNamespace := sensorupgrader.GetSensorNamespace()
 
 	if !cfg.localSensor {
 		upgradeCmdHandler, err := upgrade.NewCommandHandler(configHandler, sensorNamespace)
