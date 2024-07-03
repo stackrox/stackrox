@@ -378,8 +378,6 @@ func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]st
 		return nil, err
 	}
 
-	q.GetPagination().GetSortOptions()
-
 	// merge profile name lists
 	for _, scanProfileName := range scanProfileNames {
 		if !slices.Contains[[]string, string](resultProfileNames, scanProfileName) {
@@ -414,8 +412,6 @@ func (d *datastoreImpl) getScanConfigProfileNames(ctx context.Context, q *v1.Que
 			search.ComplianceOperatorConfigProfileName.String(),
 		},
 	}
-
-	//clonedQuery.Pagination = q.GetPagination()
 
 	var results []*distinctProfileName
 	results, err := pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, d.db, schema.ComplianceOperatorScanConfigurationV2Schema, clonedQuery)
