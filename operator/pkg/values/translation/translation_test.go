@@ -754,7 +754,8 @@ func TestGetNetworkComponentValues(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			values, err := GetGlobalNetwork(&tt.network).Build()
+			network := tt.network
+			values, err := GetGlobalNetwork(&network).Build()
 			if tt.wantErr {
 				require.Error(t, err)
 				return
