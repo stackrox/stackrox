@@ -66,6 +66,7 @@ scannerV4:
 monitoring:
   openshift:
     enabled: true
+network:
+  enableNetworkPolicies: true
 system:
   enablePodSecurityPolicies: true
-  enableNetworkPolicies: true
