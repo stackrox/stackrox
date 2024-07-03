@@ -199,6 +199,20 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 				IsClusterLocal: false,
 			}
 			container.Image = containerImage
+			for _, v := range container.Volumes {
+				v.MountPropagation = storage.Volume_NONE
+			}
+			if container.Config != nil {
+				for _, e := range container.Config.Env {
+					e.EnvVarSource = storage.ContainerConfig_EnvironmentConfig_UNKNOWN
+				}
+			}
+			for _, portConfig := range container.Ports {
+				portConfig.Exposure = storage.PortConfig_INTERNAL
+				for _, exposureInfo := range portConfig.ExposureInfos {
+					exposureInfo.Level = storage.PortConfig_INTERNAL
+				}
+			}
 			containers = append(containers, container)
 		}
 		deployment.Containers = containers
@@ -206,6 +220,12 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 			deployment.Namespace = namespace10pct
 		} else {
 			deployment.Namespace = namepsace90pct
+		}
+		for _, portConfig := range deployment.Ports {
+			portConfig.Exposure = storage.PortConfig_INTERNAL
+			for _, exposureInfo := range portConfig.ExposureInfos {
+				exposureInfo.Level = storage.PortConfig_INTERNAL
+			}
 		}
 		err = h.Deployments.UpsertDeployment(upsertCtx, deployment)
 		if err != nil {
