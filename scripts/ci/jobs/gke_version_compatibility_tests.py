@@ -41,11 +41,11 @@ def get_data_from_api(url):
         url=url,
         headers={'User-Agent': 'Mozilla/5.0'}
     )
-    response = urlopen(req)
-    response_bytes = response.read()
-    response_string = response_bytes.decode('utf-8')
-    data = json.loads(response_string)
-    return data
+    with urlopen(req) as response:
+        response_bytes = response.read()
+        response_string = response_bytes.decode('utf-8')
+        data = json.loads(response_string)
+        return data
 
 
 def get_supported_versions():
