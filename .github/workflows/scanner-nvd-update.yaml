@@ -1,9 +1,6 @@
 name: Scanner NVD update
 
 on:
-  push:
-    branches:
-    - 'yli3/**'
   schedule:
     - cron: '0 */6 * * *'
   workflow_dispatch:
