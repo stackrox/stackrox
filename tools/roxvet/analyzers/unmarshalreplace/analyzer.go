@@ -21,9 +21,7 @@ var Analyzer = &analysis.Analyzer{
 	Run:      run,
 }
 
-var allowedCallerPackages = []string{
-	"github.com/stackrox/rox/migrator/migrations",
-}
+var allowedCallerPackages = []string{}
 
 var bannedFunctions = set.NewFrozenStringSet(
 	"github.com/golang/protobuf/jsonpb.Unmarshal",
