@@ -513,32 +513,44 @@ func (h *httpHandler) validateV4DefsVersion(zipPath string) error {
 	}
 	defer utils.IgnoreError(zipR.Close)
 
-	for _, zipF := range zipR.File {
-		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			defs, size, err := h.openFromArchive(zipPath, zipF.Name)
-			if err != nil {
-				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
-			}
-			defer utils.IgnoreError(defs.Close)
-			// Use readFromArchive, as the defs file was already closed via openFromArchive.
-			mf, err := h.readFromArchive(defs, size, scannerV4ManifestFile)
-			if err != nil {
-				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
-			}
-			defer utils.IgnoreError(mf.Close)
-			offlineV, err := readV4ManifestVersion(mf)
-			if err != nil {
-				return errors.Wrap(err, "couldn't get v4 offline defs version")
-			}
-			v := minorVersionPattern.FindString(version.GetMainVersion())
-			if offlineV != "dev" && offlineV != v {
-				msg := fmt.Sprintf("failed to upload offline file bundle, uploaded file is version: %s and system version is: %s; "+
-					"please upload an offline bundle version: %s, consider using command roxctl scanner download-db", offlineV, version.GetMainVersion(), v)
-				log.Errorf(msg)
-				return errors.New(msg)
-			}
+	validate := func(zipF *zip.File) error {
+		// Extract the Scanner V4 file out of the ZIP.
+		defs, size, err := h.openFromArchive(zipPath, zipF.Name)
+		if err != nil {
+			return errors.Wrap(err, "opening Scanner V4 definitions")
 		}
+		defer utils.IgnoreError(defs.Close)
+		// Extract the manifest file out of the extracted Scanner V4 defs file.
+		// Use readFromArchive, as the defs file was already closed via openFromArchive.
+		mf, err := h.readFromArchive(defs, size, scannerV4ManifestFile)
+		if err != nil {
+			return errors.Wrap(err, "opening Scanner V4 definitions manifest")
+		}
+		defer utils.IgnoreError(mf.Close)
+		offlineV, err := readV4ManifestVersion(mf)
+		if err != nil {
+			return errors.Wrap(err, "reading v4 offline definitions version")
+		}
+		v := minorVersionPattern.FindString(version.GetMainVersion())
+		if offlineV != "dev" && offlineV != v {
+			msg := fmt.Sprintf("failed to upload offline file bundle, uploaded file is version: %s and system version is: %s; "+
+				"please upload an offline bundle version: %s, consider using command roxctl scanner download-db", offlineV, version.GetMainVersion(), v)
+			log.Error(msg)
+			return errors.New(msg)
+		}
+		return nil
 	}
+
+	// Search for the Scanner V4 related file.
+	// It will have a specific prefix, but the full name is unknown.
+	for _, zipF := range zipR.File {
+		if !strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
+			continue
+		}
+		// TODO: Validate there is exactly one of these files?
+		return validate(zipF)
+	}
+
 	return nil
 }
 
@@ -559,6 +571,7 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV2DefsBlobName); err != nil {
 				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
 			}
+			log.Debugf("Successfully processed file: %s", zipF.Name)
 			count++
 			continue
 		}
@@ -568,23 +581,25 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 			}
 			log.Debugf("Successfully processed file: %s", zipF.Name)
 			count++
+			continue
 		}
 		// Ignore any other files which may be in the ZIP.
 	}
+	// Just do a simple check for at least one valid file.
+	// Anything stricter may come with incompatibilities.
 	if count > 0 {
 		return nil
 	}
-	return errors.New("scanner defs file not found in upload zip; wrong zip uploaded?")
+	return errors.New("scanner defs file(s) not found in upload zip: incorrect zip?")
 }
 
 func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File, blobName string) error {
 	r, err := zipF.Open()
 	if err != nil {
-		return errors.Wrap(err, "opening ZIP reader")
+		return errors.Wrap(err, "opening compressed file")
 	}
 	defer utils.IgnoreError(r.Close)
 
-	// POST requests only update the offline feed.
 	b := &storage.Blob{
 		Name:         blobName,
 		LastUpdated:  protocompat.TimestampNow(),
