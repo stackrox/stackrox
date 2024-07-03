@@ -8,9 +8,9 @@ import logging
 import os
 import subprocess
 import sys
+from urllib.request import Request, urlopen
 from collections import namedtuple
 from pathlib import Path
-import requests
 
 from pre_tests import (
     PreSystemTests,
@@ -24,6 +24,9 @@ from get_latest_helm_chart_versions import (
     get_latest_helm_chart_version_for_specific_release,
 )
 
+PRODUCT_LIFECYCLES_API = "https://access.redhat.com/product-life-cycles/api/v1/products?name=" \
+                         "Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes"
+
 Release = namedtuple("Release", ["major", "minor"])
 
 # start logging
@@ -33,11 +36,23 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
 
+def get_data_from_api(url):
+    req = Request(
+        url=url,
+        headers={'User-Agent': 'Mozilla/5.0'}
+    )
+    response = urlopen(req)
+    response_bytes = response.read()
+    response_string = response_bytes.decode('utf-8')
+    data = json.loads(response_string)
+    return data
+
+
 def get_supported_versions():
     supported_central = []
     supported_sensor = []
-    response = requests.get("https://access.redhat.com/product-life-cycles/api/v1/products?name="
-                            "Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes")
+    response = get_data_from_api(PRODUCT_LIFECYCLES_API)
+
     data = json.loads(response.text)
     versions = data["data"][0]["versions"]
     for version in versions:
