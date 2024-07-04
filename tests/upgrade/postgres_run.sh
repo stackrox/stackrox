@@ -64,6 +64,8 @@ test_upgrade() {
     setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
 
+    touch "${UPGRADE_PROGRESS_POSTGRES_PREP}"
+
     test_upgrade_paths "$log_output_dir"
 }
 
@@ -124,6 +126,8 @@ test_upgrade_paths() {
     createPostgresScopes
     checkForPostgresAccessScopes
 
+    touch "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}"
+
     ########################################################################################
     # Bounce central to ensure everything starts back up.                                  #
     ########################################################################################
@@ -139,6 +143,8 @@ test_upgrade_paths() {
 
     validate_upgrade "01-bounce-after-upgrade" "bounce after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
     collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce"
+
+    touch "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_BOUNCE}"
 
     ########################################################################################
     # Bounce central-db to ensure central recovers from the database outage.               #
@@ -161,6 +167,8 @@ test_upgrade_paths() {
     # Ensure central is ready for requests after any previous tests
     wait_for_api
 
+    touch "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}"
+
     ########################################################################################
     # Upgrade to current in order to run any Postgres -> Postgres migrations               #
     ########################################################################################
@@ -175,6 +183,8 @@ test_upgrade_paths() {
 
     collect_and_check_stackrox_logs "$log_output_dir" "03_postgres_postgres_upgrade"
 
+    touch "${UPGRADE_PROGRESS_POSTGRES_MIGRATIONS}"
+
     ########################################################################################
     # Rollback to the previous Postgres                                                    #
     ########################################################################################
@@ -188,6 +198,8 @@ test_upgrade_paths() {
 
     # Ensure central is ready for requests after any previous tests
     wait_for_api
+
+    touch "${UPGRADE_PROGRESS_POSTGRES_ROLLBACK}"
 
     ########################################################################################
     # Upgrade back to latest to run the smoke tests                                        #
@@ -235,6 +247,8 @@ test_upgrade_paths() {
     CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test || touch FAIL
     store_qa_test_results "upgrade-paths-smoke-tests"
     [[ ! -f FAIL ]] || die "Smoke tests failed"
+
+    touch "${UPGRADE_PROGRESS_POSTGRES_SMOKE_TESTS}"
 
     collect_and_check_stackrox_logs "$log_output_dir" "04_final"
 }

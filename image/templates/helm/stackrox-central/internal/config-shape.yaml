@@ -186,6 +186,7 @@ meta:
     extraAPIResources: null # [string]
   noCreateStorageClass: null # bool
 globalPrefix: null # string
+network:
+  enableNetworkPolicies: null # bool
 system:
   enablePodSecurityPolicies: null # bool
-  enableNetworkPolicies: null # bool

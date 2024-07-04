@@ -104,6 +104,10 @@ type SecuredClusterSpec struct {
 	// Set this parameter to override the default registry in images. For example, nginx:latest -> <registry override>/library/nginx:latest
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom Default Image Registry",order=14,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	RegistryOverride string `json:"registryOverride,omitempty"`
+
+	// Network configuration.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=15,xDescription={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	Network *GlobalNetworkSpec `json:"network,omitempty"`
 }
 
 // SensorComponentSpec defines settings for sensor.

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"regexp"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/set"
@@ -28,6 +29,9 @@ var (
 		"*github.com/stackrox/scanner/generated",
 		"*github.com/stackrox/rox/generated/",
 	}
+
+	// Support oneof fields. All oneof interfaces have naming pattern "is<FieldName>".
+	oneofFieldRegex = regexp.MustCompile(`^github\.com/stackrox/(rox|scanner)/generated/.*\.is[A-Z]`)
 
 	replacements = map[string]string{
 		"":              "Equal",
@@ -99,6 +103,11 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			return
 		}
 
+		pkg := "protoutils"
+		if isBannedAssert {
+			pkg = "protoassert"
+		}
+
 		for _, arg := range call.Args[:min(len(call.Args), 3)] {
 			typ := pass.TypesInfo.Types[arg].Type
 			if typ == nil {
@@ -118,10 +127,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			for _, protoPkg := range protoPkgs {
 				for modifier, r := range replacements {
 					if strings.HasPrefix(comparedTypeString, modifier+protoPkg) {
-						pkg := "protoutils"
-						if isBannedAssert {
-							pkg = "protoassert"
-						}
 						pass.Report(analysis.Diagnostic{
 							Pos:     arg.Pos(),
 							Message: fmt.Sprintf("Do not use %s on proto.Message, use %s.%s", name, pkg, r),
@@ -137,6 +142,14 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					})
 					return
 				}
+			}
+
+			if oneofFieldRegex.MatchString(comparedTypeString) {
+				pass.Report(analysis.Diagnostic{
+					Pos:     arg.Pos(),
+					Message: fmt.Sprintf("Do not use %s on proto 'oneof' fields, use provided functions in %s package and compare relevant field(s) from 'oneof' list", name, pkg),
+				})
+				return
 			}
 		}
 	})

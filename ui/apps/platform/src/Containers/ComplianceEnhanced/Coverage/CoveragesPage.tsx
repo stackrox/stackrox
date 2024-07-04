@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import { Route, Switch, useParams } from 'react-router-dom';
 import {
     Bullseye,
@@ -32,6 +32,7 @@ import {
     ComplianceProfileScanStats,
     getComplianceProfilesStats,
 } from 'services/ComplianceResultsStatsService';
+import { defaultChartHeight } from 'utils/chartUtils';
 
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
@@ -72,28 +73,20 @@ function CoveragesPage() {
         Cluster: getFilteredConfig(clusterSearchFilterConfig, ['Name']),
     };
 
-    const fetchProfilesStats = useCallback(() => getComplianceProfilesStats(), []);
-    const {
-        data: profilesStatsResponse,
-        loading: isLoadingProfilesStats,
-        error: profilesStatsError,
-        refetch: refetchProfilesStats,
-    } = useRestQuery(fetchProfilesStats);
-
-    // Refetch profiles stats when profileName changes to stay more in sync with the data in the table
-    useEffect(() => {
+    const fetchProfilesStats = useCallback(async () => {
         setSelectedProfileStats(undefined);
-        refetchProfilesStats();
-    }, [profileName, refetchProfilesStats]);
-
-    useEffect(() => {
-        if (profilesStatsResponse) {
-            const profileStats = profilesStatsResponse.scanStats.find(
+        const response = await getComplianceProfilesStats();
+        if (response) {
+            const profileStats = response.scanStats.find(
                 (profile) => profile.profileName === profileName
             );
             setSelectedProfileStats(profileStats);
         }
-    }, [profilesStatsResponse, profileName]);
+        return response;
+    }, [profileName]);
+
+    const { loading: isLoadingProfilesStats, error: profilesStatsError } =
+        useRestQuery(fetchProfilesStats);
 
     function handleProfilesToggleChange(selectedProfile: string) {
         navigateWithScanConfigQuery(coverageProfileChecksPath, { profileName: selectedProfile });
@@ -141,7 +134,6 @@ function CoveragesPage() {
                             direction={{ default: 'column', md: 'row' }}
                             flexWrap={{ default: 'nowrap' }}
                             spaceItems={{ default: 'spaceItemsNone' }}
-                            style={{ minHeight: '260px' }}
                         >
                             <FlexItem flex={{ default: 'flex_2' }}>
                                 <ProfileDetailsHeader
@@ -150,18 +142,29 @@ function CoveragesPage() {
                                     profileDetails={selectedProfileDetails}
                                 />
                             </FlexItem>
-                            <Divider orientation={{ default: 'horizontal', md: 'vertical' }} />
-                            <FlexItem
-                                alignSelf={{ default: 'alignSelfStretch' }}
-                                flex={{ default: 'flex_1' }}
-                                style={{ minWidth: '400px' }}
-                            >
-                                <ProfileStatsWidget
-                                    error={profilesStatsError}
-                                    isLoading={isLoadingProfilesStats}
-                                    profileScanStats={selectedProfileStats}
-                                />
-                            </FlexItem>
+                            {(selectedProfileStats ||
+                                isLoadingProfilesStats ||
+                                profilesStatsError) && (
+                                <>
+                                    <Divider
+                                        orientation={{ default: 'horizontal', md: 'vertical' }}
+                                    />
+                                    <FlexItem
+                                        alignSelf={{ default: 'alignSelfStretch' }}
+                                        flex={{ default: 'flex_1' }}
+                                        style={{
+                                            minWidth: '400px',
+                                            minHeight: `${defaultChartHeight}px`,
+                                        }}
+                                    >
+                                        <ProfileStatsWidget
+                                            error={profilesStatsError}
+                                            isLoading={isLoadingProfilesStats}
+                                            profileScanStats={selectedProfileStats}
+                                        />
+                                    </FlexItem>
+                                </>
+                            )}
                         </Flex>
                         <Divider component="div" />
                         <PageSection variant="light" className="pf-v5-u-p-0" component="div">

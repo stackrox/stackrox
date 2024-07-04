@@ -20,9 +20,10 @@ func TestConfigDataStore(t *testing.T) {
 type configDataStoreTestSuite struct {
 	suite.Suite
 
-	hasNoneCtx  context.Context
-	hasReadCtx  context.Context
-	hasWriteCtx context.Context
+	hasNoneCtx        context.Context
+	hasReadCtx        context.Context
+	hasWriteCtx       context.Context
+	hasVMRequestsRead context.Context
 
 	dataStore DataStore
 	storage   *storeMocks.MockStore
@@ -40,7 +41,10 @@ func (s *configDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
-
+	s.hasVMRequestsRead = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.VulnerabilityManagementRequests)))
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.dataStore = New(s.storage)
@@ -82,7 +86,7 @@ var (
 			ExpiredVulnReqRetentionDurationDays: 7,
 			DecommissionedClusterRetention:      nil,
 			ReportRetentionConfig:               nil,
-			VulnerabilityExceptionConfig:        nil,
+			VulnerabilityExceptionConfig:        &storage.VulnerabilityExceptionConfig{},
 		},
 	}
 )
@@ -116,7 +120,34 @@ func (s *configDataStoreTestSuite) TestAllowsGetPrivate() {
 	privateConfigWrite, err := s.dataStore.GetPrivateConfig(s.hasWriteCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 	s.NotNil(privateConfigWrite)
+}
 
+func (s *configDataStoreTestSuite) TestEnforcesGetVulnerabilityExceptionConfig() {
+	s.storage.EXPECT().Get(gomock.Any()).Times(0)
+
+	vmExceptionConfig, err := s.dataStore.GetVulnerabilityExceptionConfig(s.hasNoneCtx)
+	s.NoError(err, "expected no error, should return nil without access")
+	s.Nil(vmExceptionConfig, "expected return value to be nil")
+}
+
+func (s *configDataStoreTestSuite) TestAllowsGetVulnerabilityExceptionConfig() {
+	s.storage.EXPECT().Get(gomock.Any()).Return(sampleConfig, true, nil).Times(1)
+
+	vmExceptionConfig, err := s.dataStore.GetVulnerabilityExceptionConfig(s.hasReadCtx)
+	s.NoError(err, "expected no error trying to read with permissions")
+	s.NotNil(vmExceptionConfig)
+
+	s.storage.EXPECT().Get(gomock.Any()).Return(sampleConfig, true, nil).Times(1)
+
+	vmExceptionConfig, err = s.dataStore.GetVulnerabilityExceptionConfig(s.hasVMRequestsRead)
+	s.NoError(err, "expected no error trying to read with permissions")
+	s.NotNil(vmExceptionConfig)
+
+	s.storage.EXPECT().Get(gomock.Any()).Return(sampleConfig, true, nil).Times(1)
+
+	vmExceptionConfig, err = s.dataStore.GetVulnerabilityExceptionConfig(s.hasWriteCtx)
+	s.NoError(err, "expected no error trying to read with permissions")
+	s.NotNil(vmExceptionConfig)
 }
 
 func (s *configDataStoreTestSuite) TestEnforcesGet() {

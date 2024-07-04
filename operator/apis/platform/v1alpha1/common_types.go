@@ -324,3 +324,32 @@ type OpenShiftMonitoring struct {
 func (m *GlobalMonitoring) IsOpenShiftMonitoringDisabled() bool {
 	return m != nil && m.OpenShiftMonitoring != nil && !m.OpenShiftMonitoring.Enabled
 }
+
+// NetworkPolicies is a type for network sub-struct.
+// +kubebuilder:validation:Enum=Enabled;Disabled
+type NetworkPolicies string
+
+const (
+	// NetworkPoliciesEnabled means that network policies should be created.
+	NetworkPoliciesEnabled NetworkPolicies = "Enabled"
+	// NetworkPoliciesDisabled means that network policies should not be created.
+	NetworkPoliciesDisabled NetworkPolicies = "Disabled"
+)
+
+// IsNetworkPoliciesEnabled checks whether network policies are enabled.
+// This method is safe to be used with nil receivers.
+func (s *GlobalNetworkSpec) IsNetworkPoliciesEnabled() bool {
+	if s == nil || s.Policies == nil {
+		return true // enabled by default
+	}
+
+	return *s.Policies == NetworkPoliciesEnabled
+}
+
+// GlobalNetworkSpec defines settings related to Helm chart network parameters. The corresponding Helm flags
+// live in the global scope `.network`.
+type GlobalNetworkSpec struct {
+	//+kubebuilder:default=Enabled
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Policies *NetworkPolicies `json:"policies,omitempty"`
+}

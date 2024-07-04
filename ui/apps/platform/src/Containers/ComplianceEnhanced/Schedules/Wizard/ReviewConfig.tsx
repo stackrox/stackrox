@@ -103,6 +103,15 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                         notifierConfigurations={formikValues.report.notifierConfigurations}
                     />
                 )}
+                <Alert
+                    variant="info"
+                    title="Save for new versus existing scan schedule"
+                    component="div"
+                    isInline
+                >
+                    Compliance Operator runs a new scan schedule immediately upon creation, but does
+                    not run until scheduled time when you save changes to an existing scan schedule.
+                </Alert>
             </Flex>
         </>
     );

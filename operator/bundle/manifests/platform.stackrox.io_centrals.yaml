@@ -750,6 +750,17 @@ spec:
                     - enabled
                     type: object
                 type: object
+              network:
+                description: Network configuration.
+                properties:
+                  policies:
+                    default: Enabled
+                    description: NetworkPolicies is a type for network sub-struct.
+                    enum:
+                    - Enabled
+                    - Disabled
+                    type: string
+                type: object
               overlays:
                 description: Overlays
                 items:

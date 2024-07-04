@@ -72,7 +72,7 @@ func TestExtractUserLogFields_ServiceIdTransformed(t *testing.T) {
 	fields := extractUserLogFields(user)
 	assert.Len(t, fields, 8)
 	assert.Contains(t, fields, logging.String("userID", ""))
-	assert.Contains(t, fields, logging.String("serviceID", "{\"serialStr\":\"serialStr\",\"id\":\"id\",\"type\":\"CENTRAL_SERVICE\",\"initBundleId\":\"initBundleId\"}"))
+	assert.Contains(t, fields, logging.String("serviceID", protoToJSON(user.GetServiceId())))
 	assert.Contains(t, fields, logging.Any("expires", user.GetExpires()))
 	assert.Contains(t, fields, logging.String("username", ""))
 	assert.Contains(t, fields, logging.String("friendlyName", ""))
