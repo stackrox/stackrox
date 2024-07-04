@@ -6,13 +6,14 @@ change me!
 
 ### User-facing documentation
 
-(*must be* 2 items and both *must be* checked)
-<!-- Remove conflicting items that won't be checked. -->
+(*must be 2 checked* items, remove items that don't apply)
 
-- [ ] CHANGELOG is updated
-- [ ] CHANGELOG update is not needed
-- [ ] Documentation PR is created and linked above
-- [ ] Documentation is not needed
+- [ ] I added Release Note to CHANGELOG.md
+- [ ] I [requested](/dev/null) Release Notes update on the JIRA ticket: <!-- put JIRA ticket link here -->
+- [ ] Release Notes update is not needed
+- [ ] I [created](https://spaces.redhat.com/display/StackRox/Submitting+a+User+Documentation+Pull+Request) Documentation PR, it is: <!-- put the link here -->
+- [ ] I [requested](/dev/null) Documentation team to prepare Documentation: <!-- put JIRA ticket or Slack link here -->
+- [ ] No user-facing Documentation is needed
 
 ### Testing
 
@@ -20,8 +21,7 @@ change me!
 
 #### Automated testing
 
-(*must be* at least 1 item and all items *must be* checked)
-<!-- Remove item(s) that don't apply and won't be checked. -->
+(remove items that don't apply, _at least one_ item _must_ remain, _all_ remaining items _must_ be checked)
 
 - [ ] added unit tests
 - [ ] added e2e tests
