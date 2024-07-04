@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -89,7 +89,7 @@ func TestMarshalingAlert(t *testing.T) {
 			var unmarshaledAlert *marshalableAlert
 			require.NoError(t, json.Unmarshal(data, &unmarshaledAlert))
 
-			require.True(t, reflect.DeepEqual(alert, unmarshaledAlert))
+			protoassert.Equal(t, c.alert, (*storage.Alert)(unmarshaledAlert))
 		})
 	}
 }
