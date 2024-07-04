@@ -102,7 +102,7 @@ def main():
             for start, end in get_dates(year, 3):# fetch quarterly
                 vulnerabilities.extend(fetch_data(start, end))
 
-            file_path = os.path.join(args.dirpath, f"{year}.json")
+            file_path = os.path.join(args.dirpath, f"{year}.nvd.json")
             with open(file_path, "w") as file:
                 json.dump({"vulnerabilities": vulnerabilities}, file)
 
