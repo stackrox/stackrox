@@ -51,9 +51,8 @@ def get_data_from_api(url):
 def get_supported_versions():
     supported_central = []
     supported_sensor = []
-    response = get_data_from_api(PRODUCT_LIFECYCLES_API)
+    data = get_data_from_api(PRODUCT_LIFECYCLES_API)
 
-    data = json.loads(response.text)
     versions = data["data"][0]["versions"]
     for version in versions:
         if version["type"] != "End of life":
