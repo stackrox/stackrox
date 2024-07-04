@@ -47,67 +47,76 @@ def transform_json(input_file, output_file):
     transformed_items = []
 
     for item in data['CVE_Items']:
-        cvss_v2_data = item.get('impact', {}).get('baseMetricV2', {}).get('cvssV2', {})
-        transformed_item = {
-            "cve": {
-                "id": item['cve']['CVE_data_meta']['ID'],
-                "published": item['publishedDate'],
-                "lastModified": item['lastModifiedDate'],
-                "descriptions": [{"lang": desc['lang'], "value": desc['value']} for desc in item['cve']['description']['description_data']],
-                "metrics": {
-                    "cvssMetricV2": [
-                        {
-                            "source": "nvd@nist.gov",
-                            "type": "Primary",
-                            "cvssData": {
-                                "version": "2.0",
-                                "vectorString": cvss_v2_data.get('vectorString', ''),
-                                "accessVector": cvss_v2_data.get('accessVector', ''),
-                                "accessComplexity": cvss_v2_data.get('accessComplexity', ''),
-                                "authentication": cvss_v2_data.get('authentication', ''),
-                                "confidentialityImpact": cvss_v2_data.get('confidentialityImpact', ''),
-                                "integrityImpact": cvss_v2_data.get('integrityImpact', ''),
-                                "availabilityImpact": cvss_v2_data.get('availabilityImpact', ''),
-                                "baseScore": cvss_v2_data.get('baseScore', 0)
-                            },
-                            "baseSeverity": item.get('impact', {}).get('baseMetricV2', {}).get('severity', ''),
-                            "exploitabilityScore": item.get('impact', {}).get('baseMetricV2', {}).get('exploitabilityScore', 0),
-                            "impactScore": item.get('impact', {}).get('baseMetricV2', {}).get('impactScore', 0),
-                            "acInsufInfo": item.get('impact', {}).get('baseMetricV2', {}).get('acInsufInfo', False),
-                            "obtainAllPrivilege": item.get('impact', {}).get('baseMetricV2', {}).get('obtainAllPrivilege', False),
-                            "obtainUserPrivilege": item.get('impact', {}).get('baseMetricV2', {}).get('obtainUserPrivilege', False),
-                            "obtainOtherPrivilege": item.get('impact', {}).get('baseMetricV2', {}).get('obtainOtherPrivilege', False),
-                            "userInteractionRequired": item.get('impact', {}).get('baseMetricV2', {}).get('userInteractionRequired', False)
-                        }
-                    ]
-                },
-                "configurations": [
-                    {
-                        "nodes": [
-                            {
-                                "operator": "OR",
-                                "negate": False,
-                                "cpeMatch": [
-                                    {
-                                        "vulnerable": cpe['vulnerable'],
-                                        "criteria": cpe['cpe23Uri'],
-                                        "matchCriteriaId": "D1A5AC77-6B76-41A9-8EFF-B5CA089313D4"  # Example matchCriteriaId
-                                    } for cpe in item['configurations']['nodes'][0]['cpe_match']
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                "references": [
-                    {
-                        "url": ref['url'],
-                        "source": "cve@mitre.org",
-                        "tags": ["Exploit", "Third Party Advisory"]  # Example tags
-                    } for ref in item['cve']['references']['reference_data']
-                ]
+        impact_data = item.get('impact', {})
+        base_metric_v2 = impact_data.get('baseMetricV2', {})
+        base_metric_v3 = impact_data.get('baseMetricV3', {})
+
+        metrics = {}
+
+        if 'cvssV2' in base_metric_v2:
+            cvss_v2_data = base_metric_v2['cvssV2']
+            metrics["cvssMetricV2"] = [
+                {
+                    "source": "nvd@nist.gov",
+                    "type": "Primary",
+                    "cvssData": {
+                        "version": "2.0",
+                        "vectorString": cvss_v2_data.get('vectorString', ''),
+                        "accessVector": cvss_v2_data.get('accessVector', ''),
+                        "accessComplexity": cvss_v2_data.get('accessComplexity', ''),
+                        "authentication": cvss_v2_data.get('authentication', ''),
+                        "confidentialityImpact": cvss_v2_data.get('confidentialityImpact', ''),
+                        "integrityImpact": cvss_v2_data.get('integrityImpact', ''),
+                        "availabilityImpact": cvss_v2_data.get('availabilityImpact', ''),
+                        "baseScore": cvss_v2_data.get('baseScore', 0)
+                    },
+                    "baseSeverity": base_metric_v2.get('severity', ''),
+                    "exploitabilityScore": base_metric_v2.get('exploitabilityScore', 0),
+                    "impactScore": base_metric_v2.get('impactScore', 0),
+                    "acInsufInfo": base_metric_v2.get('acInsufInfo', False),
+                    "obtainAllPrivilege": base_metric_v2.get('obtainAllPrivilege', False),
+                    "obtainUserPrivilege": base_metric_v2.get('obtainUserPrivilege', False),
+                    "obtainOtherPrivilege": base_metric_v2.get('obtainOtherPrivilege', False),
+                    "userInteractionRequired": base_metric_v2.get('userInteractionRequired', False)
+                }
+            ]
+
+        if 'cvssV3' in base_metric_v3:
+            cvss_v3_data = base_metric_v3['cvssV3']
+            metrics["cvssMetricV31"] = [
+                {
+                    "source": "nvd@nist.gov",
+                    "type": "Primary",
+                    "cvssData": {
+                        "version": "3.1",
+                        "vectorString": cvss_v3_data.get('vectorString', ''),
+                        "attackVector": cvss_v3_data.get('attackVector', ''),
+                        "attackComplexity": cvss_v3_data.get('attackComplexity', ''),
+                        "privilegesRequired": cvss_v3_data.get('privilegesRequired', ''),
+                        "userInteraction": cvss_v3_data.get('userInteraction', ''),
+                        "scope": cvss_v3_data.get('scope', ''),
+                        "confidentialityImpact": cvss_v3_data.get('confidentialityImpact', ''),
+                        "integrityImpact": cvss_v3_data.get('integrityImpact', ''),
+                        "availabilityImpact": cvss_v3_data.get('availabilityImpact', ''),
+                        "baseScore": cvss_v3_data.get('baseScore', 0),
+                        "baseSeverity": cvss_v3_data.get('baseSeverity', '')
+                    },
+                    "exploitabilityScore": base_metric_v3.get('exploitabilityScore', 0),
+                    "impactScore": base_metric_v3.get('impactScore', 0)
+                }
+            ]
+
+        if metrics:
+            transformed_item = {
+                "cve": {
+                    "id": item['cve']['CVE_data_meta']['ID'],
+                    "published": item['publishedDate'],
+                    "lastModified": item['lastModifiedDate'],
+                    "descriptions": [{"lang": desc['lang'], "value": desc['value']} for desc in item['cve']['description']['description_data']],
+                    "metrics": metrics
+                }
             }
-        }
-        transformed_items.append(transformed_item)
+            transformed_items.append(transformed_item)
 
     with open(output_file, 'w') as f_out:
         for transformed_item in transformed_items:
