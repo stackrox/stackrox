@@ -18,8 +18,6 @@ import (
 	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
@@ -27,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -182,7 +181,12 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	authStatus, err := getAuthStatus(t, tlsConfWithLeaf, "")
 	require.NoError(t, err)
 	validateAuthStatusResponseForClientCert(t, leafCert, authStatus)
-	assert.Empty(t, cmp.Diff(createdAuthProvider, authStatus.GetAuthProvider(), cmpopts.IgnoreFields(storage.AuthProvider{}, "Config")))
+
+	// Compare auth provider ignoring "Config" field.
+	expectedAuthProvider := createdAuthProvider.Clone()
+	actualAuthProvider := authStatus.GetAuthProvider().Clone()
+	actualAuthProvider.Config = expectedAuthProvider.GetConfig()
+	protoassert.Equal(t, expectedAuthProvider, actualAuthProvider)
 
 	// Simulate the flow used in the browser, where the certs are exchanged for a token.
 	token := getTokenForUserPKIAuthProvider(t, createdAuthProvider.GetId(), tlsConfWithLeaf)
@@ -198,8 +202,16 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	// Token plus matching cert => things should work.
 	authStatusWithToken, err := getAuthStatus(t, tlsConfWithLeaf, token)
 	require.NoError(t, err)
-	assert.Empty(t, cmp.Diff(createdAuthProvider, authStatusWithToken.GetAuthProvider(),
-		cmpopts.IgnoreFields(storage.AuthProvider{}, "Config", "Validated", "Active", "LastUpdated")))
+
+	// Compare auth provider ignoring fields: "Config", "Validated", "Active", and "LastUpdated".
+	expectedAuthProvider = createdAuthProvider.Clone()
+	actualAuthProvider = authStatusWithToken.GetAuthProvider().Clone()
+	actualAuthProvider.Config = expectedAuthProvider.GetConfig()
+	actualAuthProvider.Validated = expectedAuthProvider.GetValidated()
+	actualAuthProvider.Active = expectedAuthProvider.GetActive()
+	actualAuthProvider.LastUpdated = expectedAuthProvider.GetLastUpdated().Clone()
+	protoassert.Equal(t, expectedAuthProvider, actualAuthProvider)
+
 	validateAuthStatusResponseForClientCert(t, leafCert, authStatusWithToken)
 }
 
