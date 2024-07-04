@@ -3,6 +3,8 @@ package fixtures
 import (
 	"fmt"
 	"math/rand"
+	"testing"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -4031,3 +4033,50 @@ var (
 		{"quay.io/ansible/awx-ee:0.6.0", "sha256:e545be92edfd881518953ac925fa57c607b2bad3c5e0941f8ff43de704182b0c"},
 	}
 )
+
+// GetImageForSerializationTest returns a Mock Image for serialization testing purpose.
+func GetImageForSerializationTest(_ testing.TB) *storage.Image {
+	// This image is generated in `deployment.go`
+	image := LightweightDeploymentImage()
+	var scanDate = time.Date(2020, time.December, 24, 23, 59, 59, 999999999, time.UTC)
+	image.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&scanDate)
+	return image
+}
+
+// GetExpectedJSONSerializedTestImage returns the protoJSON serialized form
+// of the Image returned by GetImageForSerializationTest
+func GetExpectedJSONSerializedTestImage(_ testing.TB) string {
+	return `{
+	"id": "sha256:SHA1",
+	"name": {
+		"registry": "docker.io",
+		"remote": "library/nginx",
+		"tag": "1.10"
+	},
+	"metadata": {
+		"v1": {
+			"layers": [
+				{
+					"instruction": "ADD",
+					"value": "FILE:blah"
+				}
+			]
+		}
+	},
+	"scan": {
+		"components": [
+			{
+				"name": "name",
+				"vulns": [
+					{
+						"cve": "cve",
+						"cvss": 5,
+						"summary": "Vuln summary"
+					}
+				]
+			}
+		],
+		"scanTime": "2020-12-24T23:59:59.999999999Z"
+	}
+}`
+}
