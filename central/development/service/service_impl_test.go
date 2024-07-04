@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -42,7 +43,9 @@ type developmentServiceAccessControlTestSuite struct {
 }
 
 func (s *developmentServiceAccessControlTestSuite) SetupSuite() {
-	s.svc = &serviceImpl{}
+	s.svc = &serviceImpl{
+		client: http.DefaultClient,
+	}
 
 	authProvider, err := authproviders.NewProvider(
 		authproviders.WithEnabled(true),
@@ -236,6 +239,14 @@ ET7BSp68ZVVtxqPv1dSWzfGuJ/ekVxQ8lEEFeouhN0fX9X3c+s5vMaKwjOrMEpsi
 RwxPuzZEaFZcVlmtqoq8
 -----END CERTIFICATE-----`,
 			expectedResp: central.URLHasValidCertResponse_CERT_SIGNING_AUTHORITY_VALID_BUT_OTHER_ERROR,
+		},
+		{
+			url:          "https://connectivitycheck.gstatic.com/",
+			expectedResp: central.URLHasValidCertResponse_REQUEST_SUCCEEDED,
+		},
+		{
+			url:          "https://test.invalid",
+			expectedResp: central.URLHasValidCertResponse_OTHER_GET_ERROR,
 		},
 	}
 

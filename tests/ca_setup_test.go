@@ -146,6 +146,14 @@ RwxPuzZEaFZcVlmtqoq8
 -----END CERTIFICATE-----`,
 			expectedResp: central.URLHasValidCertResponse_CERT_SIGNING_AUTHORITY_VALID_BUT_OTHER_ERROR,
 		},
+		{
+			url:          "https://connectivitycheck.gstatic.com/",
+			expectedResp: central.URLHasValidCertResponse_REQUEST_SUCCEEDED,
+		},
+		{
+			url:          "https://test.invalid",
+			expectedResp: central.URLHasValidCertResponse_OTHER_GET_ERROR,
+		},
 	}
 
 	for _, c := range cases {
@@ -153,7 +161,6 @@ RwxPuzZEaFZcVlmtqoq8
 			if c.url == "https://untrusted-root.badssl.com" && os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
 				t.Skip("temporarily skipped on OCP. TODO(ROX-24688)")
 			}
-			t.Skip("temporarily skipped as badssl.com is unstable. TODO(ROX-14078)")
 			internalServiceTimeout := 20 * time.Second
 			testTimeoutPadding := 500 * time.Millisecond
 			ctx, cancel := context.WithTimeout(context.Background(), internalServiceTimeout+testTimeoutPadding)
