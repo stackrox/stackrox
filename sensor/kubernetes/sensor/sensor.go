@@ -93,8 +93,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		if centralsensor.IsInitCertClusterID(certClusterID) {
 			return nil, errors.New("a sensor that uses certificates from an init bundle must have a cluster name specified")
 		}
+	} else {
+		log.Infof("Cluster name from Helm configuration: %q", helmManagedConfig.GetClusterName())
 	}
 
+	log.Infof("Install method: %q", helmManagedConfig.GetManagedBy())
 	installmethod.Set(helmManagedConfig.GetManagedBy())
 
 	deploymentIdentification := fetchDeploymentIdentification(context.Background(), cfg.k8sClient.Kubernetes())
