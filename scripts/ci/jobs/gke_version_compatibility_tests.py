@@ -3,12 +3,10 @@
 """
 Run version compatibility tests
 """
-import json
 import logging
 import os
 import subprocess
 import sys
-from urllib.request import Request, urlopen
 from collections import namedtuple
 from pathlib import Path
 
@@ -21,11 +19,8 @@ from post_tests import PostClusterTest, FinalPost
 from runners import ClusterTestSetsRunner
 from clusters import GKECluster
 from get_latest_helm_chart_versions import (
-    get_latest_helm_chart_version_for_specific_release,
+    get_supported_helm_chart_versions,
 )
-
-PRODUCT_LIFECYCLES_API = "https://access.redhat.com/product-life-cycles/api/v1/products?name=" \
-                         "Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes"
 
 Release = namedtuple("Release", ["major", "minor"])
 
@@ -35,39 +30,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
-
-def get_data_from_api(url):
-    req = Request(
-        url=url,
-        headers={'User-Agent': 'Mozilla/5.0'}
-    )
-    with urlopen(req) as response:
-        response_bytes = response.read()
-        response_string = response_bytes.decode('utf-8')
-        data = json.loads(response_string)
-        return data
-
-
-def get_supported_versions():
-    supported_central = []
-    supported_sensor = []
-    data = get_data_from_api(PRODUCT_LIFECYCLES_API)
-
-    versions = data["data"][0]["versions"]
-    for version in versions:
-        if version["type"] != "End of life":
-            major = version["name"].split('.')[0]
-            minor = version["name"].split('.')[1]
-            supported_central.append(get_latest_helm_chart_version_for_specific_release(
-                "stackrox-central-services", Release(major=major, minor=minor)
-            ))
-            supported_sensor.append(get_latest_helm_chart_version_for_specific_release(
-                "stackrox-secured-cluster-services", Release(major=major, minor=minor)
-            ))
-    return supported_central, supported_sensor
-
-
-central_chart_versions, sensor_chart_versions = get_supported_versions()
+central_chart_versions, sensor_chart_versions = get_supported_helm_chart_versions()
 
 makefile_path = Path(__file__).parent.parent.parent.parent
 latest_tag = subprocess.check_output(
@@ -76,10 +39,9 @@ latest_tag = subprocess.check_output(
     encoding="utf-8",
 ).strip()
 
-if len(central_chart_versions) == 0:
-    raise RuntimeError("Could not find central chart versions.")
-if len(sensor_chart_versions) == 0:
-    raise RuntimeError("Could not find sensor chart versions.")
+if len(central_chart_versions) == 0 and len(sensor_chart_versions) == 0:
+    logging.info("Found no older versions to test against according to the product lifecycles API. \n"
+                 "However versions with support exceptions will still be tested against.")
 
 ChartVersions = namedtuple(
     "Chart_versions", ["central_version", "sensor_version"])
@@ -116,33 +78,38 @@ test_tuples.extend(
     if support_exception not in test_tuples
 )
 
-sets = []
-for test_tuple in test_tuples:
-    os.environ["ROX_TELEMETRY_STORAGE_KEY_V1"] = 'DISABLED'
-    test_versions = f'{test_tuple.central_version}--{test_tuple.sensor_version}'
+if len(test_tuples) > 0:
+    sets = []
+    for test_tuple in test_tuples:
+        os.environ["ROX_TELEMETRY_STORAGE_KEY_V1"] = 'DISABLED'
+        test_versions = f'{test_tuple.central_version}--{test_tuple.sensor_version}'
 
-    # expected version string is like 74.x.x for ACS 3.74 versions
-    is_3_74_sensor = test_tuple.sensor_version.startswith('74')
+        # expected version string is like 74.x.x for ACS 3.74 versions
+        is_3_74_sensor = test_tuple.sensor_version.startswith('74')
 
-    sets.append(
-        {
-            "name": f'version compatibility tests: {test_versions}',
-            "test": QaE2eTestCompatibility(test_tuple.central_version, test_tuple.sensor_version),
-            "post_test": PostClusterTest(
-                    collect_collector_metrics=not is_3_74_sensor,
-                    check_stackrox_logs=True,
-                    artifact_destination_prefix=test_versions,
-            ),
-            # Collection not supported on 3.74
-            "pre_test": CollectionMethodOverridePreTest("NO_COLLECTION" if is_3_74_sensor else "core_bpf")
-        },
-    )
-ClusterTestSetsRunner(
-    cluster=GKECluster("compat-test",
-                       machine_type="e2-standard-8", num_nodes=2),
-    initial_pre_test=PreSystemTests(),
-    sets=sets,
-    final_post=FinalPost(
-        store_qa_tests_data=True,
-    ),
-).run()
+        sets.append(
+            {
+                "name": f'version compatibility tests: {test_versions}',
+                "test": QaE2eTestCompatibility(test_tuple.central_version, test_tuple.sensor_version),
+                "post_test": PostClusterTest(
+                        collect_collector_metrics=not is_3_74_sensor,
+                        check_stackrox_logs=True,
+                        artifact_destination_prefix=test_versions,
+                ),
+                # Collection not supported on 3.74
+                "pre_test": CollectionMethodOverridePreTest("NO_COLLECTION" if is_3_74_sensor else "core_bpf")
+            },
+        )
+    ClusterTestSetsRunner(
+        cluster=GKECluster("compat-test",
+                           machine_type="e2-standard-8", num_nodes=2),
+        initial_pre_test=PreSystemTests(),
+        sets=sets,
+        final_post=FinalPost(
+            store_qa_tests_data=True,
+        ),
+    ).run()
+else:
+logging.info("There are currently no supported older versions or support exceptions that require compatibility "
+             "testing.")
+

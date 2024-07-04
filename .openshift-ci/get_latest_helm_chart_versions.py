@@ -13,6 +13,7 @@ import pathlib
 import re
 import subprocess
 import sys
+from urllib.request import Request, urlopen
 
 from collections import namedtuple
 
@@ -31,6 +32,10 @@ Version = namedtuple("Version", ["major", "minor", "patch"])
 
 # Here we call "release" (or Y-Stream) the first appearance of X.Y.0 version.
 Release = namedtuple("Release", ["major", "minor"])
+
+# API from which we can gather which versions of Stackrox are currently supported
+PRODUCT_LIFECYCLES_API = "https://access.redhat.com/product-life-cycles/api/v1/products?name=" \
+                         "Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes"
 
 # Default value of N, the number of previous releases to look up.
 # The current release cadence is 9 weeks (sometimes extended but not reduced),
@@ -64,6 +69,13 @@ def main(argv):
         f"Latest chart version for the {sample_support_exception} "
         f"releases is {helm_version_specific}"
     )
+    supported_versions_string = [[f"{version.major}.{version.minor}"] for version in get_supported_versions()]
+    supported_central_versions_from_api, supported_sensor_versions_from_api = get_supported_helm_chart_versions()
+    logging.info(
+        f"\nThe product lifecycles API denotes support for the following versions: {supported_versions_string}\n"
+        f"Found helm charts for the following supported versions: "
+        f"central{supported_central_versions_from_api} - sensor{supported_sensor_versions_from_api}"
+    )
 
 
 def get_latest_helm_chart_versions(chart_name, num_releases=NUM_RELEASES_DEFAULT):
@@ -82,6 +94,71 @@ def get_latest_helm_chart_version_for_specific_release(chart_name, release):
         return __get_latest_helm_chart_version_for_specific_release(chart_name, release)
     finally:
         remove_helm_repo()
+
+
+def get_supported_helm_chart_versions():
+    add_helm_repo()
+    try:
+        update_helm_repo()
+        return __get_supported_helm_chart_versions()
+    finally:
+        remove_helm_repo()
+
+
+def __get_supported_helm_chart_versions():
+    supported_central_versions = []
+    supported_sensor_versions = []
+
+    supported_versions = get_supported_versions()
+    for version in supported_versions:
+        if __does_chart_exist("stackrox-central-services", version):
+            supported_central_versions.append(__get_latest_helm_chart_version_for_specific_release(
+                "stackrox-central-services", version)
+            )
+        else:
+            logging.debug(f"Supported version \"{version.major}.{version.minor}\" has no corresponding helm chart for "
+                          f"stackrox-central-services.")
+        if __does_chart_exist("stackrox-secured-cluster-services", version):
+            supported_sensor_versions.append(__get_latest_helm_chart_version_for_specific_release(
+                "stackrox-secured-cluster-services", version)
+            )
+        else:
+            logging.debug(f"Supported version \"{version.major}.{version.minor}\" has no corresponding helm chart for "
+                          f"stackrox-secured-cluster-services.")
+    return supported_central_versions, supported_sensor_versions
+
+
+def get_supported_versions():
+    supported_versions = []
+    data = __get_data_from_api(PRODUCT_LIFECYCLES_API)
+    versions = data["data"][0]["versions"]
+    for version in versions:
+        if version["type"] != "End of life":
+            major = version["name"].split('.')[0]
+            minor = version["name"].split('.')[1]
+            supported_versions.append(Release(major=major, minor=minor))
+    return supported_versions
+
+
+def __get_data_from_api(url):
+    req = Request(
+        url=url,
+        headers={'User-Agent': 'Mozilla/5.0'}
+    )
+    with urlopen(req) as response:
+        response_bytes = response.read()
+        response_string = response_bytes.decode('utf-8')
+        data = json.loads(response_string)
+        return data
+
+
+def __does_chart_exist(chart_name, release):
+    charts = read_charts()
+    for chart in charts:
+        if chart["name"] == f"{HELM_REPO_NAME}/{chart_name}":
+            if version_to_release(chart["parsed_app_version"]) == release:
+                return True
+    return False
 
 
 def __get_latest_helm_chart_versions(chart_name, num_releases):
