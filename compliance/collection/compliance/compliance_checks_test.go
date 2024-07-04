@@ -174,7 +174,7 @@ func (s *ComplianceResultsBuilderTestSuite) TestSend() {
 	zippedEvidence := complianceReturn.GetEvidence()
 	s.Require().NotNil(zippedEvidence)
 	unzippedEvidence := s.decompressEvidence(zippedEvidence)
-	s.Equal(mockData, unzippedEvidence)
+	protoassert.MapEqual(s.T(), mockData.ResultMap, unzippedEvidence.ResultMap)
 }
 
 type dummyNodeNameProvider struct{}
