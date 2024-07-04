@@ -154,7 +154,7 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 		AutoUpdateRemediations: false,
 		OneTimeScan:            false,
 		StrictNodeScan:         false,
-		Schedule:               convertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()),
+		Schedule:               ConvertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()),
 		Profiles:               profiles,
 		ModifiedBy:             authn.UserFromContext(ctx),
 		Description:            scanConfig.GetScanConfig().GetDescription(),
@@ -163,8 +163,8 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 	}
 }
 
-// convertV2ScheduleToProto converts v2.Schedule to storage.Schedule. Does not validate v2.Schedule
-func convertV2ScheduleToProto(schedule *v2.Schedule) *storage.Schedule {
+// ConvertV2ScheduleToProto converts v2.Schedule to storage.Schedule. Does not validate v2.Schedule
+func ConvertV2ScheduleToProto(schedule *v2.Schedule) *storage.Schedule {
 	if schedule == nil {
 		return nil
 	}
