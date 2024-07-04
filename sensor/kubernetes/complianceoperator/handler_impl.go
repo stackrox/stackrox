@@ -257,7 +257,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 	var updatedScanSettingBinding *unstructured.Unstructured
 	// It is possible that we successfully created the scan setting but had issues on the binding.
 	if ssbObj != nil {
-		updatedScanSettingBinding, err = updateScanSettingBindingFromUpdateRequest(ssObj, request)
+		updatedScanSettingBinding, err = updateScanSettingBindingFromUpdateRequest(ssbObj, request)
 		if err != nil {
 			return m.composeAndSendApplyScanConfigResponse(requestID, err)
 		}
