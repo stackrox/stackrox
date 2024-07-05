@@ -115,8 +115,19 @@ func (s *serviceImpl) URLHasValidCert(_ context.Context, req *central.URLHasVali
 		return nil, errors.Wrapf(errox.InvalidArgs, "invalid url %s", err.Error())
 	}
 
+	// Since we are using http.DefaultHttpClient, it relies on the same CA certificates as x509.SystemCertPool.
+	// This means that verifying the provided certificate is equivalent to making a call to a service;
+	// we are primarily interested in the certificate validation process.
+	// Certificates are installed by placing them in TRUSTED_CA_FILE as detailed in:
+	// https://github.com/stackrox/stackrox/blob/4.4.0/tests/e2e/run.sh#L97
+	// The certificates are then copied to a secret, mounted at `/usr/local/share/ca-certificates/`,
+	// and installed using `update-ca-certificates`, as described in:
+	// https://github.com/stackrox/stackrox/blob/4.4.0/image/templates/helm/stackrox-central/templates/_init.tpl.htpl#L208
+	// Consequently, they will be located in `/etc/ssl/certs/ca-certificates.crt`,
+	// which is the default CA path for Go, as specified in:
+	// https://github.com/golang/go/blob/ad77cefeb2f5b3f1cef4383e974195ffc8610236/src/crypto/x509/root_linux.go#L11
 	if req.CertPEM == "" {
-		_, err = s.client.Get(req.GetUrl())
+		_, err = s.client.Head(req.GetUrl())
 	} else {
 		err = verifyProvidedCert(req, u)
 	}
