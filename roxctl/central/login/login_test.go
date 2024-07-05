@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
@@ -108,7 +109,7 @@ func loginAuthProvidersHandle(t *testing.T, providers []*v1.GetLoginAuthProvider
 		assert.Equal(t, http.MethodGet, request.Method)
 		assert.Equal(t, "/v1/login/authproviders", request.URL.Path)
 		body := request.Body
-		defer body.Close()
+		defer utils.IgnoreError(body.Close)
 		reqBodyData, err := sysIO.ReadAll(body)
 		assert.NoError(t, err)
 		assert.Len(t, reqBodyData, 0)
@@ -124,7 +125,7 @@ func loginAuthProvidersRawHandle(t *testing.T, providersData []map[string]string
 		assert.Equal(t, http.MethodGet, request.Method)
 		assert.Equal(t, "/v1/login/authproviders", request.URL.Path)
 		body := request.Body
-		defer body.Close()
+		defer utils.IgnoreError(body.Close)
 		reqBodyData, err := sysIO.ReadAll(body)
 		assert.NoError(t, err)
 		assert.Len(t, reqBodyData, 0)
