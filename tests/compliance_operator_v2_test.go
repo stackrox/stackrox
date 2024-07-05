@@ -256,7 +256,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 			Id: res.GetId(),
 		}
 		_, _ = service.DeleteComplianceScanConfiguration(ctx, reqDelete)
-		cleanUpResourcesAndWait(ctx, t, scanName, coNamespace)
+		cleanUpResources(ctx, t, scanName, coNamespace)
 	})
 
 	// Scale up Sensor
