@@ -595,9 +595,9 @@ func (m *deploymentMatcher) Matches(target interface{}) bool {
 			return m.acceptableNumberOfMismatches >= 0
 		}
 
-		if !protoutils.SlicesEqual(m.expectedExposureInfos, deployment.GetPorts()[0].GetExposureInfos()) {
-			diff := cmp.Diff(m.expectedExposureInfos, deployment.GetPorts()[0].GetExposureInfos())
-			m.error = fmt.Sprintf("Exposure info differs: %s", diff)
+		infos := deployment.GetPorts()[0].GetExposureInfos()
+		if !protoutils.SlicesEqual(m.expectedExposureInfos, infos) {
+			m.error = fmt.Sprintf("Exposure info differs: %+v %+v", m.expectedExposureInfos, infos)
 			m.acceptableNumberOfMismatches--
 			return m.acceptableNumberOfMismatches >= 0
 		}
