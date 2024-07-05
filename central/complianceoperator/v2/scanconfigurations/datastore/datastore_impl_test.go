@@ -6,9 +6,14 @@ import (
 	"context"
 	"testing"
 
+	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+	pgProfileStore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scanStatusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	configStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
+	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+	pgScanStore "github.com/stackrox/rox/central/complianceoperator/v2/scans/store/postgres"
+	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -22,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -62,6 +68,8 @@ type complianceScanConfigDataStoreTestSuite struct {
 	storage          configStore.Store
 	statusStorage    scanStatusStore.Store
 	scanConfigDSMock *scanConfigMocks.MockDataStore
+	profileDS        profileDS.DataStore
+	scanDS           scanDS.DataStore
 
 	clusterID1 string
 	clusterID2 string
@@ -82,6 +90,12 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 	s.storage = configStore.New(s.db)
 	s.statusStorage = scanStatusStore.New(s.db)
 	s.scanConfigDSMock = scanConfigMocks.NewMockDataStore(s.mockCtrl)
+
+	profileStorage := pgProfileStore.New(s.db)
+	s.profileDS = profileDS.New(profileStorage, s.db, nil)
+
+	scanStorage := pgScanStore.New(s.db)
+	s.scanDS = scanDS.New(scanStorage)
 
 	s.dataStore = New(s.storage, s.statusStorage, s.db.DB)
 	s.clusterID1 = testconsts.Cluster1
@@ -645,6 +659,33 @@ func (s *complianceScanConfigDataStoreTestSuite) TestClusterStatus() {
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNames() {
+	// upsert a profile for testing CO local scan configurations
+	profileId := uuid.NewV4().String()
+	profile1 := &storage.ComplianceOperatorProfileV2{
+		ProfileId:    profileId,
+		ClusterId:    s.clusterID1,
+		ProfileRefId: internaltov2storage.BuildProfileRefID(s.clusterID1, profileId, ""),
+		Name:         "example-profile",
+	}
+	s.Require().NoError(s.profileDS.UpsertProfile(s.testContexts[unrestrictedReadWriteCtx], profile1))
+
+	configID4 := uuid.NewV4().String()
+	operatorScanConfig4 := &storage.ComplianceOperatorScanV2{
+		Id:             configID4,
+		ScanConfigName: "scan-config",
+		ClusterId:      s.clusterID1,
+		Profile: &storage.ProfileShim{
+			ProfileId:    profile1.ProfileId,
+			ProfileRefId: profile1.ProfileRefId,
+		},
+	}
+	s.Require().NoError(s.scanDS.UpsertScan(s.testContexts[unrestrictedReadWriteCtx], operatorScanConfig4))
+
+	results, err := s.dataStore.GetProfilesNames(s.testContexts[unrestrictedReadWriteCtx], nil)
+	s.Require().NoError(err)
+	s.Len(results, 1)
+	s.Equal("example-profile", results[0])
+
 	configID1 := uuid.NewV4().String()
 	scanConfig1 := s.getTestRec(mockScanName)
 	scanConfig1.Id = configID1
@@ -703,7 +744,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNames() {
 			desc:           "Full access",
 			query:          nil,
 			testContext:    s.testContexts[unrestrictedReadCtx],
-			expectedRecord: []string{"a-rhcos-moderate", "ocp4-cis", "rhcos-moderate", "yet-another-profile"},
+			expectedRecord: []string{"a-rhcos-moderate", "ocp4-cis", "rhcos-moderate", "yet-another-profile", "example-profile"},
 			expectedCount:  4,
 		},
 		{
@@ -741,17 +782,19 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNames() {
 	}
 
 	for _, tc := range testCases {
-		log.Info(tc.desc)
-		profiles, err := s.dataStore.GetProfilesNames(tc.testContext, tc.query)
-		s.Require().NoError(err)
-		if tc.expectedRecord == nil {
-			s.Require().Equal(0, len(profiles))
-		} else {
-			s.Require().ElementsMatch(tc.expectedRecord, profiles)
-		}
-		count, err := s.dataStore.CountDistinctProfiles(tc.testContext, tc.countQuery)
-		s.Require().NoError(err)
-		s.Require().Equal(tc.expectedCount, count)
+		s.T().Run(tc.desc, func(t *testing.T) {
+			log.Info(tc.desc)
+			profiles, err := s.dataStore.GetProfilesNames(tc.testContext, tc.query)
+			require.NoError(t, err)
+			if tc.expectedRecord == nil {
+				require.Equal(t, 0, len(profiles))
+			} else {
+				require.ElementsMatch(t, tc.expectedRecord, profiles)
+			}
+			count, err := s.dataStore.CountDistinctProfiles(tc.testContext, tc.countQuery)
+			require.NoError(t, err)
+			require.Equal(t, tc.expectedCount, count)
+		})
 	}
 }
 
