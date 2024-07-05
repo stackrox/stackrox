@@ -404,10 +404,14 @@
         "gcs": {
           "$ref": "#/definitions/storageGCSConfig"
         },
+        "s3compatible": {
+          "$ref": "#/definitions/storageS3Compatible"
+        },
         "includeCertificates": {
           "type": "boolean"
         }
-      }
+      },
+      "title": "Next available tag: 10"
     },
     "storageGCSConfig": {
       "type": "object",
@@ -423,6 +427,37 @@
           "type": "string"
         },
         "useWorkloadId": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageS3Compatible": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string"
+        },
+        "useIam": {
+          "type": "boolean"
+        },
+        "accessKeyId": {
+          "type": "string",
+          "description": "The access key ID for the storage integration. The server will mask the value of this credential in responses and logs."
+        },
+        "secretAccessKey": {
+          "type": "string",
+          "description": "The secret access key for the storage integration. The server will mask the value of this credential in responses and logs."
+        },
+        "region": {
+          "type": "string"
+        },
+        "objectPrefix": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "usePathStyle": {
           "type": "boolean"
         }
       }
