@@ -15,6 +15,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
@@ -171,7 +172,7 @@ func exchangeHandle(t *testing.T, expectedToken, responseToken string) http.Hand
 func exchangeRawHandle(t *testing.T, expectedToken, responseToken string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		reqBody := request.Body
-		defer reqBody.Close()
+		defer utils.IgnoreError(reqBody.Close)
 		reqBodyData, err := sysIO.ReadAll(reqBody)
 		assert.NoError(t, err)
 		assert.JSONEq(t, `{"idToken":"`+expectedToken+`"}`, string(reqBodyData))

@@ -196,8 +196,6 @@ func GetScopedPod(ID string, clusterID string, namespace string) *storage.Pod {
 	}
 }
 
-var p = &storage.Pod{}
-
 // GetExpectedJSONSerializedTestPod returns the protoJSON serialized form
 // of the Deployment returned by GetPod
 func GetExpectedJSONSerializedTestPod(_ testing.TB) string {
