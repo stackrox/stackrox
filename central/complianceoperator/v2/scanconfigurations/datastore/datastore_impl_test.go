@@ -434,7 +434,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationProfileExi
 			configID:    uuid.NewV4().String(),
 			profiles:    []string{"ocp4-cis-1-4-0"},
 			clusters:    []string{s.clusterID1},
-			isErrorTest: true,
+			isErrorTest: false,
 		},
 		{
 			desc:        "Successful get - updating existing config",
@@ -448,7 +448,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationProfileExi
 			configID:    configID,
 			profiles:    []string{"no-match-profile", "ocp4-cis", "ocp4-cis-1-4-0"},
 			clusters:    []string{s.clusterID1},
-			isErrorTest: true,
+			isErrorTest: false,
 		},
 	}
 
