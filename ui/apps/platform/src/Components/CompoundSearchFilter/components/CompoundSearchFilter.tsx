@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Split } from '@patternfly/react-core';
+import { Flex } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
 import {
@@ -13,8 +13,6 @@ import { getDefaultAttribute, getDefaultEntity } from '../utils/utils';
 import EntitySelector, { SelectedEntity } from './EntitySelector';
 import AttributeSelector, { SelectedAttribute } from './AttributeSelector';
 import CompoundSearchFilterInputField, { InputFieldValue } from './CompoundSearchFilterInputField';
-
-import './CompoundSearchFilter.css';
 
 export type CompoundSearchFilterProps = {
     config: PartialCompoundSearchFilterConfig;
@@ -66,7 +64,12 @@ function CompoundSearchFilter({
     }, [defaultAttribute]);
 
     return (
-        <Split className="pf-v5-u-flex-grow-1">
+        <Flex
+            direction={{ default: 'row' }}
+            spaceItems={{ default: 'spaceItemsNone' }}
+            flexWrap={{ default: 'nowrap' }}
+            className="pf-v5-u-w-100"
+        >
             <EntitySelector
                 menuToggleClassName="pf-v5-u-flex-shrink-0"
                 selectedEntity={selectedEntity}
@@ -114,7 +117,7 @@ function CompoundSearchFilter({
                 }}
                 config={config}
             />
-        </Split>
+        </Flex>
     );
 }
 
