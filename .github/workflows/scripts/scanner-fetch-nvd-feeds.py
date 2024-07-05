@@ -49,28 +49,32 @@ def transform_json(input_file, output_file):
             metrics = {}
 
             if cvss_v3_data:
-                metrics["cvssMetricV31"] = [
-                    {
-                        "source": "nvd@nist.gov",
-                        "type": "Primary",
-                        "cvssData": {
-                            "version": cvss_v3_data.get('version', ''),
-                            "vectorString": cvss_v3_data.get('vectorString', ''),
-                            "attackVector": cvss_v3_data.get('attackVector', ''),
-                            "attackComplexity": cvss_v3_data.get('attackComplexity', ''),
-                            "privilegesRequired": cvss_v3_data.get('privilegesRequired', ''),
-                            "userInteraction": cvss_v3_data.get('userInteraction', ''),
-                            "scope": cvss_v3_data.get('scope', ''),
-                            "confidentialityImpact": cvss_v3_data.get('confidentialityImpact', ''),
-                            "integrityImpact": cvss_v3_data.get('integrityImpact', ''),
-                            "availabilityImpact": cvss_v3_data.get('availabilityImpact', ''),
-                            "baseScore": cvss_v3_data.get('baseScore', 0),
-                            "baseSeverity": cvss_v3_data.get('baseSeverity', '')
-                        },
-                        "exploitabilityScore": base_metric_v3.get('exploitabilityScore', 0),
-                        "impactScore": base_metric_v3.get('impactScore', 0)
-                    }
-                ]
+                cvss_v3_version = cvss_v3_data.get('version', '')
+                cvss_v3_metrics = {
+                    "source": "nvd@nist.gov",
+                    "type": "Primary",
+                    "cvssData": {
+                        "version": cvss_v3_version,
+                        "vectorString": cvss_v3_data.get('vectorString', ''),
+                        "attackVector": cvss_v3_data.get('attackVector', ''),
+                        "attackComplexity": cvss_v3_data.get('attackComplexity', ''),
+                        "privilegesRequired": cvss_v3_data.get('privilegesRequired', ''),
+                        "userInteraction": cvss_v3_data.get('userInteraction', ''),
+                        "scope": cvss_v3_data.get('scope', ''),
+                        "confidentialityImpact": cvss_v3_data.get('confidentialityImpact', ''),
+                        "integrityImpact": cvss_v3_data.get('integrityImpact', ''),
+                        "availabilityImpact": cvss_v3_data.get('availabilityImpact', ''),
+                        "baseScore": cvss_v3_data.get('baseScore', 0),
+                        "baseSeverity": cvss_v3_data.get('baseSeverity', '')
+                    },
+                    "exploitabilityScore": base_metric_v3.get('exploitabilityScore', 0),
+                    "impactScore": base_metric_v3.get('impactScore', 0)
+                }
+
+                if cvss_v3_version == '3.0':
+                    metrics["cvssMetricV30"] = [cvss_v3_metrics]
+                elif cvss_v3_version == '3.1':
+                    metrics["cvssMetricV31"] = [cvss_v3_metrics]
 
             if cvss_v2_data:
                 metrics["cvssMetricV2"] = [
