@@ -109,35 +109,33 @@ def __get_supported_helm_chart_versions():
     supported_central_versions = []
     supported_sensor_versions = []
 
-    supported_versions = get_supported_versions()
-    for version in supported_versions:
-        if __does_chart_exist("stackrox-central-services", version):
+    supported_releases = get_supported_releases()
+    for release in supported_releases:
+        if __does_chart_exist("stackrox-central-services", release):
             supported_central_versions.append(__get_latest_helm_chart_version_for_specific_release(
-                "stackrox-central-services", version)
+                "stackrox-central-services", release)
             )
         else:
-            logging.debug(f"Supported version \"{version.major}.{version.minor}\" has no corresponding helm chart for "
+            logging.debug(f"Supported version \"{release.major}.{release.minor}\" has no corresponding helm chart for "
                           f"stackrox-central-services.")
-        if __does_chart_exist("stackrox-secured-cluster-services", version):
+        if __does_chart_exist("stackrox-secured-cluster-services", release):
             supported_sensor_versions.append(__get_latest_helm_chart_version_for_specific_release(
-                "stackrox-secured-cluster-services", version)
+                "stackrox-secured-cluster-services", release)
             )
         else:
-            logging.debug(f"Supported version \"{version.major}.{version.minor}\" has no corresponding helm chart for "
+            logging.debug(f"Supported version \"{release.major}.{release.minor}\" has no corresponding helm chart for "
                           f"stackrox-secured-cluster-services.")
     return supported_central_versions, supported_sensor_versions
 
 
-def get_supported_versions():
-    supported_versions = []
+def get_supported_releases():
+    supported_releases = []
     data = __get_data_from_api(PRODUCT_LIFECYCLES_API)
-    versions = data["data"][0]["versions"]
-    for version in versions:
-        if version["type"] != "End of life":
-            major = version["name"].split('.')[0]
-            minor = version["name"].split('.')[1]
-            supported_versions.append(Release(major=major, minor=minor))
-    return supported_versions
+    releases = data["data"][0]["versions"]
+    for release in releases:
+        if release["type"] != "End of life":
+            supported_releases.append(parse_release(release["name"]))
+    return supported_releases
 
 
 def __get_data_from_api(url):
@@ -154,10 +152,10 @@ def __get_data_from_api(url):
 
 def __does_chart_exist(chart_name, release):
     charts = read_charts()
-    for chart in charts:
-        if chart["name"] == f"{HELM_REPO_NAME}/{chart_name}":
-            if version_to_release(chart["parsed_app_version"]) == release:
-                return True
+    filtered_charts = filter_charts_by_name(charts, chart_name)
+    for fchart in filtered_charts:
+        if version_to_release(fchart["parsed_app_version"]) == release:
+            return True
     return False
 
 
@@ -184,7 +182,7 @@ def __get_latest_helm_chart_version_for_specific_release(chart_name, release):
     logging.info(f"Discovered total {len(charts)} charts")
 
     filtered_charts = filter_charts_by_name(charts, chart_name)
-    print(
+    logging.info(
         f"Found {len(filtered_charts)} charts with the given name {chart_name}")
 
     latest_chart = get_latest_chart_for_specific_release(
@@ -216,6 +214,11 @@ def is_release_version(version):
 def parse_version(version_str):
     nums = [int(s) for s in version_str.split(".")]
     return Version(major=nums[0], minor=nums[1], patch=nums[2])
+
+
+def parse_release(release_str):
+    nums = [int(s) for s in release_str.split(".")]
+    return Release(major=nums[0], minor=nums[1])
 
 
 def filter_charts_by_name(charts, chart_name):
