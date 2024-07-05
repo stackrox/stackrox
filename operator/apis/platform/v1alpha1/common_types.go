@@ -349,7 +349,8 @@ func (s *GlobalNetworkSpec) IsNetworkPoliciesEnabled() bool {
 // GlobalNetworkSpec defines settings related to Helm chart network parameters. The corresponding Helm flags
 // live in the global scope `.network`.
 type GlobalNetworkSpec struct {
+	// Create NetworkPolicy objects to limit ACS network connectivity.
 	//+kubebuilder:default=Enabled
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Network Policies"
 	Policies *NetworkPolicies `json:"policies,omitempty"`
 }
