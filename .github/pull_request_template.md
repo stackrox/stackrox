@@ -6,11 +6,16 @@ change me!
 
 ### User-facing documentation
 
-(*must be 2 checked* items, remove items that don't apply)
+(*must be **1** checked* item)
+<!-- remove two other items that don't apply -->
 
 - [ ] I added Release Note(s) to CHANGELOG.md
 - [ ] I [requested](/dev/null) Release Notes update on the JIRA ticket: <!-- put JIRA ticket link here -->
 - [ ] No Release Notes update is needed
+
+(*must be **1** checked* item)
+<!-- remove two other items that don't apply -->
+
 - [ ] I [created](https://spaces.redhat.com/display/StackRox/Submitting+a+User+Documentation+Pull+Request) Documentation PR, it is: <!-- put the link here -->
 - [ ] I [requested](/dev/null) Documentation team to prepare Documentation: <!-- put JIRA ticket or Slack link here -->
 - [ ] No user-facing Documentation is needed
