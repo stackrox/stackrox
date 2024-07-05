@@ -59,7 +59,7 @@ test_e2e() {
     [[ ! -f FAIL ]] || die "e2e API tests failed"
 
     if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
-        info "Temporarily skipping proxy test on OCP. TODO(ROX-24688)"
+        info "Temporarily skipping proxy test on OCP. TODO(ROX-25172)"
     else
         # Give some time for previous tests to finish up
         wait_for_api
@@ -110,7 +110,7 @@ prepare_for_endpoints_test() {
     setup_client_CA_auth_provider
     setup_generated_certs_for_test "$gencerts_dir"
     if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
-        info "Skipping resource patching for skipped endpoints_test.go. TODO(ROX-24688)"
+        info "Skipping resource patching for skipped endpoints_test.go. TODO(ROX-25172)"
     else
         patch_resources_for_test
     fi
