@@ -8,9 +8,9 @@ change me!
 
 (*must be 2 checked* items, remove items that don't apply)
 
-- [ ] I added Release Note to CHANGELOG.md
+- [ ] I added Release Note(s) to CHANGELOG.md
 - [ ] I [requested](/dev/null) Release Notes update on the JIRA ticket: <!-- put JIRA ticket link here -->
-- [ ] Release Notes update is not needed
+- [ ] No Release Notes update is needed
 - [ ] I [created](https://spaces.redhat.com/display/StackRox/Submitting+a+User+Documentation+Pull+Request) Documentation PR, it is: <!-- put the link here -->
 - [ ] I [requested](/dev/null) Documentation team to prepare Documentation: <!-- put JIRA ticket or Slack link here -->
 - [ ] No user-facing Documentation is needed
