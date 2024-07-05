@@ -1,9 +1,11 @@
 name: Scanner NVD update
 
 on:
-  push:
-    branches:
-    - 'yli3/**'
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
   schedule:
     - cron: '0 */6 * * *'
   workflow_dispatch:
@@ -11,6 +13,12 @@ on:
 jobs:
   fetch-cves:
     runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd'))
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -20,6 +28,40 @@ jobs:
       with:
         python-version: '3.10'
 
+    - name: Fetch CVEs
+      env:
+        SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
+      run: |
+        set -eu
+        dir=$(mktemp -d)
+        python3 .github/workflows/scripts/scanner-update-nvd-legacy.py "$dir"
+        zip -j nvd.zip "$dir"/*.nvd.json
+
+    - uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: nvd
+        path: nvd.zip
+        if-no-files-found: error
+
+  upload:
+    needs:
+      - fetch-cves
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    steps:
+    # Checkout to run ./.github/actions/{download,upload}-artifact-with-retry
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.ref }}
+
+    - uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: nvd
+        path: .
+
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
       with:
@@ -28,21 +70,12 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
-    - name: Fetch CVEs
-      env:
-        SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
-      run: |
-        set -eu
-        dir=$(mktemp -d)
-        python3 .github/workflows/scripts/scanner-update-nvd.py "$dir"
-        mkdir nvd-bundle
-        tar -czf nvd-bundle/nvd-data.tar.gz -C "$dir" .
-        gsutil cp -r nvd-bundle "gs://definitions.stackrox.io/v4"
+    - name: Upload production
+      run: gsutil cp nvd.zip "gs://definitions.stackrox.io/v4/nvd/nvd.zip"
 
   send-notification:
     needs:
-    - fetch-cves
+    - upload
     runs-on: ubuntu-latest
     if: failure()
     steps:
