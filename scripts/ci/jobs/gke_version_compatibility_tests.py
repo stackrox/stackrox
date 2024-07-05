@@ -64,7 +64,7 @@ test_tuples.extend(
 
 # Currently there are no support exceptions, the last one expired on 2024-06-30, see:
 # https://issues.redhat.com/browse/ROX-18223
-# TODO: remove this after confirming that it has not been extended
+# Remove it after confirming the support exception has not been extended
 support_exceptions = [
     ChartVersions(
         central_version=latest_tag,
