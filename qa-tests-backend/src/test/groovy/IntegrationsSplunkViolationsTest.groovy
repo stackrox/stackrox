@@ -166,7 +166,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             hasNetworkAlert = alerts.any { isNetworkViolation(it) }
             hasProcessAlert = alerts.any { isProcessViolation(it) }
             // TODO: Remove debug log
-            log.info "Found Alerts in Splunk: \n${results}"
+            log.info "Found Alerts in Splunk: \n${alerts}"
             log.info "hasNetworkAlert: ${hasNetworkAlert}\nhasProcessAlert: ${hasProcessAlert}"
             // TODO: /Remove debug log
             if (hasNetworkAlert && hasProcessAlert) {
@@ -184,8 +184,9 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         assert hasProcessViolation
         assert hasNetworkAlert
         assert hasProcessAlert
-        for (result in results) {
-            validateCimMappings(result)
+        log.info "Validating CIM mappings for alerts"
+        for (alert in alerts) {
+            validateCimMappings(alert)
         }
     }
 
