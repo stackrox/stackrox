@@ -126,11 +126,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				continue
 			}
 
-			// ignore enums and common args to assert
-			switch typ.Underlying().String() {
-			case "int32", "*testing.T", "*testing.B":
-				continue
-			}
 			if !strings.Contains(typ.Underlying().String(), "github.com/stackrox/rox") {
 				continue
 			}
@@ -195,10 +190,9 @@ func nolintPositions(pass *analysis.Pass) set.IntSet {
 }
 
 func checkStruct(styp *types.Struct, seenTypes set.StringSet) {
-	if seenTypes.Contains(styp.String()) {
+	if wasNotInSet := seenTypes.Add(styp.String()); !wasNotInSet {
 		return
 	}
-	seenTypes.Add(styp.String())
 	for i := 0; i < styp.NumFields(); i++ {
 		field := styp.Field(i)
 		t, ok := parseStruct(field.Type())
