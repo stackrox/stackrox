@@ -100,5 +100,5 @@ func TestParseImageScan(t *testing.T) {
 		e.Executables = nil
 		actualFeatures[i].Executables = nil
 	}
-	assert.Equal(t, expectedScan, actualScan) //nolint:donotcompareproto proto field handled above and nilled
+	assert.Equal(t, expectedScan, actualScan) //nolint:donotcompareproto // proto field handled above and nilled
 }
