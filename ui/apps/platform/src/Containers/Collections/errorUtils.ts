@@ -33,6 +33,10 @@ export function parseConfigError(err: Error): CollectionConfigError {
     const rawMessage = getAxiosErrorMessage(err);
 
     if (/create a loop/.test(rawMessage)) {
+        // Work around error in TypeScript 5.5.3 upgrade because build does not use target in tsconfig.json file.
+        // error TS1503: Named capturing groups are only available when targeting 'ES2018' or later.
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         const errorRegex = /^edge between '[0-9a-fA-F-]*' and '(?<loopId>[0-9a-fA-F-]*)'/;
         const matches = errorRegex.exec(rawMessage);
         const loopId = matches?.groups?.loopId;

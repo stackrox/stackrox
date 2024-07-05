@@ -65,7 +65,7 @@ export function getDefaultAttribute(
 
 export function ensureStringArray(value: unknown): string[] {
     if (Array.isArray(value) && value.every((element) => typeof element === 'string')) {
-        return value as string[];
+        return value;
     }
     if (value === 'string') {
         return [value];
