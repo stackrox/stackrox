@@ -1,8 +1,8 @@
-from urllib import request, parse
 import json
 import os
 import argparse
 from datetime import datetime
+import urllib.request
 import gzip
 import shutil
 
@@ -11,25 +11,17 @@ def dirpath(s):
         return s
     raise ValueError(f"{s} is not a valid directory path")
 
-BASE_URL = os.getenv('SCANNER_NVD_URL', "https://nvd.nist.gov/feeds/json/cve/1.1")
-
 def download_and_save_json(url, year, save_dir):
     try:
         gz_file_path = os.path.join(save_dir, f"nvdcve-1.1-{year}.json.gz")
         json_file_path = os.path.join(save_dir, f"nvdcve-1.1-{year}.json")
 
-        with request.urlopen(url) as response:
-            if response.status != 200:
-                raise Exception(f"Failed to download {url}: {response.status}")
-
-            # Save the gzipped file
-            with open(gz_file_path, 'wb') as gz_file:
-                shutil.copyfileobj(response, gz_file)
+        with urllib.request.urlopen(url) as response, open(gz_file_path, 'wb') as gz_file:
+            shutil.copyfileobj(response, gz_file)
 
         # Decompress and save the JSON file
-        with gzip.open(gz_file_path, 'rb') as f_in:
-            with open(json_file_path, 'wb') as f_out:
-                shutil.copyfileobj(f_in, f_out)
+        with gzip.open(gz_file_path, 'rb') as f_in, open(json_file_path, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
 
         # Optionally, remove the gzipped file after decompressing
         os.remove(gz_file_path)
@@ -47,20 +39,46 @@ def transform_json(input_file, output_file):
         data = json.load(f_in)
 
         for item in data['CVE_Items']:
-            impact_data = item.get('impact', {})
-            base_metric_v2 = impact_data.get('baseMetricV2', {})
-            base_metric_v3 = impact_data.get('baseMetricV3', {})
+            impact = item.get('impact', {})
+            base_metric_v2 = impact.get('baseMetricV2', {})
+            base_metric_v3 = impact.get('baseMetricV3', {})
+
+            cvss_v2_data = base_metric_v2.get('cvssV2', {})
+            cvss_v3_data = base_metric_v3.get('cvssV3', {})
 
             metrics = {}
 
-            if 'cvssV2' in base_metric_v2:
-                cvss_v2_data = base_metric_v2['cvssV2']
+            if cvss_v3_data:
+                metrics["cvssMetricV31"] = [
+                    {
+                        "source": "nvd@nist.gov",
+                        "type": "Primary",
+                        "cvssData": {
+                            "version": cvss_v3_data.get('version', ''),
+                            "vectorString": cvss_v3_data.get('vectorString', ''),
+                            "attackVector": cvss_v3_data.get('attackVector', ''),
+                            "attackComplexity": cvss_v3_data.get('attackComplexity', ''),
+                            "privilegesRequired": cvss_v3_data.get('privilegesRequired', ''),
+                            "userInteraction": cvss_v3_data.get('userInteraction', ''),
+                            "scope": cvss_v3_data.get('scope', ''),
+                            "confidentialityImpact": cvss_v3_data.get('confidentialityImpact', ''),
+                            "integrityImpact": cvss_v3_data.get('integrityImpact', ''),
+                            "availabilityImpact": cvss_v3_data.get('availabilityImpact', ''),
+                            "baseScore": cvss_v3_data.get('baseScore', 0),
+                            "baseSeverity": cvss_v3_data.get('baseSeverity', '')
+                        },
+                        "exploitabilityScore": base_metric_v3.get('exploitabilityScore', 0),
+                        "impactScore": base_metric_v3.get('impactScore', 0)
+                    }
+                ]
+
+            if cvss_v2_data:
                 metrics["cvssMetricV2"] = [
                     {
                         "source": "nvd@nist.gov",
                         "type": "Primary",
                         "cvssData": {
-                            "version": "2.0",
+                            "version": cvss_v2_data.get('version', ''),
                             "vectorString": cvss_v2_data.get('vectorString', ''),
                             "accessVector": cvss_v2_data.get('accessVector', ''),
                             "accessComplexity": cvss_v2_data.get('accessComplexity', ''),
@@ -81,31 +99,6 @@ def transform_json(input_file, output_file):
                     }
                 ]
 
-            if 'cvssV3' in base_metric_v3:
-                cvss_v3_data = base_metric_v3['cvssV3']
-                metrics["cvssMetricV31"] = [
-                    {
-                        "source": "nvd@nist.gov",
-                        "type": "Primary",
-                        "cvssData": {
-                            "version": "3.1",
-                            "vectorString": cvss_v3_data.get('vectorString', ''),
-                            "attackVector": cvss_v3_data.get('attackVector', ''),
-                            "attackComplexity": cvss_v3_data.get('attackComplexity', ''),
-                            "privilegesRequired": cvss_v3_data.get('privilegesRequired', ''),
-                            "userInteraction": cvss_v3_data.get('userInteraction', ''),
-                            "scope": cvss_v3_data.get('scope', ''),
-                            "confidentialityImpact": cvss_v3_data.get('confidentialityImpact', ''),
-                            "integrityImpact": cvss_v3_data.get('integrityImpact', ''),
-                            "availabilityImpact": cvss_v3_data.get('availabilityImpact', ''),
-                            "baseScore": cvss_v3_data.get('baseScore', 0),
-                            "baseSeverity": cvss_v3_data.get('baseSeverity', '')
-                        },
-                        "exploitabilityScore": base_metric_v3.get('exploitabilityScore', 0),
-                        "impactScore": base_metric_v3.get('impactScore', 0)
-                    }
-                ]
-
             if metrics:
                 transformed_item = {
                     "cve": {
@@ -118,6 +111,7 @@ def transform_json(input_file, output_file):
                 }
                 json.dump(transformed_item, f_out)
                 f_out.write("\n")
+
         print(f"Saved {output_file}")
 
 def main():
@@ -130,12 +124,12 @@ def main():
     args = parser.parse_args()
     save_dir = args.dirpath
 
+    base_url = "https://nvd.nist.gov/feeds/json/cve/1.1/"
     first_year = 2002
-    # current_year = datetime.now().year
-    current_year = 2010
+    current_year = datetime.now().year
 
     for year in range(first_year, current_year + 1):
-        url = f"{BASE_URL}/nvdcve-1.1-{year}.json.gz"
+        url = f"{base_url}nvdcve-1.1-{year}.json.gz"
         download_and_save_json(url, year, save_dir)
         json_file_path = os.path.join(save_dir, f"nvdcve-1.1-{year}.json")
         transformed_file_path = os.path.join(save_dir, f"{year}.nvd.json")
