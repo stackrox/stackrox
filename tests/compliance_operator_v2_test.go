@@ -230,7 +230,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	// Create the ScanConfiguration service
-	service := v2.NewComplianceScanConfigurationServiceClient(conn)
+	scanConfigService := v2.NewComplianceScanConfigurationServiceClient(conn)
 
 	// Get cluster ID
 	serviceCluster := v1.NewClustersServiceClient(conn)
@@ -247,7 +247,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	waitForDeploymentReady(ctx, t, "sensor", stackroxNamespace, 0)
 
 	// Create ScanConfig in Central
-	res, err := service.CreateComplianceScanConfiguration(ctx, &scanConfig)
+	res, err := scanConfigService.CreateComplianceScanConfiguration(ctx, &scanConfig)
 	assert.NoError(t, err)
 
 	// Cleanup just in case the test fails
@@ -255,7 +255,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 		reqDelete := &v2.ResourceByID{
 			Id: res.GetId(),
 		}
-		_, _ = service.DeleteComplianceScanConfiguration(ctx, reqDelete)
+		_, _ = scanConfigService.DeleteComplianceScanConfiguration(ctx, reqDelete)
 		cleanUpResources(ctx, t, scanName, coNamespace)
 	})
 
@@ -279,7 +279,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	scanConfig.Id = res.GetId()
 	scanConfig.ScanConfig.Profiles = updatedProfiles
 	scanConfig.ScanConfig.ScanSchedule = updatedSchedule
-	_, err = service.UpdateComplianceScanConfiguration(ctx, &scanConfig)
+	_, err = scanConfigService.UpdateComplianceScanConfiguration(ctx, &scanConfig)
 	assert.NoError(t, err)
 
 	// Scale up Sensor
@@ -300,7 +300,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	reqDelete := &v2.ResourceByID{
 		Id: res.GetId(),
 	}
-	_, err = service.DeleteComplianceScanConfiguration(ctx, reqDelete)
+	_, err = scanConfigService.DeleteComplianceScanConfiguration(ctx, reqDelete)
 
 	// Scale up Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 1))
