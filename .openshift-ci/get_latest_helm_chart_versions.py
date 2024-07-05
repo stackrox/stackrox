@@ -69,7 +69,7 @@ def main(argv):
         f"Latest chart version for the {sample_support_exception} "
         f"releases is {helm_version_specific}"
     )
-    supported_versions_string = [[f"{version.major}.{version.minor}"] for version in get_supported_versions()]
+    supported_versions_string = [[f"{version.major}.{version.minor}"] for version in get_supported_releases()]
     supported_central_versions_from_api, supported_sensor_versions_from_api = get_supported_helm_chart_versions()
     logging.info(
         f"\nThe product lifecycles API denotes support for the following versions: {supported_versions_string}\n"
