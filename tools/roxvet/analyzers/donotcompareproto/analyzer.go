@@ -14,11 +14,14 @@ import (
 	"golang.org/x/tools/go/types/typeutil"
 )
 
-const doc = `Inspect calls to Equal for proto arguments that should be compared with protocompat.Equal instead`
+const (
+	doc  = `Inspect calls to Equal for proto arguments that should be compared with protocompat.Equal instead`
+	name = "donotcompareproto"
+)
 
 // Analyzer is the go vet entrypoint
 var Analyzer = &analysis.Analyzer{
-	Name:     "donotcompareproto",
+	Name:     name,
 	Doc:      doc,
 	Requires: []*analysis.Analyzer{inspect.Analyzer},
 	Run:      run,
@@ -91,12 +94,20 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	nodeFilter := []ast.Node{
 		(*ast.CallExpr)(nil),
 	}
+
+	nolint := nolintPositions(pass)
+
 	inspectResult.Preorder(nodeFilter, func(n ast.Node) {
 		call := n.(*ast.CallExpr)
 		fn, ok := typeutil.Callee(pass.TypesInfo, call).(*types.Func)
 		if !ok {
 			return
 		}
+
+		if nolint.Contains(int(call.End())) {
+			return
+		}
+
 		name := fn.FullName()
 		isBannedAssert := bannedAssertFunctions.Contains(name)
 		isBannedEqual := bannedEqualFunctions.Contains(name)
@@ -167,6 +178,20 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		}
 	})
 	return nil, nil
+}
+
+func nolintPositions(pass *analysis.Pass) set.IntSet {
+	nolint := set.IntSet{}
+	for _, f := range pass.Files {
+		for _, comment := range f.Comments {
+			for _, c := range comment.List {
+				if strings.HasPrefix(c.Text, "//nolint:"+name) {
+					nolint.Add(int(c.Pos()) - 1)
+				}
+			}
+		}
+	}
+	return nolint
 }
 
 func checkStruct(styp *types.Struct, seenTypes set.StringSet) {
