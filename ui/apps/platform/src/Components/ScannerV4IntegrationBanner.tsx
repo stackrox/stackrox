@@ -27,8 +27,8 @@ function ScannerV4IntegrationBanner() {
 
     const brandedText =
         branding.type === 'RHACS_BRANDING'
-            ? 'New Scanner V4 now available as Technical Preview in RHACS 4.4.'
-            : 'New Scanner V4 now available as Technical Preview in StackRox 4.4.';
+            ? 'New Scanner V4 now generally available in RHACS 4.5.'
+            : 'New Scanner V4 now generally available in StackRox 4.5.';
 
     const docsLink = (
         <a
