@@ -10,7 +10,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 
 utilities_dir="${DIR}/../utilities"
 
-source "${DIR}"/create-cluster "$cluster_name"
+source "${DIR}"/create-cluster.sh "$cluster_name"
 
 printf 'yes\n'  | "${HOME}/workflow/bin/teardown"
 

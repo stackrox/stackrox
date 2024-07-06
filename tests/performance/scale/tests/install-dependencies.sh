@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -eoux pipefail
 
+if [ -d "${HOME}/stackrox" ]; then
+    exit 0
+fi
+
 git clone https://github.com/stackrox/stackrox.git
 cd "${HOME}/stackrox"
 git checkout jv-automate-perf-tests

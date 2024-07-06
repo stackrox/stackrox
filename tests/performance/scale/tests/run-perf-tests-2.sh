@@ -4,6 +4,8 @@ set -eou pipefail
 json_tests_file=$1
 cluster_name_prefix=$2
 
+DIR="$(cd "$(dirname "$0")" && pwd)"
+
 ntests="$(jq '.perfTests | length' "$json_tests_file")"
 for ((i = 0; i < ntests; i = i + 1)); do
         version="$(jq .perfTests "$json_tests_file" | jq .["$i"])"
