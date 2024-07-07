@@ -5,12 +5,13 @@ num_namespaces=$1
 num_deployments=$2
 num_pods=$3
 cluster_name=$4
+utilities_dir=$5
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
-utilities_dir="${DIR}/../utilities"
+#utilities_dir="${DIR}/../utilities"
 
-source "${DIR}"/create-cluster.sh "$cluster_name"
+source "${DIR}"/create-cluster.sh "$cluster_name" "$utilities_dir"
 
 printf 'yes\n'  | "${HOME}/workflow/bin/teardown"
 

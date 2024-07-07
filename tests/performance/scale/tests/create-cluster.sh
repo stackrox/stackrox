@@ -2,14 +2,15 @@
 set -eoux pipefail
 
 export INFRA_NAME=$1
-num_replicas=${2:-3}
-lifespan=${3:-24h}
+utilities_dir=$2
+num_replicas=${3:-3}
+lifespan=${4:-24h}
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
-utilities_dir="${DIR}/../utilities"
-
-source "${utilities_dir}"/create-infra.sh
+does_cluster_exist() {
+    return "$(infractl get "$INFRA_NAME" &> /dev/null; echo $?)"
+}
 
 export ARTIFACTS_DIR="/tmp/artifacts-${INFRA_NAME}"
 
