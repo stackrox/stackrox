@@ -81,7 +81,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 			arg: &claircore.VulnerabilityReport{
 				Hash: claircore.MustParseDigest("sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e"),
 				Vulnerabilities: map[string]*claircore.Vulnerability{
-					"sample vuln": {
+					"sample vuln ID": {
 						ID:                 "sample vuln ID",
 						Name:               "sample vuln name",
 						Description:        "sample vuln description",
@@ -103,7 +103,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 				// Converter doesn't set HashId to empty.
 				HashId: "",
 				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"sample vuln": {
+					"sample vuln ID": {
 						Id:                 "sample vuln ID",
 						Name:               "sample vuln name",
 						Description:        "sample vuln description",
@@ -120,6 +120,160 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 				PackageVulnerabilities: map[string]*v4.StringList{
 					"sample pkg id": {
 						Values: []string{"sample vuln ID"},
+					},
+				},
+				Contents: &v4.Contents{},
+			},
+			wantErr: "",
+		},
+		"when there are duplicate vulnerabilities then they are filtered": {
+			arg: &claircore.VulnerabilityReport{
+				Hash: claircore.MustParseDigest("sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e"),
+				Vulnerabilities: map[string]*claircore.Vulnerability{
+					"0": {
+						ID:                 "0",
+						Name:               "CVE-2019-12900",
+						Description:        "sample vuln description",
+						Issued:             now,
+						Links:              "sample vuln links",
+						Severity:           "CVSS:3.0/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+						NormalizedSeverity: claircore.Low,
+						Package:            &claircore.Package{ID: "sample vuln package id"},
+						Dist:               &claircore.Distribution{ID: "sample vuln distribution id"},
+						Repo:               &claircore.Repository{ID: "sample vuln repository id"},
+						FixedInVersion:     "sample vuln fixed in",
+						Updater:            "rhel8",
+					},
+					"1": {
+						ID:                 "1",
+						Name:               "CVE-2019-12900",
+						Description:        "sample vuln description",
+						Issued:             now,
+						Links:              "sample vuln links",
+						Severity:           "CVSS:3.0/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+						NormalizedSeverity: claircore.Low,
+						Package:            &claircore.Package{ID: "sample vuln package id"},
+						Dist:               &claircore.Distribution{ID: "sample vuln distribution id"},
+						Repo:               &claircore.Repository{ID: "sample vuln repository id 2"},
+						FixedInVersion:     "sample vuln fixed in",
+						Updater:            "rhel8",
+					},
+				},
+				PackageVulnerabilities: map[string][]string{
+					"sample pkg id": {"0", "1"},
+				},
+			},
+			want: &v4.VulnerabilityReport{
+				// Converter doesn't set HashId to empty.
+				HashId: "",
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"0": {
+						Id:                 "0",
+						Name:               "CVE-2019-12900",
+						Description:        "sample vuln description",
+						Issued:             protoNow,
+						Link:               "sample vuln links",
+						Severity:           "CVSS:3.0/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+						PackageId:          "sample vuln package id",
+						DistributionId:     "sample vuln distribution id",
+						RepositoryId:       "sample vuln repository id",
+						FixedInVersion:     "sample vuln fixed in",
+					},
+					"1": {
+						Id:                 "1",
+						Name:               "CVE-2019-12900",
+						Description:        "sample vuln description",
+						Issued:             protoNow,
+						Link:               "sample vuln links",
+						Severity:           "CVSS:3.0/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+						PackageId:          "sample vuln package id",
+						DistributionId:     "sample vuln distribution id",
+						RepositoryId:       "sample vuln repository id 2",
+						FixedInVersion:     "sample vuln fixed in",
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"sample pkg id": {
+						Values: []string{"0"},
+					},
+				},
+				Contents: &v4.Contents{},
+			},
+			wantErr: "",
+		},
+		"when there are similar vulnerabilities with different severities and updaters then they are not filtered": {
+			arg: &claircore.VulnerabilityReport{
+				Hash: claircore.MustParseDigest("sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e"),
+				Vulnerabilities: map[string]*claircore.Vulnerability{
+					"0": {
+						ID:                 "0",
+						Name:               "CVE-2019-12900",
+						Description:        "sample vuln description",
+						Issued:             now,
+						Links:              "sample vuln links",
+						Severity:           "CVSS:3.0/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+						NormalizedSeverity: claircore.Low,
+						Package:            &claircore.Package{ID: "sample vuln package id"},
+						Dist:               &claircore.Distribution{ID: "sample vuln distribution id"},
+						Repo:               &claircore.Repository{ID: "sample vuln repository id"},
+						FixedInVersion:     "sample vuln fixed in",
+						Updater:            "rhel8",
+					},
+					"1": {
+						ID:                 "1",
+						Name:               "CVE-2019-12900",
+						Description:        "sample vuln description",
+						Issued:             now,
+						Links:              "sample vuln links",
+						Severity:           "CVSS:3.0/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+						NormalizedSeverity: claircore.Medium,
+						Package:            &claircore.Package{ID: "sample vuln package id"},
+						Dist:               &claircore.Distribution{ID: "sample vuln distribution id"},
+						Repo:               &claircore.Repository{ID: "sample vuln repository id 2"},
+						FixedInVersion:     "sample vuln fixed in",
+						Updater:            "rhel8-2",
+					},
+				},
+				PackageVulnerabilities: map[string][]string{
+					"sample pkg id": {"0", "1"},
+				},
+			},
+			want: &v4.VulnerabilityReport{
+				// Converter doesn't set HashId to empty.
+				HashId: "",
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"0": {
+						Id:                 "0",
+						Name:               "CVE-2019-12900",
+						Description:        "sample vuln description",
+						Issued:             protoNow,
+						Link:               "sample vuln links",
+						Severity:           "CVSS:3.0/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+						PackageId:          "sample vuln package id",
+						DistributionId:     "sample vuln distribution id",
+						RepositoryId:       "sample vuln repository id",
+						FixedInVersion:     "sample vuln fixed in",
+					},
+					"1": {
+						Id:                 "1",
+						Name:               "CVE-2019-12900",
+						Description:        "sample vuln description",
+						Issued:             protoNow,
+						Link:               "sample vuln links",
+						Severity:           "CVSS:3.0/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+						PackageId:          "sample vuln package id",
+						DistributionId:     "sample vuln distribution id",
+						RepositoryId:       "sample vuln repository id 2",
+						FixedInVersion:     "sample vuln fixed in",
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"sample pkg id": {
+						Values: []string{"0", "1"},
 					},
 				},
 				Contents: &v4.Contents{},
