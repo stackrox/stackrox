@@ -102,7 +102,7 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	}
 	return &v4.VulnerabilityReport{
 		Vulnerabilities:        vulnerabilities,
-		PackageVulnerabilities: toProtoV4PackageVulnerabilitiesMap(r.PackageVulnerabilities),
+		PackageVulnerabilities: toProtoV4PackageVulnerabilitiesMap(r.PackageVulnerabilities, r.Vulnerabilities),
 		Contents:               contents,
 	}, nil
 }
@@ -275,7 +275,7 @@ func toProtoV4Environment(e *claircore.Environment) *v4.Environment {
 	}
 }
 
-func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string) map[string]*v4.StringList {
+func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string, ccVulnerabilities map[string]*claircore.Vulnerability) map[string]*v4.StringList {
 	if ccPkgVulnerabilities == nil {
 		return nil
 	}
@@ -283,12 +283,12 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 	if len(ccPkgVulnerabilities) > 0 {
 		pkgVulns = make(map[string]*v4.StringList, len(ccPkgVulnerabilities))
 	}
-	for k, v := range ccPkgVulnerabilities {
-		if v == nil {
+	for id, vulnIDs := range ccPkgVulnerabilities {
+		if vulnIDs == nil {
 			continue
 		}
-		pkgVulns[k] = &v4.StringList{
-			Values: append([]string(nil), v...),
+		pkgVulns[id] = &v4.StringList{
+			Values: filterRepeatedVulns(vulnIDs, ccVulnerabilities),
 		}
 	}
 	return pkgVulns
@@ -812,4 +812,65 @@ func findName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
 		return v, true
 	}
 	return "", false
+}
+
+// filterRepeatedVulns filters repeat vulnerabilities out of vulnIDs and returns the result.
+// This function does not guarantee ordering is preserved.
+func filterRepeatedVulns(vulnIDs []string, ccVulnerabilities map[string]*claircore.Vulnerability) []string {
+	// Group each vulnerability by name.
+	// This maps each name to a slice of vulnerabilities to protect against the possibility
+	// Claircore finds multiple vulnerabilities with the same name for this package from different vulnerability streams.
+	// In that situation, it is not clear which one may be the single, correct option to choose, so just allow for both.
+	vulnsByName := make(map[string][]*claircore.Vulnerability)
+OUTER:
+	for _, vulnID := range vulnIDs {
+		vuln := ccVulnerabilities[vulnID]
+		if vuln == nil {
+			continue
+		}
+
+		// Find the currently tracked vulnerabilities with the same name.
+		// If this entry matches any of those, then ignore this one.
+		matching := vulnsByName[vuln.Name]
+		for _, match := range matching {
+			if vulnsEqual(match, vuln) {
+				continue OUTER
+			}
+		}
+
+		// Add the unique entry to the map.
+		vulnsByName[vuln.Name] = append(vulnsByName[vuln.Name], vuln)
+	}
+
+	filtered := make([]string, 0, len(vulnIDs))
+	for _, vulns := range vulnsByName {
+		for _, vuln := range vulns {
+			filtered = append(filtered, vuln.ID)
+		}
+	}
+	return filtered
+}
+
+// vulnsEqual determines if the vulnerabilities are essentially equal.
+// That is, this function does not check all fields of the vulnerability struct,
+// to prevent consumers from seeing two seemingly identical vulnerabilities
+// for the same package in the same image.
+//
+// For example: Claircore currently returns CVE-2019-12900 twice for the bzip2-libs package
+// in one particular image. The two versions of the CVE are exactly the same
+// except for the repository name (cpe:/a:redhat:enterprise_linux:8::appstream vs cpe:/o:redhat:enterprise_linux:8::baseos).
+// The entry for this vulnerability as it matched this package in this image may be found in
+// https://access.redhat.com/security/data/oval/v2/RHEL8/rhel-8-including-unpatched.oval.xml.bz2.
+// After reading the entry in this file, it is clear Claircore matched this vulnerability to this stream's
+// CVE-2019-12900 entry twice (once per matching repository).
+//
+// The goal of this function is to make it clear those two CVE-2019-12900 findings are exactly the same.
+func vulnsEqual(a, b *claircore.Vulnerability) bool {
+	return a.Name == b.Name &&
+		a.Description == b.Description &&
+		a.Issued == b.Issued &&
+		a.Links == b.Links &&
+		a.Severity == b.Severity &&
+		a.NormalizedSeverity == b.NormalizedSeverity &&
+		a.FixedInVersion == b.FixedInVersion
 }
