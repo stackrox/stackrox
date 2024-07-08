@@ -755,8 +755,10 @@ spec:
                 properties:
                   policies:
                     default: Enabled
-                    description: Create NetworkPolicy objects to limit ACS network
-                      connectivity.
+                    description: To provide security at the network level the ACS
+                      Operator creates NetworkPolicy resources by default. If you
+                      want to manage your own NetworkPolicy objects then set this
+                      to "Disabled".
                     enum:
                     - Enabled
                     - Disabled
