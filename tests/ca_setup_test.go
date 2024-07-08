@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	bad_ca "github.com/stackrox/rox/tests/bad-ca"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -51,63 +52,16 @@ func TestCASetup(t *testing.T) {
 		additionalMessage string
 	}{
 		{
-			url: "https://untrusted-root.badssl.com",
-			certPEM: `
------BEGIN CERTIFICATE-----
-MIIEmTCCAoGgAwIBAgIJAOHVqNiqXCTsMA0GCSqGSIb3DQEBCwUAMIGBMQswCQYD
-VQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5j
-aXNjbzEPMA0GA1UECgwGQmFkU1NMMTQwMgYDVQQDDCtCYWRTU0wgVW50cnVzdGVk
-IFJvb3QgQ2VydGlmaWNhdGUgQXV0aG9yaXR5MB4XDTI0MDUxNzE3NTkzM1oXDTI2
-MDUxNzE3NTkzM1owYjELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWEx
-FjAUBgNVBAcMDVNhbiBGcmFuY2lzY28xDzANBgNVBAoMBkJhZFNTTDEVMBMGA1UE
-AwwMKi5iYWRzc2wuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA
-wgTs+IzuBMKz2FDVcFjMkxjrXKhoSbAitfmVnrErLHY+bMBLYExM6rK0wA+AtrD5
-csmGAvlcQV0TK39xxEu86ZQuUDemZxxhjPZBQsVG0xaHJ5906wqdEVImIXNshEx5
-VeTRa+gGPUgVUq2zKNuq/27/YJVKd2s58STRMbbdTcDE/FO5bUKttXz+rvUV0jNI
-5yJxx8IUemwo6jdK3+pstXK0flqiFtxpsVdE2woSq97DD0d0XEEi4Zr5G5PmrSIG
-KS6xukkcDCeeo/uL90ByAKySCNmMV4RTgQXL5v5rVJhAJ4XHELtzcO9pGEEHRVV8
-+WQ/PSzDqXzrkxpMhtHKhQIDAQABozIwMDAJBgNVHRMEAjAAMCMGA1UdEQQcMBqC
-DCouYmFkc3NsLmNvbYIKYmFkc3NsLmNvbTANBgkqhkiG9w0BAQsFAAOCAgEArxeE
-TokyoO4KWzVg2euvFfP4sITwoETMBarAunrrlFgaLZ09CBxYbSSvsarhdVjGby1e
-KD2ECaOXyTaB0tgq6it2nBby+k1fu4gdWWwDpCp/F2SB6nlV/ldt2pDqhkvGdNCW
-j3v+YKVlM/QnJPQbVdWXVdO6WRhzIHCUZQZ/Wd/9JgE+yLd8IF0+IEbK3W/X233v
-1K3gw3HPHKLSJShQyp8TNfn33IJ6J+6UlQdWPTKNI+uCr5B3Sk17n1+B9V0KdBIE
-C4lv9N/3o0YxlzZD2hqHH57tmotSA0gp4oPkPwSAKumldZUusLcbVl1xPYzV0JOY
-q2yMJ9FDCI1/qia3fwdkGKDJOkdz4Pn17HFy+r3Z2SPz3yxbaQC/boxxdim4Etyo
-q6suC/Ztfi7x5vWpuzF/GNEO80d+uE9kr8h+qV+f385p+fS8jdEdGAsRpKNh9yDS
-xs7YP5VCrm9TdEMN/TKG0qeqQD3cfS8j4h7IXR8+4NilfYbDZEfhn3ewOsXvTOec
-dfj2yGeh+KmqIO28Cn0a4K5WCvFPjenz5HGcCKfGRY2qTcnSHCzotW4LQwFp9B8c
-3KJEpt+0D7xSieIfR0nqf+si3ulzMViyEKLeZd+ZiqY0R1F8I3zsLwNmvMqfUXu2
-7/yisXexTInYKqRh75G4BJzh8waJZvTShjjSsv4=
------END CERTIFICATE-----`,
+			url:     "https://untrusted-root.invalid",
+			certPEM: bad_ca.CustomCertPem,
 			// This should succeed because, even though it's a bad cert, we have configured Central to trust its root
 			// on startup.
 			expectedResp:      central.URLHasValidCertResponse_REQUEST_SUCCEEDED,
 			additionalMessage: "This failure likely means that setting up trusted CAs with Central is broken. Look at the TRUSTED_CA_FILE being exported in the deploy scripts",
 		},
 		{
-			url: "https://self-signed.badssl.com",
-			certPEM: `-----BEGIN CERTIFICATE-----
-MIIDeTCCAmGgAwIBAgIJANuSS2L+9oTlMA0GCSqGSIb3DQEBCwUAMGIxCzAJBgNV
-BAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQHDA1TYW4gRnJhbmNp
-c2NvMQ8wDQYDVQQKDAZCYWRTU0wxFTATBgNVBAMMDCouYmFkc3NsLmNvbTAeFw0y
-NDA1MTcxNzU5MzNaFw0yNjA1MTcxNzU5MzNaMGIxCzAJBgNVBAYTAlVTMRMwEQYD
-VQQIDApDYWxpZm9ybmlhMRYwFAYDVQQHDA1TYW4gRnJhbmNpc2NvMQ8wDQYDVQQK
-DAZCYWRTU0wxFTATBgNVBAMMDCouYmFkc3NsLmNvbTCCASIwDQYJKoZIhvcNAQEB
-BQADggEPADCCAQoCggEBAMIE7PiM7gTCs9hQ1XBYzJMY61yoaEmwIrX5lZ6xKyx2
-PmzAS2BMTOqytMAPgLaw+XLJhgL5XEFdEyt/ccRLvOmULlA3pmccYYz2QULFRtMW
-hyefdOsKnRFSJiFzbIRMeVXk0WvoBj1IFVKtsyjbqv9u/2CVSndrOfEk0TG23U3A
-xPxTuW1CrbV8/q71FdIzSOciccfCFHpsKOo3St/qbLVytH5aohbcabFXRNsKEqve
-ww9HdFxBIuGa+RuT5q0iBikusbpJHAwnnqP7i/dAcgCskgjZjFeEU4EFy+b+a1SY
-QCeFxxC7c3DvaRhBB0VVfPlkPz0sw6l865MaTIbRyoUCAwEAAaMyMDAwCQYDVR0T
-BAIwADAjBgNVHREEHDAaggwqLmJhZHNzbC5jb22CCmJhZHNzbC5jb20wDQYJKoZI
-hvcNAQELBQADggEBAH1tiJTqI9nW4Vr3q6joNV7+hNKS2OtgqBxQhMVWWWr4mRDf
-ayfr4eAJkiHv8/Fvb6WqbGmzClCVNVOrfTzHeLsfROLLmlkYqXSST76XryQR6hyt
-4qWqGd4M+MUNf7ty3zcVF0Yt2vqHzp4y8m+mE5nSqRarAGvDNJv+I6e4Edw19u1j
-ddjiqyutdMsJkgvfNvSLQA8u7SAVjnhnoC6n2jm2wdFbrB+9rnrGje+Q8r1ERFyj
-SG26SdQCiaG5QBCuDhrtLSR1N90URYCY0H6Z57sWcTKEusb95Pz6cBTLGuiNDKJq
-juBzebaanR+LTh++Bleb9I0HxFFCTwlQhxo/bfY=
------END CERTIFICATE-----`,
+			url:          "https://self-signed.invalid",
+			certPEM:      bad_ca.SelfSignedCertPem,
 			expectedResp: central.URLHasValidCertResponse_CERT_SIGNED_BY_UNKNOWN_AUTHORITY,
 		},
 		{
