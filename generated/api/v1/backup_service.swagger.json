@@ -439,11 +439,11 @@
         },
         "accessKeyId": {
           "type": "string",
-          "description": "The access key ID for the storage integration. The server will mask the value of this credential in responses and logs."
+          "description": "The access key ID to use. The server will mask the value of this credential in responses and logs."
         },
         "secretAccessKey": {
           "type": "string",
-          "description": "The secret access key for the storage integration. The server will mask the value of this credential in responses and logs."
+          "description": "The secret access key to use. The server will mask the value of this credential in responses and logs."
         },
         "region": {
           "type": "string"
@@ -458,7 +458,8 @@
           "$ref": "#/definitions/storageS3URLStyle",
           "description": "The URL style defines the bucket URL addressing.\nVirtual-hosted-style buckets are addressed as `https://\u003cbucket\u003e.\u003cendpoint\u003e'\nwhile path-style buckets are addressed as `https://\u003cendpoint\u003e/\u003cbucket\u003e`."
         }
-      }
+      },
+      "description": "S3Compatible is the configuration for the backup integration in an S3 compatible.\nS3 compatible being a non-AWS provider (like Minio). For official AWS S3 use S3Config."
     },
     "storageS3Config": {
       "type": "object",
@@ -486,7 +487,8 @@
         "endpoint": {
           "type": "string"
         }
-      }
+      },
+      "description": "S3Config is the configuration for the backup integration in an official AWS S3."
     },
     "storageS3URLStyle": {
       "type": "string",

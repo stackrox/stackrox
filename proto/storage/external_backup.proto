@@ -25,6 +25,7 @@ message ExternalBackup {
   }
 }
 
+// S3Config is the configuration for the backup integration in an official AWS S3.
 message S3Config {
   string bucket = 1;
   bool use_iam = 2; // @gotags: scrub:"dependent"
@@ -43,11 +44,13 @@ enum S3URLStyle {
   S3_URL_STYLE_PATH = 2;
 }
 
+// S3Compatible is the configuration for the backup integration in an S3 compatible.
+// S3 compatible being a non-AWS provider (like Minio). For official AWS S3 use S3Config.
 message S3Compatible {
   string bucket = 1;
-  // The access key ID for the storage integration. The server will mask the value of this credential in responses and logs.
+  // The access key ID to use. The server will mask the value of this credential in responses and logs.
   string access_key_id = 2; // @gotags: scrub:"always"
-  // The secret access key for the storage integration. The server will mask the value of this credential in responses and logs.
+  // The secret access key to use. The server will mask the value of this credential in responses and logs.
   string secret_access_key = 3; // @gotags: scrub:"always"
   string region = 4;
   string object_prefix = 5;

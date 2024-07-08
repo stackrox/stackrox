@@ -280,6 +280,7 @@ func (m *ExternalBackup) Clone() *ExternalBackup {
 	return cloned
 }
 
+// S3Config is the configuration for the backup integration in an official AWS S3.
 type S3Config struct {
 	Bucket string `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
 	UseIam bool   `protobuf:"varint,2,opt,name=use_iam,json=useIam,proto3" json:"use_iam,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
@@ -390,11 +391,13 @@ func (m *S3Config) Clone() *S3Config {
 	return cloned
 }
 
+// S3Compatible is the configuration for the backup integration in an S3 compatible.
+// S3 compatible being a non-AWS provider (like Minio). For official AWS S3 use S3Config.
 type S3Compatible struct {
 	Bucket string `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
-	// The access key ID for the storage integration. The server will mask the value of this credential in responses and logs.
+	// The access key ID to use. The server will mask the value of this credential in responses and logs.
 	AccessKeyId string `protobuf:"bytes,2,opt,name=access_key_id,json=accessKeyId,proto3" json:"access_key_id,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	// The secret access key for the storage integration. The server will mask the value of this credential in responses and logs.
+	// The secret access key to use. The server will mask the value of this credential in responses and logs.
 	SecretAccessKey string `protobuf:"bytes,3,opt,name=secret_access_key,json=secretAccessKey,proto3" json:"secret_access_key,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	Region          string `protobuf:"bytes,4,opt,name=region,proto3" json:"region,omitempty"`
 	ObjectPrefix    string `protobuf:"bytes,5,opt,name=object_prefix,json=objectPrefix,proto3" json:"object_prefix,omitempty"`
