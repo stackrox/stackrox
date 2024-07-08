@@ -755,7 +755,8 @@ spec:
                 properties:
                   policies:
                     default: Enabled
-                    description: NetworkPolicies is a type for network sub-struct.
+                    description: Create NetworkPolicy objects to limit ACS network
+                      connectivity.
                     enum:
                     - Enabled
                     - Disabled
