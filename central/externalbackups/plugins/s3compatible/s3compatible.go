@@ -32,6 +32,7 @@ const (
 	backupMaxTimeout               = 4 * time.Hour
 	testMaxTimeout                 = 5 * time.Second
 	initialConfigurationMaxTimeout = 5 * time.Minute
+	formatKey                      = "backup_2006-01-02T15:04:05.zip"
 )
 
 var (
@@ -68,46 +69,46 @@ func validate(cfg *storage.S3Compatible) error {
 
 func validateEndpoint(endpoint string) error {
 	if _, err := url.Parse(fmt.Sprintf("https://%s", urlfmt.TrimHTTPPrefixes(endpoint))); err != nil {
-		return errors.Wrapf(err, "invalid URL %s", endpoint)
+		return errors.Wrapf(err, "invalid URL %q", endpoint)
 	}
 	return nil
 }
 
 func newS3Compatible(integration *storage.ExternalBackup) (*s3Compatible, error) {
-	cfg, ok := integration.GetConfig().(*storage.ExternalBackup_S3Compatible)
-	if !ok {
+	cfg := integration.GetS3Compatible()
+	if cfg == nil {
 		return nil, errors.New("S3 Compatible configuration required")
 	}
-	if err := validate(cfg.S3Compatible); err != nil {
+	if err := validate(cfg); err != nil {
 		return nil, err
 	}
 
 	opts := []func(*config.LoadOptions) error{
-		config.WithRegion(cfg.S3Compatible.GetRegion()),
+		config.WithRegion(cfg.GetRegion()),
 		config.WithHTTPClient(&http.Client{Transport: proxy.RoundTripper()}),
 		config.WithCredentialsProvider(
 			credentials.NewStaticCredentialsProvider(
-				cfg.S3Compatible.GetAccessKeyId(),
-				cfg.S3Compatible.GetSecretAccessKey(), "",
+				cfg.GetAccessKeyId(),
+				cfg.GetSecretAccessKey(), "",
 			),
 		),
 	}
 
-	ctx, cancelFn := context.WithTimeout(context.Background(), initialConfigurationMaxTimeout)
-	defer cancelFn()
+	ctx, cancel := context.WithTimeout(context.Background(), initialConfigurationMaxTimeout)
+	defer cancel()
 	awsConfig, err := config.LoadDefaultConfig(ctx, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load the aws config")
 	}
 
 	var clientOpts []func(*s3.Options)
-	if cfg.S3Compatible.GetUrlStyle() == storage.S3URLStyle_S3_URL_STYLE_PATH {
+	if cfg.GetUrlStyle() == storage.S3URLStyle_S3_URL_STYLE_PATH {
 		clientOpts = append(clientOpts, func(o *s3.Options) {
 			o.UsePathStyle = true
 		})
 	}
 
-	if endpoint := cfg.S3Compatible.GetEndpoint(); endpoint != "" {
+	if endpoint := cfg.GetEndpoint(); endpoint != "" {
 		if err := validateEndpoint(endpoint); err != nil {
 			return nil, err
 		}
@@ -132,10 +133,9 @@ func (s *s3Compatible) Backup(reader io.ReadCloser) error {
 	}()
 
 	log.Info("Starting S3 Compatible Backup")
-	ctx, cancelFn := context.WithTimeout(context.Background(), backupMaxTimeout)
-	defer cancelFn()
-	formattedTime := time.Now().Format("2006-01-02T15:04:05")
-	key := fmt.Sprintf("backup_%s.zip", formattedTime)
+	ctx, cancel := context.WithTimeout(context.Background(), backupMaxTimeout)
+	defer cancel()
+	key := time.Now().Format(formatKey)
 	formattedKey := s.prefixKey(key)
 	if _, err := s.uploader.Upload(ctx, &s3.PutObjectInput{
 		Bucket: aws.String(s.integration.GetS3Compatible().GetBucket()),
@@ -145,7 +145,7 @@ func (s *s3Compatible) Backup(reader io.ReadCloser) error {
 		return s.createError(fmt.Sprintf("error creating backup in bucket %q with key %q",
 			s.integration.GetS3Compatible().GetBucket(), formattedKey), err)
 	}
-	log.Info("Successfully backed up to S3")
+	log.Info("Successfully backed up to S3 compatible store")
 	return s.pruneBackupsIfNecessary(ctx)
 }
 
@@ -158,7 +158,7 @@ func (s *s3Compatible) createError(msg string, err error) error {
 			msg = fmt.Sprintf("%s (code: %s)", msg, apiErr.ErrorCode())
 		}
 	}
-	log.Errorf("S3 backup error: %v", err)
+	log.Errorf("S3 compatible store backup error: %v", err)
 	return errors.New(msg)
 }
 
@@ -186,7 +186,7 @@ func (s *s3Compatible) pruneBackupsIfNecessary(ctx context.Context) error {
 		Prefix: aws.String(s.prefixKey("backup")),
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to list object from s3 compatible bucket")
+		return errors.Wrap(err, "failed to list objects from s3 compatible bucket")
 	}
 	// If the number of objects in the bucket is smaller than the configured
 	// number of backups to keep, we exit here.
@@ -196,7 +196,7 @@ func (s *s3Compatible) pruneBackupsIfNecessary(ctx context.Context) error {
 
 	sortS3Objects(objects.Contents)
 
-	errorList := errorhelpers.NewErrorList("remove objects in S3")
+	errorList := errorhelpers.NewErrorList("remove objects in S3 compatible store")
 	for _, objToRemove := range objects.Contents[s.integration.GetBackupsToKeep():] {
 		_, err = s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: aws.String(s.integration.GetS3Compatible().GetBucket()),
@@ -210,8 +210,8 @@ func (s *s3Compatible) pruneBackupsIfNecessary(ctx context.Context) error {
 }
 
 func (s *s3Compatible) Test() error {
-	ctx, cancelFn := context.WithTimeout(context.Background(), testMaxTimeout)
-	defer cancelFn()
+	ctx, cancel := context.WithTimeout(context.Background(), testMaxTimeout)
+	defer cancel()
 	formattedKey := s.prefixKey("test")
 	if _, err := s.uploader.Upload(ctx, &s3.PutObjectInput{
 		Bucket: aws.String(s.integration.GetS3Compatible().GetBucket()),
