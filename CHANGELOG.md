@@ -118,7 +118,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - `/v1/cve/requests` APIs (deprecated in 4.3.0) for managing vulnerability exceptions are now replaced with new `/v2/vulnerability-exceptions/` APIs.
 - ROX-22251: The ability to snooze Node and Platform CVEs is no longer enabled by default and can be enabled by setting `ROX_VULN_MGMT_LEGACY_SNOOZE` to `true` on Central.
 - ROX-24471: Scanner V4 Matcher memory requirements were updates to align with the current consumption (see ROX-24355).
-- Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered.
+- ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered.
   - To revert back to synchronous TLS checks set `ROX_SENSOR_LAZY_TLS_CHECKS` to `false`.
 
 ## [4.4.0]
