@@ -77,6 +77,9 @@ func (m *handlerImpl) Stop(_ error) {
 func (m *handlerImpl) Notify(_ common.SensorComponentEvent) {}
 
 func (m *handlerImpl) Capabilities() []centralsensor.SensorCapability {
+	if syncScanConfigsOnStartup.BooleanSetting() {
+		return []centralsensor.SensorCapability{centralsensor.ComplianceV2ScanConfigSync}
+	}
 	return nil
 }
 
@@ -87,6 +90,7 @@ func (m *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	}
 	// Sync Scan Configs is done during the syncing process between Sensor and Central
 	if _, ok := req.GetRequest().(*central.ComplianceRequest_SyncScanConfigs); ok {
+		log.Info("received scan config sync from central")
 		return m.handleSyncScanCfgRequest(req.GetSyncScanConfigs())
 	}
 
@@ -472,6 +476,7 @@ func (m *handlerImpl) handleSyncScanCfgRequest(request *central.SyncComplianceSc
 		case <-m.stopSignal.Done():
 			return
 		case <-m.complianceIsReady.Done():
+			log.Debugf("compliance is ready. Starting the reconciliation of %d scan configs", len(request.GetScanConfigs()))
 			if err := m.processSyncScanCfg(request); err != nil {
 				log.Error(err)
 				return
