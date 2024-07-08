@@ -16,7 +16,7 @@ var (
 // fails, and defaults to Stackrox otherwise.
 func GetSensorNamespace() string {
 	// Operator installs and some CI runs set a NAMESPACE env which needs to be adhered to so tests don't fail
-	sensorNamespace := os.Getenv("NAMESPACE")
+	sensorNamespace := os.Getenv("TEST_NAMESPACE")
 	// This attempts to load the namespace from the file serviceaccount/namespace
 	if sensorNamespace == "" {
 		var err error
