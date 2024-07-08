@@ -21,7 +21,6 @@ import util.SplunkUtil
 import util.SplunkUtil.SplunkDeployment
 import util.Timer
 
-import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 
@@ -150,16 +149,18 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         List<Map<String, String>> alerts = Collections.emptyList()
         boolean hasNetworkAlert = false
         boolean hasProcessAlert = false
-        for (int i = 0; i < 41; i++) { // FIXME: We must try for at least 10 minutes, as the conversion cron runs every 5 minutes. Try calling the search manually.
+        // FIXME: We must try for at least 10 minutes, as the conversion cron runs every 5 minutes.
+        //  Try calling the search manually.
+        for (int i = 0; i < 41; i++) {
             log.info "Attempt ${i} to get Alerts from Splunk"
-            def v_searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
+            def vSearchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
             TimeUnit.SECONDS.sleep(15)
-            Response v_response = SplunkUtil.getSearchResults(port, v_searchId)
+            Response vResponse = SplunkUtil.getSearchResults(port, vSearchId)
             // We should have at least one violation in the response
-            if (v_response == null) {
+            if (vResponse == null) {
                 continue
             }
-            alerts = v_response.getBody().jsonPath().getList("results")
+            alerts = vResponse.getBody().jsonPath().getList("results")
             if (alerts.isEmpty()) {
                 continue
             }
@@ -173,7 +174,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                 log.info "Success!"
                 break
             }
-
         }
 
         then:
