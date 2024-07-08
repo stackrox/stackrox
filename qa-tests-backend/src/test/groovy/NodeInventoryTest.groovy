@@ -69,7 +69,8 @@ class NodeInventoryTest extends BaseSpecification {
             }
             // Finally, before starting the test, make note of the current scan time, which should be updated
             nodes.each { node ->
-                previousScanTime[node.getId()] = node.hasScan() ? node.getScan().getScanTime() : Timestamp.getDefaultInstance()
+                previousScanTime[node.getId()] = node.hasScan() ?
+                        node.getScan().getScanTime() : Timestamp.getDefaultInstance()
                 log.info("Previous scan time of node ${node.getId()}: ${previousScanTime[node.getId()]}")
             }
         }
