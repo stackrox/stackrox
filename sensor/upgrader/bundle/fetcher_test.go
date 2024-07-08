@@ -31,7 +31,7 @@ func TestFetcherRequestEncoding(t *testing.T) {
 		t,
 		&config.UpgraderConfig{
 			ClusterID:       fixtureconsts.Cluster1,
-			CentralEndpoint: strings.TrimLeft(server.URL, "http://"),
+			CentralEndpoint: strings.TrimPrefix(server.URL, "http://"),
 		},
 	)
 	assert.NoError(t, err)
