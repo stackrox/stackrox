@@ -59,15 +59,16 @@ func FormatURL(endpoint string) string {
 	return urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 }
 
-// RegistryServer returns the registry hostname from either the
-// registry endpoint or formatted registry URL.
-func RegistryServer(endpoint string, url string) string {
-	// if the registryServer endpoint contains docker.io then the image will be docker.io/namespace/repo:tag
+// RegistryHostnameURL returns the hostname and url for a registry.
+func RegistryHostnameURL(endpoint string) (string, string) {
+	url := FormatURL(endpoint)
+
+	host := urlfmt.GetServerFromURL(url)
 	if strings.Contains(endpoint, "docker.io") {
-		return "docker.io"
+		host = "docker.io"
 	}
 
-	return urlfmt.GetServerFromURL(url)
+	return host, url
 }
 
 // DefaultTransport returns the default transport based on the configuration.

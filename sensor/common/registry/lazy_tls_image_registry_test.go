@@ -2,7 +2,9 @@ package registry
 
 import (
 	"errors"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -71,9 +73,7 @@ func TestDataSource(t *testing.T) {
 
 func TestHTTPClient(t *testing.T) {
 	reg := &lazyTLSCheckRegistry{}
-	if !buildinfo.ReleaseBuild {
-		require.PanicsWithError(t, "not implemented", func() { reg.HTTPClient() })
-	} else {
+	if buildinfo.ReleaseBuild {
 		assert.NotPanics(t, func() { reg.HTTPClient() })
 	}
 }
@@ -92,12 +92,12 @@ func TestMatch(t *testing.T) {
 	imgName, _, err := utils.GenerateImageNameFromString("example.com/repo/path:latest")
 	require.NoError(t, err)
 	assert.True(t, reg.Match(imgName))
-	assert.False(t, reg.initialized)
+	assert.False(t, reg.isInitialized())
 
 	imgName, _, err = utils.GenerateImageNameFromString("example.net/repo/path:latest")
 	require.NoError(t, err)
 	assert.False(t, reg.Match(imgName))
-	assert.False(t, reg.initialized)
+	assert.False(t, reg.isInitialized())
 }
 
 func TestMetadata(t *testing.T) {
@@ -116,7 +116,7 @@ func TestMetadata(t *testing.T) {
 		assert.Nil(t, m)
 		// Confirm that initialization is NOT considered complete due to TLS checks
 		// being temporal.
-		assert.False(t, reg.initialized)
+		assert.False(t, reg.isInitialized())
 
 		// Subsequent call should skip the TLS check.
 		m, err = reg.Metadata(img)
@@ -138,7 +138,7 @@ func TestMetadata(t *testing.T) {
 		assert.Nil(t, m)
 
 		// Confirm that initialization IS considered complete.
-		assert.True(t, reg.initialized)
+		assert.True(t, reg.isInitialized())
 
 		// Repeat to make sure same error is returned.
 		m, err = reg.Metadata(img)
@@ -162,7 +162,7 @@ func TestMetadata(t *testing.T) {
 		mockReg.EXPECT().Metadata(img).Return(fakeMetadata, nil)
 		m, err := reg.Metadata(img)
 		require.NoError(t, err)
-		assert.True(t, reg.initialized)
+		assert.True(t, reg.isInitialized())
 		protoassert.Equal(t, fakeMetadata, m)
 
 		mockReg.EXPECT().Metadata(img).Return(fakeMetadata, nil)
@@ -192,11 +192,59 @@ func TestSource(t *testing.T) {
 
 func TestTest(t *testing.T) {
 	reg := &lazyTLSCheckRegistry{}
-	if !buildinfo.ReleaseBuild {
-		require.PanicsWithError(t, "not implemented", func() { _ = reg.Test() })
-	} else {
+	if buildinfo.ReleaseBuild {
 		assert.NotPanics(t, func() { _ = reg.Test() })
 	}
+}
+
+func TestAttemptToTriggerRace(t *testing.T) {
+	cImg, err := utils.GenerateImageFromString("example.com/repo/path:latest")
+	require.NoError(t, err)
+	img := imgTypes.ToImage(cImg)
+
+	source := genImageIntegration("example.com")
+
+	slowCreator := func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+		time.Sleep(1 * time.Second)
+		return nil, errors.New("too slow")
+	}
+
+	reg, err := createReg(source, slowCreator, alwaysSecureCheckTLS)
+	require.NoError(t, err)
+
+	wg := sync.WaitGroup{}
+	for i := 0; i < 100000; i++ {
+		wg.Add(1)
+		go func(i int) {
+			if i%2 == 0 {
+				time.Sleep(1 * time.Second)
+			}
+			_, err := reg.Metadata(img)
+			assert.Error(t, err)
+			wg.Done()
+		}(i)
+
+		wg.Add(1)
+		go func(i int) {
+			if i%2 == 0 {
+				time.Sleep(1 * time.Second)
+			}
+			src := reg.Source()
+			assert.False(t, src.GetDocker().GetInsecure())
+			wg.Done()
+		}(i)
+
+		wg.Add(1)
+		go func(i int) {
+			if i%2 == 0 {
+				time.Sleep(1 * time.Second)
+			}
+			cfg := reg.Config()
+			assert.False(t, cfg.Insecure)
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
 }
 
 func genImageIntegration(endpoint string) *storage.ImageIntegration {
@@ -217,9 +265,7 @@ func createReg(source *storage.ImageIntegration, creator types.Creator, tlsCheck
 		return nil, err
 	}
 
-	url := docker.FormatURL(cfg.GetEndpoint())
-	host := docker.RegistryServer(cfg.GetEndpoint(), url)
-
+	host, url := docker.RegistryHostnameURL(cfg.GetEndpoint())
 	reg := &lazyTLSCheckRegistry{
 		source:           source,
 		creator:          creator,

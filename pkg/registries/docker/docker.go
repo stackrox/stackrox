@@ -73,8 +73,7 @@ type Registry struct {
 func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegration,
 	transports ...registry.Transport,
 ) (*Registry, error) {
-	url := cfg.formatURL()
-	registryServer := RegistryServer(cfg.Endpoint, url)
+	hostname, url := RegistryHostnameURL(cfg.Endpoint)
 
 	var transport registry.Transport
 	if len(transports) == 0 || transports[0] == nil {
@@ -94,7 +93,7 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 
 	return &Registry{
 		url:                   url,
-		registry:              registryServer,
+		registry:              hostname,
 		Client:                client,
 		cfg:                   cfg,
 		protoImageIntegration: integration,

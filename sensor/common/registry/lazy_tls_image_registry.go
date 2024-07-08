@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sync/atomic"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -35,18 +36,23 @@ type lazyTLSCheckRegistry struct {
 	tlsCheckCache *tlsCheckCacheImpl
 
 	// initialized tracks whether lazy initialization has completed.
-	initialized      bool
-	initializedMutex sync.Mutex
+	initialized      atomic.Uint32
+	initializedMutex sync.RWMutex
 
-	// initError holds the most recent initializatino error.
+	// initError holds the most recent initialization error.
 	initError error
 }
 
 var _ types.ImageRegistry = (*lazyTLSCheckRegistry)(nil)
 
-// Config will NOT trigger an initialization, however after successful
+// Config will NOT trigger initialization, however after successful
 // initialization the values may change.
 func (l *lazyTLSCheckRegistry) Config() *types.Config {
+	// registry is modified while the write lock is held,
+	// to avoid a race grab the read lock.
+	l.initializedMutex.RLock()
+	defer l.initializedMutex.RUnlock()
+
 	if l.registry != nil {
 		return l.registry.Config()
 	}
@@ -74,7 +80,15 @@ func (l *lazyTLSCheckRegistry) Match(image *storage.ImageName) bool {
 }
 
 func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
+	// Attempt initialization since Metadata interacts with the registry.
 	l.lazyInit()
+
+	// initError and registry are modified while the
+	// write lock is held, to avoid a race grab the
+	// read lock.
+	l.initializedMutex.RLock()
+	defer l.initializedMutex.RUnlock()
+
 	if l.initError != nil {
 		return nil, l.initError
 	}
@@ -83,10 +97,20 @@ func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMet
 }
 
 func (l *lazyTLSCheckRegistry) Name() string {
+	// source is modified while the write lock is held,
+	// to avoid a race grab the read lock.
+	l.initializedMutex.RLock()
+	defer l.initializedMutex.RUnlock()
+
 	return l.source.GetName()
 }
 
 func (l *lazyTLSCheckRegistry) Source() *storage.ImageIntegration {
+	// source is modified while the write lock is held,
+	// to avoid a race grab the read lock.
+	l.initializedMutex.RLock()
+	defer l.initializedMutex.RUnlock()
+
 	return l.source
 }
 
@@ -95,8 +119,11 @@ func (l *lazyTLSCheckRegistry) Test() error {
 	return nil
 }
 
+// lazyInit attempts to lazily perform a TLS check and initialize the
+// underlying registry.  The concurrency mechanisms are based of
+// https://cs.opensource.google/go/go/+/refs/tags/go1.22.5:src/sync/once.go;l=48
 func (l *lazyTLSCheckRegistry) lazyInit() {
-	if l.initialized {
+	if l.isInitialized() {
 		return
 	}
 
@@ -104,7 +131,7 @@ func (l *lazyTLSCheckRegistry) lazyInit() {
 	defer l.initializedMutex.Unlock()
 
 	// Short-circuit if another goroutine completed initialization.
-	if l.initialized {
+	if l.isInitialized() {
 		return
 	}
 
@@ -123,10 +150,17 @@ func (l *lazyTLSCheckRegistry) lazyInit() {
 
 	// If we got here assume that initialization has completed, any errors encountered
 	// are no longer temporal so do not try to repeat initialization.
-	l.initialized = true
+	defer l.initialized.Store(1)
 
-	// Update the underlying config (also updates source due to being a reference).
-	l.dockerConfig.Insecure = !secure
+	// Clone the source to prevent a race.
+	newSrc := l.source.Clone()
+	dockerCfg, err := extractDockerConfig(newSrc)
+	if err != nil {
+		l.initError = err
+		return
+	}
+	dockerCfg.Insecure = !secure
+	l.source = newSrc
 
 	// Create the registry.
 	l.registry, l.initError = l.creator(l.source)
@@ -135,4 +169,8 @@ func (l *lazyTLSCheckRegistry) lazyInit() {
 	} else {
 		log.Debugf("Lazy init success for %q (%s), secure: %t", l.source.GetName(), l.source.GetId(), secure)
 	}
+}
+
+func (l *lazyTLSCheckRegistry) isInitialized() bool {
+	return l.initialized.Load() == 1
 }
