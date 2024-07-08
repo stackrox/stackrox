@@ -37,17 +37,25 @@ message S3Config {
   string endpoint = 7; // @gotags: scrub:"dependent" validate:"nolocalendpoint"
 }
 
+enum S3URLStyle {
+  S3_URL_STYLE_UNSPECIFIED = 0;
+  S3_URL_STYLE_VIRTUAL_HOSTED = 1;
+  S3_URL_STYLE_PATH = 2;
+}
+
 message S3Compatible {
   string bucket = 1;
-  bool use_iam = 2; // @gotags: scrub:"dependent"
   // The access key ID for the storage integration. The server will mask the value of this credential in responses and logs.
-  string access_key_id = 3; // @gotags: scrub:"always"
+  string access_key_id = 2; // @gotags: scrub:"always"
   // The secret access key for the storage integration. The server will mask the value of this credential in responses and logs.
-  string secret_access_key = 4; // @gotags: scrub:"always"
-  string region = 5;
-  string object_prefix = 6;
-  string endpoint = 7; // @gotags: scrub:"dependent" validate:"nolocalendpoint"
-  bool use_path_style = 8;
+  string secret_access_key = 3; // @gotags: scrub:"always"
+  string region = 4;
+  string object_prefix = 5;
+  string endpoint = 6; // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+  // The URL style defines the bucket URL addressing.
+  // Virtual-hosted-style buckets are addressed as `https://<bucket>.<endpoint>'
+  // while path-style buckets are addressed as `https://<endpoint>/<bucket>`.
+  S3URLStyle url_style = 7;
 }
 
 message GCSConfig {

@@ -437,9 +437,6 @@
         "bucket": {
           "type": "string"
         },
-        "useIam": {
-          "type": "boolean"
-        },
         "accessKeyId": {
           "type": "string",
           "description": "The access key ID for the storage integration. The server will mask the value of this credential in responses and logs."
@@ -457,8 +454,9 @@
         "endpoint": {
           "type": "string"
         },
-        "usePathStyle": {
-          "type": "boolean"
+        "urlStyle": {
+          "$ref": "#/definitions/storageS3URLStyle",
+          "description": "The URL style defines the bucket URL addressing.\nVirtual-hosted-style buckets are addressed as `https://\u003cbucket\u003e.\u003cendpoint\u003e'\nwhile path-style buckets are addressed as `https://\u003cendpoint\u003e/\u003cbucket\u003e`."
         }
       }
     },
@@ -489,6 +487,15 @@
           "type": "string"
         }
       }
+    },
+    "storageS3URLStyle": {
+      "type": "string",
+      "enum": [
+        "S3_URL_STYLE_UNSPECIFIED",
+        "S3_URL_STYLE_VIRTUAL_HOSTED",
+        "S3_URL_STYLE_PATH"
+      ],
+      "default": "S3_URL_STYLE_UNSPECIFIED"
     },
     "storageSchedule": {
       "type": "object",
