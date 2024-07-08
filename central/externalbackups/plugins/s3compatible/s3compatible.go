@@ -53,15 +53,11 @@ type s3Compatible struct {
 
 func validate(cfg *storage.S3Compatible) error {
 	errorList := errorhelpers.NewErrorList("S3 Compatible Validation")
-	if !cfg.GetUseIam() {
-		if cfg.GetAccessKeyId() == "" {
-			errorList.AddString("Access Key ID must be specified")
-		}
-		if cfg.GetSecretAccessKey() == "" {
-			errorList.AddString("Secret Access Key must be specified")
-		}
-	} else if cfg.GetAccessKeyId() != "" || cfg.GetSecretAccessKey() != "" {
-		errorList.AddStrings("IAM and access/secret key use are mutually exclusive. Only specify one")
+	if cfg.GetAccessKeyId() == "" {
+		errorList.AddString("Access Key ID must be specified")
+	}
+	if cfg.GetSecretAccessKey() == "" {
+		errorList.AddString("Secret Access Key must be specified")
 	}
 	if cfg.GetRegion() == "" {
 		errorList.AddString("Region must be specified")
@@ -89,15 +85,12 @@ func newS3Compatible(integration *storage.ExternalBackup) (*s3Compatible, error)
 	opts := []func(*config.LoadOptions) error{
 		config.WithRegion(cfg.S3Compatible.GetRegion()),
 		config.WithHTTPClient(&http.Client{Transport: proxy.RoundTripper()}),
-	}
-
-	if cfg.S3Compatible.GetUseIam() {
-		opts = append(opts, config.WithCredentialsProvider(
+		config.WithCredentialsProvider(
 			credentials.NewStaticCredentialsProvider(
 				cfg.S3Compatible.GetAccessKeyId(),
 				cfg.S3Compatible.GetSecretAccessKey(), "",
 			),
-		))
+		),
 	}
 
 	ctx, cancelFn := context.WithTimeout(context.Background(), initialConfigurationMaxTimeout)
@@ -108,7 +101,7 @@ func newS3Compatible(integration *storage.ExternalBackup) (*s3Compatible, error)
 	}
 
 	var clientOpts []func(*s3.Options)
-	if cfg.S3Compatible.GetUsePathStyle() {
+	if cfg.S3Compatible.GetUrlStyle() == storage.S3URLStyle_S3_URL_STYLE_PATH {
 		clientOpts = append(clientOpts, func(o *s3.Options) {
 			o.UsePathStyle = true
 		})
