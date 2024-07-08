@@ -19,7 +19,7 @@ jobs:
       - name: Check PR description
         env:
           ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
-          script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
+          script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.head_ref }}
           PR_DESCRIPTION: ${{ github.event.pull_request.body }}
         run: |
           set -uo pipefail
