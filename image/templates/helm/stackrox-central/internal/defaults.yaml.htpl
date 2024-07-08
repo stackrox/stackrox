@@ -259,10 +259,10 @@ defaults:
                 operator: DoesNotExist
       resources:
         requests:
-          memory: "4Gi"
+          memory: "500Mi"
           cpu: "1000m"
         limits:
-          memory: "5Gi"
+          memory: "2Gi"
           cpu: "2000m"
     db:
       postgresConfig: "@config-templates/scanner-v4-db/postgresql.conf|config-templates/scanner-v4-db/postgresql.conf.default"
