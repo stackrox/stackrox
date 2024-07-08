@@ -133,10 +133,14 @@ type registryImpl struct {
 	complianceOperatorRemediationDispatcher         *dispatchers.RemediationDispatcher
 }
 
+func unixNow() int64 {
+	return time.Now().Unix()
+}
+
 func wrapWithDumpingDispatcher(d Dispatcher, w io.Writer) Dispatcher {
 	return dumpingDispatcher{
 		writer:     w,
-		now:        func() int64 { return time.Now().Unix() },
+		now:        unixNow,
 		Dispatcher: d,
 	}
 }
