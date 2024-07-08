@@ -101,7 +101,7 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, nodeCVECount)
 
-	s.NoError(store.DeleteMany(ctx, nodeCVEIDs))
+	s.NoError(store.PruneMany(ctx, nodeCVEIDs))
 
 	nodeCVECount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

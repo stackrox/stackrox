@@ -104,7 +104,7 @@ func (s *NetworkpoliciesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, networkPolicyCount)
 
-	s.NoError(store.DeleteMany(ctx, networkPolicyIDs))
+	s.NoError(store.PruneMany(ctx, networkPolicyIDs))
 
 	networkPolicyCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

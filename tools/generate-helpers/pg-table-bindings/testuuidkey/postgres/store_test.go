@@ -104,7 +104,7 @@ func (s *TestSingleUUIDKeyStructsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, testSingleUUIDKeyStructCount)
 
-	s.NoError(store.DeleteMany(ctx, testSingleUUIDKeyStructIDs))
+	s.NoError(store.PruneMany(ctx, testSingleUUIDKeyStructIDs))
 
 	testSingleUUIDKeyStructCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

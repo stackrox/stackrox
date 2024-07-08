@@ -24,6 +24,7 @@ const (
 	batchAfter      = 100
 	cursorBatchSize = 50
 	deleteBatchSize = 65000
+	pruneBatchSize  = 5000
 
 	// MaxBatchSize sets the maximum number of elements in a batch.
 	// Using copyFrom, we may not even want to batch.  It would probably be simpler
@@ -39,6 +40,7 @@ var (
 // Deleter is an interface that allow deletions of multiple identifiers
 type Deleter interface {
 	DeleteMany(ctx context.Context, identifiers []string) error
+	PruneMany(ctx context.Context, identifiers []string) error
 }
 
 type primaryKeyGetter[T any, PT protocompat.ClonedUnmarshaler[T]] func(obj PT) string
@@ -65,6 +67,7 @@ type Store[T any, PT protocompat.Unmarshaler[T]] interface {
 	DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, identifiers []string) error
+	PruneMany(ctx context.Context, identifiers []string) error
 	Upsert(ctx context.Context, obj PT) error
 	UpsertMany(ctx context.Context, objs []PT) error
 }
@@ -337,7 +340,7 @@ func (s *genericStore[T, PT]) Delete(ctx context.Context, id string) error {
 	return RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
 }
 
-// DeleteMany removes the objects associated to the specified IDs from the store.
+// DeleteMany removes the objects associated to the specified IDs from the store within a transaction.
 func (s *genericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.RemoveMany)
 
@@ -383,6 +386,39 @@ func (s *genericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 	if tx != nil {
 		return tx.Commit(ctx)
 	}
+	return nil
+}
+
+// PruneMany removes the objects associated to the specified IDs from the store outside a transaction.
+func (s *genericStore[T, PT]) PruneMany(ctx context.Context, identifiers []string) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.RemoveMany)
+
+	// Batch the deletes
+	localBatchSize := pruneBatchSize
+
+	for {
+		if len(identifiers) == 0 {
+			break
+		}
+
+		if len(identifiers) < localBatchSize {
+			localBatchSize = len(identifiers)
+		}
+
+		identifierBatch := identifiers[:localBatchSize]
+
+		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
+
+		// If a pruning batch fails, just move on to the next batch as pruning is best effort and eventual.
+		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
+			log.Errorf("unable to prune the records: %v", err)
+			continue
+		}
+
+		// Move the slice forward to start the next batch
+		identifiers = identifiers[localBatchSize:]
+	}
+
 	return nil
 }
 

@@ -104,7 +104,7 @@ func (s *K8sRolesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, k8SRoleCount)
 
-	s.NoError(store.DeleteMany(ctx, k8SRoleIDs))
+	s.NoError(store.PruneMany(ctx, k8SRoleIDs))
 
 	k8SRoleCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

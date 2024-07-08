@@ -101,7 +101,7 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, complianceOperatorScanSettingBindingCount)
 
-	s.NoError(store.DeleteMany(ctx, complianceOperatorScanSettingBindingIDs))
+	s.NoError(store.PruneMany(ctx, complianceOperatorScanSettingBindingIDs))
 
 	complianceOperatorScanSettingBindingCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

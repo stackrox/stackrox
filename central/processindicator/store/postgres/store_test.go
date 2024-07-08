@@ -104,7 +104,7 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, processIndicatorCount)
 
-	s.NoError(store.DeleteMany(ctx, processIndicatorIDs))
+	s.NoError(store.PruneMany(ctx, processIndicatorIDs))
 
 	processIndicatorCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

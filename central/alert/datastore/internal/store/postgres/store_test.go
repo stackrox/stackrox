@@ -104,7 +104,7 @@ func (s *AlertsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, alertCount)
 
-	s.NoError(store.DeleteMany(ctx, alertIDs))
+	s.NoError(store.PruneMany(ctx, alertIDs))
 
 	alertCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

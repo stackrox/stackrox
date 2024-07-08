@@ -104,7 +104,7 @@ func (s *ListeningEndpointsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, processListeningOnPortStorageCount)
 
-	s.NoError(store.DeleteMany(ctx, processListeningOnPortStorageIDs))
+	s.NoError(store.PruneMany(ctx, processListeningOnPortStorageIDs))
 
 	processListeningOnPortStorageCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

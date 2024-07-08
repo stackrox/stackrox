@@ -101,7 +101,7 @@ func (s *ComplianceDomainsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, complianceDomainCount)
 
-	s.NoError(store.DeleteMany(ctx, complianceDomainIDs))
+	s.NoError(store.PruneMany(ctx, complianceDomainIDs))
 
 	complianceDomainCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

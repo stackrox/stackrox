@@ -104,7 +104,7 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, deploymentCount)
 
-	s.NoError(store.DeleteMany(ctx, deploymentIDs))
+	s.NoError(store.PruneMany(ctx, deploymentIDs))
 
 	deploymentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

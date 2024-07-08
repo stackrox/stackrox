@@ -104,7 +104,7 @@ func (s *ServiceAccountsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, serviceAccountCount)
 
-	s.NoError(store.DeleteMany(ctx, serviceAccountIDs))
+	s.NoError(store.PruneMany(ctx, serviceAccountIDs))
 
 	serviceAccountCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

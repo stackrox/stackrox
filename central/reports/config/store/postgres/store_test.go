@@ -101,7 +101,7 @@ func (s *ReportConfigurationsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, reportConfigurationCount)
 
-	s.NoError(store.DeleteMany(ctx, reportConfigurationIDs))
+	s.NoError(store.PruneMany(ctx, reportConfigurationIDs))
 
 	reportConfigurationCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

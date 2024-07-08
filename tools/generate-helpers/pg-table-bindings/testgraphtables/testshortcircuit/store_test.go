@@ -101,7 +101,7 @@ func (s *TestShortCircuitsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, testShortCircuitCount)
 
-	s.NoError(store.DeleteMany(ctx, testShortCircuitIDs))
+	s.NoError(store.PruneMany(ctx, testShortCircuitIDs))
 
 	testShortCircuitCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

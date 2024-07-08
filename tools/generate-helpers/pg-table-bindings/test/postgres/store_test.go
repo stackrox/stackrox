@@ -104,7 +104,7 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, testSingleKeyStructCount)
 
-	s.NoError(store.DeleteMany(ctx, testSingleKeyStructIDs))
+	s.NoError(store.PruneMany(ctx, testSingleKeyStructIDs))
 
 	testSingleKeyStructCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

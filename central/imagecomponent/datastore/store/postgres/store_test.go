@@ -101,7 +101,7 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, imageComponentCount)
 
-	s.NoError(store.DeleteMany(ctx, imageComponentIDs))
+	s.NoError(store.PruneMany(ctx, imageComponentIDs))
 
 	imageComponentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

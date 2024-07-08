@@ -101,7 +101,7 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, simpleAccessScopeCount)
 
-	s.NoError(store.DeleteMany(ctx, simpleAccessScopeIDs))
+	s.NoError(store.PruneMany(ctx, simpleAccessScopeIDs))
 
 	simpleAccessScopeCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

@@ -101,7 +101,7 @@ func (s *RolesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, roleCount)
 
-	s.NoError(store.DeleteMany(ctx, roleIDs))
+	s.NoError(store.PruneMany(ctx, roleIDs))
 
 	roleCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
