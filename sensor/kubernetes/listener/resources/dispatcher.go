@@ -133,21 +133,15 @@ type registryImpl struct {
 	complianceOperatorRemediationDispatcher         *dispatchers.RemediationDispatcher
 }
 
-func unixNow() int64 {
-	return time.Now().Unix()
-}
-
 func wrapWithDumpingDispatcher(d Dispatcher, w io.Writer) Dispatcher {
 	return dumpingDispatcher{
 		writer:     w,
-		now:        unixNow,
 		Dispatcher: d,
 	}
 }
 
 type dumpingDispatcher struct {
 	writer io.Writer
-	now    func() int64
 	Dispatcher
 }
 
@@ -161,7 +155,7 @@ type InformerK8sMsg struct {
 }
 
 func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
-	now := m.now()
+	now := time.Now().Unix()
 	dispType := strings.Trim(fmt.Sprintf("%T", obj), "*")
 	events := m.Dispatcher.ProcessEvent(obj, oldObj, action)
 	if events == nil {

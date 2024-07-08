@@ -69,7 +69,6 @@ func TestWrappedDispatcherProcessEventObjectEncoding(t *testing.T) {
 	var buf bytes.Buffer
 	testDispatcher := &dumpingDispatcher{
 		writer:     &buf,
-		now:        func() int64 { return 1 },
 		Dispatcher: &fakeDispatcher{},
 	}
 
