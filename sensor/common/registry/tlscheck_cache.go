@@ -2,11 +2,11 @@ package registry
 
 import (
 	"context"
-	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type tlsCheckResult uint8
