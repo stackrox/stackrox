@@ -41,6 +41,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The field `error` returned for failed API calls has been deprecated, and it will be removed in a future release. Instead of using the `error` field, use the `message` field. The `message` field contains the same information as the `error` field.
 - The `/v1/summary/counts` API has been deprecated in 4.5 and will be removed in the future.
 - 'Dashboard' view under 'Vulnerability Management' is deprecated and will be removed in a future release. Use 'Workload CVEs', 'Exception Management', 'Platform CVEs', and 'Node CVEs' views instead.
+- ROX-25067: The Amazon S3 external backup integration interoperability with Google Cloud Storage has been deprecated. Backups to Google Cloud Storage should be done by using the dedicated Google Cloud Storage external backup integration.
 
 ### Technical Changes
 
@@ -73,7 +74,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-21288: The default timeout setting for ACS' admission controller webhooks has been reduced from 20 seconds to 10 seconds, which will result in an effective timeout within the ValidatingWebhookConfiguration of 12 seconds. This change has been motivated by the fact that OpenShift unconditionally caps webhook timeouts at 13 seconds. On non-OpenShift Kubernetes longer webhook timeouts are supported. Users currently depending on longer timeouts, for example because of enabled inline image scanning within webhooks, might need to specify a longer timeout explicitly, which can be done in the `SecuredCluster` CR (`admissionControl.timeoutSeconds`), in Helm (`admissionControl.dynamic.timeout`) or within a sensor deployment bundle (`ValidatingWebhookConfiguration` manifest within the file `admission-controller.yaml`).
 - ROX-20621, ROX-17677, ROX-17678: New improved user interface for managing workload, node and platform vulnerabilities are now available under 'Vulnerability Management'.
 - ROX-17385: The 'Risk Acceptance' workflow is replaced by 'Exception Management'.
-    - Pre-existing deferrals and false positive requests will be migrated to 'Exception Management'. 
+    - Pre-existing deferrals and false positive requests will be migrated to 'Exception Management'.
     - Pre-existing globally snoozed Image CVEs will be migrated to create equivalent approved deferrals under 'Exception Management'.
     - `/v1/cve/requests` APIs (deprecated in 4.3.0) for managing vulnerability exceptions are now replaced with new `/v2/vulnerability-exceptions/` APIs.
 - ROX-22251: The ability to snooze Node and Platform CVEs is no longer enabled by default and can be enabled by setting `ROX_VULN_MGMT_LEGACY_SNOOZE` to `true` on Central.
