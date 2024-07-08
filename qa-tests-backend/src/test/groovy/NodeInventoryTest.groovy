@@ -1,5 +1,8 @@
 import static util.Helpers.waitForTrue
 import static util.Helpers.withRetry
+
+import com.google.protobuf.Timestamp
+
 import io.stackrox.proto.storage.NodeOuterClass.Node
 
 import common.Constants
@@ -34,6 +37,7 @@ class NodeInventoryTest extends BaseSpecification {
         "given a non-empty list of nodes"
         List<Node> nodes = NodeService.getNodes()
         assert nodes.size() > 0
+        def previousScanTime = [:]
 
         when:
         boolean nodeInventoryContainerAvailable =
@@ -62,6 +66,12 @@ class NodeInventoryTest extends BaseSpecification {
                     return false
                 }
                 return true
+            }
+            // Finally, before starting the test, make note of the current scan time, which should be updated
+            nodes.each { node ->
+                previousScanTime[node.getId()] = node.hasScan() ?
+                        node.getScan().getScanTime() : Timestamp.getDefaultInstance()
+                log.info("Previous scan time of node ${node.getId()}: ${previousScanTime[node.getId()]}")
             }
         }
         log.info("Waiting for scanner deployment to be ready")
@@ -92,9 +102,8 @@ class NodeInventoryTest extends BaseSpecification {
             assert node.getScan().getComponentsList().size() > 4,
                 "Expected to find more than 4 components on RHCOS node"
 
-            // assume that there must be at least one vulnerability within all the components
-            assert node.getScan().getComponentsList().sum { it.getVulnerabilitiesList().size() }
-                > 0, "Expected to find at least one vulnerability among the components"
+            assert previousScanTime[node.getId()] != node.getScan().getScanTime(),
+                "Expected the scan time of the node to have changed"
         }
     }
 }
