@@ -17,7 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3Types "github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/smithy-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
@@ -150,11 +150,12 @@ func (s *s3Compatible) Backup(reader io.ReadCloser) error {
 }
 
 func (s *s3Compatible) createError(msg string, err error) error {
-	if awsErr, _ := err.(awserr.Error); awsErr != nil {
-		if awsErr.Message() != "" {
-			msg = fmt.Sprintf("%s (code: %s; message: %s)", msg, awsErr.Code(), awsErr.Message())
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) {
+		if apiErr.ErrorMessage() != "" {
+			msg = fmt.Sprintf("%s (code: %s; message: %s)", msg, apiErr.ErrorCode(), apiErr.ErrorMessage())
 		} else {
-			msg = fmt.Sprintf("%s (code: %s)", msg, awsErr.Code())
+			msg = fmt.Sprintf("%s (code: %s)", msg, apiErr.ErrorCode())
 		}
 	}
 	log.Errorf("S3 backup error: %v", err)
