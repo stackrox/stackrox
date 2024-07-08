@@ -237,7 +237,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, _ driver.Fingerprint) (i
 			if !strings.HasSuffix(jsonF.Name, ".nvd.json") {
 				continue
 			}
-			// Iterates of a NVD CVE JSON file.
+			// Iterates over a NVD CVE JSON file.
 			var iterErr error
 			jsonIter := func(yield func(vuln *schema.CVEAPIJSON20DefCVEItem) bool) {
 				iterErr = nil
