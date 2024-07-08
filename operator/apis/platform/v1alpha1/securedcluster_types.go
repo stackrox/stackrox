@@ -106,7 +106,7 @@ type SecuredClusterSpec struct {
 	RegistryOverride string `json:"registryOverride,omitempty"`
 
 	// Network configuration.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=15,xDescription={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Network,order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Network *GlobalNetworkSpec `json:"network,omitempty"`
 }
 
