@@ -1338,9 +1338,11 @@ class Kubernetes implements OrchestratorMain {
         Namespace Methods
      */
 
-    List<objects.Namespace> getNamespaceDetails() {
-        return evaluateWithRetry(2, 3) {
-            return client.namespaces().list().items.collect {
+    objects.Namespace getNamespaceDetailsByName(String name) {
+        def namespaces = evaluateWithRetry(2, 3) {
+            return client.namespaces().list().items.find {
+                it.getMetadata().getName() == name
+            }.collect {
                 new objects.Namespace(
                         uid: it.metadata.uid,
                         name: it.metadata.name,
@@ -1356,6 +1358,7 @@ class Kubernetes implements OrchestratorMain {
                 )
             }
         }
+        return namespaces.size() == 0 ? null : namespaces[0]
     }
 
     def addNamespaceAnnotation(String ns, String key, String value) {
