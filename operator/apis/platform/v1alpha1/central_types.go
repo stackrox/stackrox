@@ -73,7 +73,7 @@ type CentralSpec struct {
 	Monitoring *GlobalMonitoring `json:"monitoring,omitempty"`
 
 	// Network configuration.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=10,xDescription={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Network,order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Network *GlobalNetworkSpec `json:"network,omitempty"`
 }
 
