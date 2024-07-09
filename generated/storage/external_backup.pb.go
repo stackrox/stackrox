@@ -280,7 +280,7 @@ func (m *ExternalBackup) Clone() *ExternalBackup {
 	return cloned
 }
 
-// S3Config is the configuration for the backup integration in an official AWS S3.
+// S3Config configures the backup integration with AWS S3.
 type S3Config struct {
 	Bucket string `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
 	UseIam bool   `protobuf:"varint,2,opt,name=use_iam,json=useIam,proto3" json:"use_iam,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
@@ -391,8 +391,8 @@ func (m *S3Config) Clone() *S3Config {
 	return cloned
 }
 
-// S3Compatible is the configuration for the backup integration in an S3 compatible.
-// S3 compatible being a non-AWS provider (like Minio). For official AWS S3 use S3Config.
+// S3Compatible configures the backup integration with an S3 compatible storage provider.
+// S3 compatible is intended for non-AWS providers. For AWS S3 use S3Config.
 type S3Compatible struct {
 	Bucket string `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
 	// The access key ID to use. The server will mask the value of this credential in responses and logs.

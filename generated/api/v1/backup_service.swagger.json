@@ -459,7 +459,7 @@
           "description": "The URL style defines the bucket URL addressing.\nVirtual-hosted-style buckets are addressed as `https://\u003cbucket\u003e.\u003cendpoint\u003e'\nwhile path-style buckets are addressed as `https://\u003cendpoint\u003e/\u003cbucket\u003e`."
         }
       },
-      "description": "S3Compatible is the configuration for the backup integration in an S3 compatible.\nS3 compatible being a non-AWS provider (like Minio). For official AWS S3 use S3Config."
+      "description": "S3Compatible configures the backup integration with an S3 compatible storage provider.\nS3 compatible is intended for non-AWS providers. For AWS S3 use S3Config."
     },
     "storageS3Config": {
       "type": "object",
@@ -488,7 +488,7 @@
           "type": "string"
         }
       },
-      "description": "S3Config is the configuration for the backup integration in an official AWS S3."
+      "description": "S3Config configures the backup integration with AWS S3."
     },
     "storageS3URLStyle": {
       "type": "string",
