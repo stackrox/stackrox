@@ -202,7 +202,7 @@ func TestSplitAndMergeNode(t *testing.T) {
 	splitActual := Split(node, true)
 	protoassert.Equal(t, splitExpected.Node, splitActual.Node)
 
-	assert.Len(t, splitActual.Children, len(splitActual.Children))
+	assert.Len(t, splitActual.Children, len(splitExpected.Children))
 	for i, expected := range splitExpected.Children {
 		actual := splitActual.Children[i]
 		protoassert.Equal(t, expected.Component, actual.Component)

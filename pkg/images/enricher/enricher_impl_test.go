@@ -486,7 +486,7 @@ func TestEnricherFlow(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, c.result, result)
 
-			assert.Equal(t, c.fsr, fsr) //nolint:donotcompareproto // false possitive
+			assert.Equal(t, c.fsr, fsr) //nolint:donotcompareproto // false positive
 		})
 	}
 }

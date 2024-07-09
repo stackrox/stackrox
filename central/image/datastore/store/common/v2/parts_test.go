@@ -250,7 +250,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 	protoassert.MapEqual(t, splitExpected.ImageCVEEdges, splitActual.ImageCVEEdges)
 	protoassert.Equal(t, splitExpected.Image, splitActual.Image)
 
-	assert.Len(t, splitActual.Children, len(splitActual.Children))
+	assert.Len(t, splitActual.Children, len(splitExpected.Children))
 	for i, expected := range splitExpected.Children {
 		actual := splitActual.Children[i]
 		protoassert.Equal(t, expected.Component, actual.Component)
