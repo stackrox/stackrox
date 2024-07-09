@@ -27,6 +27,7 @@ oc -n stackrox patch deploy/central -p '{"spec":{"template":{"spec":{"containers
 oc -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"16Gi","cpu":"8"},"limits":{"memory":"16Gi","cpu":"8"}}}]}}}}'
 oc patch deployment central-db --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/volumes/4/emptyDir/sizeLimit", "value": "4Gi"}]' --namespace=stackrox
 
-"${DIR}/kube-burner/cluster-density/run-workload.sh" --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces "${num_namespaces}" --num-deployments "${num_deployments}" --num-pods "${num_pods}"
+#"${DIR}/kube-burner/cluster-density/run-workload.sh" --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces "${num_namespaces}" --num-deployments "${num_deployments}" --num-pods "${num_pods}"
+"${HOME}/stackrox/tests/performance/scale/tests/kube-burner/cluster-density/run-workload.sh" --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces "${num_namespaces}" --num-deployments "${num_deployments}" --num-pods "${num_pods}"
 
 infractl delete "$cluster_name"

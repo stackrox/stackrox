@@ -21,10 +21,6 @@ install_dependencies() {
     
     tar -zxvf "./kube-burner/kube-burner-${KUBE_BURNER_VERSION}.tar.gz" --directory ./kube-burner
     
-    KUBE_BURNER_PATH="$(pwd)/kube-burner/kube-burner"
-    export KUBE_BURNER_PATH=$KUBE_BURNER_PATH
-    echo "export KUBE_BURNER_PATH=$KUBE_BURNER_PATH" >> ~/.bashrc
-    
     sudo cp "${HOME}/oc" /usr/bin
     sudo cp "${HOME}/infractl" /usr/bin
     
@@ -44,9 +40,12 @@ install_dependencies() {
 
 }
 
+KUBE_BURNER_PATH="${HOME}/kube-burner/kube-burner"
+export KUBE_BURNER_PATH=$KUBE_BURNER_PATH
+echo "export KUBE_BURNER_PATH=$KUBE_BURNER_PATH" >> ~/.bashrc
+
 if [ ! -d "${HOME}/stackrox" ]; then
     install_dependencies
-else
-
 fi
+
 
