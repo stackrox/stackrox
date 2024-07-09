@@ -10,8 +10,6 @@ import (
 )
 
 // IO holds information about io streams used within commands of roxctl.
-//
-//go:generate mockgen-wrapper
 type IO interface {
 	In() io.Reader
 	Out() io.Writer
