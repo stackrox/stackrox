@@ -15,7 +15,7 @@ import { ACTION_COLUMN_POPPER_PROPS } from 'constants/tables';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel, WatchStatus } from '../../types';
-import ImageScanningErrorLabel from '../components/ImageScanningErrorLabelLayout';
+import ImageScanningIncompleteLabel from '../components/ImageScanningIncompleteLabelLayout';
 
 export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
@@ -179,7 +179,7 @@ function ImagesTable({
                                                     </Label>
                                                 )}
                                                 {(notes.length !== 0 || scanNotes.length !== 0) && (
-                                                    <ImageScanningErrorLabel
+                                                    <ImageScanningIncompleteLabel
                                                         imageNotes={notes}
                                                         scanNotes={scanNotes}
                                                     />
