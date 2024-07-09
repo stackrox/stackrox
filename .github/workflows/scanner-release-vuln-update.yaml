@@ -72,6 +72,13 @@ jobs:
       ROX_PRODUCT_VERSION: ${{ matrix.version }}
       ROX_PRODUCT_TAG: ${{ matrix.tag }}
     steps:
+    # Checkout to run ./.github/actions/{download,upload}-artifact-with-retry
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
     - name: Free up disk space
       shell: bash
       run: |
