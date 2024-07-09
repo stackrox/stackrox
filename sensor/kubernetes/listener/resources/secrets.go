@@ -260,20 +260,25 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	isGlobalPullSecret := secret.GetNamespace() == openshiftConfigNamespace && secret.GetName() == openshiftConfigPullSecret
 
 	newIntegrationSet := set.NewStringSet()
-	for registry, dce := range dockerConfig {
+	for registryAddress, dce := range dockerConfig {
+		registryAddr := strings.TrimSpace(registryAddress)
+		if registryAddr != registryAddress {
+			log.Warnf("Spaces have been trimmed from registry adress %q found in secret %s/%s",
+				registryAddress, secret.GetNamespace(), secret.GetName())
+		}
 		if fromDefaultSA {
 			// Store the registry credentials so Sensor can reach it.
-			err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
+			err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registryAddr, dce)
 			if err != nil {
-				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
+				log.Errorf("Unable to upsert registry %q into store: %v", registryAddr, err)
 			}
 
-			s.regStore.AddClusterLocalRegistryHost(registry)
+			s.regStore.AddClusterLocalRegistryHost(registryAddr)
 
 		} else if saName == "" {
 			// only send integrations to central that do not have the k8s SA annotation
 			// this will ignore secrets associated with OCP builder, deployer, etc. service accounts
-			ii, err := DockerConfigToImageIntegration(secret, registry, dce)
+			ii, err := DockerConfigToImageIntegration(secret, registryAddr, dce)
 			if err != nil {
 				log.Errorf("unable to create docker config for secret %s: %v", secret.GetName(), err)
 			} else if !managedcentral.IsCentralManaged() {
@@ -304,18 +309,18 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				// as namespace + secret name + registry.
 				var err error
 				if isGlobalPullSecret {
-					err = s.regStore.UpsertGlobalRegistry(context.Background(), registry, dce)
+					err = s.regStore.UpsertGlobalRegistry(context.Background(), registryAddr, dce)
 				} else {
-					err = s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
+					err = s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registryAddr, dce)
 				}
 				if err != nil {
-					log.Errorf("unable to upsert registry %q into store: %v", registry, err)
+					log.Errorf("unable to upsert registry %q into store: %v", registryAddr, err)
 				}
 			}
 		}
 
 		registries = append(registries, &storage.ImagePullSecret_Registry{
-			Name:     registry,
+			Name:     registryAddr,
 			Username: dce.Username,
 		})
 	}

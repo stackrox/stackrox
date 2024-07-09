@@ -27,6 +27,10 @@ export const WATCH_IMAGE_SUBMITTED = 'Watch Image Submitted';
 export const WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED = 'Workload CVE Entity Context View';
 export const WORKLOAD_CVE_FILTER_APPLIED = 'Workload CVE Filter Applied';
 export const WORKLOAD_CVE_DEFAULT_FILTERS_CHANGED = 'Workload CVE Default Filters Changed';
+export const WORKLOAD_CVE_DEFERRAL_EXCEPTION_REQUESTED =
+    'Workload CVE Deferral Exception Requested';
+export const WORKLOAD_CVE_FALSE_POSITIVE_EXCEPTION_REQUESTED =
+    'Workload CVE False Positive Exception Requested';
 export const COLLECTION_CREATED = 'Collection Created';
 export const VULNERABILITY_REPORT_CREATED = 'Vulnerability Report Created';
 export const VULNERABILITY_REPORT_DOWNLOAD_GENERATED = 'Vulnerability Report Download Generated';
@@ -34,7 +38,9 @@ export const VULNERABILITY_REPORT_SENT_MANUALLY = 'Vulnerability Report Sent Man
 
 // Node and Platform CVEs
 export const GLOBAL_SNOOZE_CVE = 'Global Snooze CVE';
+export const NODE_CVE_FILTER_APPLIED = 'Node CVE Filter Applied';
 export const NODE_CVE_ENTITY_CONTEXT_VIEWED = 'Node CVE Entity Context View';
+export const PLATFORM_CVE_FILTER_APPLIED = 'Platform CVE Filter Applied';
 export const PLATFORM_CVE_ENTITY_CONTEXT_VIEWED = 'Platform CVE Entity Context View';
 
 // cluster-init-bundles
@@ -54,27 +60,29 @@ export const LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES = 'Legacy Cluster Download Helm
  */
 type AnalyticsBoolean = 0 | 1;
 
-// search categories and type guards for tracking search filters on the Workload CVE pages
-export const searchCategoriesWithFilter = ['COMPONENT SOURCE', 'SEVERITY', 'FIXABLE'] as const;
+/**
+ * A curated list of filters that we would like to track both the filter category and the
+ * filter value. This list should exclude anything that could be considered sensitive or
+ * specific to a customer environment. This items in this list must also match the casing of
+ * the applied filter _exactly_, otherwise it will be tracked without the filter value.
+ */
+export const searchCategoriesWithFilter = [
+    'Component Source',
+    'SEVERITY',
+    'FIXABLE',
+    'CLUSTER CVE FIXABLE',
+    'CVSS',
+    'Node Top CVSS',
+] as const;
+
 export const isSearchCategoryWithFilter = tupleTypeGuard(searchCategoriesWithFilter);
 export type SearchCategoryWithFilter = UnionFrom<typeof searchCategoriesWithFilter>;
-
-export const searchCategoriesWithoutFilter = [
-    'CVE',
-    'IMAGE',
-    'COMPONENT',
-    'DEPLOYMENT',
-    'NAMESPACE',
-    'CLUSTER',
-] as const;
-export const isSearchCategoryWithoutFilter = tupleTypeGuard(searchCategoriesWithoutFilter);
-export type SearchCategoryWithoutFilter = UnionFrom<typeof searchCategoriesWithoutFilter>;
 
 /**
  * An AnalyticsEvent is either a simple string that represents the event name,
  * or an object with an event name and additional properties.
  */
-type AnalyticsEvent =
+export type AnalyticsEvent =
     | typeof CLUSTER_CREATED
     | typeof INVITE_USERS_MODAL_OPENED
     | typeof INVITE_USERS_SUBMITTED
@@ -87,7 +95,7 @@ type AnalyticsEvent =
               deployments: number;
           };
       }
-    /** Tracks each time network policies are genarated on Network Graph */
+    /** Tracks each time network policies are generated on Network Graph */
     | {
           event: typeof GENERATE_NETWORK_POLICIES;
           properties: {
@@ -130,16 +138,17 @@ type AnalyticsEvent =
           };
       }
     /**
-     * Tracks each time the user applies a filter on a Workload page.
-     * This is controlled by the main search bar on all Workload CVE pages.
+     * Tracks each time the user applies a filter on a VM page.
+     * This is controlled by the main search bar on all VM CVE pages.
      * We only track the value of the applied filter when it does not represent
      * specifics of a customer environment.
      */
     | {
-          event: typeof WORKLOAD_CVE_FILTER_APPLIED;
-          properties:
-              | { category: SearchCategoryWithFilter; filter: string }
-              | { category: SearchCategoryWithoutFilter };
+          event:
+              | typeof WORKLOAD_CVE_FILTER_APPLIED
+              | typeof NODE_CVE_FILTER_APPLIED
+              | typeof PLATFORM_CVE_FILTER_APPLIED;
+          properties: { category: SearchCategoryWithFilter; filter: string } | { category: string };
       }
     /**
      * Tracks each time the user changes the default filters on the Workload CVE overview page.
@@ -154,6 +163,16 @@ type AnalyticsEvent =
               CVE_STATUS_FIXABLE: AnalyticsBoolean;
               CVE_STATUS_NOT_FIXABLE: AnalyticsBoolean;
           };
+      }
+    | {
+          event: typeof WORKLOAD_CVE_DEFERRAL_EXCEPTION_REQUESTED;
+          properties:
+              | { expiryType: 'CUSTOM_DATE' | 'TIME'; expiryDays: number }
+              | { expiryType: 'ALL_CVE_FIXABLE' | 'ANY_CVE_FIXABLE' | 'INDEFINITE' };
+      }
+    | {
+          event: typeof WORKLOAD_CVE_FALSE_POSITIVE_EXCEPTION_REQUESTED;
+          properties: Record<string, never>;
       }
     /**
      * Tracks each time the user creates a collection.

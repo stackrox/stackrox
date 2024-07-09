@@ -22,6 +22,8 @@ import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 import { helperTextForName, helperTextForTime } from './useFormikScanConfig';
 
+import './ScanConfigOptions.css';
+
 function ScanConfigOptions(): ReactElement {
     const formik: FormikContextType<ScanConfigFormValues> = useFormikContext();
     function handleSelectChange(id: string, value: string): void {
@@ -49,7 +51,7 @@ function ScanConfigOptions(): ReactElement {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Form className="pf-v5-u-py-lg pf-v5-u-px-lg">
+            <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" id="scan-schedules-parameters">
                 <Stack hasGutter>
                     <StackItem>
                         <Stack hasGutter>
@@ -199,6 +201,8 @@ function ScanConfigOptions(): ReactElement {
                                                     onBlur: formik.handleBlur,
                                                     name: 'parameters.time',
                                                 }}
+                                                invalidFormatErrorMessage="" // error messaging is handled by FormLabelGroup
+                                                invalidMinMaxErrorMessage=""
                                             />
                                         </FormLabelGroup>
                                     </FlexItem>

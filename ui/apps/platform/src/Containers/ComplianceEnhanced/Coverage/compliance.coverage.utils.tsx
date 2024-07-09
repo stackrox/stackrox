@@ -14,14 +14,19 @@ import {
 import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import { SearchFilter } from 'types/search';
+import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 import { SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
-
-// Thresholds for compliance status
-const DANGER_THRESHOLD = 50;
-const WARNING_THRESHOLD = 75;
-
-type LabelColor = LabelProps['color'];
+import {
+    FAILING_LABEL_COLOR,
+    FAILING_VAR_COLOR,
+    MANUAL_LABEL_COLOR,
+    MANUAL_VAR_COLOR,
+    OTHER_LABEL_COLOR,
+    OTHER_VAR_COLOR,
+    PASSING_LABEL_COLOR,
+    PASSING_VAR_COLOR,
+} from './compliance.coverage.constants';
 
 export type ClusterStatusObject = {
     icon: ReactElement;
@@ -75,48 +80,6 @@ export function calculateCompliancePercentage(passCount: number, totalCount: num
     return totalCount > 0 ? Math.round((passCount / totalCount) * 100) : 0;
 }
 
-function getComplianceStatus(passPercentage: number): ComplianceStatus {
-    let status: ComplianceStatus = ComplianceStatus.SUCCESS;
-
-    if (passPercentage < DANGER_THRESHOLD) {
-        status = ComplianceStatus.DANGER;
-    } else if (passPercentage < WARNING_THRESHOLD) {
-        status = ComplianceStatus.WARNING;
-    }
-
-    return status;
-}
-
-export function getCompliancePfClassName(passPercentage: number): string {
-    const status = getComplianceStatus(passPercentage);
-
-    if (status === ComplianceStatus.DANGER) {
-        return 'pf-m-danger';
-    }
-    if (status === ComplianceStatus.WARNING) {
-        return 'pf-m-warning';
-    }
-    return '';
-}
-
-export function getComplianceLabelGroupColor(
-    passPercentage: number | undefined
-): LabelColor | undefined {
-    if (passPercentage === undefined) {
-        return undefined;
-    }
-
-    const status = getComplianceStatus(passPercentage);
-
-    if (status === ComplianceStatus.DANGER) {
-        return 'red';
-    }
-    if (status === ComplianceStatus.WARNING) {
-        return 'gold';
-    }
-    return 'blue';
-}
-
 export function sortCheckStats(items: ComplianceCheckStatusCount[]): ComplianceCheckStatusCount[] {
     const order: ComplianceCheckStatus[] = [
         'PASS',
@@ -137,84 +100,84 @@ const statusIconTextMap: Record<ComplianceCheckStatus, ClusterStatusObject> = {
     PASS: {
         icon: (
             <Icon>
-                <CheckCircleIcon color="var(--pf-v5-global--primary-color--100)" />
+                <CheckCircleIcon color={PASSING_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Pass',
         tooltipText: null,
-        color: 'blue',
+        color: PASSING_LABEL_COLOR,
     },
     FAIL: {
         icon: (
             <Icon>
-                <SecurityIcon color="var(--pf-v5-global--danger-color--100)" />
+                <SecurityIcon color={FAILING_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Fail',
         tooltipText: null,
-        color: 'red',
+        color: FAILING_LABEL_COLOR,
     },
     ERROR: {
         icon: (
             <Icon>
-                <ExclamationTriangleIcon color="var(--pf-v5-global--disabled-color--100)" />
+                <ExclamationTriangleIcon color={OTHER_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Error',
         tooltipText: 'Check ran successfully, but could not complete',
-        color: 'grey',
+        color: OTHER_LABEL_COLOR,
     },
     INFO: {
         icon: (
             <Icon>
-                <ExclamationCircleIcon color="var(--pf-v5-global--disabled-color--100)" />
+                <ExclamationCircleIcon color={OTHER_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Info',
         tooltipText:
             'Check was successful and found something not severe enough to be considered an error',
-        color: 'grey',
+        color: OTHER_LABEL_COLOR,
     },
     MANUAL: {
         icon: (
             <Icon>
-                <WrenchIcon color="var(--pf-v5-global--warning-color--100)" />
+                <WrenchIcon color={MANUAL_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Manual',
         tooltipText:
             'Manual check requires additional organizational or technical knowledge that is not automatable',
-        color: 'gold',
+        color: MANUAL_LABEL_COLOR,
     },
     NOT_APPLICABLE: {
         icon: (
             <Icon>
-                <BanIcon color="var(--pf-v5-global--disabled-color--100)" />
+                <BanIcon color={OTHER_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Not Applicable',
         tooltipText: 'Check did not run as it is not applicable',
-        color: 'grey',
+        color: OTHER_LABEL_COLOR,
     },
     INCONSISTENT: {
         icon: (
             <Icon>
-                <UnknownIcon color="var(--pf-v5-global--disabled-color--100)" />
+                <UnknownIcon color={OTHER_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Inconsistent',
         tooltipText: 'Different nodes report different results',
-        color: 'grey',
+        color: OTHER_LABEL_COLOR,
     },
     UNSET_CHECK_STATUS: {
         icon: (
             <Icon>
-                <ResourcesEmptyIcon color="var(--pf-v5-global--disabled-color--100)" />
+                <ResourcesEmptyIcon color={OTHER_VAR_COLOR} />
             </Icon>
         ),
         statusText: 'Unset',
         tooltipText: '',
-        color: 'grey',
+        color: OTHER_LABEL_COLOR,
     },
 };
 
@@ -251,4 +214,8 @@ export function isScanConfigurationDisabled(
     }
 
     return false;
+}
+
+export function getTimeDifferenceAsPhrase(iso8601: string | null, date: Date) {
+    return iso8601 ? getDistanceStrictAsPhrase(iso8601, date) : 'Scanning now';
 }

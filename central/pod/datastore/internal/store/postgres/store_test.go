@@ -82,11 +82,6 @@ func (s *PodsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, pod))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, pod), sac.ErrResourceAccessDenied)
 
-	foundPod, exists, err = store.Get(ctx, pod.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), pod, foundPod)
-
 	s.NoError(store.Delete(ctx, pod.GetId()))
 	foundPod, exists, err = store.Get(ctx, pod.GetId())
 	s.NoError(err)

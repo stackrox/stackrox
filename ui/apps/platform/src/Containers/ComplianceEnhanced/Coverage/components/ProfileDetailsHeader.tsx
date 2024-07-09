@@ -1,17 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
+    ExpandableSectionVariant,
+    ExpandableSection,
     Flex,
     FlexItem,
-    Title,
-    Text,
-    LabelGroup,
     Label,
-    Modal,
-    ModalVariant,
-    Button,
+    LabelGroup,
+    Text,
+    Title,
     Skeleton,
 } from '@patternfly/react-core';
-import { InfoCircleIcon } from '@patternfly/react-icons';
 
 import { ComplianceProfileSummary } from 'services/ComplianceCommon';
 
@@ -26,12 +24,16 @@ function ProfileDetailsHeader({
     profileDetails,
     profileName,
 }: ProfileDetailsHeaderProps) {
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isExpanded, setIsExpanded] = React.useState(false);
+
+    function onToggleDescription(_event: React.MouseEvent, isExpanded: boolean) {
+        setIsExpanded(isExpanded);
+    }
 
     if (isLoading) {
         return (
             <Flex
-                className="pf-v5-u-p-lg pf-v5-u-background-color-100"
+                className="pf-v5-u-p-md pf-v5-u-background-color-100"
                 direction={{ default: 'column' }}
             >
                 <Title headingLevel="h2">{profileName}</Title>
@@ -44,59 +46,42 @@ function ProfileDetailsHeader({
         const { description, productType, profileVersion, title } = profileDetails;
 
         return (
-            <>
+            <Flex
+                className="pf-v5-u-p-md pf-v5-u-background-color-100"
+                direction={{ default: 'column' }}
+            >
                 <Flex
-                    className="pf-v5-u-p-lg pf-v5-u-background-color-100"
-                    direction={{ default: 'column' }}
+                    alignItems={{ default: 'alignItemsFlexStart' }}
+                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
                 >
-                    <Flex
-                        justifyContent={{ default: 'justifyContentSpaceBetween' }}
-                        alignItems={{ default: 'alignItemsFlexStart' }}
-                    >
-                        <FlexItem>
-                            <Title headingLevel="h2">{profileName}</Title>
-                        </FlexItem>
-                        <FlexItem>
-                            <LabelGroup numLabels={4}>
-                                {profileVersion ? (
-                                    <Label variant="filled">
-                                        Profile version: {profileVersion}
-                                    </Label>
-                                ) : null}
-                                <Label variant="filled">Applicability: {productType}</Label>
-                                <Label
-                                    color="blue"
-                                    icon={<InfoCircleIcon />}
-                                    onClick={() => setIsModalOpen(!isModalOpen)}
-                                >
-                                    View description
-                                </Label>
-                            </LabelGroup>
-                        </FlexItem>
-                    </Flex>
                     <FlexItem>
-                        <Text className="pf-v5-u-font-size-sm">{title}</Text>
+                        <Title headingLevel="h2">{profileName}</Title>
+                    </FlexItem>
+                    <FlexItem>
+                        <LabelGroup numLabels={4}>
+                            {profileVersion ? (
+                                <Label variant="filled">Profile version: {profileVersion}</Label>
+                            ) : null}
+                            <Label variant="filled">Applicability: {productType}</Label>
+                        </LabelGroup>
                     </FlexItem>
                 </Flex>
-
-                <Modal
-                    variant={ModalVariant.medium}
-                    title={profileName}
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(!isModalOpen)}
-                    actions={[
-                        <Button
-                            key="close"
-                            variant="primary"
-                            onClick={() => setIsModalOpen(!isModalOpen)}
-                        >
-                            Close
-                        </Button>,
-                    ]}
-                >
-                    {description}
-                </Modal>
-            </>
+                <FlexItem>
+                    <Text className="pf-v5-u-font-size-sm">{title}</Text>
+                </FlexItem>
+                <FlexItem>
+                    <ExpandableSection
+                        className="pf-v5-u-font-size-sm"
+                        isExpanded={isExpanded}
+                        toggleText={isExpanded ? 'Show less' : 'Show more'}
+                        truncateMaxLines={5}
+                        variant={ExpandableSectionVariant.truncate}
+                        onToggle={onToggleDescription}
+                    >
+                        {description}
+                    </ExpandableSection>
+                </FlexItem>
+            </Flex>
         );
     }
 

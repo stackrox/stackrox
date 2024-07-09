@@ -56,7 +56,7 @@ const (
 )
 
 const (
-	defaultAdmissionControllerTimeout = 3
+	defaultAdmissionControllerTimeout = 10
 )
 
 var (

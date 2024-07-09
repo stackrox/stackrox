@@ -122,6 +122,8 @@ type apiImpl struct {
 	listenersLock      sync.Mutex
 	listeners          []serverAndListener
 
+	tlsHandshakeTimeout time.Duration
+
 	grpcServer         *grpc.Server
 	shutdownInProgress *atomic.Bool
 }
@@ -157,10 +159,11 @@ func NewAPI(config Config) API {
 	var shutdownRequested atomic.Bool
 	shutdownRequested.Store(false)
 	return &apiImpl{
-		config:             config,
-		requestInfoHandler: requestinfo.NewRequestInfoHandler(),
-		shutdownInProgress: &shutdownRequested,
-		listenersLock:      sync.Mutex{},
+		config:              config,
+		requestInfoHandler:  requestinfo.NewRequestInfoHandler(),
+		shutdownInProgress:  &shutdownRequested,
+		listenersLock:       sync.Mutex{},
+		tlsHandshakeTimeout: env.TLSHandshakeTimeout.DurationSetting(),
 	}
 }
 
@@ -413,7 +416,7 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 	}
 
 	a.grpcServer = grpc.NewServer(
-		grpc.Creds(credsFromConn{}),
+		grpc.Creds(credsFromConn{a.tlsHandshakeTimeout}),
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(a.streamInterceptors()...),
 		),

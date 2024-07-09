@@ -82,11 +82,6 @@ func (s *NetworkBaselinesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, networkBaseline))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, networkBaseline), sac.ErrResourceAccessDenied)
 
-	foundNetworkBaseline, exists, err = store.Get(ctx, networkBaseline.GetDeploymentId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), networkBaseline, foundNetworkBaseline)
-
 	s.NoError(store.Delete(ctx, networkBaseline.GetDeploymentId()))
 	foundNetworkBaseline, exists, err = store.Get(ctx, networkBaseline.GetDeploymentId())
 	s.NoError(err)

@@ -109,7 +109,7 @@ func getTestImages() ([]*storage.Image, error) {
 	defer func() { _ = zipReader.Close() }()
 
 	jsonReader := json.NewDecoder(zipReader)
-	unmarshaler := jsonpb.Unmarshaler{}
+	unmarshaler := jsonpb.Unmarshaler{AllowUnknownFields: true}
 
 	images := make([]*storage.Image, 0, 500)
 

@@ -16,6 +16,7 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageComponentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
@@ -431,4 +432,47 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 			require.ElementsMatch(t, tc.expected, results)
 		})
 	}
+}
+
+func TestImageLabelAutoCompleteSearch(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	testGormDB := testDB.GetGormDB(t)
+	defer pgtest.CloseGormDB(t, testGormDB)
+	defer testDB.Teardown(t)
+
+	imageDatastore := imageDS.GetTestPostgresDataStore(t, testDB.DB)
+	ctx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
+
+	resolver, _ := SetupTestResolver(t, imageDatastore)
+	allowAllCtx := SetAuthorizerOverride(ctx, allow.Anonymous())
+
+	// Case: nil labels
+	image := fixtures.GetImage()
+	image.GetMetadata().GetV1().Labels = nil
+
+	require.NoError(t, imageDatastore.UpsertImage(ctx, image))
+
+	request := searchRequest{
+		Query:      "Image Label:",
+		Categories: &[]string{"IMAGES"},
+	}
+	results, err := resolver.SearchAutocomplete(allowAllCtx, request)
+	require.NoError(t, err)
+	require.ElementsMatch(t, []string{}, results)
+
+	// Case: Non-empty labels
+	image.GetMetadata().GetV1().Labels = map[string]string{
+		"k1": "v1",
+		"k2": "v2",
+	}
+
+	require.NoError(t, imageDatastore.UpsertImage(ctx, image))
+
+	request = searchRequest{
+		Query:      "Image Label:",
+		Categories: &[]string{"IMAGES"},
+	}
+	results, err = resolver.SearchAutocomplete(allowAllCtx, request)
+	require.NoError(t, err)
+	require.ElementsMatch(t, []string{"k1=v1", "k2=v2"}, results)
 }

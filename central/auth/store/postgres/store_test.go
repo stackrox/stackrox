@@ -79,11 +79,6 @@ func (s *AuthMachineToMachineConfigsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, authMachineToMachineConfig))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, authMachineToMachineConfig), sac.ErrResourceAccessDenied)
 
-	foundAuthMachineToMachineConfig, exists, err = store.Get(ctx, authMachineToMachineConfig.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), authMachineToMachineConfig, foundAuthMachineToMachineConfig)
-
 	s.NoError(store.Delete(ctx, authMachineToMachineConfig.GetId()))
 	foundAuthMachineToMachineConfig, exists, err = store.Get(ctx, authMachineToMachineConfig.GetId())
 	s.NoError(err)

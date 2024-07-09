@@ -79,6 +79,7 @@ func TestCASetup(t *testing.T) {
 			if c.url == "https://untrusted-root.badssl.com" && os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
 				t.Skip("temporarily skipped on OCP. TODO(ROX-24688)")
 			}
+			t.Skip("temporarily skipped as badssl.com is unstable. TODO(ROX-14078)")
 			internalServiceTimeout := 20 * time.Second
 			testTimeoutPadding := 500 * time.Millisecond
 			ctx, cancel := context.WithTimeout(context.Background(), internalServiceTimeout+testTimeoutPadding)

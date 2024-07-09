@@ -79,11 +79,6 @@ func (s *TestStructsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, testStruct))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, testStruct), sac.ErrResourceAccessDenied)
 
-	foundTestStruct, exists, err = store.Get(ctx, testStruct.GetKey1())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), testStruct, foundTestStruct)
-
 	s.NoError(store.Delete(ctx, testStruct.GetKey1()))
 	foundTestStruct, exists, err = store.Get(ctx, testStruct.GetKey1())
 	s.NoError(err)

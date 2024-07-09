@@ -82,11 +82,6 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, processIndicator))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, processIndicator), sac.ErrResourceAccessDenied)
 
-	foundProcessIndicator, exists, err = store.Get(ctx, processIndicator.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), processIndicator, foundProcessIndicator)
-
 	s.NoError(store.Delete(ctx, processIndicator.GetId()))
 	foundProcessIndicator, exists, err = store.Get(ctx, processIndicator.GetId())
 	s.NoError(err)

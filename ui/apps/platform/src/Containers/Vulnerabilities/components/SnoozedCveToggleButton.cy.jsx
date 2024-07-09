@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import SnoozeCveToggleButton from './SnoozedCveToggleButton';
 
-function Wrapper({ startingSearchFilter = {} }) {
+function Wrapper({ startingSearchFilter = {}, snoozedCveCount }) {
     const [searchFilter, setSearchFilter] = useState(startingSearchFilter);
 
     return (
@@ -14,7 +14,11 @@ function Wrapper({ startingSearchFilter = {} }) {
                     </div>
                 ))}
             </div>
-            <SnoozeCveToggleButton searchFilter={searchFilter} setSearchFilter={setSearchFilter} />
+            <SnoozeCveToggleButton
+                searchFilter={searchFilter}
+                setSearchFilter={setSearchFilter}
+                snoozedCveCount={snoozedCveCount}
+            />
         </>
     );
 }
@@ -57,5 +61,23 @@ describe(Cypress.spec.relative, () => {
         cy.findByText('Show observed CVEs').click();
         cy.get(snoozedFilterSelector).should('not.exist');
         cy.get(severityFilterSelector).should('exist');
+    });
+
+    it('should correctly display the current snoozed CVE count', () => {
+        // Badge should not show when no count is provided
+        cy.mount(<Wrapper snoozedCveCount={undefined} />);
+        cy.get('button .pf-v5-c-badge').should('not.exist');
+
+        // Badge should not show when count is 0
+        cy.mount(<Wrapper snoozedCveCount={0} />);
+        cy.get('button .pf-v5-c-badge').should('not.exist');
+
+        // Badge should show when count is > 0
+        cy.mount(<Wrapper snoozedCveCount={1} />);
+        cy.get('button .pf-v5-c-badge').contains('1');
+
+        // Badge should not show when viewing snoozed CVEs
+        cy.findByText('Show snoozed CVEs').click();
+        cy.get('button .pf-v5-c-badge').should('not.exist');
     });
 });

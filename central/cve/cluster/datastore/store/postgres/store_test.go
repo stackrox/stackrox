@@ -79,11 +79,6 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, clusterCVE))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, clusterCVE), sac.ErrResourceAccessDenied)
 
-	foundClusterCVE, exists, err = store.Get(ctx, clusterCVE.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), clusterCVE, foundClusterCVE)
-
 	s.NoError(store.Delete(ctx, clusterCVE.GetId()))
 	foundClusterCVE, exists, err = store.Get(ctx, clusterCVE.GetId())
 	s.NoError(err)

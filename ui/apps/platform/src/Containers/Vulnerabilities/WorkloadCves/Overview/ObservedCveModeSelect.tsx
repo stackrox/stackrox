@@ -25,6 +25,7 @@ function ObservedCveModeSelect({
     setObservedCveMode,
 }: ObservedCveModeSelectProps) {
     const [isCveModeSelectOpen, setIsCveModeSelectOpen] = useState(false);
+
     const isViewingWithCves = observedCveMode === 'WITH_CVES';
 
     const menuToggleIcon = isViewingWithCves ? <SecurityIcon /> : <UnknownIcon />;

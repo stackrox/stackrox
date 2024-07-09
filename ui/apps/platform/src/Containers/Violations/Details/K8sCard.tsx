@@ -8,7 +8,6 @@ import {
     CardExpandableContent,
     CardBody,
     DescriptionList,
-    Divider,
 } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
@@ -33,16 +32,18 @@ function K8sCard({ message, keyValueAttrs = { attrs: [] }, time }: K8sCardProps)
     }
 
     return (
-        <div className="pf-v5-u-pb-md" key={message}>
-            <Card isExpanded={isExpanded} id={message} isFlat>
-                <CardHeader onExpand={onExpand}>
+        <div className="pf-v5-u-pb-md">
+            <Card isExpanded={isExpanded} isFlat>
+                <CardHeader
+                    onExpand={onExpand}
+                    toggleButtonProps={{ 'aria-expanded': isExpanded, 'aria-label': 'Details' }}
+                >
                     <CardTitle>{message}</CardTitle>
                 </CardHeader>
                 <CardExpandableContent>
                     <CardBody className="pf-v5-u-mt-lg">
                         <DescriptionList isHorizontal>
                             <DescriptionListItem term="Time" desc={format(time, dateTimeFormat)} />
-                            {keyValueAttrs.attrs?.length > 0 && <Divider component="div" />}
                             {keyValueAttrs.attrs.map(({ key, value }) => (
                                 <DescriptionListItem
                                     term={capitalize(key)}

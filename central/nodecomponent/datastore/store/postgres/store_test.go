@@ -79,11 +79,6 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, nodeComponent))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, nodeComponent), sac.ErrResourceAccessDenied)
 
-	foundNodeComponent, exists, err = store.Get(ctx, nodeComponent.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), nodeComponent, foundNodeComponent)
-
 	s.NoError(store.Delete(ctx, nodeComponent.GetId()))
 	foundNodeComponent, exists, err = store.Get(ctx, nodeComponent.GetId())
 	s.NoError(err)

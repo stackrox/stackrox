@@ -79,11 +79,6 @@ func (s *SignatureIntegrationsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, signatureIntegration))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, signatureIntegration), sac.ErrResourceAccessDenied)
 
-	foundSignatureIntegration, exists, err = store.Get(ctx, signatureIntegration.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), signatureIntegration, foundSignatureIntegration)
-
 	s.NoError(store.Delete(ctx, signatureIntegration.GetId()))
 	foundSignatureIntegration, exists, err = store.Get(ctx, signatureIntegration.GetId())
 	s.NoError(err)

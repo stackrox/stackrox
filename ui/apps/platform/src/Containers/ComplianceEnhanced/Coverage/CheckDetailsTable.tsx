@@ -13,7 +13,6 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { ClusterCheckStatus } from 'services/ComplianceResultsService';
-import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { TableUIState } from 'utils/getTableUIState';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
@@ -25,7 +24,10 @@ import {
 import { SearchFilter } from 'types/search';
 
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
-import { getClusterResultsStatusObject } from './compliance.coverage.utils';
+import {
+    getClusterResultsStatusObject,
+    getTimeDifferenceAsPhrase,
+} from './compliance.coverage.utils';
 import { CHECK_STATUS_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
 import StatusIcon from './components/StatusIcon';
@@ -126,7 +128,8 @@ function CheckDetailsTable({
                         title: 'There was an error loading results for this check',
                     }}
                     emptyProps={{
-                        message: 'No results found for this check',
+                        message:
+                            'If you have recently created a scan schedule, please wait a few minutes for the results to become available.',
                     }}
                     filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) => (
@@ -138,7 +141,7 @@ function CheckDetailsTable({
                                     status,
                                 } = clusterInfo;
                                 const clusterStatusObject = getClusterResultsStatusObject(status);
-                                const firstDiscoveredAsPhrase = getDistanceStrictAsPhrase(
+                                const lastScanTimeAsPhrase = getTimeDifferenceAsPhrase(
                                     lastScanTime,
                                     currentDatetime
                                 );
@@ -158,7 +161,7 @@ function CheckDetailsTable({
                                                 {clusterName}
                                             </Link>
                                         </Td>
-                                        <Td dataLabel="Last scanned">{firstDiscoveredAsPhrase}</Td>
+                                        <Td dataLabel="Last scanned">{lastScanTimeAsPhrase}</Td>
                                         <Td dataLabel="Compliance status">
                                             <StatusIcon clusterStatusObject={clusterStatusObject} />
                                         </Td>

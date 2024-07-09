@@ -28,9 +28,9 @@ const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesWorkloa
 
 function WorkloadCvesPage() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const { hasReadAccess } = usePermissions();
     const hasReadAccessForIntegration = hasReadAccess('Integration');
-    const hasReadAccessForNamespaces = hasReadWriteAccess('Namespace');
+    const hasReadAccessForNamespaces = hasReadAccess('Namespace');
 
     return (
         <>

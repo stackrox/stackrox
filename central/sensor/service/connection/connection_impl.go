@@ -6,6 +6,7 @@ import (
 	"math"
 
 	"github.com/pkg/errors"
+	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	delegatedRegistryConfigConvert "github.com/stackrox/rox/central/delegatedregistryconfig/convert"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/util/imageintegration"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
@@ -30,9 +31,11 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -72,6 +75,7 @@ type sensorConnection struct {
 	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager
 	imageIntegrationMgr        common.ImageIntegrationManager
 	complianceOperatorMgr      common.ComplianceOperatorManager
+	scanSettingDS              compScanSetting.DataStore
 
 	sensorHello  *central.SensorHello
 	capabilities set.Set[centralsensor.SensorCapability]
@@ -111,6 +115,7 @@ func newConnection(ctx context.Context,
 		delegatedRegistryConfigMgr: delegatedRegistryConfigMgr,
 		imageIntegrationMgr:        imageIntegrationMgr,
 		complianceOperatorMgr:      complianceOperatorMgr,
+		scanSettingDS:              compScanSetting.Singleton(),
 
 		sensorHello: sensorHello,
 		capabilities: set.NewSet(sliceutils.
@@ -500,6 +505,61 @@ func (c *sensorConnection) getClusterConfigMsg(ctx context.Context) (*central.Ms
 	}, nil
 }
 
+func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*central.MsgToSensor, error) {
+	_, exists, err := c.clusterMgr.GetCluster(ctx, c.clusterID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Errorf("could not pull config for cluster %q because it does not exist", c.clusterID)
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, c.clusterID).ProtoQuery()
+	scanConfigs, err := c.scanSettingDS.GetScanConfigurations(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	var reformattedConfigs []*central.ApplyComplianceScanConfigRequest
+	for _, scanConfig := range scanConfigs {
+		var profiles []string
+		for _, profile := range scanConfig.GetProfiles() {
+			profiles = append(profiles, profile.GetProfileName())
+		}
+		cron, err := schedule.ConvertToCronTab(scanConfig.GetSchedule())
+		if err != nil {
+			return nil, err
+		}
+		scanConfigRequest := central.ApplyComplianceScanConfigRequest{
+			ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
+				UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
+					ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
+						ScanName:               scanConfig.GetScanConfigName(),
+						Profiles:               profiles,
+						StrictNodeScan:         scanConfig.GetStrictNodeScan(),
+						AutoApplyRemediations:  scanConfig.GetAutoApplyRemediations(),
+						AutoUpdateRemediations: scanConfig.GetAutoUpdateRemediations(),
+					},
+					Cron: cron,
+				},
+			},
+		}
+		reformattedConfigs = append(reformattedConfigs, &scanConfigRequest)
+	}
+
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ComplianceRequest{
+			ComplianceRequest: &central.ComplianceRequest{
+				Request: &central.ComplianceRequest_SyncScanConfigs{
+					SyncScanConfigs: &central.SyncComplianceScanConfigRequest{
+						ScanConfigs: reformattedConfigs,
+					},
+				},
+			},
+		},
+	}, nil
+}
+
 func (c *sensorConnection) getAuditLogSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
 	cluster, exists, err := c.clusterMgr.GetCluster(ctx, c.clusterID)
 	if err != nil {
@@ -692,6 +752,18 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		// Send the audit log state to sensor even if the user has it disabled (that's set in dynamic config). When enabled, sensor will use it correctly
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync audit log file state to cluster %q", c.clusterID)
+		}
+	}
+
+	if features.ComplianceEnhancements.Enabled() && connectionCapabilities.Contains(centralsensor.ComplianceV2ScanConfigSync) {
+		log.Infof("Sensor (%s) can sync scan configuration: sending sending scan configuration", c.clusterID)
+		scanMsg, err := c.getScanConfigurationMsg(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get scan config for %q", c.clusterID)
+		}
+		log.Infof("sending %d scan configs to sensor", len(scanMsg.GetComplianceRequest().GetSyncScanConfigs().GetScanConfigs()))
+		if err := server.Send(scanMsg); err != nil {
+			return errors.Wrapf(err, "unable to sync config to cluster %q", c.clusterID)
 		}
 	}
 

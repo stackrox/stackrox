@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -594,9 +595,9 @@ func (m *deploymentMatcher) Matches(target interface{}) bool {
 			return m.acceptableNumberOfMismatches >= 0
 		}
 
-		if !protoutils.SlicesEqual(m.expectedExposureInfos, deployment.GetPorts()[0].GetExposureInfos()) {
-			diff := cmp.Diff(m.expectedExposureInfos, deployment.GetPorts()[0].GetExposureInfos())
-			m.error = fmt.Sprintf("Exposure info differs: %s", diff)
+		infos := deployment.GetPorts()[0].GetExposureInfos()
+		if !protoutils.SlicesEqual(m.expectedExposureInfos, infos) {
+			m.error = fmt.Sprintf("Exposure info differs: %+v %+v", m.expectedExposureInfos, infos)
 			m.acceptableNumberOfMismatches--
 			return m.acceptableNumberOfMismatches >= 0
 		}
@@ -622,8 +623,9 @@ func (m *detectionObjectMatcher) Matches(target interface{}) bool {
 		return false
 	}
 
-	if !cmp.Equal(m.expected, event.DetectorMessages) {
-		m.error = fmt.Sprintf("received detection deployment doesn't match expected: %s", cmp.Diff(m.expected, event.ReprocessDeployments))
+	diff := cmp.Diff(m.expected, event.DetectorMessages, cmpopts.IgnoreUnexported(storage.Deployment{}))
+	if len(diff) != 0 {
+		m.error = fmt.Sprintf("received detection deployment doesn't match expected: %s", diff)
 		m.acceptableNumberOfMismatches--
 		return m.acceptableNumberOfMismatches >= 0
 	}

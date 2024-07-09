@@ -4,12 +4,9 @@ import org.javers.core.Javers
 import org.javers.core.JaversBuilder
 import org.javers.core.diff.ListCompareAlgorithm
 
-import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.NodeOuterClass.Node
 
-import common.Constants
-import objects.Namespace
 import services.ClusterService
 import services.NamespaceService
 import services.NodeService
@@ -117,57 +114,64 @@ class SummaryTest extends BaseSpecification {
         Assume.assumeFalse(ClusterService.isOpenShift4())
 
         given:
-        "fetch the list of namespace"
+        "ACS and Orchestrator have the same namespaces"
+        List<String> orchestratorNamespaces = new ArrayList<>()
+        Map<String, String> stackroxNamespaces
+        withRetry(3, 5) {
+            stackroxNamespaces = new HashMap<>()
+            orchestratorNamespaces = orchestrator.getNamespaces()
 
-        List<Namespace> orchestratorNamespaces = orchestrator.getNamespaceDetails()
-        Namespace qaNamespace = orchestratorNamespaces.find {
-            it.name == Constants.ORCHESTRATOR_NAMESPACE
-        }
-        NamespaceService.waitForNamespace(qaNamespace.uid)
-
-        List<NamespaceServiceOuterClass.Namespace> stackroxNamespaces = NamespaceService.getNamespaces()
-
-        expect:
-        "verify Namespace Details"
-        assert stackroxNamespaces.size() == orchestratorNamespaces.size()
-        Boolean diff = false
-        for (NamespaceServiceOuterClass.Namespace stackroxNamespace : stackroxNamespaces) {
-            Namespace orchestratorNamespace = orchestratorNamespaces.find {
-                it.uid == stackroxNamespace.metadata.id
+            NamespaceService.getNamespaces().collect {
+                stackroxNamespaces.put(it.metadata.name, it.metadata.id)
             }
-            def start = System.currentTimeMillis()
-            while (stackroxNamespace.numDeployments != orchestratorNamespace.deploymentCount.size() &&
-                (System.currentTimeMillis() - start) < (30 * 1000)) {
-                stackroxNamespace = NamespaceService.getNamespace(stackroxNamespace.metadata.id)
-                log.info "There is a difference in the deployment count for namespace "+
-                        stackroxNamespace.metadata.name
-                log.info "StackRox has ${stackroxNamespace.numDeployments}, "+
-                        "the orchestrator has ${orchestratorNamespace.deploymentCount.size()}"
-                log.info "will retry to find equivalence in 5 seconds"
-                sleep(5000)
-            }
-            if (stackroxNamespace.numDeployments != orchestratorNamespace.deploymentCount.size()) {
-                log.info "There is a difference in the deployment count for namespace "+
-                        stackroxNamespace.metadata.name
-                log.info "StackRox has ${stackroxNamespace.numDeployments}, "+
-                        "the orchestrator has ${orchestratorNamespace.deploymentCount.size()}"
-                log.info "This diff may help with debug, however deployment names may be different between APIs"
-                List<String> stackroxDeploymentNames = Services.getDeployments(
-                        SearchServiceOuterClass.RawQuery.newBuilder().setQuery(
-                                "Namespace:${ stackroxNamespace.metadata.name }").build()
-                )*.name
+            if (stackroxNamespaces.keySet().size() != orchestratorNamespaces.size()) {
+                log.info "There is a difference in the namespace count"
+                log.info "Stackrox has ${stackroxNamespaces.keySet().size()}, " +
+                        "the orchestrator has ${orchestratorNamespaces.size()}"
+                log.info "In this diff, 'removed' means 'missing in orchestrator but given in ACS', " +
+                        "whereas 'added' - the other way round"
                 Javers javers = JaversBuilder.javers()
                         .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
                         .build()
-                log.info javers.compare(stackroxDeploymentNames, orchestratorNamespace.deploymentCount).prettyPrint()
-                diff = true
+                log.info javers.compare(stackroxNamespaces.keySet().sort(), orchestratorNamespaces.sort())
+                        .prettyPrint()
             }
-            assert stackroxNamespace.metadata.clusterId == ClusterService.getClusterId()
-            assert stackroxNamespace.metadata.name == orchestratorNamespace.name
-            assert stackroxNamespace.metadata.labelsMap == orchestratorNamespace.labels
-            assert stackroxNamespace.numSecrets == orchestratorNamespace.secretsCount
-            assert stackroxNamespace.numNetworkPolicies == orchestratorNamespace.networkPolicyCount
+            assert stackroxNamespaces.keySet().sort() == orchestratorNamespaces.sort()
+            assert !orchestratorNamespaces.isEmpty()
         }
-        assert !diff, "See diff(s) above"
+        expect:
+        "Namespace details should match the resources in the orchestrator"
+        for (String ns : orchestratorNamespaces) {
+            withRetry(5, 5) {
+                // Retrieve the namespace details from ACS and the orchestrator
+                def orchestratorNamespaceDetails = orchestrator.getNamespaceDetailsByName(ns)
+                def stackroxNamespaceDetails = NamespaceService.getNamespace(stackroxNamespaces.get(ns))
+
+                log.info "Comparing namespace ${ns}"
+                if (stackroxNamespaceDetails.numDeployments != orchestratorNamespaceDetails.deploymentCount.size()) {
+                    log.info "There is a difference in the deployment count for namespace ${ns}"
+                    log.info "Stackrox has ${stackroxNamespaceDetails.numDeployments}, " +
+                            "the orchestrator has ${orchestratorNamespaceDetails.deploymentCount.size()}"
+                    log.info "This diff may help with debug, however deployment names may be different between APIs"
+                    log.info "In this diff, 'removed' means 'missing in orchestrator but given in ACS', " +
+                            "whereas 'added' - the other way round"
+                    List<String> stackroxDeploymentNames = Services.getDeployments(
+                            SearchServiceOuterClass.RawQuery.newBuilder().setQuery(
+                                    "Namespace:${ stackroxNamespaceDetails.metadata.name }").build()
+                    )*.name
+                    Javers javers = JaversBuilder.javers()
+                            .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
+                            .build()
+                    log.info javers.compare(stackroxDeploymentNames, orchestratorNamespaceDetails.deploymentCount)
+                            .prettyPrint()
+                }
+                assert stackroxNamespaceDetails.numDeployments == orchestratorNamespaceDetails.deploymentCount.size()
+                assert stackroxNamespaceDetails.metadata.clusterId == ClusterService.getClusterId()
+                assert stackroxNamespaceDetails.metadata.name == orchestratorNamespaceDetails.name
+                assert stackroxNamespaceDetails.metadata.labelsMap == orchestratorNamespaceDetails.labels
+                assert stackroxNamespaceDetails.numSecrets == orchestratorNamespaceDetails.secretsCount
+                assert stackroxNamespaceDetails.numNetworkPolicies == orchestratorNamespaceDetails.networkPolicyCount
+            }
+        }
     }
 }

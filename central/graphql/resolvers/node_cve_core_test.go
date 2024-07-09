@@ -61,6 +61,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVEsEmpty() {
 	q := &PaginatedQuery{}
 	expectedQ, err := q.AsV1QueryOrEmpty()
 	s.Require().NoError(err)
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 
 	s.nodeCVEView.EXPECT().Get(s.ctx, expectedQ).Return(nil, nil)
 	response, err := s.resolver.NodeCVEs(s.ctx, *q)
@@ -72,6 +73,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVEsNonEmpty() {
 	q := &PaginatedQuery{}
 	expectedQ, err := q.AsV1QueryOrEmpty()
 	s.Require().NoError(err)
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 
 	expected := []nodecve.CveCore{
 		nodeCVEViewMock.NewMockCveCore(s.mockCtrl),
@@ -91,6 +93,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVEsWithQuery() {
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.CVE, "cve-2022-xyz").
 		WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 
 	expected := []nodecve.CveCore{
 		nodeCVEViewMock.NewMockCveCore(s.mockCtrl),
@@ -120,6 +123,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVEsWithPaginatedQuery() {
 			search.NewSortOption(search.NodeTopCVSS).AggregateBy(aggregatefunc.Max, false),
 		).Limit(math.MaxInt32),
 	).ProtoQuery()
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 	expected := []nodecve.CveCore{
 		nodeCVEViewMock.NewMockCveCore(s.mockCtrl),
 		nodeCVEViewMock.NewMockCveCore(s.mockCtrl),
@@ -148,6 +152,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVECount() {
 	q := &RawQuery{}
 	expectedQ, err := q.AsV1QueryOrEmpty()
 	s.Require().NoError(err)
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 
 	s.nodeCVEView.EXPECT().Count(s.ctx, expectedQ).Return(11, nil)
 	response, err := s.resolver.NodeCVECount(s.ctx, *q)
@@ -160,6 +165,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountWithQuery() {
 		Query: pointers.String("Node:node"),
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.Node, "node").ProtoQuery()
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 
 	s.nodeCVEView.EXPECT().Count(s.ctx, expectedQ).Return(3, nil)
 	response, err := s.resolver.NodeCVECount(s.ctx, *q)
@@ -171,6 +177,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountWithInternalError() {
 	q := &RawQuery{}
 	expectedQ, err := q.AsV1QueryOrEmpty()
 	s.Require().NoError(err)
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 
 	s.nodeCVEView.EXPECT().Count(s.ctx, expectedQ).Return(0, errox.ServerError)
 	response, err := s.resolver.NodeCVECount(s.ctx, *q)
@@ -266,6 +273,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverity() {
 	q := &RawQuery{}
 	expectedQ, err := q.AsV1QueryOrEmpty()
 	s.Require().NoError(err)
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 	cbs := nodecve.NewCountByNodeCVESeverity(7, 3, 6, 2, 5, 1, 4, 0)
 
 	s.nodeCVEView.EXPECT().CountBySeverity(s.ctx, expectedQ).Return(cbs, nil)
@@ -298,6 +306,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverityWithQuery() {
 		Query: pointers.String("Node:node"),
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.Node, "node").ProtoQuery()
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 	cbs := nodecve.NewCountByNodeCVESeverity(7, 3, 6, 2, 5, 1, 4, 0)
 
 	s.nodeCVEView.EXPECT().CountBySeverity(s.ctx, expectedQ).Return(cbs, nil)
@@ -329,6 +338,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverityWithInternalErr
 	q := &RawQuery{}
 	expectedQ, err := q.AsV1QueryOrEmpty()
 	s.Require().NoError(err)
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 
 	s.nodeCVEView.EXPECT().CountBySeverity(s.ctx, expectedQ).Return(nil, errox.ServerError)
 	response, err := s.resolver.NodeCVECountBySeverity(s.ctx, *q)

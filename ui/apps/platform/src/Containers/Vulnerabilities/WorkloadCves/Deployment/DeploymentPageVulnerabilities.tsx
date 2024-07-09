@@ -27,6 +27,8 @@ import {
 import { getTableUIState } from 'utils/getTableUIState';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import {
     imageComponentSearchFilterConfig,
     imageCVESearchFilterConfig,
@@ -117,6 +119,10 @@ function DeploymentPageVulnerabilities({
 }: DeploymentPageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
+
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
+
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -224,20 +230,23 @@ function DeploymentPageVulnerabilities({
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
-                <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
+                <VulnerabilityStateTabs
+                    isBox
+                    onChange={() => {
+                        setSearchFilter({});
+                        setPage(1, 'replace');
+                    }}
+                />
                 <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
                     {isAdvancedFiltersEnabled ? (
                         <AdvancedFiltersToolbar
                             className="pf-v5-u-pt-lg pf-v5-u-pb-0"
                             searchFilterConfig={searchFilterConfig}
                             searchFilter={searchFilter}
-                            onFilterChange={(newFilter, { action }) => {
+                            onFilterChange={(newFilter, searchPayload) => {
                                 setSearchFilter(newFilter);
                                 setPage(1, 'replace');
-
-                                if (action === 'ADD') {
-                                    // TODO - Add analytics tracking ROX-24532
-                                }
+                                trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
                             }}
                         />
                     ) : (

@@ -98,14 +98,8 @@ function NodesTable({
                 filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
                     data.map((node) => {
-                        const {
-                            id,
-                            name,
-                            nodeCVECountBySeverity,
-                            cluster,
-                            operatingSystem,
-                            scanTime,
-                        } = node;
+                        const { id, name, nodeCVECountBySeverity, cluster, osImage, scanTime } =
+                            node;
                         const { critical, important, moderate, low } = nodeCVECountBySeverity;
                         return (
                             <Tr key={id}>
@@ -127,7 +121,7 @@ function NodesTable({
                                     <Truncate position="middle" content={cluster.name} />
                                 </Td>
                                 <Td dataLabel="Operating system" modifier="nowrap">
-                                    {operatingSystem}
+                                    <Truncate position="middle" content={osImage} />
                                 </Td>
                                 <Td dataLabel="Scan time">
                                     <DateDistance date={scanTime} />
