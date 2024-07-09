@@ -18,13 +18,8 @@ func GetSensorNamespace(params ...bool) string {
 	// Operator installs and some CI runs set a NAMESPACE env which needs to be adhered to so tests don't fail
 	sensorNamespace := os.Getenv("TEST_NAMESPACE")
 
-	verbose := false
-	if len(params) > 0 && params[0] == true {
-		verbose = true
-	}
-	if verbose {
-		log.Infof("sensorNamespace is %s after running 'os.Getenv(\"TEST_NAMESPACE\")'", sensorNamespace)
-	}
+	log.Infof("sensorNamespace is %s after running 'os.Getenv(\"TEST_NAMESPACE\")'", sensorNamespace)
+
 	// This attempts to load the namespace from the file serviceaccount/namespace
 	if sensorNamespace == "" {
 		var err error
@@ -32,16 +27,13 @@ func GetSensorNamespace(params ...bool) string {
 		if err != nil {
 			log.Errorf("Failed to determine namespace from service account token file: %s", err)
 		}
-		if verbose {
-			log.Infof("sensorNamespace is %s after running 'satoken.LoadNamespaceFromFile()'", sensorNamespace)
-		}
+		log.Infof("sensorNamespace is %s after running 'satoken.LoadNamespaceFromFile()'", sensorNamespace)
+
 	}
 	if sensorNamespace == "" {
 		// This environment variable is configured to contain pod namespace by sensor YAML/helm file.
 		sensorNamespace = os.Getenv("POD_NAMESPACE")
-		if verbose {
-			log.Infof("sensorNamespace is %s after running 'os.Getenv(\"POD_NAMESPACE\")'", sensorNamespace)
-		}
+		log.Infof("sensorNamespace is %s after running 'os.Getenv(\"POD_NAMESPACE\")'", sensorNamespace)
 	}
 	if sensorNamespace == "" {
 		sensorNamespace = namespaces.StackRox
