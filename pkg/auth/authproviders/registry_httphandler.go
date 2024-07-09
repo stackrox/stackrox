@@ -77,15 +77,9 @@ func (r *registryImpl) tokenURL(rawToken, typ, clientState string) *url.URL {
 	}
 }
 
-func getSerializedAuthStatusData(authStatus *v1.AuthStatus) (bytes.Buffer, error) {
-	var buf bytes.Buffer
-	err := new(jsonpb.Marshaler).Marshal(&buf, authStatus)
-	return buf, err
-}
-
 func (r *registryImpl) userMetadataURL(user *v1.AuthStatus, typ, clientState string, testMode bool) *url.URL {
-	buf, err := getSerializedAuthStatusData(user)
-	if err != nil {
+	var buf bytes.Buffer
+	if err := new(jsonpb.Marshaler).Marshal(&buf, user); err != nil {
 		return r.errorURL(err, typ, clientState, testMode)
 	}
 
