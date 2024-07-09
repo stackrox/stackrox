@@ -27,7 +27,7 @@ export function getViewStateDescription(
     switch (vulnerabilityState) {
         case 'OBSERVED':
             return cveViewingMode === 'WITH_CVES'
-                ? 'Images and deployments observed with CVEs'
+                ? 'Images and deployments with observed CVEs'
                 : 'Images and deployments without observed CVEs (results might include false negatives due to scanner limitations, such as unsupported operating systems)';
         case 'DEFERRED':
             return 'Observed vulnerabilities that are approved by administrators to be deferred for a period of time or until fixable';
