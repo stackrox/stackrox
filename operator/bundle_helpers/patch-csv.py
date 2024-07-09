@@ -49,7 +49,7 @@ def must_replace_suffix(str, suffix, replacement):
     return splits[0] + replacement
 
 
-def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches):
+def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches, unreleased=None):
     csv_doc['metadata']['annotations']['createdAt'] = datetime.now(timezone.utc).isoformat()
 
     placeholder_image = csv_doc['metadata']['annotations']['containerImage']
@@ -76,7 +76,7 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
 
     skips = parse_skips(csv_doc["spec"], raw_name)
     replaced_xyz = calculate_replaced_version(
-        version=version, first_version=first_version, previous_y_stream=previous_y_stream, skips=skips)
+        version=version, first_version=first_version, previous_y_stream=previous_y_stream, skips=skips, unreleased=unreleased)
     if replaced_xyz is not None:
         csv_doc["spec"]["replaces"] = f"{raw_name}.v{replaced_xyz}"
 
@@ -96,7 +96,7 @@ def must_strip_prefix(str, prefix):
     return str[len(prefix):]
 
 
-def calculate_replaced_version(version, first_version, previous_y_stream, skips):
+def calculate_replaced_version(version, first_version, previous_y_stream, skips, unreleased=None):
     current_xyz = XyzVersion.parse_from(version)
     first_xyz = XyzVersion.parse_from(first_version)
     previous_xyz = XyzVersion.parse_from(previous_y_stream)
@@ -108,6 +108,11 @@ def calculate_replaced_version(version, first_version, previous_y_stream, skips)
     # If this is a new patch, it replaces previous patch (e.g. 4.2.2 replaces 4.2.1, or 4.2.1 replaces 4.2.0).
     initial_replace = previous_xyz if current_xyz.z == 0 else \
         XyzVersion(current_xyz.x, current_xyz.y, current_xyz.z - 1)
+
+    # If this version is not yet released, try previous one.
+    # E.g. 4.5 branch was cut and the 4.6.x tag created, but the 4.5 release process is still in progress.
+    if unreleased and str(initial_replace) == str(unreleased):
+        initial_replace = XyzVersion.parse_from(get_previous_y_stream(str(initial_replace)))
 
     # Next, in the presence of version skips, i.e. versions that are marked as broken with `skips` attribute, we need to
     # handle a situation when the replaced version is also skipped, because the upgrade may fail.
@@ -156,6 +161,9 @@ def parse_args():
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
                         default=[])
+    parser.add_argument("--echo-replaced-version-only", action='store_true',
+                        help='Do not modify any files, just compute and echo the replaced operator version.')
+    parser.add_argument("--unreleased", help="Not yet released version of operator, if any.")
     return parser.parse_args()
 
 
@@ -164,10 +172,19 @@ def main():
                         format=f"%(asctime)s {pathlib.Path(__file__).name}: %(message)s")
     args = parse_args()
     doc = yaml.safe_load(sys.stdin)
+    if args.echo_replaced_version_only:
+        raw_name = must_replace_suffix(doc['metadata']['name'], '.v0.0.1', '')
+        skips = parse_skips(doc["spec"], raw_name)
+        replaced_xyz = calculate_replaced_version(
+            version=args.use_version, first_version=args.first_version,
+            previous_y_stream=get_previous_y_stream(args.use_version), skips=skips)
+        print(replaced_xyz)
+        return
     patch_csv(doc,
               operator_image=args.operator_image,
               version=args.use_version,
               first_version=args.first_version,
+              unreleased=args.unreleased,
               no_related_images=args.no_related_images,
               extra_supported_arches=args.add_supported_arch)
     print(yaml.safe_dump(doc))
