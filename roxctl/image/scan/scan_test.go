@@ -617,7 +617,11 @@ func (s *imageScanTestSuite) runLegacyOutputTests(cases map[string]outputFormatT
 			s.Require().NoError(err)
 			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
 			s.Require().NoError(err)
-			s.Assert().Equal(string(expectedOutput), out.String())
+			if format == "json" {
+				s.Assert().JSONEq(string(expectedOutput), out.String())
+			} else {
+				s.Assert().Equal(string(expectedOutput), out.String())
+			}
 		})
 	}
 }
