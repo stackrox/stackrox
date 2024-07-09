@@ -112,7 +112,7 @@ RwxPuzZEaFZcVlmtqoq8
 
 	for _, c := range cases {
 		t.Run(c.url, func(t *testing.T) {
-			if c.url == "https://untrusted-root.badssl.com" && os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
+			if c.url == "https://untrusted-root.invalid" && os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
 				t.Skip("temporarily skipped on OCP. TODO(ROX-24688)")
 			}
 			internalServiceTimeout := 20 * time.Second
