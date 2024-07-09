@@ -92,7 +92,7 @@ export const validationSchema = yup.object().shape({
             objectPrefix: yup.string(),
             endpoint: yup.string(),
             region: yup.string().trim().required('Region is required'),
-            urlStyle: yup.string(),
+            urlStyle: yup.string().trim().required('URL style is required'),
             accessKeyId: yup
                 .string()
                 .trim()
@@ -106,7 +106,7 @@ export const validationSchema = yup.object().shape({
                     requireCredentials
                 ),
         }),
-        type: yup.string().matches(/s3/),
+        type: yup.string().matches(/s3compatible/),
     }),
     updatePassword: yup.bool(),
 });
