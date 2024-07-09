@@ -84,10 +84,10 @@ if ! (return 0 2>/dev/null); then # called
     check_not_empty \
         SCRIPT \
         GITHUB_REPOSITORY \
-        GITHUB_REF_NAME
+        GITHUB_HEAD_REF
 
-    URL="/repos/$GITHUB_REPOSITORY/contents/.github/workflows/scripts/$SCRIPT.sh?ref=$GITHUB_REF_NAME"
+    URL="/repos/$GITHUB_REPOSITORY/contents/.github/workflows/scripts/$SCRIPT.sh?ref=$GITHUB_HEAD_REF"
     shift
-    gh_log debug "Executing '$SCRIPT.sh' from '$GITHUB_REPOSITORY' $GITHUB_REF_NAME branch with: ${*@Q}"
+    gh_log debug "Executing '$SCRIPT.sh' from '$GITHUB_REPOSITORY' $GITHUB_HEAD_REF branch with: ${*@Q}"
     gh api -H "Accept: application/vnd.github.v3.raw" "$URL" | bash -s -- "$@"
 fi
