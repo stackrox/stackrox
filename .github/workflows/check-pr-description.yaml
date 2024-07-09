@@ -1,0 +1,47 @@
+name: "Check PR description"
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened]
+
+  # This allows for testing the workflow from the PR branch.
+  # Should be deleted before merge.
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  check-description:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check PR description
+        env:
+          ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+          script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.head_ref }}
+          PR_DESCRIPTION: ${{ github.event.pull_request.body }}
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            check-pr-description "$PR_DESCRIPTION"
+
+  check-template-change:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check if PR template has changed
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TEMPLATE: ".github/pull_request_template.md"
+        run: |
+          set -uo pipefail
+          if gh pr view --repo "$GITHUB_REPOSITORY" "$PR_NUMBER" \
+            --json files -q '.files[]|.path' | grep "$PR_TEMPLATE"; then
+
+            echo "::notice file=$PR_TEMPLATE,title=Action required::Please check if" \
+            '.github/workflows/scripts/check-pr-description.sh' \
+            'needs and update as well.'
+          fi
