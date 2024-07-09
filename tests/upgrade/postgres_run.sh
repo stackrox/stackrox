@@ -27,11 +27,7 @@ source "$TEST_ROOT/tests/upgrade/lib.sh"
 source "$TEST_ROOT/tests/upgrade/validation.sh"
 
 test_upgrade() {
-    info "Starting Rocks to Postgres upgrade test"
-
-    # Need to push the flag to ci so that is where it needs to be for the part
-    # of the test.  We start this test with RocksDB
-    ci_export ROX_POSTGRES_DATASTORE "true"
+    info "Starting upgrade test"
 
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: test_upgrade <log-output-dir>"
@@ -91,7 +87,7 @@ test_upgrade_paths() {
     export MAX_WAIT_SECONDS=600
 
     ########################################################################################
-    # Use roxctl to generate helm files and deploy older central backed by RocksDB         #
+    # Use roxctl to generate helm files and deploy older central                           #
     ########################################################################################
     deploy_earlier_postgres_central
     wait_for_api
