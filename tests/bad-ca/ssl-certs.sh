@@ -36,7 +36,7 @@ END
 		)
 
 	echo "remove unused files"
-	rm ${root}.key ${root}.srl ${base}.csr ${base}.key ${base}.csr
+	rm "${root}.key" "${root}.srl" "${base}.csr" "${base}.key" "${base}.csr"
 
 	echo "review files"
 	echo "--"
