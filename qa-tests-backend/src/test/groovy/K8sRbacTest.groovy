@@ -63,8 +63,6 @@ class K8sRbacTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("COMPATIBILITY")
-    // TODO(ROX-14666): This test times out under openshift
-//     @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
     def "Verify scraped service accounts"() {
         given:
         List<K8sServiceAccount> orchestratorSAs = null
