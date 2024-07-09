@@ -13,7 +13,8 @@ PACKAGE_JSON_FILES := $(shell find . -type d \( -name node_modules \) -prune -fa
 ROX_PRODUCT_BRANDING ?= $(shell $(MAKE) --quiet --no-print-directory -C .. product-branding)
 export REACT_APP_ROX_PRODUCT_BRANDING := $(ROX_PRODUCT_BRANDING)
 
-deps: yarn.lock $(PACKAGE_JSON_FILES)
+deps: apps/platform/yarn.lock $(PACKAGE_JSON_FILES)
+	cd apps/platform
 	yarn install --frozen-lockfile --prefer-offline --network-timeout=$(YARN_NETWORK_TIMEOUT)
 	@touch deps
 
@@ -61,6 +62,7 @@ clean:
 	rm -rf build
 	rm -rf node_modules apps/*/node_modules
 
+# TODO - Verify this is not in use anywhere
 .PHONY: publish-packages
 publish-packages:
 	yarn lerna:publish

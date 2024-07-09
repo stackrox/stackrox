@@ -795,6 +795,7 @@ clean-offline-bundle:
 offline-bundle: clean-offline-bundle
 	$(SILENT)./scripts/offline-bundle/create.sh
 
+# TODO - Where is this used?
 .PHONY: ui-publish-packages
 ui-publish-packages:
 	make -C ui publish-packages
