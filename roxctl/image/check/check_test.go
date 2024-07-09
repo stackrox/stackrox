@@ -511,11 +511,7 @@ func (suite *imageCheckTestSuite) TestLegacyPrint_Format() {
 			_ = imgCheckCmd.printResults(c.alerts)
 			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
 			suite.Require().NoError(err)
-			if c.json {
-				suite.Assert().JSONEq(string(expectedOutput), out.String())
-			} else {
-				suite.Assert().Equal(string(expectedOutput), out.String())
-			}
+			suite.Assert().Equal(string(expectedOutput), out.String())
 		})
 	}
 }
