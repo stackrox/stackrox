@@ -442,6 +442,9 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 		--operator-image $(IMG) \
 		--no-related-images \
 		--add-supported-arch amd64 \
+		--add-supported-arch s390x \
+		--add-supported-arch ppc64le \
+		--add-supported-arch arm64 \
 		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
 		> build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 # Check that the resulting bundle still passes validations.
@@ -501,10 +504,25 @@ docker-push-index: ## Push docker image with the index.
 PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
 .PHONY: docker-buildx
 docker-buildx: smuggled-status-sh test build/Dockerfile.gen ## Build and push docker image for the manager for cross-platform support
-	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
-	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' build/Dockerfile.gen > build/Dockerfile.cross
 	- docker buildx create --name project-v3-builder
 	docker buildx use project-v3-builder
-	- docker buildx build --platform=$(PLATFORMS) --push --tag ${IMG} -f build/Dockerfile.cross ..
+	- docker buildx build --platform=$(PLATFORMS) --push --tag ${IMG} -f build/Dockerfile.gen ..
 	- docker buildx rm project-v3-builder
-	rm build/Dockerfile.cross
+
+.PHONY: index-buildx
+index-buildx: bundle-post-process yq ## Build Index (a.k.a. Catalog) image with the bundles. Bundle image must be pushed beforehand.
+# If the bundle has `replaces:` attribute in CSV, then the one it replaces has to already be in the index. Otherwise,
+# validation of the index fails because more than one version is identified as the head of the channel. An example of an
+# error: `multiple channel heads found in graph: rhacs-operator.v3.67.0, rhacs-operator.v3.69.0`
+# We assume that the index for the replaced bundle is already in the registry with the same tag and so we use previous
+# index image as a base when building the current index image. The sed expression below should extract everything after
+# the first dot in `replaces:` value. E.g. `  replaces: rhacs-operator.v3.62.0` -> `v3.62.0`
+	$(SILENT)set -euo pipefail ;\
+	replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
+	YQ=$(YQ) ./hack/build-index-image.sh \
+		--base-index-tag "$(INDEX_IMG_BASE):$${replaced_version}" \
+		--index-tag "$(INDEX_IMG)" \
+		--bundle-tag "$(BUNDLE_IMG)" \
+		--replaced-version "$${replaced_version}" \
+		--platform "$(PLATFORMS)" \
+		--clean-output-dir
