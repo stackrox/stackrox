@@ -1,4 +1,11 @@
 import withAuth from '../../../helpers/basicAuth';
+import {
+    assertAvailableFilters,
+    compoundFiltersSelectors,
+    selectEntity,
+    toggleAttributeSelectorMenu,
+    toggleEntitySelectorMenu,
+} from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
     assertCannotFindThePage,
@@ -6,6 +13,7 @@ import {
 } from '../../../helpers/visit';
 import navSelectors from '../../../selectors/navigation';
 import { visitNodeCveOverviewPage } from './NodeCve.helpers';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Node CVEs - Overview Page', () => {
     withAuth();
@@ -50,8 +58,20 @@ describe('Node CVEs - Overview Page', () => {
     });
 
     it('should only show relevant filters for the Node CVEs page', () => {
+        visitNodeCveOverviewPage();
+        const expectedFilters = {
+            CVE: ['Name', 'CVSS', 'Discovered Time'],
+            Node: ['Name', 'Operating System', 'Label', 'Annotation', 'Scan Time'],
+            'Node Component': ['Name', 'Version'],
+            Cluster: ['Name', 'Label', 'Type', 'Platform type'],
+        };
+
         // check the advanced filters and ensure only the relevant filters are displayed for CVEs
+        assertAvailableFilters(expectedFilters);
+
         // check the advanced filters and ensure only the relevant filters are displayed for Nodes
+        cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
+        assertAvailableFilters(expectedFilters);
     });
 
     it('should link to the correct details pages', () => {
