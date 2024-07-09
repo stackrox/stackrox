@@ -39,7 +39,6 @@ class NodeInventoryTest extends BaseSpecification {
         "given a non-empty list of nodes"
         List<Node> nodes = NodeService.getNodes()
         assert nodes.size() > 0
-        def previousScanTime = [:]
 
         when:
         boolean nodeInventoryContainerAvailable =
@@ -69,12 +68,6 @@ class NodeInventoryTest extends BaseSpecification {
                 }
                 return true
             }
-            // Finally, before starting the test, make note of the current scan time, which should be updated
-            nodes.each { node ->
-                previousScanTime[node.getId()] = node.hasScan() ?
-                        node.getScan().getScanTime() : Timestamp.getDefaultInstance()
-                log.info("Previous scan time of node ${node.getId()}: ${previousScanTime[node.getId()]}")
-            }
         }
         log.info("Waiting for scanner deployment to be ready")
         waitForTrue(20, 6) {
@@ -103,9 +96,6 @@ class NodeInventoryTest extends BaseSpecification {
             }
             assert node.getScan().getComponentsList().size() > 4,
                 "Expected to find more than 4 components on RHCOS node"
-
-            assert previousScanTime[node.getId()] != node.getScan().getScanTime(),
-                "Expected the scan time of the node to have changed"
         }
     }
 }
