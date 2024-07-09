@@ -5,6 +5,32 @@ on:
   workflow_dispatch:
 
 jobs:
+  download-nvd:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Download NVD
+      run: |
+        set -eu
+        since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
+        curl \
+            -o nvd.zip \
+            -w "%{http_code}" \
+            -H "If-Modified-Since: $since_time" \
+            https://definitions.stackrox.io/v4/nvd/nvd.zip \
+        | grep 200
+
+    - uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: nvd
+        path: nvd.zip
+        if-no-files-found: error
+
   read-release-versions:
     runs-on: ubuntu-latest
     outputs:
@@ -24,7 +50,9 @@ jobs:
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
   upload-release-vulnerabilities:
-    needs: read-release-versions
+    needs:
+      - read-release-versions
+      - download-nvd
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
@@ -64,10 +92,16 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
+    - uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: nvd
+        path: .
+
     - name: Update vulnerabilities
       env:
         STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         STACKROX_NVD_API_CALL_INTERVAL: 6s
+        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
         DOWNLOAD_URL="https://github.com/stackrox/stackrox/archive/refs/tags/${{ env.ROX_PRODUCT_TAG }}.zip"
         FILE_NAME=$(basename "$DOWNLOAD_URL")
