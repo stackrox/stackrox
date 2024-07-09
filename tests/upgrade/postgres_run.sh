@@ -46,7 +46,7 @@ test_upgrade() {
     # repo for old version with legacy database
     REPO_FOR_TIME_TRAVEL="/tmp/rox-postgres-upgrade-test"
     DEPLOY_DIR="deploy/k8s"
-    QUAY_REPO="stackrox-io"
+    QUAY_REPO="rhacs-eng"
     REGISTRY="quay.io/$QUAY_REPO"
 
     export OUTPUT_FORMAT="helm"
