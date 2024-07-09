@@ -1,0 +1,34 @@
+{
+    "data": {
+        "node": {
+            "id": "1",
+            "nodeVulnerabilityCount": 1,
+            "nodeVulnerabilities": [
+                {
+                    "cve": "CVE-2022-1996",
+                    "summary": "DOCUMENTATION: A flaw was found in CORS Filter feature from the go-restful package. When a user inputs a domain which is in AllowedDomains, all domains starting with the same pattern are accepted. This issue could allow an attacker to break the CORS policy by allowing any page to make requests and retrieve data on behalf of users. \n            STATEMENT: The go-restful package is a transitive dependency which is being pulled with k8s.io/api and not directly being used anywhere in OpenShift Container Platform (OCP), OpenShift Container Storage and OpenShift Data Foundation, hence these components are marked as 'Will not fix' or even \"Not affected\".",
+                    "cvss": 9.100000381469727,
+                    "scoreVersion": "V3",
+                    "nodeComponents": [
+                        {
+                            "name": "openshift-clients",
+                            "source": "INFRASTRUCTURE",
+                            "version": "4.14.0-202401111553.p0.g286cfa5.assembly.stream.el9.x86_64",
+                            "nodeVulnerabilities": [
+                                {
+                                    "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                                    "isFixable": false,
+                                    "fixedByVersion": "",
+                                    "__typename": "NodeVulnerability"
+                                }
+                            ],
+                            "__typename": "NodeComponent"
+                        }
+                    ],
+                    "__typename": "NodeVulnerability"
+                }
+            ],
+            "__typename": "Node"
+        }
+    }
+}
