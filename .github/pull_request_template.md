@@ -9,6 +9,13 @@ about contributing to this project, check "*.md" files under:
 
 change me!
 
+### General Availability
+
+(*must be* one of the items checked)
+
+- [ ] this PR meets all General Availability requirements, including thorough testing, comprehensive documentation, and adherence to performance and security standards
+- [ ] the change is gated by a feature flag, disabled by default
+
 ### User-facing documentation
 
 - [ ] CHANGELOG is updated **OR** update is not needed
