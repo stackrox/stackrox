@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/tools/roxvet/common"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
@@ -95,7 +96,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		(*ast.CallExpr)(nil),
 	}
 
-	nolint := nolintPositions(pass)
+	nolint := common.NolintPositions(pass, name)
 
 	inspectResult.Preorder(nodeFilter, func(n ast.Node) {
 		call := n.(*ast.CallExpr)
@@ -173,20 +174,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		}
 	})
 	return nil, nil
-}
-
-func nolintPositions(pass *analysis.Pass) set.IntSet {
-	nolint := set.IntSet{}
-	for _, f := range pass.Files {
-		for _, comment := range f.Comments {
-			for _, c := range comment.List {
-				if strings.HasPrefix(c.Text, "//nolint:"+name) {
-					nolint.Add(int(c.Pos()) - 1)
-				}
-			}
-		}
-	}
-	return nolint
 }
 
 func checkStruct(styp *types.Struct, seenTypes set.StringSet) {

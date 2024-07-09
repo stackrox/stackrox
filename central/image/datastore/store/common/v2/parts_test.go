@@ -257,10 +257,10 @@ func TestSplitAndMergeImage(t *testing.T) {
 		protoassert.Equal(t, expected.Edge, actual.Edge)
 
 		assert.Len(t, actual.Children, len(expected.Children))
-		for i, expected := range expected.Children {
-			actual := actual.Children[i]
-			protoassert.Equal(t, expected.Edge, actual.Edge)
-			protoassert.Equal(t, expected.CVE, actual.CVE)
+		for i, e := range expected.Children {
+			a := actual.Children[i]
+			protoassert.Equal(t, e.Edge, a.Edge)
+			protoassert.Equal(t, e.CVE, a.CVE)
 		}
 	}
 
