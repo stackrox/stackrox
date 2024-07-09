@@ -176,3 +176,116 @@ jobs:
       run: |
         source scripts/ci/lib.sh
         slack_workflow_failure
+
+  check-title:
+    runs-on: ubuntu-latest
+    env:
+      PR_TITLE: ${{ github.event.pull_request.title }}
+    steps:
+      - name: Check if the PR title is well dressed
+        env:
+          CONV: '(build|chore|ci|docs?|feat|fix|perf|refactor|revert|style|tests?)(\([\w\-\.]+\))?!?'
+          JIRA: '([A-Z]+-[0-9]+, ?)*[A-Z]+-[0-9]+'
+          TEXT: ': .+'
+        run: |
+          # Either conventional or JIRA-nnn prefix followed by ': ' and random text:
+          REGEX="(($CONV)|($JIRA))($TEXT)"
+          test_regex() { echo -nE "$1" | grep --perl-regexp --line-regexp "$REGEX" ; }
+
+          echo "Examples:"
+          test_regex 'ROX-123: text'
+          test_regex 'ROX-123, RS-45: text'
+          test_regex 'refactor: text'
+          test_regex 'fix(ui): text'
+          test_regex 'feat(api)!: text'
+
+          if ! test_regex "$PR_TITLE"
+          then
+            echo "::error::Please update the PR title so that it follows the convention."
+            exit 1
+          fi
+
+      - name: Check PR title length
+        if: github.event.pull_request.user.login != 'dependabot[bot]'
+        env:
+          LENGTH: '70'
+        run: |
+          TITLE_LENGTH="$(echo -nE "$PR_TITLE" | wc --chars)"
+          if [ "$TITLE_LENGTH" -gt "$LENGTH" ]
+          then
+            echo "::error::Please shorten the PR title from $TITLE_LENGTH to at most $LENGTH characters."
+            exit 1
+          fi
+
+  check-pr-description:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check PR description
+        env:
+          ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+          script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.head_ref }}
+          PR_DESCRIPTION: ${{ github.event.pull_request.body }}
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            check-pr-description "$PR_DESCRIPTION"
+
+  check-pr-template-change:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check if PR template has changed
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TEMPLATE: ".github/pull_request_template.md"
+        run: |
+          set -uo pipefail
+          if gh pr view --repo "$GITHUB_REPOSITORY" "$PR_NUMBER" \
+            --json files -q '.files[]|.path' | grep "$PR_TEMPLATE"; then
+
+            echo "::notice file=$PR_TEMPLATE,title=Action required::Please check if" \
+            '.github/workflows/scripts/check-pr-description.sh' \
+            'needs and update as well.'
+          fi
+
+  github-actions-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download actionlint
+        id: get_actionlint
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.6.27
+        shell: bash
+      - name: Check workflow files
+        run: ${{ steps.get_actionlint.outputs.executable }} -color
+        shell: bash
+
+  github-actions-shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check scripts with shellcheck
+        run: shellcheck -P SCRIPTDIR -x ./.github/workflows/scripts/*.sh
+
+  openshift-ci-lint:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Pylint
+        run: make -C .openshift-ci lint
