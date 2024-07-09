@@ -309,11 +309,11 @@ func getViolationsWithAndWithoutCaching(t *testing.T, matcher func(cache *CacheR
 	var cache CacheReceptacle
 	violationsWithEmptyCache, err := matcher(&cache)
 	require.NoError(t, err)
-	requireEqual(t, violations, violationsWithEmptyCache)
+	assertViolations(t, violations, violationsWithEmptyCache)
 
 	violationsWithNonEmptyCache, err := matcher(&cache)
 	require.NoError(t, err)
-	requireEqual(t, violations, violationsWithNonEmptyCache)
+	assertViolations(t, violations, violationsWithNonEmptyCache)
 
 	return violations
 }
@@ -3751,7 +3751,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 						require.NoError(b, err)
 					}
 				})
-				requireEqual(b, resNoCaching, resWithCaching)
+				assertViolations(b, resNoCaching, resWithCaching)
 			})
 		}
 	}
@@ -3836,7 +3836,7 @@ func podPortForwardEvent(pod string, port int32) *storage.KubernetesEvent {
 	}
 }
 
-func requireEqual(t testing.TB, expected, actual Violations) {
+func assertViolations(t testing.TB, expected, actual Violations) {
 	t.Helper()
 	protoassert.Equal(t, expected.ProcessViolation, actual.ProcessViolation)
 	protoassert.SlicesEqual(t, expected.AlertViolations, actual.AlertViolations)
