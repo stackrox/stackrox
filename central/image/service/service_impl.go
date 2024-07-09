@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -239,8 +240,12 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	if err != nil {
 		return nil, err
 	}
-
 	defer s.internalScanSemaphore.Release(1)
+
+	clusterID, err := clusterIDFromCtx(ctx)
+	if err != nil {
+		log.Debugf("Unable to get cluster id from request context: %v", err)
+	}
 
 	var (
 		img       *storage.Image
@@ -266,7 +271,11 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 			existingImg.Names = append(existingImg.Names, request.GetImage().GetName())
 			img = existingImg
 
-			log.Debugf("Scan cache miss for %q, existing image %q (%s)", request.GetImage().GetName().GetFullName(), img.GetName().GetFullName(), imgID)
+			log.Debugf("Scan cache miss for %q (%s), existing image %q, from cluster %q",
+				request.GetImage().GetName().GetFullName(),
+				imgID,
+				img.GetName().GetFullName(),
+				clusterID)
 
 			// We only want to force re-fetching of signatures and verification data, the additional image name has no
 			// impact on image scan data.
@@ -290,7 +299,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		img = types.ToImage(request.GetImage())
 	}
 
-	if err := s.enrichImage(ctx, img, fetchOpt, request); err != nil && imgExists {
+	if err := s.enrichImage(ctx, img, fetchOpt, request, clusterID); err != nil && imgExists {
 		// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
 		// central, since it could lead to us overriding an enriched image with a non-enriched image.
 		return internalScanRespFromImage(img), nil
@@ -343,7 +352,7 @@ func updateImageFromRequest(existingImg *storage.Image, reqImgName *storage.Imag
 // Any occurred error will be logged, and the given image will be modified, after execution it will contain the enriched
 // image data (i.e. scan results, signature data etc.).
 func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetchOpt enricher.FetchOption,
-	request *v1.ScanImageInternalRequest) error {
+	request *v1.ScanImageInternalRequest, clusterID string) error {
 	enrichmentContext := enricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 		Internal: true,
@@ -359,6 +368,7 @@ func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetch
 
 	if _, err := s.enricher.EnrichImage(ctx, enrichmentContext, img); err != nil {
 		log.Errorw("error enriching image",
+			logging.ClusterID(clusterID),
 			logging.ImageName(img.GetName().GetFullName()),
 			logging.Err(err),
 			logging.ImageID(img.GetId()),
@@ -482,6 +492,11 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	defer s.internalScanSemaphore.Release(1)
 
+	clusterID, err := clusterIDFromCtx(ctx)
+	if err != nil {
+		log.Debugf("Unable to get cluster ID from request context: %v", err)
+	}
+
 	var hasErrors bool
 	if request.Error != "" {
 		// If errors occurred we continue processing so that the failed image scan may be saved in
@@ -489,7 +504,10 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		// secured clusters are failing.
 		hasErrors = true
 		log.Warnw("Received image enrichment request with errors",
-			logging.ImageName(request.GetImageName().GetFullName()), logging.Err(errors.New(request.GetError())))
+			logging.ImageName(request.GetImageName().GetFullName()),
+			logging.Err(errors.New(request.GetError())),
+			logging.ClusterID(clusterID),
+		)
 	}
 
 	var imgExists bool
@@ -521,9 +539,18 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 		// If the image exists and scan / signature verification results do not need an update yet, return it.
 		// Otherwise, reprocess the image.
-		if imgExists && !forceScanUpdate && !forceSigVerificationUpdate {
-			s.informScanWaiter(request.GetRequestId(), existingImg, nil)
-			return internalScanRespFromImage(existingImg), nil
+		if imgExists {
+			if !forceScanUpdate && !forceSigVerificationUpdate {
+				s.informScanWaiter(request.GetRequestId(), existingImg, nil)
+				return internalScanRespFromImage(existingImg), nil
+			}
+
+			log.Debugf("Scan cache miss for %q (%s), existing image %q, from cluster %q",
+				request.GetImageName().GetFullName(),
+				request.GetImageId(),
+				existingImg.GetName().GetFullName(),
+				imgID,
+				clusterID)
 		}
 	}
 
@@ -779,4 +806,18 @@ func (s *serviceImpl) GetWatchedImages(ctx context.Context, _ *v1.Empty) (*v1.Ge
 		return nil, err
 	}
 	return &v1.GetWatchedImagesResponse{WatchedImages: watchedImgs}, nil
+}
+
+func clusterIDFromCtx(ctx context.Context) (string, error) {
+	id, err := authn.IdentityFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	svc := id.Service()
+	if svc.GetType() != storage.ServiceType_SENSOR_SERVICE || svc.GetType() != storage.ServiceType_ADMISSION_CONTROL_SERVICE {
+		return "", errors.Errorf("not Sensor or Admission Controller service type: %q", svc.GetType())
+	}
+
+	return svc.GetId(), nil
 }
