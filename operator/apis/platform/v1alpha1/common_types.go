@@ -325,7 +325,7 @@ func (m *GlobalMonitoring) IsOpenShiftMonitoringDisabled() bool {
 	return m != nil && m.OpenShiftMonitoring != nil && !m.OpenShiftMonitoring.Enabled
 }
 
-// NetworkPolicies is a type for network sub-struct.
+// Set this to Disabled to prevent the operator from creating NetworkPolicy objects.
 // +kubebuilder:validation:Enum=Enabled;Disabled
 type NetworkPolicies string
 
@@ -349,7 +349,8 @@ func (s *GlobalNetworkSpec) IsNetworkPoliciesEnabled() bool {
 // GlobalNetworkSpec defines settings related to Helm chart network parameters. The corresponding Helm flags
 // live in the global scope `.network`.
 type GlobalNetworkSpec struct {
+	// To provide security at the network level the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
 	//+kubebuilder:default=Enabled
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Network Policies"
 	Policies *NetworkPolicies `json:"policies,omitempty"`
 }
