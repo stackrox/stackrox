@@ -27,10 +27,7 @@ test_upgrade() {
 
     cd "$TEST_ROOT"
 
-    # Need to push the flag to ci so that is where it needs to be for the part
-    # of the test.
     ci_export ROX_POSTGRES_DATASTORE "true"
-    export ROX_POSTGRES_DATASTORE "true"
 
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: test_upgrade <log-output-dir>"
