@@ -66,7 +66,6 @@ func init() {
 // https://github.com/stackrox/stackrox/pull/11761
 // Using the S3 backup integration interoperability with GCS has been deprecated
 // in 4.5.
-// In 4.7 the S3 backup integration will migrate to aws-sdk-v2.
 type s3Compatible struct {
 	integration *storage.ExternalBackup
 
