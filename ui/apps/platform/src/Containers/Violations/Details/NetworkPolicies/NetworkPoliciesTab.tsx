@@ -45,9 +45,8 @@ function NetworkPoliciesTab({ clusterId, namespaceName }: NetworkPoliciesTabProp
                             {namespacePolicies
                                 .sort(compareNetworkPolicies)
                                 .map((netpol: NetworkPolicy) => (
-                                    <ListItem>
+                                    <ListItem key={netpol.id}>
                                         <Button
-                                            key={netpol.id}
                                             variant="link"
                                             onClick={() => setSelectedNetworkPolicy(netpol)}
                                         >
