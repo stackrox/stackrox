@@ -11,6 +11,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+- ROX-25066: Add new external backup integration for non-AWS S3 compatible providers. 
+
 ### Removed Features
 
 ### Deprecated Fatures
