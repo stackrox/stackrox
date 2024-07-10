@@ -10,7 +10,7 @@ function generate() {
 
 	echo "create root key and certificate"
 	openssl genrsa -out "${root}.key" 3072
-	openssl req -x509 -nodes -sha256 -new -key "${root}.key" -out "${root}.crt" -days 18500 \
+	openssl req -x509 -nodes -sha256 -new -key "${root}.key" -out "${root}.pem" -days 18500 \
 		-subj "/CN=Custom Root" \
 		-addext "keyUsage = critical, keyCertSign" \
 		-addext "basicConstraints = critical, CA:TRUE, pathlen:0" \
@@ -49,4 +49,4 @@ END
 generate "self-signed.invalid" "unknown-root"
 generate "untrusted-root.invalid" "root"
 
-rm unknown-root.crt
+rm unknown-root.pem
