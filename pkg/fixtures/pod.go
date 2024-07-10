@@ -1,6 +1,8 @@
 package fixtures
 
 import (
+	"testing"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -192,4 +194,75 @@ func GetScopedPod(ID string, clusterID string, namespace string) *storage.Pod {
 		ClusterId: clusterID,
 		Namespace: namespace,
 	}
+}
+
+// GetExpectedJSONSerializedTestPod returns the protoJSON serialized form
+// of the Deployment returned by GetPod
+func GetExpectedJSONSerializedTestPod(_ testing.TB) string {
+	return `{
+	"id": "nginx-7db9fccd9b-92hfs",
+	"deploymentId": "deaaaaaa-bbbb-4011-0000-111111111111",
+	"clusterId": "prod cluster",
+	"namespace": "stackrox",
+	"started": "1970-01-01T00:00:00Z",
+	"liveInstances": [
+		{
+			"instanceId": {"id": "containerid" },
+			"containerName": "containername",
+			"imageDigest": "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
+			"started": "1970-01-01T00:00:02Z"
+		},
+		{
+			"instanceId": {"id": "othercontainerid" },
+			"containerName": "othercontainername",
+			"imageDigest": "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
+			"started": "1970-01-01T00:00:03Z"
+		}
+	],
+	"terminatedInstances": [
+		{
+			"instances": [
+				{
+					"instanceId": {"id": "containeridfirst" },
+					"containerName": "containername",
+					"imageDigest": "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
+					"started": "1970-01-01T00:00:00Z",
+					"finished": "1970-01-01T00:00:01Z"
+				}
+			]
+		},
+		{
+			"instances": [
+				{
+					"instanceId": {"id": "othercontainerid" },
+					"containerName": "othercontainername",
+					"imageDigest": "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
+					"started": "1970-01-01T00:00:01Z",
+					"finished": "1970-01-01T00:00:02Z"
+				}
+			]
+		},
+		{
+			"instances": [
+				{
+					"instanceId": {"id": "containeridinitfirst" },
+					"containerName": "containerinitname",
+					"imageDigest": "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
+					"started": "1970-01-01T00:00:00Z",
+					"finished": "1970-01-01T00:00:01Z",
+					"exitCode": 137,
+					"terminationReason": "Error"
+				},
+				{
+					"instanceId": {"id": "containeridinitsecond" },
+					"containerName": "containerinitname",
+					"imageDigest": "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
+					"started": "1970-01-01T00:00:01.000000200Z",
+					"finished": "1970-01-01T00:00:01.000000800Z",
+					"terminationReason": "Completed"
+				}
+			]
+		}
+	]
+}`
 }

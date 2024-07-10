@@ -1,6 +1,8 @@
 package login
 
 import (
+	"encoding/json"
+	sysIO "io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
@@ -53,6 +56,33 @@ func TestVerifyLoginAuthProviders_Successful(t *testing.T) {
 	assert.NoError(t, loginCmd.verifyLoginAuthProviders())
 }
 
+func TestVerifyLoginAuthProviders_RawResponseData_Successful(t *testing.T) {
+	server := httptest.NewServer(loginAuthProvidersRawHandle(t, []map[string]string{
+		{
+			"id":             "1",
+			"name":           "basic",
+			"type":           basic.TypeName,
+			"dummyTestField": "to test backward/forward compatibility",
+		},
+		{
+			"id":   "2",
+			"name": "oidc",
+			"type": oidc.TypeName,
+		},
+	}))
+	defer server.Close()
+
+	// Required for picking up the endpoint used by GetRoxctlHTTPClient. Currently, it is not possible to inject this
+	// otherwise.
+	t.Setenv("ROX_ENDPOINT", server.URL)
+
+	loginCmd := loginCommand{
+		env: mockEnvWithHTTPClient(t),
+	}
+
+	assert.NoError(t, loginCmd.verifyLoginAuthProviders())
+}
+
 func TestVerifyLoginAuthProviders_Failure(t *testing.T) {
 	server := httptest.NewServer(loginAuthProvidersHandle(t, []*v1.GetLoginAuthProvidersResponse_LoginAuthProvider{
 		{
@@ -76,11 +106,71 @@ func TestVerifyLoginAuthProviders_Failure(t *testing.T) {
 
 func loginAuthProvidersHandle(t *testing.T, providers []*v1.GetLoginAuthProvidersResponse_LoginAuthProvider) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
+		assert.Equal(t, http.MethodGet, request.Method)
+		assert.Equal(t, "/v1/login/authproviders", request.URL.Path)
+		body := request.Body
+		defer utils.IgnoreError(body.Close)
+		reqBodyData, err := sysIO.ReadAll(body)
+		assert.NoError(t, err)
+		assert.Len(t, reqBodyData, 0)
 		marshal := jsonpb.Marshaler{Indent: "    "}
 		assert.NoError(t, marshal.Marshal(writer, &v1.GetLoginAuthProvidersResponse{
 			AuthProviders: providers,
 		}))
 	}
+}
+
+func loginAuthProvidersRawHandle(t *testing.T, providersData []map[string]string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		assert.Equal(t, http.MethodGet, request.Method)
+		assert.Equal(t, "/v1/login/authproviders", request.URL.Path)
+		body := request.Body
+		defer utils.IgnoreError(body.Close)
+		reqBodyData, err := sysIO.ReadAll(body)
+		assert.NoError(t, err)
+		assert.Len(t, reqBodyData, 0)
+		respData := map[string][]map[string]string{
+			"authProviders": providersData,
+		}
+		jsonMarshaler := json.NewEncoder(writer)
+		assert.NoError(t, jsonMarshaler.Encode(respData))
+	}
+}
+
+func TestRawHandle(t *testing.T) {
+	handler := loginAuthProvidersRawHandle(t, []map[string]string{
+		{
+			"id":             "1",
+			"name":           "basic",
+			"type":           basic.TypeName,
+			"dummyTestField": "to test backward/forward compatibility",
+		},
+		{
+			"id":   "2",
+			"name": "oidc",
+			"type": oidc.TypeName,
+		},
+	})
+	expectedWrittenPayload := `{
+	"authProviders": [
+		{
+			"id": "1",
+			"name": "basic",
+			"type": "basic",
+			"dummyTestField": "to test backward/forward compatibility"
+		},
+		{
+			"id": "2",
+			"name": "oidc",
+			"type": "oidc"
+		}
+	]
+}`
+	rspWriter := httptest.NewRecorder()
+	fakeRequest := httptest.NewRequest(http.MethodGet, "/v1/login/authproviders", nil)
+	handler.ServeHTTP(rspWriter, fakeRequest)
+	assert.Equal(t, http.StatusOK, rspWriter.Code)
+	assert.JSONEq(t, expectedWrittenPayload, rspWriter.Body.String())
 }
 
 func mockEnvWithHTTPClient(t *testing.T) environment.Environment {
