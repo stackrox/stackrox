@@ -7,7 +7,7 @@ on:
 jobs:
   check-description:
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.actor != 'dependabot[bot]'
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -23,7 +23,7 @@ jobs:
 
   check-template-change:
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.actor != 'dependabot[bot]'
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
