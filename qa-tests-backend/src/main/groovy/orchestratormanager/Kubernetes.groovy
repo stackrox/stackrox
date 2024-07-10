@@ -2108,7 +2108,12 @@ class Kubernetes implements OrchestratorMain {
             log.warn("Error while waiting for deployment/populating deployment info: ", e)
         }
         if (!deployment.skipReplicaWait && !deployment.deploymentUid) {
-            throw new OrchestratorManagerException("The deployment did not start or reach replica ready state")
+            String exceptionMsg = "The deployment did not start or reach replica ready state"
+            if (deployment.imagePullPolicy == "Never") {
+                exceptionMsg += " - if this job uses image prefetch check that this image is in the jobs prefetch list"+
+                                " - " + deployment.image
+            }
+            throw new OrchestratorManagerException(exceptionMsg)
         }
     }
 
