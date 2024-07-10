@@ -76,7 +76,7 @@ func ProtoToJSON(m protocompat.Message, options ...ConversionOption) (string, er
 		}
 		x = buf.Bytes()
 	}
-	
+
 	return string(x), nil
 }
 
