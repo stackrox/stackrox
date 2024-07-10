@@ -109,7 +109,8 @@ func TestProtoToJSONServiceIdentity(t *testing.T) {
 	_ = t
 	const svcIdentityID = "ecabcdef-bbbb-4011-0000-111111111111"
 	const initBundleID = "ebaaaaaa-bbbb-4011-0000-111111111111"
-	const serialString = "12345678901"
+	const serialString = "12345 678901"
+	const serial = "12345678901"
 	const svcIdentityType = storage.ServiceType_CENTRAL_SERVICE
 	testServiceIdentity := &storage.ServiceIdentity{
 		SerialStr: serialString,
@@ -123,7 +124,7 @@ func TestProtoToJSONServiceIdentity(t *testing.T) {
 	serialized := protoToJSON(testServiceIdentity)
 	expectedSerialized := `{` +
 		`"serialStr":"` + serialString + `",` +
-		`"serial":"` + serialString + `",` +
+		`"serial":"` + serial + `",` +
 		`"id":"` + svcIdentityID + `",` +
 		`"type":"` + storage.ServiceType_name[int32(svcIdentityType)] + `",` +
 		`"initBundleId":"` + initBundleID + `"` +

@@ -2,6 +2,7 @@ package jsonutil
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"strings"
 
@@ -67,6 +68,15 @@ func ProtoToJSON(m protocompat.Message, options ...ConversionOption) (string, er
 		return "", err
 	}
 
+	if contains(options, OptCompact) {
+		var buf bytes.Buffer
+		err = json.Compact(&buf, x)
+		if err != nil {
+			return "", err
+		}
+		x = buf.Bytes()
+	}
+	
 	return string(x), nil
 }
 
