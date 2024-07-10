@@ -1,3 +1,5 @@
+//go:build test_all
+
 package networktree
 
 import (

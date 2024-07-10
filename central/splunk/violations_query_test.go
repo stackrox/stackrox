@@ -1,3 +1,5 @@
+//go:build test_all
+
 package splunk
 
 // This file contains datastore helpers and tests for queryAlerts() function.
