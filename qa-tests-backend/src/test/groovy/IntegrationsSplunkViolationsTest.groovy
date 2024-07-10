@@ -97,6 +97,12 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         // create new input to search violations from
         postToSplunk(port, "/servicesNS/nobody/TA-stackrox/data/inputs/stackrox_violations",
                 ["name": SPLUNK_INPUT_NAME, "interval": "1", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
+        // update saved search of TA to run every minute to create alerts quicker. It also looks further back.
+        postToSplunk(port, "/servicesNS/nobody/TA-stackrox/saved/searches/" +
+                "Threat%20-%20Create%20Notable%20from%20RHACS%20Alert%20-%20Rule", [
+                        "cron_schedule": "* * * * *",
+                        "dispatch.earliest_time": "-15m",
+                ])
     }
 
     @Tag("Integration")
@@ -142,17 +148,20 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             }
         }
 
-        // FIXME: After we know that violations are there, POST to manually run the conversion cronjob
-        // OR: Edit the conversion cronjob to run every 20 seconds in setup()
+        // After we know that violations arrived, manually kick off search that converts them into alerts
+        postToSplunk(port, "https://localhost:8089/services/saved/searches/" +
+                "Threat%20-%20Create%20Notable%20from%20RHACS%20Alert%20-%20Rule/dispatch", [
+                "dispatch.now": "true",
+                "force_dispatch": "true",
+        ])
 
         // Check for Alerts
         List<Map<String, String>> alerts = Collections.emptyList()
         boolean hasNetworkAlert = false
         boolean hasProcessAlert = false
-        // FIXME: We must try for at least 10 minutes, as the conversion cron runs every 5 minutes.
-        //  Try calling the search manually.
         for (int i = 0; i < 41; i++) {
             log.info "Attempt ${i} to get Alerts from Splunk"
+            // Hint: If this produces no results, evaluate expanding the earliest_time, e.g. to -15m
             def vSearchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
             TimeUnit.SECONDS.sleep(15)
             Response vResponse = SplunkUtil.getSearchResults(port, vSearchId)
