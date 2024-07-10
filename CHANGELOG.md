@@ -11,6 +11,18 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+### Removed Features
+
+### Deprecated Fatures
+
+### Technical Changes
+
+## [4.5.0]
+
+
+
+### Added Features
+
 - ROX-18689: ACS will qualify the registry (and path) of images from the container runtime when env var `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is set to `true` on both Central and Sensor.
   - This enables support for CRI-O's unqualified search registries and short name aliases ([more info](https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md)).
 - ROX-23852: `roxctl image scan` now has the option to filter by vulnerability severities using the `--severity` flag.
