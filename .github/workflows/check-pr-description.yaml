@@ -4,11 +4,6 @@ on:
   pull_request_target:
     types: [opened, edited, synchronize, reopened]
 
-  # This allows for testing the workflow from the PR branch.
-  # Should be deleted before merge.
-  pull_request:
-    types: [opened, edited, synchronize, reopened]
-
 jobs:
   check-description:
     runs-on: ubuntu-latest
