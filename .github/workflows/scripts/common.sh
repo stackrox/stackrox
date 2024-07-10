@@ -84,7 +84,7 @@ if ! (return 0 2>/dev/null); then # called
     check_not_empty \
         SCRIPT \
         GITHUB_REPOSITORY \
-        GITHUB_HEAD_REF
+        GITHUB_REF_NAME
     # GITHUB_REF_NAME: For pull requests, the format is <pr_number>/merge.
     #                  For milestones: master.
     # GITHUB_HEAD_REF: Branch name set only for pull_request and pull_request_target.
