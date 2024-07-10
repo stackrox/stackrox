@@ -27,6 +27,8 @@ test_upgrade() {
 
     cd "$TEST_ROOT"
 
+    ci_export ROX_POSTGRES_DATASTORE "true"
+
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: test_upgrade <log-output-dir>"
     fi
