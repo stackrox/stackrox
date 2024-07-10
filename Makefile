@@ -48,7 +48,7 @@ ROX_IMAGE_FLAVOR ?= $(shell \
 	  echo "development_build"; \
 	fi)
 
-DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
+DEFAULT_IMAGE_REGISTRY ?= quay.io/stackrox-io
 ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
 	DEFAULT_IMAGE_REGISTRY := quay.io/rhacs-eng
 endif
