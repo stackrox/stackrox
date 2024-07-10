@@ -2340,7 +2340,7 @@ class Kubernetes implements OrchestratorMain {
         )
         // Allow override of imagePullPolicy for quay.io images. Typically used
         // to set to Never to help keep the list of quay.io prebuilt images up
-        // to date for image-prefetcher. Why not all images? ROX-xxx.
+        // to date for image-prefetcher. Why not all images? See ROX-25258.
         if (Env.IMAGE_PULL_POLICY_FOR_QUAY_IO && deployment.image =~ /^quay.io/) {
             container.setImagePullPolicy(Env.IMAGE_PULL_POLICY_FOR_QUAY_IO)
         }
