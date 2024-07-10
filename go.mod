@@ -5,9 +5,9 @@ go 1.21.8
 toolchain go1.21.9
 
 require (
-	cloud.google.com/go/artifactregistry v1.14.9
+	cloud.google.com/go/artifactregistry v1.14.11
 	cloud.google.com/go/compute/metadata v0.4.0
-	cloud.google.com/go/containeranalysis v0.11.6
+	cloud.google.com/go/containeranalysis v0.11.8
 	cloud.google.com/go/securitycenter v1.32.0
 	cloud.google.com/go/storage v1.43.0
 	github.com/BurntSushi/toml v1.4.0
@@ -132,9 +132,9 @@ require (
 	golang.org/x/time v0.5.0
 	golang.org/x/tools v0.23.0
 	golang.stackrox.io/grpc-http1 v0.3.12
-	google.golang.org/api v0.187.0
-	google.golang.org/genproto v0.0.0-20240624140628-dc46fd24d27d
-	google.golang.org/grpc v1.64.0
+	google.golang.org/api v0.188.0
+	google.golang.org/genproto v0.0.0-20240708141625-4ad9e859172b
+	google.golang.org/grpc v1.64.1
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
@@ -160,10 +160,10 @@ require (
 
 require (
 	cloud.google.com/go v0.115.0 // indirect
-	cloud.google.com/go/auth v0.6.1 // indirect
+	cloud.google.com/go/auth v0.7.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
-	cloud.google.com/go/iam v1.1.8 // indirect
-	cloud.google.com/go/longrunning v0.5.7 // indirect
+	cloud.google.com/go/iam v1.1.10 // indirect
+	cloud.google.com/go/longrunning v0.5.9 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
@@ -456,8 +456,8 @@ require (
 	golang.org/x/mod v0.19.0 // indirect
 	golang.org/x/term v0.22.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240617180043-68d350f18fd4 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240624140628-dc46fd24d27d // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240701130421-f6361c86f094 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240708141625-4ad9e859172b // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
