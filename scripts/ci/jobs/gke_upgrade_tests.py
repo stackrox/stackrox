@@ -10,10 +10,6 @@ from pre_tests import PreSystemTests
 from ci_tests import UpgradeTest
 from post_tests import PostClusterTest, FinalPost
 
-# NOTE:  This test starts with Postgres off so that migrations
-# from RocksDB to Postgres can be executed.  Once RocksDB is
-# out of support those bits can be removed.
-
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
 ClusterTestRunner(
