@@ -42,6 +42,10 @@ jobs:
 
   download-nvd:
     runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'schedule' ||
+      (github.event_name == 'pull_request' &&
+       contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns'))
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
