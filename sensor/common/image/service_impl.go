@@ -2,6 +2,7 @@ package image
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -69,7 +70,11 @@ func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
 
 func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest) (*sensor.GetImageResponse, error) {
 	if id := req.GetImage().GetId(); id != "" {
-		img, _ := s.imageCache.Get(imagecacheutils.GetImageCacheKey(req.GetImage())).(*storage.Image)
+		v := s.imageCache.Get(imagecacheutils.GetImageCacheKey(req.GetImage()))
+		img, ok := v.(*storage.Image)
+		if !ok && v != nil {
+			panic(fmt.Sprintf("expected *storage.Image but got %T instead", v))
+		}
 		if img != nil && (!req.GetScanInline() || img.GetScan() != nil) {
 			return &sensor.GetImageResponse{
 				Image: img,

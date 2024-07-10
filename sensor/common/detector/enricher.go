@@ -3,6 +3,7 @@ package detector
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -241,7 +242,11 @@ func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAcc
 }
 
 func (e *enricher) getImageFromCache(key string) (*storage.Image, bool) {
-	value, _ := e.imageCache.Get(key).(*cacheValue)
+	v := e.imageCache.Get(key)
+	value, ok := v.(*cacheValue)
+	if !ok && v != nil {
+		panic(fmt.Sprintf("expected *cacheValue but got %T instead", v))
+	}
 	if value == nil {
 		return nil, false
 	}
@@ -290,7 +295,11 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 		localScan: e.localScan,
 		regStore:  e.regStore,
 	}
-	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
+	v := e.imageCache.GetOrSet(key, newValue)
+	value, ok := v.(*cacheValue)
+	if !ok && v != nil {
+		panic(fmt.Sprintf("expected *cacheValue but got %T instead", v))
+	}
 	if forceEnrichImageWithSignatures || newValue == value {
 		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
 	}
