@@ -404,10 +404,14 @@
         "gcs": {
           "$ref": "#/definitions/storageGCSConfig"
         },
+        "s3compatible": {
+          "$ref": "#/definitions/storageS3Compatible"
+        },
         "includeCertificates": {
           "type": "boolean"
         }
-      }
+      },
+      "title": "Next available tag: 10"
     },
     "storageGCSConfig": {
       "type": "object",
@@ -426,6 +430,36 @@
           "type": "boolean"
         }
       }
+    },
+    "storageS3Compatible": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string"
+        },
+        "accessKeyId": {
+          "type": "string",
+          "description": "The access key ID to use. The server will mask the value of this credential in responses and logs."
+        },
+        "secretAccessKey": {
+          "type": "string",
+          "description": "The secret access key to use. The server will mask the value of this credential in responses and logs."
+        },
+        "region": {
+          "type": "string"
+        },
+        "objectPrefix": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "urlStyle": {
+          "$ref": "#/definitions/storageS3URLStyle",
+          "description": "The URL style defines the bucket URL addressing.\nVirtual-hosted-style buckets are addressed as `https://\u003cbucket\u003e.\u003cendpoint\u003e'\nwhile path-style buckets are addressed as `https://\u003cendpoint\u003e/\u003cbucket\u003e`."
+        }
+      },
+      "description": "S3Compatible configures the backup integration with an S3 compatible storage provider.\nS3 compatible is intended for non-AWS providers. For AWS S3 use S3Config."
     },
     "storageS3Config": {
       "type": "object",
@@ -453,7 +487,17 @@
         "endpoint": {
           "type": "string"
         }
-      }
+      },
+      "description": "S3Config configures the backup integration with AWS S3."
+    },
+    "storageS3URLStyle": {
+      "type": "string",
+      "enum": [
+        "S3_URL_STYLE_UNSPECIFIED",
+        "S3_URL_STYLE_VIRTUAL_HOSTED",
+        "S3_URL_STYLE_PATH"
+      ],
+      "default": "S3_URL_STYLE_UNSPECIFIED"
     },
     "storageSchedule": {
       "type": "object",
