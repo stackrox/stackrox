@@ -1,4 +1,4 @@
-//go:build test_all
+//go:build test_sensor_integration
 
 package role
 
