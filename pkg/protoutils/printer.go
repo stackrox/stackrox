@@ -20,6 +20,7 @@ type Wrapper struct {
 func (w *Wrapper) String() string {
 	marshaler := &protojson.MarshalOptions{
 		Indent:            "  ",
+		EmitUnpopulated:   true,
 		EmitDefaultValues: true,
 	}
 	if w.Message == nil {
