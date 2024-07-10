@@ -1416,5 +1416,5 @@ func newEnricher(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) I
 }
 
 func newCache() cache.ImageMetadata {
-	return cache.ImageMetadata(expiringcache.NewExpiringCache(1 * time.Minute))
+	return cache.ImageMetadata(expiringcache.NewExpiringCache[string, *storage.ImageMetadata](1 * time.Minute))
 }

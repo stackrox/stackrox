@@ -84,13 +84,13 @@ func (h *handlerImpl) ProcessInvalidateImageCache(req *central.InvalidateImageCa
 	default:
 		h.admCtrlSettingsMgr.FlushCache()
 
-		keysToDelete := make([]interface{}, 0, len(req.GetImageKeys()))
+		keysToDelete := make([]imagecacheutils.Key, 0, len(req.GetImageKeys()))
 		for _, image := range req.GetImageKeys() {
 			key := image.GetImageId()
 			if key == "" {
 				key = image.GetImageFullName()
 			}
-			keysToDelete = append(keysToDelete, key)
+			keysToDelete = append(keysToDelete, imagecacheutils.Key(key))
 		}
 		h.imageCache.Remove(keysToDelete...)
 	}

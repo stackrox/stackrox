@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/image"
+	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/installmethod"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -117,7 +118,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		return nil, errors.Wrap(err, "creating enforcer")
 	}
 
-	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
+	imageCache := expiringcache.NewExpiringCache[imagecacheutils.Key, imagecacheutils.Value](env.ReprocessInterval.DurationSetting())
 
 	localScan := scan.NewLocalScan(storeProvider.Registries(), storeProvider.RegistryMirrors())
 	delegatedRegistryHandler := delegatedregistry.NewHandler(storeProvider.Registries(), localScan)

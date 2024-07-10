@@ -62,9 +62,18 @@ type cacheValue struct {
 	regStore  *registry.Store
 }
 
-func (c *cacheValue) waitAndGet() *storage.Image {
+func (c *cacheValue) WaitAndGet() *storage.Image {
 	// We need to wait before locking
 	c.signal.Wait()
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+	return c.image
+}
+
+func (c *cacheValue) GetIfDone() *storage.Image {
+	if !c.signal.IsDone() {
+		return nil
+	}
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 	return c.image
@@ -239,16 +248,12 @@ func newEnricher(cache imagecacheutils.ImageCache, serviceAccountStore store.Ser
 	}
 }
 
-func (e *enricher) getImageFromCache(key string) (*storage.Image, bool) {
-	v, ok := e.imageCache.Get(key)
+func (e *enricher) getImageFromCache(key imagecacheutils.Key) (*storage.Image, bool) {
+	value, ok := e.imageCache.Get(key)
 	if !ok {
 		return nil, false
 	}
-	value, _ := v.(*cacheValue)
-	if value == nil {
-		return nil, false
-	}
-	return value.waitAndGet(), true
+	return value.WaitAndGet(), true
 }
 
 func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
@@ -298,7 +303,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
 	}
 	return imageChanResult{
-		image:        value.waitAndGet(),
+		image:        value.WaitAndGet(),
 		containerIdx: req.containerIdx,
 	}
 }

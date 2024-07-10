@@ -8,7 +8,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
@@ -67,9 +66,10 @@ func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
 }
 
 func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest) (*sensor.GetImageResponse, error) {
-	if id := req.GetImage().GetId(); id != "" {
-		v, _ := s.imageCache.Get(imagecacheutils.GetImageCacheKey(req.GetImage()))
-		img, _ := v.(*storage.Image)
+	id := req.GetImage().GetId()
+	v, ok := s.imageCache.Get(imagecacheutils.GetImageCacheKey(req.GetImage()))
+	if id != "" && ok {
+		img := v.GetIfDone()
 		if img != nil && (!req.GetScanInline() || img.GetScan() != nil) {
 			return &sensor.GetImageResponse{
 				Image: img,

@@ -5,7 +5,17 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 )
 
-type ImageCache expiringcache.Cache
+type ImageCache expiringcache.Cache[Key, Value]
+
+// Value represents the value stored in image cache
+type Value interface {
+	WaitAndGet() *storage.Image
+	GetIfDone() *storage.Image
+}
+
+// Key is the type for keys in image cache to prevent accidental use,
+// it should be obtained from image with GetImageCacheKey
+type Key string
 
 // CacheKeyProvider represents an interface from which image cache can be generated.
 type CacheKeyProvider interface {
@@ -14,11 +24,11 @@ type CacheKeyProvider interface {
 }
 
 // GetImageCacheKey generates image cache key from a cache key provider.
-func GetImageCacheKey(provider CacheKeyProvider) string {
+func GetImageCacheKey(provider CacheKeyProvider) Key {
 	if id := provider.GetId(); id != "" {
-		return id
+		return Key(id)
 	}
-	return provider.GetName().GetFullName()
+	return Key(provider.GetName().GetFullName())
 }
 
 // CompareImageCacheKey given two CacheKeyProvider, compares if they're equal
