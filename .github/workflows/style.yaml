@@ -21,7 +21,7 @@ jobs:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
-    if: ${{ github.event.action != 'edited' }}
+    if: github.event.action != 'edited'
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
@@ -48,7 +48,7 @@ jobs:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
-    if: ${{ github.event.action != 'edited' }}
+    if: github.event.action != 'edited'
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
@@ -81,7 +81,7 @@ jobs:
 
   style-check:
     runs-on: ubuntu-latest
-    if: ${{ github.event.action != 'edited' }}
+    if: github.event.action != 'edited'
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
@@ -115,7 +115,7 @@ jobs:
   golangci-lint:
     timeout-minutes: 240
     runs-on: ubuntu-latest
-    if: ${{ github.event.action != 'edited' }}
+    if: github.event.action != 'edited'
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
@@ -225,7 +225,7 @@ jobs:
 
   check-pr-description:
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.actor != 'dependabot[bot]'
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -241,7 +241,7 @@ jobs:
 
   check-pr-template-change:
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.actor != 'dependabot[bot]'
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -261,6 +261,7 @@ jobs:
 
   github-actions-lint:
     runs-on: ubuntu-latest
+    if: github.event.action != 'edited'
     steps:
       - uses: actions/checkout@v4
       - name: Download actionlint
@@ -273,6 +274,7 @@ jobs:
 
   github-actions-shellcheck:
     runs-on: ubuntu-latest
+    if: github.event.action != 'edited'
     steps:
       - uses: actions/checkout@v4
       - name: Check scripts with shellcheck
@@ -280,7 +282,7 @@ jobs:
 
   openshift-ci-lint:
     runs-on: ubuntu-latest
-    if: ${{ github.event.action != 'edited' }}
+    if: github.event.action != 'edited'
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
     steps:
