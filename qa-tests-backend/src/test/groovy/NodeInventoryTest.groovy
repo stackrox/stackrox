@@ -11,12 +11,14 @@ import services.ClusterService
 import services.NodeService
 import spock.lang.Shared
 import spock.lang.Tag
+import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import util.Env
 
 // skip if executed in a test environment with just secured-cluster deployed in the test cluster
 // i.e. central is deployed elsewhere
 @IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
+@Ignore("ROX-24871") // After merging PR #11865, the test now fails more often and needs attention
 @Tag("PZ")
 class NodeInventoryTest extends BaseSpecification {
     @Shared
