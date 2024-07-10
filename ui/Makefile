@@ -62,11 +62,6 @@ clean:
 	rm -rf build
 	rm -rf node_modules apps/*/node_modules
 
-# TODO - Verify this is not in use anywhere
-.PHONY: publish-packages
-publish-packages:
-	yarn lerna:publish
-
 ######################
 ## Dev Dependencies ##
 ######################

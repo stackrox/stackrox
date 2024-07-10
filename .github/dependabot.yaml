@@ -6,7 +6,7 @@
 version: 2
 updates:
   - package-ecosystem: 'npm'
-    directory: 'ui/'
+    directory: 'ui/apps/platform'
     schedule:
       interval: 'weekly'
       day: 'wednesday'
