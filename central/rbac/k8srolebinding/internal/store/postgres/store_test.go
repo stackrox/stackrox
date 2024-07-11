@@ -104,7 +104,7 @@ func (s *RoleBindingsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, k8SRoleBindingCount)
 
-	s.NoError(store.PruneMany(ctx, k8SRoleBindingIDs))
+	s.NoError(store.DeleteMany(ctx, k8SRoleBindingIDs))
 
 	k8SRoleBindingCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

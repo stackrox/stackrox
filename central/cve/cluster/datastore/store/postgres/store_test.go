@@ -101,7 +101,7 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, clusterCVECount)
 
-	s.NoError(store.PruneMany(ctx, clusterCVEIDs))
+	s.NoError(store.DeleteMany(ctx, clusterCVEIDs))
 
 	clusterCVECount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

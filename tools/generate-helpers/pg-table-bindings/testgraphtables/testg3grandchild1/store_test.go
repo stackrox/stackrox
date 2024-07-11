@@ -101,7 +101,7 @@ func (s *TestG3GrandChild1StoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, testG3GrandChild1Count)
 
-	s.NoError(store.PruneMany(ctx, testG3GrandChild1IDs))
+	s.NoError(store.DeleteMany(ctx, testG3GrandChild1IDs))
 
 	testG3GrandChild1Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

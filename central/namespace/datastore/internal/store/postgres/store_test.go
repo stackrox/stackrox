@@ -104,7 +104,7 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, namespaceMetadataCount)
 
-	s.NoError(store.PruneMany(ctx, namespaceMetadataIDs))
+	s.NoError(store.DeleteMany(ctx, namespaceMetadataIDs))
 
 	namespaceMetadataCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

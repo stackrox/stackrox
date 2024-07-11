@@ -104,7 +104,7 @@ func (s *SecretsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, secretCount)
 
-	s.NoError(store.PruneMany(ctx, secretIDs))
+	s.NoError(store.DeleteMany(ctx, secretIDs))
 
 	secretCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

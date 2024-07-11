@@ -104,7 +104,7 @@ func (s *AuthMachineToMachineConfigsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, authMachineToMachineConfigCount)
 
-	s.NoError(store.PruneMany(ctx, authMachineToMachineConfigIDs))
+	s.NoError(store.DeleteMany(ctx, authMachineToMachineConfigIDs))
 
 	authMachineToMachineConfigCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

@@ -104,7 +104,7 @@ func (s *PodsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, podCount)
 
-	s.NoError(store.PruneMany(ctx, podIDs))
+	s.NoError(store.DeleteMany(ctx, podIDs))
 
 	podCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

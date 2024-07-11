@@ -104,7 +104,7 @@ func (s *NotifiersStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, notifierCount)
 
-	s.NoError(store.PruneMany(ctx, notifierIDs))
+	s.NoError(store.DeleteMany(ctx, notifierIDs))
 
 	notifierCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

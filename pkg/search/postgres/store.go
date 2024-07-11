@@ -361,7 +361,7 @@ func (s *genericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 				return errors.Wrapf(err, "unable to delete records and rollback failed: %v", rollbackErr)
 			}
 		}
-		return errors.Wrap(err, "unable to delete the records")
+		return err
 	}
 
 	if tx != nil {
@@ -510,8 +510,6 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 }
 
 func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []string, initialBatchSize int, continueOnError bool) error {
-	defer s.setPostgresOperationDurationTime(time.Now(), ops.RemoveMany)
-
 	// Batch the deletes
 	localBatchSize := initialBatchSize
 
@@ -529,11 +527,10 @@ func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []stri
 		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
 		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
-			if continueOnError {
-				log.Errorf("unable to prune the records: %v", err)
-				continue
+			if !continueOnError {
+				return errors.Wrap(err, "unable to delete the records")
 			}
-			return errors.Wrap(err, "unable to delete the records")
+			log.Errorf("unable to prune the records: %v", err)
 		}
 
 		// Move the slice forward to start the next batch

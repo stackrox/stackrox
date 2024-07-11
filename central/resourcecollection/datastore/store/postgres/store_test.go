@@ -103,7 +103,7 @@ func (s *CollectionsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, resourceCollectionCount)
 
-	s.NoError(store.PruneMany(ctx, resourceCollectionIDs))
+	s.NoError(store.DeleteMany(ctx, resourceCollectionIDs))
 
 	resourceCollectionCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

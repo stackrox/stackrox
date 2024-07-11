@@ -104,7 +104,7 @@ func (s *NetworkBaselinesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, networkBaselineCount)
 
-	s.NoError(store.PruneMany(ctx, networkBaselineIDs))
+	s.NoError(store.DeleteMany(ctx, networkBaselineIDs))
 
 	networkBaselineCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

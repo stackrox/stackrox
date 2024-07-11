@@ -101,7 +101,7 @@ func (s *SignatureIntegrationsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, signatureIntegrationCount)
 
-	s.NoError(store.PruneMany(ctx, signatureIntegrationIDs))
+	s.NoError(store.DeleteMany(ctx, signatureIntegrationIDs))
 
 	signatureIntegrationCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

@@ -104,7 +104,7 @@ func (s *RisksStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, riskCount)
 
-	s.NoError(store.PruneMany(ctx, riskIDs))
+	s.NoError(store.DeleteMany(ctx, riskIDs))
 
 	riskCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

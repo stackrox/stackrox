@@ -104,7 +104,7 @@ func (s *ProcessBaselinesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, processBaselineCount)
 
-	s.NoError(store.PruneMany(ctx, processBaselineIDs))
+	s.NoError(store.DeleteMany(ctx, processBaselineIDs))
 
 	processBaselineCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

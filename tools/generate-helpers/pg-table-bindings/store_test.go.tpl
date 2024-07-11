@@ -145,7 +145,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, {{.TrimmedType|lowerCamelCase}}Count)
 
-	s.NoError(store.PruneMany(ctx, {{$name}}IDs))
+	s.NoError(store.DeleteMany(ctx, {{$name}}IDs))
 
 	{{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

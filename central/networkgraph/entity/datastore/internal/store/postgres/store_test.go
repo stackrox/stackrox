@@ -101,7 +101,7 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, networkEntityCount)
 
-	s.NoError(store.PruneMany(ctx, networkEntityIDs))
+	s.NoError(store.DeleteMany(ctx, networkEntityIDs))
 
 	networkEntityCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

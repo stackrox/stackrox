@@ -101,7 +101,7 @@ func (s *AdministrationEventsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, administrationEventCount)
 
-	s.NoError(store.PruneMany(ctx, administrationEventIDs))
+	s.NoError(store.DeleteMany(ctx, administrationEventIDs))
 
 	administrationEventCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

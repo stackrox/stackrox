@@ -101,7 +101,7 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, testGrandparentCount)
 
-	s.NoError(store.PruneMany(ctx, testGrandparentIDs))
+	s.NoError(store.DeleteMany(ctx, testGrandparentIDs))
 
 	testGrandparentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
