@@ -1,4 +1,4 @@
-//go:build test_sensor_integration
+//go:build test_all
 
 package runtime
 
