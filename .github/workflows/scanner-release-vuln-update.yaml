@@ -130,7 +130,7 @@ jobs:
         # Just run go mod tidy and hope for the best.
         go mod tidy
         cd scanner
-        go build -trimpath -o bin/updater ./cmd/updater
+        go build -trimpath -buildvcs=false -o bin/updater ./cmd/updater
         go clean -cache -modcache
 
         mkdir ${{ env.ROX_PRODUCT_VERSION }}
