@@ -28,7 +28,17 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Fetch CVEs
+    - name: Fetch NVD Feeds
+      env:
+        SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
+      run: |
+        set -eu
+        dir=$(mktemp -d)
+        python3 .github/workflows/scripts/scanner-update-nvd-legacy.py "$dir"
+        zip -j nvd.zip "$dir"/*.nvd.json
+
+    - name: Fetch NVD Api
       env:
         SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
@@ -43,6 +53,12 @@ jobs:
         name: nvd20
         path: nvd20.zip
         if-no-files-found: error
+
+    - uses: ./.github/actions/upload-artifact-with-retry
+        with:
+          name: nvd
+          path: nvd.zip
+          if-no-files-found: error
 
   upload:
     needs:

@@ -73,7 +73,7 @@ def fetch_data(start, end):
                     "descriptions": cve_feed.get('descriptions', []),
                     "metrics": cve_feed.get('metrics', {})
                 }
-                yield transformed_data
+                yield {"cve": transformed_data}
 
             index += data['resultsPerPage']
             max_retries = 3  # Reset retries
