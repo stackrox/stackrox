@@ -268,8 +268,8 @@ force_rollback_to_previous_postgres() {
     echo "config patch: $config_patch"
 
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
-    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
-    kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$FORCE_ROLLBACK_VERSION"
+    kubectl -n stackrox set image deploy/central "central=quay.io/stackrox-io/main:$FORCE_ROLLBACK_VERSION"
+    kubectl -n stackrox set image deploy/central-db "*=quay.io/stackrox-io/central-db:$FORCE_ROLLBACK_VERSION"
 }
 
 deploy_scaled_workload() {
