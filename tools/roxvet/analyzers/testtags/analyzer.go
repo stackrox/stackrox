@@ -30,6 +30,9 @@ func isTest(packageName string) bool {
 	}
 	unqualifiedPackageName := strings.TrimPrefix(packageName, roxPrefix)
 	pathElems := strings.Split(unqualifiedPackageName, string(filepath.Separator))
+	if pathElems == nil {
+		return false
+	}
 	if pathElems[0] == "tests" {
 		return true
 	}
