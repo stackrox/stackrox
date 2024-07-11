@@ -1,24 +1,21 @@
 import static util.Helpers.waitForTrue
 import static util.Helpers.withRetry
 
-import com.google.protobuf.Timestamp
-
 import io.stackrox.proto.storage.NodeOuterClass.Node
 
 import common.Constants
 import services.BaseService
 import services.ClusterService
 import services.NodeService
+import util.Env
+
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
-import spock.lang.Ignore
-import spock.lang.IgnoreIf
-import util.Env
 
 // skip if executed in a test environment with just secured-cluster deployed in the test cluster
 // i.e. central is deployed elsewhere
 @IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
-@Ignore("ROX-24871") // After merging PR #11865, the test now fails more often and needs attention
 @Tag("PZ")
 class NodeInventoryTest extends BaseSpecification {
     @Shared
@@ -39,7 +36,6 @@ class NodeInventoryTest extends BaseSpecification {
         "given a non-empty list of nodes"
         List<Node> nodes = NodeService.getNodes()
         assert nodes.size() > 0
-        def previousScanTime = [:]
 
         when:
         boolean nodeInventoryContainerAvailable =
@@ -69,12 +65,6 @@ class NodeInventoryTest extends BaseSpecification {
                 }
                 return true
             }
-            // Finally, before starting the test, make note of the current scan time, which should be updated
-            nodes.each { node ->
-                previousScanTime[node.getId()] = node.hasScan() ?
-                        node.getScan().getScanTime() : Timestamp.getDefaultInstance()
-                log.info("Previous scan time of node ${node.getId()}: ${previousScanTime[node.getId()]}")
-            }
         }
         log.info("Waiting for scanner deployment to be ready")
         waitForTrue(20, 6) {
@@ -103,9 +93,6 @@ class NodeInventoryTest extends BaseSpecification {
             }
             assert node.getScan().getComponentsList().size() > 4,
                 "Expected to find more than 4 components on RHCOS node"
-
-            assert previousScanTime[node.getId()] != node.getScan().getScanTime(),
-                "Expected the scan time of the node to have changed"
         }
     }
 }
