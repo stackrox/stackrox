@@ -506,7 +506,7 @@ go-unit-tests: build-prep test-prep
 	@echo "Run log tests"
 	for encoding in console json; do \
 		for level in debug info warn error fatal panic; do \
-			LOGENCODING=$$encoding LOGLEVEL=$$level CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -v ./pkg/logging/... | grep -v "iteration"; \
+			LOGENCODING=$$encoding LOGLEVEL=$$level CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,test_all scripts/go-test.sh -p 4 -race -v ./pkg/logging/... | grep -v "iteration"; \
 		done; \
 	done
 
@@ -568,7 +568,7 @@ test: go-unit-tests ui-test shell-unit-tests
 .PHONY: integration-unit-tests
 integration-unit-tests: build-prep test-prep
 	set -o pipefail ; \
-	GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -count=1 -v \
+	GOTAGS=$(GOTAGS),test,test_all,integration scripts/go-test.sh -count=1 -v \
 		$(shell go list ./... | grep  "registries\|scanners\|notifiers") \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
