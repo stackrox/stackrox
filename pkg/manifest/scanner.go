@@ -147,12 +147,9 @@ func (m *manifestGenerator) applyScannerDbDeployment(ctx context.Context) error 
 						FSGroup: &PostgresUser,
 					},
 					Containers: []v1.Container{{
-						Name:  "db",
-						Image: image,
-						SecurityContext: &v1.SecurityContext{
-							RunAsUser:  &PostgresUser,
-							RunAsGroup: &PostgresUser,
-						},
+						Name:            "db",
+						Image:           image,
+						SecurityContext: RestrictedSecurityContext(PostgresUser),
 						Ports: []v1.ContainerPort{{
 							Name:          "tcp-postgresql",
 							ContainerPort: 5432,
@@ -170,12 +167,9 @@ func (m *manifestGenerator) applyScannerDbDeployment(ctx context.Context) error 
 						},
 					}},
 					InitContainers: []v1.Container{{
-						Name:  "init-db",
-						Image: image,
-						SecurityContext: &v1.SecurityContext{
-							RunAsUser:  &PostgresUser,
-							RunAsGroup: &PostgresUser,
-						},
+						Name:            "init-db",
+						Image:           image,
+						SecurityContext: RestrictedSecurityContext(PostgresUser),
 						Env: []v1.EnvVar{
 							{
 								Name:  "POSTGRES_PASSWORD_FILE",
@@ -307,13 +301,10 @@ func (m *manifestGenerator) applyScannerDeployment(ctx context.Context) error {
 						FSGroup: &ScannerUser,
 					},
 					Containers: []v1.Container{{
-						Name:    "scanner",
-						Image:   image,
-						Command: []string{"/entrypoint.sh"},
-						SecurityContext: &v1.SecurityContext{
-							RunAsUser:  &ScannerUser,
-							RunAsGroup: &ScannerUser,
-						},
+						Name:            "scanner",
+						Image:           image,
+						Command:         []string{"/entrypoint.sh"},
+						SecurityContext: RestrictedSecurityContext(ScannerUser),
 						Ports: []v1.ContainerPort{{
 							Name:          "https",
 							ContainerPort: 8080,

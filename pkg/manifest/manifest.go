@@ -174,3 +174,20 @@ func (v VolumeDefAndMount) Apply(c *v1.Container, spec *v1.PodSpec) {
 	v.Volume.Name = v.Name
 	spec.Volumes = append(spec.Volumes, v.Volume)
 }
+
+func RestrictedSecurityContext(user int64) *v1.SecurityContext {
+	FALSE := false
+	TRUE := true
+	return &v1.SecurityContext{
+		RunAsUser:                &user,
+		RunAsGroup:               &user,
+		AllowPrivilegeEscalation: &FALSE,
+		SeccompProfile: &v1.SeccompProfile{
+			Type: v1.SeccompProfileTypeRuntimeDefault,
+		},
+		RunAsNonRoot: &TRUE,
+		Capabilities: &v1.Capabilities{
+			Drop: []v1.Capability{"ALL"},
+		},
+	}
+}

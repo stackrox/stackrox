@@ -199,7 +199,7 @@ func (m *manifestGenerator) createCentralDbPvc(ctx context.Context) error {
 	pvc := v1.PersistentVolumeClaim{
 		Spec: v1.PersistentVolumeClaimSpec{
 			AccessModes: []v1.PersistentVolumeAccessMode{"ReadWriteOnce"},
-			Resources: v1.ResourceRequirements{
+			Resources: v1.VolumeResourceRequirements{
 				Requests: v1.ResourceList{
 					v1.ResourceStorage: resource.MustParse("1Gi"),
 				},
@@ -261,12 +261,9 @@ func (m *manifestGenerator) applyCentralDbDeployment(ctx context.Context) error 
 						FSGroup: &PostgresUser,
 					},
 					Containers: []v1.Container{{
-						Name:  "central-db",
-						Image: "quay.io/stackrox-io/central-db:latest",
-						SecurityContext: &v1.SecurityContext{
-							RunAsUser:  &PostgresUser,
-							RunAsGroup: &PostgresUser,
-						},
+						Name:            "central-db",
+						Image:           "quay.io/stackrox-io/central-db:latest",
+						SecurityContext: RestrictedSecurityContext(PostgresUser),
 						Ports: []v1.ContainerPort{{
 							Name:          "postgresql",
 							ContainerPort: 5432,
@@ -284,13 +281,10 @@ func (m *manifestGenerator) applyCentralDbDeployment(ctx context.Context) error 
 						},
 					}},
 					InitContainers: []v1.Container{{
-						Name:    "init-db",
-						Image:   "quay.io/stackrox-io/central-db:latest",
-						Command: []string{"init-entrypoint.sh"},
-						SecurityContext: &v1.SecurityContext{
-							RunAsUser:  &PostgresUser,
-							RunAsGroup: &PostgresUser,
-						},
+						Name:            "init-db",
+						Image:           "quay.io/stackrox-io/central-db:latest",
+						Command:         []string{"init-entrypoint.sh"},
+						SecurityContext: RestrictedSecurityContext(PostgresUser),
 						Env: []v1.EnvVar{
 							{
 								Name:  "PGDATA",
