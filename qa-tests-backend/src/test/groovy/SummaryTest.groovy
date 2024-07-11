@@ -11,7 +11,6 @@ import services.ClusterService
 import services.NamespaceService
 import services.NodeService
 import services.SummaryService
-import util.Env
 import util.Helpers
 
 import org.junit.Assume
@@ -109,9 +108,6 @@ class SummaryTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    // TODO(ROX-25197): Fails under AKS
-    @IgnoreIf({ Env.CI_JOB_NAME.contains("aks-qa-e2e") })
-    @IgnoreIf({ Env.CI_JOB_NAME.contains("aks-ebpf-qa-e2e") })
     @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
     def "Verify namespace details"() {
         // https://issues.redhat.com/browse/ROX-6844
