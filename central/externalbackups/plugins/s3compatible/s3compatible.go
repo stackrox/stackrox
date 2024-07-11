@@ -88,11 +88,13 @@ func validate(cfg *storage.S3Compatible) error {
 	return errorList.ToError()
 }
 
-func validateEndpoint(endpoint string) error {
-	if _, err := url.Parse(fmt.Sprintf("https://%s", urlfmt.TrimHTTPPrefixes(endpoint))); err != nil {
-		return errors.Wrapf(err, "invalid URL %q", endpoint)
+func validateEndpoint(endpoint string) (string, error) {
+	// The aws-sdk-go-v2 package does not add the `https` prefix to the endpoint
+	sanitizedEndpoint := fmt.Sprintf("https://%s", urlfmt.TrimHTTPPrefixes(endpoint))
+	if _, err := url.Parse(sanitizedEndpoint); err != nil {
+		return "", errors.Wrapf(err, "invalid URL %q", endpoint)
 	}
-	return nil
+	return sanitizedEndpoint, nil
 }
 
 func newS3Compatible(integration *storage.ExternalBackup) (*s3Compatible, error) {
@@ -130,7 +132,8 @@ func newS3Compatible(integration *storage.ExternalBackup) (*s3Compatible, error)
 	}
 
 	if endpoint := cfg.GetEndpoint(); endpoint != "" {
-		if err := validateEndpoint(endpoint); err != nil {
+		endpoint, err = validateEndpoint(endpoint)
+		if err != nil {
 			return nil, err
 		}
 		clientOpts = append(clientOpts, func(o *s3.Options) {
