@@ -970,12 +970,11 @@ wait_for_api() {
         if (( elapsed_seconds > max_seconds )); then
             kubectl -n "${central_namespace}" get pod -o wide
             kubectl -n "${central_namespace}" get deploy -o wide
-            echo >&2 "wait_for_api() timeout after $max_seconds seconds."
-            exit 1
+            die "wait_for_api() timeout after $max_seconds seconds."
         fi
 
         # Otherwise report and retry
-        echo "waiting ($elapsed_seconds/$max_seconds)"
+        info "Still waiting (${elapsed_seconds}s/${max_seconds}s)..."
         sleep 5
     done
 
@@ -1002,13 +1001,14 @@ wait_for_api() {
 
     API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
     PING_URL="https://${API_ENDPOINT}/v1/ping"
-    info "PING_URL is set to ${PING_URL}"
-
-    set +e
     NUM_SUCCESSES_IN_A_ROW=0
     SUCCESSES_NEEDED_IN_A_ROW=3
+
+    info "Attempting to get ${SUCCESSES_NEEDED_IN_A_ROW} 'ok' responses in a row from ${PING_URL}"
+
+    set +e
     # shellcheck disable=SC2034
-    for i in $(seq 1 60); do
+    for i in $(seq 1 120); do
         pong="$(curl -sk --connect-timeout 5 --max-time 10 "${PING_URL}")"
         pong_exitstatus="$?"
         status="$(echo "$pong" | jq -r '.status')"
@@ -1022,12 +1022,12 @@ wait_for_api() {
             continue
         fi
         NUM_SUCCESSES_IN_A_ROW=0
-        echo -n .
+        info "Curl exited with status ${pong_exitstatus} and returned '${pong}'."
         sleep 5
     done
     echo
     if [[ "${NUM_SUCCESSES_IN_A_ROW}" != "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
-        info "Failed to connect to Central in namespace ${central_namespace}. Failed with ${NUM_SUCCESSES_IN_A_ROW} successes in a row"
+        info "Failed to connect to Central in namespace ${central_namespace}. Saw at most ${NUM_SUCCESSES_IN_A_ROW} successes in a row."
         info "port-forwards:"
         pgrep port-forward
         info "pods:"
