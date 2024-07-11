@@ -357,6 +357,11 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/debugger")
 	}
 
+	if validImportRoot == "central" {
+		// Need this for unit tests.
+		allowedPackages = appendPackageWithChildren(allowedPackages, "tests/bad-ca")
+	}
+
 	for _, imp := range imports {
 		err := verifySingleImportFromAllowedPackagesOnly(imp, packageName, validImportRoot, allowedPackages...)
 		if err != nil {

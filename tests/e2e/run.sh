@@ -99,7 +99,7 @@ test_preamble() {
 
     export ROX_PLAINTEXT_ENDPOINTS="8080,grpc@8081"
     export ROXDEPLOY_CONFIG_FILE_MAP="$ROOT/scripts/ci/endpoints/endpoints.yaml"
-    export TRUSTED_CA_FILE="$ROOT/tests/bad-ca/untrusted-root-badssl-com.pem"
+    export TRUSTED_CA_FILE="$ROOT/tests/bad-ca/root.crt"
 }
 
 prepare_for_endpoints_test() {
