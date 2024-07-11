@@ -59,11 +59,24 @@ def fetch_data(start, end):
 
             with request.urlopen(req, timeout=45) as response:
                 data = json.loads(response.read().decode())
+
             total = data['totalResults']
             logging.info(f"Fetched page at index {index} (out of {total} total items)")
-            yield from data['vulnerabilities']
+
+            # Transform the data during fetching
+            for item in data['vulnerabilities']:
+                cve_feed = item['cve']
+                transformed_data = {
+                    "id": cve_feed['id'],
+                    "published": cve_feed['published'],
+                    "lastModified": cve_feed['lastModified'],
+                    "descriptions": cve_feed.get('descriptions', []),
+                    "metrics": cve_feed.get('metrics', {})
+                }
+                yield transformed_data
+
             index += data['resultsPerPage']
-            max_retries = 3 #reset
+            max_retries = 3  # Reset retries
             backoff_time = 1
         except Exception as e:
             logging.error(f"Failed to download page at index {index}: {e}")
@@ -102,9 +115,11 @@ def main():
             for start, end in get_dates(year, 3):# fetch quarterly
                 vulnerabilities.extend(fetch_data(start, end))
 
-            file_path = os.path.join(args.dirpath, f"{year}.json")
+            file_path = os.path.join(args.dirpath, f"{year}.nvd.json")
             with open(file_path, "w") as file:
-                json.dump({"vulnerabilities": vulnerabilities}, file)
+                for start, end in get_dates(year, 3):  # fetch quarterly
+                    for vulnerability in fetch_data(start, end):
+                        file.write(json.dumps(vulnerability) + '\n')
 
             file_size = os.path.getsize(file_path) # Get the size of the file
             logging.info(f"Size of {file_path}: {file_size} bytes")

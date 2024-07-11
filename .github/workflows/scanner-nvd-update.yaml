@@ -35,20 +35,20 @@ jobs:
       run: |
         set -eu
         dir=$(mktemp -d)
-        python3 .github/workflows/scripts/scanner-update-nvd-legacy.py "$dir"
-        zip -j nvd.zip "$dir"/*.nvd.json
+        python3 .github/workflows/scripts/scanner-update-nvd.py "$dir"
+        zip -j nvd20.zip "$dir"/*.nvd.json
 
     - uses: ./.github/actions/upload-artifact-with-retry
       with:
-        name: nvd
-        path: nvd.zip
+        name: nvd20
+        path: nvd20.zip
         if-no-files-found: error
 
   upload:
     needs:
       - fetch-cves
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
+    # if: github.event_name != 'pull_request'
     steps:
     # Checkout to run ./.github/actions/{download,upload}-artifact-with-retry
     - name: Checkout repository
@@ -59,7 +59,7 @@ jobs:
 
     - uses: ./.github/actions/download-artifact-with-retry
       with:
-        name: nvd
+        name: nvd20
         path: .
 
     - name: Authenticate with Google Cloud
@@ -71,7 +71,7 @@ jobs:
       uses: google-github-actions/setup-gcloud@v2
 
     - name: Upload production
-      run: gsutil cp nvd.zip "gs://definitions.stackrox.io/v4/nvd/nvd.zip"
+      run: gsutil cp nvd20.zip "gs://definitions.stackrox.io/v4/nvd/nvd20.zip"
 
   send-notification:
     needs:
