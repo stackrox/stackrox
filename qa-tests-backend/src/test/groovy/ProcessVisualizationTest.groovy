@@ -4,10 +4,8 @@ import objects.Deployment
 import services.DeploymentService
 import services.ProcessService
 import util.Timer
-import util.Env
 
 import org.junit.Assume
-import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -93,7 +91,8 @@ class ProcessVisualizationTest extends BaseSpecification {
         def kubeProxyPods = orchestrator.getPodsByLabel("kube-system", ["component": "kube-proxy"])
         def podOwnerIsTracked = false
         for (pod in kubeProxyPods) {
-            if (podOwnerIsTracked = orchestrator.ownerIsTracked(pod.getMetadata())) {
+            if (orchestrator.ownerIsTracked(pod.getMetadata())) {
+                podOwnerIsTracked = true
                 break
             }
         }
