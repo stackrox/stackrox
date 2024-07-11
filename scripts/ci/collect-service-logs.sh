@@ -17,6 +17,10 @@ set -euo pipefail
 # - Must be called from the root of the Apollo git repository.
 # - Logs are saved under /tmp/k8s-service-logs/ or DIR if passed
 
+SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/ci/lib.sh
+source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
+
 usage() {
     echo "./scripts/ci/collect-service-logs.sh <namespace> [<output-dir>]"
     echo "e.g. ./scripts/ci/collect-service-logs.sh stackrox"
@@ -46,7 +50,7 @@ main() {
     fi
 
     if ! kubectl get ns "${namespace}"; then
-        echo "Skipping missing namespace"
+        info "Skipping missing namespace ${namespace}"
         exit 0
     fi
 
@@ -58,18 +62,16 @@ main() {
     log_dir="${log_dir}/${namespace}"
     mkdir -p "${log_dir}"
 
-    echo
-    echo ">>> Collecting from namespace ${namespace} <<<"
-    echo
+    info ">>> Collecting from namespace ${namespace} <<<"
     set +e
 
     for object in daemonsets deployments services pods secrets serviceaccounts validatingwebhookconfigurations \
       catalogsources subscriptions clusterserviceversions central securedclusters nodes; do
         # A feel good command before pulling logs
-        echo ">>> ${object} <<<"
+        info ">>> Collecting ${object} from namespace ${namespace} <<<"
         out="$(mktemp)"
         if ! kubectl -n "${namespace}" get "${object}" -o wide > "$out" 2>&1; then
-            echo "Cannot get $object in $namespace: $(cat "$out")"
+            info "Cannot get $object in $namespace: $(cat "$out")"
             continue
         fi
         cat "$out"
