@@ -131,7 +131,7 @@ var (
 )
 
 type fakeRegistryScanner struct {
-	scanner           scannertypes.Scanner
+	scanner           *fakeScanner
 	requestedMetadata bool
 	notMatch          bool
 }
