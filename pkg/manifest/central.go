@@ -18,7 +18,19 @@ import (
 )
 
 func (m *manifestGenerator) applyCentral(ctx context.Context) error {
-	err := m.createCentralEndpointsConfig(ctx)
+	err := m.createServiceAccount(ctx, "central")
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return fmt.Errorf("Failed to create central service account: %w\n", err)
+	}
+	log.Info("Created central service account")
+
+	err = m.createServiceAccount(ctx, "central-db")
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return fmt.Errorf("Failed to create central-db service account: %w\n", err)
+	}
+	log.Info("Created central-db service account")
+
+	err = m.createCentralEndpointsConfig(ctx)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create central endpoints config: %w\n", err)
 	}
@@ -257,8 +269,12 @@ func (m *manifestGenerator) applyCentralDbDeployment(ctx context.Context) error 
 					},
 				},
 				Spec: v1.PodSpec{
+					ServiceAccountName: "central-db",
 					SecurityContext: &v1.PodSecurityContext{
 						FSGroup: &PostgresUser,
+						SeccompProfile: &v1.SeccompProfile{
+							Type: v1.SeccompProfileTypeRuntimeDefault,
+						},
 					},
 					Containers: []v1.Container{{
 						Name:            "central-db",
@@ -416,10 +432,12 @@ func (m *manifestGenerator) applyCentralDeployment(ctx context.Context) error {
 					},
 				},
 				Spec: v1.PodSpec{
+					ServiceAccountName: "central",
 					Containers: []v1.Container{{
-						Name:    "central",
-						Image:   "quay.io/stackrox-io/main:latest",
-						Command: []string{"/stackrox/central-entrypoint.sh"},
+						Name:            "central",
+						Image:           "quay.io/klape/stackrox:latest",
+						ImagePullPolicy: v1.PullAlways,
+						Command:         []string{"/stackrox/central-entrypoint.sh"},
 						Ports: []v1.ContainerPort{{
 							Name:          "api",
 							ContainerPort: 8443,

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,6 +50,10 @@ func (m *manifestGenerator) Apply(ctx context.Context) error {
 
 	if err := m.getCA(ctx); err != nil {
 		return fmt.Errorf("Getting CA: %w\n", err)
+	}
+
+	if err := m.createNonrootV2SCCRole(ctx); err != nil {
+		panic(err)
 	}
 
 	if err := m.applyCentral(ctx); err != nil {
@@ -190,4 +195,80 @@ func RestrictedSecurityContext(user int64) *v1.SecurityContext {
 			Drop: []v1.Capability{"ALL"},
 		},
 	}
+}
+
+func (m *manifestGenerator) createNonrootV2SCCRole(ctx context.Context) error {
+	name := "use-nonroot-v2-scc"
+	role := rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Rules: []rbacv1.PolicyRule{{
+			APIGroups:     []string{"security.openshift.io"},
+			Resources:     []string{"securitycontextconstraints"},
+			ResourceNames: []string{"nonroot-v2"},
+			Verbs:         []string{"use"},
+		}},
+	}
+	_, err := m.Client.RbacV1().Roles(m.Namespace).Create(ctx, &role, metav1.CreateOptions{})
+
+	if err != nil {
+		if errors.IsAlreadyExists(err) {
+			log.Infof("Role %s already exists", name)
+		} else {
+			return fmt.Errorf("Error creating role %s: %w", name, err)
+		}
+	}
+
+	return nil
+}
+
+func (m *manifestGenerator) createNonrootV2SCCRoleBinding(ctx context.Context, serviceAccountName string) error {
+	name := fmt.Sprintf("%s-use-nonroot-v2-scc", serviceAccountName)
+	roleBinding := rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     "use-nonroot-v2-scc",
+		},
+		Subjects: []rbacv1.Subject{{
+			Kind:      "ServiceAccount",
+			Name:      serviceAccountName,
+			Namespace: "stackrox",
+		}},
+	}
+	_, err := m.Client.RbacV1().RoleBindings(m.Namespace).Create(ctx, &roleBinding, metav1.CreateOptions{})
+
+	if err != nil {
+		if errors.IsAlreadyExists(err) {
+			log.Infof("Role binding %s already exists", name)
+		} else {
+			return fmt.Errorf("Error creating role binding %s: %w", name, err)
+		}
+	}
+
+	return nil
+}
+
+func (m *manifestGenerator) createServiceAccount(ctx context.Context, name string) error {
+	acct := v1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+
+	_, err := m.Client.CoreV1().ServiceAccounts(m.Namespace).Create(ctx, &acct, metav1.CreateOptions{})
+
+	if err != nil {
+		if errors.IsAlreadyExists(err) {
+			log.Infof("Service account %s already exists", name)
+		} else {
+			return fmt.Errorf("Error creating service account %s: %w", name, err)
+		}
+	}
+
+	return m.createNonrootV2SCCRoleBinding(ctx, name)
 }

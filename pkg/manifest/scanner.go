@@ -16,6 +16,12 @@ import (
 )
 
 func (m *manifestGenerator) applyScanner(ctx context.Context) error {
+	err := m.createServiceAccount(ctx, "scanner")
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return fmt.Errorf("Failed to create scanner service account: %w\n", err)
+	}
+	log.Info("Created scanner service account")
+
 	if err := m.createScannerConfig(ctx); err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create central config: %w\n", err)
 	}
@@ -146,6 +152,7 @@ func (m *manifestGenerator) applyScannerDbDeployment(ctx context.Context) error 
 					SecurityContext: &v1.PodSecurityContext{
 						FSGroup: &PostgresUser,
 					},
+					ServiceAccountName: "scanner",
 					Containers: []v1.Container{{
 						Name:            "db",
 						Image:           image,
@@ -300,6 +307,7 @@ func (m *manifestGenerator) applyScannerDeployment(ctx context.Context) error {
 					SecurityContext: &v1.PodSecurityContext{
 						FSGroup: &ScannerUser,
 					},
+					ServiceAccountName: "scanner",
 					Containers: []v1.Container{{
 						Name:            "scanner",
 						Image:           image,
