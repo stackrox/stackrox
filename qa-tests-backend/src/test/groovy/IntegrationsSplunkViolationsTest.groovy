@@ -149,7 +149,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         }
 
         // After we know that violations arrived, manually kick off search that converts them into alerts
-        postToSplunk(port, "https://localhost:8089/services/saved/searches/" +
+        postToSplunk(port, "/services/saved/searches/" +
                 "Threat%20-%20Create%20Notable%20from%20RHACS%20Alert%20-%20Rule/dispatch", [
                 "dispatch.now": "true",
                 "force_dispatch": "true",
