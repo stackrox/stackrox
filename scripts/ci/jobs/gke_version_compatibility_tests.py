@@ -28,6 +28,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
+os.environ["COLLECTION_METHOD"] = "core-bpf"
 
 central_chart_versions = get_latest_helm_chart_versions(
     "stackrox-central-services", 2)
@@ -62,23 +63,6 @@ test_tuples.extend(
                       sensor_version=latest_tag)
         for central_chart_version in central_chart_versions
     ]
-)
-
-# Support exception for latest central and sensor 3.74 as per
-# https://issues.redhat.com/browse/ROX-18223
-support_exceptions = [
-    ChartVersions(
-        central_version=latest_tag,
-        sensor_version=get_latest_helm_chart_version_for_specific_release(
-            "stackrox-secured-cluster-services", Release(major=3, minor=74)
-        ),
-    )
-]
-
-test_tuples.extend(
-    support_exception
-    for support_exception in support_exceptions
-    if support_exception not in test_tuples
 )
 
 sets = []
