@@ -41,13 +41,15 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	if !isTest(packagePath) {
 		return nil, nil
 	}
+	root := strings.TrimPrefix(packagePath, roxPrefix)
+	root = "../../../../../" + root
 
 	var goTestFiles []string
-	err := filepath.WalkDir(packagePath, func(path string, d fs.DirEntry, err error) error {
-		if !d.IsDir() && strings.HasSuffix(path, "*_test.go") {
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if !d.IsDir() && strings.HasSuffix(path, "_test.go") {
 			goTestFiles = append(goTestFiles, path)
 		}
-		return err
+		return nil
 	})
 
 	if err != nil {
