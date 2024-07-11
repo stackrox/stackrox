@@ -1,5 +1,3 @@
-//go:build test_all
-
 package check442
 
 import (

@@ -1,5 +1,3 @@
-//go:build test_all
-
 package splunk
 
 // This file contains tests for splunkCheckpoint behavior.

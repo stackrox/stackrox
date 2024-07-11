@@ -1,5 +1,3 @@
-//go:build test_all
-
 package fixedby_test
 
 import (
