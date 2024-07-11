@@ -257,6 +257,11 @@ export const backupIntegrationsDescriptors: BackupIntegrationDescriptor[] = [
         type: 's3',
     },
     {
+        image: s3,
+        label: 'S3 API Compatible',
+        type: 's3compatible',
+    },
+    {
         image: google,
         label: 'Google Cloud Storage',
         type: 'gcs',
