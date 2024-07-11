@@ -2,6 +2,7 @@ package testtags
 
 import (
 	"go/token"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,6 +13,8 @@ import (
 
 const doc = `Ensure that our *_test.go files include a //go:build <TAG>, otherwise they won't be run.'`
 
+const roxPrefix = "github.com/stackrox/rox/"
+
 // Analyzer is a analysis.Analyzer from the analysis package of the Go standard lib. [It analyzes code]
 var Analyzer = &analysis.Analyzer{
 	Name:     "testtags",
@@ -20,11 +23,35 @@ var Analyzer = &analysis.Analyzer{
 	Run:      run,
 }
 
+// Given the package name, get the root directory of the service.
+func isTest(packageName string) bool {
+	if !strings.HasPrefix(packageName, roxPrefix) {
+		return false
+	}
+	unqualifiedPackageName := strings.TrimPrefix(packageName, roxPrefix)
+	pathElems := strings.Split(unqualifiedPackageName, string(filepath.Separator))
+	if pathElems[0] == "tests" {
+		return true
+	}
+	return false
+}
+
 func run(pass *analysis.Pass) (interface{}, error) {
 	packagePath := pass.Pkg.Path()
-	goTestFiles, err := filepath.Glob(filepath.Join(packagePath, "*_test.go"))
+	if !isTest(packagePath) {
+		return nil, nil
+	}
+
+	var goTestFiles []string
+	err := filepath.WalkDir(packagePath, func(path string, d fs.DirEntry, err error) error {
+		if !d.IsDir() && strings.HasSuffix(path, "*_test.go") {
+			goTestFiles = append(goTestFiles, path)
+		}
+		return err
+	})
+
 	if err != nil {
-		pass.Reportf(token.NoPos, "Failed to parse package for files: %v", err)
+		pass.Reportf(token.NoPos, "Failed to walk directory %s with error %v", packagePath, err)
 		return nil, nil
 	}
 
