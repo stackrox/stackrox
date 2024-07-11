@@ -29,10 +29,12 @@ usage() {
 dump_logs() {
     local json_path="$1"
     for ctr in $(kubectl -n "${namespace}" get "${object}" "${item}" -o jsonpath="{${json_path}[*].name}"); do
+        info "Dumping log of ${object}/${item} current container ${ctr} in ${namespace}..."
         kubectl -n "${namespace}" logs "${object}/${item}" -c "${ctr}" > "${log_dir}/${object}/${item}-${ctr}.log"
         exit_code="$(kubectl -n "${namespace}" get "${object}/${item}" -o jsonpath="{${json_path}}" | jq --arg ctr "$ctr" '.[] | select(.name == $ctr) | .lastState.terminated.exitCode')"
         if [ "${exit_code}" != "null" ]; then
             prev_log_file="${log_dir}/${object}/${item}-${ctr}-previous.log"
+            info "Dumping log of ${object}/${item} previous container ${ctr} in ${namespace}..."
             if kubectl -n "${namespace}" logs "${object}/${item}" -p -c "${ctr}" > "${prev_log_file}"; then
                 if [ "$exit_code" -eq "0" ]; then
                     mv "${prev_log_file}" "${log_dir}/${object}/${item}-${ctr}-prev-success.log"
