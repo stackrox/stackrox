@@ -16,7 +16,4 @@ os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
-# GKE uses this network for services. Consider it as a private subnet.
-os.environ["ROX_NON_AGGREGATED_NETWORKS"] = "34.118.224.0/20"
-
 make_qa_e2e_test_runner(cluster=GKECluster("qa-e2e-test")).run()
