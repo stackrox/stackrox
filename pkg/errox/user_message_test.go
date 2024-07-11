@@ -2,10 +2,14 @@ package errox
 
 import (
 	"net"
+	"net/http"
+	"net/url"
+	"os"
 	"strconv"
 	"testing"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +21,10 @@ func TestWithUserMessage(t *testing.T) {
 		err             error
 		expectedMessage string
 	}{
+		"nil": {
+			(*userMessage)(nil),
+			"",
+		},
 		"nil base": {
 			WithUserMessage(nil, "message"),
 			"message",
@@ -51,6 +59,10 @@ func TestGetUserMessage(t *testing.T) {
 	}{
 		"nil": {
 			nil,
+			"",
+		},
+		"(*userMessage)(nil)": {
+			errors.WithMessage((*userMessage)(nil), "message"),
 			"",
 		},
 		"message": {
@@ -123,6 +135,10 @@ func TestGetUserMessage(t *testing.T) {
 			&multierror.Error{Errors: []error{NotFound, errors.New("secret"), InvalidArgs}},
 			"[not found, invalid arguments]",
 		},
+		"multierror 4": {
+			&multierror.Error{Errors: []error{errors.New("secret")}},
+			"",
+		},
 		"net.AddrError": {
 			&net.AddrError{Err: "bad", Addr: "1.2.3.4"},
 			"address: bad",
@@ -147,6 +163,28 @@ func TestGetUserMessage(t *testing.T) {
 			func() error { _, err := strconv.Atoi("abc"); return err }(),
 			"error parsing \"abc\"",
 		},
+		"registry.HttpStatusError 0": {
+			&registry.HttpStatusError{},
+			"HTTP error",
+		},
+		"registry.HttpStatusError 1": {
+			&registry.HttpStatusError{
+				Response: &http.Response{Status: "STATUS"},
+			},
+			"HTTP response: STATUS",
+		},
+		"os.SyscallError": {
+			&os.SyscallError{Syscall: "fopen", Err: NotFound},
+			"fopen: not found",
+		},
+		"os.PathError": {
+			&os.PathError{Op: "open", Err: NotFound},
+			"open: not found",
+		},
+		"url.Error": {
+			&url.Error{Op: "open", Err: NotFound},
+			"open: not found",
+		},
 	}
 
 	for name, test := range tests {
@@ -154,4 +192,12 @@ func TestGetUserMessage(t *testing.T) {
 			assert.Equal(t, test.expectedMessage, GetUserMessage(test.err))
 		})
 	}
+}
+
+func Test_userMessageUnwrap(t *testing.T) {
+	var um *userMessage
+	assert.Nil(t, um.Unwrap())
+	assert.Empty(t, um.Error())
+	um = &userMessage{message: "message", base: NotFound}
+	assert.Equal(t, "not found", errors.Unwrap(um).Error())
 }

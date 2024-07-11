@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -50,8 +51,13 @@ func joinIfNotEmpty(args ...string) string {
 	return sb.String()
 }
 
+func isNilPointer(i any) bool {
+	value := reflect.ValueOf(i)
+	return value.Kind() == reflect.Pointer && value.IsNil()
+}
+
 func GetUserMessage(err error) string {
-	for ; err != nil; err = errors.Unwrap(err) {
+	for ; err != nil && !isNilPointer(err); err = errors.Unwrap(err) {
 		switch e := err.(type) {
 		case *userMessage:
 			return joinIfNotEmpty(e.message, GetUserMessage(e.base))
