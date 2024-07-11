@@ -57,7 +57,7 @@ func parseNumericPrefix(value string) (prefix string, trimmedValue string) {
 func parseNumericStringToFloat(s string) (float64, error) {
 	val, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		return 0, errox.InvalidArgs.Newf("cannot parse %q as number", s)
+		return 0, errox.InvalidArgs.Newf("cannot parse %q as a number", s)
 	}
 	return val, nil
 }
