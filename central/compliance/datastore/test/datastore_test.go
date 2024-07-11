@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -79,7 +80,8 @@ func (s *complianceDataStoreTestSuite) TestGetLatestRunResults() {
 
 	// Check results match.
 	s.Nil(err)
-	s.Equal(expectedReturn, result)
+	protoassert.SlicesEqual(s.T(), expectedReturn.FailedRuns, result.FailedRuns)
+	protoassert.Equal(s.T(), expectedReturn.LastSuccessfulResults, result.LastSuccessfulResults)
 }
 
 func (s *complianceDataStoreTestSuite) TestGetLatestRunResultsBatch() {
@@ -113,7 +115,10 @@ func (s *complianceDataStoreTestSuite) TestGetLatestRunResultsBatch() {
 	// Check results match.
 	s.Nil(err)
 	s.Equal(1, len(result))
-	s.Equal(expectedReturn[csPair], result[csPair])
+	expected := expectedReturn[csPair]
+	actual := result[csPair]
+	protoassert.Equal(s.T(), expected.LastSuccessfulResults, actual.LastSuccessfulResults)
+	protoassert.SlicesEqual(s.T(), expected.FailedRuns, actual.FailedRuns)
 }
 
 func (s *complianceDataStoreTestSuite) TestStoreRunResults() {

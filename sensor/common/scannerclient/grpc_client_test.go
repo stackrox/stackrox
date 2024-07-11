@@ -6,6 +6,7 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/scannerv4/client/mocks"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -83,7 +84,11 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 				assert.ErrorContains(t, err, tt.wantErr)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.want, got)
+				protoassert.Equal(t, tt.want.GetContents(), got.GetContents())
+				protoassert.Equal(t, tt.want.GetComponents(), got.GetComponents())
+				assert.Equal(t, tt.want.GetStatus(), got.GetStatus())
+				assert.Equal(t, tt.want.GetNotes(), got.GetNotes())
+				assert.Equal(t, tt.want.GetIndexerVersion(), got.GetIndexerVersion())
 			}
 		})
 	}
