@@ -164,7 +164,9 @@ function IntegrationsTable({
                             {integrations.map((integration, rowIndex) => {
                                 const { id } = integration;
                                 const canTriggerBackup =
-                                    integration.type === 's3' || integration.type === 'gcs';
+                                    integration.type === 's3' ||
+                                    integration.type === 's3compatible' ||
+                                    integration.type === 'gcs';
                                 const actionItems = [
                                     {
                                         title: 'Trigger backup',
