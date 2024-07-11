@@ -27,7 +27,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.9
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.16.9
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.51.4
-	github.com/aws/smithy-go v1.20.1
+	github.com/aws/smithy-go v1.20.3
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cloudflare/cfssl v1.6.5
 	github.com/cockroachdb/pebble v1.1.1
