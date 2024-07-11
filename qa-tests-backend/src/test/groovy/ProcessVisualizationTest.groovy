@@ -87,20 +87,30 @@ class ProcessVisualizationTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("RUNTIME")
-    // TODO(ROX-16461): Fails under AKS
-    @IgnoreIf({ Env.CI_JOB_NAME.contains("aks-qa-e2e") })
     def "Verify process visualization on kube-proxy"() {
         when:
         "Check if kube-proxy is running"
         def kubeProxyPods = orchestrator.getPodsByLabel("kube-system", ["component": "kube-proxy"])
+        def podOwnerIsTracked = false
+        for (pod in kubeProxyPods) {
+            if (podOwnerIsTracked = orchestrator.ownerIsTracked(pod.getMetadata())) {
+                break
+            }
+        }
         // We only want to run this test if kube-proxy is running
         Assume.assumeFalse(kubeProxyPods == null || kubeProxyPods.size() == 0)
 
         then:
         "Ensure it has processes"
+        def query = "Namespace:kube-system+Deployment:static-kube-proxy-pods"
+        // if the kube-proxy pod owner is tracked (e.g. DaemonSet), then sensor does not track the individual pods as
+        // `static-kube-proxy-pods` so we must assert against the DaemonSet `kube-proxy`
+        if (podOwnerIsTracked) {
+            query = "Namespace:kube-system+Deployment:kube-proxy"
+        }
         def kubeProxyDeploymentsInRox = DeploymentService.listDeploymentsSearch(
                 SearchServiceOuterClass.RawQuery.newBuilder().
-                        setQuery("Namespace:kube-system+Deployment:static-kube-proxy-pods").
+                        setQuery(query).
                         build()
         )
         assert kubeProxyDeploymentsInRox.getDeploymentsList().size() == 1
