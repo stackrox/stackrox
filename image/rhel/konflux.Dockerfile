@@ -35,8 +35,9 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-# Ensure there will be no unintended -dirty suffix. package-lock is restored because it's touched by Cachi2.
-RUN git restore .konflux/bootstrap-yarn/package-lock.json && \
+# Ensure there will be no unintended -dirty suffix. package and package-lock are restored 
+# because they are touched by Cachi2.
+RUN git restore ui/apps/platform/package.json ui/apps/platform/package-lock.json && \
     .konflux/scripts/fail-build-if-git-is-dirty.sh
 
 ARG VERSIONS_SUFFIX
@@ -65,18 +66,10 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY --chown=default . .
 
-# This installs yarn from Cachi2 and makes `yarn` executable available.
-# Not using `npm install --global` because it won't get us `yarn` globally.
-RUN cd .konflux/bootstrap-yarn && \
-    npm ci --no-audit --no-fund
-ENV PATH="$PATH:/go/src/github.com/stackrox/rox/app/.konflux/bootstrap-yarn/node_modules/.bin/"
-
 # This sets branding during UI build time. This is to make sure UI is branded as commercial RHACS (not StackRox).
 # ROX_PRODUCT_BRANDING is also set in the resulting image so that Central Go code knows its RHACS.
 ENV ROX_PRODUCT_BRANDING="RHACS_BRANDING"
 
-# UI build is not hermetic because Cachi2 does not support pulling packages according to V1 of yarn.lock.
-# TODO(ROX-20723): enable yarn package prefetch and make UI builds hermetic.
 RUN make -C ui build
 
 
