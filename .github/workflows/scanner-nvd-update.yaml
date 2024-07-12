@@ -75,6 +75,11 @@ jobs:
 
     - uses: ./.github/actions/download-artifact-with-retry
       with:
+        name: nvd
+        path: .
+
+    - uses: ./.github/actions/download-artifact-with-retry
+      with:
         name: nvd20
         path: .
 
@@ -87,7 +92,9 @@ jobs:
       uses: google-github-actions/setup-gcloud@v2
 
     - name: Upload production
-      run: gsutil cp nvd20.zip "gs://definitions.stackrox.io/v4/nvd/nvd20.zip"
+      run: |
+        gsutil cp nvd20.zip "gs://definitions.stackrox.io/v4/nvd/nvd20.zip"
+        gsutil cp nvd.zip "gs://definitions.stackrox.io/v4/nvd/nvd.zip"
 
   send-notification:
     needs:
