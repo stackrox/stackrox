@@ -13,10 +13,12 @@ export KUBECONFIG="${ARTIFACTS_DIR}/kubeconfig"
 
 infractl lifespan "${INFRA_NAME}" 24h
 
+stackrox_dir="$(git rev-parse --show-toplevel || echo "$HOME/go/src/github.com/stackrox/stackrox")"
+
 # Set number of pods per node
 max_pods_set="$(oc get KubeletConfig set-max-pods || true)"
 if [[ -z "$max_pods_set" ]]; then
-  oc create --filename=$HOME/go/src/github.com/stackrox/stackrox/tests/performance/scale/utilities/examples/set-max-pods.yml
+  oc create --filename="$stackrox_dir/tests/performance/scale/utilities/examples/set-max-pods.yml"
 fi
 
 for machineset in `oc get machineset.machine.openshift.io --namespace openshift-machine-api  | tail -n +2 | awk '{print $1}'`; do

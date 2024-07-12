@@ -22,6 +22,7 @@ for ((i = 0; i < ntests; i = i + 1)); do
 	"${utilities_dir}/wait-for-pods.sh" "${ARTIFACTS_DIR}"
 	"${utilities_dir}/get-bundle.sh" "${ARTIFACTS_DIR}"
 	"${utilities_dir}/start-secured-cluster.sh" $ARTIFACTS_DIR "$COLLECTOR_IMAGE_TAG" "$COLLECTOR_IMAGE_REGISTRY"
+	sleep 1800
 	
 	oc -n stackrox patch deploy/central-db -p '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"memory":"8Gi","cpu":"4"},"limits":{"memory":"8Gi","cpu":"4"}}}]}}}}'
 	oc -n stackrox patch deploy/scanner-db -p '{"spec":{"template":{"spec":{"containers":[{"name":"db","resources":{"requests":{"memory":"8Gi","cpu":"4"},"limits":{"memory":"8Gi","cpu":"4"}}}]}}}}'

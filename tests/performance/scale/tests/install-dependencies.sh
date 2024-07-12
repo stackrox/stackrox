@@ -3,7 +3,7 @@ set -eoux pipefail
 
 git clone https://github.com/stackrox/stackrox.git
 cd "${HOME}/stackrox"
-git checkout jv-automate-perf-tests
+git checkout jv-automate-perf-tests-stable
 cd "${HOME}"
 
 git clone https://github.com/stackrox/workflow.git
