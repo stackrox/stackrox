@@ -45,9 +45,8 @@ export function s3EndpointIcon(): ReactElement {
                     >
                         Modifies the endpoint under which S3 is reached. Note that when using a
                         non-AWS service provider, it is recommended to create an{' '}
-                        <em>S3 API Compatible</em>
-                        integration instead. See the AWS documentation about S3 endpoints for a
-                        complete list of AWS endpoints.
+                        <em>S3 API Compatible</em> integration instead. See the AWS documentation
+                        about S3 endpoints for a complete list of AWS endpoints.
                     </a>
                 </div>
             }
