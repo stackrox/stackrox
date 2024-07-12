@@ -131,7 +131,8 @@ export function s3CompatibleEndpointIcon(): ReactElement {
             bodyContent={
                 <div>
                     Modifies the endpoint under which the S3 compatible service is reached. Must be
-                    reachable via https.
+                    reachable via https. Note that when using AWS S3, it is recommended to create an
+                    *Amazon S3* integration instead.
                 </div>
             }
             headerContent={'Endpoint'}
