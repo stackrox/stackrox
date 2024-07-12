@@ -334,7 +334,7 @@ function S3IntegrationForm({
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label=""
+                        label="Short-lived tokens"
                         labelIcon={s3IamRole()}
                         fieldId="externalBackup.s3.useIam"
                         touched={touched}

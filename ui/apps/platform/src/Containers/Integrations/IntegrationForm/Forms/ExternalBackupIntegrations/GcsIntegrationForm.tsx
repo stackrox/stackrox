@@ -297,7 +297,7 @@ function GcsIntegrationForm({
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label=""
+                        label="Short-lived tokens"
                         labelIcon={gcsWorkloadIdentity()}
                         fieldId="externalBackup.gcs.useWorkloadId"
                         touched={touched}
