@@ -955,8 +955,8 @@ cloud.google.com/go/securitycenter v1.23.0/go.mod h1:8pwQ4n+Y9WCWM278R8W3nF65QtY
 cloud.google.com/go/securitycenter v1.23.1/go.mod h1:w2HV3Mv/yKhbXKwOCu2i8bCuLtNP1IMHuiYQn4HJq5s=
 cloud.google.com/go/securitycenter v1.24.1/go.mod h1:3h9IdjjHhVMXdQnmqzVnM7b0wMn/1O/U20eWVpMpZjI=
 cloud.google.com/go/securitycenter v1.24.2/go.mod h1:l1XejOngggzqwr4Fa2Cn+iWZGf+aBLTXtB/vXjy5vXM=
-cloud.google.com/go/securitycenter v1.32.0 h1:UJvalA9NoLhU0DWLa10qMSvMucEe+iQOqxC4/KGqMys=
-cloud.google.com/go/securitycenter v1.32.0/go.mod h1:s1dN6hM6HZyzUyJrqBoGvhxR/GecT5u48sidMIgDxTo=
+cloud.google.com/go/securitycenter v1.33.0 h1:0UMkWiqmkMV5YE1oEx7uYOz24vipZYugCHj/Gxrca5k=
+cloud.google.com/go/securitycenter v1.33.0/go.mod h1:lkEPItFjC1RRBHniiWR3lJTpUJW+7+EFAb7nP5ZCQxI=
 cloud.google.com/go/servicecontrol v1.4.0/go.mod h1:o0hUSJ1TXJAmi/7fLJAedOovnujSEvjKCAFNXPQ1RaU=
 cloud.google.com/go/servicecontrol v1.5.0/go.mod h1:qM0CnXHhyqKVuiZnGKrIurvVImCs8gmqWsDoqe9sU1s=
 cloud.google.com/go/servicecontrol v1.10.0/go.mod h1:pQvyvSRh7YzUF2efw7H87V92mxU8FnFDawMClGCNuAA=
