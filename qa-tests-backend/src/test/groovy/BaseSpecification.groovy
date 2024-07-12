@@ -50,7 +50,6 @@ class BaseSpecification extends Specification {
 
     public static final String UNRESTRICTED_SCOPE_ID = "ffffffff-ffff-fff4-f5ff-ffffffffffff"
 
-
     static {
         String idStr
         try {
