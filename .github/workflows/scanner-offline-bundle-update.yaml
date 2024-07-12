@@ -2,6 +2,11 @@ name: Scanner release offline vulnerability bundle update
 on:
   schedule:
     - cron: '0 */3 * * *'
+  pull_request: # TODO: remove prior to merge
+    types:
+    - opened
+    - reopened
+    - synchronize
   workflow_dispatch:
 
 jobs:

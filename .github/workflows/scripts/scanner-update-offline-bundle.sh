@@ -5,10 +5,15 @@ set -eu
 SCANNER_V4_DEFS_BUCKET="https://storage.googleapis.com/definitions.stackrox.io"
 ROX_PRODUCT_VERSION="$1"
 PRODUCT_VERSION="${ROX_PRODUCT_VERSION}.0"
+
 declare -A files_to_download=(
-    ["v4/vulns.json.zst"]="${SCANNER_V4_DEFS_BUCKET}/v4/vulnerability-bundles/${PRODUCT_VERSION}/vulns.json.zst"
     ["v4/mapping.zip"]="https://definitions.stackrox.io/v4/redhat-repository-mappings/mapping.zip"
 )
+if [[ "$ROX_PRODUCT_VERSION" == "4.4" ]]; then
+    files_to_download["v4/vulns.json.zst"]="${SCANNER_V4_DEFS_BUCKET}/v4/vulnerability-bundles/${PRODUCT_VERSION}/vulns.json.zst"
+else
+    files_to_download["v4/vulnerabilities.zip"]="${SCANNER_V4_DEFS_BUCKET}/v4/vulnerability-bundles/${PRODUCT_VERSION}/vulnerabilities.zip"
+fi
 
 # Download the files
 for f in "${!files_to_download[@]}"; do
