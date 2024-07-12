@@ -47,7 +47,7 @@ function ScanConfigurationsProvider({ children }: { children: React.ReactNode })
     const fetchScanConfigurations = useCallback(() => listComplianceScanConfigurations(), []);
     const {
         data: scanConfigurationsResponse,
-        loading: isLoading,
+        isLoading,
         error,
     } = useRestQuery(fetchScanConfigurations);
 

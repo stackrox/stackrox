@@ -85,7 +85,7 @@ function CoveragesPage() {
         return response;
     }, [profileName]);
 
-    const { loading: isLoadingProfilesStats, error: profilesStatsError } =
+    const { isLoading: isLoadingProfilesStats, error: profilesStatsError } =
         useRestQuery(fetchProfilesStats);
 
     function handleProfilesToggleChange(selectedProfile: string) {

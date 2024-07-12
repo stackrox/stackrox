@@ -21,7 +21,7 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
 
     const {
         data: dataForFetch,
-        loading: isFetching,
+        isLoading: isFetching,
         error: errorForFetch,
     } = useRestQuery(fetchClusterInitBundles);
 

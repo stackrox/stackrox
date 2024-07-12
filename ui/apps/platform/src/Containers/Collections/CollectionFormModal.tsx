@@ -81,7 +81,7 @@ function CollectionsFormModal({
         openSelect: openDrawer,
     } = useSelectToggle(isXLargeScreen);
 
-    const { data, loading, error } = useCollection(
+    const { data, isLoading, error } = useCollection(
         modalAction.type === 'view' ? modalAction.collectionId : undefined
     );
 
@@ -99,7 +99,7 @@ function CollectionsFormModal({
             </Bullseye>
         );
         modalTitle = 'Collection error';
-    } else if (loading) {
+    } else if (isLoading) {
         content = (
             <Bullseye className="pf-v5-u-p-2xl">
                 <Spinner />
@@ -126,7 +126,7 @@ function CollectionsFormModal({
     }
 
     const modalHeaderButtons =
-        error || loading ? (
+        error || isLoading ? (
             ''
         ) : (
             <>

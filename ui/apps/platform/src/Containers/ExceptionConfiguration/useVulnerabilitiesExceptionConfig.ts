@@ -25,7 +25,7 @@ export function useVulnerabilitiesExceptionConfig(): UseVulnerabilitiesException
 
     return {
         config: getConfigRequest.data ?? undefined,
-        isConfigLoading: getConfigRequest.loading,
+        isConfigLoading: getConfigRequest.isLoading,
         configLoadError: getConfigRequest.error,
         isUpdateInProgress: updateConfigMutation.isLoading,
         updateConfig: updateConfigMutation.mutate,
