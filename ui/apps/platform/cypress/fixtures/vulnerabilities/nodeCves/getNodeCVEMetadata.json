@@ -1,0 +1,23 @@
+{
+    "data": {
+        "nodeCVE": {
+            "cve": "CVE-2022-1996",
+            "distroTuples": [
+                {
+                    "summary": "DOCUMENTATION: A flaw was found in CORS Filter feature from the go-restful package. When a user inputs a domain which is in AllowedDomains, all domains starting with the same pattern are accepted. This issue could allow an attacker to break the CORS policy by allowing any page to make requests and retrieve data on behalf of users. \n            STATEMENT: The go-restful package is a transitive dependency which is being pulled with k8s.io/api and not directly being used anywhere in OpenShift Container Platform (OCP), OpenShift Container Storage and OpenShift Data Foundation, hence these components are marked as 'Will not fix' or even \"Not affected\".",
+                    "link": "https://access.redhat.com/security/cve/CVE-2022-1996",
+                    "operatingSystem": "rhcos:4.14",
+                    "__typename": "NodeVulnerability"
+                },
+                {
+                    "summary": "DOCUMENTATION: A flaw was found in CORS Filter feature from the go-restful package. When a user inputs a domain which is in AllowedDomains, all domains starting with the same pattern are accepted. This issue could allow an attacker to break the CORS policy by allowing any page to make requests and retrieve data on behalf of users. \n            STATEMENT: The go-restful package is a transitive dependency which is being pulled with k8s.io/api and not directly being used anywhere in OpenShift Container Platform (OCP), OpenShift Container Storage and OpenShift Data Foundation, hence these components are marked as 'Will not fix' or even \"Not affected\".",
+                    "link": "https://access.redhat.com/security/cve/CVE-2022-1996",
+                    "operatingSystem": "rhcos:4.15",
+                    "__typename": "NodeVulnerability"
+                }
+            ],
+            "firstDiscoveredInSystem": "2024-03-14T22:48:43.642313Z",
+            "__typename": "NodeCVECore"
+        }
+    }
+}

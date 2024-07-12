@@ -1,8 +1,25 @@
+import { graphql } from '../../../constants/apiEndpoints';
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
+import {
+    assertCannotFindThePage,
+    visitWithStaticResponseForPermissions,
+} from '../../../helpers/visit';
 
-// TODO - classic tests conditionally skip many of these checks when running on OpenShift, we
-//        need to verify if this is still necessary and if so, how to handle it in the new tests
+const nodeCveBaseUrl = '/main/vulnerabilities/node-cves/cves';
+
+const mockCveName = 'CVE-2022-1996';
+
+function mockNodeCvePageRequests() {
+    const opnames = ['getNodeCVEMetadata', 'getNodeCVESummaryData', 'getAffectedNodes'];
+    opnames.forEach((opname) => {
+        cy.intercept(
+            { method: 'POST', url: graphql(opname) },
+            { fixture: `vulnerabilities/nodeCves/${opname}.json` }
+        ).as(opname);
+    });
+}
+
 describe('Node CVEs - CVE Detail Page', () => {
     withAuth();
 
@@ -12,8 +29,29 @@ describe('Node CVEs - CVE Detail Page', () => {
         }
     });
 
+    beforeEach(() => {
+        // We cannot rely on any Node CVE data being available in CI so we need to mock the data
+        // and test page behavior independent of any expected server response.
+        mockNodeCvePageRequests();
+    });
+
     it('should restrict access to users with insufficient permissions', () => {
-        // check that users without Node access cannot access the Node CVE Detail page directly
+        const url = `${nodeCveBaseUrl}/${mockCveName}`;
+
+        visitWithStaticResponseForPermissions(url, {
+            body: { resourceToAccess: { Node: 'READ_ACCESS' } },
+        });
+        assertCannotFindThePage();
+
+        visitWithStaticResponseForPermissions(url, {
+            body: { resourceToAccess: { Cluster: 'READ_ACCESS' } },
+        });
+        assertCannotFindThePage();
+
+        visitWithStaticResponseForPermissions(url, {
+            body: { resourceToAccess: { Node: 'READ_ACCESS', Cluster: 'READ_ACCESS' } },
+        });
+        cy.get('h1').contains(mockCveName);
     });
 
     it('should only show relevant filters for the page', () => {
