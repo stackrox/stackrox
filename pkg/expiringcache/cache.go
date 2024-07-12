@@ -12,7 +12,7 @@ import (
 //go:generate mockgen-wrapper
 type Cache interface {
 	Add(key, value interface{})
-	Get(key interface{}) interface{}
+	Get(key interface{}) (interface{}, bool)
 	GetAll() []interface{}
 	GetOrSet(key interface{}, value interface{}) interface{}
 	Remove(key ...interface{})
@@ -98,21 +98,21 @@ func (e *expiringCacheImpl) addNoLock(key, value interface{}) {
 }
 
 // Get takes in a key and returns nil if the item doesn't exist or if the item has expired
-func (e *expiringCacheImpl) Get(key interface{}) interface{} {
+func (e *expiringCacheImpl) Get(key interface{}) (interface{}, bool) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
 	e.cleanNoLock(e.clock.Now())
 	value := e.getValue(key)
 	if value == nil {
-		return nil
+		return nil, false
 	}
 
 	if e.updateOnGets {
 		e.removeNoLock(key)
 		e.addNoLock(key, value)
 	}
-	return value
+	return value, true
 }
 
 // GetAll returns all non-expired values in the cache.

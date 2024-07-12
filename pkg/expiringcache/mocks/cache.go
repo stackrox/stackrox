@@ -51,11 +51,12 @@ func (mr *MockCacheMockRecorder) Add(key, value any) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockCache) Get(key any) any {
+func (m *MockCache) Get(key any) (any, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", key)
 	ret0, _ := ret[0].(any)
-	return ret0
+	ret1, _ := ret[1].(bool)
+	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
