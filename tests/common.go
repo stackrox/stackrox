@@ -1,5 +1,3 @@
-//go:build test_e2e || sql_integration
-
 package tests
 
 import (

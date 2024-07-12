@@ -53,15 +53,27 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		goBuildDirectiveCount := 0
 		fileNode := n.(*ast.File)
 		pos := fileNode.Pos()
-		for _, comment := range fileNode.Comments {
-			if strings.HasPrefix(comment.Text(), "//go:build") {
-				goBuildDirectiveCount++
+		fileContainsTestFunction := false
+		for _, decl := range fileNode.Decls {
+			switch decl.(type) {
+			case *ast.FuncDecl:
+				if strings.HasPrefix(decl.(*ast.FuncDecl).Name.String(), "Test") {
+					fileContainsTestFunction = true
+					break
+				}
 			}
 		}
-		if goBuildDirectiveCount == 0 {
-			pass.Reportf(pos, "Missing //go:build directive.")
-		} else if goBuildDirectiveCount > 1 {
-			pass.Reportf(pos, "Multiple //go:build directives, there should be exactly one.")
+		if fileContainsTestFunction {
+			for _, comment := range fileNode.Comments {
+				if strings.HasPrefix(comment.Text(), "//go:build") {
+					goBuildDirectiveCount++
+				}
+			}
+			if goBuildDirectiveCount == 0 {
+				pass.Reportf(pos, "Missing //go:build directive.")
+			} else if goBuildDirectiveCount > 1 {
+				pass.Reportf(pos, "Multiple //go:build directives, there should be exactly one.")
+			}
 		}
 	})
 	return nil, nil
