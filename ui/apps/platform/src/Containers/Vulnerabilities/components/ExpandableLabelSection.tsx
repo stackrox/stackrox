@@ -25,6 +25,10 @@ function ExpandableLabelSection({ toggleText, labels }: ExpandableLabelSectionPr
         setIsExpanded(isExpanded);
     };
 
+    if (labels.length === 0) {
+        return null;
+    }
+
     return (
         <ExpandableSection
             toggleContent={
