@@ -890,7 +890,8 @@ class Kubernetes implements OrchestratorMain {
     Set<String> getStaticPodCount(String ns = null) {
         return evaluateWithRetry(2, 3) {
             // This method assumes that a static pod will either have no OwnerReferences,
-            // it will have a owner not tracked by ACS, or it will be a kube-proxy pod
+            // it has an owner not tracked by ACS, or
+            // it is a kube-proxy pod with a non-tracked owner.
             Set<String> staticPods = [] as Set
             PodList podList = ns == null ? client.pods().list() : client.pods().inNamespace(ns).list()
             podList.items.each {
@@ -898,11 +899,11 @@ class Kubernetes implements OrchestratorMain {
                     return
                 }
                 if (it.getMetadata().getOwnerReferences().size() > 0) {
-                        if (!isKubeProxyPod(it) && ownerIsTracked(it.getMetadata())) {
-                            return
-                        }
+                    if (ownerIsTracked(it.getMetadata()) || !isKubeProxyPod(it)) {
+                        return
+                    }
                 }
-                // Sensor tracks all kube-proxy pods as one with name `static-kube-proxy-pods`
+                // Sensor tracks all kube-proxy static-pods as one with name `static-kube-proxy-pods`
                 isKubeProxyPod(it) ? staticPods.add("static-kube-proxy-pods") : staticPods.add(it.metadata.name)
             }
             return staticPods
