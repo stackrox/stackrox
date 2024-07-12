@@ -49,7 +49,15 @@ jobs:
       uses: google-github-actions/setup-gcloud@v2
 
     - name: Generate offline vulnerability bundle
-      run: .github/workflows/scripts/scanner-update-offline-bundle.sh "$ROX_PRODUCT_VERSION"
+      run: |
+        case "${{ env.ROX_PRODUCT_VERSION }}" in
+        4.4)
+            .github/workflows/scripts/scanner-update-offline-bundle.sh "${{ env.ROX_PRODUCT_VERSION }}" "vulns.json.zst"
+            ;;
+        *)
+            .github/workflows/scripts/scanner-update-offline-bundle.sh "${{ env.ROX_PRODUCT_VERSION }}" "vulnerabilities.zip"
+            ;;
+        esac
 
   send-notification:
     needs:
