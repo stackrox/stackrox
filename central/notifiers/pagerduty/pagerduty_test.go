@@ -93,3 +93,23 @@ func TestMarshalingAlert(t *testing.T) {
 		})
 	}
 }
+
+func TestMarshalUnmarshalAlert(t *testing.T) {
+	rawAlert := fixtures.GetSerializationTestAlert()
+	alert := (*marshalableAlert)(rawAlert)
+	marshaled, err := alert.MarshalJSON()
+	require.NoError(t, err)
+	assert.JSONEq(t, fixtures.GetJSONSerializedTestAlert(), string(marshaled))
+
+	decodedAlert := &marshalableAlert{}
+	err = decodedAlert.UnmarshalJSON(marshaled)
+	assert.NoError(t, err)
+	decodedProtoAlert := (*storage.Alert)(decodedAlert)
+	protoassert.Equal(t, rawAlert, decodedProtoAlert)
+}
+
+func TestMarshalAlertError(t *testing.T) {
+	var alert *marshalableAlert
+	_, err := alert.MarshalJSON()
+	assert.Error(t, err)
+}
