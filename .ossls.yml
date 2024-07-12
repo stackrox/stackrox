@@ -2,6 +2,7 @@ gomod:
   mod-file: go.mod
 
 yarn:
+  # TODO This could very well be broken with the move away from yarn v1.x
   lockfile: ui/apps/platform/yarn.lock
   node-modules-dirs:
     - ui/apps/platform/node_modules
