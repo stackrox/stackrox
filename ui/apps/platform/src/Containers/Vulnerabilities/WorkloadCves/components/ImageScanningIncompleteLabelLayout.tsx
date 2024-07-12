@@ -5,12 +5,15 @@ import isEmpty from 'lodash/isEmpty';
 
 import getImageScanMessage from '../utils/getImageScanMessage';
 
-export type ImageScanningErrorLabelProps = {
+export type ImageScanningIncompleteLabelProps = {
     imageNotes: string[];
     scanNotes: string[];
 };
 
-function ImageScanningErrorLabel({ imageNotes, scanNotes }: ImageScanningErrorLabelProps) {
+function ImageScanningIncompleteLabel({
+    imageNotes,
+    scanNotes,
+}: ImageScanningIncompleteLabelProps) {
     const scanMessage = getImageScanMessage(imageNotes, scanNotes);
 
     if (isEmpty(scanMessage)) {
@@ -20,7 +23,7 @@ function ImageScanningErrorLabel({ imageNotes, scanNotes }: ImageScanningErrorLa
     return (
         <>
             <Popover
-                aria-label="Image scanning error label"
+                aria-label="Image scanning incomplete label"
                 headerContent={<div>CVE data may be inaccurate</div>}
                 bodyContent={
                     <Flex
@@ -41,7 +44,7 @@ function ImageScanningErrorLabel({ imageNotes, scanNotes }: ImageScanningErrorLa
                         icon={<ExclamationTriangleIcon />}
                         variant="outline"
                     >
-                        Image scanning error
+                        Image scanning incomplete
                     </Label>
                 </Button>
             </Popover>
@@ -49,4 +52,4 @@ function ImageScanningErrorLabel({ imageNotes, scanNotes }: ImageScanningErrorLa
     );
 }
 
-export default ImageScanningErrorLabel;
+export default ImageScanningIncompleteLabel;
