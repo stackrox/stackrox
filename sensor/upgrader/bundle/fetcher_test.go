@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/config"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
@@ -19,6 +20,8 @@ const (
 	expectedRequestBody = `{
 	"id": "` + fixtureconsts.Cluster1 + `"
 }`
+	handlerError    = "failed request verification"
+	handlerNotFound = "No data for requested cluster ID"
 )
 
 func TestFetcherRequestEncoding(t *testing.T) {
@@ -40,10 +43,11 @@ func TestFetcherRequestEncoding(t *testing.T) {
 	bundle, fetchErr := clusterFetcher.FetchBundle()
 	assert.Nil(t, bundle)
 	assert.Error(t, fetchErr)
-	expectedErrorText := "making HTTP request to central for cluster bundle download: " +
-		"received response code 404 Not Found, but expected 2xx; error message: " +
-		"No data for requested cluster ID"
-	assert.Equal(t, expectedErrorText, fetchErr.Error())
+	expectedResponse := httptest.NewRecorder()
+	expectedResponse.WriteHeader(http.StatusNotFound)
+	_, _ = expectedResponse.Write([]byte(handlerNotFound))
+	expectedError := httputil.ResponseToError(expectedResponse.Result())
+	assert.ErrorIs(t, fetchErr, expectedError)
 }
 
 func getFakeZipHandler(t *testing.T, expectedRequestBody string) http.HandlerFunc {
@@ -59,10 +63,10 @@ func getFakeZipHandler(t *testing.T, expectedRequestBody string) http.HandlerFun
 
 		if hasError {
 			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("failed request verification"))
+			_, _ = w.Write([]byte(handlerError))
 		} else {
 			w.WriteHeader(http.StatusNotFound)
-			_, _ = w.Write([]byte("No data for requested cluster ID"))
+			_, _ = w.Write([]byte(handlerNotFound))
 		}
 	}
 }
