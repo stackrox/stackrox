@@ -436,10 +436,19 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 # Run Python script to post-process necessary files in the build/bundle/. Configure Python dependencies if not done already.
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
+	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
+	candidate_version=$$(./bundle_helpers/patch-csv.py \
+		--use-version $(VERSION) \
+		--first-version $${first_version} \
+		--operator-image $(IMG) \
+		--echo-replaced-version-only \
+		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml); \
+	if ! ../scripts/ci/lib.sh check_rhacs_eng_image_exists $(INDEX_IMG_BASE) v$${candidate_version}; then unreleased_opt="--unreleased=$${candidate_version}"; fi; \
 	./bundle_helpers/patch-csv.py \
 		--use-version $(VERSION) \
-		--first-version 3.62.0 `# 3.62.0 is the first operator version ever released` \
+		--first-version $${first_version} \
 		--operator-image $(IMG) \
+		$${unreleased_opt} \
 		--no-related-images \
 		--add-supported-arch amd64 \
 		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml \

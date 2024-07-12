@@ -247,7 +247,22 @@ func TestSplitAndMergeImage(t *testing.T) {
 	}
 
 	splitActual := Split(image, true)
-	assert.Equal(t, splitExpected, splitActual)
+	protoassert.MapEqual(t, splitExpected.ImageCVEEdges, splitActual.ImageCVEEdges)
+	protoassert.Equal(t, splitExpected.Image, splitActual.Image)
+
+	assert.Len(t, splitActual.Children, len(splitExpected.Children))
+	for i, expected := range splitExpected.Children {
+		actual := splitActual.Children[i]
+		protoassert.Equal(t, expected.Component, actual.Component)
+		protoassert.Equal(t, expected.Edge, actual.Edge)
+
+		assert.Len(t, actual.Children, len(expected.Children))
+		for i, e := range expected.Children {
+			a := actual.Children[i]
+			protoassert.Equal(t, e.Edge, a.Edge)
+			protoassert.Equal(t, e.CVE, a.CVE)
+		}
+	}
 
 	// Need to add first occurrence edges as otherwise they will be filtered out
 	// These values are added on insertion for the DB which is why we will populate them artificially here

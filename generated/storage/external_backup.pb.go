@@ -22,6 +22,35 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+type S3URLStyle int32
+
+const (
+	S3URLStyle_S3_URL_STYLE_UNSPECIFIED    S3URLStyle = 0
+	S3URLStyle_S3_URL_STYLE_VIRTUAL_HOSTED S3URLStyle = 1
+	S3URLStyle_S3_URL_STYLE_PATH           S3URLStyle = 2
+)
+
+var S3URLStyle_name = map[int32]string{
+	0: "S3_URL_STYLE_UNSPECIFIED",
+	1: "S3_URL_STYLE_VIRTUAL_HOSTED",
+	2: "S3_URL_STYLE_PATH",
+}
+
+var S3URLStyle_value = map[string]int32{
+	"S3_URL_STYLE_UNSPECIFIED":    0,
+	"S3_URL_STYLE_VIRTUAL_HOSTED": 1,
+	"S3_URL_STYLE_PATH":           2,
+}
+
+func (x S3URLStyle) String() string {
+	return proto.EnumName(S3URLStyle_name, int32(x))
+}
+
+func (S3URLStyle) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_38dc9102c7d6c41e, []int{0}
+}
+
+// Next available tag: 10
 type ExternalBackup struct {
 	Id            string    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
 	Name          string    `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
@@ -31,6 +60,7 @@ type ExternalBackup struct {
 	// Types that are valid to be assigned to Config:
 	//	*ExternalBackup_S3
 	//	*ExternalBackup_Gcs
+	//	*ExternalBackup_S3Compatible
 	Config isExternalBackup_Config `protobuf_oneof:"Config"`
 	// Types that are valid to be assigned to IncludeCertificatesOpt:
 	//	*ExternalBackup_IncludeCertificates
@@ -92,6 +122,9 @@ type ExternalBackup_S3 struct {
 type ExternalBackup_Gcs struct {
 	Gcs *GCSConfig `protobuf:"bytes,7,opt,name=gcs,proto3,oneof" json:"gcs,omitempty"`
 }
+type ExternalBackup_S3Compatible struct {
+	S3Compatible *S3Compatible `protobuf:"bytes,9,opt,name=s3compatible,proto3,oneof" json:"s3compatible,omitempty"`
+}
 type ExternalBackup_IncludeCertificates struct {
 	IncludeCertificates bool `protobuf:"varint,8,opt,name=include_certificates,json=includeCertificates,proto3,oneof" json:"include_certificates,omitempty"`
 }
@@ -116,6 +149,17 @@ func (m *ExternalBackup_Gcs) Clone() isExternalBackup_Config {
 	*cloned = *m
 
 	cloned.Gcs = m.Gcs.Clone()
+	return cloned
+}
+func (*ExternalBackup_S3Compatible) isExternalBackup_Config() {}
+func (m *ExternalBackup_S3Compatible) Clone() isExternalBackup_Config {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ExternalBackup_S3Compatible)
+	*cloned = *m
+
+	cloned.S3Compatible = m.S3Compatible.Clone()
 	return cloned
 }
 func (*ExternalBackup_IncludeCertificates) isExternalBackup_IncludeCertificatesOpt() {}
@@ -191,6 +235,13 @@ func (m *ExternalBackup) GetGcs() *GCSConfig {
 	return nil
 }
 
+func (m *ExternalBackup) GetS3Compatible() *S3Compatible {
+	if x, ok := m.GetConfig().(*ExternalBackup_S3Compatible); ok {
+		return x.S3Compatible
+	}
+	return nil
+}
+
 // Deprecated: Do not use.
 func (m *ExternalBackup) GetIncludeCertificates() bool {
 	if x, ok := m.GetIncludeCertificatesOpt().(*ExternalBackup_IncludeCertificates); ok {
@@ -204,6 +255,7 @@ func (*ExternalBackup) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
 		(*ExternalBackup_S3)(nil),
 		(*ExternalBackup_Gcs)(nil),
+		(*ExternalBackup_S3Compatible)(nil),
 		(*ExternalBackup_IncludeCertificates)(nil),
 	}
 }
@@ -228,6 +280,7 @@ func (m *ExternalBackup) Clone() *ExternalBackup {
 	return cloned
 }
 
+// S3Config configures the backup integration with AWS S3.
 type S3Config struct {
 	Bucket string `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
 	UseIam bool   `protobuf:"varint,2,opt,name=use_iam,json=useIam,proto3" json:"use_iam,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
@@ -338,6 +391,121 @@ func (m *S3Config) Clone() *S3Config {
 	return cloned
 }
 
+// S3Compatible configures the backup integration with an S3 compatible storage provider.
+// S3 compatible is intended for non-AWS providers. For AWS S3 use S3Config.
+type S3Compatible struct {
+	Bucket string `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
+	// The access key ID to use. The server will mask the value of this credential in responses and logs.
+	AccessKeyId string `protobuf:"bytes,2,opt,name=access_key_id,json=accessKeyId,proto3" json:"access_key_id,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	// The secret access key to use. The server will mask the value of this credential in responses and logs.
+	SecretAccessKey string `protobuf:"bytes,3,opt,name=secret_access_key,json=secretAccessKey,proto3" json:"secret_access_key,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	Region          string `protobuf:"bytes,4,opt,name=region,proto3" json:"region,omitempty"`
+	ObjectPrefix    string `protobuf:"bytes,5,opt,name=object_prefix,json=objectPrefix,proto3" json:"object_prefix,omitempty"`
+	Endpoint        string `protobuf:"bytes,6,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+	// The URL style defines the bucket URL addressing.
+	// Virtual-hosted-style buckets are addressed as `https://<bucket>.<endpoint>'
+	// while path-style buckets are addressed as `https://<endpoint>/<bucket>`.
+	UrlStyle             S3URLStyle `protobuf:"varint,7,opt,name=url_style,json=urlStyle,proto3,enum=storage.S3URLStyle" json:"url_style,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
+}
+
+func (m *S3Compatible) Reset()         { *m = S3Compatible{} }
+func (m *S3Compatible) String() string { return proto.CompactTextString(m) }
+func (*S3Compatible) ProtoMessage()    {}
+func (*S3Compatible) Descriptor() ([]byte, []int) {
+	return fileDescriptor_38dc9102c7d6c41e, []int{2}
+}
+func (m *S3Compatible) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *S3Compatible) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_S3Compatible.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *S3Compatible) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_S3Compatible.Merge(m, src)
+}
+func (m *S3Compatible) XXX_Size() int {
+	return m.Size()
+}
+func (m *S3Compatible) XXX_DiscardUnknown() {
+	xxx_messageInfo_S3Compatible.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_S3Compatible proto.InternalMessageInfo
+
+func (m *S3Compatible) GetBucket() string {
+	if m != nil {
+		return m.Bucket
+	}
+	return ""
+}
+
+func (m *S3Compatible) GetAccessKeyId() string {
+	if m != nil {
+		return m.AccessKeyId
+	}
+	return ""
+}
+
+func (m *S3Compatible) GetSecretAccessKey() string {
+	if m != nil {
+		return m.SecretAccessKey
+	}
+	return ""
+}
+
+func (m *S3Compatible) GetRegion() string {
+	if m != nil {
+		return m.Region
+	}
+	return ""
+}
+
+func (m *S3Compatible) GetObjectPrefix() string {
+	if m != nil {
+		return m.ObjectPrefix
+	}
+	return ""
+}
+
+func (m *S3Compatible) GetEndpoint() string {
+	if m != nil {
+		return m.Endpoint
+	}
+	return ""
+}
+
+func (m *S3Compatible) GetUrlStyle() S3URLStyle {
+	if m != nil {
+		return m.UrlStyle
+	}
+	return S3URLStyle_S3_URL_STYLE_UNSPECIFIED
+}
+
+func (m *S3Compatible) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *S3Compatible) Clone() *S3Compatible {
+	if m == nil {
+		return nil
+	}
+	cloned := new(S3Compatible)
+	*cloned = *m
+
+	return cloned
+}
+
 type GCSConfig struct {
 	Bucket string `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
 	// The service account for the storage integration. The server will mask the value of this credential in responses and logs.
@@ -353,7 +521,7 @@ func (m *GCSConfig) Reset()         { *m = GCSConfig{} }
 func (m *GCSConfig) String() string { return proto.CompactTextString(m) }
 func (*GCSConfig) ProtoMessage()    {}
 func (*GCSConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_38dc9102c7d6c41e, []int{2}
+	return fileDescriptor_38dc9102c7d6c41e, []int{3}
 }
 func (m *GCSConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -424,47 +592,59 @@ func (m *GCSConfig) Clone() *GCSConfig {
 }
 
 func init() {
+	proto.RegisterEnum("storage.S3URLStyle", S3URLStyle_name, S3URLStyle_value)
 	proto.RegisterType((*ExternalBackup)(nil), "storage.ExternalBackup")
 	proto.RegisterType((*S3Config)(nil), "storage.S3Config")
+	proto.RegisterType((*S3Compatible)(nil), "storage.S3Compatible")
 	proto.RegisterType((*GCSConfig)(nil), "storage.GCSConfig")
 }
 
 func init() { proto.RegisterFile("storage/external_backup.proto", fileDescriptor_38dc9102c7d6c41e) }
 
 var fileDescriptor_38dc9102c7d6c41e = []byte{
-	// 510 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x92, 0xd1, 0x8a, 0xd3, 0x40,
-	0x14, 0x86, 0x77, 0xd2, 0x6e, 0x9b, 0x9c, 0xb5, 0x2d, 0x1d, 0x65, 0x8d, 0x05, 0x4b, 0xe9, 0x42,
-	0x2d, 0x82, 0x5d, 0xb0, 0x17, 0x5e, 0x08, 0xc2, 0xb6, 0x88, 0x5b, 0xf6, 0x46, 0xb2, 0x82, 0xe0,
-	0x4d, 0x48, 0x27, 0xa7, 0x75, 0x4c, 0x9b, 0x09, 0x33, 0x13, 0x6d, 0xdf, 0x44, 0xdf, 0x48, 0xf0,
-	0xc6, 0x47, 0x90, 0xea, 0x83, 0x48, 0x26, 0xd3, 0x2a, 0xba, 0x7b, 0xd5, 0x73, 0xfe, 0xf3, 0xcd,
-	0xe9, 0x9f, 0x9f, 0x03, 0x0f, 0x95, 0x16, 0x32, 0x5a, 0xe2, 0x39, 0x6e, 0x34, 0xca, 0x34, 0x5a,
-	0x85, 0xf3, 0x88, 0x25, 0x79, 0x36, 0xca, 0xa4, 0xd0, 0x82, 0xd6, 0xed, 0xb8, 0x73, 0xba, 0xe7,
-	0x14, 0x7b, 0x8f, 0x71, 0xbe, 0xc2, 0x12, 0xe8, 0x7f, 0x73, 0xa0, 0xf9, 0xd2, 0x3e, 0x9d, 0x98,
-	0x97, 0xb4, 0x09, 0x0e, 0x8f, 0x7d, 0xd2, 0x23, 0x43, 0x2f, 0x70, 0x78, 0x4c, 0x29, 0x54, 0xd3,
-	0x68, 0x8d, 0xbe, 0x63, 0x14, 0x53, 0x17, 0x9a, 0xde, 0x66, 0xe8, 0x57, 0x4a, 0xad, 0xa8, 0xe9,
-	0x13, 0x70, 0xf7, 0xcb, 0xfd, 0x6a, 0x8f, 0x0c, 0x4f, 0x9e, 0xb6, 0x47, 0xf6, 0x5f, 0x47, 0xd7,
-	0x76, 0x10, 0x1c, 0x10, 0x3a, 0x80, 0x56, 0x69, 0x55, 0x85, 0x5a, 0x84, 0x09, 0x62, 0xe6, 0x1f,
-	0xf7, 0xc8, 0xf0, 0x38, 0x68, 0x58, 0xf9, 0x8d, 0xb8, 0x42, 0xcc, 0xe8, 0x19, 0x38, 0x6a, 0xec,
-	0xd7, 0xfe, 0x5d, 0x38, 0x9e, 0x8a, 0x74, 0xc1, 0x97, 0x97, 0x47, 0x81, 0xa3, 0xc6, 0x74, 0x00,
-	0x95, 0x25, 0x53, 0x7e, 0xdd, 0x50, 0xf4, 0x40, 0xbd, 0x9a, 0x5e, 0x1f, 0xb0, 0x02, 0xa0, 0xcf,
-	0xe0, 0x1e, 0x4f, 0xd9, 0x2a, 0x8f, 0x31, 0x64, 0x28, 0x35, 0x5f, 0x70, 0x16, 0x69, 0x54, 0xbe,
-	0xdb, 0x23, 0x43, 0x77, 0xe2, 0xf8, 0xe4, 0x92, 0x04, 0x77, 0x2d, 0x31, 0xfd, 0x0b, 0x98, 0xb8,
-	0x50, 0x2b, 0x37, 0x4d, 0x3a, 0xe0, 0xdf, 0xb4, 0x22, 0x14, 0x99, 0xee, 0xff, 0x22, 0xe0, 0xee,
-	0x9d, 0xd1, 0x53, 0xa8, 0xcd, 0x73, 0x96, 0xa0, 0xb6, 0x59, 0xda, 0x8e, 0xde, 0x87, 0x7a, 0xae,
-	0x30, 0xe4, 0xd1, 0xda, 0x44, 0xea, 0x06, 0xb5, 0x5c, 0xe1, 0x2c, 0x5a, 0xd3, 0x3e, 0x34, 0x22,
-	0xc6, 0x50, 0xa9, 0x30, 0xc1, 0x6d, 0xc8, 0x63, 0x9b, 0xee, 0x49, 0x29, 0x5e, 0xe1, 0x76, 0x16,
-	0xd3, 0xc7, 0xd0, 0x56, 0xc8, 0x24, 0xea, 0xf0, 0x0f, 0x6a, 0xd2, 0xf6, 0x82, 0x56, 0x39, 0xb8,
-	0xd8, 0xd3, 0x85, 0x01, 0x89, 0x4b, 0x2e, 0x52, 0x13, 0xac, 0x17, 0xd8, 0x8e, 0x9e, 0x41, 0x43,
-	0xcc, 0x3f, 0x20, 0xd3, 0x61, 0x26, 0x71, 0xc1, 0x37, 0x26, 0x5c, 0x2f, 0xb8, 0x53, 0x8a, 0xaf,
-	0x8d, 0x46, 0x3b, 0xe0, 0x62, 0x1a, 0x67, 0x82, 0xa7, 0xda, 0xc4, 0xea, 0x05, 0x87, 0xbe, 0xff,
-	0x85, 0x80, 0x77, 0x88, 0xf6, 0xd6, 0xef, 0x7c, 0x04, 0x2d, 0x85, 0xf2, 0x23, 0x67, 0x58, 0x78,
-	0x15, 0x79, 0xaa, 0xed, 0x09, 0x35, 0xad, 0x7c, 0x51, 0xaa, 0xff, 0xfb, 0xa9, 0xdc, 0xe0, 0x67,
-	0x00, 0xad, 0x22, 0xb5, 0x4f, 0x42, 0x26, 0x2b, 0x11, 0xc5, 0x45, 0x3c, 0x55, 0x93, 0x5e, 0x23,
-	0x57, 0xf8, 0xd6, 0xaa, 0xb3, 0x78, 0xf2, 0xe2, 0xeb, 0xae, 0x4b, 0xbe, 0xef, 0xba, 0xe4, 0xc7,
-	0xae, 0x4b, 0x3e, 0xff, 0xec, 0x1e, 0xc1, 0x03, 0x2e, 0x46, 0x4a, 0x47, 0x2c, 0x91, 0x62, 0x53,
-	0x5e, 0xfd, 0xfe, 0x3e, 0xde, 0xb5, 0x47, 0xe7, 0xb6, 0x7c, 0x6e, 0x7f, 0xe7, 0x35, 0x43, 0x8c,
-	0x7f, 0x07, 0x00, 0x00, 0xff, 0xff, 0xf2, 0x90, 0xcf, 0x6d, 0x59, 0x03, 0x00, 0x00,
+	// 669 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x94, 0x41, 0x6f, 0xda, 0x4a,
+	0x10, 0xc7, 0xb1, 0x21, 0xc4, 0x9e, 0x04, 0x08, 0x9b, 0x97, 0x3c, 0xbf, 0xbc, 0xf7, 0x28, 0x22,
+	0x52, 0x8a, 0x22, 0x95, 0x54, 0xe1, 0xd0, 0x43, 0xa4, 0x4a, 0x40, 0x68, 0x41, 0x41, 0x6d, 0x64,
+	0xa0, 0x55, 0x7b, 0xb1, 0x8c, 0x3d, 0xa1, 0x2e, 0xc6, 0x6b, 0x79, 0xd7, 0x6d, 0x38, 0xf6, 0xd6,
+	0x8f, 0xd0, 0x7e, 0xa3, 0x1e, 0xfb, 0x11, 0xaa, 0xb4, 0x1f, 0xa4, 0xb2, 0xbd, 0x90, 0xd0, 0x24,
+	0x4d, 0x4f, 0xec, 0xfe, 0xe7, 0xb7, 0xc3, 0xfc, 0x67, 0x46, 0x86, 0xff, 0x19, 0xa7, 0x81, 0x39,
+	0xc6, 0x03, 0x3c, 0xe7, 0x18, 0x78, 0xa6, 0x6b, 0x8c, 0x4c, 0x6b, 0x12, 0xfa, 0x35, 0x3f, 0xa0,
+	0x9c, 0x92, 0x55, 0x11, 0xde, 0xd9, 0x9e, 0x73, 0xcc, 0x7a, 0x83, 0x76, 0xe8, 0x62, 0x02, 0x54,
+	0x3e, 0xa6, 0x21, 0xdf, 0x16, 0x4f, 0x9b, 0xf1, 0x4b, 0x92, 0x07, 0xd9, 0xb1, 0x35, 0xa9, 0x2c,
+	0x55, 0x55, 0x5d, 0x76, 0x6c, 0x42, 0x20, 0xe3, 0x99, 0x53, 0xd4, 0xe4, 0x58, 0x89, 0xcf, 0x91,
+	0xc6, 0x67, 0x3e, 0x6a, 0xe9, 0x44, 0x8b, 0xce, 0xe4, 0x01, 0x28, 0xf3, 0xe4, 0x5a, 0xa6, 0x2c,
+	0x55, 0xd7, 0x0e, 0x8b, 0x35, 0xf1, 0xaf, 0xb5, 0xbe, 0x08, 0xe8, 0x0b, 0x84, 0xec, 0x41, 0x21,
+	0x29, 0x95, 0x19, 0x9c, 0x1a, 0x13, 0x44, 0x5f, 0x5b, 0x29, 0x4b, 0xd5, 0x15, 0x3d, 0x27, 0xe4,
+	0x01, 0x3d, 0x41, 0xf4, 0xc9, 0x2e, 0xc8, 0xac, 0xae, 0x65, 0x7f, 0x4d, 0x58, 0x6f, 0x51, 0xef,
+	0xcc, 0x19, 0x77, 0x52, 0xba, 0xcc, 0xea, 0x64, 0x0f, 0xd2, 0x63, 0x8b, 0x69, 0xab, 0x31, 0x45,
+	0x16, 0xd4, 0xd3, 0x56, 0x7f, 0x81, 0x45, 0x00, 0x39, 0x82, 0x75, 0x56, 0xb7, 0xe8, 0xd4, 0x37,
+	0xb9, 0x33, 0x72, 0x51, 0x53, 0xe3, 0x07, 0x5b, 0x4b, 0x69, 0xe7, 0xc1, 0x4e, 0x4a, 0x5f, 0x82,
+	0xc9, 0x23, 0xf8, 0xcb, 0xf1, 0x2c, 0x37, 0xb4, 0xd1, 0xb0, 0x30, 0xe0, 0xce, 0x99, 0x63, 0x99,
+	0x1c, 0x99, 0xa6, 0x94, 0xa5, 0xaa, 0xd2, 0x94, 0x35, 0xa9, 0x23, 0xe9, 0x9b, 0x82, 0x68, 0x5d,
+	0x01, 0x9a, 0x0a, 0x64, 0x93, 0x32, 0x9a, 0x3b, 0xa0, 0xdd, 0x94, 0xc2, 0xa0, 0x3e, 0xaf, 0xfc,
+	0x90, 0x40, 0x99, 0xdb, 0x22, 0xdb, 0x90, 0x1d, 0x85, 0xd6, 0x04, 0xb9, 0x18, 0x84, 0xb8, 0x91,
+	0xbf, 0x61, 0x35, 0x64, 0x68, 0x38, 0xe6, 0x34, 0x9e, 0x87, 0xa2, 0x67, 0x43, 0x86, 0x5d, 0x73,
+	0x4a, 0x2a, 0x90, 0x33, 0x2d, 0x0b, 0x19, 0x33, 0x26, 0x38, 0x33, 0x1c, 0x5b, 0x8c, 0x66, 0x2d,
+	0x11, 0x4f, 0x70, 0xd6, 0xb5, 0xc9, 0x3e, 0x14, 0x19, 0x5a, 0x01, 0x72, 0xe3, 0x12, 0x8d, 0x47,
+	0xa5, 0xea, 0x85, 0x24, 0xd0, 0x98, 0xd3, 0x51, 0x01, 0x01, 0x8e, 0x1d, 0xea, 0xc5, 0x53, 0x51,
+	0x75, 0x71, 0x23, 0xbb, 0x90, 0xa3, 0xa3, 0xb7, 0x68, 0x71, 0xc3, 0x0f, 0xf0, 0xcc, 0x39, 0x8f,
+	0x27, 0xa3, 0xea, 0xeb, 0x89, 0x78, 0x1a, 0x6b, 0x64, 0x07, 0x14, 0xf4, 0x6c, 0x9f, 0x3a, 0x1e,
+	0x8f, 0x67, 0xa2, 0xea, 0x8b, 0x7b, 0xe5, 0x83, 0x0c, 0xeb, 0x57, 0xdb, 0x7c, 0xab, 0xd5, 0x6b,
+	0x8e, 0xe4, 0x3f, 0x74, 0x94, 0xbe, 0xcb, 0x51, 0xe6, 0xf7, 0x8e, 0x56, 0xee, 0x70, 0x94, 0x5d,
+	0x76, 0x44, 0x1e, 0x82, 0x1a, 0x06, 0xae, 0xc1, 0xf8, 0xcc, 0xc5, 0xd8, 0x6e, 0xfe, 0x70, 0xf3,
+	0xca, 0x46, 0x0d, 0xf5, 0x5e, 0x3f, 0x0a, 0xe9, 0x4a, 0x18, 0xb8, 0xf1, 0xa9, 0xf2, 0x59, 0x02,
+	0x75, 0xb1, 0x9b, 0xb7, 0x36, 0xe0, 0x3e, 0x14, 0x18, 0x06, 0xef, 0x1c, 0x0b, 0x23, 0x77, 0x34,
+	0xf4, 0xb8, 0x68, 0x41, 0x5e, 0xc8, 0x8d, 0x44, 0xbd, 0xee, 0x20, 0x7d, 0x83, 0x83, 0x3d, 0x28,
+	0x44, 0x9b, 0xf3, 0x9e, 0x06, 0x13, 0x97, 0x9a, 0x76, 0xd4, 0xd0, 0x4c, 0xbc, 0x41, 0xb9, 0x90,
+	0xe1, 0x4b, 0xa1, 0x76, 0xed, 0xfd, 0x11, 0xc0, 0x65, 0xcd, 0xe4, 0x3f, 0xd0, 0xfa, 0x75, 0x63,
+	0xa8, 0xf7, 0x8c, 0xfe, 0xe0, 0x55, 0xaf, 0x6d, 0x0c, 0x9f, 0xf5, 0x4f, 0xdb, 0xad, 0xee, 0x93,
+	0x6e, 0xfb, 0x78, 0x23, 0x45, 0xee, 0xc1, 0xbf, 0x4b, 0xd1, 0x17, 0x5d, 0x7d, 0x30, 0x6c, 0xf4,
+	0x8c, 0xce, 0xf3, 0xfe, 0xa0, 0x7d, 0xbc, 0x21, 0x91, 0x2d, 0x28, 0x2e, 0x01, 0xa7, 0x8d, 0x41,
+	0x67, 0x43, 0x6e, 0x3e, 0xfe, 0x72, 0x51, 0x92, 0xbe, 0x5e, 0x94, 0xa4, 0x6f, 0x17, 0x25, 0xe9,
+	0xd3, 0xf7, 0x52, 0x0a, 0xfe, 0x71, 0x68, 0x8d, 0x71, 0xd3, 0x9a, 0x04, 0xf4, 0x3c, 0xf9, 0x34,
+	0xcd, 0x3b, 0xf8, 0xba, 0x58, 0x3b, 0x10, 0xc7, 0x23, 0xf1, 0x3b, 0xca, 0xc6, 0x44, 0xfd, 0x67,
+	0x00, 0x00, 0x00, 0xff, 0xff, 0x7b, 0x21, 0x11, 0xf4, 0xfe, 0x04, 0x00, 0x00,
 }
 
 func (m *ExternalBackup) Marshal() (dAtA []byte, err error) {
@@ -491,20 +671,20 @@ func (m *ExternalBackup) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.IncludeCertificatesOpt != nil {
-		{
-			size := m.IncludeCertificatesOpt.Size()
-			i -= size
-			if _, err := m.IncludeCertificatesOpt.MarshalTo(dAtA[i:]); err != nil {
-				return 0, err
-			}
-		}
-	}
 	if m.Config != nil {
 		{
 			size := m.Config.Size()
 			i -= size
 			if _, err := m.Config.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if m.IncludeCertificatesOpt != nil {
+		{
+			size := m.IncludeCertificatesOpt.Size()
+			i -= size
+			if _, err := m.IncludeCertificatesOpt.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -609,6 +789,27 @@ func (m *ExternalBackup_IncludeCertificates) MarshalToSizedBuffer(dAtA []byte) (
 	dAtA[i] = 0x40
 	return len(dAtA) - i, nil
 }
+func (m *ExternalBackup_S3Compatible) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ExternalBackup_S3Compatible) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.S3Compatible != nil {
+		{
+			size, err := m.S3Compatible.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintExternalBackup(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	return len(dAtA) - i, nil
+}
 func (m *S3Config) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -677,6 +878,80 @@ func (m *S3Config) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		}
 		i--
 		dAtA[i] = 0x10
+	}
+	if len(m.Bucket) > 0 {
+		i -= len(m.Bucket)
+		copy(dAtA[i:], m.Bucket)
+		i = encodeVarintExternalBackup(dAtA, i, uint64(len(m.Bucket)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *S3Compatible) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *S3Compatible) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *S3Compatible) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.UrlStyle != 0 {
+		i = encodeVarintExternalBackup(dAtA, i, uint64(m.UrlStyle))
+		i--
+		dAtA[i] = 0x38
+	}
+	if len(m.Endpoint) > 0 {
+		i -= len(m.Endpoint)
+		copy(dAtA[i:], m.Endpoint)
+		i = encodeVarintExternalBackup(dAtA, i, uint64(len(m.Endpoint)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.ObjectPrefix) > 0 {
+		i -= len(m.ObjectPrefix)
+		copy(dAtA[i:], m.ObjectPrefix)
+		i = encodeVarintExternalBackup(dAtA, i, uint64(len(m.ObjectPrefix)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.Region) > 0 {
+		i -= len(m.Region)
+		copy(dAtA[i:], m.Region)
+		i = encodeVarintExternalBackup(dAtA, i, uint64(len(m.Region)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.SecretAccessKey) > 0 {
+		i -= len(m.SecretAccessKey)
+		copy(dAtA[i:], m.SecretAccessKey)
+		i = encodeVarintExternalBackup(dAtA, i, uint64(len(m.SecretAccessKey)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.AccessKeyId) > 0 {
+		i -= len(m.AccessKeyId)
+		copy(dAtA[i:], m.AccessKeyId)
+		i = encodeVarintExternalBackup(dAtA, i, uint64(len(m.AccessKeyId)))
+		i--
+		dAtA[i] = 0x12
 	}
 	if len(m.Bucket) > 0 {
 		i -= len(m.Bucket)
@@ -827,6 +1102,18 @@ func (m *ExternalBackup_IncludeCertificates) Size() (n int) {
 	n += 2
 	return n
 }
+func (m *ExternalBackup_S3Compatible) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.S3Compatible != nil {
+		l = m.S3Compatible.Size()
+		n += 1 + l + sovExternalBackup(uint64(l))
+	}
+	return n
+}
 func (m *S3Config) Size() (n int) {
 	if m == nil {
 		return 0
@@ -859,6 +1146,45 @@ func (m *S3Config) Size() (n int) {
 	l = len(m.Endpoint)
 	if l > 0 {
 		n += 1 + l + sovExternalBackup(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *S3Compatible) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Bucket)
+	if l > 0 {
+		n += 1 + l + sovExternalBackup(uint64(l))
+	}
+	l = len(m.AccessKeyId)
+	if l > 0 {
+		n += 1 + l + sovExternalBackup(uint64(l))
+	}
+	l = len(m.SecretAccessKey)
+	if l > 0 {
+		n += 1 + l + sovExternalBackup(uint64(l))
+	}
+	l = len(m.Region)
+	if l > 0 {
+		n += 1 + l + sovExternalBackup(uint64(l))
+	}
+	l = len(m.ObjectPrefix)
+	if l > 0 {
+		n += 1 + l + sovExternalBackup(uint64(l))
+	}
+	l = len(m.Endpoint)
+	if l > 0 {
+		n += 1 + l + sovExternalBackup(uint64(l))
+	}
+	if m.UrlStyle != 0 {
+		n += 1 + sovExternalBackup(uint64(m.UrlStyle))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1170,6 +1496,41 @@ func (m *ExternalBackup) Unmarshal(dAtA []byte) error {
 			}
 			b := bool(v != 0)
 			m.IncludeCertificatesOpt = &ExternalBackup_IncludeCertificates{b}
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field S3Compatible", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExternalBackup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &S3Compatible{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Config = &ExternalBackup_S3Compatible{v}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipExternalBackup(dAtA[iNdEx:])
@@ -1433,6 +1794,268 @@ func (m *S3Config) Unmarshal(dAtA []byte) error {
 			}
 			m.Endpoint = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipExternalBackup(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *S3Compatible) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowExternalBackup
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: S3Compatible: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: S3Compatible: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Bucket", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExternalBackup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Bucket = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessKeyId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExternalBackup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccessKeyId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SecretAccessKey", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExternalBackup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SecretAccessKey = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Region", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExternalBackup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Region = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ObjectPrefix", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExternalBackup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ObjectPrefix = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Endpoint", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExternalBackup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthExternalBackup
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Endpoint = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UrlStyle", wireType)
+			}
+			m.UrlStyle = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExternalBackup
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UrlStyle |= S3URLStyle(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipExternalBackup(dAtA[iNdEx:])

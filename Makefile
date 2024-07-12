@@ -454,7 +454,7 @@ sensor-kubernetes-build:
 .PHONY: main-build-dockerized
 main-build-dockerized: build-volumes
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e SHORTCOMMIT -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps

@@ -2,7 +2,6 @@ package output
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"testing"
 
@@ -160,11 +159,14 @@ func executeHelpOutputCommand(chartName, outputDir string, removeOutputDir bool,
 }
 
 func testChartInNamespaceLint(t *testing.T, chartDir string, namespace string) {
-	linter := lint.All(chartDir, nil, namespace, false)
+	// The 'ca.cert' config option MUST be set to StackRox's Service CA certificate
+	// in order for the admission controller to be usable
+	// To not produce warning let's provide it
+	values := map[string]any{"ca": map[string]any{"cert": "fake"}}
+	linter := lint.All(chartDir, values, namespace, false)
 
 	assert.LessOrEqualf(t, linter.HighestSeverity, maxTolerableSev, "linting chart produced warnings with severity %v", linter.HighestSeverity)
 	for _, msg := range linter.Messages {
-		fmt.Fprintln(os.Stderr, msg.Error())
 		assert.LessOrEqual(t, msg.Severity, maxTolerableSev, msg.Error())
 	}
 }

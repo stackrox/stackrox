@@ -11,6 +11,20 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+- ROX-25066: Add new external backup integration for non-AWS S3 compatible providers.
+
+### Removed Features
+
+### Deprecated Fatures
+
+### Technical Changes
+
+## [4.5.0]
+
+
+
+### Added Features
+
 - ROX-18689: ACS will qualify the registry (and path) of images from the container runtime when env var `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is set to `true` on both Central and Sensor.
   - This enables support for CRI-O's unqualified search registries and short name aliases ([more info](https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md)).
 - ROX-23852: `roxctl image scan` now has the option to filter by vulnerability severities using the `--severity` flag.
@@ -42,6 +56,29 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The `/v1/summary/counts` API has been deprecated in 4.5 and will be removed in the future.
 - 'Dashboard' view under 'Vulnerability Management' is deprecated and will be removed in a future release. Use 'Workload CVEs', 'Exception Management', 'Platform CVEs', and 'Node CVEs' views instead.
 - ROX-25067: The Amazon S3 external backup integration interoperability with Google Cloud Storage has been deprecated. Backups to Google Cloud Storage should be done by using the dedicated Google Cloud Storage external backup integration.
+- The fields `grpcCode`, `httpCode`, and `httpStatus` in returned error for gRPC stream APIs will be removed in the next release. A new field `code` will be added, which should be used instead of `grpcCode`. This change will unify returned API calls for streams and unary requests and it will simplify error handling.
+  Here is an example of the current error payload:
+  ```
+  {
+     "error": {
+       "grpcCode": 16,
+       "httpCode": 401,
+       "message": "credentials not found",
+       "httpStatus": "Unauthorized",
+       "details": []
+     }
+  }
+  ```
+  That example error will be returned in the following format with the next release:
+  ```
+  {
+     "error": {
+       "code": 16,
+       "message": "credentials not found",
+       "details": []
+     }
+  }
+  ```
 
 ### Technical Changes
 

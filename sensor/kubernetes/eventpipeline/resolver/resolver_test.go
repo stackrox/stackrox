@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -623,13 +622,29 @@ func (m *detectionObjectMatcher) Matches(target interface{}) bool {
 		return false
 	}
 
-	diff := cmp.Diff(m.expected, event.DetectorMessages, cmpopts.IgnoreUnexported(storage.Deployment{}))
-	if len(diff) != 0 {
-		m.error = fmt.Sprintf("received detection deployment doesn't match expected: %s", diff)
+	if !cmp(m.expected, event.DetectorMessages) {
+		m.error = fmt.Sprintf("received detection deployment (%v) doesn't match expected (%v)", m.expected, event.DetectorMessages)
 		m.acceptableNumberOfMismatches--
 		return m.acceptableNumberOfMismatches >= 0
 	}
 
+	return true
+}
+
+func cmp(expected, actual []component.DeploytimeDetectionRequest) bool {
+	equal := len(expected) == len(actual)
+	if !equal {
+		return false
+	}
+	for i, e := range expected {
+		a := actual[i]
+		if e.Action != a.Action {
+			return false
+		}
+		if !protocompat.Equal(e.Object, a.Object) {
+			return false
+		}
+	}
 	return true
 }
 

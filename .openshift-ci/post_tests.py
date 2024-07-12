@@ -15,7 +15,7 @@ from common import log_print
 
 class PostTestsConstants:
     API_TIMEOUT = 5 * 60
-    COLLECT_TIMEOUT = 10 * 60
+    COLLECT_TIMEOUT = 15 * 60
     COLLECT_INFRA_TIMEOUT = 12 * 60
     CHECK_TIMEOUT = 5 * 60
     STORE_TIMEOUT = 5 * 60
