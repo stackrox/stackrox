@@ -55,9 +55,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		pos := fileNode.Pos()
 		fileContainsTestFunction := false
 		for _, decl := range fileNode.Decls {
-			switch decl.(type) {
+			switch d := decl.(type) {
 			case *ast.FuncDecl:
-				if strings.HasPrefix(decl.(*ast.FuncDecl).Name.String(), "Test") {
+				if strings.HasPrefix(d.Name.String(), "Test") {
 					fileContainsTestFunction = true
 					break
 				}
