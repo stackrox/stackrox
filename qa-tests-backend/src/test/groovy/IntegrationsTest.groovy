@@ -537,11 +537,11 @@ class IntegrationsTest extends BaseSpecification {
 
         integrationName                          | endpoint
         | urlStyle
-        "Cloudflare R2/path-based/no-prefix"     | ${Env.mustGetCloudflareR2Endpoint()}
+        "Cloudflare R2/path-based/no-prefix"     | Env.mustGetCloudflareR2Endpoint()
         | S3URLStyle.S3_URL_STYLE_PATH
         "Cloudflare R2/path-based/https"         | "https://${Env.mustGetCloudflareR2Endpoint()}"
         | S3URLStyle.S3_URL_STYLE_PATH
-        "Cloudflare R2/virtual-hosted/no-prefix" | ${Env.mustGetCloudflareR2Endpoint()}
+        "Cloudflare R2/virtual-hosted/no-prefix" | Env.mustGetCloudflareR2Endpoint()
         | S3URLStyle.S3_URL_STYLE_VIRTUAL_HOSTED
         "Cloudflare R2/virtual-hosted/https"     | "https://${Env.mustGetCloudflareR2Endpoint()}"
         | S3URLStyle.S3_URL_STYLE_VIRTUAL_HOSTED
