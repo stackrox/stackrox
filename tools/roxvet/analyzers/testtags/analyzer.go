@@ -1,14 +1,15 @@
 package testtags
 
 import (
+	"go/ast"
 	"go/token"
-	"io/fs"
-	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/stackrox/rox/tools/roxvet/common"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
+	"golang.org/x/tools/go/ast/inspector"
 )
 
 const doc = `Ensure that our *_test.go files include a //go:build <TAG>, otherwise they won't be run.'`
@@ -23,8 +24,8 @@ var Analyzer = &analysis.Analyzer{
 	Run:      run,
 }
 
-// Given the package name, get the root directory of the service.
-func isTest(packageName string) bool {
+// Make sure this runs only on tests within stackrox/tests, our go e2e tests
+func isTestsPackage(packageName string) bool {
 	if !strings.HasPrefix(packageName, roxPrefix) {
 		return false
 	}
@@ -40,50 +41,30 @@ func isTest(packageName string) bool {
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	packagePath := pass.Pkg.Path()
-	if !isTest(packagePath) {
+	inspectResult := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	nodeFilter := []ast.Node{
+		(*ast.File)(nil),
+	}
+
+	if !isTestsPackage(pass.Pkg.Path()) {
 		return nil, nil
 	}
-	root := strings.TrimPrefix(packagePath, roxPrefix)
-	root = "../../../../../" + root
 
-	var goTestFiles []string
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if !d.IsDir() && strings.HasSuffix(path, "_test.go") {
-			goTestFiles = append(goTestFiles, path)
+	goBuildDirectiveCount := 0
+	pos := token.NoPos
+	common.FilteredPreorder(inspectResult, common.IsTestFile, nodeFilter, func(n ast.Node) {
+		fileNode := n.(*ast.File)
+		pos = fileNode.Pos()
+		for _, comment := range fileNode.Comments {
+			if strings.HasPrefix(comment.Text(), "//go:build") {
+				goBuildDirectiveCount++
+			}
 		}
-		return nil
 	})
-
-	if err != nil {
-		pass.Reportf(token.NoPos, "Failed to walk directory %s with error %v", packagePath, err)
-		return nil, nil
-	}
-
-	for _, filePath := range goTestFiles {
-		var fileContent []byte
-		fileContent, err = os.ReadFile(filePath)
-		if err != nil {
-			pass.Reportf(token.NoPos, "os.ReadFile failed with: %v", err)
-			return nil, nil
-		}
-		numGoBuildDirectives := numGoBuildDirectives(string(fileContent))
-		if numGoBuildDirectives == 0 {
-			pass.Reportf(token.NoPos, "\"%s\" is missing a //go:build directive.", filePath)
-		} else if numGoBuildDirectives > 1 {
-			pass.Reportf(token.NoPos, "\"%s\" has multiple //go:build directives, there should only be one.", filePath)
-		}
+	if goBuildDirectiveCount == 0 {
+		pass.Reportf(pos, "Missing //go:build directive.")
+	} else if goBuildDirectiveCount > 1 {
+		pass.Reportf(pos, "Multiple //go:build directives, there should be exactly one.")
 	}
 	return nil, nil
-}
-
-func numGoBuildDirectives(fileContent string) int {
-	lines := strings.Split(fileContent, "\n")
-	count := 0
-	for _, line := range lines {
-		if strings.HasPrefix(line, "//go:build") {
-			count += 1
-		}
-	}
-	return count
 }
