@@ -96,13 +96,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                  "api_token": tokenResp.getToken(),])
         // create new input to search violations from
         postToSplunk(port, "/servicesNS/nobody/TA-stackrox/data/inputs/stackrox_violations",
-                ["name": SPLUNK_INPUT_NAME, "interval": "1", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
-        // update saved search of TA to run every minute to create alerts quicker. It also looks further back.
-        postToSplunk(port, "/servicesNS/nobody/TA-stackrox/saved/searches/" +
-                "Threat%20-%20Create%20Notable%20from%20RHACS%20Alert%20-%20Rule", [
-                        "cron_schedule": "* * * * *",
-                        "dispatch.earliest_time": "-15m",
-                ])
+                ["name": SPLUNK_INPUT_NAME, "interval": "5", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
     }
 
     @Tag("Integration")
@@ -123,7 +117,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         boolean hasNetworkViolation = false
         boolean hasProcessViolation = false
         def port = splunkDeployment.splunkPortForward.getLocalPort()
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 20; i++) {
             log.info "Attempt ${i} to get raw violations from Splunk"
             def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
             TimeUnit.SECONDS.sleep(15)
@@ -159,7 +153,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         List<Map<String, String>> alerts = Collections.emptyList()
         boolean hasNetworkAlert = false
         boolean hasProcessAlert = false
-        for (int i = 0; i < 41; i++) {
+        for (int i = 0; i < 20; i++) {
             log.info "Attempt ${i} to get Alerts from Splunk"
             // Hint: If this produces no results, evaluate expanding the earliest_time, e.g. to -15m
             def vSearchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
