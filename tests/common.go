@@ -29,6 +29,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+//lint:file-ignore U1000 since common.go is included in several different go:build tags but not every function is used
+// within every tag, hence the linter incorrectly shows most functions in this file as unused.
+
 const (
 	nginxDeploymentName     = `nginx`
 	expectedLatestTagPolicy = `Latest tag`
