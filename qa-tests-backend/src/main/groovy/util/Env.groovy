@@ -259,8 +259,8 @@ class Env {
         return mustGet("CLOUDFLARE_R2_BACKUP_TEST_REGION") // ENAM
     }
 
-    static String mustGetCloudflareR2AccountID() {
-        return mustGet("CLOUDFLARE_R2_BACKUP_TEST_ACCOUNT_ID") // d4b91883f15dbe6373e25d6ce7274d01
+    static String mustGetCloudflareR2Endpoint() {
+        return "${mustGet("CLOUDFLARE_R2_BACKUP_TEST_ACCOUNT_ID")}.r2.cloudflarestorage.com"
     }
 
     static String mustGetCloudflareR2AccessKeyID() {
