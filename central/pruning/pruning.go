@@ -209,6 +209,7 @@ func (g *garbageCollectorImpl) runGC() {
 
 // Remove vulnerability requests that have expired and past the retention period.
 func (g *garbageCollectorImpl) removeExpiredVulnRequests() {
+	defer metrics.SetPruningDuration(time.Now(), ops.Remove, "VulnRequests")
 	results, err := g.vulnReqs.Search(
 		pruningCtx,
 		search.ConjunctionQuery(
@@ -310,6 +311,7 @@ func (g *garbageCollectorImpl) removeOrphanedK8SRoleBindings(searchQuery *v1.Que
 }
 
 func (g *garbageCollectorImpl) removeOrphanedResources() {
+	defer metrics.SetPruningDuration(time.Now(), ops.Remove, "Orphaned Resources")
 	clusters, err := g.clusters.GetClusters(pruningCtx)
 	if err != nil {
 		log.Errorf("Failed to fetch clusters: %v", err)
@@ -491,11 +493,13 @@ func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
 }
 
 func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage.PrivateConfig) {
+	defer metrics.SetPruningDuration(time.Now(), ops.Remove, "AdministrationEvents")
 	retentionDays := time.Duration(config.GetAdministrationEventsConfig().GetRetentionDurationDays()) * 24 * time.Hour
 	postgres.PruneAdministrationEvents(pruningCtx, g.postgres, retentionDays)
 }
 
 func (g *garbageCollectorImpl) removeExpiredDiscoveredClusters() {
+	defer metrics.SetPruningDuration(time.Now(), ops.Remove, "DiscoveredClusters")
 	postgres.PruneDiscoveredClusters(pruningCtx, g.postgres, env.DiscoveredClustersRetentionTime.DurationSetting())
 }
 
@@ -564,7 +568,7 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStr
 }
 
 func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
-	defer metrics.SetImagePruningDuration(time.Now(), ops.Remove, "Images")
+	defer metrics.SetPruningDuration(time.Now(), ops.Remove, "Images")
 	pruneImageAfterDays := config.GetImageRetentionDurationDays()
 	qb := search.NewQueryBuilder().AddDays(search.LastUpdatedTime, int64(pruneImageAfterDays)).ProtoQuery()
 	imageResults, err := g.images.Search(pruningCtx, qb)
@@ -607,12 +611,14 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 }
 
 func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateConfig) {
+	defer metrics.SetPruningDuration(time.Now(), ops.Remove, "OldReportHistory")
 	reportHistoryRetentionConfig := config.GetReportRetentionConfig().GetHistoryRetentionDurationDays()
 	dur := time.Duration(reportHistoryRetentionConfig) * 24 * time.Hour
 	postgres.PruneReportHistory(pruningCtx, g.postgres, dur)
 }
 
 func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfig) {
+	defer metrics.SetPruningDuration(time.Now(), ops.Remove, "OldReportBlobs")
 	blobRetentionDays := config.GetReportRetentionConfig().GetDownloadableReportRetentionDays()
 	cutOffTime, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-time.Duration(blobRetentionDays) * 24 * time.Hour))
 	if err != nil {
@@ -653,6 +659,7 @@ func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfi
 
 func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	// Check to see if pruning is enabled
+	defer metrics.SetPruningDuration(time.Now(), ops.Remove, "Clusters")
 	clusterRetention := config.GetDecommissionedClusterRetention()
 	retentionDays := int64(clusterRetention.GetRetentionDurationDays())
 	if retentionDays == 0 {
@@ -798,6 +805,7 @@ func getConfigValues(config *storage.PrivateConfig) (pruneResolvedDeployAfter, p
 }
 
 func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
+	defer metrics.SetPruningDuration(time.Now(), ops.Remove, "Alerts")
 	alertRetention := config.GetAlertRetention()
 	if alertRetention == nil {
 		log.Info("[Alert pruning] Alert pruning has been disabled.")
@@ -919,6 +927,7 @@ func (g *garbageCollectorImpl) removeOrphanedRisks() {
 }
 
 func (g *garbageCollectorImpl) removeOrphanedDeploymentRisks() {
+	defer metrics.SetPruningDuration(time.Now(), ops.Remove, "OrphanedDeploymentRisks")
 	deploymentsWithRisk := g.getRisks(storage.RiskSubjectType_DEPLOYMENT)
 	results, err := g.deployments.Search(pruningCtx, search.EmptyQuery())
 	if err != nil {
@@ -932,6 +941,7 @@ func (g *garbageCollectorImpl) removeOrphanedDeploymentRisks() {
 }
 
 func (g *garbageCollectorImpl) removeOrphanedImageRisks() {
+	defer metrics.SetPruningDuration(time.Now(), ops.Remove, "OrphanedImageRisks")
 	imagesWithRisk := g.getRisks(storage.RiskSubjectType_IMAGE)
 	results, err := g.images.Search(pruningCtx, search.EmptyQuery())
 	if err != nil {
@@ -945,6 +955,7 @@ func (g *garbageCollectorImpl) removeOrphanedImageRisks() {
 }
 
 func (g *garbageCollectorImpl) removeOrphanedImageComponentRisks() {
+	defer metrics.SetPruningDuration(time.Now(), ops.Remove, "OrphanedImageCompositionRisks")
 	componentsWithRisk := g.getRisks(storage.RiskSubjectType_IMAGE_COMPONENT)
 	results, err := g.imageComponents.Search(pruningCtx, search.EmptyQuery())
 	if err != nil {
@@ -958,6 +969,7 @@ func (g *garbageCollectorImpl) removeOrphanedImageComponentRisks() {
 }
 
 func (g *garbageCollectorImpl) removeOrphanedNodeRisks() {
+	defer metrics.SetPruningDuration(time.Now(), ops.Remove, "OrphanedNodeRisks")
 	nodesWithRisk := g.getRisks(storage.RiskSubjectType_NODE)
 	results, err := g.nodes.Search(pruningCtx, search.EmptyQuery())
 	if err != nil {
@@ -999,6 +1011,7 @@ func (g *garbageCollectorImpl) removeRisks(riskType storage.RiskSubjectType, ids
 
 func (g *garbageCollectorImpl) pruneLogImbues() {
 	// Check to see if enough time has elapsed to run again
+	defer metrics.SetPruningDuration(time.Now(), ops.Remove, "LogImbues")
 	if lastLogImbuePruneTime.Add(logImbueGCFreq).After(time.Now()) {
 		// Only log imbue pruning if it's been at least logImbueGCFreq since last time those were pruned
 		return

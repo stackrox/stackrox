@@ -30,14 +30,14 @@ var (
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
 
-	imagePruningDurationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	pruningDurationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "image_prune_duration",
-		Help:      "Time taken for pruning images",
+		Name:      "prune_duration",
+		Help:      "Time to perform a pruning operation",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
-	}, []string{"Operation", "Type"})
+	}, []string{"Type"})
 
 	postgresOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -330,9 +330,9 @@ func SetCacheOperationDurationTime(start time.Time, op metrics.Op, t string) {
 		Observe(startTimeToMS(start))
 }
 
-// SetImagePruningDuration times how long it takes to prune images
-func SetImagePruningDuration(start time.Time, op metrics.Op, e string) {
-	imagePruningDurationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Entity": e}).
+// SetPruningDuration times how long it takes to prune an entity
+func SetPruningDuration(start time.Time, op metrics.Op, e string) {
+	pruningDurationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": e}).
 		Observe(startTimeToMS(start))
 }
 
