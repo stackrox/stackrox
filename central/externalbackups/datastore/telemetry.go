@@ -38,8 +38,9 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	})
 
 	backupTypesCount := map[string]int{
-		types.S3Type:  0,
-		types.GCSType: 0,
+		types.S3Type:           0,
+		types.S3CompatibleType: 0,
+		types.GCSType:          0,
 	}
 
 	cloudCredentialsEnabledBackupsCount := map[string]int{
