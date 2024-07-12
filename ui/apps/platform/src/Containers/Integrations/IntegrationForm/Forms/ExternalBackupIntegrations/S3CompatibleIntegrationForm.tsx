@@ -1,15 +1,7 @@
 /* eslint-disable no-void */
 import React, { ReactElement } from 'react';
-import {
-    Checkbox,
-    Form,
-    FormSelect,
-    PageSection,
-    Popover,
-    TextInput,
-} from '@patternfly/react-core';
+import { Checkbox, Form, FormSelect, PageSection, TextInput } from '@patternfly/react-core';
 import { SelectOption } from '@patternfly/react-core/deprecated';
-import { HelpIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
 
 import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
@@ -20,14 +12,15 @@ import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import SelectSingle from 'Components/SelectSingle';
-import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import useIntegrationForm from '../../useIntegrationForm';
+import { IntegrationFormProps } from '../../integrationFormTypes';
+import { s3CompatibleEndpointIcon, objectPrefixIcon, urlStyleIcon } from './icons';
 
-import IntegrationFormActions from '../IntegrationFormActions';
-import FormLabelGroup from '../FormLabelGroup';
-import ScheduleIntervalOptions from '../FormSchedule/ScheduleIntervalOptions';
-import ScheduleWeeklyOptions from '../FormSchedule/ScheduleWeeklyOptions';
-import ScheduleDailyOptions from '../FormSchedule/ScheduleDailyOptions';
+import IntegrationFormActions from '../../IntegrationFormActions';
+import FormLabelGroup from '../../FormLabelGroup';
+import ScheduleIntervalOptions from '../../FormSchedule/ScheduleIntervalOptions';
+import ScheduleWeeklyOptions from '../../FormSchedule/ScheduleWeeklyOptions';
+import ScheduleDailyOptions from '../../FormSchedule/ScheduleDailyOptions';
 
 const urlStyles = [
     {
@@ -134,39 +127,6 @@ export const defaultValues: S3CompatibleIntegrationFormValues = {
     },
     updatePassword: true,
 };
-
-function urlStyleIcon(): ReactElement {
-    return (
-        <Popover
-            bodyContent={
-                <div>
-                    <a
-                        href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/VirtualHosting.html"
-                        target="_blank"
-                        rel="noreferrer"
-                    >
-                        The URL style defines the bucket URL addressing. Virtual-hosted-style
-                        buckets are addressed as https://&#60;bucket&#62;.&#60;endpoint&#62; while
-                        path-style buckets are addressed as
-                        https://&#60;endpoint&#62;/&#60;bucket&#62;. See the AWS documentation about
-                        virtual hosting for more information.
-                    </a>
-                </div>
-            }
-            headerContent={'Virtual hosting of buckets'}
-        >
-            <button
-                type="button"
-                aria-label="More info for input"
-                onClick={(e) => e.preventDefault()}
-                aria-describedby="simple-form-name-01"
-                className="pf-v5-c-form__group-label-help"
-            >
-                <HelpIcon />
-            </button>
-        </Popover>
-    );
-}
 
 function S3CompatibleIntegrationForm({
     initialValues = null,
@@ -328,6 +288,7 @@ function S3CompatibleIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Object prefix"
+                        labelIcon={objectPrefixIcon()}
                         fieldId="externalBackup.s3compatible.objectPrefix"
                         touched={touched}
                         errors={errors}
@@ -344,6 +305,7 @@ function S3CompatibleIntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Endpoint"
+                        labelIcon={s3CompatibleEndpointIcon()}
                         fieldId="externalBackup.s3compatible.endpoint"
                         helperText="example, play.min.io"
                         touched={touched}

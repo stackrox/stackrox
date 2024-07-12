@@ -1,56 +1,48 @@
 /* eslint-disable no-void */
 import React, { ReactElement } from 'react';
-import { Checkbox, Form, FormSelect, PageSection, TextInput } from '@patternfly/react-core';
+import {
+    Checkbox,
+    Form,
+    FormSelect,
+    PageSection,
+    TextInput,
+    TextArea,
+} from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
-import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
-import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import useIntegrationForm from '../../useIntegrationForm';
+import { IntegrationFormProps } from '../../integrationFormTypes';
+import { gcsWorkloadIdentity, objectPrefixIcon } from './icons';
 
-import IntegrationFormActions from '../IntegrationFormActions';
-import FormLabelGroup from '../FormLabelGroup';
-import ScheduleIntervalOptions from '../FormSchedule/ScheduleIntervalOptions';
-import ScheduleWeeklyOptions from '../FormSchedule/ScheduleWeeklyOptions';
-import ScheduleDailyOptions from '../FormSchedule/ScheduleDailyOptions';
+import IntegrationFormActions from '../../IntegrationFormActions';
+import FormLabelGroup from '../../FormLabelGroup';
+import ScheduleIntervalOptions from '../../FormSchedule/ScheduleIntervalOptions';
+import ScheduleWeeklyOptions from '../../FormSchedule/ScheduleWeeklyOptions';
+import ScheduleDailyOptions from '../../FormSchedule/ScheduleDailyOptions';
 
-export type S3Integration = {
-    s3: {
+import { getGoogleCredentialsPlaceholder } from '../../../utils/integrationUtils';
+
+export type GcsIntegration = {
+    gcs: {
         bucket: string;
         objectPrefix: string;
-        endpoint: string;
-        region: string;
-        useIam: boolean;
-        accessKeyId: string;
-        secretAccessKey: string;
+        useWorkloadId: boolean;
+        serviceAccount: string;
     };
-    type: 's3';
+    type: 'gcs';
 } & BackupIntegrationBase;
 
-export type S3IntegrationFormValues = {
-    externalBackup: S3Integration;
+export type GcsIntegrationFormValues = {
+    externalBackup: GcsIntegration;
     updatePassword: boolean;
 };
-
-function requireCredentials(value, context: yup.TestContext) {
-    const requirePasswordField =
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        context?.from[2]?.value?.updatePassword || false;
-    const useIam = context?.parent?.useIam;
-
-    if (!requirePasswordField || useIam) {
-        return true;
-    }
-
-    const trimmedValue = value?.trim();
-    return !!trimmedValue;
-}
 
 export const validationSchema = yup.object().shape({
     externalBackup: yup.object().shape({
@@ -67,31 +59,42 @@ export const validationSchema = yup.object().shape({
             hour: yup.number(),
             minute: yup.number(),
         }),
-        s3: yup.object().shape({
+        gcs: yup.object().shape({
             bucket: yup.string().trim().required('Bucket is required'),
-            objectPrefix: yup.string(),
-            endpoint: yup.string(),
-            region: yup.string().trim().required('Region is required'),
-            useIam: yup.bool(),
-            accessKeyId: yup
-                .string()
-                .trim()
-                .test('accessKeyId-test', 'An access key ID is required', requireCredentials),
-            secretAccessKey: yup
+            objectPrefix: yup.string().trim(),
+            useWorkloadId: yup.bool(),
+            serviceAccount: yup
                 .string()
                 .trim()
                 .test(
-                    'secretAccessKey-test',
-                    'A secret access key is required',
-                    requireCredentials
+                    'serviceAccount-test',
+                    'Valid JSON is required for service account key',
+                    (value, context: yup.TestContext) => {
+                        const requirePasswordField =
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            context?.from[2]?.value?.updatePassword || false;
+                        const useWorkloadId = context?.parent?.useWorkloadId;
+
+                        if (!requirePasswordField || useWorkloadId) {
+                            return true;
+                        }
+                        try {
+                            JSON.parse(value as string);
+                        } catch (e) {
+                            return false;
+                        }
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
+                    }
                 ),
         }),
-        type: yup.string().matches(/s3/),
+        type: yup.string().matches(/gcs/),
     }),
     updatePassword: yup.bool(),
 });
 
-export const defaultValues: S3IntegrationFormValues = {
+export const defaultValues: GcsIntegrationFormValues = {
     externalBackup: {
         id: '',
         name: '',
@@ -101,26 +104,22 @@ export const defaultValues: S3IntegrationFormValues = {
             hour: 0,
             minute: 0,
         },
-        s3: {
+        gcs: {
             bucket: '',
             objectPrefix: '',
-            endpoint: '',
-            region: '',
-            useIam: false,
-            accessKeyId: '',
-            secretAccessKey: '',
+            useWorkloadId: false,
+            serviceAccount: '',
         },
-        type: 's3',
+        type: 'gcs',
     },
     updatePassword: true,
 };
 
-function S3IntegrationForm({
+function GcsIntegrationForm({
     initialValues = null,
     isEditable = false,
-}: IntegrationFormProps<S3Integration>): ReactElement {
+}: IntegrationFormProps<GcsIntegration>): ReactElement {
     const formInitialValues = { ...defaultValues, ...initialValues };
-
     if (initialValues) {
         formInitialValues.externalBackup = {
             ...formInitialValues.externalBackup,
@@ -128,8 +127,7 @@ function S3IntegrationForm({
         };
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
-        formInitialValues.externalBackup.s3.accessKeyId = '';
-        formInitialValues.externalBackup.s3.secretAccessKey = '';
+        formInitialValues.externalBackup.gcs.serviceAccount = '';
 
         // Don't assume user wants to change password; that has caused confusing UX.
         formInitialValues.updatePassword = false;
@@ -148,7 +146,7 @@ function S3IntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<S3IntegrationFormValues>({
+    } = useIntegrationForm<GcsIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });
@@ -158,17 +156,15 @@ function S3IntegrationForm({
         return setFieldValue(event.target.id, value, false);
     }
 
-    function updateKeysOnChange(value, event) {
+    function updateServiceAccountOnChange(value, event) {
         void setFieldValue(event.target.id, value);
         if (value === true) {
-            void setFieldValue('externalBackup.s3.accessKeyId', '');
-            void setFieldValue('externalBackup.s3.secretAccessKey', '');
+            void setFieldValue('externalBackup.gcs.serviceAccount', '');
         }
     }
 
     function onUpdateCredentialsChange(value, event) {
-        setFieldValue('externalBackup.s3.accessKeyId', '');
-        setFieldValue('externalBackup.s3.secretAccessKey', '');
+        setFieldValue('externalBackup.gcs.serviceAccount', '');
         return setFieldValue(event.target.id, value);
     }
 
@@ -205,6 +201,7 @@ function S3IntegrationForm({
                             isRequired
                             type="number"
                             id="externalBackup.backupsToKeep"
+                            name="externalBackup.backupsToKeep"
                             value={values.externalBackup.backupsToKeep}
                             onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
@@ -267,15 +264,16 @@ function S3IntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Bucket"
-                        fieldId="externalBackup.s3.bucket"
+                        fieldId="externalBackup.gcs.bucket"
                         touched={touched}
                         errors={errors}
-                        helperText="example, acs.backups"
+                        helperText="example, stackrox.backups"
                     >
                         <TextInput
                             type="text"
-                            id="externalBackup.s3.bucket"
-                            value={values.externalBackup.s3.bucket}
+                            id="externalBackup.gcs.bucket"
+                            name="externalBackup.gcs.bucket"
+                            value={values.externalBackup.gcs.bucket}
                             onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
@@ -283,47 +281,16 @@ function S3IntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Object prefix"
-                        fieldId="externalBackup.s3.objectPrefix"
+                        labelIcon={objectPrefixIcon()}
+                        fieldId="externalBackup.gcs.objectPrefix"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             type="text"
-                            id="externalBackup.s3.objectPrefix"
-                            value={values.externalBackup.s3.objectPrefix}
-                            onChange={(event, value) => onChange(value, event)}
-                            onBlur={handleBlur}
-                            isDisabled={!isEditable}
-                        />
-                    </FormLabelGroup>
-                    <FormLabelGroup
-                        label="Endpoint"
-                        fieldId="externalBackup.s3.endpoint"
-                        helperText="example, s3.us-west-2.amazonaws.com"
-                        touched={touched}
-                        errors={errors}
-                    >
-                        <TextInput
-                            type="text"
-                            id="externalBackup.s3.endpoint"
-                            value={values.externalBackup.s3.endpoint}
-                            onChange={(event, value) => onChange(value, event)}
-                            onBlur={handleBlur}
-                            isDisabled={!isEditable}
-                        />
-                    </FormLabelGroup>
-                    <FormLabelGroup
-                        isRequired
-                        label="Region"
-                        fieldId="externalBackup.s3.region"
-                        helperText="example, us-west-2"
-                        touched={touched}
-                        errors={errors}
-                    >
-                        <TextInput
-                            type="text"
-                            id="externalBackup.s3.region"
-                            value={values.externalBackup.s3.region}
+                            id="externalBackup.gcs.objectPrefix"
+                            name="externalBackup.gcs.objectPrefix"
+                            value={values.externalBackup.gcs.objectPrefix}
                             onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
@@ -331,15 +298,16 @@ function S3IntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label=""
-                        fieldId="externalBackup.s3.useIam"
+                        labelIcon={gcsWorkloadIdentity()}
+                        fieldId="externalBackup.gcs.useWorkloadId"
                         touched={touched}
                         errors={errors}
                     >
                         <Checkbox
-                            label="Use container IAM role"
-                            id="externalBackup.s3.useIam"
-                            isChecked={values.externalBackup.s3.useIam}
-                            onChange={(event, value) => updateKeysOnChange(value, event)}
+                            label="Use workload identity"
+                            id="externalBackup.gcs.useWorkloadId"
+                            isChecked={values.externalBackup.gcs.useWorkloadId}
+                            onChange={(event, value) => updateServiceAccountOnChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -349,68 +317,51 @@ function S3IntegrationForm({
                             label=""
                             fieldId="updatePassword"
                             helperText="Enable this option to replace currently stored credentials (if any)"
+                            touched={touched}
                             errors={errors}
                         >
                             <Checkbox
-                                label="Update access key ID and secret access key"
+                                label="Update stored credentials"
                                 id="updatePassword"
-                                isChecked={values.updatePassword}
+                                isChecked={
+                                    !values.externalBackup.gcs.useWorkloadId &&
+                                    values.updatePassword
+                                }
                                 onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
-                                isDisabled={!isEditable}
+                                isDisabled={!isEditable || values.externalBackup.gcs.useWorkloadId}
                             />
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
-                        label="Access key ID"
-                        fieldId="externalBackup.s3.accessKeyId"
-                        isRequired={values.updatePassword && !values.externalBackup.s3.useIam}
+                        label="Service account key (JSON)"
+                        isRequired={
+                            values.updatePassword && !values.externalBackup.gcs.useWorkloadId
+                        }
+                        fieldId="externalBackup.gcs.serviceAccount"
                         touched={touched}
                         errors={errors}
                     >
-                        <TextInput
-                            isRequired={values.updatePassword && !values.externalBackup.s3.useIam}
-                            type="password"
-                            id="externalBackup.s3.accessKeyId"
-                            value={values.externalBackup.s3.accessKeyId}
+                        <TextArea
+                            className="json-input"
+                            isRequired={
+                                values.updatePassword && !values.externalBackup.gcs.useWorkloadId
+                            }
+                            type="text"
+                            id="externalBackup.gcs.serviceAccount"
+                            name="externalBackup.gcs.serviceAccount"
+                            value={values.externalBackup.gcs.serviceAccount}
                             onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={
                                 !isEditable ||
                                 !values.updatePassword ||
-                                values.externalBackup.s3.useIam
+                                values.externalBackup.gcs.useWorkloadId
                             }
-                            placeholder={
-                                values.updatePassword || values.externalBackup.s3.useIam
-                                    ? ''
-                                    : 'Currently-stored access key ID will be used.'
-                            }
-                        />
-                    </FormLabelGroup>
-                    <FormLabelGroup
-                        label="Secret access key"
-                        fieldId="externalBackup.s3.secretAccessKey"
-                        isRequired={values.updatePassword && !values.externalBackup.s3.useIam}
-                        touched={touched}
-                        errors={errors}
-                    >
-                        <TextInput
-                            isRequired={values.updatePassword && !values.externalBackup.s3.useIam}
-                            type="password"
-                            id="externalBackup.s3.secretAccessKey"
-                            value={values.externalBackup.s3.secretAccessKey}
-                            onChange={(event, value) => onChange(value, event)}
-                            onBlur={handleBlur}
-                            isDisabled={
-                                !isEditable ||
-                                !values.updatePassword ||
-                                values.externalBackup.s3.useIam
-                            }
-                            placeholder={
-                                values.updatePassword || values.externalBackup.s3.useIam
-                                    ? ''
-                                    : 'Currently-stored secret access key will be used.'
-                            }
+                            placeholder={getGoogleCredentialsPlaceholder(
+                                values.externalBackup.gcs.useWorkloadId,
+                                values.updatePassword
+                            )}
                         />
                     </FormLabelGroup>
                 </Form>
@@ -440,4 +391,4 @@ function S3IntegrationForm({
     );
 }
 
-export default S3IntegrationForm;
+export default GcsIntegrationForm;
