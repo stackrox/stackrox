@@ -2,7 +2,6 @@ package testtags
 
 import (
 	"go/ast"
-	"go/token"
 	"path/filepath"
 	"strings"
 
@@ -52,9 +51,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 	common.FilteredPreorder(inspectResult, common.IsTestFile, nodeFilter, func(n ast.Node) {
 		goBuildDirectiveCount := 0
-		pos := token.NoPos
 		fileNode := n.(*ast.File)
-		pos = fileNode.Pos()
+		pos := fileNode.Pos()
 		for _, comment := range fileNode.Comments {
 			if strings.HasPrefix(comment.Text(), "//go:build") {
 				goBuildDirectiveCount++
