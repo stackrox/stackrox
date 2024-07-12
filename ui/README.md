@@ -21,12 +21,12 @@ the instructions below.
     recommended to use the latest LTS version. If you're managing multiple versions of
     Node.js on your machine, consider using
     [nvm](https://github.com/creationix/nvm))
--   [Yarn](https://yarnpkg.com/en/) v1.x
+-   [npm](https://npmjs.com/) v9.x
 
 ### Dev Env Setup
 
 _Before starting, make sure you have the above tools installed on your machine
-and you've run `yarn install` in the `apps/platform` directory to download dependencies._
+and you've run `npm ci` in the `apps/platform` directory to download dependencies._
 
 The front end development environment consists of a CRA-provided dev server to
 serve static UI assets and deployed StackRox Docker containers that provide
@@ -45,17 +45,17 @@ _Note: Similar instructions apply when using
    Note that Docker for Mac is no longer the most recommended k8s environment for development.
    Some recommended alternatives are `podman-desktop` or `colima`.
 
-1. **Deploy** - Run `yarn deploy-local` (wraps `../deploy/k8s/deploy-local.sh`)
+1. **Deploy** - Run `npm run deploy-local` (wraps `../deploy/k8s/deploy-local.sh`)
    to deploy the StackRox k8s app. Make sure that your git working directory is
    clean and that the branch that you're on has a corresponding tag from CI (see
    Roxbot comment for a PR branch). Alternatively, you can specify the image tag
    you want to deploy by setting the `MAIN_IMAGE_TAG` env var. If
-   `yarn deploy-local` fails, see this
+   `npm run deploy-local` fails, see this
    [Knowledge Base article for debugging instructions](https://github.com/stackrox/dev-docs/blob/main/docs/troubleshooting/Troubleshooting-local-deployment.md).
 
-1. **Start** - Start your local dev server by running `yarn start`. This will build
+1. **Start** - Start your local dev server by running `npm run start`. This will build
    the application in watch mode. To see
-   available options to `yarn start`, first ensure that `yarn build` has been
+   available options to `npm run start`, first ensure that `npm run build` has been
    run from the top level and then refer to the [README.md](./apps/platform/README.md#running-the-development-server)
    in the `apps/platform` directory.
 

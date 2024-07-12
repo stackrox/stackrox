@@ -1,20 +1,19 @@
 UI_BASE_URL ?= https://localhost:8000
-YARN_NETWORK_TIMEOUT ?= 60000
+UI_PKG_INSTALL_NETWORK_TIMEOUT ?= 60000
 
 .PHONY: all
 all: deps lint test test-component build
 
 SOURCES := $(shell find apps -type d \( -name node_modules \) -prune -o -print)
 
-# in monorepo yarn.lock might remain unchanged when new NPM packages are created,
-# tracking package.json files of monorepo packages is the easiest way to discover such situations
-PACKAGE_JSON_FILES := $(shell find . -type d \( -name node_modules \) -prune -false -o -name package.json)
-
 ROX_PRODUCT_BRANDING ?= $(shell $(MAKE) --quiet --no-print-directory -C .. product-branding)
 export REACT_APP_ROX_PRODUCT_BRANDING := $(ROX_PRODUCT_BRANDING)
 
-deps: apps/platform/yarn.lock $(PACKAGE_JSON_FILES)
-	yarn install --cwd=apps/platform --frozen-lockfile --prefer-offline --network-timeout=$(YARN_NETWORK_TIMEOUT)
+deps: apps/platform/package.json apps/platform/package-lock.json
+	# TODO Need to test and verify correct cache behavior in CI - we may
+	# need to specify a different cache folder to ensure deps are not
+	# downloaded each time, unless GH can cache the home-level .npm folder
+	npm ci --prefix apps/platform --prefer-offline --fetch-timeout=$(UI_PKG_INSTALL_NETWORK_TIMEOUT)
 	@touch deps
 
 .PHONY: printsrcs
@@ -24,38 +23,38 @@ printsrcs:
 
 lint: deps $(SOURCES)
 	@echo "+ $@"
-	yarn lint
+	npm run lint
 	@touch lint
 
 build: deps $(SOURCES)
 	@echo "+ $@"
-	yarn build
+	npm run build
 	@touch build
 
 .PHONY: start
 start: deps
 	@echo "+ $@"
-	yarn start
+	npm run start
 
 .PHONY: test
 test: deps $(SOURCES)
 	@echo "+ $@"
-	yarn test
+	npm run test
 
 .PHONY: test-component
 test-component: deps $(SOURCES)
 	@echo "+ $@"
-	yarn test-component
+	npm run test-component
 
 .PHONY: test-e2e
 test-e2e: deps $(SOURCES)
 	@echo "+ $@"
-	yarn test-e2e
+	npm run test-e2e
 
 .PHONY: clean
 clean:
 	@echo "+ $@"
-	yarn clean
+	npm run clean
 	rm -f deps
 	rm -f lint
 	rm -rf build
