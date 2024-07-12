@@ -10,14 +10,14 @@ function proxyWithTarget(target) {
 }
 
 /**
- * Allows custom proxy endpoints during development by setting the UI_CUSTOM_PROXIES environment
+ * Allows custom proxy endpoints during development by setting the ACS_UI_CUSTOM_PROXIES environment
  * variable to a comma separated list of 'path,target' pairs.
  *
- * @example UI_CUSTOM_PROXIES='/v1/collections,http://localhost:3030,/v1/newapi,http://localhost:9000' npm run start
+ * @example ACS_UI_CUSTOM_PROXIES='/v1/collections,http://localhost:3030,/v1/newapi,http://localhost:9000' npm run start
  * @returns {[string, string][]} An array of [path, target] pairs
  */
 function parseCustomProxies() {
-    const proxyString = process.env.UI_CUSTOM_PROXIES;
+    const proxyString = process.env.ACS_UI_CUSTOM_PROXIES;
     if (!proxyString) {
         return [];
     }
@@ -25,7 +25,7 @@ function parseCustomProxies() {
     if (rawValues.length % 2 !== 0) {
         // eslint-disable-next-line no-console
         console.warn(
-            'UI_CUSTOM_PROXIES must be set with an even number of comma delimited values',
+            'ACS_UI_CUSTOM_PROXIES must be set with an even number of comma delimited values',
             'Webpack proxy is ignoring this value'
         );
         return [];
