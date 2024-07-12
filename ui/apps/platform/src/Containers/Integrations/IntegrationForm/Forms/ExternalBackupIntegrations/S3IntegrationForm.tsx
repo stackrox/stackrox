@@ -12,7 +12,7 @@ import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import useIntegrationForm from '../../useIntegrationForm';
 import { IntegrationFormProps } from '../../integrationFormTypes';
-import { s3IamRole, s3EndpointIcon, objectPrefixIcon } from './icons';
+import { s3EndpointIcon, s3IamRole, s3RegionIcon, objectPrefixIcon } from './icons';
 
 import IntegrationFormActions from '../../IntegrationFormActions';
 import FormLabelGroup from '../../FormLabelGroup';
@@ -318,6 +318,7 @@ function S3IntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Region"
+                        labelIcon={s3RegionIcon()}
                         fieldId="externalBackup.s3.region"
                         helperText="example, us-west-2"
                         touched={touched}

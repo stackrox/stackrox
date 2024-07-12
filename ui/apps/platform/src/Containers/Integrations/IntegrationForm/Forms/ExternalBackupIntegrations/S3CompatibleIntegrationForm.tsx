@@ -14,7 +14,12 @@ import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import SelectSingle from 'Components/SelectSingle';
 import useIntegrationForm from '../../useIntegrationForm';
 import { IntegrationFormProps } from '../../integrationFormTypes';
-import { s3CompatibleEndpointIcon, objectPrefixIcon, urlStyleIcon } from './icons';
+import {
+    s3CompatibleEndpointIcon,
+    s3CompatibleRegionIcon,
+    objectPrefixIcon,
+    urlStyleIcon,
+} from './icons';
 
 import IntegrationFormActions from '../../IntegrationFormActions';
 import FormLabelGroup from '../../FormLabelGroup';
@@ -323,6 +328,7 @@ function S3CompatibleIntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Region"
+                        labelIcon={s3CompatibleRegionIcon()}
                         fieldId="externalBackup.s3compatible.region"
                         helperText="example, us-west-2"
                         touched={touched}
