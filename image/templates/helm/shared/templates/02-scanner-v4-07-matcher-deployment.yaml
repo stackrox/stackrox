@@ -26,9 +26,6 @@ spec:
         {{- include "srox.podLabels" (list . "deployment" "scanner-v4-matcher") | nindent 8 }}
       annotations:
         {{- $annotations := dict "traffic.sidecar.istio.io/excludeInboundPorts" "8443" -}}
-        {{- if eq ._rox.env.openshift 4 }}
-          {{- $_ := set $annotations "openshift.io/required-scc" "nonroot-v2" -}}
-        {{- end }}
         {{- include "srox.podAnnotations" (list . "deployment" "scanner-v4-matcher" $annotations) | nindent 8 }}
     spec:
       {{- if ._rox.scannerV4.matcher._nodeSelector }}
@@ -98,7 +95,6 @@ spec:
           capabilities:
             drop: ["NET_RAW"]
           runAsNonRoot: true
-          runAsUser: 65534
         readinessProbe:
           httpGet:
             scheme: HTTPS
@@ -136,7 +132,6 @@ spec:
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
       securityContext:
         runAsNonRoot: true
-        runAsUser: 65534
       serviceAccountName: scanner-v4
       volumes:
       - name: additional-ca-volume
