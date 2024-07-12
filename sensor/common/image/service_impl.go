@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
@@ -44,7 +43,7 @@ type ServiceComponent interface {
 }
 
 // NewService returns the ImageService API for the Admission Controller to use.
-func NewService(imageCache expiringcache.Cache, registryStore registryStore, mirrorStore registrymirror.Store) ServiceComponent {
+func NewService(imageCache imagecacheutils.ImageCache, registryStore registryStore, mirrorStore registrymirror.Store) ServiceComponent {
 	return &serviceImpl{
 		imageCache:    imageCache,
 		registryStore: registryStore,
@@ -57,7 +56,7 @@ type serviceImpl struct {
 	sensor.UnimplementedImageServiceServer
 
 	centralClient centralClient
-	imageCache    expiringcache.Cache
+	imageCache    imagecacheutils.ImageCache
 	registryStore registryStore
 	localScan     localScan
 	centralReady  concurrency.Signal
