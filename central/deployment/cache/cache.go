@@ -16,7 +16,7 @@ var (
 	}
 )
 
-type DeletedDeploymentCache interface {
+type DeletedDeployments interface {
 	Add(id string)
 	Contains(id string) bool
 }
@@ -34,7 +34,7 @@ func (c *deploymentCache) Contains(id string) bool {
 	return ok
 }
 
-// DeletedDeploymentCacheSingleton returns a global expiringcache for deployments that have been recently deleted
-func DeletedDeploymentCacheSingleton() DeletedDeploymentCache {
+// DeletedDeploymentsSingleton returns a global expiringcache for deployments that have been recently deleted
+func DeletedDeploymentsSingleton() DeletedDeployments {
 	return cache
 }

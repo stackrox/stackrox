@@ -26,7 +26,7 @@ type DeploymentTestStoreParams struct {
 	ProcessBaselinesDataStore         pbDS.DataStore
 	NetworkGraphFlowClustersDataStore nfDS.ClusterDataStore
 	RisksDataStore                    riskDS.DataStore
-	DeletedDeploymentCache            cache.DeletedDeploymentCache
+	DeletedDeploymentCache            cache.DeletedDeployments
 	ProcessIndicatorFilter            filter.Filter
 	ClusterRanker                     *ranking.Ranker
 	NamespaceRanker                   *ranking.Ranker

@@ -16,7 +16,7 @@ type clusterDataStoreImpl struct {
 	storage                 store.ClusterStore
 	networkTreeMgr          networktree.Manager
 	graphConfig             graphConfigDS.DataStore
-	deletedDeploymentsCache cache.DeletedDeploymentCache
+	deletedDeploymentsCache cache.DeletedDeployments
 }
 
 func (cds *clusterDataStoreImpl) GetFlowStore(ctx context.Context, clusterID string) (FlowDataStore, error) {

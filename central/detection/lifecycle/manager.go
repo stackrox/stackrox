@@ -47,7 +47,7 @@ type Manager interface {
 // newManager returns a new manager with the injected dependencies.
 func newManager(buildTimeDetector buildtime.Detector, deployTimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
 	deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore, baselines baselineDataStore.DataStore,
-	alertManager alertmanager.AlertManager, reprocessor reprocessor.Loop, deletedDeploymentsCache cache.DeletedDeploymentCache, filter filter.Filter,
+	alertManager alertmanager.AlertManager, reprocessor reprocessor.Loop, deletedDeploymentsCache cache.DeletedDeployments, filter filter.Filter,
 	processAggregator aggregator.ProcessAggregator) *managerImpl {
 	m := &managerImpl{
 		buildTimeDetector:       buildTimeDetector,

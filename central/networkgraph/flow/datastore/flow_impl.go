@@ -23,7 +23,7 @@ type flowDataStoreImpl struct {
 	storage                   store.FlowStore
 	graphConfig               graphConfigDS.DataStore
 	hideDefaultExtSrcsManager aggregator.NetworkConnsAggregator
-	deletedDeploymentsCache   cache.DeletedDeploymentCache
+	deletedDeploymentsCache   cache.DeletedDeployments
 }
 
 func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {

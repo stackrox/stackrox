@@ -39,7 +39,7 @@ type datastoreImpl struct {
 	networkFlows           nfDS.ClusterDataStore
 	baselines              pwDS.DataStore
 	risks                  riskDS.DataStore
-	deletedDeploymentCache cache.DeletedDeploymentCache
+	deletedDeploymentCache cache.DeletedDeployments
 	processFilter          filter.Filter
 
 	keyedMutex *concurrency.KeyedMutex
@@ -49,7 +49,7 @@ type datastoreImpl struct {
 	deploymentRanker *ranking.Ranker
 }
 
-func newDatastoreImpl(storage deploymentStore.Store, searcher deploymentSearch.Searcher, images imageDS.DataStore, baselines pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache cache.DeletedDeploymentCache, processFilter filter.Filter, clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) *datastoreImpl {
+func newDatastoreImpl(storage deploymentStore.Store, searcher deploymentSearch.Searcher, images imageDS.DataStore, baselines pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache cache.DeletedDeployments, processFilter filter.Filter, clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) *datastoreImpl {
 	return &datastoreImpl{
 		deploymentStore:        storage,
 		deploymentSearcher:     searcher,

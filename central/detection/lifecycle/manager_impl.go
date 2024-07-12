@@ -65,7 +65,7 @@ type managerImpl struct {
 	deploymentDataStore     deploymentDatastore.DataStore
 	processesDataStore      processIndicatorDatastore.DataStore
 	baselines               baselineDataStore.DataStore
-	deletedDeploymentsCache cache.DeletedDeploymentCache
+	deletedDeploymentsCache cache.DeletedDeployments
 	processFilter           filter.Filter
 
 	queuedIndicators           map[string]*storage.ProcessIndicator

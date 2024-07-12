@@ -22,7 +22,7 @@ type ClusterDataStore interface {
 }
 
 // NewClusterDataStore returns a new instance of ClusterDataStore using the input storage underneath.
-func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.DataStore, networkTreeMgr networktree.Manager, deletedDeploymentsCache cache.DeletedDeploymentCache) ClusterDataStore {
+func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.DataStore, networkTreeMgr networktree.Manager, deletedDeploymentsCache cache.DeletedDeployments) ClusterDataStore {
 	return &clusterDataStoreImpl{
 		storage:                 storage,
 		graphConfig:             graphConfig,
