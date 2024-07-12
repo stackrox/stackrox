@@ -44,7 +44,8 @@ export function s3EndpointIcon(): ReactElement {
                         rel="noreferrer"
                     >
                         Modifies the endpoint under which S3 is reached. Note that when using a
-                        non-AWS service provider, it is recommended to create an *S3 API Compatible*
+                        non-AWS service provider, it is recommended to create an{' '}
+                        <em>S3 API Compatible</em>
                         integration instead. See the AWS documentation about S3 endpoints for a
                         complete list of AWS endpoints.
                     </a>
@@ -132,7 +133,7 @@ export function s3CompatibleEndpointIcon(): ReactElement {
                 <div>
                     Modifies the endpoint under which the S3 compatible service is reached. Must be
                     reachable via https. Note that when using AWS S3, it is recommended to create an
-                    *Amazon S3* integration instead.
+                    <em>Amazon S3</em> integration instead.
                 </div>
             }
             headerContent={'Endpoint'}
