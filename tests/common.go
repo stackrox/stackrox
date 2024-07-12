@@ -1,3 +1,5 @@
+//go:build test_e2e || sql_integration || compliance
+
 package tests
 
 import (
