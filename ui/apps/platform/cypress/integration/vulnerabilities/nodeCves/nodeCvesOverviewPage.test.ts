@@ -1,11 +1,5 @@
 import withAuth from '../../../helpers/basicAuth';
-import {
-    assertAvailableFilters,
-    compoundFiltersSelectors,
-    selectEntity,
-    toggleAttributeSelectorMenu,
-    toggleEntitySelectorMenu,
-} from '../../../helpers/compoundFilters';
+import { assertAvailableFilters } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
     assertCannotFindThePage,
