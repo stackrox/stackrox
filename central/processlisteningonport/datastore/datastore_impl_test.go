@@ -272,7 +272,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 
 	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
 
-	expectedPlopCounts := map[string]int{plopObjects[0].GetDeploymentId(), 1}
+	expectedPlopCounts := map[string]int{plopObjects[0].GetDeploymentId(): 1}
 	suite.Equal(expectedPlopCounts, plopCounts)
 }
 

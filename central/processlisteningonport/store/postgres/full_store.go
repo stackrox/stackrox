@@ -45,6 +45,14 @@ const getByDeploymentStmt = "SELECT plop.serialized, " +
 
 const getClusterAndNamespaceStmt = "SELECT namespace, clusterid FROM deployments WHERE id = $1"
 
+const getCountsByDeploymentId = "SELECT deploymentid, namespace, clusterid, count(*) as count FROM listening_endpoints where closed = false GROUP BY deploymentid, namespace, clusterid"
+
+func (s *fullStoreImpl) CountProcessListeningOnPort(ctx context.Context) (map[string]int, error) {
+	return pgutils.Retry2(func() (map[string]int, error) {
+		return s.retryableCountPLOP(ctx)
+	})
+}
+
 // Manually written function to get PLOP joined with ProcessIndicators
 func (s *fullStoreImpl) GetProcessListeningOnPort(
 	ctx context.Context,
@@ -126,6 +134,30 @@ func (s *fullStoreImpl) checkAccesssForRows(
 	}
 
 	return true, nil
+}
+
+func (s *fullStoreImpl) retryableCountPLOP(ctx context.Context) (map[string]int, error) {
+	var rows pgx.Rows
+	var err error
+
+	rows, err = s.db.Query(ctx, getCountsByDeploymentId)
+
+	if err != nil {
+		// Do not be alarmed if the error is simply NoRows
+		err = pgutils.ErrNilIfNoRows(err)
+		if err != nil {
+			log.Warnf("%s: %s", getCountsByDeploymentId, err)
+		}
+		return nil, err
+	}
+	defer rows.Close()
+
+	results, err := s.readCountRows(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, rows.Err()
 }
 
 func (s *fullStoreImpl) retryableGetPLOP(
@@ -268,4 +300,28 @@ func (s *fullStoreImpl) readRows(
 	}
 
 	return plops, nil
+}
+
+func (s *fullStoreImpl) readCountRows(
+	ctx context.Context,
+	rows pgx.Rows,
+) (map[string]int, error) {
+	var counts = make(map[string]int)
+
+	for rows.Next() {
+		var deploymentID string
+		var namespace string
+		var clusterID string
+		var count int
+
+		if err := rows.Scan(&deploymentID, &namespace, &clusterID, &count); err != nil {
+			return nil, pgutils.ErrNilIfNoRows(err)
+		}
+
+		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID), sac.NamespaceScopeKey(namespace)); err == nil && ok {
+			counts[deploymentID] = count
+		}
+	}
+
+	return counts, nil
 }
