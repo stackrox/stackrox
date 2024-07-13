@@ -18,6 +18,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.DeploymentExtension)): {
 			"/v1.ListeningEndpointsService/GetListeningEndpoints",
+			"/v1.ListeningEndpointsService/CountListeningEndpoints",
 		},
 	})
 )
@@ -56,5 +57,21 @@ func (s *serviceImpl) GetListeningEndpoints(
 
 	return &v1.GetProcessesListeningOnPortsResponse{
 		ListeningEndpoints: processesListeningOnPorts,
+	}, nil
+}
+
+// CountListeningEndpoints returns the count of listening endpoints by deploymentid
+func (s *serviceImpl) GetListeningEndpoints(
+	ctx context.Context,
+	_ *v1.Empty,
+) (*v1.CountProcessesListeningOnPortsResponse, error) {
+	counts, err := s.dataStore.CountProcessListeningOnPort(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.CountProcessesListeningOnPortsResponse{
+		Counts: counts,
 	}, nil
 }

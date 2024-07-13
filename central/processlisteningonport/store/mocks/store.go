@@ -57,6 +57,21 @@ func (mr *MockStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), ctx, q)
 }
 
+// CountProcessListeningOnPort mocks base method.
+func (m *MockStore) CountProcessListeningOnPort(ctx context.Context) (map[string]int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountProcessListeningOnPort", ctx)
+	ret0, _ := ret[0].(map[string]int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountProcessListeningOnPort indicates an expected call of CountProcessListeningOnPort.
+func (mr *MockStoreMockRecorder) CountProcessListeningOnPort(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountProcessListeningOnPort", reflect.TypeOf((*MockStore)(nil).CountProcessListeningOnPort), ctx)
+}
+
 // Delete mocks base method.
 func (m *MockStore) Delete(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()

@@ -61,6 +61,21 @@ func (mr *MockDataStoreMockRecorder) AddProcessListeningOnPort(ctx, clusterID an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessListeningOnPort", reflect.TypeOf((*MockDataStore)(nil).AddProcessListeningOnPort), varargs...)
 }
 
+// CountProcessListeningOnPort mocks base method.
+func (m *MockDataStore) CountProcessListeningOnPort(ctx context.Context) (map[string]int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountProcessListeningOnPort", ctx)
+	ret0, _ := ret[0].(map[string]int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountProcessListeningOnPort indicates an expected call of CountProcessListeningOnPort.
+func (mr *MockDataStoreMockRecorder) CountProcessListeningOnPort(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountProcessListeningOnPort", reflect.TypeOf((*MockDataStore)(nil).CountProcessListeningOnPort), ctx)
+}
+
 // GetProcessListeningOnPort mocks base method.
 func (m *MockDataStore) GetProcessListeningOnPort(ctx context.Context, deployment string) ([]*storage.ProcessListeningOnPort, error) {
 	m.ctrl.T.Helper()

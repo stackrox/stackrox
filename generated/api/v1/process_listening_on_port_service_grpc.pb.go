@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ListeningEndpointsService_GetListeningEndpoints_FullMethodName = "/v1.ListeningEndpointsService/GetListeningEndpoints"
+	ListeningEndpointsService_GetListeningEndpoints_FullMethodName   = "/v1.ListeningEndpointsService/GetListeningEndpoints"
+	ListeningEndpointsService_CountListeningEndpoints_FullMethodName = "/v1.ListeningEndpointsService/CountListeningEndpoints"
 )
 
 // ListeningEndpointsServiceClient is the client API for ListeningEndpointsService service.
@@ -30,6 +31,8 @@ const (
 type ListeningEndpointsServiceClient interface {
 	// GetListeningEndpoints returns the listening endpoints and the processes that opened them for a given deployment
 	GetListeningEndpoints(ctx context.Context, in *GetProcessesListeningOnPortsRequest, opts ...grpc.CallOption) (*GetProcessesListeningOnPortsResponse, error)
+	// CountListeningEndpoints returns the number listening endpoints for each deployment
+	CountListeningEndpoints(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CountProcessesListeningOnPortsResponse, error)
 }
 
 type listeningEndpointsServiceClient struct {
@@ -50,6 +53,16 @@ func (c *listeningEndpointsServiceClient) GetListeningEndpoints(ctx context.Cont
 	return out, nil
 }
 
+func (c *listeningEndpointsServiceClient) CountListeningEndpoints(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CountProcessesListeningOnPortsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CountProcessesListeningOnPortsResponse)
+	err := c.cc.Invoke(ctx, ListeningEndpointsService_CountListeningEndpoints_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ListeningEndpointsServiceServer is the server API for ListeningEndpointsService service.
 // All implementations should embed UnimplementedListeningEndpointsServiceServer
 // for forward compatibility.
@@ -58,6 +71,8 @@ func (c *listeningEndpointsServiceClient) GetListeningEndpoints(ctx context.Cont
 type ListeningEndpointsServiceServer interface {
 	// GetListeningEndpoints returns the listening endpoints and the processes that opened them for a given deployment
 	GetListeningEndpoints(context.Context, *GetProcessesListeningOnPortsRequest) (*GetProcessesListeningOnPortsResponse, error)
+	// CountListeningEndpoints returns the number listening endpoints for each deployment
+	CountListeningEndpoints(context.Context, *Empty) (*CountProcessesListeningOnPortsResponse, error)
 }
 
 // UnimplementedListeningEndpointsServiceServer should be embedded to have
@@ -69,6 +84,9 @@ type UnimplementedListeningEndpointsServiceServer struct{}
 
 func (UnimplementedListeningEndpointsServiceServer) GetListeningEndpoints(context.Context, *GetProcessesListeningOnPortsRequest) (*GetProcessesListeningOnPortsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetListeningEndpoints not implemented")
+}
+func (UnimplementedListeningEndpointsServiceServer) CountListeningEndpoints(context.Context, *Empty) (*CountProcessesListeningOnPortsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CountListeningEndpoints not implemented")
 }
 func (UnimplementedListeningEndpointsServiceServer) testEmbeddedByValue() {}
 
@@ -108,6 +126,24 @@ func _ListeningEndpointsService_GetListeningEndpoints_Handler(srv interface{}, c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ListeningEndpointsService_CountListeningEndpoints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ListeningEndpointsServiceServer).CountListeningEndpoints(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ListeningEndpointsService_CountListeningEndpoints_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ListeningEndpointsServiceServer).CountListeningEndpoints(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ListeningEndpointsService_ServiceDesc is the grpc.ServiceDesc for ListeningEndpointsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -118,6 +154,10 @@ var ListeningEndpointsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetListeningEndpoints",
 			Handler:    _ListeningEndpointsService_GetListeningEndpoints_Handler,
+		},
+		{
+			MethodName: "CountListeningEndpoints",
+			Handler:    _ListeningEndpointsService_CountListeningEndpoints_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
