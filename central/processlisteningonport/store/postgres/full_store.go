@@ -48,7 +48,7 @@ const getClusterAndNamespaceStmt = "SELECT namespace, clusterid FROM deployments
 const getCountsByDeploymentId = "SELECT deploymentid, namespace, clusterid, count(*) as count FROM listening_endpoints where closed = false GROUP BY deploymentid, namespace, clusterid"
 
 func (s *fullStoreImpl) CountProcessListeningOnPort(ctx context.Context) (map[string]int, error) {
-	return pgutils.Retry2(func() (map[string]int, error) {
+	return pgutils.Retry2(ctx, func() (map[string]int, error) {
 		return s.retryableCountPLOP(ctx)
 	})
 }
