@@ -269,6 +269,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	}
 
 	protoassert.Equal(suite.T(), expectedPlopStorage, newPlopsFromDB[0])
+
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+
+	expectedPlopCounts := map[string]int{plopObjects[0].GetDeploymentId(), 1}
+	suite.Equal(expectedPlopCounts, plopCounts)
 }
 
 // TestPLOPAddNoDeployments: Add PLOPs without a matching deployment in the deployments table
