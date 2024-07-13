@@ -76,9 +76,6 @@ var (
 	// ScannerV4MultiBundle enables Scanner V4 to consume vulnerabilities using multi-bundle archives.
 	ScannerV4MultiBundle = registerFeature("Enables Scanner V4 to consume vulnerabilities using multi-bundle archives", "ROX_SCANNER_V4_MULTI_BUNDLE", true)
 
-	// CloudSources enables support for cloud source integrations.
-	CloudSources = registerFeature("Enable support for cloud source integrations", "ROX_CLOUD_SOURCES", true)
-
 	// ComplianceHierachyControlData enables support for compliance hierarchy control data.
 	ComplianceHierachyControlData = registerFeature("Enable support to display and import the compliance hierarchy control data", "ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA", true)
 
