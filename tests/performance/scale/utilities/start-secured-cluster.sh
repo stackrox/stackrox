@@ -17,7 +17,6 @@ settings=(
     --set exposeMonitoring=true
     --set collector.collectionMethod=CORE_BPF
     --set collector.forceCollectionMethod=true
-    --set scannerV4.disable=false
 )
 
 if [[ -n ${collector_image_tag:-} ]]; then

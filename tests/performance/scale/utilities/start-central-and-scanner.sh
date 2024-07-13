@@ -15,6 +15,7 @@ settings=(
     --set enableOpenShiftMonitoring=true
     --set central.db.enabled=true
     --set central.persistence.none=true
+    --set scannerV4.disable=false
 )
 
 if [[ -n ${DOCKER_USERNAME:-} ]]; then
