@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -138,9 +137,6 @@ func Validate(awssh *storage.AWSSecurityHub, validateSecret bool) error {
 			if awssh.GetCredentials().GetSecretAccessKey() == "" {
 				return errors.New("AWS secret access key must not be empty")
 			}
-		}
-		if awssh.GetCredentials().GetStsEnabled() && !features.CloudCredentials.Enabled() {
-			return errors.New("AWS STS support enabled without the associated feature flag being enabled")
 		}
 	}
 

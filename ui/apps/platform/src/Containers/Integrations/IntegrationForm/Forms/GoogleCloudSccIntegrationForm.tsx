@@ -9,7 +9,6 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -98,8 +97,6 @@ function GoogleCloudSccIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<GoogleCloudSccIntegration>): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isCloudCredentialsEnabled = isFeatureFlagEnabled('ROX_CLOUD_CREDENTIALS');
     const formInitialValues = { ...defaultValues, ...initialValues };
     if (initialValues) {
         formInitialValues.notifier = {
@@ -183,22 +180,20 @@ function GoogleCloudSccIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {isCloudCredentialsEnabled && (
-                        <FormLabelGroup
-                            fieldId="notifier.cscc.wifEnabled"
-                            touched={touched}
-                            errors={errors}
-                        >
-                            <Checkbox
-                                label="Use workload identity"
-                                id="notifier.cscc.wifEnabled"
-                                isChecked={values.notifier.cscc.wifEnabled}
-                                onChange={(event, value) => onChange(value, event)}
-                                onBlur={handleBlur}
-                                isDisabled={!isEditable}
-                            />
-                        </FormLabelGroup>
-                    )}
+                    <FormLabelGroup
+                        fieldId="notifier.cscc.wifEnabled"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <Checkbox
+                            label="Use workload identity"
+                            id="notifier.cscc.wifEnabled"
+                            isChecked={values.notifier.cscc.wifEnabled}
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
+                        />
+                    </FormLabelGroup>
                     {!isCreating && isEditable && (
                         <FormLabelGroup
                             label=""
@@ -211,36 +206,24 @@ function GoogleCloudSccIntegrationForm({
                                 label="Update stored credentials"
                                 id="updatePassword"
                                 isChecked={
-                                    !(
-                                        isCloudCredentialsEnabled && values.notifier.cscc.wifEnabled
-                                    ) && values.updatePassword
+                                    !values.notifier.cscc.wifEnabled && values.updatePassword
                                 }
                                 onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
-                                isDisabled={
-                                    !isEditable ||
-                                    (isCloudCredentialsEnabled && values.notifier.cscc.wifEnabled)
-                                }
+                                isDisabled={!isEditable || values.notifier.cscc.wifEnabled}
                             />
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
                         label="Service account key (JSON)"
-                        isRequired={
-                            values.updatePassword &&
-                            isCloudCredentialsEnabled &&
-                            !values.notifier.cscc.wifEnabled
-                        }
+                        isRequired={values.updatePassword && !values.notifier.cscc.wifEnabled}
                         fieldId="notifier.cscc.serviceAccount"
                         touched={touched}
                         errors={errors}
                     >
                         <TextArea
                             className="json-input"
-                            isRequired={
-                                values.updatePassword &&
-                                !(isCloudCredentialsEnabled && values.notifier.cscc.wifEnabled)
-                            }
+                            isRequired={values.updatePassword && !values.notifier.cscc.wifEnabled}
                             type="text"
                             id="notifier.cscc.serviceAccount"
                             name="notifier.cscc.serviceAccount"
@@ -250,10 +233,10 @@ function GoogleCloudSccIntegrationForm({
                             isDisabled={
                                 !isEditable ||
                                 !values.updatePassword ||
-                                (isCloudCredentialsEnabled && values.notifier.cscc.wifEnabled)
+                                values.notifier.cscc.wifEnabled
                             }
                             placeholder={getGoogleCredentialsPlaceholder(
-                                isCloudCredentialsEnabled && values.notifier.cscc.wifEnabled,
+                                values.notifier.cscc.wifEnabled,
                                 values.updatePassword
                             )}
                         />
