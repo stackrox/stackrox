@@ -89,9 +89,6 @@ for test_tuple in test_tuples:
     os.environ["ROX_TELEMETRY_STORAGE_KEY_V1"] = 'DISABLED'
     test_versions = f'{test_tuple.central_version}--{test_tuple.sensor_version}'
 
-    # Collection not supported on 3.74
-    collection_method = 'none' if test_tuple.sensor_version.startswith('74') else 'core-bpf'
-
     sets.append(
         {
             "name": f'version compatibility tests: {test_versions}',
@@ -100,7 +97,8 @@ for test_tuple in test_tuples:
                     check_stackrox_logs=True,
                     artifact_destination_prefix=test_versions,
             ),
-            "pre_test": CollectionPreTest(collection_method)
+            # Collection not supported on 3.74
+            "pre_test": CollectionPreTest("none" if test_tuple.sensor_version.startswith('74') else "core-bpf")
         },
     )
 ClusterTestSetsRunner(
