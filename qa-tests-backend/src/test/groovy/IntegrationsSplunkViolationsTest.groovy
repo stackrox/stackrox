@@ -38,6 +38,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private static final String CIM_REMOTE_LOCATION = "/tmp/cim.tgz"
     private static final String TEST_NAMESPACE = Constants.SPLUNK_TEST_NAMESPACE
     private static final String SPLUNK_INPUT_NAME = "stackrox-violations-input"
+    private static final String SPLUNK_TA_CONVERSION_JOB_NAME =
+            "Threat%20-%20Create%20Notable%20from%20RHACS%20Alert%20-%20Rule"
 
     private SplunkDeployment splunkDeployment
 
@@ -132,19 +134,16 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             }
             hasNetworkViolation = results.any { isNetworkViolation(it) }
             hasProcessViolation = results.any { isProcessViolation(it) }
-            // TODO: Remove debug log
-            log.info "Found violations in Splunk: \n${results}"
-            log.info "hasNetworkViolation: ${hasNetworkViolation}\nhasProcessViolation: ${hasProcessViolation}"
-            // TODO: /Remove debug log
+            log.debug "Found violations in Splunk: \n${results}"
+            log.debug "hasNetworkViolation: ${hasNetworkViolation}\nhasProcessViolation: ${hasProcessViolation}"
             if (hasNetworkViolation && hasProcessViolation) {
-                log.info "Success!"
+                log.info "Success finding Network and Process Violations in Splunk!"
                 break
             }
         }
 
-        // After we know that violations arrived, manually kick off search that converts them into alerts
-        postToSplunk(port, "/services/saved/searches/" +
-                "Threat%20-%20Create%20Notable%20from%20RHACS%20Alert%20-%20Rule/dispatch", [
+        log.info "Starting conversion of ACS violations to Splunk alerts"
+        postToSplunk(port, "/services/saved/searches/" + SPLUNK_TA_CONVERSION_JOB_NAME +"/dispatch", [
                 "dispatch.now": "true",
                 "force_dispatch": "true",
         ])
@@ -155,7 +154,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         boolean hasProcessAlert = false
         for (int i = 0; i < 20; i++) {
             log.info "Attempt ${i} to get Alerts from Splunk"
-            // Hint: If this produces no results, evaluate expanding the earliest_time, e.g. to -15m
+            // Hint: If this produces no results, evaluate expanding the earliest_time, e.g. to -15m.
+            // This can be done by expanding `createSearch` with a new parameter.
             def vSearchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
             TimeUnit.SECONDS.sleep(15)
             Response vResponse = SplunkUtil.getSearchResults(port, vSearchId)
@@ -169,12 +169,10 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             }
             hasNetworkAlert = alerts.any { isNetworkViolation(it) }
             hasProcessAlert = alerts.any { isProcessViolation(it) }
-            // TODO: Remove debug log
-            log.info "Found Alerts in Splunk: \n${alerts}"
-            log.info "hasNetworkAlert: ${hasNetworkAlert}\nhasProcessAlert: ${hasProcessAlert}"
-            // TODO: /Remove debug log
+            log.debug "Found Alerts in Splunk: \n${alerts}"
+            log.info "Current Splunk index contains NetworkAlert: ${hasNetworkAlert} and ProcessAlert: ${hasProcessAlert}"
             if (hasNetworkAlert && hasProcessAlert) {
-                log.info "Success!"
+                log.info "Success finding Network and Process Alerts in Splunk!"
                 break
             }
         }
