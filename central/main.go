@@ -359,13 +359,10 @@ func startServices() {
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
 	administrationUsageInjector.Singleton().Start()
+	gcp.Singleton().Start()
 
 	if features.AdministrationEvents.Enabled() {
 		administrationEventHandler.Singleton().Start()
-	}
-
-	if features.CloudCredentials.Enabled() {
-		gcp.Singleton().Start()
 	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
@@ -930,6 +927,7 @@ func waitForTerminationSignal() {
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 		{administrationUsageInjector.Singleton(), "administration usage injector"},
 		{apiTokenExpiration.Singleton(), "api token expiration notifier"},
+		{gcp.Singleton(), "GCP cloud credentials manager"},
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
@@ -948,10 +946,6 @@ func waitForTerminationSignal() {
 	if features.AdministrationEvents.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{administrationEventHandler.Singleton(), "administration events handler"})
-	}
-
-	if features.CloudCredentials.Enabled() {
-		stoppables = append(stoppables, stoppableWithName{gcp.Singleton(), "GCP cloud credentials manager"})
 	}
 
 	if features.CloudSources.Enabled() {
