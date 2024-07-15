@@ -198,7 +198,7 @@ class DeploymentCheck extends BaseSpecification {
     }
 
     static String createDeploymentYaml(String deploymentName, String namespace,
-        String image = "quay.io/rhacs-eng/qa-multi-arch-nginx:latest") {
+        String image = "quay.io/rhacs-eng/qa-multi-arch:nginx-latest") {
         """
 apiVersion: apps/v1
 kind: Deployment
