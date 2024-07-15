@@ -82,11 +82,11 @@ test_tuples.extend(
 )
 
 class PreTestCollection:
-    def __init__(self, collection):
-        self._collection = collection
+    def __init__(self, method):
+        self._collection_method = method
 
     def run(self):
-        os.environ['COLLECTION_METHOD'] = self._collection
+        os.environ['COLLECTION_METHOD'] = self._collection_method
 
 sets = []
 for test_tuple in test_tuples:
@@ -94,7 +94,7 @@ for test_tuple in test_tuples:
     test_versions = f'{test_tuple.central_version}--{test_tuple.sensor_version}'
 
     # Collection not supported on 3.74
-    collection = 'none' if test_tuple.sensor_version.startswith('74') else 'core-bpf'
+    collection_method = 'none' if test_tuple.sensor_version.startswith('74') else 'core-bpf'
 
     sets.append(
         {
@@ -104,7 +104,7 @@ for test_tuple in test_tuples:
                     check_stackrox_logs=True,
                     artifact_destination_prefix=test_versions,
             ),
-            "pre_test": PreTestCollection(collection)
+            "pre_test": PreTestCollection(collection_method)
         },
     )
 ClusterTestSetsRunner(
