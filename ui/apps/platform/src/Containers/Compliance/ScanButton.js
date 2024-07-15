@@ -21,7 +21,7 @@ class ScanButton extends React.Component {
         addToast: PropTypes.func.isRequired,
         removeToast: PropTypes.func.isRequired,
         onScanTriggered: PropTypes.func,
-        scanInProgress: PropTypes.bool.isRequired,
+        scanInProgress: PropTypes.bool,
     };
 
     static defaultProps = {
