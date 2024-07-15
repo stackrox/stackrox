@@ -170,7 +170,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             hasNetworkAlert = alerts.any { isNetworkViolation(it) }
             hasProcessAlert = alerts.any { isProcessViolation(it) }
             log.debug "Found Alerts in Splunk: \n${alerts}"
-            log.info "Current Splunk index contains NetworkAlert: ${hasNetworkAlert} and ProcessAlert: ${hasProcessAlert}"
+            log.info "Current Splunk index contains " +
+                    "NetworkAlert: ${hasNetworkAlert} and ProcessAlert: ${hasProcessAlert}"
             if (hasNetworkAlert && hasProcessAlert) {
                 log.info "Success finding Network and Process Alerts in Splunk!"
                 break
