@@ -1041,7 +1041,6 @@ class NetworkFlowTest extends BaseSpecification {
             List<Edge> foundEdges = NetworkGraphUtil.findEdges(graph, edge.sourceID, edge.targetID)
             log.debug "Found ${foundEdges.size()} edges between ${edge.sourceID} and ${edge.targetID}."
             Edge newEdge = foundEdges?.find { true }
-            log.debug "The 'new' edge with timestamps to analyze: ${newEdge}"
             log.info "The 'new' edge last_active_timestamp: " +
                 "${newEdge.edgeProperties.lastActiveTimestamp.seconds}." +
                 "${newEdge.edgeProperties.lastActiveTimestamp.nanos}." +

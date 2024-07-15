@@ -111,7 +111,7 @@ class NetworkGraphUtil {
         }
     }
 
-    static List<Edge> checkForEdge(String sourceId, String targetId, Timestamp since = null,
+    static checkForEdge(String sourceId, String targetId, Timestamp since = null,
                         int timeoutSeconds = 90, String query = null) {
         int intervalSeconds = 1
         int waitTime
