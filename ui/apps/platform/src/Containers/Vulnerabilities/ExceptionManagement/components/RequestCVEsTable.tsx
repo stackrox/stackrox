@@ -109,9 +109,8 @@ function RequestCVEsTable({
                         tableState={tableState}
                         colSpan={colSpan}
                         emptyProps={{
-                            title: 'No CVEs found',
-                            message:
-                                'This request does not currently have any CVEs associated with it.',
+                            title: 'No CVEs',
+                            message: 'This request currently has no CVEs associated with it.',
                         }}
                         renderer={({ data }) =>
                             data.map((imageCVE, rowIndex) => {
