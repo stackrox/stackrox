@@ -79,11 +79,6 @@ func (s *ComplianceDomainsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, complianceDomain))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceDomain), sac.ErrResourceAccessDenied)
 
-	foundComplianceDomain, exists, err = store.Get(ctx, complianceDomain.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), complianceDomain, foundComplianceDomain)
-
 	s.NoError(store.Delete(ctx, complianceDomain.GetId()))
 	foundComplianceDomain, exists, err = store.Get(ctx, complianceDomain.GetId())
 	s.NoError(err)

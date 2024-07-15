@@ -79,11 +79,6 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, networkPolicyApplicationUndoDeploymentRecord))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, networkPolicyApplicationUndoDeploymentRecord), sac.ErrResourceAccessDenied)
 
-	foundNetworkPolicyApplicationUndoDeploymentRecord, exists, err = store.Get(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), networkPolicyApplicationUndoDeploymentRecord, foundNetworkPolicyApplicationUndoDeploymentRecord)
-
 	s.NoError(store.Delete(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId()))
 	foundNetworkPolicyApplicationUndoDeploymentRecord, exists, err = store.Get(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
 	s.NoError(err)

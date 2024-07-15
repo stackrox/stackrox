@@ -79,11 +79,6 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, testGrandparent))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, testGrandparent), sac.ErrResourceAccessDenied)
 
-	foundTestGrandparent, exists, err = store.Get(ctx, testGrandparent.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), testGrandparent, foundTestGrandparent)
-
 	s.NoError(store.Delete(ctx, testGrandparent.GetId()))
 	foundTestGrandparent, exists, err = store.Get(ctx, testGrandparent.GetId())
 	s.NoError(err)

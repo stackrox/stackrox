@@ -1,0 +1,84 @@
+name: Scanner NVD update
+
+on:
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  fetch-cves:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd'))
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Fetch CVEs
+      env:
+        SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
+      run: |
+        set -eu
+        dir=$(mktemp -d)
+        python3 .github/workflows/scripts/scanner-update-nvd-legacy.py "$dir"
+        zip -j nvd.zip "$dir"/*.nvd.json
+
+    - uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: nvd
+        path: nvd.zip
+        if-no-files-found: error
+
+  upload:
+    needs:
+      - fetch-cves
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    steps:
+    # Checkout to run ./.github/actions/{download,upload}-artifact-with-retry
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.ref }}
+
+    - uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: nvd
+        path: .
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Upload production
+      run: gsutil cp nvd.zip "gs://definitions.stackrox.io/v4/nvd/nvd.zip"
+
+  send-notification:
+    needs:
+    - upload
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+    - name: Send Slack notification on workflow failure
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Failed to update NVD CVEs"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}

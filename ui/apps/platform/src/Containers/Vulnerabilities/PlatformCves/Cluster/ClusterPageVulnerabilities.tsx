@@ -19,6 +19,8 @@ import { getTableUIState } from 'utils/getTableUIState';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import useURLSort from 'hooks/useURLSort';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import useAnalytics, { PLATFORM_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
 import { getHiddenStatuses, parseQuerySearchFilter } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
@@ -40,6 +42,9 @@ export type ClusterPageVulnerabilitiesProps = {
 };
 
 function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesProps) {
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
+
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const query = getRequestQueryStringForSearchFilter(querySearchFilter);
@@ -58,15 +63,16 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
         perPage,
         sortOption,
     });
+
     const summaryRequest = useClusterSummaryData(clusterId, query);
 
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
-    const clusterVulnerabilityCount = data?.cluster.clusterVulnerabilityCount ?? 0;
+    const clusterVulnerabilityCount = data?.cluster?.clusterVulnerabilityCount ?? 0;
 
     const tableState = getTableUIState({
         isLoading: loading,
         error,
-        data: data?.cluster.clusterVulnerabilities,
+        data: data?.cluster?.clusterVulnerabilities,
         searchFilter: querySearchFilter,
     });
 
@@ -81,12 +87,9 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
                     cveStatusFilterField="CLUSTER CVE FIXABLE"
-                    onFilterChange={(newFilter, { action }) => {
+                    onFilterChange={(newFilter, searchPayload) => {
                         setSearchFilter(newFilter);
-
-                        if (action === 'ADD') {
-                            // TODO - Add analytics tracking ROX-24509
-                        }
+                        trackAppliedFilter(PLATFORM_CVE_FILTER_APPLIED, searchPayload);
                     }}
                     includeCveSeverityFilters={false}
                 />

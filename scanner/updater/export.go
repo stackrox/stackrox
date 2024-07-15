@@ -156,6 +156,10 @@ func nvdOpts() []updates.ManagerOption {
 				if !ok {
 					return errors.New("internal error: config assertion failed")
 				}
+				path := os.Getenv("STACKROX_NVD_ZIP_PATH")
+				if path != "" {
+					cfg.FeedPath = &path
+				}
 				ci := os.Getenv("STACKROX_NVD_API_CALL_INTERVAL")
 				if ci != "" {
 					cfg.CallInterval = &ci

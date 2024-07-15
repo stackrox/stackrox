@@ -241,7 +241,7 @@ func (s *enricherSuite) TestUpdateImageNoLock() {
 		genCacheValue := func() *cacheValue { return &cacheValue{image: &storage.Image{Name: name1}} }
 		cValue := genCacheValue()
 		cValue.updateImageNoLock(nil)
-		assert.Equal(t, genCacheValue(), cValue)
+		protoassert.Equal(t, genCacheValue().image, cValue.image)
 	})
 
 	s.T().Run("keep existing names when name removed", func(t *testing.T) {

@@ -1,0 +1,42 @@
+{
+  "id": "1c224010-9e0b-41a8-be9a-a17c7040ce98",
+  "name": "Password Binaries",
+  "description": "Processes that indicate attempts to change passwd",
+  "rationale": "Attempts to change password during runtime in containers is unusual",
+  "remediation": "Ensure that the base image used to create the Dockerfile doesn't have passwd binaries packaged with it.",
+  "disabled": true,
+  "categories": [
+    "System Modification"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "shadowconfig|grpck|pwunconv|grpconv|pwck|groupmod|vipw|pwconv|useradd|newusers|cppw|chpasswd|usermod|groupadd|groupdel|grpunconv|chgpasswd|userdel|chage|chsh|gpasswd|chfn|expiry|passwd|vigr|cpgr"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0003",
+      "techniques": [
+        "T1098"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

@@ -134,7 +134,13 @@ func (s *debugServiceTestSuite) TestGetRoles() {
 	}
 
 	s.NoError(err)
-	s.EqualValues(expectedRoles, actualRoles)
+	actual := actualRoles.([]*diagResolvedRole)
+	for i, e := range expectedRoles {
+		a := actual[i]
+		protoassert.Equal(s.T(), e.Role, a.Role)
+		protoassert.Equal(s.T(), e.AccessScope, a.AccessScope)
+		s.Equal(e.PermissionSet, a.PermissionSet)
+	}
 }
 
 func (s *debugServiceTestSuite) TestGetNotifiers() {

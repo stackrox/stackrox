@@ -82,11 +82,6 @@ func (s *ServiceAccountsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, serviceAccount))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, serviceAccount), sac.ErrResourceAccessDenied)
 
-	foundServiceAccount, exists, err = store.Get(ctx, serviceAccount.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), serviceAccount, foundServiceAccount)
-
 	s.NoError(store.Delete(ctx, serviceAccount.GetId()))
 	foundServiceAccount, exists, err = store.Get(ctx, serviceAccount.GetId())
 	s.NoError(err)

@@ -7,16 +7,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
-	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
@@ -80,11 +79,11 @@ func (t *ClientTestSuite) SetupSuite() {
 
 	signature, err := testdata.ReadFile("testdata/signature.example")
 	t.Require().NoError(err)
-	t.signatureExample = string(signature)
+	t.signatureExample = strings.TrimRight(string(signature), "\n")
 
 	trustInfo, err := testdata.ReadFile("testdata/trust_info_serialized.example")
 	t.Require().NoError(err)
-	t.trustInfoExample = string(trustInfo)
+	t.trustInfoExample = strings.TrimRight(string(trustInfo), "\n")
 }
 
 func (t *ClientTestSuite) newSelfSignedCertificate(commonName string) *tls.Certificate {
@@ -261,7 +260,6 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidTrustInfo() {
 
 	_, err = c.GetTLSTrustedCerts(context.Background())
 	t.Require().Error(err)
-	t.True(errors.Is(err, io.ErrUnexpectedEOF))
 }
 
 func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidSignature() {

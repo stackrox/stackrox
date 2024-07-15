@@ -36,6 +36,41 @@ func makeEndpoints(host, zone, port string) []endpointTestCase {
 	return result
 }
 
+func TestParseEndpoint(t *testing.T) {
+	tcs := []struct {
+		// endpoint must have no path and no scheme
+		endpoint string
+		wantHost string
+		wantZone string
+		wantPort string
+		wantErr  bool
+	}{
+		{"example.com:80", "example.com", "", "80", false},
+		{"127.0.0.1:8080", "127.0.0.1", "", "8080", false},
+		{"example.com", "example.com", "", "", false},
+		{"[1::]:80", "1::", "", "80", false},
+		{"1::", "1::", "", "", false},
+		{"2001:0db8:0000:0000:0000:ff00:0042:8329", "2001:0db8:0000:0000:0000:ff00:0042:8329", "", "", false},
+		// This address with port is strictly conforming to RFC2732
+		{"[2001:0db8:0000:0000:0000:ff00:0042:8329]:61273", "2001:0db8:0000:0000:0000:ff00:0042:8329", "", "61273", false},
+		// This address with port is NOT strictly conforming to RFC2732. We do not support this for now
+		// {"2001:0db8:0000:0000:0000:ff00:0042:8329:61273", "2001:0db8:0000:0000:0000:ff00:0042:8329", "", "61273", false},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.endpoint, func(t *testing.T) {
+			gotHost, gotZone, gotPort, err := ParseEndpoint(tc.endpoint)
+			assert.Equal(t, tc.wantHost, gotHost)
+			assert.Equal(t, tc.wantZone, gotZone)
+			assert.Equal(t, tc.wantPort, gotPort)
+			if tc.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestParseEndpoint_Valid(t *testing.T) {
 	t.Parallel()
 

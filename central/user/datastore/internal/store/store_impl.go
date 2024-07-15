@@ -25,7 +25,11 @@ func (s *storeImpl) GetAllUsers() ([]*storage.User, error) {
 
 // GetUser retrieves a user from the store by id.
 func (s *storeImpl) GetUser(id string) (*storage.User, error) {
-	user, _ := s.ec.Get(id).(*storage.User)
+	v, ok := s.ec.Get(id)
+	if !ok {
+		return nil, nil
+	}
+	user, _ := v.(*storage.User)
 	return user, nil
 }
 

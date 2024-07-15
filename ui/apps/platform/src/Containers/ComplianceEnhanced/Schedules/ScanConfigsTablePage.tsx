@@ -266,14 +266,14 @@ function ScanConfigsTablePage({
         <>
             <PageTitle title="Compliance - Schedules" />
             <PageSection component="div" variant="light">
-                <Flex direction={{ default: 'row' }}>
-                    <FlexItem>
+                <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsCenter' }}>
+                    <Flex direction={{ default: 'column' }}>
                         <Title headingLevel="h1">Schedules</Title>
                         <Text>
                             Configure scan schedules to run profile compliance checks on selected
                             clusters
                         </Text>
-                    </FlexItem>
+                    </Flex>
                     {hasWriteAccessForCompliance && (
                         <FlexItem align={{ default: 'alignRight' }}>
                             <CreateScanConfigButton />

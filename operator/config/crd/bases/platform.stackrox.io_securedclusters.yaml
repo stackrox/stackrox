@@ -172,11 +172,12 @@ spec:
                         type: object
                     type: object
                   timeoutSeconds:
-                    default: 20
+                    default: 10
                     description: |-
                       Maximum timeout period for admission review, upon which admission review will fail open.
                       Use it to set request timeouts when you enable inline image scanning.
                       The default kubectl timeout is 30 seconds; taking padding into account, this should not exceed 25 seconds.
+                      On OpenShift webhook timeouts cannot exceed 13 seconds, hence with padding this value shall not exceed 10 seconds.
                     format: int32
                     maximum: 25
                     minimum: 1
@@ -429,6 +430,20 @@ spec:
                     - enabled
                     type: object
                 type: object
+              network:
+                description: Network configuration.
+                properties:
+                  policies:
+                    default: Enabled
+                    description: To provide security at the network level the ACS
+                      Operator creates NetworkPolicy resources by default. If you
+                      want to manage your own NetworkPolicy objects then set this
+                      to "Disabled".
+                    enum:
+                    - Enabled
+                    - Disabled
+                    type: string
+                type: object
               overlays:
                 description: Overlays
                 items:
@@ -519,11 +534,8 @@ spec:
                         type: string
                       forceCollection:
                         default: false
-                        description: |-
-                          When the "collection" field is set to the deprecated value "EBPF", then
-                          setting this to "true" prevents conversion of the collection method to
-                          "CORE_BPF". This could be used in exceptional situations when "EBPF" has
-                          to be used.
+                        description: Deprecated field. This field will be removed
+                          in a future release.
                         type: boolean
                       imageFlavor:
                         default: Regular

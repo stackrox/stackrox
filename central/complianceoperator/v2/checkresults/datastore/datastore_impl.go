@@ -281,6 +281,13 @@ func (d *datastoreImpl) CountByField(ctx context.Context, query *v1.Query, field
 	return 0, errors.Errorf("Unable to group result counts by %q", field)
 }
 
+func (d *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn func(result *storage.ComplianceOperatorCheckResultV2) error) error {
+	wrappedFn := func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
+		return fn(checkResult)
+	}
+	return d.store.WalkByQuery(ctx, query, wrappedFn)
+}
+
 func (d *datastoreImpl) countByCluster(ctx context.Context, query *v1.Query, field search.FieldLabel) (int, error) {
 	var results []*clusterCount
 	results, err := pgSearch.RunSelectRequestForSchema[clusterCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ClusterID))

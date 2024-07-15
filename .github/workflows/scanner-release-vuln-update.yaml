@@ -5,6 +5,32 @@ on:
   workflow_dispatch:
 
 jobs:
+  download-nvd:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Download NVD
+      run: |
+        set -eu
+        since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
+        curl \
+            -o nvd.zip \
+            -w "%{http_code}" \
+            -H "If-Modified-Since: $since_time" \
+            https://definitions.stackrox.io/v4/nvd/nvd.zip \
+        | grep 200
+
+    - uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: nvd
+        path: nvd.zip
+        if-no-files-found: error
+
   read-release-versions:
     runs-on: ubuntu-latest
     outputs:
@@ -24,13 +50,17 @@ jobs:
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
   upload-release-vulnerabilities:
-    needs: read-release-versions
+    needs:
+      - read-release-versions
+      - download-nvd
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
       volumes:
         # The updater makes heavy use of /tmp files.
         - /tmp:/tmp
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     strategy:
       # If one of the versions fails, it should not stop others from succeeding.
       fail-fast: false
@@ -42,12 +72,24 @@ jobs:
       ROX_PRODUCT_VERSION: ${{ matrix.version }}
       ROX_PRODUCT_TAG: ${{ matrix.tag }}
     steps:
-    - name: Recover docker image cache space
-      run: |
-        df --si /
-        docker system prune --force --all
-        df --si /
+    # Checkout to run ./.github/actions/{download,upload}-artifact-with-retry
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Free up disk space
       shell: bash
+      run: |
+        set +e
+        set -x
+        df -h
+        docker system prune --force --all
+        for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
+          rm -rf "/mnt${delete:?}"
+        done
+        df -h
 
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
@@ -57,10 +99,16 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
+    - uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: nvd
+        path: .
+
     - name: Update vulnerabilities
       env:
         STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         STACKROX_NVD_API_CALL_INTERVAL: 6s
+        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
         DOWNLOAD_URL="https://github.com/stackrox/stackrox/archive/refs/tags/${{ env.ROX_PRODUCT_TAG }}.zip"
         FILE_NAME=$(basename "$DOWNLOAD_URL")
@@ -82,7 +130,7 @@ jobs:
         # Just run go mod tidy and hope for the best.
         go mod tidy
         cd scanner
-        go build -trimpath -o bin/updater ./cmd/updater
+        go build -trimpath -buildvcs=false -o bin/updater ./cmd/updater
         go clean -cache -modcache
 
         mkdir ${{ env.ROX_PRODUCT_VERSION }}

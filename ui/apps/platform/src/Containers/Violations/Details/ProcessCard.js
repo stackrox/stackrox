@@ -33,7 +33,12 @@ function ProcessCard({ processes, message }) {
 
     return (
         <Card isFlat isExpanded={isExpanded}>
-            <CardHeader onExpand={onExpand}>{message}</CardHeader>
+            <CardHeader
+                onExpand={onExpand}
+                toggleButtonProps={{ 'aria-expanded': isExpanded, 'aria-label': 'Details' }}
+            >
+                {message}
+            </CardHeader>
             <CardExpandableContent>
                 <CardBody>
                     <DescriptionList

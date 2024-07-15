@@ -14,11 +14,13 @@ import {
     Flex,
     debounce,
 } from '@patternfly/react-core';
-import { ArrowRightIcon, TimesIcon } from '@patternfly/react-icons';
+import { ArrowRightIcon, SearchIcon, TimesIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import SEARCH_AUTOCOMPLETE_QUERY, {
     SearchAutocompleteQueryResponse,
 } from 'queries/searchAutocomplete';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { SearchFilter } from 'types/search';
 import { ensureString } from '../utils/utils';
 
 type SearchFilterAutocompleteProps = {
@@ -28,11 +30,14 @@ type SearchFilterAutocompleteProps = {
     onChange: (value: string) => void;
     onSearch: (value: string) => void;
     textLabel: string;
+    searchFilter: SearchFilter;
+    additionalContextFilter?: SearchFilter;
 };
 
 function getSelectOptions(
     data: SearchAutocompleteQueryResponse | undefined,
-    isLoading: boolean
+    isLoading: boolean,
+    filterValue: string
 ): SelectOptionProps[] {
     if (isLoading) {
         return [
@@ -63,9 +68,8 @@ function getSelectOptions(
 
     return [
         {
-            isDisabled: false,
-            children: `No results found`,
-            value: 'no results',
+            value: filterValue,
+            children: `Add "${filterValue}"`,
         },
     ];
 }
@@ -77,6 +81,8 @@ function SearchFilterAutocomplete({
     onChange,
     onSearch,
     textLabel,
+    searchFilter,
+    additionalContextFilter,
 }: SearchFilterAutocompleteProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [filterValue, setFilterValue] = useState('');
@@ -96,17 +102,42 @@ function SearchFilterAutocomplete({
         []
     );
 
+    const autocompleteSearchString = `${searchTerm}:${filterValue ? `r/${filterValue}` : ''}`;
+
+    const searchContext = {
+        ...searchFilter,
+        ...additionalContextFilter,
+    };
+    const filteredSearchContext = Object.keys(searchContext).reduce((acc, key) => {
+        // Autocomplete requests for some filters never return results if there is a 'Fixable' search filter
+        // included in the query.
+        if (key !== 'FIXABLE') {
+            acc[key] = searchContext[key];
+        }
+        return acc;
+    }, {});
+    const autocompleteContextString = getRequestQueryStringForSearchFilter(filteredSearchContext);
+
+    const autocompleteQuery =
+        autocompleteContextString !== ''
+            ? [autocompleteContextString, autocompleteSearchString].join('+')
+            : autocompleteSearchString;
+
     const { data, loading: isLoading } = useQuery<SearchAutocompleteQueryResponse>(
         SEARCH_AUTOCOMPLETE_QUERY,
         {
             variables: {
-                query: `${searchTerm}:${filterValue ? `r/${filterValue}` : ''}`,
+                query: autocompleteQuery,
                 categories: searchCategory,
             },
         }
     );
 
-    const selectOptions: SelectOptionProps[] = getSelectOptions(data, isLoading || isTyping);
+    const selectOptions: SelectOptionProps[] = getSelectOptions(
+        data,
+        isLoading || isTyping,
+        filterValue
+    );
 
     const onToggleClick = () => {
         setIsOpen(!isOpen);
@@ -116,7 +147,7 @@ function SearchFilterAutocomplete({
         _event: React.MouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
-        if (value && value !== 'no results') {
+        if (value) {
             onChange(ensureString(value));
             setFilterValue('');
         }
@@ -127,6 +158,11 @@ function SearchFilterAutocomplete({
 
     const onTextInputChange = (_event: React.FormEvent<HTMLInputElement>, value: string) => {
         onChange(value);
+        if (!isOpen) {
+            setIsOpen(true);
+        } else if (isOpen && value === '') {
+            setIsOpen(false);
+        }
         setFilterValueDebounced(value);
         setIsTyping(true);
     };
@@ -167,14 +203,14 @@ function SearchFilterAutocomplete({
         switch (event.key) {
             // Select the first available option
             case 'Enter':
-                if (isOpen && focusedItem.value !== 'no results') {
-                    const newValue = String(focusedItem.children);
+                if (isOpen) {
+                    const newValue = ensureString(focusedItem.value);
                     onChange(newValue);
                     onSearch(newValue);
                     setFilterValue('');
                 }
 
-                setIsOpen((prevIsOpen) => !prevIsOpen);
+                setIsOpen(false);
                 setFocusedItemIndex(null);
                 setActiveItem(null);
 
@@ -216,8 +252,8 @@ function SearchFilterAutocomplete({
                     isExpanded={isOpen}
                     aria-controls="select-typeahead-listbox"
                     aria-label={textLabel}
+                    icon={<SearchIcon />}
                 />
-
                 <TextInputGroupUtilities>
                     {!!value && (
                         <Button
@@ -254,6 +290,7 @@ function SearchFilterAutocomplete({
                         <SelectOption
                             key={option.value || option.children}
                             isFocused={focusedItemIndex === index}
+                            isSelected={false}
                             className={option.className}
                             onClick={() => {
                                 onChange(option.value);

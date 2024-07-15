@@ -88,6 +88,7 @@ func (resolver *Resolver) PlatformCVECount(ctx context.Context, q RawQuery) (int
 	if err != nil {
 		return 0, err
 	}
+	query = tryUnsuppressedQuery(query)
 
 	count, err := resolver.PlatformCVEView.Count(ctx, query)
 	if err != nil {
@@ -112,6 +113,7 @@ func (resolver *Resolver) PlatformCVEs(ctx context.Context, q PaginatedQuery) ([
 	if err != nil {
 		return nil, err
 	}
+	query = tryUnsuppressedQuery(query)
 
 	cves, err := resolver.PlatformCVEView.Get(ctx, query)
 	ret, err := resolver.wrapPlatformCVECoresWithContext(ctx, cves, err)

@@ -11,6 +11,7 @@ option java_package = "io.stackrox.proto.internalapi.central";
 
 message URLHasValidCertRequest {
   string url = 1;
+  string certPEM = 2;
 }
 
 message URLHasValidCertResponse {

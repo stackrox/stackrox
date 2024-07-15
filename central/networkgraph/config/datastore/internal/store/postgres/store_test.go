@@ -79,11 +79,6 @@ func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, networkGraphConfig))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, networkGraphConfig), sac.ErrResourceAccessDenied)
 
-	foundNetworkGraphConfig, exists, err = store.Get(ctx, networkGraphConfig.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), networkGraphConfig, foundNetworkGraphConfig)
-
 	s.NoError(store.Delete(ctx, networkGraphConfig.GetId()))
 	foundNetworkGraphConfig, exists, err = store.Get(ctx, networkGraphConfig.GetId())
 	s.NoError(err)

@@ -79,11 +79,6 @@ func (s *GroupsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, group))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, group), sac.ErrResourceAccessDenied)
 
-	foundGroup, exists, err = store.Get(ctx, group.GetProps().GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), group, foundGroup)
-
 	s.NoError(store.Delete(ctx, group.GetProps().GetId()))
 	foundGroup, exists, err = store.Get(ctx, group.GetProps().GetId())
 	s.NoError(err)

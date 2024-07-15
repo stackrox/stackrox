@@ -79,11 +79,6 @@ func (s *AdministrationEventsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, administrationEvent))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, administrationEvent), sac.ErrResourceAccessDenied)
 
-	foundAdministrationEvent, exists, err = store.Get(ctx, administrationEvent.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), administrationEvent, foundAdministrationEvent)
-
 	s.NoError(store.Delete(ctx, administrationEvent.GetId()))
 	foundAdministrationEvent, exists, err = store.Get(ctx, administrationEvent.GetId())
 	s.NoError(err)

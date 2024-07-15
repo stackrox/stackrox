@@ -886,6 +886,41 @@ func (s *complianceCheckResultDataStoreTestSuite) TestGetComplianceCheckResult()
 	}
 }
 
+func (s *complianceCheckResultDataStoreTestSuite) TestWalkByQueryCheckResult() {
+	s.setupTestData()
+	rec1 := getTestRec(testconsts.Cluster1)
+	rec1.CheckName = "test-check1"
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
+	rec2 := getTestRec(testconsts.Cluster2)
+	rec2.CheckName = "test-check2"
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
+	parsedQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, rec1.GetScanConfigName()).
+		AddExactMatches(search.ClusterID, rec1.ClusterId).
+		ProtoQuery()
+	type repResults struct {
+		ClusterName string
+		CheckName   string
+		Status      string
+	}
+	results, err := s.dataStore.SearchComplianceCheckResults(s.testContexts[testutils.UnrestrictedReadWriteCtx], parsedQuery)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(results)
+	resultsQuery := []*repResults{}
+
+	err = s.dataStore.WalkByQuery(s.testContexts[testutils.UnrestrictedReadCtx], parsedQuery, func(c *storage.ComplianceOperatorCheckResultV2) error {
+		res := &repResults{
+			ClusterName: c.GetClusterName(),
+			CheckName:   c.GetCheckName(),
+			Status:      c.GetStatus().String(),
+		}
+		resultsQuery = append(resultsQuery, res)
+		return nil
+	})
+	s.Require().NoError(err)
+	s.Require().NotEmpty(resultsQuery)
+	s.Require().Equal(resultsQuery[0].CheckName, rec1.GetCheckName())
+}
+
 func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResultStats() {
 	s.setupTestData()
 	testCases := []struct {
@@ -1025,6 +1060,7 @@ func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
 
 	for k, v := range profileCluster {
 		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_profile_v2 (id, profileid, name, producttype, clusterid, profilerefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), "profile-1", "ocp4-cis-node", "node", k, v)
+
 		s.Require().NoError(err)
 	}
 

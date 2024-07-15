@@ -82,11 +82,6 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, namespaceMetadata))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, namespaceMetadata), sac.ErrResourceAccessDenied)
 
-	foundNamespaceMetadata, exists, err = store.Get(ctx, namespaceMetadata.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), namespaceMetadata, foundNamespaceMetadata)
-
 	s.NoError(store.Delete(ctx, namespaceMetadata.GetId()))
 	foundNamespaceMetadata, exists, err = store.Get(ctx, namespaceMetadata.GetId())
 	s.NoError(err)

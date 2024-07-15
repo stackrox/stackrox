@@ -6,6 +6,8 @@ spec:
   sourceType: grpc
   image: ${IMAGE_TAG_BASE}:${INDEX_VERSION}
   displayName: StackRox Operator Test index
+  grpcPodConfig:
+    ${DISABLE_SECURITY_CONTEXT_CONFIG}securityContextConfig: restricted
 ---
 apiVersion: operators.coreos.com/v1alpha2
 kind: OperatorGroup

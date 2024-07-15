@@ -105,7 +105,7 @@ func readFromDatabase(msg proto.Message) {
 			utils.Should(err)
 		}
 
-		m := jsonpb.Marshaler{Indent: "  "}
+		m := jsonpb.Marshaler{Indent: "  ", EmitDefaults: true}
 		json, err := m.MarshalToString(msg)
 		if err != nil {
 			utils.Should(err)
@@ -140,7 +140,7 @@ func printProtoMessagesFromStdin(in io.Reader, out io.Writer, msg proto.Message)
 			return fmt.Errorf("%w: %w", errUnmarshal, err)
 		}
 
-		m := jsonpb.Marshaler{Indent: "  "}
+		m := jsonpb.Marshaler{Indent: "  ", EmitDefaults: true}
 		json, err := m.MarshalToString(msg)
 		if err != nil {
 			return fmt.Errorf("failed marshalling the proto to JSON (msg=%+v): %w", msg, err)

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     PageSection,
     Title,
@@ -19,7 +19,11 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
-import useAnalytics, { GLOBAL_SNOOZE_CVE } from 'hooks/useAnalytics';
+import useAnalytics, {
+    GLOBAL_SNOOZE_CVE,
+    NODE_CVE_ENTITY_CONTEXT_VIEWED,
+    NODE_CVE_FILTER_APPLIED,
+} from 'hooks/useAnalytics';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
 import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
@@ -29,6 +33,8 @@ import {
     nodeCVESearchFilterConfig,
     clusterSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
+import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
@@ -59,6 +65,7 @@ const searchFilterConfig = {
 function NodeCvesOverviewPage() {
     const apolloClient = useApolloClient();
     const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
     const [activeEntityTabKey] = useURLStringUnion('entityTab', nodeEntityTabValues);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -77,6 +84,7 @@ function NodeCvesOverviewPage() {
     const hasLegacySnoozeAbility = useHasLegacySnoozeAbility();
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
+    const snoozedCveCount = useSnoozedCveCount('Node');
 
     function onEntityTabChange(entityTab: 'CVE' | 'Node') {
         pagination.setPage(1);
@@ -84,7 +92,20 @@ function NodeCvesOverviewPage() {
             entityTab === 'CVE' ? cveDefaultSortOption : nodeDefaultSortOption,
             'replace'
         );
+
+        analyticsTrack({
+            event: NODE_CVE_ENTITY_CONTEXT_VIEWED,
+            properties: {
+                type: entityTab,
+                page: 'Overview',
+            },
+        });
     }
+
+    // Track the current entity tab when the page is initially visited.
+    useEffect(() => {
+        onEntityTabChange(activeEntityTabKey);
+    }, []);
 
     function onClearFilters() {
         setSearchFilter({});
@@ -102,12 +123,9 @@ function NodeCvesOverviewPage() {
         <AdvancedFiltersToolbar
             searchFilter={searchFilter}
             searchFilterConfig={searchFilterConfig}
-            onFilterChange={(newFilter, { action }) => {
+            onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);
-
-                if (action === 'ADD') {
-                    // TODO - Add analytics tracking ROX-24509
-                }
+                trackAppliedFilter(NODE_CVE_FILTER_APPLIED, searchPayload);
             }}
         />
     );
@@ -156,6 +174,7 @@ function NodeCvesOverviewPage() {
                         <SnoozeCveToggleButton
                             searchFilter={searchFilter}
                             setSearchFilter={setSearchFilter}
+                            snoozedCveCount={snoozedCveCount}
                         />
                     </FlexItem>
                 </Flex>

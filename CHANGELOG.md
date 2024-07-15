@@ -10,6 +10,21 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 
 ### Added Features
+
+- ROX-25066: Add new external backup integration for non-AWS S3 compatible providers.
+
+### Removed Features
+
+### Deprecated Fatures
+
+### Technical Changes
+
+## [4.5.0]
+
+
+
+### Added Features
+
 - ROX-18689: ACS will qualify the registry (and path) of images from the container runtime when env var `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is set to `true` on both Central and Sensor.
   - This enables support for CRI-O's unqualified search registries and short name aliases ([more info](https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md)).
 - ROX-23852: `roxctl image scan` now has the option to filter by vulnerability severities using the `--severity` flag.
@@ -18,6 +33,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-24173: A new export API `/v1/export/vuln-mgmt/workloads` for workload vulnerabilities has been added. It provides a performant way of exporting both deployments and images in a single query which will hold all relevant data for vulnerability management.
 - ROX-21768: Scanner V4 may now be configured to return partial Node.js results via `ROX_SCANNER_V4_PARTIAL_NODE_JS_SUPPORT` (default is `false`).
   - Scanner v2 (aka StackRox Scanner) always returned partial results for programming languages such that only packages with known vulnerabilities were returned. This flag allows users to enable this functionality in Scanner V4 for Node.js, only.
+- Scanner V4 is out of Tech Preview and is now Generally Available.
+  - StackRox Scanner (Scanner v2) continues to be the default scanner until a future release, but it is recommended to use Scanner V4 for more accurate image scan results.
 
 ### Removed Features
 
@@ -26,13 +43,42 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The `ROX_SCANNER_V4_NODE_JS_SUPPORT` environment variable is removed.
   - This flag originally allowed users to configure if Scanner V4 should support Node.js.
   - This is replaced with `ROX_SCANNER_V4_PARTIAL_NODE_JS_SUPPORT`.
+- ROX-23155: EBPF collection has been removed. If EBPF is configured, it
+  will be automatically converted to CORE_BPF. forceCollection no longer has an
+  effect.
 
 ### Deprecated Features
 
-- Slim/Full Collector images have been deprecated and will be removed in a
+- ROX-23155: Slim/Full Collector images have been deprecated and will be removed in a
   future release. The two image flavors are now functionally identical (neither contain any kernel drivers.)
+- ROX-23155: Kernel support packages and driver download functionality have been deprecated and will be removed in ACS 4.7 or later.
 - The field `error` returned for failed API calls has been deprecated, and it will be removed in a future release. Instead of using the `error` field, use the `message` field. The `message` field contains the same information as the `error` field.
 - The `/v1/summary/counts` API has been deprecated in 4.5 and will be removed in the future.
+- 'Dashboard' view under 'Vulnerability Management' is deprecated and will be removed in a future release. Use 'Workload CVEs', 'Exception Management', 'Platform CVEs', and 'Node CVEs' views instead.
+- ROX-25067: The Amazon S3 external backup integration interoperability with Google Cloud Storage has been deprecated. Backups to Google Cloud Storage should be done by using the dedicated Google Cloud Storage external backup integration.
+- The fields `grpcCode`, `httpCode`, and `httpStatus` in returned error for gRPC stream APIs will be removed in the next release. A new field `code` will be added, which should be used instead of `grpcCode`. This change will unify returned API calls for streams and unary requests and it will simplify error handling.
+  Here is an example of the current error payload:
+  ```
+  {
+     "error": {
+       "grpcCode": 16,
+       "httpCode": 401,
+       "message": "credentials not found",
+       "httpStatus": "Unauthorized",
+       "details": []
+     }
+  }
+  ```
+  That example error will be returned in the following format with the next release:
+  ```
+  {
+     "error": {
+       "code": 16,
+       "message": "credentials not found",
+       "details": []
+     }
+  }
+  ```
 
 ### Technical Changes
 
@@ -61,6 +107,15 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-24725: Enhances Sensor's image scan event handling when `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is `true` so only one simultaneous scan request is allowed per unique image.
   - Also increases the chances of scan cache hits when multiple names for the same image have been observed.
   - This enhancement is enabled by default when `ROX_UNQUALIFIED_SEARCH_REGISTRIES` is `true` on Sensor, it can be disabled by setting `ROX_SENSOR_SINGLE_SCAN` to `false` on Sensor.
+- ROX-21651, ROX-22364, ROX-22365:  Further enhancements to the ACS and Compliance Operator integration are now available under the heading "Compliance (2.0)". Updates include improved views by profiles, limited control information and on demand reporting.  As part of the enhancements the APIs were updated and the count APIs were removed.  This feature remains in Tech Preview.
+- ROX-21288: The default timeout setting for ACS' admission controller webhooks has been reduced from 20 seconds to 10 seconds, which will result in an effective timeout within the ValidatingWebhookConfiguration of 12 seconds. This change has been motivated by the fact that OpenShift unconditionally caps webhook timeouts at 13 seconds. On non-OpenShift Kubernetes longer webhook timeouts are supported. Users currently depending on longer timeouts, for example because of enabled inline image scanning within webhooks, might need to specify a longer timeout explicitly, which can be done in the `SecuredCluster` CR (`admissionControl.timeoutSeconds`), in Helm (`admissionControl.dynamic.timeout`) or within a sensor deployment bundle (`ValidatingWebhookConfiguration` manifest within the file `admission-controller.yaml`).
+- ROX-20621, ROX-17677, ROX-17678: New improved user interface for managing workload, node and platform vulnerabilities are now available under 'Vulnerability Management'.
+- ROX-17385: The 'Risk Acceptance' workflow is replaced by 'Exception Management'.
+    - Pre-existing deferrals and false positive requests will be migrated to 'Exception Management'.
+    - Pre-existing globally snoozed Image CVEs will be migrated to create equivalent approved deferrals under 'Exception Management'.
+    - `/v1/cve/requests` APIs (deprecated in 4.3.0) for managing vulnerability exceptions are now replaced with new `/v2/vulnerability-exceptions/` APIs.
+- ROX-22251: The ability to snooze Node and Platform CVEs is no longer enabled by default and can be enabled by setting `ROX_VULN_MGMT_LEGACY_SNOOZE` to `true` on Central.
+- ROX-24471: Scanner V4 Matcher memory requirements were updates to align with the current consumption (see ROX-24355).
 
 ## [4.4.0]
 

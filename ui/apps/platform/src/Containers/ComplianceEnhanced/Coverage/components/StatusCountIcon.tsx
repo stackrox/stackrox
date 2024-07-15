@@ -5,6 +5,13 @@ import pluralize from 'pluralize';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
 
+import {
+    FAILING_VAR_COLOR,
+    MANUAL_VAR_COLOR,
+    OTHER_VAR_COLOR,
+    PASSING_VAR_COLOR,
+} from '../compliance.coverage.constants';
+
 type Status = 'pass' | 'fail' | 'manual' | 'other';
 
 type StatusCountIconProps = {
@@ -18,16 +25,16 @@ function getStatusIcon(status: Status, count: number) {
     if (count > 0) {
         switch (status) {
             case 'fail':
-                color = 'var(--pf-v5-global--danger-color--100)';
+                color = FAILING_VAR_COLOR;
                 break;
             case 'pass':
-                color = 'var(--pf-v5-global--primary-color--100)';
+                color = PASSING_VAR_COLOR;
                 break;
             case 'manual':
-                color = 'var(--pf-v5-global--warning-color--100)';
+                color = MANUAL_VAR_COLOR;
                 break;
             case 'other':
-                color = 'var(--pf-v5-global--disabled-color--100)';
+                color = OTHER_VAR_COLOR;
                 break;
             default:
                 break;

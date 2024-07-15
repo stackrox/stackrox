@@ -26,7 +26,7 @@ func getMetadata(t *testing.T, conn *grpc.ClientConn) *v1.Metadata {
 
 func TestMetadataIsSetCorrectly(t *testing.T) {
 	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
-		t.Skip("Temporarily skipping this test on OCP: TODO(ROX-24688)")
+		t.Skip("Temporarily skipping this test on OCP: TODO(ROX-25171)")
 	}
 	t.Parallel()
 

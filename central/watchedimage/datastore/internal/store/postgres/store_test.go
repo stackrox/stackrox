@@ -79,11 +79,6 @@ func (s *WatchedImagesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, watchedImage))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, watchedImage), sac.ErrResourceAccessDenied)
 
-	foundWatchedImage, exists, err = store.Get(ctx, watchedImage.GetName())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), watchedImage, foundWatchedImage)
-
 	s.NoError(store.Delete(ctx, watchedImage.GetName()))
 	foundWatchedImage, exists, err = store.Get(ctx, watchedImage.GetName())
 	s.NoError(err)

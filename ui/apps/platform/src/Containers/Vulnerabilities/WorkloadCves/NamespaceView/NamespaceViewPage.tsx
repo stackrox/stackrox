@@ -36,6 +36,8 @@ import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import KeyValueListModal from 'Components/KeyValueListModal';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import DeploymentFilterLink from './DeploymentFilterLink';
@@ -102,6 +104,8 @@ const defaultSortOption = {
 const pollInterval = 30000;
 
 function NamespaceViewPage() {
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter({
         ...searchFilter,
@@ -136,7 +140,8 @@ function NamespaceViewPage() {
         searchFilter,
     });
 
-    function onSearch({ category, value, action }: OnSearchPayload) {
+    function onSearch(searchPayload: OnSearchPayload) {
+        const { category, value, action } = searchPayload;
         const selectedSearchFilter = searchValueAsArray(searchFilter[category]);
 
         const newFilter = {
@@ -147,12 +152,9 @@ function NamespaceViewPage() {
                     : selectedSearchFilter.filter((oldValue) => value !== oldValue),
         };
 
-        if (action === 'ADD') {
-            // TODO - Add analytics tracking
-        }
-
         setSearchFilter(newFilter);
         onFilterChange();
+        trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
     }
 
     function onFilterChange() {

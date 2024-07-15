@@ -36,6 +36,7 @@ export type CompoundSearchFilterInputFieldProps = {
     selectedAttribute: SelectedAttribute;
     value: InputFieldValue;
     searchFilter: SearchFilter;
+    additionalContextFilter?: SearchFilter;
     onSearch: ({ action, category, value }: OnSearchPayload) => void;
     onChange: InputFieldOnChange;
     config: PartialCompoundSearchFilterConfig;
@@ -62,6 +63,7 @@ function CompoundSearchFilterInputField({
     selectedAttribute,
     value,
     searchFilter,
+    additionalContextFilter,
     onSearch,
     onChange,
     config,
@@ -178,6 +180,8 @@ function CompoundSearchFilterInputField({
                     onChange('');
                 }}
                 textLabel={textLabel}
+                searchFilter={searchFilter}
+                additionalContextFilter={additionalContextFilter}
             />
         );
     }

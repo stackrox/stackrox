@@ -133,44 +133,36 @@ tests:
         scanner.mode: ""
 
 - name: "scanner V4 with deprecated PodSecurityPolicies disabled"
-  values:
-    scannerV4:
-      disable: false
-    system:
-      enablePodSecurityPolicies: false
+  set:
+    scannerV4.disable: false
+    system.enablePodSecurityPolicies: false
   expect: |
     .podsecuritypolicys["stackrox-scanner-v4"] | assertThat(. == null)
     .rolebindings["stackrox-scanner-v4-psp"] | assertThat(. == null)
     .clusterroles["stackrox-scanner-v4-psp"] | assertThat(. == null)
 
 - name: "scanner with deprecated PodSecurityPolicies enabled"
-  values:
-    scannerV4:
-      disable: false
-    system:
-      enablePodSecurityPolicies: true
+  set:
+    scannerV4.disable: false
+    system.enablePodSecurityPolicies: true
   expect: |
     .podsecuritypolicys["stackrox-scanner-v4"] | assertThat(. != null)
     .rolebindings["stackrox-scanner-v4-psp"] | assertThat(. != null)
     .clusterroles["stackrox-scanner-v4-psp"] | assertThat(. != null)
 
 - name: "scanner with network policies enabled"
-  values:
-    scannerV4:
-      disable: false
-    system:
-      enableNetworkPolicies: true
+  set:
+    scannerV4.disable: false
+    network.enableNetworkPolicies: true
   expect: |
     .networkpolicys["scanner-v4-indexer"] | assertThat(. != null)
     .networkpolicys["scanner-v4-matcher"] | assertThat(. != null)
     .networkpolicys["scanner-v4-db"] | assertThat(. != null)
 
 - name: "scanner with network policies disabled"
-  values:
-    scannerV4:
-      disable: false
-    system:
-      enableNetworkPolicies: false
+  set:
+    scannerV4.disable: false
+    network.enableNetworkPolicies: false
   expect: |
     .networkpolicys["scanner-v4-indexer"] | assertThat(. == null)
     .networkpolicys["scanner-v4-matcher"] | assertThat(. == null)

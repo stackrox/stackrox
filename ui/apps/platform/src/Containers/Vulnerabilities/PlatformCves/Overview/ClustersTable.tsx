@@ -46,7 +46,7 @@ export const sortFields = [
     CLUSTER_KUBERNETES_VERSION_SORT_FIELD,
 ];
 
-export const defaultSortOption = { field: CVE_COUNT_SORT_FIELD, direction: 'desc' } as const;
+export const defaultSortOption = { field: CLUSTER_SORT_FIELD, direction: 'asc' } as const;
 
 export type Cluster = {
     id: string;
@@ -121,7 +121,7 @@ function ClustersTable({
                         CVEs
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th sort={getSortParams(CLUSTER_TYPE_SORT_FIELD)}>Cluster type</Th>
+                    <Th sort={getSortParams(CLUSTER_TYPE_SORT_FIELD)}>Platform type</Th>
                     <Th sort={getSortParams(CLUSTER_KUBERNETES_VERSION_SORT_FIELD)}>
                         Kubernetes version
                     </Th>
@@ -144,7 +144,7 @@ function ClustersTable({
                                 <Td dataLabel="CVEs">
                                     {pluralize(clusterVulnerabilityCount, 'CVE')}
                                 </Td>
-                                <Td dataLabel="Cluster type">{displayClusterType(type)}</Td>
+                                <Td dataLabel="Platform type">{displayClusterType(type)}</Td>
                                 <Td dataLabel="Kubernetes version">
                                     {status?.orchestratorMetadata?.version ?? 'Unavailable'}
                                 </Td>

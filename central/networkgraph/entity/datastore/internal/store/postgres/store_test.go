@@ -79,11 +79,6 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, networkEntity))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, networkEntity), sac.ErrResourceAccessDenied)
 
-	foundNetworkEntity, exists, err = store.Get(ctx, networkEntity.GetInfo().GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), networkEntity, foundNetworkEntity)
-
 	s.NoError(store.Delete(ctx, networkEntity.GetInfo().GetId()))
 	foundNetworkEntity, exists, err = store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)

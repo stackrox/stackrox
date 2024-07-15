@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -103,7 +104,7 @@ func (e *exchangeCommand) exchange() error {
 		return errors.Wrap(err, "exchange request failed")
 	}
 	var exchangeResp v1.ExchangeAuthMachineToMachineTokenResponse
-	if err := jsonpb.Unmarshal(resp.Body, &exchangeResp); err != nil {
+	if err := jsonutil.JSONReaderToProto(resp.Body, &exchangeResp); err != nil {
 		return errors.Wrap(err, "unmarshalling exchange request response")
 	}
 

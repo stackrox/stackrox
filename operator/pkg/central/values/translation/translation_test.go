@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jeremywohl/flatten"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/central/common"
 	"github.com/stackrox/rox/operator/pkg/central/extensions"
@@ -1152,6 +1153,109 @@ func TestTranslate(t *testing.T) {
 			assert.NoError(t, err)
 
 			assert.Equal(t, wantAsValues, got)
+		})
+	}
+}
+
+func TestTranslatePartialMatch(t *testing.T) {
+	type args struct {
+		c platform.Central
+	}
+
+	networkPoliciesEnabled := platform.NetworkPoliciesEnabled
+	networkPoliciesDisabled := platform.NetworkPoliciesDisabled
+
+	tests := map[string]struct {
+		args args
+		want chartutil.Values
+	}{
+		"unset network": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{},
+				},
+			},
+			want: chartutil.Values{
+				"network":                       nil,
+				"network.enableNetworkPolicies": nil,
+			},
+		},
+		"unset network policies": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Network: &platform.GlobalNetworkSpec{},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"network":                       nil,
+				"network.enableNetworkPolicies": nil,
+			},
+		},
+		"disabled network policies": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Network: &platform.GlobalNetworkSpec{
+							Policies: &networkPoliciesDisabled,
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"network.enableNetworkPolicies": false,
+			},
+		},
+		"enabled network policies": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Network: &platform.GlobalNetworkSpec{
+							Policies: &networkPoliciesEnabled,
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"network.enableNetworkPolicies": true,
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			wantAsValues, err := translation.ToHelmValues(tt.want)
+			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
+
+			client := fkClient.NewClientBuilder().Build()
+			translator := New(client)
+			got, err := translator.translate(context.Background(), tt.args.c)
+			assert.NoError(t, err)
+
+			wantFlattened, err := flatten.Flatten(wantAsValues, "", flatten.DotStyle)
+			assert.NoError(t, err)
+			for key, wantValue := range wantFlattened {
+				gotValue, err := got.PathValue(key)
+				if wantValue == nil {
+					assert.Error(t, err) // The value should not exist
+				} else {
+					assert.NoError(t, err)
+					assert.Equal(t, wantValue, gotValue)
+				}
+			}
 		})
 	}
 }

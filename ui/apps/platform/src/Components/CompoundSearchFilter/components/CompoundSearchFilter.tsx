@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Split } from '@patternfly/react-core';
+import { Flex } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
 import {
@@ -14,13 +14,12 @@ import EntitySelector, { SelectedEntity } from './EntitySelector';
 import AttributeSelector, { SelectedAttribute } from './AttributeSelector';
 import CompoundSearchFilterInputField, { InputFieldValue } from './CompoundSearchFilterInputField';
 
-import './CompoundSearchFilter.css';
-
 export type CompoundSearchFilterProps = {
     config: PartialCompoundSearchFilterConfig;
     defaultEntity?: SearchFilterEntityName;
     defaultAttribute?: SearchFilterAttributeName;
     searchFilter: SearchFilter;
+    additionalContextFilter?: SearchFilter;
     onSearch: ({ action, category, value }: OnSearchPayload) => void;
 };
 
@@ -29,6 +28,7 @@ function CompoundSearchFilter({
     defaultEntity,
     defaultAttribute,
     searchFilter,
+    additionalContextFilter,
     onSearch,
 }: CompoundSearchFilterProps) {
     const [selectedEntity, setSelectedEntity] = useState<SelectedEntity>(() => {
@@ -64,8 +64,14 @@ function CompoundSearchFilter({
     }, [defaultAttribute]);
 
     return (
-        <Split className="pf-v5-u-flex-grow-1">
+        <Flex
+            direction={{ default: 'row' }}
+            spaceItems={{ default: 'spaceItemsNone' }}
+            flexWrap={{ default: 'nowrap' }}
+            className="pf-v5-u-w-100"
+        >
             <EntitySelector
+                menuToggleClassName="pf-v5-u-flex-shrink-0"
                 selectedEntity={selectedEntity}
                 onChange={(value) => {
                     setSelectedEntity(value as SearchFilterEntityName);
@@ -79,6 +85,7 @@ function CompoundSearchFilter({
                 config={config}
             />
             <AttributeSelector
+                menuToggleClassName="pf-v5-u-flex-shrink-0"
                 selectedEntity={selectedEntity}
                 selectedAttribute={selectedAttribute}
                 onChange={(value) => {
@@ -95,6 +102,7 @@ function CompoundSearchFilter({
                     setInputValue(value);
                 }}
                 searchFilter={searchFilter}
+                additionalContextFilter={additionalContextFilter}
                 onSearch={(payload) => {
                     const { action, category, value } = payload;
                     const shouldSearch =
@@ -109,7 +117,7 @@ function CompoundSearchFilter({
                 }}
                 config={config}
             />
-        </Split>
+        </Flex>
     );
 }
 

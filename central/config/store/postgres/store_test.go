@@ -56,11 +56,6 @@ func (s *ConfigsStoreSuite) TestStore() {
 	s.True(exists)
 	protoassert.Equal(s.T(), config, foundConfig)
 
-	foundConfig, exists, err = store.Get(ctx)
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), config, foundConfig)
-
 	s.NoError(store.Delete(ctx))
 	foundConfig, exists, err = store.Get(ctx)
 	s.NoError(err)

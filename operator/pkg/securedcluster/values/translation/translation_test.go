@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jeremywohl/flatten"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/images"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
@@ -880,58 +881,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 			},
 		},
-		"force EBPF": {
-			args: args{
-				client: newDefaultFakeClient(t),
-				sc: platform.SecuredCluster{
-					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
-					Spec: platform.SecuredClusterSpec{
-						ClusterName: "test-cluster",
-						PerNode: &platform.PerNodeSpec{
-							Collector: &platform.CollectorContainerSpec{
-								ImageFlavor:     platform.ImageFlavorRegular.Pointer(),
-								Collection:      platform.CollectionEBPF.Pointer(),
-								ForceCollection: pointer.Bool(true),
-							},
-						},
-					},
-				},
-			},
-			want: chartutil.Values{
-				"clusterName":   "test-cluster",
-				"ca":            map[string]string{"cert": "ca central content"},
-				"createSecrets": false,
-				"collector": map[string]interface{}{
-					"forceCollectionMethod": true,
-					"collectionMethod":      "EBPF",
-					"slimMode":              false,
-				},
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
-				"scanner": map[string]interface{}{
-					"disable": false,
-				},
-				"scannerV4": map[string]interface{}{
-					"disable": true,
-				},
-				"sensor": map[string]interface{}{
-					"localImageScanning": map[string]string{
-						"enabled": "true",
-					},
-				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
-						"enabled": true,
-					},
-				},
-			},
-		},
 	}
 
 	for name, tt := range tests {
@@ -952,6 +901,102 @@ func (s *TranslationTestSuite) TestTranslate() {
 			}
 
 			assert.Equal(t, wantAsValues, got)
+		})
+	}
+}
+
+func TestTranslatePartialMatch(t *testing.T) {
+	type args struct {
+		sc platform.SecuredCluster
+	}
+
+	networkPoliciesEnabled := platform.NetworkPoliciesEnabled
+	networkPoliciesDisabled := platform.NetworkPoliciesDisabled
+
+	tests := map[string]struct {
+		args args
+		want chartutil.Values
+	}{
+		"unset network": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec:       platform.SecuredClusterSpec{},
+				},
+			},
+			want: chartutil.Values{
+				"network":                       nil,
+				"network.enableNetworkPolicies": nil,
+			},
+		},
+		"unset network policies": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						Network: &platform.GlobalNetworkSpec{},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"network":                       nil,
+				"network.enableNetworkPolicies": nil,
+			},
+		},
+		"disabled network policies": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						Network: &platform.GlobalNetworkSpec{
+							Policies: &networkPoliciesDisabled,
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"network.enableNetworkPolicies": false,
+			},
+		},
+		"enabled network policies": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						Network: &platform.GlobalNetworkSpec{
+							Policies: &networkPoliciesEnabled,
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"network.enableNetworkPolicies": true,
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			wantAsValues, err := translation.ToHelmValues(tt.want)
+			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
+
+			client := newDefaultFakeClientWithCentral(t) // Provide default objects and central for detection
+			translator := New(client, client)
+			got, err := translator.translate(context.Background(), tt.args.sc)
+			assert.NoError(t, err)
+
+			wantFlattened, err := flatten.Flatten(wantAsValues, "", flatten.DotStyle)
+			assert.NoError(t, err)
+
+			for key, wantValue := range wantFlattened {
+				gotValue, err := got.PathValue(key)
+				if wantValue == nil {
+					assert.Error(t, err) // The value should not exist
+				} else {
+					assert.NoError(t, err)
+					assert.Equal(t, wantValue, gotValue)
+				}
+			}
 		})
 	}
 }

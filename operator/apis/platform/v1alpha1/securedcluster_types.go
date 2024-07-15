@@ -104,6 +104,10 @@ type SecuredClusterSpec struct {
 	// Set this parameter to override the default registry in images. For example, nginx:latest -> <registry override>/library/nginx:latest
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom Default Image Registry",order=14,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	RegistryOverride string `json:"registryOverride,omitempty"`
+
+	// Network configuration.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Network,order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	Network *GlobalNetworkSpec `json:"network,omitempty"`
 }
 
 // SensorComponentSpec defines settings for sensor.
@@ -139,7 +143,8 @@ type AdmissionControlComponentSpec struct {
 	// Maximum timeout period for admission review, upon which admission review will fail open.
 	// Use it to set request timeouts when you enable inline image scanning.
 	// The default kubectl timeout is 30 seconds; taking padding into account, this should not exceed 25 seconds.
-	//+kubebuilder:default=20
+	// On OpenShift webhook timeouts cannot exceed 13 seconds, hence with padding this value shall not exceed 10 seconds.
+	//+kubebuilder:default=10
 	//+kubebuilder:validation:Minimum=1
 	//+kubebuilder:validation:Maximum=25
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
@@ -221,7 +226,7 @@ type PerNodeSpec struct {
 	HostAliases []corev1.HostAlias `json:"hostAliases,omitempty"`
 }
 
-// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF', 'None', or 'KernelModule'. Note that the collection method will be switched to EBPF if KernelModule is used.
+// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF', 'None', or 'KernelModule'. Note that the collection method will be switched to CORE_BPF if KernelModule or EBPF is used.
 // +kubebuilder:validation:Enum=EBPF;CORE_BPF;NoCollection;KernelModule
 type CollectionMethod string
 
@@ -305,10 +310,7 @@ type CollectorContainerSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ImageFlavor *CollectorImageFlavor `json:"imageFlavor,omitempty"`
 
-	// When the "collection" field is set to the deprecated value "EBPF", then
-	// setting this to "true" prevents conversion of the collection method to
-	// "CORE_BPF". This could be used in exceptional situations when "EBPF" has
-	// to be used.
+	// Deprecated field. This field will be removed in a future release.
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ForceCollection *bool `json:"forceCollection,omitempty"`

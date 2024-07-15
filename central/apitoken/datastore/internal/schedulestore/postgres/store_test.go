@@ -56,11 +56,6 @@ func (s *NotificationSchedulesStoreSuite) TestStore() {
 	s.True(exists)
 	protoassert.Equal(s.T(), notificationSchedule, foundNotificationSchedule)
 
-	foundNotificationSchedule, exists, err = store.Get(ctx)
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), notificationSchedule, foundNotificationSchedule)
-
 	s.NoError(store.Delete(ctx))
 	foundNotificationSchedule, exists, err = store.Get(ctx)
 	s.NoError(err)

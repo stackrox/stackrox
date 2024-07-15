@@ -79,11 +79,6 @@ func (s *AuthProvidersStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, authProvider))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, authProvider), sac.ErrResourceAccessDenied)
 
-	foundAuthProvider, exists, err = store.Get(ctx, authProvider.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), authProvider, foundAuthProvider)
-
 	s.NoError(store.Delete(ctx, authProvider.GetId()))
 	foundAuthProvider, exists, err = store.Get(ctx, authProvider.GetId())
 	s.NoError(err)
