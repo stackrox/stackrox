@@ -1,12 +1,13 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Flex, FlexItem } from '@patternfly/react-core';
 
 import useAuthStatus from 'hooks/useAuthStatus';
+import { clustersInitBundlesPath } from 'routePaths';
 
 import { ClusterStatus } from '../clusterTypes';
 import CredentialExpiration from './CredentialExpiration';
 import CredentialInteraction from './CredentialInteraction';
-import ManageTokensButton from './ManageTokensButton';
 
 import { isCertificateExpiringSoon } from '../cluster.helpers';
 
@@ -42,7 +43,13 @@ const CredentialExpirationWidget = ({
                 </FlexItem>
                 {hasAdminRole && (
                     <FlexItem>
-                        <ManageTokensButton />
+                        <Link
+                            to={clustersInitBundlesPath}
+                            className="no-underline flex-shrink-0"
+                            data-testid="manageTokens"
+                        >
+                            Init bundles
+                        </Link>
                     </FlexItem>
                 )}
             </Flex>
