@@ -85,8 +85,8 @@ func (c *tlsCheckCacheImpl) CheckTLS(ctx context.Context, registry string) (secu
 	// First check the cache for an entry and if found perform
 	// the TLS check. This is an optimization to avoid unnecessary
 	// allocations on cache hits.
-	entryI := c.results.Get(registry)
-	if entryI != nil {
+	entryI, ok := c.results.Get(registry)
+	if ok {
 		return entryI.(*cacheEntry).checkTLS(ctx, registry, c.checkTLSFunc)
 	}
 
