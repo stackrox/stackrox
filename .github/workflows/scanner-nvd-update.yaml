@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  fetch-cves:
+  fetch-nvd-feeds:
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'schedule' ||
@@ -28,29 +28,62 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Fetch CVEs
+    - name: Fetch NVD Feeds
       env:
         SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
       run: |
         set -eu
         dir=$(mktemp -d)
-        python3 .github/workflows/scripts/scanner-update-nvd-legacy.py "$dir"
-        zip -j nvd.zip "$dir"/*.nvd.json
+        python3 .github/workflows/scripts/scanner-update-nvd-feeds.py "$dir"
+        zip -j nvd-feeds.zip "$dir"/*.nvd.json
 
     - uses: ./.github/actions/upload-artifact-with-retry
       with:
-        name: nvd
-        path: nvd.zip
+        name: nvd-feeds
+        path: nvd-feeds.zip
+        if-no-files-found: error
+
+  fetch-nvd-api:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd'))
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Fetch NVD Api
+      env:
+        SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
+      run: |
+        set -eu
+        dir=$(mktemp -d)
+        python3 .github/workflows/scripts/scanner-update-nvd-api.py "$dir"
+        zip -j nvd-api.zip "$dir"/*.nvd.json
+
+    - uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: nvd-api
+        path: nvd-api.zip
         if-no-files-found: error
 
   upload:
     needs:
-      - fetch-cves
+    - fetch-nvd-feeds
+    - fetch-nvd-api
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     steps:
-    # Checkout to run ./.github/actions/{download,upload}-artifact-with-retry
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
@@ -59,7 +92,12 @@ jobs:
 
     - uses: ./.github/actions/download-artifact-with-retry
       with:
-        name: nvd
+        name: nvd-feeds
+        path: .
+
+    - uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: nvd-api
         path: .
 
     - name: Authenticate with Google Cloud
@@ -70,12 +108,15 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
-    - name: Upload production
-      run: gsutil cp nvd.zip "gs://definitions.stackrox.io/v4/nvd/nvd.zip"
+    - name: Upload nvd to Google Cloud Storage
+      run: gsutil cp nvd-feeds.zip "gs://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
+
+    - name: Upload nvd-api to Google Cloud Storage
+      run: gsutil cp nvd-api.zip "gs://definitions.stackrox.io/v4/nvd/nvd-api.zip"
 
   send-notification:
     needs:
-    - upload
+      - upload
     runs-on: ubuntu-latest
     if: failure()
     steps:
