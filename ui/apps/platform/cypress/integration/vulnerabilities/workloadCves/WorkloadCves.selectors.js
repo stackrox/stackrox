@@ -45,8 +45,6 @@ export const selectors = {
 
     // General selectors
     filteredViewLabel: '.pf-v5-c-label:contains("Filtered view")',
-    entityTypeToggleItem: (entityType) =>
-        `.pf-v5-c-toggle-group[aria-label="Entity type toggle items"] button:contains("${entityType}")`,
     summaryCard: (cardTitle) => `.pf-v5-c-card:contains("${cardTitle}")`,
     iconText: (textContent) => `svg ~ *:contains("${textContent}")`,
     bulkActionMenuToggle: 'button:contains("Bulk actions")',

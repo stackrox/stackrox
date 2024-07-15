@@ -3,4 +3,6 @@ const filterChipSection =
 
 export const selectors = {
     clearFiltersButton: `${filterChipSection} button:contains("Clear filters")`,
+    entityTypeToggleItem: (entityType: string) =>
+        `.pf-v5-c-toggle-group[aria-label="Entity type toggle items"] button:contains("${entityType}")`,
 } as const;

@@ -1,10 +1,13 @@
 import { graphql } from '../../../constants/apiEndpoints';
 import withAuth from '../../../helpers/basicAuth';
+import { assertAvailableFilters } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
     assertCannotFindThePage,
     visitWithStaticResponseForPermissions,
 } from '../../../helpers/visit';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
+import { visitFirstNodeLinkFromTable, visitNodeCveOverviewPage } from './NodeCve.helpers';
 
 const nodeBaseUrl = '/main/vulnerabilities/node-cves/nodes';
 const mockNodeId = '1';
@@ -51,7 +54,15 @@ describe('Node CVEs - Node Detail Page', () => {
     });
 
     it('should only show relevant filters for the Node Detail page', () => {
-        // check the advanced filters and ensure only the relevant filters are displayed
+        visitNodeCveOverviewPage();
+        cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
+
+        visitFirstNodeLinkFromTable();
+
+        assertAvailableFilters({
+            CVE: ['Name', 'CVSS', 'Discovered Time'],
+            'Node Component': ['Name', 'Version'],
+        });
     });
 
     it('should link to the correct pages', () => {
