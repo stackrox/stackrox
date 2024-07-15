@@ -883,6 +883,13 @@ remove_existing_stackrox_resources() {
             done
         fi
         if [[ "${centrals_supported}" == "true" ]]; then
+            # Remove stackrox.io/pause-reconcile annotation since it prevents
+            # deletion of central in static clusters
+               kubectl annotate -n "${namespace}" \
+                centrals.platform.stackrox.io \
+                stackrox-central-services \
+                stackrox.io/pause-reconcile-
+            
             kubectl get centrals -o name | while read -r central; do
                 kubectl -n "${namespace}" delete --ignore-not-found --wait "${central}"
                 kubectl wait -n "${namespace}"  --for=delete deployment/central --timeout=60s
