@@ -19,7 +19,6 @@ function IntegrationHelpIcon({
                 type="button"
                 aria-label={ariaLabel}
                 onClick={(e) => e.preventDefault()}
-                aria-describedby="simple-form-name-01"
                 className="pf-v5-c-form__group-label-help"
             >
                 <HelpIcon />
