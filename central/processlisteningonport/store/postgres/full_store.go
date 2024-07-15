@@ -45,7 +45,9 @@ const getByDeploymentStmt = "SELECT plop.serialized, " +
 
 const getClusterAndNamespaceStmt = "SELECT namespace, clusterid FROM deployments WHERE id = $1"
 
-const getCountsByDeploymentId = "SELECT deploymentid, namespace, clusterid, count(*) as count FROM listening_endpoints where closed = false GROUP BY deploymentid, namespace, clusterid"
+//const getCountsByDeploymentId = "SELECT deploymentid, namespace, clusterid, count(*) as count FROM listening_endpoints where closed = false GROUP BY deploymentid, namespace, clusterid"
+const getCountsByDeploymentId = "SELECT d.id, d.namespace, d.clusterid, COALESCE(COUNT(le.deploymentid), 0) AS count " +
+			"FROM deployments d LEFT JOIN listening_endpoints le ON d.id = le.deploymentid AND d.namespace = le.namespace AND d.clusterid = le.clusterid AND le.closed = false GROUP BY d.id, d.namespace, d.clusterid"
 
 func (s *fullStoreImpl) CountProcessListeningOnPort(ctx context.Context) (map[string]int, error) {
 	return pgutils.Retry2(ctx, func() (map[string]int, error) {
