@@ -26,6 +26,9 @@ spec:
         {{- include "srox.podLabels" (list . "deployment" "scanner-v4-indexer") | nindent 8 }}
       annotations:
         {{- $annotations := dict "traffic.sidecar.istio.io/excludeInboundPorts" "8443" -}}
+        {{- if eq ._rox.env.openshift 4 }}
+          {{- $_ := set $annotations "openshift.io/required-scc" "restricted-v2" -}}
+        {{- end }}
         {{- include "srox.podAnnotations" (list . "deployment" "scanner-v4-indexer" $annotations) | nindent 8 }}
     spec:
       {{- if ._rox.scannerV4.indexer._nodeSelector }}
