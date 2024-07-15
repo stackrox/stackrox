@@ -13,6 +13,7 @@ import {
     typeAndEnterCustomSearchFilterValue,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE overview page tests', () => {
     const isAdvancedFiltersEnabled = hasFeatureFlag('ROX_VULN_MGMT_ADVANCED_FILTERS');
@@ -31,13 +32,17 @@ describe('Workload CVE overview page tests', () => {
         // TODO Test that the default tab is set to "Observed"
 
         // Check that the CVE entity toggle is selected and Image/Deployment are disabled
-        cy.get(selectors.entityTypeToggleItem('CVE')).should('have.attr', 'aria-pressed', 'true');
-        cy.get(selectors.entityTypeToggleItem('Image')).should(
+        cy.get(vulnSelectors.entityTypeToggleItem('CVE')).should(
+            'have.attr',
+            'aria-pressed',
+            'true'
+        );
+        cy.get(vulnSelectors.entityTypeToggleItem('Image')).should(
             'not.have.attr',
             'aria-pressed',
             'true'
         );
-        cy.get(selectors.entityTypeToggleItem('Deployment')).should(
+        cy.get(vulnSelectors.entityTypeToggleItem('Deployment')).should(
             'not.have.attr',
             'aria-pressed',
             'true'

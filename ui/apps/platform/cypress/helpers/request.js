@@ -19,6 +19,7 @@
  * @returns Record<string, { method: string, url: string }>
  */
 export function getRouteMatcherMapForGraphQL(opnames) {
+    /** @type Record<string, { method: string, url: string }> */
     const routeMatcherMap = {};
 
     opnames.forEach((opname) => {
