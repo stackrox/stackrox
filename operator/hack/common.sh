@@ -54,7 +54,7 @@ function apply_operator_manifests() {
     operator_channel=$(< midstream/iib.json jq -r '.operator.channel')
   env -i PATH="${PATH}" \
     INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" OPERATOR_CHANNEL="${operator_channel}" \
-    IMAGE_TAG_BASE="${image_tag_base}" \
+    IMAGE_TAG_BASE="${image_tag_base}" DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
     envsubst < "${ROOT_DIR}/operator/hack/operator-midstream.envsubst.yaml" \
     | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
   else
