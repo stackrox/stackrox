@@ -98,7 +98,7 @@ for test_tuple in test_tuples:
                     artifact_destination_prefix=test_versions,
             ),
             # Collection not supported on 3.74
-            "pre_test": CollectionPreTest("none" if test_tuple.sensor_version.startswith('74') else "core-bpf")
+            "pre_test": CollectionPreTest(None if test_tuple.sensor_version.startswith('74') else "core_bpf")
         },
     )
 ClusterTestSetsRunner(

@@ -65,7 +65,7 @@ class CollectionPreTest:
     for individual tests
     """
     def __init__(self, method):
-        self._collection_method = method
+        self._collection_method = method or "NO_COLLECTION"
 
     def run(self):
         os.environ['COLLECTION_METHOD'] = self._collection_method
