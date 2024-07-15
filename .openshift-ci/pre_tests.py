@@ -56,3 +56,15 @@ class PreSystemTests:
             check=True,
             timeout=PreSystemTests.START_PREFETCH_TIMEOUT,
         )
+
+
+class CollectionPreTest:
+    """
+    CollectionPreTest - allows finer control over collection method
+    for individual tests
+    """
+    def __init__(self, method):
+        self._collection_method = method
+
+    def run(self):
+        os.environ['COLLECTION_METHOD'] = self._collection_method

@@ -11,7 +11,10 @@ import sys
 from collections import namedtuple
 from pathlib import Path
 
-from pre_tests import PreSystemTests
+from pre_tests import (
+    PreSystemTests,
+    CollectionPreTest
+)
 from ci_tests import QaE2eTestCompatibility
 from post_tests import PostClusterTest, FinalPost
 from runners import ClusterTestSetsRunner
@@ -81,13 +84,6 @@ test_tuples.extend(
     if support_exception not in test_tuples
 )
 
-class PreTestCollection:
-    def __init__(self, method):
-        self._collection_method = method
-
-    def run(self):
-        os.environ['COLLECTION_METHOD'] = self._collection_method
-
 sets = []
 for test_tuple in test_tuples:
     os.environ["ROX_TELEMETRY_STORAGE_KEY_V1"] = 'DISABLED'
@@ -104,7 +100,7 @@ for test_tuple in test_tuples:
                     check_stackrox_logs=True,
                     artifact_destination_prefix=test_versions,
             ),
-            "pre_test": PreTestCollection(collection_method)
+            "pre_test": CollectionPreTest(collection_method)
         },
     )
 ClusterTestSetsRunner(
