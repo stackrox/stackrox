@@ -201,7 +201,7 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 
 		// Create an image and attempt to enrich it with metadata.
 		pullSourceImage := types.ToImage(pullSource)
-		reg := s.enrichImageWithMetadata(errs, registries, pullSourceImage)
+		reg := s.enrichImageWithMetadata(ctx, errs, registries, pullSourceImage)
 		if reg != nil {
 			// Successful enrichment.
 			enrichImageDataSource(sourceImage, reg, pullSourceImage)
@@ -210,7 +210,7 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 			srcID := sourceImage.GetId()
 			pullName := pullSourceImage.GetName().GetFullName()
 			pullID := pullSourceImage.GetId()
-			log.Infof("Image %q (%v) enriched with metadata using pull source %q (%v) and integration %q (insecure: %t)", srcName, srcID, pullName, pullID, reg.Name(), reg.Config().GetInsecure())
+			log.Infof("Image %q (%v) enriched with metadata using pull source %q (%v) and integration %q (insecure: %t)", srcName, srcID, pullName, pullID, reg.Name(), reg.Config(ctx).GetInsecure())
 			log.Debugf("Metadata for image %q (%v) using pull source %q (%v): %v", srcName, srcID, pullName, pullID, pullSourceImage.GetMetadata())
 			return reg, pullSourceImage
 		}
@@ -305,12 +305,14 @@ func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.
 }
 
 // enrichImageWithMetadata will loop through registries returning the first that succeeds in enriching image with metadata.
-func (s *LocalScan) enrichImageWithMetadata(errorList *errorhelpers.ErrorList, registries []registryTypes.ImageRegistry, image *storage.Image) registryTypes.ImageRegistry {
+func (s *LocalScan) enrichImageWithMetadata(ctx context.Context, errorList *errorhelpers.ErrorList,
+	registries []registryTypes.ImageRegistry, image *storage.Image,
+) registryTypes.ImageRegistry {
 	var errs []error
 	for _, reg := range registries {
 		metadata, err := reg.Metadata(image)
 		if err != nil {
-			insecure := reg.Config().GetInsecure()
+			insecure := reg.Config(ctx).GetInsecure()
 			log.Debugf("Failed fetching metadata for image %q (%q) with integration %q (insecure: %t): %v", image.GetName().GetFullName(), image.GetId(), reg.Name(), insecure, err)
 			errs = append(errs, pkgErrors.Wrapf(err, "with integration %q (insecure: %t)", reg.Name(), insecure))
 			continue
@@ -377,7 +379,7 @@ func scanImage(ctx context.Context, image *storage.Image,
 	registry registryTypes.ImageRegistry, scannerClient scannerclient.ScannerClient,
 ) (*scannerclient.ImageAnalysis, error) {
 	// Get the image analysis from the local Scanner.
-	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, registry.Config())
+	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, registry.Config(ctx))
 	if err != nil {
 		return nil, err
 	}

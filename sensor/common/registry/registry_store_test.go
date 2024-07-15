@@ -64,7 +64,7 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 	}
 	reg, err := regStore.GetRegistryForImageInNamespace(img, "qa")
 	require.NoError(t, err)
-	assert.Equal(t, "image-registry.openshift-image-registry.svc:5000", reg.Config().RegistryHostname)
+	assert.Equal(t, "image-registry.openshift-image-registry.svc:5000", reg.Config(ctx).RegistryHostname)
 
 	img = &storage.ImageName{
 		Registry: "image-registry.openshift-image-registry.svc.local:5000",
@@ -74,7 +74,7 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 	}
 	reg, err = regStore.GetRegistryForImageInNamespace(img, "qa")
 	require.NoError(t, err)
-	assert.Equal(t, "image-registry.openshift-image-registry.svc.local:5000", reg.Config().RegistryHostname)
+	assert.Equal(t, "image-registry.openshift-image-registry.svc.local:5000", reg.Config(ctx).RegistryHostname)
 
 	img = &storage.ImageName{
 		Registry: "172.99.12.11:5000",
@@ -84,7 +84,7 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 	}
 	reg, err = regStore.GetRegistryForImageInNamespace(img, "qa")
 	require.NoError(t, err)
-	assert.Equal(t, "172.99.12.11:5000", reg.Config().RegistryHostname)
+	assert.Equal(t, "172.99.12.11:5000", reg.Config(ctx).RegistryHostname)
 }
 
 // TestRegistryStore_SpecificNamespace tests interactions with the registry store
@@ -98,8 +98,8 @@ func TestRegistryStore_SpecificNamespace(t *testing.T) {
 	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dce))
 	reg, err := regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
-	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config().RegistryHostname)
-	assert.Equal(t, reg.Config().Username, "username")
+	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config(ctx).RegistryHostname)
+	assert.Equal(t, reg.Config(ctx).Username, "username")
 
 	// no registry should exist based on img.Remote
 	_, err = regStore.GetRegistryForImageInNamespace(fakeImgName, "qa")
@@ -118,16 +118,16 @@ func TestRegistryStore_MultipleSecretsSameRegistry(t *testing.T) {
 	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dceA))
 	reg, err := regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
-	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config().RegistryHostname)
-	assert.Equal(t, reg.Config().Username, dceA.Username)
-	assert.Equal(t, reg.Config().Password, dceA.Password)
+	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config(ctx).RegistryHostname)
+	assert.Equal(t, reg.Config(ctx).Username, dceA.Username)
+	assert.Equal(t, reg.Config(ctx).Password, dceA.Password)
 
 	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dceB))
 	reg, err = regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
-	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config().RegistryHostname)
-	assert.Equal(t, reg.Config().Username, dceB.Username)
-	assert.Equal(t, reg.Config().Password, dceB.Password)
+	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config(ctx).RegistryHostname)
+	assert.Equal(t, reg.Config(ctx).Username, dceB.Username)
+	assert.Equal(t, reg.Config(ctx).Password, dceB.Password)
 }
 
 func TestRegistryStore_FailUpsertCheckTLS(t *testing.T) {
@@ -176,7 +176,7 @@ func TestRegistryStore_GlobalStore(t *testing.T) {
 	reg, err := regStore.GetGlobalRegistryForImage(fakeImgName)
 	require.NoError(t, err, "should be no error on valid get")
 	assert.NotNil(t, reg)
-	assert.Equal(t, reg.Config().Username, dce.Username)
+	assert.Equal(t, reg.Config(ctx).Username, dce.Username)
 
 	// sanity check
 	assert.Zero(t, len(regStore.store), "non-global store should not have been modified")

@@ -248,7 +248,7 @@ func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namesp
 	regs := rs.getRegistriesInNamespace(namespace)
 	if regs != nil {
 		for _, r := range regs.GetAll() {
-			if r.Config().GetRegistryHostname() == reg {
+			if r.Config(context.Background()).GetRegistryHostname() == reg {
 				return r, nil
 			}
 		}
@@ -293,7 +293,7 @@ func (rs *Store) GetGlobalRegistryForImage(image *storage.ImageName) (types.Imag
 	regs := rs.globalRegistries
 	if regs != nil {
 		for _, r := range regs.GetAll() {
-			if r.Config().GetRegistryHostname() == reg {
+			if r.Config(context.Background()).GetRegistryHostname() == reg {
 				return r, nil
 			}
 		}

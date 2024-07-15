@@ -84,16 +84,15 @@ func sanitizeConfiguration(ecr *storage.ECRConfig) error {
 }
 
 // Config returns an up to date docker registry configuration.
-func (e *ecr) Config() *types.Config {
+func (e *ecr) Config(ctx context.Context) *types.Config {
 	// No need for synchronization if there is no transport.
 	if e.transport == nil {
-		return e.Registry.Config()
+		return e.Registry.Config(ctx)
 	}
-	ctx := context.Background()
 	if err := e.transport.ensureValid(ctx); err != nil {
 		log.Errorf("Failed to ensure access token validity for image integration %q: %v", e.transport.name, err)
 	}
-	return e.Registry.Config()
+	return e.Registry.Config(ctx)
 }
 
 // Test tests the current registry and makes sure that it is working properly.

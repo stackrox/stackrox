@@ -37,11 +37,11 @@ func (g *googleRegistry) Match(image *storage.ImageName) bool {
 }
 
 // Config returns an up to date docker registry configuration.
-func (g *googleRegistry) Config() *types.Config {
+func (g *googleRegistry) Config(ctx context.Context) *types.Config {
 	if err := g.transport.ensureValid(); err != nil {
 		log.Errorf("Failed to ensure access token validity for image integration %q: %v", g.transport.name, err)
 	}
-	return g.Registry.Config()
+	return g.Registry.Config(ctx)
 }
 
 // Creator provides the type and registries.Creator to add to the registries Registry.

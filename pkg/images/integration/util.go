@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"context"
 	"sort"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -20,17 +21,18 @@ func GetMatchingImageIntegrations(registries []registryTypes.ImageRegistry,
 		}
 	}
 
+	ctx := context.Background()
 	sort.Slice(matchingIntegrations, func(i, j int) bool {
 		// Note: the Name of ImageRegistry does not reflect the registry hostname used within the integration but a
 		// name chosen by the creator. Additionally, we have to trim the HTTP prefixes (http:// & https://).
-		if matchingIntegrations[i].Config() == nil {
+		if matchingIntegrations[i].Config(ctx) == nil {
 			return true
 		}
-		if matchingIntegrations[j].Config() == nil {
+		if matchingIntegrations[j].Config(ctx) == nil {
 			return false
 		}
-		return urlfmt.TrimHTTPPrefixes(matchingIntegrations[i].Config().RegistryHostname) <
-			urlfmt.TrimHTTPPrefixes(matchingIntegrations[j].Config().RegistryHostname)
+		return urlfmt.TrimHTTPPrefixes(matchingIntegrations[i].Config(ctx).RegistryHostname) <
+			urlfmt.TrimHTTPPrefixes(matchingIntegrations[j].Config(ctx).RegistryHostname)
 	})
 
 	return matchingIntegrations
