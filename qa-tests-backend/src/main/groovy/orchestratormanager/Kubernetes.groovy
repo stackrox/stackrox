@@ -2110,7 +2110,8 @@ class Kubernetes implements OrchestratorMain {
         if (!deployment.skipReplicaWait && !deployment.deploymentUid) {
             String exceptionMsg = "The deployment did not start or reach replica ready state"
             if (Env.IMAGE_PULL_POLICY_FOR_QUAY_IO == "Never") {
-                exceptionMsg += " - if this job uses image prefetch check that this image is in the jobs prefetch list"+
+                exceptionMsg += " - if this job uses image prefetch check that this image "+
+                                "is in the jobs prefetch list e.g. qa-tests-backend/scripts/images-to-prefetch.txt"+
                                 " - " + deployment.image
             }
             throw new OrchestratorManagerException(exceptionMsg)
