@@ -11,7 +11,9 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-const doc = `Ensure that our *_test.go files include a //go:build <TAG>, otherwise they won't be run.'`
+const doc = `Ensure that our *_test.go files include a //go:build <TAG>, otherwise they won't be run by the test target.
+You can run scripts/prepend-go-build-to-tests.sh <BUILD_TAG> with the tag corresponding to your test target, to add it 
+to all *_test.go files in the directory.'`
 
 const roxPrefix = "github.com/stackrox/rox/"
 
