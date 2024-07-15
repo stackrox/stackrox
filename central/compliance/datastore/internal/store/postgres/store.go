@@ -92,8 +92,7 @@ func (s *storeImpl) getDomain(ctx context.Context, domainID string) (*storage.Co
 	cacheLock.Lock(domainID)
 	defer cacheLock.Unlock(domainID)
 
-	cachedDomain := domainCache.Get(domainID)
-	if cachedDomain != nil {
+	if cachedDomain, ok := domainCache.Get(domainID); ok {
 		return cachedDomain.(*storage.ComplianceDomain), nil
 	}
 

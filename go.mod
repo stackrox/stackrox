@@ -6,7 +6,7 @@ toolchain go1.21.9
 
 require (
 	cloud.google.com/go/artifactregistry v1.14.11
-	cloud.google.com/go/compute/metadata v0.4.0
+	cloud.google.com/go/compute/metadata v0.5.0
 	cloud.google.com/go/containeranalysis v0.11.8
 	cloud.google.com/go/securitycenter v1.33.0
 	cloud.google.com/go/storage v1.43.0
@@ -23,7 +23,7 @@ require (
 	github.com/andygrunwald/go-jira v1.16.0
 	github.com/aws/aws-sdk-go v1.54.0
 	github.com/aws/aws-sdk-go-v2 v1.30.3
-	github.com/aws/aws-sdk-go-v2/config v1.27.9
+	github.com/aws/aws-sdk-go-v2/config v1.27.26
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.26
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.16.9
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.51.4
