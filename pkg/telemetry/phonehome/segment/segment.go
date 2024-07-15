@@ -142,7 +142,7 @@ func isDuplicate(id string) bool {
 	if id == "" {
 		return false
 	}
-	if expiringIDCache.Get(id) == nil {
+	if _, ok := expiringIDCache.Get(id); !ok {
 		expiringIDCache.Add(id, true)
 		return false
 	}

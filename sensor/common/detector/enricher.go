@@ -240,7 +240,11 @@ func newEnricher(cache imagecacheutils.ImageCache, serviceAccountStore store.Ser
 }
 
 func (e *enricher) getImageFromCache(key string) (*storage.Image, bool) {
-	value, _ := e.imageCache.Get(key).(*cacheValue)
+	v, ok := e.imageCache.Get(key)
+	if !ok {
+		return nil, false
+	}
+	value, _ := v.(*cacheValue)
 	if value == nil {
 		return nil, false
 	}

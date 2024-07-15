@@ -44,8 +44,8 @@ func (rs *Store) checkTLS(ctx context.Context, registry string) (secure bool, sk
 }
 
 func (rs *Store) getCachedTLSCheckResult(registry string) tlsCheckResult {
-	resultI := rs.tlsCheckResults.Get(registry)
-	if resultI == nil {
+	resultI, ok := rs.tlsCheckResults.Get(registry)
+	if !ok {
 		return tlsCheckResultUnknown
 	}
 
