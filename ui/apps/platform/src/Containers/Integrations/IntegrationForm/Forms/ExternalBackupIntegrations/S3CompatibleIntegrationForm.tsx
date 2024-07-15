@@ -1,6 +1,6 @@
 /* eslint-disable no-void */
 import React, { ReactElement } from 'react';
-import { Checkbox, Form, FormSelect, PageSection, TextInput } from '@patternfly/react-core';
+import { Button, Checkbox, Form, FormSelect, PageSection, TextInput } from '@patternfly/react-core';
 import { SelectOption } from '@patternfly/react-core/deprecated';
 import * as yup from 'yup';
 
@@ -12,14 +12,9 @@ import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import SelectSingle from 'Components/SelectSingle';
+import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 import useIntegrationForm from '../../useIntegrationForm';
 import { IntegrationFormProps } from '../../integrationFormTypes';
-import {
-    s3CompatibleEndpointIcon,
-    s3CompatibleRegionIcon,
-    objectPrefixIcon,
-    urlStyleIcon,
-} from './icons';
 
 import IntegrationFormActions from '../../IntegrationFormActions';
 import FormLabelGroup from '../../FormLabelGroup';
@@ -293,7 +288,18 @@ function S3CompatibleIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Object prefix"
-                        labelIcon={objectPrefixIcon()}
+                        labelIcon={
+                            <IntegrationHelpIcon
+                                helpTitle="Object prefix"
+                                helpText={
+                                    <div>
+                                        Creates a new folder &#60;prefix&#62; under which backups
+                                        files are placed.
+                                    </div>
+                                }
+                                ariaLabel="Help for object prefix"
+                            />
+                        }
                         fieldId="externalBackup.s3compatible.objectPrefix"
                         touched={touched}
                         errors={errors}
@@ -310,7 +316,20 @@ function S3CompatibleIntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Endpoint"
-                        labelIcon={s3CompatibleEndpointIcon()}
+                        labelIcon={
+                            <IntegrationHelpIcon
+                                helpTitle="Endpoint"
+                                helpText={
+                                    <div>
+                                        Modifies the endpoint under which the S3 compatible service
+                                        is reached. Must be reachable via https. Note that when
+                                        using AWS S3, it is recommended to create an{' '}
+                                        <em>Amazon S3</em> integration instead.
+                                    </div>
+                                }
+                                ariaLabel="Help for endpoint"
+                            />
+                        }
                         fieldId="externalBackup.s3compatible.endpoint"
                         helperText="example, play.min.io"
                         touched={touched}
@@ -328,7 +347,18 @@ function S3CompatibleIntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Region"
-                        labelIcon={s3CompatibleRegionIcon()}
+                        labelIcon={
+                            <IntegrationHelpIcon
+                                helpTitle="Region"
+                                helpText={
+                                    <div>
+                                        Consult the service provider&apos;s S3 compatibility
+                                        instructions for the correct region.
+                                    </div>
+                                }
+                                ariaLabel="Help for region"
+                            />
+                        }
                         fieldId="externalBackup.s3compatible.region"
                         helperText="example, us-west-2"
                         touched={touched}
@@ -345,7 +375,31 @@ function S3CompatibleIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="URL style"
-                        labelIcon={urlStyleIcon()}
+                        labelIcon={
+                            <IntegrationHelpIcon
+                                helpTitle="Virtual hosting of buckets"
+                                helpText={
+                                    <div>
+                                        Defines the bucket URL addressing. Virtual-hosted-style
+                                        buckets are addressed as
+                                        https://&#60;bucket&#62;.&#60;endpoint&#62; while path-style
+                                        buckets are addressed as
+                                        https://&#60;endpoint&#62;/&#60;bucket&#62;. See the{' '}
+                                        <Button variant="link" isInline>
+                                            <a
+                                                href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/VirtualHosting.html"
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                AWS documentation about virtual hosting
+                                            </a>
+                                        </Button>{' '}
+                                        for more information.
+                                    </div>
+                                }
+                                ariaLabel="Help for URL style"
+                            />
+                        }
                         fieldId="externalBackup.s3compatible.urlStyle"
                         errors={errors}
                     >

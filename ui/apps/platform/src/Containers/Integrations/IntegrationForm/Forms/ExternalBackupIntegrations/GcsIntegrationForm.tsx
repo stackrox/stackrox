@@ -1,6 +1,7 @@
 /* eslint-disable no-void */
 import React, { ReactElement } from 'react';
 import {
+    Button,
     Checkbox,
     Form,
     FormSelect,
@@ -17,9 +18,9 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 import useIntegrationForm from '../../useIntegrationForm';
 import { IntegrationFormProps } from '../../integrationFormTypes';
-import { gcsWorkloadIdentity, objectPrefixIcon } from './icons';
 
 import IntegrationFormActions from '../../IntegrationFormActions';
 import FormLabelGroup from '../../FormLabelGroup';
@@ -281,7 +282,18 @@ function GcsIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Object prefix"
-                        labelIcon={objectPrefixIcon()}
+                        labelIcon={
+                            <IntegrationHelpIcon
+                                helpTitle="Object prefix"
+                                helpText={
+                                    <div>
+                                        Creates a new folder &#60;prefix&#62; under which backups
+                                        files are placed.
+                                    </div>
+                                }
+                                ariaLabel="Help for object prefix"
+                            />
+                        }
                         fieldId="externalBackup.gcs.objectPrefix"
                         touched={touched}
                         errors={errors}
@@ -298,7 +310,28 @@ function GcsIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Short-lived tokens"
-                        labelIcon={gcsWorkloadIdentity()}
+                        labelIcon={
+                            <IntegrationHelpIcon
+                                helpTitle="GCP workload identity"
+                                helpText={
+                                    <div>
+                                        Enables authentication via short-lived tokens using GCP
+                                        workload identities. See the{' '}
+                                        <Button variant="link" isInline>
+                                            <a
+                                                href="https://docs.openshift.com/acs/integration/integrate-using-short-lived-tokens.html"
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                Red Hat ACS documentation
+                                            </a>
+                                        </Button>{' '}
+                                        for more information.
+                                    </div>
+                                }
+                                ariaLabel="Help for short-lived tokens"
+                            />
+                        }
                         fieldId="externalBackup.gcs.useWorkloadId"
                         touched={touched}
                         errors={errors}
