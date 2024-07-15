@@ -295,8 +295,7 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	// Dedupe the removed deployments. This can happen because Pods have many completion states
 	// and we may receive multiple Remove calls
 	if ds.deletedDeploymentCache != nil {
-		_, ok := ds.deletedDeploymentCache.Get(id)
-		if ok {
+		if _, ok := ds.deletedDeploymentCache.Get(id); ok {
 			return nil
 		}
 		ds.deletedDeploymentCache.Add(id, true)
