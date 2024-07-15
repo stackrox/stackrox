@@ -18,6 +18,7 @@ from runners import ClusterTestSetsRunner
 from clusters import GKECluster
 from get_latest_helm_chart_versions import (
     get_latest_helm_chart_versions,
+    get_latest_helm_chart_version_for_specific_release,
 )
 
 Release = namedtuple("Release", ["major", "minor"])
@@ -27,7 +28,6 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
-os.environ["COLLECTION_METHOD"] = "core-bpf"
 
 central_chart_versions = get_latest_helm_chart_versions(
     "stackrox-central-services", 2)
@@ -64,10 +64,38 @@ test_tuples.extend(
     ]
 )
 
+# Support exception for latest central and sensor 3.74 as per
+# https://issues.redhat.com/browse/ROX-18223
+support_exceptions = [
+    ChartVersions(
+        central_version=latest_tag,
+        sensor_version=get_latest_helm_chart_version_for_specific_release(
+            "stackrox-secured-cluster-services", Release(major=3, minor=74)
+        ),
+    )
+]
+
+test_tuples.extend(
+    support_exception
+    for support_exception in support_exceptions
+    if support_exception not in test_tuples
+)
+
+class PreTestCollection:
+    def __init__(self, collection):
+        self._collection = collection
+
+    def run(self):
+        os.environ['COLLECTION_METHOD'] = self._collection
+
 sets = []
 for test_tuple in test_tuples:
     os.environ["ROX_TELEMETRY_STORAGE_KEY_V1"] = 'DISABLED'
     test_versions = f'{test_tuple.central_version}--{test_tuple.sensor_version}'
+
+    # Collection not supported on 3.74
+    collection = 'none' if test_tuple.sensor_version.startswith('74') else 'core-bpf'
+
     sets.append(
         {
             "name": f'version compatibility tests: {test_versions}',
@@ -76,6 +104,7 @@ for test_tuple in test_tuples:
                     check_stackrox_logs=True,
                     artifact_destination_prefix=test_versions,
             ),
+            "pre_test": PreTestCollection(collection)
         },
     )
 ClusterTestSetsRunner(
