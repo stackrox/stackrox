@@ -6,7 +6,7 @@ toolchain go1.21.9
 
 require (
 	cloud.google.com/go/artifactregistry v1.14.11
-	cloud.google.com/go/compute/metadata v0.4.0
+	cloud.google.com/go/compute/metadata v0.5.0
 	cloud.google.com/go/containeranalysis v0.11.8
 	cloud.google.com/go/securitycenter v1.33.0
 	cloud.google.com/go/storage v1.43.0
