@@ -5,11 +5,11 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
@@ -27,7 +27,7 @@ type Handler interface {
 }
 
 // NewHandler returns a new instance of a deployment reprocessor.
-func NewHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, detector detector.Detector, imageCache expiringcache.Cache) Handler {
+func NewHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, detector detector.Detector, imageCache imagecacheutils.ImageCache) Handler {
 	return &handlerImpl{
 		admCtrlSettingsMgr: admCtrlSettingsMgr,
 		detector:           detector,
@@ -39,7 +39,7 @@ func NewHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, detector
 type handlerImpl struct {
 	admCtrlSettingsMgr admissioncontroller.SettingsManager
 	detector           detector.Detector
-	imageCache         expiringcache.Cache
+	imageCache         imagecacheutils.ImageCache
 	stopSig            concurrency.ErrorSignal
 }
 
