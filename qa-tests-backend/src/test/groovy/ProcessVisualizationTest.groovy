@@ -110,7 +110,7 @@ class ProcessVisualizationTest extends BaseSpecification {
         def receivedProcessPaths = ProcessService.getUniqueProcessPaths(kubeProxyDeploymentID)
         log.info "Received processes: ${receivedProcessPaths}"
         // Avoid asserting on the specific process names since that might change across versions/distributions.
-        // The goal is to make sure we pick up processes from static pods.
+        // The goal is to make sure we pick up processes running in pods.
         assert receivedProcessPaths.size() > 0
     }
 
