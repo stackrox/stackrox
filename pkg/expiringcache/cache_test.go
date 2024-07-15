@@ -50,7 +50,9 @@ func TestExpiringCache(t *testing.T) {
 	getTime := time.Time{}
 	for _, p := range pairs {
 		clock.EXPECT().Now().Return(getTime)
-		assert.Equal(t, p.value, ec.Get(p.key).(string))
+		v, ok := ec.Get(p.key)
+		assert.True(t, ok)
+		assert.Equal(t, p.value, v.(string))
 	}
 
 	// Move forward 11 seconds, and the first element should get pruned but the rest should be available.
@@ -58,7 +60,9 @@ func TestExpiringCache(t *testing.T) {
 
 	// First is gone.
 	clock.EXPECT().Now().Return(getTime)
-	assert.Nil(t, ec.Get(pairs[0].key))
+	v, ok := ec.Get(pairs[0].key)
+	assert.Nil(t, v)
+	assert.False(t, ok)
 
 	// Other two are still available.
 	clock.EXPECT().Now().Return(getTime)
@@ -73,10 +77,14 @@ func TestExpiringCache(t *testing.T) {
 
 	// First and second elements are gone.
 	clock.EXPECT().Now().Return(getTime)
-	assert.Nil(t, ec.Get(pairs[0].key))
+	v, ok = ec.Get(pairs[0].key)
+	assert.Nil(t, v)
+	assert.False(t, ok)
 
 	clock.EXPECT().Now().Return(getTime)
-	assert.Nil(t, ec.Get(pairs[1].key))
+	v, ok = ec.Get(pairs[1].key)
+	assert.Nil(t, v)
+	assert.False(t, ok)
 
 	// Third element is still there.
 	clock.EXPECT().Now().Return(getTime)

@@ -68,7 +68,8 @@ func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
 
 func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest) (*sensor.GetImageResponse, error) {
 	if id := req.GetImage().GetId(); id != "" {
-		img, _ := s.imageCache.Get(imagecacheutils.GetImageCacheKey(req.GetImage())).(*storage.Image)
+		v, _ := s.imageCache.Get(imagecacheutils.GetImageCacheKey(req.GetImage()))
+		img, _ := v.(*storage.Image)
 		if img != nil && (!req.GetScanInline() || img.GetScan() != nil) {
 			return &sensor.GetImageResponse{
 				Image: img,
