@@ -60,7 +60,7 @@ describe('Exception Management - Approved Deferrals Table', () => {
 
         // the deferred request should be approved
         cy.get(
-            'table tr:first-child td[data-label="Requested action"]:contains("Deferred (when all fixed)")'
+            'table tr:nth(1) td[data-label="Requested action"]:contains("Deferred (when all fixed)")'
         ).should('exist');
     });
 
@@ -89,7 +89,7 @@ describe('Exception Management - Approved Deferrals Table', () => {
         approveRequest();
         visitApprovedDeferralsTab();
 
-        const requestNameSelector = 'table tr:first-child td[data-label="Request name"]';
+        const requestNameSelector = 'table tr:nth(1) td[data-label="Request name"]';
 
         cy.get(requestNameSelector)
             .invoke('text')
@@ -227,13 +227,13 @@ describe('Exception Management - Approved Deferrals Table', () => {
         approveRequest();
         visitApprovedDeferralsTab();
 
-        cy.get('table tr:first-child td[data-label="Request name"] a').then((element) => {
+        cy.get('table tr:nth(1) td[data-label="Request name"] a').then((element) => {
             const requestName = element.text().trim();
             typeAndSelectCustomSearchFilterValue('Request name', requestName);
-            cy.get('table tr:first-child td[data-label="Request name"] a').should('exist');
+            cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
             cy.get(vulnSelectors.clearFiltersButton).click();
             typeAndSelectCustomSearchFilterValue('Request name', 'BLAH');
-            cy.get('table tr:first-child td[data-label="Request name"] a').should('not.exist');
+            cy.get('table tr:nth(1) td[data-label="Request name"] a').should('not.exist');
         });
     });
 
@@ -247,9 +247,9 @@ describe('Exception Management - Approved Deferrals Table', () => {
         visitApprovedDeferralsTab();
 
         typeAndSelectCustomSearchFilterValue('Requester', 'ui_tests');
-        cy.get('table tr:first-child td[data-label="Request name"] a').should('exist');
+        cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
         cy.get(vulnSelectors.clearFiltersButton).click();
         typeAndSelectCustomSearchFilterValue('Requester', 'BLAH');
-        cy.get('table tr:first-child td[data-label="Request name"] a').should('not.exist');
+        cy.get('table tr:nth(1) td[data-label="Request name"] a').should('not.exist');
     });
 });
