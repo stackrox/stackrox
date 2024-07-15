@@ -298,6 +298,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoDeployments() {
 		suite.hasReadCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
+	// No PLOPs are returned as there are no matching deployments in the
+	// deployments table.
 	suite.Len(newPlops, 0)
 
 	// Verify that newly added PLOP object doesn't have Process field set in
@@ -321,6 +323,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoDeployments() {
 	}
 
 	protoassert.Equal(suite.T(), expectedPlopStorage, newPlopsFromDB[0])
+
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+
+	expectedPlopCounts := map[string]int{}
+	suite.Equal(expectedPlopCounts, plopCounts)
 }
 
 // TestPLOPSAC: Tests getting the PLOPs with various levels of access
@@ -342,10 +349,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 	cases := map[string]struct {
 		ctx           context.Context
 		expectAllowed bool
+		expectedPlopCounts map[string]int
 	}{
 		"all access": {
 			ctx:           sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker()),
 			expectAllowed: true,
+			expectedPlopCounts: map[string]int{
+				fixtureconsts.Deployment1: 1,
+				fixtureconsts.Deployment2: 0,
+			},
 		},
 		"access to cluster and namespace": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
@@ -355,6 +367,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
 			)),
 			expectAllowed: true,
+			expectedPlopCounts: map[string]int{
+				fixtureconsts.Deployment1: 1,
+				fixtureconsts.Deployment2: 0,
+			},
 		},
 		"read and write access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
@@ -364,6 +380,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
 			)),
 			expectAllowed: true,
+			expectedPlopCounts: map[string]int{
+				fixtureconsts.Deployment1: 1,
+				fixtureconsts.Deployment2: 0,
+			},
 		},
 		"access to wrong namespace": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
@@ -373,6 +393,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 				sac.NamespaceScopeKeys(fixtureconsts.Namespace2),
 			)),
 			expectAllowed: false,
+			expectedPlopCounts: map[string]int{},
 		},
 		"access to wrong cluster": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
@@ -382,6 +403,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
 			)),
 			expectAllowed: false,
+			expectedPlopCounts: map[string]int{},
 		},
 		"cluster level access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
@@ -390,6 +412,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
 			)),
 			expectAllowed: true,
+			expectedPlopCounts: map[string]int{
+				fixtureconsts.Deployment1: 1,
+				fixtureconsts.Deployment2: 0,
+			},
 		},
 	}
 
@@ -397,8 +423,12 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 		suite.Run(name, func() {
 			newPlops, err := suite.datastore.GetProcessListeningOnPort(
 				c.ctx, fixtureconsts.Deployment1)
+			plopCounts, countErr := suite.datastore.CountProcessListeningOnPort(c.ctx)
+			suite.Equal(c.expectedPlopCounts, plopCounts)
+
 			if c.expectAllowed {
 				suite.NoError(err)
+				suite.NoError(countErr)
 				suite.Len(newPlops, 1)
 				protoassert.Equal(suite.T(), newPlops[0], &storage.ProcessListeningOnPort{
 					ContainerName: "test_container1",
@@ -420,6 +450,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 
 			} else {
 				suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+				//suite.ErrorIs(countErr, sac.ErrResourceAccessDenied)
 				suite.Len(newPlops, 0)
 			}
 		})
