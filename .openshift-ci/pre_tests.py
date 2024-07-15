@@ -2,6 +2,7 @@
 PreTests - something to run before test but after resource provisioning.
 """
 
+import os
 import subprocess
 
 
