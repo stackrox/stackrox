@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	// Embed is used to import the serialized test object file.
+	_ "embed"
+
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
@@ -19,6 +22,9 @@ import (
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 )
+
+//go:embed serialized_test_pod.json
+var expectedJSONSerializedPod string
 
 func TestExportPods(t *testing.T) {
 	fakeService := &fakePodsService{tb: t}
@@ -48,8 +54,7 @@ func TestExportPods(t *testing.T) {
 	cmd := Command(mockEnv)
 	err = cmd.RunE(fakeCmd, []string{})
 	assert.NoError(t, err)
-	expectedSerializedPod := fixtures.GetExpectedJSONSerializedTestPod(t)
-	assert.JSONEq(t, `{"pod":`+expectedSerializedPod+`}`, buf.String())
+	assert.JSONEq(t, `{"pod":`+expectedJSONSerializedPod+`}`, buf.String())
 }
 
 type fakePodsService struct {

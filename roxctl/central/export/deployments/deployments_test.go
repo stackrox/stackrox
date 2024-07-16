@@ -6,12 +6,16 @@ import (
 	"testing"
 	"time"
 
+	// Embed is used to import the serialized test object file.
+	_ "embed"
+
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/protocompat"
 	envMocks "github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	ioMocks "github.com/stackrox/rox/roxctl/common/io/mocks"
@@ -20,6 +24,9 @@ import (
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 )
+
+//go:embed serialized_test_deployment.json
+var expectedJSONSerializedDeployment string
 
 func TestExportDeployments(t *testing.T) {
 	fakeService := &fakeDeploymentService{tb: t}
@@ -50,8 +57,7 @@ func TestExportDeployments(t *testing.T) {
 	err = cmd.RunE(fakeCmd, []string{})
 	assert.NoError(t, err)
 
-	var expectedDeploymentJSON = fixtures.GetExpectedJSONSerializedTestDeployment(t)
-	assert.JSONEq(t, `{"deployment":`+expectedDeploymentJSON+`}`, buf.String())
+	assert.JSONEq(t, `{"deployment":`+expectedJSONSerializedDeployment+`}`, buf.String())
 }
 
 type fakeDeploymentService struct {
@@ -59,7 +65,7 @@ type fakeDeploymentService struct {
 }
 
 func (s *fakeDeploymentService) ExportDeployments(_ *v1.ExportDeploymentRequest, srv v1.DeploymentService_ExportDeploymentsServer) error {
-	var testDeployment = fixtures.GetDeploymentForSerializationTest(s.tb)
+	var testDeployment = getDeploymentForSerializationTest()
 	return srv.Send(&v1.ExportDeploymentResponse{Deployment: testDeployment})
 }
 
@@ -85,4 +91,12 @@ func (s *fakeDeploymentService) ListDeploymentsWithProcessInfo(_ context.Context
 
 func (s *fakeDeploymentService) GetLabels(_ context.Context, _ *v1.Empty) (*v1.DeploymentLabelsResponse, error) {
 	return nil, errox.NotImplemented
+}
+
+// getDeploymentForSerializationTest returns a Mock Deployment for serialization testing purpose.
+func getDeploymentForSerializationTest() *storage.Deployment {
+	deployment := fixtures.LightweightDeployment()
+	var createdDate = time.Date(2020, time.December, 24, 23, 59, 59, 999999999, time.UTC)
+	deployment.Created = protocompat.ConvertTimeToTimestampOrNil(&createdDate)
+	return deployment
 }

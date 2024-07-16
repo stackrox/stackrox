@@ -6,12 +6,16 @@ import (
 	"testing"
 	"time"
 
+	// Embed is used to import the serialized test object file.
+	_ "embed"
+
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/protocompat"
 	envMocks "github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	ioMocks "github.com/stackrox/rox/roxctl/common/io/mocks"
@@ -20,6 +24,9 @@ import (
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 )
+
+//go:embed serialized_test_image.json
+var expectedJSONSerializedImage string
 
 func TestExportImages(t *testing.T) {
 	fakeService := &fakeImageService{tb: t}
@@ -49,8 +56,7 @@ func TestExportImages(t *testing.T) {
 	cmd := Command(env)
 	err = cmd.RunE(fakeCmd, []string{})
 	assert.NoError(t, err)
-	expectedSerializedImage := fixtures.GetExpectedJSONSerializedTestImage(t)
-	assert.JSONEq(t, `{"image":`+expectedSerializedImage+`}`, buf.String())
+	assert.JSONEq(t, `{"image":`+expectedJSONSerializedImage+`}`, buf.String())
 }
 
 type fakeImageService struct {
@@ -58,7 +64,7 @@ type fakeImageService struct {
 }
 
 func (s *fakeImageService) ExportImages(_ *v1.ExportImageRequest, srv v1.ImageService_ExportImagesServer) error {
-	testImage := fixtures.GetImageForSerializationTest(s.tb)
+	testImage := getImageForSerializationTest(s.tb)
 	return srv.Send(&v1.ExportImageResponse{Image: testImage})
 }
 
@@ -112,4 +118,13 @@ func (s *fakeImageService) UnwatchImage(_ context.Context, _ *v1.UnwatchImageReq
 
 func (s *fakeImageService) GetWatchedImages(_ context.Context, _ *v1.Empty) (*v1.GetWatchedImagesResponse, error) {
 	return nil, errox.NotImplemented
+}
+
+// getImageForSerializationTest returns a Mock Image for serialization testing purpose.
+func getImageForSerializationTest() *storage.Image {
+	// This image is generated in `deployment.go`
+	image := fixtures.LightweightDeploymentImage()
+	var scanDate = time.Date(2020, time.December, 24, 23, 59, 59, 999999999, time.UTC)
+	image.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&scanDate)
+	return image
 }

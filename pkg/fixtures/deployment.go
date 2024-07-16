@@ -1,9 +1,6 @@
 package fixtures
 
 import (
-	"testing"
-	"time"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	types2 "github.com/stackrox/rox/pkg/images/types"
@@ -167,82 +164,4 @@ func GetDeploymentWithImage(cluster, namespace string, image *storage.Image) *st
 	dep.NamespaceId = cluster + namespace
 	dep.Containers = append(dep.Containers, &storage.Container{Name: "supervulnerable", Image: types2.ToContainerImage(image)})
 	return dep
-}
-
-// GetDeploymentForSerializationTest returns a Mock Deployment for serialization testing purpose.
-func GetDeploymentForSerializationTest(_ testing.TB) *storage.Deployment {
-	deployment := LightweightDeployment()
-	var createdDate = time.Date(2020, time.December, 24, 23, 59, 59, 999999999, time.UTC)
-	deployment.Created = protocompat.ConvertTimeToTimestampOrNil(&createdDate)
-	return deployment
-}
-
-// GetExpectedJSONSerializedTestDeployment returns the protoJSON serialized form
-// of the Deployment returned by GetDeploymentForSerializationTest
-func GetExpectedJSONSerializedTestDeployment(_ testing.TB) string {
-	return `{
-	"name": "nginx_server",
-	"id": "deaaaaaa-bbbb-4011-0000-111111111111",
-	"clusterId": "caaaaaaa-bbbb-4011-0000-111111111111",
-	"clusterName": "prod cluster",
-	"namespace": "stackrox",
-	"annotations": {
-		"team": "stackrox"
-	},
-	"labels": {
-		"com.docker.stack.namespace": "prevent",
-		"com.docker.swarm.service.name": "prevent_sensor",
-		"email": "vv@stackrox.com",
-		"owner": "stackrox"
-	},
-	"podLabels": {
-		"app": "nginx"
-	},
-	"containers": [
-		{
-			"name": "nginx110container",
-			"image": {
-				"id": "sha256:SHA1",
-				"name": {
-					"registry": "docker.io",
-					"remote": "library/nginx",
-					"tag": "1.10"
-				}
-			},
-			"securityContext": {
-				"addCapabilities": ["SYS_ADMIN"],
-				"dropCapabilities": ["SYS_MODULE"],
-				"privileged": true
-			},
-			"resources": {
-				"cpuCoresRequest": 0.9
-			},
-			"config": {
-				"env": [
-					{
-						"key": "envkey",
-						"value": "envvalue"
-					}
-				]
-			},
-			"volumes": [
-				{
-					"destination": "/vol2",
-					"name": "vol1",
-					"readOnly": true,
-					"source": "/vol1",
-					"type": "host"
-				}
-			],
-			"secrets": [
-				{
-					"name": "secretname",
-					"path": "/var/lib/stackrox"
-				}
-			]
-		}
-	],
-	"created": "2020-12-24T23:59:59.999999999Z",
-	"priority": "1"
-}`
 }
