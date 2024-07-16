@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
+	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
@@ -168,9 +168,11 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 }
 
 func (c *clairv4) indexReportExists(digest string) (bool, error) {
-	// FIXME: go1.19 adds https://pkg.go.dev/net/url#JoinPath, which seems more idiomatic.
-	url := strings.Join([]string{c.indexReportEndpoint, digest}, "/")
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	path, err := url.JoinPath(c.indexReportEndpoint, digest)
+	if err != nil {
+		return false, err
+	}
+	req, err := http.NewRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return false, err
 	}
@@ -241,9 +243,11 @@ func (c *clairv4) index(manifest *claircore.Manifest) error {
 }
 
 func (c *clairv4) getVulnerabilityReport(digest string) (*claircore.VulnerabilityReport, error) {
-	// FIXME: go1.19 adds https://pkg.go.dev/net/url#JoinPath, which seems more idiomatic.
-	url := strings.Join([]string{c.vulnerabilityReportEndpoint, digest}, "/")
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	path, err := url.JoinPath(c.vulnerabilityReportEndpoint, digest)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err
 	}
