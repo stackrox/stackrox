@@ -181,54 +181,8 @@ spec:
     workspaces:
     - name: subscription-manager-activation-key
       workspace: subscription-manager-activation-key
-    taskSpec:
-      params:
-      - name: SOURCE_ARTIFACT
-        description: The Trusted Artifact URI pointing to the application source code with
-          the additional smuggled activation key. This should be the result of the git-clone task,
-          results from other tasks might fail as dirty.
-        type: string
-      - name: ociStorage
-        description: The OCI repository where the Trusted Artifacts are stored.
-        type: string
-      - name: ociArtifactExpiresAfter
-        description: Expiration date for the trusted artifacts created in the
-          OCI repository. An empty string means the artifacts do not expire.
-        type: string
-        default: ""
-      results:
-      - name: SOURCE_ARTIFACT
-        description: The Trusted Artifact URI pointing to the artifact with
-          the smuggled activation key.
-        type: string
-      volumes:
-        - name: workdir
-          emptyDir: {}
-      stepTemplate:
-        volumeMounts:
-          - mountPath: /var/workdir
-            name: workdir
-      steps:
-      - name: use-trusted-artifact
-        image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:4e39fb97f4444c2946944482df47b39c5bbc195c54c6560b0647635f553ab23d
-        args:
-          - use
-          - $(params.SOURCE_ARTIFACT)=/var/workdir/source
-      # TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available.
-      - name: smuggle-activation-key
-        image: registry.access.redhat.com/ubi8/ubi:latest
-        workingDir: /var/workdir/source
-        script: .konflux/scripts/subscription-manager/subscription-manager-bro.sh smuggle
-      - name: create-trusted-artifact
-        image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:4e39fb97f4444c2946944482df47b39c5bbc195c54c6560b0647635f553ab23d
-        args:
-          - create
-          - --store
-          - $(params.ociStorage)
-          - $(results.SOURCE_ARTIFACT.path)=/var/workdir/source
-        env:
-          - name: IMAGE_EXPIRES_AFTER
-            value: $(params.ociArtifactExpiresAfter)
+    taskRef:
+      name: copy-subscription-manager-activation-key-oci-ta
 
   - name: fetch-external-networks
     params:
@@ -238,57 +192,8 @@ spec:
         value: $(params.output-image-repo):konflux-$(params.revision).external-networks
       - name: ociArtifactExpiresAfter
         value: $(params.oci-artifact-expires-after)
-    taskSpec:
-      params:
-      - name: SOURCE_ARTIFACT
-        description: The Trusted Artifact URI pointing to the application source code with
-          the additional external networks definitions. This should be the result of the subscription-manager task,
-          to ensure order of execution.
-        type: string
-      - name: ociStorage
-        description: The OCI repository where the Trusted Artifacts are stored.
-        type: string
-      - name: ociArtifactExpiresAfter
-        description: Expiration date for the trusted artifacts created in the
-          OCI repository. An empty string means the artifacts do not expire.
-        type: string
-        default: ""
-      results:
-      - name: SOURCE_ARTIFACT
-        description: The Trusted Artifact URI pointing to the artifact with
-          the external networks.
-        type: string
-      volumes:
-        - name: workdir
-          emptyDir: {}
-      stepTemplate:
-        volumeMounts:
-          - mountPath: /var/workdir
-            name: workdir
-      steps:
-      - name: use-trusted-artifact
-        image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:4e39fb97f4444c2946944482df47b39c5bbc195c54c6560b0647635f553ab23d
-        args:
-          - use
-          - $(params.SOURCE_ARTIFACT)=/var/workdir/source
-      - name: fetch-external-networks
-        image: registry.access.redhat.com/ubi8-minimal:latest
-        workingDir: /var/workdir/source
-        script: |
-          #!/usr/bin/env bash
-          set -euo pipefail
-          microdnf -y install zip
-          image/rhel/fetch-stackrox-data.sh .konflux/stackrox-data
-      - name: create-trusted-artifact
-        image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:4e39fb97f4444c2946944482df47b39c5bbc195c54c6560b0647635f553ab23d
-        args:
-          - create
-          - --store
-          - $(params.ociStorage)
-          - $(results.SOURCE_ARTIFACT.path)=/var/workdir/source
-        env:
-          - name: IMAGE_EXPIRES_AFTER
-            value: $(params.ociArtifactExpiresAfter)
+    taskRef:
+      name: fetch-external-networks-oci-ta
 
   - name: prefetch-dependencies
     params:
