@@ -344,7 +344,7 @@ func TestJSONRemarks(t *testing.T) {
 			writer := newTestWriter(tc.writeableLen)
 			err := JSONWithRemarks(writer, tc.alerts, tc.remarks)
 			require.Error(t, err)
-			assert.Equal(t, tc.expectedError.Error(), err.Error())
+			assert.EqualError(t, err, tc.expectedError.Error())
 		})
 	}
 }
@@ -439,7 +439,7 @@ func TestJSON(t *testing.T) {
 			err := JSON(writer, tc.alerts)
 			if tc.expectedError != nil {
 				require.Error(t, err)
-				assert.Equal(t, tc.expectedError.Error(), err.Error())
+				assert.EqualError(t, err, tc.expectedError.Error())
 			} else {
 				assert.NoError(t, err)
 				assert.JSONEq(t, tc.expectedOutput, writer.String())
@@ -455,6 +455,8 @@ type testWriter struct {
 
 func newTestWriter(capacity int) *testWriter {
 	if capacity == 0 {
+		// 0 should mean "infinite" capacity.
+		// Ensure the writer should have enough capacity.
 		capacity = 1024 * 1024 * 1024 * 2
 	}
 	return &testWriter{
@@ -464,7 +466,8 @@ func newTestWriter(capacity int) *testWriter {
 }
 
 var (
-	capacityExhaustedErr = errors.New("could not write, capacity exhausted")
+	capacityExhaustedErrorText = "could not write, capacity exhausted"
+	capacityExhaustedErr       = errors.New(capacityExhaustedErrorText)
 )
 
 func (w *testWriter) Write(p []byte) (n int, err error) {
