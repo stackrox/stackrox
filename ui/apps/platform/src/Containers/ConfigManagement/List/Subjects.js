@@ -13,6 +13,7 @@ import { subjectSortFields } from 'constants/sortFields';
 import { SUBJECTS_QUERY } from 'queries/subject';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
+import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
 
 export const defaultSubjectSort = [
@@ -34,6 +35,14 @@ const buildTableColumns = (match, location) => {
             Header: 'Users & Groups',
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original, pdf }) => {
+                const url = getConfigMgmtPathForEntitiesAndId('SUBJECT', original.id);
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {original.name}
+                    </TableCellLink>
+                );
+            },
             accessor: 'name',
             id: subjectSortFields.SUBJECT,
             sortField: subjectSortFields.SUBJECT,
