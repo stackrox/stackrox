@@ -5,15 +5,19 @@ on:
   workflow_dispatch:
     inputs:
       job:
-        description: "Choose the job to run: nvd-api or nvd-feeds"
-        required: false
-        default: "nvd-api"
+        type: choice
+        description: "Choose the NVD source"
+        options:
+        - nvd-api
+        - nvd-feeds
+        required: true
+        default: nvd-api
 
 jobs:
   download-nvd:
     runs-on: ubuntu-latest
     env:
-      JOB: ${{ github.event.inputs.job || github.event.workflow_dispatch.inputs.job || 'nvd-feeds' }}
+      JOB: ${{ github.event.inputs.job || 'nvd-api' }}
 
     steps:
     - name: Checkout repository

@@ -10,9 +10,13 @@ on:
   workflow_dispatch:
     inputs:
       job:
-        description: "Choose the job to run: nvd-api or nvd-feeds"
-        required: false
-        default: "nvd-api"
+        type: choice
+        description: "Choose the NVD source"
+        options:
+        - nvd-api
+        - nvd-feeds
+        required: true
+        default: nvd-api
 
 jobs:
   build-updater:
@@ -49,7 +53,7 @@ jobs:
   download-nvd:
     runs-on: ubuntu-latest
     env:
-      JOB: ${{ github.event.inputs.job || github.event.workflow_dispatch.inputs.job || 'nvd-feeds' }}
+      JOB: ${{ github.event.inputs.job || 'nvd-api' }}
     if: >
       github.event_name == 'schedule' ||
       (github.event_name == 'pull_request' &&
@@ -66,10 +70,10 @@ jobs:
         set -eu
         since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
         if [ "$JOB" = "nvd-api" ]; then
-          url="https://definitions.stackrox.io/v4/nvd/nvd-api.zip"
-        else
-          url="https://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
-        fi
+            url="https://definitions.stackrox.io/v4/nvd/nvd-api.zip"
+          else
+            url="https://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
+          fi
           
         curl \
           -o nvd.zip \
