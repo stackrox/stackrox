@@ -1,76 +1,49 @@
 /* eslint-disable no-void */
 import React, { ReactElement } from 'react';
 import {
+    Button,
     Checkbox,
     Form,
     FormSelect,
     PageSection,
-    Popover,
     TextInput,
+    TextArea,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
-import { HelpIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
 
 import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
-import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
-import SelectSingle from 'Components/SelectSingle';
-import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
+import useIntegrationForm from '../../useIntegrationForm';
+import { IntegrationFormProps } from '../../integrationFormTypes';
 
-import IntegrationFormActions from '../IntegrationFormActions';
-import FormLabelGroup from '../FormLabelGroup';
-import ScheduleIntervalOptions from '../FormSchedule/ScheduleIntervalOptions';
-import ScheduleWeeklyOptions from '../FormSchedule/ScheduleWeeklyOptions';
-import ScheduleDailyOptions from '../FormSchedule/ScheduleDailyOptions';
+import IntegrationFormActions from '../../IntegrationFormActions';
+import FormLabelGroup from '../../FormLabelGroup';
+import ScheduleIntervalOptions from '../../FormSchedule/ScheduleIntervalOptions';
+import ScheduleWeeklyOptions from '../../FormSchedule/ScheduleWeeklyOptions';
+import ScheduleDailyOptions from '../../FormSchedule/ScheduleDailyOptions';
 
-const urlStyles = [
-    {
-        label: 'Path',
-        value: 'S3_URL_STYLE_PATH',
-    },
-    {
-        label: 'Virtual hosted',
-        value: 'S3_URL_STYLE_VIRTUAL_HOSTED',
-    },
-];
+import { getGoogleCredentialsPlaceholder } from '../../../utils/integrationUtils';
 
-export type S3CompatibleIntegration = {
-    s3compatible: {
+export type GcsIntegration = {
+    gcs: {
         bucket: string;
         objectPrefix: string;
-        endpoint: string;
-        region: string;
-        accessKeyId: string;
-        secretAccessKey: string;
-        urlStyle: 'S3_URL_STYLE_PATH' | 'S3_URL_STYLE_VIRTUAL_HOSTED';
+        useWorkloadId: boolean;
+        serviceAccount: string;
     };
-    type: 's3compatible';
+    type: 'gcs';
 } & BackupIntegrationBase;
 
-export type S3CompatibleIntegrationFormValues = {
-    externalBackup: S3CompatibleIntegration;
+export type GcsIntegrationFormValues = {
+    externalBackup: GcsIntegration;
     updatePassword: boolean;
 };
-
-function requireCredentials(value, context: yup.TestContext) {
-    const requirePasswordField =
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        context?.from[2]?.value?.updatePassword || false;
-
-    if (!requirePasswordField) {
-        return true;
-    }
-
-    const trimmedValue = value?.trim();
-    return !!trimmedValue;
-}
 
 export const validationSchema = yup.object().shape({
     externalBackup: yup.object().shape({
@@ -87,31 +60,42 @@ export const validationSchema = yup.object().shape({
             hour: yup.number(),
             minute: yup.number(),
         }),
-        s3compatible: yup.object().shape({
+        gcs: yup.object().shape({
             bucket: yup.string().trim().required('Bucket is required'),
-            objectPrefix: yup.string(),
-            endpoint: yup.string(),
-            region: yup.string().trim().required('Region is required'),
-            urlStyle: yup.string().trim().required('URL style is required'),
-            accessKeyId: yup
-                .string()
-                .trim()
-                .test('accessKeyId-test', 'An access key ID is required', requireCredentials),
-            secretAccessKey: yup
+            objectPrefix: yup.string().trim(),
+            useWorkloadId: yup.bool(),
+            serviceAccount: yup
                 .string()
                 .trim()
                 .test(
-                    'secretAccessKey-test',
-                    'A secret access key is required',
-                    requireCredentials
+                    'serviceAccount-test',
+                    'Valid JSON is required for service account key',
+                    (value, context: yup.TestContext) => {
+                        const requirePasswordField =
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            context?.from[2]?.value?.updatePassword || false;
+                        const useWorkloadId = context?.parent?.useWorkloadId;
+
+                        if (!requirePasswordField || useWorkloadId) {
+                            return true;
+                        }
+                        try {
+                            JSON.parse(value as string);
+                        } catch (e) {
+                            return false;
+                        }
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
+                    }
                 ),
         }),
-        type: yup.string().matches(/s3compatible/),
+        type: yup.string().matches(/gcs/),
     }),
     updatePassword: yup.bool(),
 });
 
-export const defaultValues: S3CompatibleIntegrationFormValues = {
+export const defaultValues: GcsIntegrationFormValues = {
     externalBackup: {
         id: '',
         name: '',
@@ -121,59 +105,22 @@ export const defaultValues: S3CompatibleIntegrationFormValues = {
             hour: 0,
             minute: 0,
         },
-        s3compatible: {
+        gcs: {
             bucket: '',
             objectPrefix: '',
-            endpoint: '',
-            region: '',
-            accessKeyId: '',
-            secretAccessKey: '',
-            urlStyle: 'S3_URL_STYLE_PATH',
+            useWorkloadId: false,
+            serviceAccount: '',
         },
-        type: 's3compatible',
+        type: 'gcs',
     },
     updatePassword: true,
 };
 
-function urlStyleIcon(): ReactElement {
-    return (
-        <Popover
-            bodyContent={
-                <div>
-                    <a
-                        href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/VirtualHosting.html"
-                        target="_blank"
-                        rel="noreferrer"
-                    >
-                        The URL style defines the bucket URL addressing. Virtual-hosted-style
-                        buckets are addressed as https://&#60;bucket&#62;.&#60;endpoint&#62; while
-                        path-style buckets are addressed as
-                        https://&#60;endpoint&#62;/&#60;bucket&#62;. See the AWS documentation about
-                        virtual hosting for more information.
-                    </a>
-                </div>
-            }
-            headerContent={'Virtual hosting of buckets'}
-        >
-            <button
-                type="button"
-                aria-label="More info for input"
-                onClick={(e) => e.preventDefault()}
-                aria-describedby="simple-form-name-01"
-                className="pf-v5-c-form__group-label-help"
-            >
-                <HelpIcon />
-            </button>
-        </Popover>
-    );
-}
-
-function S3CompatibleIntegrationForm({
+function GcsIntegrationForm({
     initialValues = null,
     isEditable = false,
-}: IntegrationFormProps<S3CompatibleIntegration>): ReactElement {
+}: IntegrationFormProps<GcsIntegration>): ReactElement {
     const formInitialValues = { ...defaultValues, ...initialValues };
-
     if (initialValues) {
         formInitialValues.externalBackup = {
             ...formInitialValues.externalBackup,
@@ -181,8 +128,7 @@ function S3CompatibleIntegrationForm({
         };
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
-        formInitialValues.externalBackup.s3compatible.accessKeyId = '';
-        formInitialValues.externalBackup.s3compatible.secretAccessKey = '';
+        formInitialValues.externalBackup.gcs.serviceAccount = '';
 
         // Don't assume user wants to change password; that has caused confusing UX.
         formInitialValues.updatePassword = false;
@@ -201,7 +147,7 @@ function S3CompatibleIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<S3CompatibleIntegrationFormValues>({
+    } = useIntegrationForm<GcsIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });
@@ -211,9 +157,15 @@ function S3CompatibleIntegrationForm({
         return setFieldValue(event.target.id, value, false);
     }
 
+    function updateServiceAccountOnChange(value, event) {
+        void setFieldValue(event.target.id, value);
+        if (value === true) {
+            void setFieldValue('externalBackup.gcs.serviceAccount', '');
+        }
+    }
+
     function onUpdateCredentialsChange(value, event) {
-        setFieldValue('externalBackup.s3compatible.accessKeyId', '');
-        setFieldValue('externalBackup.s3compatible.secretAccessKey', '');
+        setFieldValue('externalBackup.gcs.serviceAccount', '');
         return setFieldValue(event.target.id, value);
     }
 
@@ -250,6 +202,7 @@ function S3CompatibleIntegrationForm({
                             isRequired
                             type="number"
                             id="externalBackup.backupsToKeep"
+                            name="externalBackup.backupsToKeep"
                             value={values.externalBackup.backupsToKeep}
                             onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
@@ -312,15 +265,16 @@ function S3CompatibleIntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Bucket"
-                        fieldId="externalBackup.s3compatible.bucket"
+                        fieldId="externalBackup.gcs.bucket"
                         touched={touched}
                         errors={errors}
-                        helperText="example, acs.backups"
+                        helperText="example, stackrox.backups"
                     >
                         <TextInput
                             type="text"
-                            id="externalBackup.s3compatible.bucket"
-                            value={values.externalBackup.s3compatible.bucket}
+                            id="externalBackup.gcs.bucket"
+                            name="externalBackup.gcs.bucket"
+                            value={values.externalBackup.gcs.bucket}
                             onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
@@ -328,132 +282,119 @@ function S3CompatibleIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Object prefix"
-                        fieldId="externalBackup.s3compatible.objectPrefix"
+                        labelIcon={
+                            <IntegrationHelpIcon
+                                helpTitle="Object prefix"
+                                helpText={
+                                    <div>
+                                        Creates a new folder &#60;prefix&#62; under which backups
+                                        files are placed.
+                                    </div>
+                                }
+                                ariaLabel="Help for object prefix"
+                            />
+                        }
+                        fieldId="externalBackup.gcs.objectPrefix"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             type="text"
-                            id="externalBackup.s3compatible.objectPrefix"
-                            value={values.externalBackup.s3compatible.objectPrefix}
+                            id="externalBackup.gcs.objectPrefix"
+                            name="externalBackup.gcs.objectPrefix"
+                            value={values.externalBackup.gcs.objectPrefix}
                             onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        isRequired
-                        label="Endpoint"
-                        fieldId="externalBackup.s3compatible.endpoint"
-                        helperText="example, play.min.io"
+                        label="Short-lived tokens"
+                        labelIcon={
+                            <IntegrationHelpIcon
+                                helpTitle="GCP workload identity"
+                                helpText={
+                                    <div>
+                                        Enables authentication via short-lived tokens using GCP
+                                        workload identities. See the{' '}
+                                        <Button variant="link" isInline>
+                                            <a
+                                                href="https://docs.openshift.com/acs/integration/integrate-using-short-lived-tokens.html"
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                Red Hat ACS documentation
+                                            </a>
+                                        </Button>{' '}
+                                        for more information.
+                                    </div>
+                                }
+                                ariaLabel="Help for short-lived tokens"
+                            />
+                        }
+                        fieldId="externalBackup.gcs.useWorkloadId"
                         touched={touched}
                         errors={errors}
                     >
-                        <TextInput
-                            type="text"
-                            id="externalBackup.s3compatible.endpoint"
-                            value={values.externalBackup.s3compatible.endpoint}
-                            onChange={(event, value) => onChange(value, event)}
+                        <Checkbox
+                            label="Use workload identity"
+                            id="externalBackup.gcs.useWorkloadId"
+                            isChecked={values.externalBackup.gcs.useWorkloadId}
+                            onChange={(event, value) => updateServiceAccountOnChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup
-                        isRequired
-                        label="Region"
-                        fieldId="externalBackup.s3compatible.region"
-                        helperText="example, us-west-2"
-                        touched={touched}
-                        errors={errors}
-                    >
-                        <TextInput
-                            type="text"
-                            id="externalBackup.s3compatible.region"
-                            value={values.externalBackup.s3compatible.region}
-                            onChange={(event, value) => onChange(value, event)}
-                            onBlur={handleBlur}
-                            isDisabled={!isEditable}
-                        />
-                    </FormLabelGroup>
-                    <FormLabelGroup
-                        label="URL style"
-                        labelIcon={urlStyleIcon()}
-                        fieldId="externalBackup.s3compatible.urlStyle"
-                        errors={errors}
-                    >
-                        <SelectSingle
-                            id="externalBackup.s3compatible.urlStyle"
-                            value={values.externalBackup.s3compatible.urlStyle}
-                            handleSelect={setFieldValue}
-                            direction="up"
-                        >
-                            {urlStyles.map(({ value, label }) => (
-                                <SelectOption key={value} value={value}>
-                                    {label}
-                                </SelectOption>
-                            ))}
-                        </SelectSingle>
-                    </FormLabelGroup>
-
                     {!isCreating && isEditable && (
                         <FormLabelGroup
                             label=""
                             fieldId="updatePassword"
                             helperText="Enable this option to replace currently stored credentials (if any)"
+                            touched={touched}
                             errors={errors}
                         >
                             <Checkbox
-                                label="Update access key ID and secret access key"
+                                label="Update stored credentials"
                                 id="updatePassword"
-                                isChecked={values.updatePassword}
+                                isChecked={
+                                    !values.externalBackup.gcs.useWorkloadId &&
+                                    values.updatePassword
+                                }
                                 onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
-                                isDisabled={!isEditable}
+                                isDisabled={!isEditable || values.externalBackup.gcs.useWorkloadId}
                             />
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
-                        label="Access key ID"
-                        fieldId="externalBackup.s3compatible.accessKeyId"
-                        isRequired={values.updatePassword}
+                        label="Service account key (JSON)"
+                        isRequired={
+                            values.updatePassword && !values.externalBackup.gcs.useWorkloadId
+                        }
+                        fieldId="externalBackup.gcs.serviceAccount"
                         touched={touched}
                         errors={errors}
                     >
-                        <TextInput
-                            isRequired={values.updatePassword}
-                            type="password"
-                            id="externalBackup.s3compatible.accessKeyId"
-                            value={values.externalBackup.s3compatible.accessKeyId}
+                        <TextArea
+                            className="json-input"
+                            isRequired={
+                                values.updatePassword && !values.externalBackup.gcs.useWorkloadId
+                            }
+                            type="text"
+                            id="externalBackup.gcs.serviceAccount"
+                            name="externalBackup.gcs.serviceAccount"
+                            value={values.externalBackup.gcs.serviceAccount}
                             onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
-                            isDisabled={!isEditable || !values.updatePassword}
-                            placeholder={
-                                values.updatePassword
-                                    ? ''
-                                    : 'Currently-stored access key ID will be used.'
+                            isDisabled={
+                                !isEditable ||
+                                !values.updatePassword ||
+                                values.externalBackup.gcs.useWorkloadId
                             }
-                        />
-                    </FormLabelGroup>
-                    <FormLabelGroup
-                        label="Secret access key"
-                        fieldId="externalBackup.s3compatible.secretAccessKey"
-                        isRequired={values.updatePassword}
-                        touched={touched}
-                        errors={errors}
-                    >
-                        <TextInput
-                            isRequired={values.updatePassword}
-                            type="password"
-                            id="externalBackup.s3compatible.secretAccessKey"
-                            value={values.externalBackup.s3compatible.secretAccessKey}
-                            onChange={(event, value) => onChange(value, event)}
-                            onBlur={handleBlur}
-                            isDisabled={!isEditable || !values.updatePassword}
-                            placeholder={
+                            placeholder={getGoogleCredentialsPlaceholder(
+                                values.externalBackup.gcs.useWorkloadId,
                                 values.updatePassword
-                                    ? ''
-                                    : 'Currently-stored secret access key will be used.'
-                            }
+                            )}
                         />
                     </FormLabelGroup>
                 </Form>
@@ -483,4 +424,4 @@ function S3CompatibleIntegrationForm({
     );
 }
 
-export default S3CompatibleIntegrationForm;
+export default GcsIntegrationForm;
