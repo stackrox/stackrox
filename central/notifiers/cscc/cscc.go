@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/sac"
@@ -86,12 +85,8 @@ func newCSCC(protoNotifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 	}
 
 	var client *securitycenter.Client
-	if features.CloudCredentials.Enabled() {
-		client, err = gcpUtils.CreateSecurityCenterClientFromConfigWithManager(context.Background(), gcp.Singleton(),
-			[]byte(decCreds), conf.GetWifEnabled())
-	} else {
-		client, err = gcpUtils.CreateSecurityCenterClientFromConfig(context.Background(), []byte(decCreds), conf.GetWifEnabled())
-	}
+	client, err = gcpUtils.CreateSecurityCenterClientFromConfigWithManager(context.Background(), gcp.Singleton(),
+		[]byte(decCreds), conf.GetWifEnabled())
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create security center client")
 	}

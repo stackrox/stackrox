@@ -97,7 +97,7 @@ describe('Workload CVE Image CVE Single page', () => {
 
     it('should correctly handle local filters on the deployments tab', () => {
         visitFirstCve();
-        cy.get(selectors.entityTypeToggleItem('Deployment')).click();
+        cy.get(vulnSelectors.entityTypeToggleItem('Deployment')).click();
 
         // Wait for the loading spinner to disappear
         cy.get('.pf-v5-c-spinner').should('not.exist');
@@ -160,7 +160,7 @@ describe('Workload CVE Image CVE Single page', () => {
         cy.go('back');
 
         // Go to the deployment toggle tab
-        cy.get(selectors.entityTypeToggleItem('Deployment')).click();
+        cy.get(vulnSelectors.entityTypeToggleItem('Deployment')).click();
 
         // Test the the deployment links navigate to the correct page
         cy.get(`${selectors.firstTableRow} td[data-label="Deployment"] a`).then(

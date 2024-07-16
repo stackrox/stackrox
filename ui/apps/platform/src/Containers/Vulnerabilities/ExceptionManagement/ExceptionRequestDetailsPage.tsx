@@ -92,7 +92,7 @@ function ExceptionRequestDetailsPage() {
     );
     const {
         data: vulnerabilityException,
-        loading,
+        isLoading,
         error,
         refetch,
     } = useRestQuery(vulnerabilityExceptionByIdFn);
@@ -121,7 +121,7 @@ function ExceptionRequestDetailsPage() {
         setSuccessMessage(`The vulnerability request was successfully updated.`);
     }
 
-    if (loading && !vulnerabilityException) {
+    if (isLoading && !vulnerabilityException) {
         return (
             <Bullseye>
                 <Spinner />

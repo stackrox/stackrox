@@ -21,6 +21,7 @@ import slack from 'images/slack.svg';
 import splunk from 'images/splunk.svg';
 import sumologic from 'images/sumologic.svg';
 import s3 from 'images/s3.svg';
+import s3compatible from 'images/s3-compatible.svg';
 import syslog from 'images/syslog.svg';
 import teams from 'images/teams.svg';
 import paladinCloud from 'images/paladinCloud.svg';
@@ -257,7 +258,7 @@ export const backupIntegrationsDescriptors: BackupIntegrationDescriptor[] = [
         type: 's3',
     },
     {
-        image: s3,
+        image: s3compatible,
         label: 'S3 API Compatible',
         type: 's3compatible',
     },

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Truncate } from '@patternfly/react-core';
-import { Table, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import DateDistance from 'Components/DateDistance';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
@@ -96,40 +96,42 @@ function NodesTable({
                 colSpan={5}
                 emptyProps={{ message: 'No CVEs have been reported for your scanned nodes' }}
                 filteredEmptyProps={{ onClearFilters }}
-                renderer={({ data }) =>
-                    data.map((node) => {
-                        const { id, name, nodeCVECountBySeverity, cluster, osImage, scanTime } =
-                            node;
-                        const { critical, important, moderate, low } = nodeCVECountBySeverity;
-                        return (
-                            <Tr key={id}>
-                                <Td dataLabel="Node" modifier="nowrap">
-                                    <Link to={getNodeEntityPagePath('Node', id)}>
-                                        <Truncate position="middle" content={name} />
-                                    </Link>
-                                </Td>
-                                <Td dataLabel="CVEs by severity">
-                                    <SeverityCountLabels
-                                        criticalCount={critical.total}
-                                        importantCount={important.total}
-                                        moderateCount={moderate.total}
-                                        lowCount={low.total}
-                                        filteredSeverities={filteredSeverities}
-                                    />
-                                </Td>
-                                <Td dataLabel="Cluster" modifier="nowrap">
-                                    <Truncate position="middle" content={cluster.name} />
-                                </Td>
-                                <Td dataLabel="Operating system" modifier="nowrap">
-                                    <Truncate position="middle" content={osImage} />
-                                </Td>
-                                <Td dataLabel="Scan time">
-                                    <DateDistance date={scanTime} />
-                                </Td>
-                            </Tr>
-                        );
-                    })
-                }
+                renderer={({ data }) => (
+                    <Tbody>
+                        {data.map((node) => {
+                            const { id, name, nodeCVECountBySeverity, cluster, osImage, scanTime } =
+                                node;
+                            const { critical, important, moderate, low } = nodeCVECountBySeverity;
+                            return (
+                                <Tr key={id}>
+                                    <Td dataLabel="Node" modifier="nowrap">
+                                        <Link to={getNodeEntityPagePath('Node', id)}>
+                                            <Truncate position="middle" content={name} />
+                                        </Link>
+                                    </Td>
+                                    <Td dataLabel="CVEs by severity">
+                                        <SeverityCountLabels
+                                            criticalCount={critical.total}
+                                            importantCount={important.total}
+                                            moderateCount={moderate.total}
+                                            lowCount={low.total}
+                                            filteredSeverities={filteredSeverities}
+                                        />
+                                    </Td>
+                                    <Td dataLabel="Cluster" modifier="nowrap">
+                                        <Truncate position="middle" content={cluster.name} />
+                                    </Td>
+                                    <Td dataLabel="Operating system" modifier="nowrap">
+                                        <Truncate position="middle" content={osImage} />
+                                    </Td>
+                                    <Td dataLabel="Scan time">
+                                        <DateDistance date={scanTime} />
+                                    </Td>
+                                </Tr>
+                            );
+                        })}
+                    </Tbody>
+                )}
             />
         </Table>
     );

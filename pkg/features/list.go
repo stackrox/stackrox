@@ -22,9 +22,6 @@ var (
 	// AdministrationEvents enables APIs (including collection) and UI pages for administration events.
 	AdministrationEvents = registerFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", true)
 
-	// PostgresDatastore defines if PostgresSQL should be used
-	PostgresDatastore = registerUnchangeableFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", true)
-
 	// ActiveVulnMgmt defines if the active vuln mgmt feature is enabled
 	ActiveVulnMgmt = registerFeature("Enable Active Vulnerability Management", "ROX_ACTIVE_VULN_MGMT", false)
 
@@ -75,12 +72,6 @@ var (
 
 	// ScannerV4MultiBundle enables Scanner V4 to consume vulnerabilities using multi-bundle archives.
 	ScannerV4MultiBundle = registerFeature("Enables Scanner V4 to consume vulnerabilities using multi-bundle archives", "ROX_SCANNER_V4_MULTI_BUNDLE", true)
-
-	// CloudCredentials enables support for short-lived cloud credentials.
-	CloudCredentials = registerFeature("Enable support for short-lived cloud credentials", "ROX_CLOUD_CREDENTIALS", true)
-
-	// CloudSources enables support for cloud source integrations.
-	CloudSources = registerFeature("Enable support for cloud source integrations", "ROX_CLOUD_SOURCES", true)
 
 	// ComplianceHierachyControlData enables support for compliance hierarchy control data.
 	ComplianceHierachyControlData = registerFeature("Enable support to display and import the compliance hierarchy control data", "ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA", true)

@@ -38,7 +38,7 @@ function InitBundlesPage({ hasWriteAccessForInitBundles }: InitBundlesPageProps)
     const {
         data: dataForFetch,
         error: errorForFetch,
-        loading: isFetching,
+        isLoading: isFetching,
         refetch,
     } = useRestQuery(fetchClusterInitBundles);
 

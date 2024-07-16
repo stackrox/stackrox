@@ -9,7 +9,6 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -121,8 +120,6 @@ function AwsSecurityHubIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<AwsSecurityHubIntegration>): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isCloudCredentialsEnabled = isFeatureFlagEnabled('ROX_CLOUD_CREDENTIALS');
     const formInitialValues = { ...defaultValues, ...initialValues };
     if (initialValues) {
         formInitialValues.notifier = {
@@ -237,22 +234,20 @@ function AwsSecurityHubIntegrationForm({
                             />
                         </FormLabelGroup>
                     )}
-                    {isCloudCredentialsEnabled && (
-                        <FormLabelGroup
-                            fieldId="notifier.awsSecurityHub.credentials.stsEnabled"
-                            touched={touched}
-                            errors={errors}
-                        >
-                            <Checkbox
-                                label="Use container IAM role"
-                                id="notifier.awsSecurityHub.credentials.stsEnabled"
-                                isChecked={values.notifier.awsSecurityHub.credentials.stsEnabled}
-                                onChange={(event, value) => onChange(value, event)}
-                                onBlur={handleBlur}
-                                isDisabled={!isEditable}
-                            />
-                        </FormLabelGroup>
-                    )}
+                    <FormLabelGroup
+                        fieldId="notifier.awsSecurityHub.credentials.stsEnabled"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <Checkbox
+                            label="Use container IAM role"
+                            id="notifier.awsSecurityHub.credentials.stsEnabled"
+                            isChecked={values.notifier.awsSecurityHub.credentials.stsEnabled}
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
+                        />
+                    </FormLabelGroup>
                     {!values.notifier.awsSecurityHub.credentials.stsEnabled && (
                         <>
                             <FormLabelGroup

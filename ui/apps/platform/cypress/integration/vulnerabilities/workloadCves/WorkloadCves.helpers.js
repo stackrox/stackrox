@@ -159,7 +159,7 @@ export function typeAndEnterCustomSearchFilterValue(entity, searchTerm, value) {
  * @param {('CVE' | 'Image' | 'Deployment')} entityType
  */
 export function selectEntityTab(entityType) {
-    cy.get(selectors.entityTypeToggleItem(entityType)).click();
+    cy.get(vulnSelectors.entityTypeToggleItem(entityType)).click();
 }
 
 const allSeverities = ['Critical', 'Important', 'Moderate', 'Low'];

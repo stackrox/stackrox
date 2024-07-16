@@ -4,7 +4,6 @@ import (
 	cloudSourcesDS "github.com/stackrox/rox/central/cloudsources/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	discoveredClustersDS "github.com/stackrox/rox/central/discoveredclusters/datastore"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -34,10 +33,6 @@ type Manager interface {
 
 // Singleton creates a singleton instance of the cloud sources Manager.
 func Singleton() Manager {
-	if !features.CloudSources.Enabled() {
-		return nil
-	}
-
 	once.Do(func() {
 		m = newManager(cloudSourcesDS.Singleton(), discoveredClustersDS.Singleton(), clusterDS.Singleton())
 	})

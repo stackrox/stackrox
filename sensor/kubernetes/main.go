@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -68,19 +67,14 @@ func main() {
 	utils.CrashOnError(err)
 
 	s.Start()
-
-	if features.CloudCredentials.Enabled() {
-		gcp.Singleton().Start()
-	}
+	gcp.Singleton().Start()
 
 	for {
 		select {
 		case sig := <-sigs:
 			log.Infof("Caught %s signal", sig)
 			s.Stop()
-			if features.CloudCredentials.Enabled() {
-				gcp.Singleton().Stop()
-			}
+			gcp.Singleton().Stop()
 		case <-s.Stopped().Done():
 			if err := s.Stopped().Err(); err != nil {
 				log.Fatalf("Sensor exited with error: %v", err)

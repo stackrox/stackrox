@@ -29,8 +29,6 @@ source "$TEST_ROOT/tests/upgrade/validation.sh"
 test_upgrade() {
     info "Starting upgrade test"
 
-    ci_export ROX_POSTGRES_DATASTORE "true"
-
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: test_upgrade <log-output-dir>"
     fi

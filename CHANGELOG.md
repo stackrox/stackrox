@@ -46,6 +46,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-23155: EBPF collection has been removed. If EBPF is configured, it
   will be automatically converted to CORE_BPF. forceCollection no longer has an
   effect.
+- The `ROX_CLOUD_CREDENTIALS` feature flag has been removed. Its effect is now enabled by default.
 
 ### Deprecated Features
 
