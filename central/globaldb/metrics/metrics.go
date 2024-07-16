@@ -18,6 +18,8 @@ func init() {
 		PostgresConnected,
 		PostgresTotalConnections,
 		PostgresMaximumConnections,
+		PostgresTableLiveTuples,
+		PostgresTableDeadTuples,
 	)
 }
 
