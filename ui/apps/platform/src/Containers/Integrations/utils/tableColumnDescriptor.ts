@@ -26,10 +26,9 @@ import { getOriginLabel } from 'Containers/AccessControl/traits';
 import { AuthMachineToMachineConfig } from 'services/MachineAccessService';
 import { CloudSourceIntegration } from 'services/CloudSourceService';
 import {
+    backupScheduleDescriptor,
     categoriesUtilsForClairifyScanner,
     categoriesUtilsForRegistryScanner,
-    daysOfWeek,
-    timesOfDay,
     transformDurationLongForm,
 } from './integrationUtils';
 
@@ -306,47 +305,17 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         s3: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 's3.bucket', Header: 'Bucket' },
-            {
-                accessor: ({ schedule }) => {
-                    if (schedule.intervalType === 'WEEKLY') {
-                        return `Weekly on ${daysOfWeek[schedule.weekly.day]} @ ${
-                            timesOfDay[schedule.hour]
-                        } UTC`;
-                    }
-                    return `Daily @ ${timesOfDay[schedule.hour]} UTC`;
-                },
-                Header: 'Schedule',
-            },
+            backupScheduleDescriptor(),
         ],
         s3compatible: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 's3compatible.bucket', Header: 'Bucket' },
-            {
-                accessor: ({ schedule }) => {
-                    if (schedule.intervalType === 'WEEKLY') {
-                        return `Weekly on ${daysOfWeek[schedule.weekly.day]} @ ${
-                            timesOfDay[schedule.hour]
-                        } UTC`;
-                    }
-                    return `Daily @ ${timesOfDay[schedule.hour]} UTC`;
-                },
-                Header: 'Schedule',
-            },
+            backupScheduleDescriptor(),
         ],
         gcs: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'gcs.bucket', Header: 'Bucket' },
-            {
-                accessor: ({ schedule }) => {
-                    if (schedule.intervalType === 'WEEKLY') {
-                        return `Weekly on ${daysOfWeek[schedule.weekly.day]} @ ${
-                            timesOfDay[schedule.hour]
-                        } UTC`;
-                    }
-                    return `Daily @ ${timesOfDay[schedule.hour]} UTC`;
-                },
-                Header: 'Schedule',
-            },
+            backupScheduleDescriptor(),
         ],
     },
     cloudSources: {
