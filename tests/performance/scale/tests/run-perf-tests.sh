@@ -18,10 +18,12 @@ ntests="$(jq '.perfTests | length' "$json_tests_file")"
 for ((i = 0; i < ntests; i = i + 1)); do
         printf 'yes\n'  | "${HOME}/workflow/bin/teardown"
 
-        "${utilities_dir}/start-central-and-scanner.sh" "${ARTIFACTS_DIR}"
-        "${utilities_dir}/wait-for-pods.sh" "${ARTIFACTS_DIR}"
-        "${utilities_dir}/get-bundle.sh" "${ARTIFACTS_DIR}"
-        "${utilities_dir}/start-secured-cluster.sh" $ARTIFACTS_DIR "$COLLECTOR_IMAGE_TAG" "$COLLECTOR_IMAGE_REGISTRY"
+        #"${utilities_dir}/start-central-and-scanner.sh" "${ARTIFACTS_DIR}"
+        #"${utilities_dir}/wait-for-pods.sh" "${ARTIFACTS_DIR}"
+        #"${utilities_dir}/get-bundle.sh" "${ARTIFACTS_DIR}"
+        #"${utilities_dir}/start-secured-cluster.sh" $ARTIFACTS_DIR "$COLLECTOR_IMAGE_TAG" "$COLLECTOR_IMAGE_REGISTRY"
+	${HOME}/stackrox/deploy/deploy.sh
+	sleep 120
         oc -n stackrox patch deploy/central-db -p '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"memory":"8Gi","cpu":"4"},"limits":{"memory":"8Gi","cpu":"4"}}}]}}}}'
         oc -n stackrox patch deploy/scanner-db -p '{"spec":{"template":{"spec":{"containers":[{"name":"db","resources":{"requests":{"memory":"8Gi","cpu":"4"},"limits":{"memory":"8Gi","cpu":"4"}}}]}}}}'
         oc -n stackrox patch deploy/scanner -p '{"spec":{"template":{"spec":{"containers":[{"name":"scanner","resources":{"requests":{"memory":"8Gi","cpu":"4"},"limits":{"memory":"8Gi","cpu":"4"}}}]}}}}'
