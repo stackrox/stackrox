@@ -24,6 +24,7 @@ const (
 	batchAfter      = 100
 	cursorBatchSize = 50
 	deleteBatchSize = 65000
+	pruneBatchSize  = 5000
 
 	// MaxBatchSize sets the maximum number of elements in a batch.
 	// Using copyFrom, we may not even want to batch.  It would probably be simpler
@@ -39,6 +40,7 @@ var (
 // Deleter is an interface that allow deletions of multiple identifiers
 type Deleter interface {
 	DeleteMany(ctx context.Context, identifiers []string) error
+	PruneMany(ctx context.Context, identifiers []string) error
 }
 
 type primaryKeyGetter[T any, PT protocompat.ClonedUnmarshaler[T]] func(obj PT) string
@@ -65,6 +67,7 @@ type Store[T any, PT protocompat.Unmarshaler[T]] interface {
 	DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, identifiers []string) error
+	PruneMany(ctx context.Context, identifiers []string) error
 	Upsert(ctx context.Context, obj PT) error
 	UpsertMany(ctx context.Context, objs []PT) error
 }
@@ -337,12 +340,10 @@ func (s *genericStore[T, PT]) Delete(ctx context.Context, id string) error {
 	return RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
 }
 
-// DeleteMany removes the objects associated to the specified IDs from the store.
+// DeleteMany removes the objects associated to the specified IDs from the store within a transaction.
 func (s *genericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.RemoveMany)
 
-	// Batch the deletes
-	localBatchSize := deleteBatchSize
 	var err error
 	var tx *postgres.Tx
 	if !postgres.HasTxInContext(ctx) {
@@ -354,36 +355,26 @@ func (s *genericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 		ctx = postgres.ContextWithTx(ctx, tx)
 	}
 
-	for {
-		if len(identifiers) == 0 {
-			break
-		}
-
-		if len(identifiers) < localBatchSize {
-			localBatchSize = len(identifiers)
-		}
-
-		identifierBatch := identifiers[:localBatchSize]
-
-		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
-
-		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
-			if tx != nil {
-				if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
-					return errors.Wrapf(err, "unable to delete records and rollback failed: %v", rollbackErr)
-				}
+	if err := s.deleteMany(ctx, identifiers, deleteBatchSize, false); err != nil {
+		if tx != nil {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+				return errors.Wrapf(err, "unable to delete records and rollback failed: %v", rollbackErr)
 			}
-			return errors.Wrap(err, "unable to delete the records")
 		}
-
-		// Move the slice forward to start the next batch
-		identifiers = identifiers[localBatchSize:]
+		return err
 	}
 
 	if tx != nil {
 		return tx.Commit(ctx)
 	}
 	return nil
+}
+
+// PruneMany removes the objects associated to the specified IDs from the store outside a transaction.
+func (s *genericStore[T, PT]) PruneMany(ctx context.Context, identifiers []string) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Prune)
+
+	return s.deleteMany(ctx, identifiers, pruneBatchSize, true)
 }
 
 // Upsert saves the current state of an object in storage.
@@ -515,6 +506,37 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 	if err := tx.Commit(ctx); err != nil {
 		return errors.Wrap(err, "could not commit transaction")
 	}
+	return nil
+}
+
+func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []string, initialBatchSize int, continueOnError bool) error {
+	// Batch the deletes
+	localBatchSize := initialBatchSize
+
+	for {
+		if len(identifiers) == 0 {
+			break
+		}
+
+		if len(identifiers) < localBatchSize {
+			localBatchSize = len(identifiers)
+		}
+
+		identifierBatch := identifiers[:localBatchSize]
+
+		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
+
+		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
+			if !continueOnError {
+				return errors.Wrap(err, "unable to delete the records")
+			}
+			log.Errorf("unable to prune the records: %v", err)
+		}
+
+		// Move the slice forward to start the next batch
+		identifiers = identifiers[localBatchSize:]
+	}
+
 	return nil
 }
 
