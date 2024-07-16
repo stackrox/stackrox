@@ -179,9 +179,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	if features.AdministrationEvents.Enabled() {
 		g.removeExpiredAdministrationEvents(pvtConfig)
 	}
-	if features.CloudSources.Enabled() {
-		g.removeExpiredDiscoveredClusters()
-	}
+	g.removeExpiredDiscoveredClusters()
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
@@ -348,7 +346,7 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 }
 
 func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
-	// TODO: When searching can be done with SQL, this should be refactored to a simple `NOT IN...` query. This current one is inefficent
+	// TODO: When searching can be done with SQL, this should be refactored to a simple `NOT IN...` query. This current one is inefficient
 	// with a large number of clusters and because of the required conjunction query that is taking a hit being a regex query to do nothing
 	// Bleve/booleanquery requires a conjunction so it can't be removed
 	var mustNot *v1.DisjunctionQuery
