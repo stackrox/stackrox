@@ -94,7 +94,8 @@ func filterOutNoScanAlerts(alerts []*storage.Alert) []*storage.Alert {
 }
 
 func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionRequest) (*admission.AdmissionResponse, error) {
-	log.Debugf("Evaluating request %+v", req)
+	// TODO(dhaus): Remove for the time being as it is too noisy.
+	//log.Debugf("Evaluating request %+v", req)
 
 	if m.shouldBypass(s, req) {
 		return pass(req.UID), nil
@@ -106,6 +107,8 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	if err != nil {
 		return nil, errors.Wrap(err, "could not unmarshal object from request")
 	}
+
+	log.Debugf("Object to evaluate: %+v", k8sObj)
 
 	deployment, err := resources.NewDeploymentFromStaticResource(k8sObj, req.Kind.Kind, s.clusterID(), s.GetClusterConfig().GetRegistryOverride())
 	if err != nil {
