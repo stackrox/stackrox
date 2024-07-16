@@ -25,7 +25,7 @@ jobs:
             https://definitions.stackrox.io/v4/nvd/nvd.zip)
 
         echo "code: $code"
-        echo $code | grep -q 200
+        echo "$code" | grep -q 200
 
     - uses: ./.github/actions/upload-artifact-with-retry
       with:
