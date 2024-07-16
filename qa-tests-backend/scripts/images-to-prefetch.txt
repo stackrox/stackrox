@@ -1,6 +1,8 @@
 # Images used by QA e2e tests that will be prefetched
 
-# This list was largely derived manually
+# If renaming/moving this file, update the reference in
+# qa-tests-backend/src/main/groovy/orchestratormanager/Kubernetes.groovy
+
 quay.io/centos/centos:stream9
 quay.io/rhacs-eng/qa-multi-arch-busybox:1.30
 quay.io/rhacs-eng/qa-multi-arch-busybox:latest
@@ -72,3 +74,4 @@ quay.io/rhacs-eng/qa-signatures:centos9-multiarch@sha256:743cf31b5c29c227aa1371e
 quay.io/rhacs-eng/qa-multi-arch@sha256:b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e
 quay.io/rhacs-eng/qa-multi-arch@sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534
 quay.io/rhacs-eng/qa-signatures:nginx-multiarch@sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534
+quay.io/rhacs-eng/qa-signatures:byopki@sha256:7b3ccabffc97de872a30dfd234fd972a66d247c8cfc69b0550f276481852627c

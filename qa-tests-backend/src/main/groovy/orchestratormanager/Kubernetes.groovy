@@ -2109,7 +2109,13 @@ class Kubernetes implements OrchestratorMain {
             log.warn("Error while waiting for deployment/populating deployment info: ", e)
         }
         if (!deployment.skipReplicaWait && !deployment.deploymentUid) {
-            throw new OrchestratorManagerException("The deployment did not start or reach replica ready state")
+            String exceptionMsg = "The deployment did not start or reach replica ready state"
+            if (Env.IMAGE_PULL_POLICY_FOR_QUAY_IO == "Never") {
+                exceptionMsg += " - if this job uses image prefetch check that this image "+
+                                "is in the jobs prefetch list e.g. qa-tests-backend/scripts/images-to-prefetch.txt"+
+                                " - " + deployment.image
+            }
+            throw new OrchestratorManagerException(exceptionMsg)
         }
     }
 
@@ -2327,7 +2333,6 @@ class Kubernetes implements OrchestratorMain {
         Container container = new Container(
                 name: deployment.containerName ? deployment.containerName : deployment.name,
                 image: deployment.image,
-                imagePullPolicy: "IfNotPresent",
                 command: deployment.command,
                 args: deployment.args,
                 ports: depPorts,
@@ -2340,6 +2345,12 @@ class Kubernetes implements OrchestratorMain {
                                                      capabilities: new Capabilities(add: deployment.addCapabilities,
                                                                                     drop: deployment.dropCapabilities)),
         )
+        // Allow override of imagePullPolicy for quay.io images. Typically used
+        // to set to Never to help keep the list of quay.io prebuilt images up
+        // to date for image-prefetcher. Why not all images? See ROX-25258.
+        if (Env.IMAGE_PULL_POLICY_FOR_QUAY_IO && deployment.image =~ /^quay.io/) {
+            container.setImagePullPolicy(Env.IMAGE_PULL_POLICY_FOR_QUAY_IO)
+        }
         if (deployment.livenessProbeDefined) {
             Probe livenessProbe = new Probe(
                 exec: new ExecAction(command: ["touch", "/tmp/healthy"]),
