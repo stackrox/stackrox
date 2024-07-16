@@ -3,7 +3,6 @@ package debug
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -44,7 +43,6 @@ func TestStreamAuthzTraces(t *testing.T) {
 	var buf bytes.Buffer
 	streamErr := streamAuthzTraces(env, 10*time.Second, &buf)
 	assert.NoError(t, streamErr)
-	fmt.Println(buf.String())
 	assert.JSONEq(t, expectedSerializedTrace, buf.String())
 
 }
