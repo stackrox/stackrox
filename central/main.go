@@ -379,6 +379,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		backupRestoreService.Singleton(),
 		centralHealthService.Singleton(),
 		certgen.ServiceSingleton(),
+		cloudSourcesService.Singleton(),
 		clusterCVEService.Singleton(),
 		clusterInitService.Singleton(),
 		clusterService.Singleton(),
@@ -392,6 +393,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		delegatedRegistryConfigService.Singleton(),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
+		discoveredClustersService.Singleton(),
 		featureFlagService.Singleton(),
 		groupService.Singleton(),
 		grpcPreferences.Singleton(),
@@ -464,11 +466,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.UnifiedCVEDeferral.Enabled() {
 		servicesToRegister = append(servicesToRegister, vulnRequestServiceV2.Singleton())
-	}
-
-	if features.CloudSources.Enabled() {
-		servicesToRegister = append(servicesToRegister, cloudSourcesService.Singleton())
-		servicesToRegister = append(servicesToRegister, discoveredClustersService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -553,9 +550,7 @@ func startGRPCServer() {
 		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
 	}
 
-	if features.CloudSources.Enabled() {
-		cloudSourcesManager.Singleton().Start()
-	}
+	cloudSourcesManager.Singleton().Start()
 
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
@@ -920,7 +915,7 @@ func waitForTerminationSignal() {
 	stoppables := []stoppableWithName{
 		{reprocessor.Singleton(), "reprocessor loop"},
 		{suppress.Singleton(), "cve unsuppress loop"},
-		{pruning.Singleton(), "gargage collector"},
+		{pruning.Singleton(), "garbage collector"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
@@ -928,6 +923,7 @@ func waitForTerminationSignal() {
 		{administrationUsageInjector.Singleton(), "administration usage injector"},
 		{apiTokenExpiration.Singleton(), "api token expiration notifier"},
 		{gcp.Singleton(), "GCP cloud credentials manager"},
+		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
@@ -946,11 +942,6 @@ func waitForTerminationSignal() {
 	if features.AdministrationEvents.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{administrationEventHandler.Singleton(), "administration events handler"})
-	}
-
-	if features.CloudSources.Enabled() {
-		stoppables = append(stoppables,
-			stoppableWithName{cloudSourcesManager.Singleton(), "cloud sources manager"})
 	}
 
 	var wg sync.WaitGroup
