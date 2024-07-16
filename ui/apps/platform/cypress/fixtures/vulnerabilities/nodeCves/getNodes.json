@@ -1,0 +1,66 @@
+{
+    "data": {
+        "nodes": [
+            {
+                "id": "1",
+                "name": "cypress-node-1",
+                "nodeCVECountBySeverity": {
+                    "critical": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "important": {
+                        "total": 14,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "moderate": {
+                        "total": 62,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "low": {
+                        "total": 15,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "__typename": "ResourceCountByCVESeverity"
+                },
+                "cluster": {
+                    "name": "staging-secured-cluster",
+                    "__typename": "Cluster"
+                },
+                "osImage": "Red Hat Enterprise Linux CoreOS 414.92.202401010110-0 (Plow)",
+                "scanTime": "2024-07-16T11:56:01.355441667Z",
+                "__typename": "Node"
+            },
+            {
+                "id": "2",
+                "name": "cypress-node-2",
+                "nodeCVECountBySeverity": {
+                    "critical": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "important": {
+                        "total": 24,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "moderate": {
+                        "total": 62,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "low": {
+                        "total": 15,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "__typename": "ResourceCountByCVESeverity"
+                },
+                "cluster": {
+                    "name": "staging-secured-cluster",
+                    "__typename": "Cluster"
+                },
+                "osImage": "Red Hat Enterprise Linux CoreOS 411.92.202101010110-0 (Plow)",
+                "scanTime": "2024-07-16T14:16:44.367903374Z",
+                "__typename": "Node"
+            }
+        ]
+    }
+}
