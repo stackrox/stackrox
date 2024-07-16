@@ -50,7 +50,7 @@ Options:
     and is used by some tests.
   -o, --orchestrator=<orchestrator> - choose the cluster orchestrator.
     Either k8s or openshift. defaults to k8s.
-  --db=<postgres|rocksdb> - defaults to postgres.
+  --db=<postgres> - only postgres is currently supported.
   -y - run without prompts.
   -h - show this help.
 
@@ -225,7 +225,6 @@ get_options() {
             die "flavor $FLAVOR not supported"
             ;;
     esac
-    export ROX_POSTGRES_DATASTORE="true"
     export TASK_OR_SUITE="${2:-}"
     export CASE="${3:-}"
 
@@ -326,9 +325,6 @@ _EOWARNING_
 
     export ORCHESTRATOR_FLAVOR="$ORCHESTRATOR"
 
-    # required to get a running central
-    export ROX_POSTGRES_DATASTORE="true"
-
     # image prefetch is initiated in .openshift-ci/pre_tests.py and may not be
     # available for standalone testing.
     export IMAGE_PREFETCH_DISABLED="true"
@@ -421,8 +417,6 @@ export_job_name() {
     case "$DATABASE" in
         postgres)
             job_name="postgres-$job_name"
-            ;;
-        rocksdb)
             ;;
         *)
             die "database $DATABASE not supported"

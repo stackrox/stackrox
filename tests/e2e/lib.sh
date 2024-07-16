@@ -261,8 +261,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_BASELINE_OBSERVATION_PERIOD'
     customize_envVars+=$'\n        value: '"${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD}"
-    customize_envVars+=$'\n      - name: ROX_POSTGRES_DATASTORE'
-    customize_envVars+=$'\n        value: "'"${ROX_POSTGRES_DATASTORE:-false}"'"'
     customize_envVars+=$'\n      - name: ROX_PROCESSES_LISTENING_ON_PORT'
     customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-true}"'"'
     customize_envVars+=$'\n      - name: ROX_TELEMETRY_STORAGE_KEY_V1'
@@ -1160,13 +1158,8 @@ db_backup_and_restore_test() {
     update_public_config
 
     if [[ ! -e DB_TEST_FAIL ]]; then
-        if [ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]; then
-            info "Restoring from ${output_dir}/postgres_db_*"
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
-        else
-            info "Restoring from ${output_dir}/stackrox_db_*"
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_* || touch DB_TEST_FAIL
-        fi
+        info "Restoring from ${output_dir}/postgres_db_*"
+        roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
     fi
 
     wait_for_api "${central_namespace}"

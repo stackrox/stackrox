@@ -217,9 +217,7 @@ function launch_central {
 
     add_args -i "${MAIN_IMAGE}"
 
-    if [[ "${ROX_POSTGRES_DATASTORE}" == "true" && -n "${CENTRAL_DB_IMAGE}" ]]; then
-        add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
-    fi
+    add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
 
     add_args "--image-defaults=${ROXCTL_ROX_IMAGE_FLAVOR}"
 
@@ -239,16 +237,12 @@ function launch_central {
 
     if [[ -n $STORAGE_CLASS ]]; then
         add_storage_args "--storage-class=$STORAGE_CLASS"
-        if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
-            add_storage_args "--db-storage-class=$STORAGE_CLASS"
-        fi
+        add_storage_args "--db-storage-class=$STORAGE_CLASS"
     fi
 
     if [[ "${STORAGE}" == "pvc" && -n "${STORAGE_SIZE}" ]]; then
 	      add_storage_args "--size=${STORAGE_SIZE}"
-        if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
-            add_storage_args "--db-size=${STORAGE_SIZE}"
-        fi
+          add_storage_args "--db-size=${STORAGE_SIZE}"
     fi
 
     if [[ "${STORAGE}" == "hostpath" && -n "${STORAGE_HOSTPATH_PATH}" ]]; then
@@ -476,10 +470,8 @@ function launch_central {
 
       if [[ "${is_local_dev}" == "true" ]]; then
         ${ORCH_CMD} -n stackrox patch deploy/central --patch "$(cat "${common_dir}/central-local-patch.yaml")"
-        if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
-          ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-local-patch.yaml")"
-        fi
-      elif [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
+        ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-local-patch.yaml")"
+      else
         ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-patch.yaml")"
       fi
       if [[ "${CGO_CHECKS}" == "true" ]]; then
