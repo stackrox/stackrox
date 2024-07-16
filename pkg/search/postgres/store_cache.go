@@ -213,6 +213,18 @@ func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []strin
 	return nil
 }
 
+// PruneMany removes the objects associated to the specified IDs from the store.
+func (c *cachedStore[T, PT]) PruneMany(ctx context.Context, identifiers []string) error {
+	if len(identifiers) == 0 {
+		return nil
+	}
+
+	// Ideally we could use PruneMany, but since a batch of pruning can fail that could lead
+	// to inconsistencies with the cache.  So for the cache it is best to continue to using
+	// the cachedStore DeleteMany as it does batched deletion at DB level as well as cache synchronization.
+	return c.DeleteMany(ctx, identifiers)
+}
+
 // Exists tells whether the ID exists in the store.
 func (c *cachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Exists)
