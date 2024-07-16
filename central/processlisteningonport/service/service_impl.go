@@ -61,7 +61,7 @@ func (s *serviceImpl) GetListeningEndpoints(
 }
 
 // CountListeningEndpoints returns the count of listening endpoints by deploymentid
-func (s *serviceImpl) GetListeningEndpoints(
+func (s *serviceImpl) CountListeningEndpoints(
 	ctx context.Context,
 	_ *v1.Empty,
 ) (*v1.CountProcessesListeningOnPortsResponse, error) {
