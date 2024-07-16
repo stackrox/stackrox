@@ -1,7 +1,6 @@
 import React from 'react';
-import { Bullseye, Flex, PageSection, Spinner, Text, Title } from '@patternfly/react-core';
+import { Flex, PageSection, Text, Title } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { SearchIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
@@ -14,11 +13,11 @@ import {
     VulnerabilityState,
 } from 'services/VulnerabilityExceptionService';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import EmptyStateTemplate from 'Components/EmptyStateTemplate';
-import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { getTableUIState } from 'utils/getTableUIState';
 import {
     aggregateByCVSS,
     aggregateByCreatedTime,
@@ -63,7 +62,11 @@ function RequestCVEsTable({
 
     const query = getRequestQueryStringForSearchFilter(queryObject);
 
-    const { error, loading, data } = useQuery<CVEListQueryResult>(cveListQuery, {
+    const {
+        error,
+        loading: isLoading,
+        data,
+    } = useQuery<CVEListQueryResult>(cveListQuery, {
         variables: {
             query,
             pagination: {
@@ -74,24 +77,14 @@ function RequestCVEsTable({
         },
     });
 
-    if (loading && !data) {
-        return (
-            <Bullseye>
-                <Spinner />
-            </Bullseye>
-        );
-    }
+    const tableState = getTableUIState({
+        isLoading,
+        data: data?.imageCVEs,
+        error,
+        searchFilter: {},
+    });
 
-    if (error) {
-        return (
-            <PageSection variant="light">
-                <TableErrorComponent
-                    error={error}
-                    message="An error occurred. Try refreshing again"
-                />
-            </PageSection>
-        );
-    }
+    const colSpan = 6;
 
     return (
         <PageSection variant="light">
@@ -112,34 +105,23 @@ function RequestCVEsTable({
                             </Th>
                         </Tr>
                     </Thead>
-                    {data?.imageCVEs.length === 0 && (
-                        <Tbody>
-                            <Tr>
-                                <Td colSpan={6}>
-                                    <Bullseye>
-                                        <EmptyStateTemplate
-                                            title="No results found"
-                                            headingLevel="h2"
-                                            icon={SearchIcon}
-                                        />
-                                    </Bullseye>
-                                </Td>
-                            </Tr>
-                        </Tbody>
-                    )}
-                    {data?.imageCVEs.length !== 0 &&
-                        data?.imageCVEs.map(
-                            (
-                                {
+                    <TbodyUnified
+                        tableState={tableState}
+                        colSpan={colSpan}
+                        emptyProps={{
+                            title: 'No CVEs',
+                            message: 'This request currently has no CVEs associated with it.',
+                        }}
+                        renderer={({ data }) =>
+                            data.map((imageCVE, rowIndex) => {
+                                const {
                                     cve,
                                     affectedImageCountBySeverity,
                                     topCVSS,
                                     affectedImageCount,
                                     firstDiscoveredInSystem,
                                     distroTuples,
-                                },
-                                rowIndex
-                            ) => {
+                                } = imageCVE;
                                 const isExpanded = expandedRowSet.has(cve);
 
                                 const criticalCount = affectedImageCountBySeverity.critical.total;
@@ -175,7 +157,7 @@ function RequestCVEsTable({
                                 );
 
                                 return (
-                                    <Tbody key={cve}>
+                                    <Tbody key={cve} isExpanded={isExpanded}>
                                         <Tr>
                                             <Td
                                                 expand={{
@@ -216,7 +198,7 @@ function RequestCVEsTable({
                                         </Tr>
                                         <Tr isExpanded={isExpanded}>
                                             <Td />
-                                            <Td colSpan={5}>
+                                            <Td colSpan={colSpan - 1}>
                                                 <ExpandableRowContent>
                                                     {prioritizedDistros.length > 0 && (
                                                         <Text>{summary}</Text>
@@ -226,8 +208,9 @@ function RequestCVEsTable({
                                         </Tr>
                                     </Tbody>
                                 );
-                            }
-                        )}
+                            })
+                        }
+                    />
                 </Table>
             </Flex>
         </PageSection>
