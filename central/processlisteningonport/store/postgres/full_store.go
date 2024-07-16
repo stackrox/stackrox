@@ -45,12 +45,12 @@ const getByDeploymentStmt = "SELECT plop.serialized, " +
 
 const getClusterAndNamespaceStmt = "SELECT namespace, clusterid FROM deployments WHERE id = $1"
 
-//const getCountsByDeploymentId = "SELECT deploymentid, namespace, clusterid, count(*) as count FROM listening_endpoints where closed = false GROUP BY deploymentid, namespace, clusterid"
+// const getCountsByDeploymentId = "SELECT deploymentid, namespace, clusterid, count(*) as count FROM listening_endpoints where closed = false GROUP BY deploymentid, namespace, clusterid"
 const getCountsByDeploymentId = "SELECT d.id, d.namespace, d.clusterid, COALESCE(COUNT(le.deploymentid), 0) AS count " +
-			"FROM deployments d LEFT JOIN listening_endpoints le ON d.id = le.deploymentid AND d.namespace = le.namespace AND d.clusterid = le.clusterid AND le.closed = false GROUP BY d.id, d.namespace, d.clusterid"
+	"FROM deployments d LEFT JOIN listening_endpoints le ON d.id = le.deploymentid AND d.namespace = le.namespace AND d.clusterid = le.clusterid AND le.closed = false GROUP BY d.id, d.namespace, d.clusterid"
 
-func (s *fullStoreImpl) CountProcessListeningOnPort(ctx context.Context) (map[string]int, error) {
-	return pgutils.Retry2(ctx, func() (map[string]int, error) {
+func (s *fullStoreImpl) CountProcessListeningOnPort(ctx context.Context) (map[string]int32, error) {
+	return pgutils.Retry2(ctx, func() (map[string]int32, error) {
 		return s.retryableCountPLOP(ctx)
 	})
 }
@@ -138,7 +138,7 @@ func (s *fullStoreImpl) checkAccesssForRows(
 	return true, nil
 }
 
-func (s *fullStoreImpl) retryableCountPLOP(ctx context.Context) (map[string]int, error) {
+func (s *fullStoreImpl) retryableCountPLOP(ctx context.Context) (map[string]int32, error) {
 	var rows pgx.Rows
 	var err error
 
@@ -307,14 +307,14 @@ func (s *fullStoreImpl) readRows(
 func (s *fullStoreImpl) readCountRows(
 	ctx context.Context,
 	rows pgx.Rows,
-) (map[string]int, error) {
-	var counts = make(map[string]int)
+) (map[string]int32, error) {
+	var counts = make(map[string]int32)
 
 	for rows.Next() {
 		var deploymentID string
 		var namespace string
 		var clusterID string
-		var count int
+		var count int32
 
 		if err := rows.Scan(&deploymentID, &namespace, &clusterID, &count); err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)

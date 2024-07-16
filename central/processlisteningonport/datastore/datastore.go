@@ -28,7 +28,7 @@ type DataStore interface {
 		ctx context.Context,
 		deployment string,
 	) ([]*storage.ProcessListeningOnPort, error)
-	CountProcessListeningOnPort(ctx context.Context) (map[string]int, error)
+	CountProcessListeningOnPort(ctx context.Context) (map[string]int32, error)
 	WalkAll(ctx context.Context, fn WalkFn) error
 	RemoveProcessListeningOnPort(ctx context.Context, ids []string) error
 	RemovePlopsByPod(ctx context.Context, id string) error

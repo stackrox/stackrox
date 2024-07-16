@@ -272,9 +272,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 
 	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
 
-	expectedPlopCounts := map[string]int{
+	expectedPlopCounts := map[string]int32{
 		plopObjects[0].GetDeploymentId(): 1,
-		fixtureconsts.Deployment2: 0,
+		fixtureconsts.Deployment2:        0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 }
@@ -326,7 +326,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoDeployments() {
 
 	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
 
-	expectedPlopCounts := map[string]int{}
+	expectedPlopCounts := map[string]int32{}
 	suite.Equal(expectedPlopCounts, plopCounts)
 }
 
@@ -347,14 +347,14 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 	suite.addDeployments()
 
 	cases := map[string]struct {
-		ctx           context.Context
-		expectAllowed bool
-		expectedPlopCounts map[string]int
+		ctx                context.Context
+		expectAllowed      bool
+		expectedPlopCounts map[string]int32
 	}{
 		"all access": {
 			ctx:           sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker()),
 			expectAllowed: true,
-			expectedPlopCounts: map[string]int{
+			expectedPlopCounts: map[string]int32{
 				fixtureconsts.Deployment1: 1,
 				fixtureconsts.Deployment2: 0,
 			},
@@ -367,7 +367,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
 			)),
 			expectAllowed: true,
-			expectedPlopCounts: map[string]int{
+			expectedPlopCounts: map[string]int32{
 				fixtureconsts.Deployment1: 1,
 				fixtureconsts.Deployment2: 0,
 			},
@@ -380,7 +380,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
 			)),
 			expectAllowed: true,
-			expectedPlopCounts: map[string]int{
+			expectedPlopCounts: map[string]int32{
 				fixtureconsts.Deployment1: 1,
 				fixtureconsts.Deployment2: 0,
 			},
@@ -392,8 +392,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
 				sac.NamespaceScopeKeys(fixtureconsts.Namespace2),
 			)),
-			expectAllowed: false,
-			expectedPlopCounts: map[string]int{},
+			expectAllowed:      false,
+			expectedPlopCounts: map[string]int32{},
 		},
 		"access to wrong cluster": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
@@ -402,8 +402,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 				sac.ClusterScopeKeys(fixtureconsts.Cluster2),
 				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
 			)),
-			expectAllowed: false,
-			expectedPlopCounts: map[string]int{},
+			expectAllowed:      false,
+			expectedPlopCounts: map[string]int32{},
 		},
 		"cluster level access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
@@ -412,7 +412,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
 			)),
 			expectAllowed: true,
-			expectedPlopCounts: map[string]int{
+			expectedPlopCounts: map[string]int32{
 				fixtureconsts.Deployment1: 1,
 				fixtureconsts.Deployment2: 0,
 			},
@@ -450,7 +450,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 
 			} else {
 				suite.ErrorIs(err, sac.ErrResourceAccessDenied)
-				//suite.ErrorIs(countErr, sac.ErrResourceAccessDenied)
+				// suite.ErrorIs(countErr, sac.ErrResourceAccessDenied)
 				suite.Len(newPlops, 0)
 			}
 		})

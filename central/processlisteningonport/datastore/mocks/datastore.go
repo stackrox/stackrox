@@ -62,10 +62,10 @@ func (mr *MockDataStoreMockRecorder) AddProcessListeningOnPort(ctx, clusterID an
 }
 
 // CountProcessListeningOnPort mocks base method.
-func (m *MockDataStore) CountProcessListeningOnPort(ctx context.Context) (map[string]int, error) {
+func (m *MockDataStore) CountProcessListeningOnPort(ctx context.Context) (map[string]int32, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CountProcessListeningOnPort", ctx)
-	ret0, _ := ret[0].(map[string]int)
+	ret0, _ := ret[0].(map[string]int32)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

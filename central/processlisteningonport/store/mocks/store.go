@@ -58,10 +58,10 @@ func (mr *MockStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 }
 
 // CountProcessListeningOnPort mocks base method.
-func (m *MockStore) CountProcessListeningOnPort(ctx context.Context) (map[string]int, error) {
+func (m *MockStore) CountProcessListeningOnPort(ctx context.Context) (map[string]int32, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CountProcessListeningOnPort", ctx)
-	ret0, _ := ret[0].(map[string]int)
+	ret0, _ := ret[0].(map[string]int32)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

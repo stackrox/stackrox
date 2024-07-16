@@ -265,7 +265,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	return ds.storage.UpsertMany(ctx, updatePlopObjects)
 }
 
-func (ds *datastoreImpl) CountProcessListeningOnPort(ctx context.Context) (map[string]int, error) {
+func (ds *datastoreImpl) CountProcessListeningOnPort(ctx context.Context) (map[string]int32, error) {
 
 	counts, err := ds.storage.CountProcessListeningOnPort(ctx)
 

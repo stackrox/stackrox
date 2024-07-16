@@ -34,5 +34,5 @@ type Store interface {
 		ctx context.Context,
 		deploymentID string,
 	) ([]*storage.ProcessListeningOnPort, error)
-	CountProcessListeningOnPort(ctx context.Context) (map[string]int, error)
+	CountProcessListeningOnPort(ctx context.Context) (map[string]int32, error)
 }
