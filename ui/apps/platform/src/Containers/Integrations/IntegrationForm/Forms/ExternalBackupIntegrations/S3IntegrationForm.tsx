@@ -357,10 +357,7 @@ function S3IntegrationForm({
                                 helpTitle="AWS S3 region"
                                 helpText={
                                     <div>
-                                        Modifies the endpoint under which S3 is reached. Note that
-                                        when using a non-AWS service provider, it is recommended to
-                                        create an <em>S3 API Compatible</em> integration instead.
-                                        See the{' '}
+                                        Specifies the AWS region. See the{' '}
                                         <Button variant="link" isInline>
                                             <a
                                                 href="https://docs.aws.amazon.com/general/latest/gr/s3.html"
