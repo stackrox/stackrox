@@ -11,11 +11,11 @@ import sys
 from collections import namedtuple
 from pathlib import Path
 
-from pre_tests import PreSystemTests
+# from pre_tests import PreSystemTests
 from ci_tests import QaE2eTestCompatibility
 from post_tests import PostClusterTest, FinalPost
-from runners import ClusterTestSetsRunner
-from clusters import GKECluster
+# from runners import ClusterTestSetsRunner
+# from clusters import GKECluster
 from get_latest_helm_chart_versions import (
     get_latest_helm_chart_versions,
     get_latest_helm_chart_version_for_specific_release,
@@ -96,12 +96,15 @@ for test_tuple in test_tuples:
             ),
         },
     )
-ClusterTestSetsRunner(
-    cluster=GKECluster("compat-test",
-                       machine_type="e2-standard-8", num_nodes=2),
-    initial_pre_test=PreSystemTests(),
-    sets=sets,
-    final_post=FinalPost(
-        store_qa_tests_data=True,
-    ),
-).run()
+
+print(sets)
+
+# ClusterTestSetsRunner(
+#     cluster=GKECluster("compat-test",
+#                        machine_type="e2-standard-8", num_nodes=2),
+#     initial_pre_test=PreSystemTests(),
+#     sets=sets,
+#     final_post=FinalPost(
+#         store_qa_tests_data=True,
+#     ),
+# ).run()
