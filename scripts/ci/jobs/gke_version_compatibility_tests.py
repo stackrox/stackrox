@@ -89,16 +89,19 @@ for test_tuple in test_tuples:
     os.environ["ROX_TELEMETRY_STORAGE_KEY_V1"] = 'DISABLED'
     test_versions = f'{test_tuple.central_version}--{test_tuple.sensor_version}'
 
+    is_374_sensor = test_tuple.sensor_version.startswith('74')
+
     sets.append(
         {
             "name": f'version compatibility tests: {test_versions}',
             "test": QaE2eTestCompatibility(test_tuple.central_version, test_tuple.sensor_version),
             "post_test": PostClusterTest(
+                    collect_collector_metrics=not is_374_sensor,
                     check_stackrox_logs=True,
                     artifact_destination_prefix=test_versions,
             ),
             # Collection not supported on 3.74
-            "pre_test": CollectionPreTest(None if test_tuple.sensor_version.startswith('74') else "core_bpf")
+            "pre_test": CollectionPreTest(None if is_374_sensor else "core_bpf")
         },
     )
 ClusterTestSetsRunner(
