@@ -64,7 +64,7 @@ type fakeImageService struct {
 }
 
 func (s *fakeImageService) ExportImages(_ *v1.ExportImageRequest, srv v1.ImageService_ExportImagesServer) error {
-	testImage := getImageForSerializationTest(s.tb)
+	testImage := getImageForSerializationTest()
 	return srv.Send(&v1.ExportImageResponse{Image: testImage})
 }
 
