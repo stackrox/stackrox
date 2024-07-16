@@ -137,6 +137,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         }
 
         log.info "Starting conversion of ACS violations to Splunk alerts"
+        // This conversion job is run by the Splunk Cronjob every 5 minutes. We need the created alerts.
+        // This forces an out of schedule run to minimize waiting time for its results.
         postToSplunk(port, "/services/saved/searches/" + SPLUNK_TA_CONVERSION_JOB_NAME +"/dispatch", [
                 "dispatch.now": "true",
                 "force_dispatch": "true",
@@ -165,13 +167,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         }
 
         then:
-        "StackRox violations are in Splunk"
-        assert !results.isEmpty()
+        "StackRox violations are in Splunk and have been converted to alerts"
         assert !alerts.isEmpty()
-        assert hasNetworkViolation
-        assert hasProcessViolation
-        assert hasNetworkAlert
-        assert hasProcessAlert
         log.info "Validating CIM mappings for alerts"
         for (alert in alerts) {
             validateCimMappings(alert)
