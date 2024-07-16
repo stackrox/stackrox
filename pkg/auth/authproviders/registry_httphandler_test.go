@@ -13,6 +13,9 @@ import (
 	"testing"
 	"time"
 
+	// Embed is used to import the serialized test object file.
+	_ "embed"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth"
@@ -411,62 +414,10 @@ var (
 		},
 		IdpToken: "abcdefghijklmnopqrstuvwxyz0123456789",
 	}
-
-	expectedSerializedTestAuthStatus = `{
-	"authProvider":{
-		"id": "adaaaaaa-cccc-4011-0000-111111111111",
-		"name": "Login with username/password",
-		"type": "basic"
-	},
-	"expires": "2020-12-31T23:59:59.999999999Z",
-	"idpToken": "abcdefghijklmnopqrstuvwxyz0123456789",
-	"userAttributes": [
-		{
-			"key": "role",
-			"values": ["Admin"]
-		},
-		{
-			"key": "username",
-			"values": ["admin"]
-		}
-	],
-	"userId": "admin",
-	"userInfo": {
-		"roles": [
-			{
-				"name": "Admin",
-				"resourceToAccess": {
-					"Access": "READ_WRITE_ACCESS",
-					"Administration": "READ_WRITE_ACCESS",
-					"Alert": "READ_WRITE_ACCESS",
-					"CVE": "READ_WRITE_ACCESS",
-					"Cluster": "READ_WRITE_ACCESS",
-					"Compliance": "READ_WRITE_ACCESS",
-					"Deployment": "READ_WRITE_ACCESS",
-					"DeploymentExtension": "READ_WRITE_ACCESS",
-					"Detection": "READ_WRITE_ACCESS",
-					"Image": "READ_WRITE_ACCESS",
-					"Integration": "READ_WRITE_ACCESS",
-					"K8sRole": "READ_WRITE_ACCESS",
-					"K8sRoleBinding": "READ_WRITE_ACCESS",
-					"K8sSubject": "READ_WRITE_ACCESS",
-					"Namespace": "READ_WRITE_ACCESS",
-					"NetworkGraph": "READ_WRITE_ACCESS",
-					"NetworkPolicy": "READ_WRITE_ACCESS",
-					"Node": "READ_WRITE_ACCESS",
-					"Secret": "READ_WRITE_ACCESS",
-					"ServiceAccount": "READ_WRITE_ACCESS",
-					"VulnerabilityManagementApprovals": "READ_WRITE_ACCESS",
-					"VulnerabilityManagementRequests": "READ_WRITE_ACCESS",
-					"WatchedImages": "READ_WRITE_ACCESS",
-					"WorkflowAdministration": "READ_WRITE_ACCESS"
-				}
-			}
-		],
-		"username": "admin"
-	}
-}`
 )
+
+//go:embed serialized_test_auth_status.json
+var expectedSerializedTestAuthStatus string
 
 func TestGetSerializedAuthStatusData(t *testing.T) {
 	var nilAuthStatus *v1.AuthStatus
