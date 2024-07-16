@@ -93,7 +93,7 @@ function ScanConfigsTablePage({
         () => listComplianceScanConfigurations(sortOption, page - 1, perPage),
         [sortOption, page, perPage]
     );
-    const { data: listData, loading: isLoading, error, refetch } = useRestQuery(listQuery);
+    const { data: listData, isLoading, error, refetch } = useRestQuery(listQuery);
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
 
