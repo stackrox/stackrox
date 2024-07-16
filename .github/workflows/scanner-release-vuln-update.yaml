@@ -27,7 +27,7 @@ jobs:
         > $outfile
 
         echo "code: $(cat $outfile)"
-        grep 200 code.txt
+        grep 200 $outfile
 
     - uses: ./.github/actions/upload-artifact-with-retry
       with:
