@@ -4,10 +4,8 @@ import objects.Deployment
 import services.DeploymentService
 import services.ProcessService
 import util.Timer
-import util.Env
 
 import org.junit.Assume
-import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -19,7 +17,6 @@ class ProcessVisualizationTest extends BaseSpecification {
     static final private String CENTOSDEPLOYMENT = "centosdeployment"
     static final private String FEDORADEPLOYMENT = "fedoradeployment"
     static final private String ELASTICDEPLOYMENT = "elasticdeployment"
-    //static final private String REDISDEPLOYMENT = "redisdeployment"
     static final private String MONGODEPLOYMENT = "mongodeployment"
     static final private String ROX4751DEPLOYMENT = "rox4751deployment"
     static final private String ROX4979DEPLOYMENT = "rox4979deployment"
@@ -49,12 +46,6 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:elasticsearch-"+
                            "cdeb134689bb0318a773e03741f4414b3d1d0ee443b827d5954f957775db57eb")
                 .addLabel ("app", "test" ),
-            /* deployment is flaky on few arches, disabling has no impact as other deployments have sufficient coverage
-            new Deployment()
-                .setName (REDISDEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa-multi-arch:redis-4.0.11")
-                .addLabel ("app", "test" ),
-            */
             new Deployment()
                 .setName (MONGODEPLOYMENT)
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:mongodb")
@@ -87,20 +78,31 @@ class ProcessVisualizationTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("RUNTIME")
-    // TODO(ROX-16461): Fails under AKS
-    @IgnoreIf({ Env.CI_JOB_NAME.contains("aks-qa-e2e") })
     def "Verify process visualization on kube-proxy"() {
         when:
         "Check if kube-proxy is running"
         def kubeProxyPods = orchestrator.getPodsByLabel("kube-system", ["component": "kube-proxy"])
+        def podOwnerIsTracked = false
+        for (pod in kubeProxyPods) {
+            if (orchestrator.ownerIsTracked(pod.getMetadata())) {
+                podOwnerIsTracked = true
+                break
+            }
+        }
         // We only want to run this test if kube-proxy is running
         Assume.assumeFalse(kubeProxyPods == null || kubeProxyPods.size() == 0)
 
         then:
         "Ensure it has processes"
+        def query = "Namespace:kube-system+Deployment:static-kube-proxy-pods"
+        // if the kube-proxy pod owner is tracked (e.g. DaemonSet), then sensor does not track the individual pods as
+        // `static-kube-proxy-pods` so we must assert against the DaemonSet `kube-proxy`
+        if (podOwnerIsTracked) {
+            query = "Namespace:kube-system+Deployment:kube-proxy"
+        }
         def kubeProxyDeploymentsInRox = DeploymentService.listDeploymentsSearch(
                 SearchServiceOuterClass.RawQuery.newBuilder().
-                        setQuery("Namespace:kube-system+Deployment:static-kube-proxy-pods").
+                        setQuery(query).
                         build()
         )
         assert kubeProxyDeploymentsInRox.getDeploymentsList().size() == 1
@@ -108,7 +110,7 @@ class ProcessVisualizationTest extends BaseSpecification {
         def receivedProcessPaths = ProcessService.getUniqueProcessPaths(kubeProxyDeploymentID)
         log.info "Received processes: ${receivedProcessPaths}"
         // Avoid asserting on the specific process names since that might change across versions/distributions.
-        // The goal is to make sure we pick up processes from static pods.
+        // The goal is to make sure we pick up processes running in pods.
         assert receivedProcessPaths.size() > 0
     }
 
