@@ -144,8 +144,6 @@ spec:
       value: $(params.output-image-repo):konflux-$(params.revision).git
     - name: ociArtifactExpiresAfter
       value: $(params.oci-artifact-expires-after)
-    runAfter:
-    - init
     taskRef:
       params:
       - name: name
@@ -186,8 +184,8 @@ spec:
     taskSpec:
       params:
       - name: SOURCE_ARTIFACT
-        description: The Trusted Artifact URI pointing to the artifact with
-          the application source code. This should be the result of the git-clone task,
+        description: The Trusted Artifact URI pointing to the application source code with
+          the additional smuggled activation key. This should be the result of the git-clone task,
           results from other tasks might fail as dirty.
         type: string
       - name: ociStorage
@@ -243,8 +241,8 @@ spec:
     taskSpec:
       params:
       - name: SOURCE_ARTIFACT
-        description: The Trusted Artifact URI pointing to the artifact with
-          the application source code. This should be the result of the subscription-manager task,
+        description: The Trusted Artifact URI pointing to the application source code with
+          the additional external networks definitions. This should be the result of the subscription-manager task,
           to ensure order of execution.
         type: string
       - name: ociStorage
