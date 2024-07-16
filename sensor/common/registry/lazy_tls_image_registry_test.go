@@ -67,7 +67,7 @@ func TestDataSource(t *testing.T) {
 
 	got := reg.DataSource()
 	if got != ds {
-		t.Error(t, "Recieved different datasource than expected.")
+		t.Error(t, "Received different datasource than expected.")
 	}
 }
 
@@ -186,7 +186,7 @@ func TestSource(t *testing.T) {
 
 	got := reg.Source()
 	if got != ii {
-		t.Error(t, "Recieved different datasource than expected.")
+		t.Error(t, "Received different datasource than expected.")
 	}
 }
 
