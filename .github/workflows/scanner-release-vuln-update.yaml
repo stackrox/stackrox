@@ -25,7 +25,7 @@ jobs:
             -H "If-Modified-Since: $since_time" \
             https://definitions.stackrox.io/v4/nvd/nvd.zip \
         > $outfile
-        
+
         echo "code: $(cat $outfile)"
         grep 200 code.txt
 
