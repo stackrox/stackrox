@@ -94,9 +94,12 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         then:
         "Ensure it has processes"
+        def query = "Namespace:kube-system+Deployment:static-kube-proxy-pods"
         // if the kube-proxy pod owner is tracked (e.g. DaemonSet), then sensor does not track the individual pods as
         // `static-kube-proxy-pods` so we must assert against the DaemonSet `kube-proxy`
-        def query = podOwnerIsTracked ? "Namespace:kube-system+Deployment:kube-proxy" : "Namespace:kube-system+Deployment:static-kube-proxy-pods"
+        if (podOwnerIsTracked) {
+            query = "Namespace:kube-system+Deployment:kube-proxy"
+        }
         def kubeProxyDeploymentsInRox = DeploymentService.listDeploymentsSearch(
                 SearchServiceOuterClass.RawQuery.newBuilder().
                         setQuery(query).
