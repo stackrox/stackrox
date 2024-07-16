@@ -24,6 +24,7 @@ rules:
   - securitycontextconstraints
   resourceNames:
   - nonroot-v2
+  - restricted-v2
   verbs:
   - use
 
