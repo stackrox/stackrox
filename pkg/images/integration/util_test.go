@@ -65,9 +65,10 @@ func TestGetMatchingImageIntegrations(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			res := GetMatchingImageIntegrations(tc.registries, imgName)
+			res := GetMatchingImageIntegrations(ctx, tc.registries, imgName)
 			assert.Equal(t, tc.expectedRegistries, res)
 		})
 	}
