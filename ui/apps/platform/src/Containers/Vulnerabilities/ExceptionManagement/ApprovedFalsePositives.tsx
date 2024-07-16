@@ -82,7 +82,7 @@ function ApprovedFalsePositives() {
         [searchFilter, sortOption, page, perPage]
     );
     // TODO: Consider changing the name of "loading" to "isLoading" - https://issues.redhat.com/browse/ROX-22865
-    const { data, loading: isLoading, error } = useRestQuery(vulnerabilityExceptionsFn);
+    const { data, isLoading, error } = useRestQuery(vulnerabilityExceptionsFn);
 
     const tableUIState = getTableUIState({
         isLoading,

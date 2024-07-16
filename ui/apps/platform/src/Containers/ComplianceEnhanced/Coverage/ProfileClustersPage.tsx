@@ -45,7 +45,7 @@ function ProfileClustersPage() {
             searchFilter: combinedFilter,
         });
     }, [page, perPage, profileName, sortOption, searchFilter, selectedScanConfigName]);
-    const { data: profileClusters, loading: isLoading, error } = useRestQuery(fetchProfileClusters);
+    const { data: profileClusters, isLoading, error } = useRestQuery(fetchProfileClusters);
 
     const tableState = getTableUIState({
         isLoading,

@@ -71,7 +71,7 @@ function ClusterDetailsPage() {
     );
     const {
         data: scanConfigProfilesResponse,
-        loading: isLoadingScanConfigProfiles,
+        isLoading: isLoadingScanConfigProfiles,
         error: scanConfigProfilesError,
     } = useRestQuery(fetchProfilesStats);
 
@@ -89,7 +89,7 @@ function ClusterDetailsPage() {
     }, [clusterId, page, perPage, profileName, sortOption, searchFilter]);
     const {
         data: checkResultsResponse,
-        loading: isLoadingCheckResults,
+        isLoading: isLoadingCheckResults,
         error: checkResultsError,
     } = useRestQuery(fetchCheckResults);
 

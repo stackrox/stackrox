@@ -36,11 +36,7 @@ function ComplianceProfilesProvider({ children }: { children: React.ReactNode })
         () => listComplianceScanConfigProfiles(createScanConfigFilter(selectedScanConfigName)),
         [selectedScanConfigName]
     );
-    const {
-        data: scanConfigProfilesResponse,
-        loading: isLoading,
-        error,
-    } = useRestQuery(fetchProfiles);
+    const { data: scanConfigProfilesResponse, isLoading, error } = useRestQuery(fetchProfiles);
 
     const contextValue: ComplianceProfilesContextValue = {
         scanConfigProfilesResponse: scanConfigProfilesResponse ?? defaultProfilesResponse,

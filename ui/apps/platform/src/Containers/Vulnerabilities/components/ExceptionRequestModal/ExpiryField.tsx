@@ -34,14 +34,14 @@ export type ExpiryFieldProps = {
 };
 
 function ExpiryField({ formik }: ExpiryFieldProps) {
-    const { data: config, loading, error } = useRestQuery(fetchVulnerabilitiesExceptionConfig);
+    const { data: config, isLoading, error } = useRestQuery(fetchVulnerabilitiesExceptionConfig);
     const { values, errors, setValues } = formik;
 
     function setExpiry(expiry: DeferralValues['expiry']) {
         return setValues((prev) => ({ ...prev, expiry }));
     }
 
-    if (loading || !config) {
+    if (isLoading || !config) {
         return (
             <Bullseye>
                 <Spinner />

@@ -44,7 +44,7 @@ function ProfileChecksPage() {
             searchFilter: combinedFilter,
         });
     }, [page, perPage, profileName, sortOption, searchFilter, selectedScanConfigName]);
-    const { data: profileChecks, loading: isLoading, error } = useRestQuery(fetchProfileChecks);
+    const { data: profileChecks, isLoading, error } = useRestQuery(fetchProfileChecks);
 
     const tableState = getTableUIState({
         isLoading,
