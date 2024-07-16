@@ -1,18 +1,13 @@
 import React, { useCallback } from 'react';
 import {
-    Bullseye,
-    Button,
     PageSection,
     Pagination,
-    Spinner,
-    Text,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { FileAltIcon, SearchIcon } from '@patternfly/react-icons';
+import { Table, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
@@ -23,7 +18,7 @@ import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import useURLSort from 'hooks/useURLSort';
 import PageTitle from 'Components/PageTitle';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
-import EmptyStateTemplate from 'Components/EmptyStateTemplate';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import {
     RequestExpires,
     RequestIDLink,
@@ -89,7 +84,7 @@ function PendingApprovals() {
     // TODO: Consider changing the name of "loading" to "isLoading" - https://issues.redhat.com/browse/ROX-22865
     const { data, isLoading, error } = useRestQuery(vulnerabilityExceptionsFn);
 
-    const tableUIState = getTableUIState({
+    const tableState = getTableUIState({
         isLoading,
         data,
         error,
@@ -100,11 +95,16 @@ function PendingApprovals() {
         setPage(1);
     }
 
-    if (tableUIState.type === 'ERROR') {
+    function onClearFilters() {
+        setSearchFilter({});
+        setPage(1, 'replace');
+    }
+
+    if (tableState.type === 'ERROR') {
         return (
             <PageSection variant="light">
                 <TableErrorComponent
-                    error={tableUIState.error}
+                    error={tableState.error}
                     message="An error occurred. Try refreshing again"
                 />
             </PageSection>
@@ -163,65 +163,17 @@ function PendingApprovals() {
                         <Th>Requested items</Th>
                     </Tr>
                 </Thead>
-                <Tbody>
-                    {tableUIState.type === 'LOADING' && (
-                        <Tr>
-                            <Td colSpan={7}>
-                                <Bullseye>
-                                    <Spinner aria-label="Loading table data" />
-                                </Bullseye>
-                            </Td>
-                        </Tr>
-                    )}
-                    {tableUIState.type === 'EMPTY' && (
-                        <Tr>
-                            <Td colSpan={7}>
-                                <Bullseye>
-                                    <EmptyStateTemplate
-                                        title="No pending exception requests"
-                                        headingLevel="h2"
-                                        icon={FileAltIcon}
-                                    >
-                                        <Text>
-                                            There are currently no pending exception requests. Feel
-                                            free to review completed requests or return to your
-                                            dashboard.
-                                        </Text>
-                                    </EmptyStateTemplate>
-                                </Bullseye>
-                            </Td>
-                        </Tr>
-                    )}
-                    {tableUIState.type === 'FILTERED_EMPTY' && (
-                        <Tr>
-                            <Td colSpan={7}>
-                                <Bullseye>
-                                    <EmptyStateTemplate
-                                        title="No results found"
-                                        headingLevel="h2"
-                                        icon={SearchIcon}
-                                    >
-                                        <Text>
-                                            We couldn’t find any items matching your search
-                                            criteria. Try adjusting your filters or search terms for
-                                            better results
-                                        </Text>
-                                        <Button
-                                            variant="link"
-                                            onClick={() => {
-                                                setPage(1);
-                                                setSearchFilter({});
-                                            }}
-                                        >
-                                            Clear search filters
-                                        </Button>
-                                    </EmptyStateTemplate>
-                                </Bullseye>
-                            </Td>
-                        </Tr>
-                    )}
-                    {(tableUIState.type === 'COMPLETE' || tableUIState.type === 'POLLING') &&
-                        tableUIState.data.map((exception) => {
+                <TbodyUnified
+                    tableState={tableState}
+                    colSpan={7}
+                    emptyProps={{
+                        title: 'No pending exception requests',
+                        message:
+                            'There are currently no pending exception requests. Feel free to review completed requests or return to your dashboard.',
+                    }}
+                    filteredEmptyProps={{ onClearFilters }}
+                    renderer={({ data }) =>
+                        data.map((exception) => {
                             const { id, name, status, requester, createdAt, scope } = exception;
                             const context =
                                 status === 'APPROVED_PENDING_UPDATE' ? 'PENDING_UPDATE' : 'CURRENT';
@@ -259,8 +211,9 @@ function PendingApprovals() {
                                     </Td>
                                 </Tr>
                             );
-                        })}
-                </Tbody>
+                        })
+                    }
+                />
             </Table>
         </PageSection>
     );
