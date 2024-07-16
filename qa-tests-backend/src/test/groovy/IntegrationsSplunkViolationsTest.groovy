@@ -1,3 +1,4 @@
+import static util.Helpers.withRetry
 import static util.SplunkUtil.SPLUNK_ADMIN_PASSWORD
 import static util.SplunkUtil.postToSplunk
 import static util.SplunkUtil.tearDownSplunk
@@ -119,27 +120,20 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         boolean hasNetworkViolation = false
         boolean hasProcessViolation = false
         def port = splunkDeployment.splunkPortForward.getLocalPort()
-        for (int i = 0; i < 20; i++) {
-            log.info "Attempt ${i} to get raw violations from Splunk"
+        withRetry(20, 5) {
             def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
             TimeUnit.SECONDS.sleep(15)
             Response response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
-            if (response == null) {
-                continue
-            }
+            assert response != null
             results = response.getBody().jsonPath().getList("results")
-            if (results.isEmpty()) {
-                continue
-            }
+            assert !results.isEmpty()
             hasNetworkViolation = results.any { isNetworkViolation(it) }
             hasProcessViolation = results.any { isProcessViolation(it) }
             log.debug "Found violations in Splunk: \n${results}"
-            log.debug "hasNetworkViolation: ${hasNetworkViolation}\nhasProcessViolation: ${hasProcessViolation}"
-            if (hasNetworkViolation && hasProcessViolation) {
-                log.info "Success finding Network and Process Violations in Splunk!"
-                break
-            }
+            log.info "Current Splunk index contains " +
+                    "any Network Violation: ${hasNetworkViolation} and any Process Violation: ${hasProcessViolation}"
+            assert hasNetworkViolation && hasProcessViolation
         }
 
         log.info "Starting conversion of ACS violations to Splunk alerts"
@@ -152,30 +146,22 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         List<Map<String, String>> alerts = Collections.emptyList()
         boolean hasNetworkAlert = false
         boolean hasProcessAlert = false
-        for (int i = 0; i < 20; i++) {
-            log.info "Attempt ${i} to get Alerts from Splunk"
+        withRetry(20, 5) {
             // Hint: If this produces no results, evaluate expanding the earliest_time, e.g. to -15m.
             // This can be done by expanding `createSearch` with a new parameter.
             def vSearchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
             TimeUnit.SECONDS.sleep(15)
             Response vResponse = SplunkUtil.getSearchResults(port, vSearchId)
             // We should have at least one violation in the response
-            if (vResponse == null) {
-                continue
-            }
+            assert vResponse != null
             alerts = vResponse.getBody().jsonPath().getList("results")
-            if (alerts.isEmpty()) {
-                continue
-            }
+            assert !alerts.isEmpty()
             hasNetworkAlert = alerts.any { isNetworkViolation(it) }
             hasProcessAlert = alerts.any { isProcessViolation(it) }
             log.debug "Found Alerts in Splunk: \n${alerts}"
             log.info "Current Splunk index contains " +
-                    "NetworkAlert: ${hasNetworkAlert} and ProcessAlert: ${hasProcessAlert}"
-            if (hasNetworkAlert && hasProcessAlert) {
-                log.info "Success finding Network and Process Alerts in Splunk!"
-                break
-            }
+                    "any Network Alert: ${hasNetworkAlert} and any Process Alert: ${hasProcessAlert}"
+            assert hasNetworkAlert && hasProcessAlert
         }
 
         then:
