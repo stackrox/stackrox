@@ -2,9 +2,8 @@ gomod:
   mod-file: go.mod
 
 yarn:
-  lockfile: ui/yarn.lock
+  lockfile: ui/apps/platform/yarn.lock
   node-modules-dirs:
-    - ui/node_modules
     - ui/apps/platform/node_modules
 
 patterns:

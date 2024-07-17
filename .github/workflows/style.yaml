@@ -93,8 +93,6 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
-      - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
-
       - name: Cache UI dependencies
         uses: ./.github/actions/cache-ui-dependencies
 
