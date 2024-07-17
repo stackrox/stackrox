@@ -322,8 +322,9 @@ function S3CompatibleIntegrationForm({
                                 helpText={
                                     <div>
                                         The endpoint under which the S3 compatible service is
-                                        reached. Note that when using AWS S3, it is recommended to
-                                        create an <em>Amazon S3</em> integration instead.
+                                        reached. Defaults to https if the scheme is left out. Note
+                                        that when using AWS S3, it is recommended to create an{' '}
+                                        <em>Amazon S3</em> integration instead.
                                     </div>
                                 }
                                 ariaLabel="Help for endpoint"
