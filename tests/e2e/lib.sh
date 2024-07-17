@@ -885,7 +885,7 @@ remove_existing_stackrox_resources() {
         if [[ "${centrals_supported}" == "true" ]]; then
             # Remove stackrox.io/pause-reconcile annotation since it prevents
             # deletion of central in static clusters
-               kubectl annotate -n "${namespace}" \
+               kubectl annotate -n stackrox \
                 centrals.platform.stackrox.io \
                 stackrox-central-services \
                 stackrox.io/pause-reconcile-
