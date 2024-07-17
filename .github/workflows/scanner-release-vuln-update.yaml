@@ -22,7 +22,7 @@ jobs:
             -o nvd.zip \
             -w "%{http_code}" \
             -H "If-Modified-Since: $since_time" \
-            https://definitions.stackrox.io/v4/nvd/nvd.zip)
+            https://definitions.stackrox.io/v4/nvd/nvd-feeds.zip)
 
         echo "code: $code"
         echo "$code" | grep -q 200
