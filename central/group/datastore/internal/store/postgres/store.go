@@ -40,6 +40,7 @@ type Store interface {
 	Delete(ctx context.Context, propsID string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
+	PruneMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Exists(ctx context.Context, propsID string) (bool, error)

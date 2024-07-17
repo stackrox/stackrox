@@ -75,6 +75,7 @@ type Store interface {
     Delete(ctx context.Context, {{template "paramList" $pks}}) error
     DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
     DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
+    PruneMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
 {{- end }}
 
     Count(ctx context.Context, q *v1.Query) (int, error)

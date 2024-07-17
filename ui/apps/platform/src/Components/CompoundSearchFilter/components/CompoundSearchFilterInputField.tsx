@@ -80,7 +80,7 @@ function CompoundSearchFilterInputField({
     }
 
     if (attributeObject.inputType === 'text') {
-        const textLabel = `Filter results by ${attributeObject.filterChipLabel.toLowerCase()}`;
+        const textLabel = `Filter results by ${attributeObject.filterChipLabel}`;
         return (
             <SearchInput
                 aria-label={textLabel}
@@ -162,7 +162,7 @@ function CompoundSearchFilterInputField({
     ) {
         const { searchCategory } = entityObject;
         const { searchTerm, filterChipLabel } = attributeObject;
-        const textLabel = `Filter results by ${filterChipLabel.toLowerCase()}`;
+        const textLabel = `Filter results by ${filterChipLabel}`;
         return (
             <SearchFilterAutocomplete
                 searchCategory={searchCategory}
@@ -186,7 +186,7 @@ function CompoundSearchFilterInputField({
         );
     }
     if (isSelectType(attributeObject)) {
-        const attributeLabel = attributeObject.displayName.toLowerCase();
+        const attributeLabel = attributeObject.displayName;
         const selectOptions = attributeObject.inputProps.options;
         const { searchTerm } = attributeObject;
         const selection = ensureStringArray(searchFilter?.[searchTerm]);

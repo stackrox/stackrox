@@ -452,6 +452,49 @@ func TestDeleteByQueryReturningIDs(t *testing.T) {
 	}
 }
 
+func TestPruneMany(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newStore(testDB)
+	require.NotNil(t, store)
+
+	objectBatch := sampleTestSingleKeyStructArray("PruneMany")
+	require.NoError(t, store.UpsertMany(ctx, objectBatch))
+
+	identifiersToRemove := make([]string, 0, len(objectBatch)+1)
+	for _, obj := range objectBatch {
+		key := pkGetter(obj)
+		identifiersToRemove = append(identifiersToRemove, key)
+		// ensure object is in DB before call to remove
+		objBefore, foundBefore, errBefore := store.Get(ctx, key)
+		protoassert.Equal(t, obj, objBefore)
+		assert.True(t, foundBefore)
+		assert.NoError(t, errBefore)
+	}
+
+	missingKey := "TestPruneManyMissingKey"
+	identifiersToRemove = append(identifiersToRemove, missingKey)
+	missingObjBefore, missingFoundBefore, missingErrBefore := store.Get(ctx, missingKey)
+	assert.Nil(t, missingObjBefore)
+	assert.False(t, missingFoundBefore)
+	assert.NoError(t, missingErrBefore)
+
+	assert.NoError(t, store.PruneMany(ctx, identifiersToRemove))
+
+	for _, obj := range objectBatch {
+		key := pkGetter(obj)
+		// ensure object is NOT in DB after call to remove
+		objAfter, foundAfter, errAfter := store.Get(ctx, key)
+		assert.Nil(t, objAfter)
+		assert.False(t, foundAfter)
+		assert.NoError(t, errAfter)
+	}
+
+	missingObjAfter, missingFoundAfter, missingErrAfter := store.Get(ctx, missingKey)
+	assert.Nil(t, missingObjAfter)
+	assert.False(t, missingFoundAfter)
+	assert.NoError(t, missingErrAfter)
+}
+
 // region Helper Functions
 
 func newStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct] {

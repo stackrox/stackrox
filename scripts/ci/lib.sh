@@ -552,6 +552,10 @@ _image_prefetcher_prebuilt_start() {
     case "$CI_JOB_NAME" in
     *qa-e2e-tests)
         image_prefetcher_start_set qa-e2e
+        # Override the default image pull policy for containers with quay.io
+        # images to rely on prefetched images. This helps ensure that the static
+        # prefect list stays up to date with additions.
+        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
         ;;
     # TODO(ROX-20508): for operaror-e2e jobs, pre-fetch images of the release from which operator upgrade test starts.
     *)

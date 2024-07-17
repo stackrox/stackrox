@@ -774,7 +774,8 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error executing query %s", queryStr)
+		log.Errorf("Query issue: %s: %v", queryStr, err)
+		return nil, errors.Wrap(err, "error executing query")
 	}
 	defer rows.Close()
 
@@ -889,7 +890,8 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 		var count int
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 		if err := row.Scan(&count); err != nil {
-			return 0, errors.Wrapf(err, "error executing query %s", queryStr)
+			log.Errorf("Query issue: %s: %v", queryStr, err)
+			return 0, errors.Wrap(err, "error executing query")
 		}
 		return count, nil
 	})
@@ -1015,7 +1017,8 @@ func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	return pgutils.Retry(ctx, func() error {
 		_, err := db.Exec(ctx, queryStr, query.Data...)
 		if err != nil {
-			return errors.Wrapf(err, "could not delete from %q with query %s", schema.Table, queryStr)
+			log.Errorf("Query issue: %s: %v", queryStr, err)
+			return errors.Wrap(err, "could not delete from database")
 		}
 		return err
 	})
@@ -1050,7 +1053,8 @@ func RunDeleteRequestReturningIDsForSchema(ctx context.Context, schema *walker.S
 	dbErr := pgutils.Retry(ctx, func() error {
 		rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 		if err != nil {
-			return errors.Wrapf(err, "could not delete from %q with query %s", schema.Table, queryStr)
+			log.Errorf("Query issue: %s: %v", queryStr, err)
+			return errors.Wrap(err, "could not delete from database")
 		}
 		defer rows.Close()
 		for rows.Next() {
