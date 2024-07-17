@@ -1,20 +1,8 @@
+import { ConfigurationManagementEntityType } from 'utils/entityRelationships';
 import { configManagementPath, urlEntityListTypes } from 'routePaths';
 
-export type ConfigMgmtEntityType =
-    | 'CLUSTER'
-    | 'CONTROL'
-    | 'DEPLOYMENT'
-    | 'IMAGE'
-    | 'NAMESPACE'
-    | 'NODE'
-    | 'POLICY'
-    | 'ROLE'
-    | 'SECRET'
-    | 'SERVICE_ACCOUNT'
-    | 'SUBJECT';
-
 export function getConfigMgmtPathForEntitiesAndId(
-    entityListType: ConfigMgmtEntityType,
+    entityListType: ConfigurationManagementEntityType,
     id: string
 ) {
     return `${configManagementPath}/${urlEntityListTypes[entityListType]}/${id}`;

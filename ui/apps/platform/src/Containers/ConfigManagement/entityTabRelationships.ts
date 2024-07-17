@@ -1,6 +1,9 @@
-import { ConfigMgmtEntityType } from './entities';
+import { ConfigurationManagementEntityType } from 'utils/entityRelationships';
 
-const entityTabsMap: Record<ConfigMgmtEntityType, ConfigMgmtEntityType[]> = {
+const entityTabsMap: Record<
+    ConfigurationManagementEntityType,
+    ConfigurationManagementEntityType[]
+> = {
     SERVICE_ACCOUNT: ['DEPLOYMENT', 'ROLE'],
     ROLE: ['SUBJECT', 'SERVICE_ACCOUNT'],
     SECRET: ['DEPLOYMENT'],

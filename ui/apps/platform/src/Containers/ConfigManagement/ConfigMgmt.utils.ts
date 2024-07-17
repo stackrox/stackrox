@@ -10,9 +10,9 @@ import { defaultSecretSort } from 'Containers/ConfigManagement/List/Secrets';
 import { defaultServiceAccountSort } from 'Containers/ConfigManagement/List/ServiceAccounts';
 import { defaultSubjectSort } from 'Containers/ConfigManagement/List/Subjects';
 import { GraphQLSortOption } from 'types/search';
-import { ConfigMgmtEntityType } from './entities';
+import { ConfigurationManagementEntityType } from 'utils/entityRelationships';
 
-const defaultSortFieldMap: Record<ConfigMgmtEntityType, GraphQLSortOption[]> = {
+const defaultSortFieldMap: Record<ConfigurationManagementEntityType, GraphQLSortOption[]> = {
     CLUSTER: defaultClusterSort,
     CONTROL: [],
     DEPLOYMENT: defaultDeploymentSort,
@@ -27,14 +27,14 @@ const defaultSortFieldMap: Record<ConfigMgmtEntityType, GraphQLSortOption[]> = {
 };
 
 export function getConfigMgmtDefaultSort(
-    entityListType: ConfigMgmtEntityType
+    entityListType: ConfigurationManagementEntityType
 ): GraphQLSortOption[] {
     const defaultSort = defaultSortFieldMap[entityListType];
 
     return defaultSort ?? [];
 }
 
-export function getConfigMgmtCountQuery(entityListType: ConfigMgmtEntityType) {
+export function getConfigMgmtCountQuery(entityListType: ConfigurationManagementEntityType) {
     const parsedEntityListTypeCount = defaultCountKeyMap[entityListType];
 
     return !parsedEntityListTypeCount || entityListType === 'CONTROL' || entityListType === 'POLICY'
