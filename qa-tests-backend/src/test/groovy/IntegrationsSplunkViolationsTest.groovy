@@ -1,3 +1,4 @@
+import static util.Helpers.withRetry
 import static util.SplunkUtil.SPLUNK_ADMIN_PASSWORD
 import static util.SplunkUtil.postToSplunk
 import static util.SplunkUtil.tearDownSplunk
@@ -21,7 +22,6 @@ import util.SplunkUtil
 import util.SplunkUtil.SplunkDeployment
 import util.Timer
 
-import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 
@@ -39,6 +39,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private static final String CIM_REMOTE_LOCATION = "/tmp/cim.tgz"
     private static final String TEST_NAMESPACE = Constants.SPLUNK_TEST_NAMESPACE
     private static final String SPLUNK_INPUT_NAME = "stackrox-violations-input"
+    private static final String SPLUNK_TA_CONVERSION_JOB_NAME =
+            "Threat%20-%20Create%20Notable%20from%20RHACS%20Alert%20-%20Rule"
 
     private SplunkDeployment splunkDeployment
 
@@ -97,11 +99,10 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                  "api_token": tokenResp.getToken(),])
         // create new input to search violations from
         postToSplunk(port, "/servicesNS/nobody/TA-stackrox/data/inputs/stackrox_violations",
-                ["name": SPLUNK_INPUT_NAME, "interval": "1", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
+                ["name": SPLUNK_INPUT_NAME, "interval": "5", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
     }
 
     @Tag("Integration")
-    @Ignore("ROX-15348")
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
@@ -119,34 +120,58 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         boolean hasNetworkViolation = false
         boolean hasProcessViolation = false
         def port = splunkDeployment.splunkPortForward.getLocalPort()
-        for (int i = 0; i < 15; i++) {
-            log.info "Attempt ${i} to get violations from Splunk"
-            def searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
+        withRetry(20, 5) {
+            def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
             TimeUnit.SECONDS.sleep(15)
             Response response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
-            if (response == null) {
-                continue
-            }
+            assert response != null
             results = response.getBody().jsonPath().getList("results")
-            if (results.isEmpty()) {
-                continue
-            }
+            assert !results.isEmpty()
             hasNetworkViolation = results.any { isNetworkViolation(it) }
             hasProcessViolation = results.any { isProcessViolation(it) }
-            if (hasNetworkViolation && hasProcessViolation) {
-                log.info "Success!"
-                break
-            }
+            log.debug "Found violations in Splunk: \n${results}"
+            log.info "Current Splunk index contains " +
+                    "any Network Violation: ${hasNetworkViolation} and any Process Violation: ${hasProcessViolation}"
+            assert hasNetworkViolation && hasProcessViolation
+        }
+
+        log.info "Starting conversion of ACS violations to Splunk alerts"
+        // This conversion job is run by the Splunk Cronjob every 5 minutes. We need the created alerts.
+        // This forces an out of schedule run to minimize waiting time for its results.
+        postToSplunk(port, "/services/saved/searches/" + SPLUNK_TA_CONVERSION_JOB_NAME +"/dispatch", [
+                "dispatch.now": "true",
+                "force_dispatch": "true",
+        ])
+
+        // Check for Alerts
+        List<Map<String, String>> alerts = Collections.emptyList()
+        boolean hasNetworkAlert = false
+        boolean hasProcessAlert = false
+        withRetry(20, 5) {
+            // Hint: If this produces no results, evaluate expanding the earliest_time, e.g. to -15m.
+            // This can be done by expanding `createSearch` with a new parameter.
+            def vSearchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
+            TimeUnit.SECONDS.sleep(15)
+            Response vResponse = SplunkUtil.getSearchResults(port, vSearchId)
+            // We should have at least one violation in the response
+            assert vResponse != null
+            alerts = vResponse.getBody().jsonPath().getList("results")
+            assert !alerts.isEmpty()
+            hasNetworkAlert = alerts.any { isNetworkViolation(it) }
+            hasProcessAlert = alerts.any { isProcessViolation(it) }
+            log.debug "Found Alerts in Splunk: \n${alerts}"
+            log.info "Current Splunk index contains " +
+                    "any Network Alert: ${hasNetworkAlert} and any Process Alert: ${hasProcessAlert}"
+            assert hasNetworkAlert && hasProcessAlert
         }
 
         then:
-        "StackRox violations are in Splunk"
-        assert !results.isEmpty()
-        assert hasNetworkViolation
-        assert hasProcessViolation
-        for (result in results) {
-            validateCimMappings(result)
+        "StackRox violations are in Splunk and have been converted to alerts"
+        assert !alerts.isEmpty()
+        log.info "Validating CIM mappings for alerts"
+        for (alert in alerts) {
+            validateCimMappings(alert)
         }
     }
 
