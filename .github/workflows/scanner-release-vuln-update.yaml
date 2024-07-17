@@ -18,12 +18,14 @@ jobs:
       run: |
         set -eu
         since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
-        curl \
+        code=$(curl \
             -o nvd.zip \
             -w "%{http_code}" \
             -H "If-Modified-Since: $since_time" \
-            https://definitions.stackrox.io/v4/nvd/nvd.zip \
-        | grep 200
+            https://definitions.stackrox.io/v4/nvd/nvd.zip)
+
+        echo "code: $code"
+        echo "$code" | grep -q 200
 
     - uses: ./.github/actions/upload-artifact-with-retry
       with:
