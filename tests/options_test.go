@@ -1,5 +1,4 @@
 //go:build test_e2e
-//go:build compatibility
 
 package tests
 
