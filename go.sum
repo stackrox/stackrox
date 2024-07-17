@@ -341,8 +341,8 @@ cloud.google.com/go/containeranalysis v0.11.0/go.mod h1:4n2e99ZwpGxpNcz+YsFT1dfO
 cloud.google.com/go/containeranalysis v0.11.1/go.mod h1:rYlUOM7nem1OJMKwE1SadufX0JP3wnXj844EtZAwWLY=
 cloud.google.com/go/containeranalysis v0.11.2/go.mod h1:xibioGBC1MD2j4reTyV1xY1/MvKaz+fyM9ENWhmIeP8=
 cloud.google.com/go/containeranalysis v0.11.3/go.mod h1:kMeST7yWFQMGjiG9K7Eov+fPNQcGhb8mXj/UcTiWw9U=
-cloud.google.com/go/containeranalysis v0.11.8 h1:1rkYgK2szbRH311mRw/3lkeEOqrjN+2gOD7AZhMUxZw=
-cloud.google.com/go/containeranalysis v0.11.8/go.mod h1:2ru4oxs6dCcaG3ZsmKAy4yMmG68ukOuS/IRCMEHYpLo=
+cloud.google.com/go/containeranalysis v0.12.0 h1:c5/40le3c4Kxf8cU4yFDPoA2LTjqCPu3sonzRmipicM=
+cloud.google.com/go/containeranalysis v0.12.0/go.mod h1:a3Yo1yk1Dv4nVmlxcJWOJDqsnzy5I1HmETg2UGlERhs=
 cloud.google.com/go/datacatalog v1.3.0/go.mod h1:g9svFY6tuR+j+hrTw3J2dNcmI0dzmSiyOzm8kpLq0a0=
 cloud.google.com/go/datacatalog v1.5.0/go.mod h1:M7GPLNQeLfWqeIm3iuiruhPzkt65+Bx8dAKvScX8jvs=
 cloud.google.com/go/datacatalog v1.6.0/go.mod h1:+aEyF8JKg+uXcIdAmmaMUmZ3q1b/lKLtXCmXdnc0lbc=
