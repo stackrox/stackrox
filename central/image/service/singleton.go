@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
+	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -25,7 +26,7 @@ func initialize() {
 		manager.Singleton(),
 		connection.ManagerSingleton(),
 		enrichment.ImageEnricherSingleton(),
-		enrichment.ImageMetadataCacheSingleton(),
+		cache.ImageMetadataCacheSingleton(),
 		scanwaiter.Singleton(),
 		sachelper.NewClusterSacHelper(clusterDataStore.Singleton()),
 	)

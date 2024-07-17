@@ -2,7 +2,6 @@ package enrichment
 
 import (
 	"context"
-	"time"
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
@@ -21,8 +20,8 @@ import (
 	signatureIntegrationDataStore "github.com/stackrox/rox/central/signatureintegration/datastore"
 	"github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/suppressor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/images/cache"
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/metrics"
 	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
@@ -39,10 +38,6 @@ var (
 	cf                    fetcher.OrchestratorIstioCVEManager
 	manager               Manager
 	imageIntegrationStore imageIntegrationDS.DataStore
-	metadataCacheOnce     sync.Once
-	metadataCache         expiringcache.Cache
-
-	imageCacheExpiryDuration = 4 * time.Hour
 )
 
 func initialize() {
@@ -54,7 +49,7 @@ func initialize() {
 	)
 
 	ie = imageEnricher.New(imageCVEDataStore.Singleton(), suppressor.Singleton(), imageintegration.Set(),
-		metrics.CentralSubsystem, ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton(),
+		metrics.CentralSubsystem, cache.ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton(),
 		signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations, scanDelegator)
 	ne = nodeEnricher.New(nodeCVEDataStore.Singleton(), metrics.CentralSubsystem)
 	en = New(datastore.Singleton(), ie)
@@ -93,14 +88,6 @@ func Singleton() Enricher {
 func ImageEnricherSingleton() imageEnricher.ImageEnricher {
 	once.Do(initialize)
 	return ie
-}
-
-// ImageMetadataCacheSingleton returns the cache for image metadata
-func ImageMetadataCacheSingleton() expiringcache.Cache {
-	metadataCacheOnce.Do(func() {
-		metadataCache = expiringcache.NewExpiringCache(imageCacheExpiryDuration, expiringcache.UpdateExpirationOnGets)
-	})
-	return metadataCache
 }
 
 // NodeEnricherSingleton provides the singleton NodeEnricher to use.
