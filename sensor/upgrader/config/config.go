@@ -1,15 +1,12 @@
 package config
 
 import (
-	"os"
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/netutil"
-	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/upgrader/common"
@@ -53,31 +50,27 @@ func (c *UpgraderConfig) Validate() error {
 }
 
 // Create instantiates a new upgrader config using environment variables and well-known config files.
-func Create() (*UpgraderConfig, error) {
+func Create(clusterID, centralEndpoint, processID, upgraderOwnerRefStr string, certsOnly bool) (*UpgraderConfig, error) {
 	restConfig, err := loadKubeConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining Kubernetes API config")
 	}
 
-	// clusterID is optional and only required when fetching the bundle, not when used in standalone mode
-	clusterID := os.Getenv(sensorupgrader.ClusterIDEnvVarName)
-
-	centralEndpoint := os.Getenv(env.CentralEndpoint.EnvVar())
 	if strings.HasPrefix(centralEndpoint, "ws://") || strings.HasPrefix(centralEndpoint, "wss://") {
 		_, centralEndpoint = stringutils.Split2(centralEndpoint, "://")
 	}
 	cfg := &UpgraderConfig{
 		ClusterID:          clusterID,
-		ProcessID:          os.Getenv(upgradeProcessIDEnvVar),
+		ProcessID:          processID,
 		CentralEndpoint:    centralEndpoint,
 		K8sRESTConfig:      restConfig,
-		InCertRotationMode: env.UpgraderCertsOnly.BooleanSetting(),
+		InCertRotationMode: certsOnly,
 	}
 
-	if ownerRefStr := os.Getenv(upgraderOwnerEnvVar); ownerRefStr != "" {
-		owner, err := k8sobjects.ParseRef(ownerRefStr)
+	if upgraderOwnerRefStr != "" {
+		owner, err := k8sobjects.ParseRef(upgraderOwnerRefStr)
 		if err != nil {
-			return nil, errors.Wrapf(err, "invalid owner reference string %q", ownerRefStr)
+			return nil, errors.Wrapf(err, "invalid owner reference string %q", upgraderOwnerRefStr)
 		}
 		cfg.Owner = &owner
 	}

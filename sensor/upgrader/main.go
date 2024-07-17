@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"flag"
+	"os"
 
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/upgrader/config"
@@ -21,6 +24,11 @@ var (
 	workflow = flag.String("workflow", "", "workflow to run")
 )
 
+const (
+	upgraderOwnerEnvVar    = `ROX_UPGRADER_OWNER`
+	upgradeProcessIDEnvVar = `ROX_UPGRADE_PROCESS_ID`
+)
+
 func main() {
 	log.Infof("StackRox Sensor Upgrader, version %s", version.GetMainVersion())
 
@@ -30,7 +38,21 @@ func main() {
 }
 
 func mainCmd() error {
-	upgraderCfg, err := config.Create()
+	// clusterID is optional and only required when fetching the bundle, not when used in standalone mode
+	clusterID := os.Getenv(sensorupgrader.ClusterIDEnvVarName)
+	centralEndpoint := os.Getenv(env.CentralEndpoint.EnvVar())
+
+	log.Infof("Configuring upgrader with: "+
+		"clusterID=%q, centralEndpoint=%q, "+
+		"processID=%q, owner=%q, certsOnly=%t",
+		clusterID, centralEndpoint,
+		os.Getenv(upgradeProcessIDEnvVar), os.Getenv(upgraderOwnerEnvVar), env.UpgraderCertsOnly.BooleanSetting())
+
+	upgraderCfg, err := config.Create(clusterID,
+		centralEndpoint,
+		os.Getenv(upgradeProcessIDEnvVar),
+		os.Getenv(upgraderOwnerEnvVar),
+		env.UpgraderCertsOnly.BooleanSetting())
 	if err != nil {
 		return err
 	}
