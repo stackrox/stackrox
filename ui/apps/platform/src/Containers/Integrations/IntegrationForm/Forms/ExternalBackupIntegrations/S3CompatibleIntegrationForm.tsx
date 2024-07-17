@@ -321,9 +321,9 @@ function S3CompatibleIntegrationForm({
                                 helpTitle="Endpoint"
                                 helpText={
                                     <div>
-                                        Modifies the endpoint under which the S3 compatible service
-                                        is reached. Must be reachable via https. Note that when
-                                        using AWS S3, it is recommended to create an{' '}
+                                        The endpoint under which the S3 compatible service is
+                                        reached. Defaults to https if the scheme is left out. Note
+                                        that when using AWS S3, it is recommended to create an{' '}
                                         <em>Amazon S3</em> integration instead.
                                     </div>
                                 }
