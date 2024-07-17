@@ -889,7 +889,7 @@ remove_existing_stackrox_resources() {
                 centrals.platform.stackrox.io \
                 stackrox-central-services \
                 stackrox.io/pause-reconcile-
-            
+
             kubectl get centrals -o name | while read -r central; do
                 kubectl -n "${namespace}" delete --ignore-not-found --wait "${central}"
                 kubectl wait -n "${namespace}"  --for=delete deployment/central --timeout=60s
