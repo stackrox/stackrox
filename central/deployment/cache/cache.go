@@ -34,7 +34,7 @@ func (c *deploymentCache) Contains(id string) bool {
 	return ok
 }
 
-// DeletedDeploymentsSingleton returns a global expiringcache for deployments that have been recently deleted
+// DeletedDeploymentsSingleton returns a global expiringcache for deployments that have been recently deleted.
 func DeletedDeploymentsSingleton() DeletedDeployments {
 	return cache
 }
