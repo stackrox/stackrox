@@ -331,8 +331,8 @@ func SetCacheOperationDurationTime(start time.Time, op metrics.Op, t string) {
 }
 
 // SetPruningDuration times how long it takes to prune an entity
-func SetPruningDuration(start time.Time, op metrics.Op, e string) {
-	pruningDurationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": e}).
+func SetPruningDuration(start time.Time, e string) {
+	pruningDurationHistogramVec.With(prometheus.Labels{"Type": e}).
 		Observe(startTimeToMS(start))
 }
 

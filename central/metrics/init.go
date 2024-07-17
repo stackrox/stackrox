@@ -8,6 +8,7 @@ func init() {
 	// general
 
 	prometheus.MustRegister(
+		pruningDurationHistogramVec,
 		pipelinePanicCounter,
 		graphQLOperationHistogramVec,
 		graphQLQueryHistogramVec,
