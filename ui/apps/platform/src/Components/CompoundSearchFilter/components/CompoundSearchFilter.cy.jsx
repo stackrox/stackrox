@@ -205,10 +205,10 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.attributeSelectToggle).click();
         cy.get(selectors.attributeSelectItem('Tag')).click();
 
-        cy.get('input[aria-label="Filter results by image tag"]').should('exist');
+        cy.get('input[aria-label="Filter results by Image tag"]').should('exist');
 
-        cy.get('input[aria-label="Filter results by image tag"]').clear();
-        cy.get('input[aria-label="Filter results by image tag"]').type('Tag 123');
+        cy.get('input[aria-label="Filter results by Image tag"]').clear();
+        cy.get('input[aria-label="Filter results by Image tag"]').type('Tag 123');
         cy.get('button[aria-label="Apply text input to search"]').click();
 
         cy.get('@onSearch').should('have.been.calledWithExactly', {
@@ -236,10 +236,10 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.attributeSelectToggle).click();
         cy.get(selectors.attributeSelectItem('Source')).click();
 
-        cy.get('button[aria-label="Filter by source"]').click();
+        cy.get('button[aria-label="Filter by Source"]').click();
 
         const imageComponenSourceSelectItems =
-            'div[aria-label="Filter by source select menu"] ul li';
+            'div[aria-label="Filter by Source select menu"] ul li';
 
         cy.get(imageComponenSourceSelectItems).should('have.length', 8);
         cy.get(imageComponenSourceSelectItems).eq(0).should('have.text', 'OS');
@@ -385,7 +385,7 @@ describe(Cypress.spec.relative, () => {
         const autocompleteMenuToggle =
             'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Menu toggle"]';
         const autocompleteMenuItems = 'div[aria-label="Filter results select menu"] ul li';
-        const autocompleteInput = 'input[aria-label="Filter results by image name"]';
+        const autocompleteInput = 'input[aria-label="Filter results by Image name"]';
         const autocompleteSearchButton = 'button[aria-label="Apply autocomplete input to search"]';
 
         setup(config, searchFilter, onSearch);
