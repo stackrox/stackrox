@@ -795,10 +795,6 @@ clean-offline-bundle:
 offline-bundle: clean-offline-bundle
 	$(SILENT)./scripts/offline-bundle/create.sh
 
-.PHONY: ui-publish-packages
-ui-publish-packages:
-	make -C ui publish-packages
-
 .PHONY: check-debugger
 check-debugger:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" BUILD_TAG="$(BUILD_TAG)" TAG="$(TAG)" ./scripts/check-debugger.sh

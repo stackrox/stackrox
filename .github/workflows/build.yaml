@@ -89,8 +89,6 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
-
       - uses: ./.github/actions/cache-ui-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
@@ -106,7 +104,7 @@ jobs:
           name: ui-${{env.ROX_PRODUCT_BRANDING}}-build
           path: |
             ui/build
-            ui/monorepo.lock
+            ui/apps/platform/yarn.lock
 
   pre-build-cli:
     runs-on: ubuntu-latest
@@ -359,8 +357,6 @@ jobs:
         with:
           name: docs-build
           path: image/rhel/docs
-
-      - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
       # needed to restore node_modules for ossls-nostice
       - uses: ./.github/actions/cache-ui-dependencies
