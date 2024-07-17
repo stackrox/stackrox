@@ -3,13 +3,12 @@ kind: Task
 metadata:
   name: fetch-scanner-vuln-mappings-oci-ta
   namespace: rh-acs-tenant
-# TODO(ROX-23812): Refactor to a task bundle
+# TODO(ROX-22196): Refactor to a task bundle
 spec:
   description: Fetches vulnerability mappings for Scanner v4 from StackRox artifacts to be baked into the image.
   params:
   - name: SOURCE_ARTIFACT
-    description: The Trusted Artifact URI pointing to the application source code. This should be the result of the clone-repository task,
-      to ensure order of execution.
+    description: The Trusted Artifact URI pointing to the application source code.
     type: string
   - name: ociStorage
     description: The OCI repository where the Trusted Artifacts are stored.
@@ -18,11 +17,10 @@ spec:
     description: Expiration date for the trusted artifacts created in the
       OCI repository. An empty string means the artifacts do not expire.
     type: string
-    default: ""
   results:
   - name: SOURCE_ARTIFACT
-    description: The Trusted Artifact URI pointing to the artifact with
-      the vulnerability mappings.
+    description: The Trusted Artifact URI pointing to the artifact with the application source code and
+      additional vulnerability mappings.
     type: string
   volumes:
     - name: workdir
