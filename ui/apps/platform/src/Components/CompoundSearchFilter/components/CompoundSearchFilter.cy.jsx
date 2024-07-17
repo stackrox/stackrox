@@ -7,6 +7,7 @@ import CompoundSearchFilter from './CompoundSearchFilter';
 import {
     clusterSearchFilterConfig,
     deploymentSearchFilterConfig,
+    imageCVESearchFilterConfig,
     imageComponentSearchFilterConfig,
     imageSearchFilterConfig,
     nodeComponentSearchFilterConfig,
@@ -31,10 +32,10 @@ const imageNameResponseMock = {
     },
 };
 
-function Wrapper({ config, onSearch }) {
+function Wrapper({ config, searchFilter, onSearch }) {
     return (
         <div className="pf-v5-u-p-md">
-            <CompoundSearchFilter config={config} onSearch={onSearch} />
+            <CompoundSearchFilter config={config} searchFilter={searchFilter} onSearch={onSearch} />
         </div>
     );
 }
@@ -64,6 +65,33 @@ function mockAutocompleteResponse() {
 
         req.reply(response);
     }).as('autocomplete');
+}
+
+/**
+ * Selects a date in a date-picker component.
+ *
+ * @param {string} month - The full name of the month to select (e.g., "January", "February").
+ * @param {string} day - The day of the month to select (e.g., "01", "15").
+ * @param {string} year - The four-digit year to select (e.g., "2023").
+ *
+ */
+function selectDatePickerDate(month, day, year) {
+    // The date-picker input should be present
+    cy.get('input[aria-label="Filter by date"]').should('exist');
+
+    // Click on the date-picker toggle
+    cy.get('button[aria-label="Filter by date toggle"]').click();
+
+    // Select a month
+    cy.get('div.pf-v5-c-calendar-month__header-month button').click();
+    cy.get(`button.pf-v5-c-menu__item:contains("${month}")`).click();
+
+    // Select a year
+    cy.get('input[aria-label="Select year"]').clear();
+    cy.get('input[aria-label="Select year"]').type(year);
+
+    // Select a day
+    cy.get(`button.pf-v5-c-calendar-month__date:contains("${day}")`).click();
 }
 
 describe(Cypress.spec.relative, () => {
@@ -131,15 +159,12 @@ describe(Cypress.spec.relative, () => {
 
         cy.get(selectors.attributeSelectToggle).click();
 
-        cy.get(selectors.attributeSelectItems).should('have.length', 8);
+        cy.get(selectors.attributeSelectItems).should('have.length', 5);
         cy.get(selectors.attributeSelectItems).eq(0).should('have.text', 'Name');
-        cy.get(selectors.attributeSelectItems).eq(1).should('have.text', 'Operating System');
+        cy.get(selectors.attributeSelectItems).eq(1).should('have.text', 'Operating system');
         cy.get(selectors.attributeSelectItems).eq(2).should('have.text', 'Tag');
-        cy.get(selectors.attributeSelectItems).eq(3).should('have.text', 'CVSS');
-        cy.get(selectors.attributeSelectItems).eq(4).should('have.text', 'Label');
-        cy.get(selectors.attributeSelectItems).eq(5).should('have.text', 'Created Time');
-        cy.get(selectors.attributeSelectItems).eq(6).should('have.text', 'Scan Time');
-        cy.get(selectors.attributeSelectItems).eq(7).should('have.text', 'Registry');
+        cy.get(selectors.attributeSelectItems).eq(3).should('have.text', 'Label');
+        cy.get(selectors.attributeSelectItems).eq(4).should('have.text', 'Registry');
     });
 
     it('should display Deployment attributes in the attribute selector', () => {
@@ -180,10 +205,10 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.attributeSelectToggle).click();
         cy.get(selectors.attributeSelectItem('Tag')).click();
 
-        cy.get('input[aria-label="Filter results by image tag"]').should('exist');
+        cy.get('input[aria-label="Filter results by Image tag"]').should('exist');
 
-        cy.get('input[aria-label="Filter results by image tag"]').clear();
-        cy.get('input[aria-label="Filter results by image tag"]').type('Tag 123');
+        cy.get('input[aria-label="Filter results by Image tag"]').clear();
+        cy.get('input[aria-label="Filter results by Image tag"]').type('Tag 123');
         cy.get('button[aria-label="Apply text input to search"]').click();
 
         cy.get('@onSearch').should('have.been.calledWithExactly', {
@@ -196,7 +221,7 @@ describe(Cypress.spec.relative, () => {
     it('should display the select input and correctly search for image component source', () => {
         const config = {
             Image: imageSearchFilterConfig,
-            ImageComponent: imageComponentSearchFilterConfig,
+            'Image component': imageComponentSearchFilterConfig,
         };
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
@@ -204,26 +229,27 @@ describe(Cypress.spec.relative, () => {
         setup(config, searchFilter, onSearch);
 
         cy.get(selectors.entitySelectToggle).click();
-        cy.get(selectors.entitySelectItem('Image Component')).click();
+        cy.get(selectors.entitySelectItem('Image component')).click();
 
         cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
 
         cy.get(selectors.attributeSelectToggle).click();
         cy.get(selectors.attributeSelectItem('Source')).click();
 
-        cy.get('button[aria-label="Filter by source"]').click();
+        cy.get('button[aria-label="Filter by Source"]').click();
 
         const imageComponenSourceSelectItems =
-            'div[aria-label="Filter by source select menu"] ul li';
+            'div[aria-label="Filter by Source select menu"] ul li';
 
-        cy.get(imageComponenSourceSelectItems).should('have.length', 7);
+        cy.get(imageComponenSourceSelectItems).should('have.length', 8);
         cy.get(imageComponenSourceSelectItems).eq(0).should('have.text', 'OS');
         cy.get(imageComponenSourceSelectItems).eq(1).should('have.text', 'Python');
         cy.get(imageComponenSourceSelectItems).eq(2).should('have.text', 'Java');
         cy.get(imageComponenSourceSelectItems).eq(3).should('have.text', 'Ruby');
         cy.get(imageComponenSourceSelectItems).eq(4).should('have.text', 'Node js');
-        cy.get(imageComponenSourceSelectItems).eq(5).should('have.text', 'Dotnet Core Runtime');
-        cy.get(imageComponenSourceSelectItems).eq(6).should('have.text', 'Infrastructure');
+        cy.get(imageComponenSourceSelectItems).eq(5).should('have.text', 'Go');
+        cy.get(imageComponenSourceSelectItems).eq(6).should('have.text', 'Dotnet Core Runtime');
+        cy.get(imageComponenSourceSelectItems).eq(7).should('have.text', 'Infrastructure');
 
         cy.get(imageComponenSourceSelectItems).eq(1).click();
         cy.get('@onSearch').should('have.been.calledWithExactly', {
@@ -240,52 +266,48 @@ describe(Cypress.spec.relative, () => {
         });
     });
 
-    it('should display the date-picker input and correctly search for image create time', () => {
+    it('should display the date-picker input and correctly search for image cve discovered time', () => {
         const config = {
-            Image: imageSearchFilterConfig,
+            'Image CVE': imageCVESearchFilterConfig,
         };
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
         setup(config, searchFilter, onSearch);
 
+        cy.get(selectors.entitySelectToggle).click();
+        cy.get(selectors.entitySelectItem('CVE')).click();
+
+        cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
+
         cy.get(selectors.attributeSelectToggle).click();
-        cy.get(selectors.attributeSelectItem('Created Time')).click();
+        cy.get(selectors.attributeSelectItem('Discovered time')).click();
 
-        // The date-picker input should be present
-        cy.get('input[aria-label="Filter by date"]').should('exist');
+        selectDatePickerDate('January', '15', '2034');
 
-        // Click on the date-picker toggle
-        cy.get('button[aria-label="Filter by date toggle"]').click();
-
-        // Select a month
-        cy.get('div.pf-v5-c-calendar-month__header-month button').click();
-        cy.get('button.pf-v5-c-menu__item:contains("January")').click();
-
-        // Select a year
-        cy.get('input[aria-label="Select year"]').clear();
-        cy.get('input[aria-label="Select year"]').type('2034');
-
-        // Select a day
-        cy.get('button.pf-v5-c-calendar-month__date:contains("15")').click();
+        cy.get('button[aria-label="Apply date input to search"]').click();
 
         // Check updated date value
         cy.get('@onSearch').should('have.been.calledWithExactly', {
             action: 'ADD',
-            category: 'Image Created Time',
+            category: 'CVE Created Time',
             value: '01/15/2034',
         });
-        cy.get('input[aria-label="Filter by date"]').should('have.value', '01/15/2034');
+
+        cy.get('input[aria-label="Filter by date"]').should('have.value', '');
     });
 
     it('should display the condition-number input and correctly search for image cvss', () => {
         const config = {
-            Image: imageSearchFilterConfig,
+            'Image CVE': imageCVESearchFilterConfig,
         };
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
         setup(config, searchFilter, onSearch);
+
+        cy.get(selectors.entitySelectToggle).click();
+        cy.get(selectors.entitySelectItem('CVE')).click();
 
         cy.get(selectors.attributeSelectToggle).click();
         cy.get(selectors.attributeSelectItem('CVSS')).click();
@@ -313,7 +335,7 @@ describe(Cypress.spec.relative, () => {
         cy.get('button[aria-label="Apply condition and number input to search"]').click();
         cy.get('@onSearch').should('have.been.calledWithExactly', {
             action: 'ADD',
-            category: 'Image Top CVSS',
+            category: 'CVSS',
             value: '<9.9',
         });
 
@@ -332,7 +354,7 @@ describe(Cypress.spec.relative, () => {
         cy.get('button[aria-label="Apply condition and number input to search"]').click();
         cy.get('@onSearch').should('have.been.calledWithExactly', {
             action: 'ADD',
-            category: 'Image Top CVSS',
+            category: 'CVSS',
             value: '<10',
         });
 
@@ -346,7 +368,7 @@ describe(Cypress.spec.relative, () => {
         cy.get('button[aria-label="Apply condition and number input to search"]').click();
         cy.get('@onSearch').should('have.been.calledWithExactly', {
             action: 'ADD',
-            category: 'Image Top CVSS',
+            category: 'CVSS',
             value: '<0',
         });
     });
@@ -363,7 +385,7 @@ describe(Cypress.spec.relative, () => {
         const autocompleteMenuToggle =
             'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Menu toggle"]';
         const autocompleteMenuItems = 'div[aria-label="Filter results select menu"] ul li';
-        const autocompleteInput = 'input[aria-label="Filter results by image name"]';
+        const autocompleteInput = 'input[aria-label="Filter results by Image name"]';
         const autocompleteSearchButton = 'button[aria-label="Apply autocomplete input to search"]';
 
         setup(config, searchFilter, onSearch);

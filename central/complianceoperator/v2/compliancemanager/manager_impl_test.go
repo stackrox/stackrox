@@ -29,6 +29,11 @@ const (
 	mockScanID   = "mockScanID"
 )
 
+var expectedComplianceOperatorScanConfigurationV2 = &storage.ComplianceOperatorScanConfigurationV2{
+	ScanConfigName: mockScanName,
+	Profiles:       []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{{ProfileName: "ocp4-cis"}},
+}
+
 type pipelineTestCase struct {
 	desc                         string
 	setMocksAndGetComplianceInfo func()
@@ -423,7 +428,7 @@ func (suite *complianceManagerTestSuite) TestUpdateScanRequest() {
 			setMocks: func() {
 			},
 			isErrorTest: true,
-			expectedErr: fmt.Sprintf("Scan Configuration ID is required for an update, scan_config_name:%q profiles:<profile_name:\"ocp4-cis\" > ", mockScanName),
+			expectedErr: fmt.Sprintf("Scan Configuration ID is required for an update, %+v", expectedComplianceOperatorScanConfigurationV2),
 		},
 		{
 			desc:        "Error due to only having write access to one of the clusters",
@@ -433,7 +438,7 @@ func (suite *complianceManagerTestSuite) TestUpdateScanRequest() {
 			setMocks: func() {
 			},
 			isErrorTest: true,
-			expectedErr: fmt.Sprintf("Scan Configuration ID is required for an update, scan_config_name:%q profiles:<profile_name:\"ocp4-cis\" > ", mockScanName),
+			expectedErr: fmt.Sprintf("Scan Configuration ID is required for an update, %+v", expectedComplianceOperatorScanConfigurationV2),
 		},
 		{
 			desc:        "Successful update of scan configuration",

@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    Divider,
     Flex,
     PageSection,
     Pagination,
@@ -13,14 +14,18 @@ import {
 
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
-import { getHasSearchApplied, getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import useURLSort from 'hooks/useURLSort';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import useAnalytics, { PLATFORM_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
 import { getHiddenStatuses, parseQuerySearchFilter } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
+import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
+import { platformCVESearchFilterConfig } from '../../searchFilterConfig';
 
 import useClusterVulnerabilities from './useClusterVulnerabilities';
 import useClusterSummaryData from './useClusterSummaryData';
@@ -28,14 +33,21 @@ import CVEsTable, { defaultSortOption, sortFields } from './CVEsTable';
 import PlatformCvesByStatusSummaryCard from './PlatformCvesByStatusSummaryCard';
 import PlatformCvesByTypeSummaryCard from './PlatformCvesByTypeSummaryCard';
 
+const searchFilterConfig = {
+    'Platform CVE': platformCVESearchFilterConfig,
+};
+
 export type ClusterPageVulnerabilitiesProps = {
     clusterId: string;
 };
 
 function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesProps) {
-    const { searchFilter } = useURLSearch();
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
+
+    const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const query = getUrlQueryStringForSearchFilter(querySearchFilter);
+    const query = getRequestQueryStringForSearchFilter(querySearchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
@@ -51,15 +63,16 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
         perPage,
         sortOption,
     });
+
     const summaryRequest = useClusterSummaryData(clusterId, query);
 
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
-    const clusterVulnerabilityCount = data?.cluster.clusterVulnerabilityCount ?? 0;
+    const clusterVulnerabilityCount = data?.cluster?.clusterVulnerabilityCount ?? 0;
 
     const tableState = getTableUIState({
         isLoading: loading,
         error,
-        data: data?.cluster.clusterVulnerabilities,
+        data: data?.cluster?.clusterVulnerabilities,
         searchFilter: querySearchFilter,
     });
 
@@ -69,6 +82,17 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                 <Text>Review and triage vulnerability data scanned on this cluster</Text>
             </PageSection>
             <PageSection isFilled className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
+                <AdvancedFiltersToolbar
+                    className="pf-v5-u-pb-0 pf-v5-u-px-sm"
+                    searchFilter={searchFilter}
+                    searchFilterConfig={searchFilterConfig}
+                    cveStatusFilterField="CLUSTER CVE FIXABLE"
+                    onFilterChange={(newFilter, searchPayload) => {
+                        setSearchFilter(newFilter);
+                        trackAppliedFilter(PLATFORM_CVE_FILTER_APPLIED, searchPayload);
+                    }}
+                    includeCveSeverityFilters={false}
+                />
                 <SummaryCardLayout isLoading={summaryRequest.loading} error={summaryRequest.error}>
                     <SummaryCard
                         loadingText={'Loading platform CVEs by status summary'}
@@ -90,6 +114,7 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                         )}
                     />
                 </SummaryCardLayout>
+                <Divider component="div" />
                 <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100 pf-v5-u-p-lg">
                     <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
                         <SplitItem isFilled>
@@ -116,7 +141,14 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                             />
                         </SplitItem>
                     </Split>
-                    <CVEsTable tableState={tableState} getSortParams={getSortParams} />
+                    <CVEsTable
+                        tableState={tableState}
+                        getSortParams={getSortParams}
+                        onClearFilters={() => {
+                            setSearchFilter({});
+                            setPage(1, 'replace');
+                        }}
+                    />
                 </div>
             </PageSection>
         </>

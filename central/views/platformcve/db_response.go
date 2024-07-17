@@ -100,3 +100,34 @@ type clusterResponse struct {
 	ClusterType       storage.ClusterType `db:"cluster_platform_type"`
 	KubernetesVersion string              `db:"cluster_kubernetes_version"`
 }
+
+type cveCountByTypeResponse struct {
+	KubernetesCVECount int `db:"k8s_cve_count"`
+	OpenshiftCVECount  int `db:"openshift_cve_count"`
+	IstioCVECount      int `db:"istio_cve_count"`
+}
+
+func (c *cveCountByTypeResponse) GetKubernetesCVECount() int {
+	return c.KubernetesCVECount
+}
+
+func (c *cveCountByTypeResponse) GetOpenshiftCVECount() int {
+	return c.OpenshiftCVECount
+}
+
+func (c *cveCountByTypeResponse) GetIstioCVECount() int {
+	return c.IstioCVECount
+}
+
+type cveCountByFixabilityResponse struct {
+	CVECount     int `db:"cve_id_count"`
+	FixableCount int `db:"fixable_cve_id_count"`
+}
+
+func (c *cveCountByFixabilityResponse) GetTotal() int {
+	return c.CVECount
+}
+
+func (c *cveCountByFixabilityResponse) GetFixable() int {
+	return c.FixableCount
+}

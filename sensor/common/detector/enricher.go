@@ -3,6 +3,7 @@ package detector
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -12,12 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
@@ -50,7 +49,7 @@ type enricher struct {
 
 	serviceAccountStore store.ServiceAccountStore
 	localScan           *scan.LocalScan
-	imageCache          expiringcache.Cache
+	imageCache          imagecacheutils.ImageCache
 	stopSig             concurrency.Signal
 	regStore            *registry.Store
 }
@@ -143,6 +142,12 @@ outer:
 }
 
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
+	if features.UnqualifiedSearchRegistries.Enabled() && features.SensorSingleScanPerImage.Enabled() {
+		// TODO(ROX-24641): Remove dependency on the UnqualifiedSearchRegistries feature so that this is enabled by default.
+		c.scanAndSetWithLock(ctx, svc, req)
+		return
+	}
+
 	defer c.signal.Signal()
 
 	// Ask Central to scan the image if the image is not local otherwise scan with local scanner
@@ -170,7 +175,60 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	c.image = scannedImage.GetImage()
 }
 
-func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
+func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
+	defer c.signal.Signal()
+
+	// A cacheValue is unique per image, obtain the lock before scanning to avoid sending multiple
+	// scan requests for the same image at the same time.
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	// Check to see if another routine already enriched this name, if so, short circuit.
+	if protoutils.SliceContains(req.containerImage.GetName(), c.image.GetNames()) {
+		log.Debugf("Image scan loaded from cache: %s: Components: (%d) - short circuit", req.containerImage.GetName().GetFullName(), len(c.image.GetScan().GetComponents()))
+		return
+	}
+
+	// Ask Central to scan the image if the image is not local otherwise scan with local scanner
+	scanImageFn := scanImage
+	if c.regStore.IsLocal(req.containerImage.GetName()) {
+		scanImageFn = scanImageLocal
+		log.Debugf("Sending scan to local scanner for image %q", req.containerImage.GetName().GetFullName())
+	} else {
+		log.Debugf("Sending scan to central for image %q", req.containerImage.GetName().GetFullName())
+	}
+
+	scannedImage, err := c.scanWithRetries(ctx, svc, req, scanImageFn)
+	if err != nil {
+		// Ignore the error and set the image to something basic,
+		// so alerting can progress.
+		log.Errorf("Scan request failed for image %q: %s", req.containerImage.GetName().GetFullName(), err)
+		c.updateImageNoLock(types.ToImage(req.containerImage))
+		return
+	}
+
+	log.Debugf("Successful image scan for image %s: %d components returned by scanner", req.containerImage.GetName().GetFullName(), len(scannedImage.GetImage().GetScan().GetComponents()))
+	c.updateImageNoLock(scannedImage.GetImage())
+}
+
+// updateImageNoLock will replace the internal image with the new image
+// while ensuring any existing image names are kept.
+func (c *cacheValue) updateImageNoLock(image *storage.Image) {
+	if c == nil || image == nil {
+		return
+	}
+
+	existingNames := c.image.GetNames()
+	c.image = image
+
+	if len(existingNames) == 0 {
+		return
+	}
+
+	c.image.Names = protoutils.SliceUnique(append(c.image.GetNames(), existingNames...))
+}
+
+func newEnricher(cache imagecacheutils.ImageCache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
 	return &enricher{
 		scanResultChan:      make(chan scanResult),
 		serviceAccountStore: serviceAccountStore,
@@ -182,7 +240,11 @@ func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAcc
 }
 
 func (e *enricher) getImageFromCache(key string) (*storage.Image, bool) {
-	value, _ := e.imageCache.Get(key).(*cacheValue)
+	v, ok := e.imageCache.Get(key)
+	if !ok {
+		return nil, false
+	}
+	value, _ := v.(*cacheValue)
 	if value == nil {
 		return nil, false
 	}

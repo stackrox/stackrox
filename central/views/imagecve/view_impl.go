@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -62,7 +61,7 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 	}
 
 	var results []*resourceCountByImageCVESeverity
-	results, err = pgSearch.RunSelectRequestForSchema[resourceCountByImageCVESeverity](ctx, v.db, v.schema, withCountBySeveritySelectQuery(q, search.CVE))
+	results, err = pgSearch.RunSelectRequestForSchema[resourceCountByImageCVESeverity](ctx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +212,7 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	}
 	if !options.SkipGetImagesBySeverity {
 		cloned.Selects = append(cloned.Selects,
-			withCountBySeveritySelectQuery(q, search.ImageSHA).Selects...,
+			common.WithCountBySeverityAndFixabilityQuery(q, search.ImageSHA).Selects...,
 		)
 	}
 	if !options.SkipGetTopCVSS {
@@ -228,96 +227,5 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
 	}
-	return cloned
-}
-
-func withCountBySeveritySelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
-	cloned := q.Clone()
-	cloned.Selects = append(cloned.Selects,
-		search.NewQuerySelect(countOn).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("critical_severity_count",
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.Severity,
-						storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String(),
-					).ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(countOn).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("fixable_critical_severity_count",
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.Severity,
-						storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String(),
-					).
-					AddBools(search.Fixable, true).ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(countOn).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("important_severity_count",
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.Severity,
-						storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY.String(),
-					).ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(countOn).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("fixable_important_severity_count",
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.Severity,
-						storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY.String(),
-					).
-					AddBools(search.Fixable, true).ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(countOn).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("moderate_severity_count",
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.Severity,
-						storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY.String(),
-					).ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(countOn).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("fixable_moderate_severity_count",
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.Severity,
-						storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY.String(),
-					).
-					AddBools(search.Fixable, true).ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(countOn).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("low_severity_count",
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.Severity,
-						storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String(),
-					).ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(countOn).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("fixable_low_severity_count",
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.Severity,
-						storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String(),
-					).
-					AddBools(search.Fixable, true).ProtoQuery(),
-			).Proto(),
-	)
 	return cloned
 }

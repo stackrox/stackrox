@@ -226,7 +226,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ReportConfigura
 
 // UpsertMany saves the state of multiple objects in the storage.
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ReportConfiguration) error {
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
 		// violations

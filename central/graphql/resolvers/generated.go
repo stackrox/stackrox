@@ -6585,6 +6585,16 @@ func (resolver *Resolver) wrapCosignSignaturesWithContext(ctx context.Context, v
 	return output, nil
 }
 
+func (resolver *cosignSignatureResolver) CertChainPem(ctx context.Context) []byte {
+	value := resolver.data.GetCertChainPem()
+	return value
+}
+
+func (resolver *cosignSignatureResolver) CertPem(ctx context.Context) []byte {
+	value := resolver.data.GetCertPem()
+	return value
+}
+
 func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) []byte {
 	value := resolver.data.GetRawSignature()
 	return value

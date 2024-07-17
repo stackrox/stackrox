@@ -16,9 +16,15 @@ export type EntitySelectorProps = {
     selectedEntity: SelectedEntity;
     onChange: EntitySelectorOnChange;
     config: PartialCompoundSearchFilterConfig;
+    menuToggleClassName?: string;
 };
 
-function EntitySelector({ selectedEntity, onChange, config }: EntitySelectorProps) {
+function EntitySelector({
+    selectedEntity,
+    onChange,
+    config,
+    menuToggleClassName,
+}: EntitySelectorProps) {
     const entities = getEntities(config);
 
     if (entities.length === 0) {
@@ -29,6 +35,7 @@ function EntitySelector({ selectedEntity, onChange, config }: EntitySelectorProp
 
     return (
         <SimpleSelect
+            menuToggleClassName={menuToggleClassName}
             value={displayName}
             onChange={onChange}
             ariaLabelMenu="compound search filter entity selector menu"

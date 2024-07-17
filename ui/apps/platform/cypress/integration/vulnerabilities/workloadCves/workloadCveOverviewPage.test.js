@@ -13,6 +13,7 @@ import {
     typeAndEnterCustomSearchFilterValue,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE overview page tests', () => {
     const isAdvancedFiltersEnabled = hasFeatureFlag('ROX_VULN_MGMT_ADVANCED_FILTERS');
@@ -31,13 +32,17 @@ describe('Workload CVE overview page tests', () => {
         // TODO Test that the default tab is set to "Observed"
 
         // Check that the CVE entity toggle is selected and Image/Deployment are disabled
-        cy.get(selectors.entityTypeToggleItem('CVE')).should('have.attr', 'aria-pressed', 'true');
-        cy.get(selectors.entityTypeToggleItem('Image')).should(
+        cy.get(vulnSelectors.entityTypeToggleItem('CVE')).should(
+            'have.attr',
+            'aria-pressed',
+            'true'
+        );
+        cy.get(vulnSelectors.entityTypeToggleItem('Image')).should(
             'not.have.attr',
             'aria-pressed',
             'true'
         );
-        cy.get(selectors.entityTypeToggleItem('Deployment')).should(
+        cy.get(vulnSelectors.entityTypeToggleItem('Deployment')).should(
             'not.have.attr',
             'aria-pressed',
             'true'
@@ -99,20 +104,12 @@ describe('Workload CVE overview page tests', () => {
         it('should remove cve-related UI elements when viewing the "without cves" view', () => {
             visitWorkloadCveOverview();
 
-            // TODO
-            // These cannot be relied on in CI until the table is refactored to use
-            // the new table component that always renders the header
-            // const riskPriorityHeader = 'th:contains("Risk priority")';
-            // const cvesBySeverityHeader = 'th:contains("CVEs by severity")';
-            const prioritizeByNamespaceButton = 'button:contains("Prioritize by namespace view")';
+            const cvesBySeverityHeader = 'th:contains("CVEs by severity")';
+            const prioritizeByNamespaceButton = 'a:contains("Prioritize by namespace view")';
             const defaultFiltersButton = 'button:contains("Default filters")';
 
             function assertCveElementsArePresent() {
-                // TODO
-                // These cannot be relied on in CI until the table is refactored to use
-                // the new table component that always renders the header
-                // cy.get(riskPriorityHeader);
-                // cy.get(cvesBySeverityHeader);
+                cy.get(cvesBySeverityHeader);
                 cy.get(prioritizeByNamespaceButton);
                 cy.get(defaultFiltersButton);
                 cy.get(selectors.severityDropdown);
@@ -120,11 +117,7 @@ describe('Workload CVE overview page tests', () => {
             }
 
             function assertCveElementsAreNotPresent() {
-                // TODO
-                // These cannot be relied on in CI until the table is refactored to use
-                // the new table component that always renders the header
-                // cy.get(riskPriorityHeader).should('not.exist');
-                // cy.get(cvesBySeverityHeader).should('not.exist');
+                cy.get(cvesBySeverityHeader).should('not.exist');
                 cy.get(prioritizeByNamespaceButton).should('not.exist');
                 cy.get(defaultFiltersButton).should('not.exist');
                 cy.get(selectors.severityDropdown).should('not.exist');
@@ -163,7 +156,7 @@ describe('Workload CVE overview page tests', () => {
         it('should apply the correct filters when switching between "with cves" and "without cves" views', () => {
             const severityChip = isAdvancedFiltersEnabled ? 'CVE severity' : 'Severity';
             const cveStatusChip = 'CVE status';
-            const imageNameChip = isAdvancedFiltersEnabled ? 'Image Name' : 'Image';
+            const imageNameChip = isAdvancedFiltersEnabled ? 'Image name' : 'Image';
 
             // Since we want to test the behavior of the default filters with the two cve views, we
             // do not clear them by default in this case

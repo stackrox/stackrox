@@ -14,6 +14,8 @@ import (
 	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protomock"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -127,7 +129,7 @@ func (suite *ServiceAccountServiceTestSuite) TestGetServiceAccount() {
 
 	sa, err := suite.service.GetServiceAccount(suite.ctx, &v1.ResourceByID{Id: saID})
 	suite.NoError(err)
-	suite.Equal(expectedSA, sa.SaAndRole.ServiceAccount)
+	protoassert.Equal(suite.T(), expectedSA, sa.SaAndRole.ServiceAccount)
 	suite.Equal(1, len(sa.SaAndRole.DeploymentRelationships))
 	suite.Equal(listDeployment.GetName(), sa.SaAndRole.DeploymentRelationships[0].GetName())
 	suite.Equal(1, len(sa.SaAndRole.ScopedRoles))
@@ -205,7 +207,7 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 		AddExactMatches(search.SubjectName, expectedSA.Name).
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		ProtoQuery()
-	suite.mockBindingStore.EXPECT().Search(gomock.Any(), clusterScopeQuery).AnyTimes().
+	suite.mockBindingStore.EXPECT().Search(gomock.Any(), protomock.GoMockMatcherEqualMessage(clusterScopeQuery)).AnyTimes().
 		Return([]search.Result{
 			{
 				ID: clusterRoleBinding.GetId(),
@@ -225,7 +227,7 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 		AddExactMatches(search.SubjectName, expectedSA.Name).
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		ProtoQuery()
-	suite.mockBindingStore.EXPECT().Search(gomock.Any(), namespaceScopeQuery).AnyTimes().
+	suite.mockBindingStore.EXPECT().Search(gomock.Any(), protomock.GoMockMatcherEqualMessage(namespaceScopeQuery)).AnyTimes().
 		Return([]search.Result{
 			{
 				ID: rolebinding.GetId(),

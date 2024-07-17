@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -208,7 +209,7 @@ func TestTransformAccessScope(t *testing.T) {
 			NamespaceName: "NamespaceD",
 		},
 	}
-	assert.ElementsMatch(t, expectedNamespaces, scopeProto.GetRules().GetIncludedNamespaces())
+	protoassert.ElementsMatch(t, expectedNamespaces, scopeProto.GetRules().GetIncludedNamespaces())
 
 	// 7. Access scope with "everything-and-the-kitchen-sink", i.e. cluster/namespace label selectors, clusters, and
 	//    namespaces
@@ -267,7 +268,7 @@ func TestTransformAccessScope(t *testing.T) {
 			NamespaceName: "NamespaceD",
 		},
 	}
-	assert.ElementsMatch(t, expectedNamespaces, scopeProto.GetRules().GetIncludedNamespaces())
+	protoassert.ElementsMatch(t, expectedNamespaces, scopeProto.GetRules().GetIncludedNamespaces())
 }
 
 func compareLabelSelectors(t *testing.T, labelSelectors []declarativeconfig.LabelSelector, protoLabelSelectors []*storage.SetBasedLabelSelector) {

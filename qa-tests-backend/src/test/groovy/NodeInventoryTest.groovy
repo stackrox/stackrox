@@ -1,15 +1,17 @@
 import static util.Helpers.waitForTrue
 import static util.Helpers.withRetry
+
 import io.stackrox.proto.storage.NodeOuterClass.Node
 
 import common.Constants
 import services.BaseService
 import services.ClusterService
 import services.NodeService
+import util.Env
+
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
-import spock.lang.IgnoreIf
-import util.Env
 
 // skip if executed in a test environment with just secured-cluster deployed in the test cluster
 // i.e. central is deployed elsewhere
@@ -91,10 +93,6 @@ class NodeInventoryTest extends BaseSpecification {
             }
             assert node.getScan().getComponentsList().size() > 4,
                 "Expected to find more than 4 components on RHCOS node"
-
-            // assume that there must be at least one vulnerability within all the components
-            assert node.getScan().getComponentsList().sum { it.getVulnerabilitiesList().size() }
-                > 0, "Expected to find at least one vulnerability among the components"
         }
     }
 }

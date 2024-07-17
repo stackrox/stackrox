@@ -1,7 +1,7 @@
 package services
 
 import io.stackrox.proto.api.v1.Common
-import io.stackrox.proto.api.v1.VulnReqService
+import io.stackrox.proto.api.v1.VulnMgmtReqService
 import io.stackrox.proto.api.v1.VulnerabilityRequestServiceGrpc
 import io.stackrox.proto.storage.VulnRequests.VulnerabilityRequest
 
@@ -18,7 +18,7 @@ class VulnRequestService extends BaseService {
     }
 
     static deferVuln(String cve, String comment, VulnerabilityRequest.Scope scope) {
-        def req = VulnReqService.DeferVulnRequest.newBuilder().
+        def req = VulnMgmtReqService.DeferVulnRequest.newBuilder().
                 setCve(cve).
                 setScope(scope).
                 setComment(comment).
@@ -28,7 +28,7 @@ class VulnRequestService extends BaseService {
     }
 
     static markVulnAsFP(String cve, String comment, VulnerabilityRequest.Scope scope) {
-        def req = VulnReqService.FalsePositiveVulnRequest.newBuilder().
+        def req = VulnMgmtReqService.FalsePositiveVulnRequest.newBuilder().
                 setCve(cve).
                 setScope(scope).
                 setComment(comment).
@@ -37,7 +37,7 @@ class VulnRequestService extends BaseService {
     }
 
     static approveRequest(String reqID, String comment) {
-        def req = VulnReqService.ApproveVulnRequest.newBuilder().
+        def req = VulnMgmtReqService.ApproveVulnRequest.newBuilder().
                 setId(reqID).
                 setComment(comment).
                 build()
@@ -45,7 +45,7 @@ class VulnRequestService extends BaseService {
     }
 
     static denyRequest(String reqID, String comment) {
-        def req = VulnReqService.DenyVulnRequest.newBuilder().
+        def req = VulnMgmtReqService.DenyVulnRequest.newBuilder().
                 setId(reqID).
                 setComment(comment).
                 build()

@@ -3,6 +3,7 @@ import static util.Helpers.withRetry
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.storage.ClusterOuterClass
+import io.stackrox.proto.storage.ExternalBackupOuterClass.S3URLStyle
 import io.stackrox.proto.storage.NotifierOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
@@ -517,6 +518,33 @@ class IntegrationsTest extends BaseSpecification {
         "GCS"                 | Env.mustGetGCSBucketName()   | "us-east-1"                    |
                 "storage.googleapis.com"                             | Env.mustGetGCPAccessKeyID() |
                 Env.mustGetGCPAccessKey()
+    }
+
+    @Unroll
+    @Tag("Integration")
+    def "Verify S3 Compatible Integration: #integrationName"() {
+        when:
+        "the integration is tested"
+        def backup = ExternalBackupService.getS3CompatibleIntegrationConfig(integrationName, endpoint, urlStyle)
+
+        then:
+        "verify test integration"
+        // Test integration for S3 compatible performs test backup (and rollback).
+        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+
+        where:
+        "configurations are:"
+
+        integrationName                          | endpoint
+        | urlStyle
+        "Cloudflare R2/path-based/no-prefix"     | Env.mustGetCloudflareR2Endpoint()
+        | S3URLStyle.S3_URL_STYLE_PATH
+        "Cloudflare R2/path-based/https"         | "https://${Env.mustGetCloudflareR2Endpoint()}"
+        | S3URLStyle.S3_URL_STYLE_PATH
+        "Cloudflare R2/virtual-hosted/no-prefix" | Env.mustGetCloudflareR2Endpoint()
+        | S3URLStyle.S3_URL_STYLE_VIRTUAL_HOSTED
+        "Cloudflare R2/virtual-hosted/https"     | "https://${Env.mustGetCloudflareR2Endpoint()}"
+        | S3URLStyle.S3_URL_STYLE_VIRTUAL_HOSTED
     }
 
     @Unroll

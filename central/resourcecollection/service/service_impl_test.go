@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -95,7 +96,7 @@ func (suite *CollectionServiceTestSuite) TestGetCollection() {
 
 	result, err := suite.collectionService.GetCollection(context.Background(), request)
 	suite.NoError(err)
-	suite.Equal(expected, result)
+	protoassert.Equal(suite.T(), expected, result)
 
 	// collection not present
 	suite.dataStore.EXPECT().Get(gomock.Any(), request.Id).Times(1).Return(nil, false, nil)
@@ -199,7 +200,7 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 	suite.NotNil(resp.GetCollection())
 	suite.Equal(request.Name, resp.GetCollection().GetName())
 	suite.Equal(request.GetDescription(), resp.GetCollection().GetDescription())
-	suite.Equal(request.GetResourceSelectors(), resp.GetCollection().GetResourceSelectors())
+	protoassert.SlicesEqual(suite.T(), request.GetResourceSelectors(), resp.GetCollection().GetResourceSelectors())
 	suite.NotNil(resp.GetCollection().GetEmbeddedCollections())
 	suite.Equal(request.GetEmbeddedCollectionIds(), suite.embeddedCollectionsToIds(resp.GetCollection().GetEmbeddedCollections()))
 	suite.NotNil(resp.GetCollection().GetCreatedBy())
@@ -295,7 +296,7 @@ func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
 	suite.Equal(request.GetId(), resp.GetCollection().GetId())
 	suite.Equal(request.Name, resp.GetCollection().GetName())
 	suite.Equal(request.GetDescription(), resp.GetCollection().GetDescription())
-	suite.Equal(request.GetResourceSelectors(), resp.GetCollection().GetResourceSelectors())
+	protoassert.SlicesEqual(suite.T(), request.GetResourceSelectors(), resp.GetCollection().GetResourceSelectors())
 	suite.Equal(request.GetEmbeddedCollectionIds(), suite.embeddedCollectionsToIds(resp.GetCollection().GetEmbeddedCollections()))
 	suite.Equal("uid", resp.GetCollection().GetUpdatedBy().GetId())
 	suite.Equal("name", resp.GetCollection().GetUpdatedBy().GetName())
@@ -404,7 +405,7 @@ func (suite *CollectionServiceTestSuite) TestListCollections() {
 	suite.dataStore.EXPECT().SearchCollections(allAccessCtx, gomock.Any()).Times(1).Return(expectedResp.Collections, nil)
 	resp, err := suite.collectionService.ListCollections(allAccessCtx, &v1.ListCollectionsRequest{})
 	suite.NoError(err)
-	suite.Equal(expectedResp, resp)
+	protoassert.Equal(suite.T(), expectedResp, resp)
 
 	// test failure
 	suite.dataStore.EXPECT().SearchCollections(allAccessCtx, gomock.Any()).Times(1).Return(nil, errors.New("test error"))
@@ -451,7 +452,7 @@ func (suite *CollectionServiceTestSuite) TestDryRunCollection() {
 	suite.dataStore.EXPECT().DryRunAddCollection(ctx, gomock.Any()).Times(1).Return(nil)
 	resp, err := suite.collectionService.DryRunCollection(ctx, request)
 	suite.NoError(err)
-	suite.Equal(expectedResp, resp)
+	protoassert.Equal(suite.T(), expectedResp, resp)
 
 	// test failure add request
 	mockID.EXPECT().UID().Return("uid").Times(1)
@@ -475,7 +476,7 @@ func (suite *CollectionServiceTestSuite) TestDryRunCollection() {
 	suite.dataStore.EXPECT().DryRunUpdateCollection(ctx, gomock.Any()).Times(1).Return(nil)
 	resp, err = suite.collectionService.DryRunCollection(ctx, request)
 	suite.NoError(err)
-	suite.Equal(expectedResp, resp)
+	protoassert.Equal(suite.T(), expectedResp, resp)
 
 	// test failure update request
 	mockID.EXPECT().UID().Return("uid").Times(1)
@@ -511,7 +512,7 @@ func (suite *CollectionServiceTestSuite) TestDryRunCollection() {
 	suite.deploymentDS.EXPECT().SearchListDeployments(ctx, gomock.Any()).Times(1).Return(expectedResp.Deployments, nil)
 	resp, err = suite.collectionService.DryRunCollection(ctx, request)
 	suite.NoError(err)
-	suite.Equal(expectedResp, resp)
+	protoassert.Equal(suite.T(), expectedResp, resp)
 
 	// test failure to resolve query
 	suite.dataStore.EXPECT().DryRunUpdateCollection(ctx, gomock.Any()).Times(1).Return(nil)

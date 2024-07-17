@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/protoreflect"
 )
 
 // ReconcileScrubbedStructWithExisting replaces scrub:always fields in updated with the corresponding field values in existing
@@ -34,8 +35,11 @@ func reconcileScrubbedWithExisting(updated reflect.Value, existing reflect.Value
 
 	skipDependentReconcile := false
 	for i := 0; i < updatedType.NumField(); i++ {
-		updatedField := updated.Field(i)
+		if protoreflect.IsProtoMessage(updatedType) && protoreflect.IsInternalGeneratorField(updatedType.Field(i)) {
+			continue
+		}
 
+		updatedField := updated.Field(i)
 		if updatedField.Kind() == reflect.Bool && updatedType.Field(i).Tag.Get(scrubStructTag) == scrubTagDisableDependentIfTrue {
 			if updatedField.Bool() {
 				skipDependentReconcile = true // skip because the field tagged as "disableDependentIfTrue" is true
@@ -45,6 +49,10 @@ func reconcileScrubbedWithExisting(updated reflect.Value, existing reflect.Value
 
 	path = append(path, updatedType.Name())
 	for i := 0; i < updatedType.NumField(); i++ {
+		if protoreflect.IsProtoMessage(updatedType) && protoreflect.IsInternalGeneratorField(updatedType.Field(i)) {
+			continue
+		}
+
 		updatedField := updated.Field(i)
 		existingField := existing.Field(i)
 		switch updatedField.Kind() {

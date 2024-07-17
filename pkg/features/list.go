@@ -22,9 +22,6 @@ var (
 	// AdministrationEvents enables APIs (including collection) and UI pages for administration events.
 	AdministrationEvents = registerFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", true)
 
-	// PostgresDatastore defines if PostgresSQL should be used
-	PostgresDatastore = registerUnchangeableFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", true)
-
 	// ActiveVulnMgmt defines if the active vuln mgmt feature is enabled
 	ActiveVulnMgmt = registerFeature("Enable Active Vulnerability Management", "ROX_ACTIVE_VULN_MGMT", false)
 
@@ -32,7 +29,7 @@ var (
 	VulnReportingEnhancements = registerFeature("Enable Vulnerability Reporting enhancements", "ROX_VULN_MGMT_REPORTING_ENHANCEMENTS", true)
 
 	// UnifiedCVEDeferral enables APIs and UI pages for unified deferral workflow.
-	UnifiedCVEDeferral = registerFeature("Enable new unified Vulnerability deferral workflow", "ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL", false)
+	UnifiedCVEDeferral = registerFeature("Enable new unified Vulnerability deferral workflow", "ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL", true)
 
 	// ClusterAwareDeploymentCheck enables roxctl deployment check to check deployments on the cluster level.
 	ClusterAwareDeploymentCheck = registerFeature("Enables cluster level check for the 'roxctl deployment check' command.", "ROX_CLUSTER_AWARE_DEPLOYMENT_CHECK", true)
@@ -76,29 +73,23 @@ var (
 	// ScannerV4MultiBundle enables Scanner V4 to consume vulnerabilities using multi-bundle archives.
 	ScannerV4MultiBundle = registerFeature("Enables Scanner V4 to consume vulnerabilities using multi-bundle archives", "ROX_SCANNER_V4_MULTI_BUNDLE", true)
 
-	// CloudCredentials enables support for short-lived cloud credentials.
-	CloudCredentials = registerFeature("Enable support for short-lived cloud credentials", "ROX_CLOUD_CREDENTIALS", true)
-
-	// CloudSources enables support for cloud source integrations.
-	CloudSources = registerFeature("Enable support for cloud source integrations", "ROX_CLOUD_SOURCES", true)
-
 	// ComplianceHierachyControlData enables support for compliance hierarchy control data.
-	ComplianceHierachyControlData = registerFeature("Enable support to display and import the compliance hierarchy control data", "ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA", false)
+	ComplianceHierachyControlData = registerFeature("Enable support to display and import the compliance hierarchy control data", "ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA", true)
 
 	// VulnMgmtNodePlatformCVEs enables new APIs and UI for VM 2.0 Node and Platform CVEs
-	VulnMgmtNodePlatformCVEs = registerFeature("Enables support for Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_NODE_PLATFORM_CVES", false)
+	VulnMgmtNodePlatformCVEs = registerFeature("Enables support for Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_NODE_PLATFORM_CVES", true)
 
 	// VulnMgmtLegacySnooze enables APIs and UI for the legacy VM 1.0 "snooze CVE" functionality in the new VM 2.0 sections
 	VulnMgmtLegacySnooze = registerFeature("Enables the ability to snooze Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_LEGACY_SNOOZE", false)
 
 	// ComplianceReporting enables support for compliance reporting.
-	ComplianceReporting = registerFeature("Enable support for V2 compliance reporting", "ROX_COMPLIANCE_REPORTING", false)
+	ComplianceReporting = registerFeature("Enable support for V2 compliance reporting", "ROX_COMPLIANCE_REPORTING", true)
 
 	// UnqualifiedSearchRegistries enables support for unqualified search registries and short name aliases.
 	UnqualifiedSearchRegistries = registerFeature("Enable support for unqualified search registries and short name aliases", "ROX_UNQUALIFIED_SEARCH_REGISTRIES", false)
 
 	// ComplianceRemediationV2 enables the remediation feature of the compliance v2 integration.
-	ComplianceRemediationV2 = registerFeature("Enable Compliance Remediation feature", "ROX_COMPLIANCE_REMEDIATION", false)
+	ComplianceRemediationV2 = registerFeature("Enable Compliance Remediation feature", "ROX_COMPLIANCE_REMEDIATION", true)
 
 	// SensorAggregateDeploymentReferenceOptimization enables a performance improvement by aggregating deployment references when the same reference is queued for processing
 	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION", false)
@@ -111,10 +102,10 @@ var (
 	AttemptManifestDigest = registerFeature("Enables attempts to pull manifest digests for all registry integrations", "ROX_ATTEMPT_MANIFEST_DIGEST", true)
 
 	// VulnMgmt2GA enables support for migration changes for VM 2.0 GA
-	VulnMgmt2GA = registerFeature("Enables support for migration changes for VM 2.0 GA", "ROX_VULN_MGMT_2_GA", false)
+	VulnMgmt2GA = registerFeature("Enables support for migration changes for VM 2.0 GA", "ROX_VULN_MGMT_2_GA", true)
 
 	// VulnMgmtAdvancedFilters enables support for advanced filters for VM 2.0 GA
-	VulnMgmtAdvancedFilters = registerFeature("Enables support for advanced filters for VM 2.0 GA", "ROX_VULN_MGMT_ADVANCED_FILTERS", false)
+	VulnMgmtAdvancedFilters = registerFeature("Enables support for advanced filters for VM 2.0 GA", "ROX_VULN_MGMT_ADVANCED_FILTERS", true)
 
 	// DelegateWatchedImageReprocessing when set to true reprocessing of watched images may be delegated to secured clusters based
 	// on the delegated scanning config.
@@ -122,4 +113,9 @@ var (
 
 	// CollectorRuntimeConfig enables filtering of runtime events.
 	CollectorRuntimeConfig = registerFeature("Enable collector runtime configuration", "ROX_COLLECTOR_RUNTIME_CONFIG", false)
+
+	// SensorSingleScanPerImage when set to true forces Sensor to allow only a single scan per image to be active at any given
+	// time. Will only have an affect if UnqualifiedSearchRegistries is also enabled.
+	// TODO(ROX-24641): Remove dependency on the UnqualifiedSearchRegistries feature so that this is enabled by default.
+	SensorSingleScanPerImage = registerFeature("Sensor will only allow a single active scan per image", "ROX_SENSOR_SINGLE_SCAN", true)
 )

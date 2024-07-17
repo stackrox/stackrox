@@ -16,7 +16,6 @@ import (
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
@@ -44,13 +43,11 @@ var matcherNames = []string{
 }
 
 func init() {
-	if env.ScannerV4NodeJSSupport.BooleanSetting() {
-		// ClairCore does not register the Node.js factory by default.
-		m := nodejs.Matcher{}
-		mf := driver.MatcherStatic(&m)
-		registry.Register(m.Name(), mf)
-		matcherNames = append(matcherNames, m.Name())
-	}
+	// ClairCore does not register the Node.js factory by default.
+	m := nodejs.Matcher{}
+	mf := driver.MatcherStatic(&m)
+	registry.Register(m.Name(), mf)
+	matcherNames = append(matcherNames, m.Name())
 }
 
 // Matcher represents a vulnerability matcher.

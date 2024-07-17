@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -308,11 +309,11 @@ func getViolationsWithAndWithoutCaching(t *testing.T, matcher func(cache *CacheR
 	var cache CacheReceptacle
 	violationsWithEmptyCache, err := matcher(&cache)
 	require.NoError(t, err)
-	require.Equal(t, violations, violationsWithEmptyCache)
+	assertViolations(t, violations, violationsWithEmptyCache)
 
 	violationsWithNonEmptyCache, err := matcher(&cache)
 	require.NoError(t, err)
-	require.Equal(t, violations, violationsWithNonEmptyCache)
+	assertViolations(t, violations, violationsWithNonEmptyCache)
 
 	return violations
 }
@@ -1510,7 +1511,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						if c.policyName == "Images with no scans" {
 							if len(suite.deployments[id].GetContainers()) == 1 {
 								msg := fmt.Sprintf(c.sampleViolationForMatched, suite.deployments[id].GetContainers()[0].GetName())
-								assert.Equal(t, actualViolations[id], []*storage.Alert_Violation{{Message: msg}})
+								protoassert.SlicesEqual(t, actualViolations[id], []*storage.Alert_Violation{{Message: msg}})
 							}
 						}
 					}
@@ -1526,10 +1527,10 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 					if c.allowUnvalidatedViolations {
 						assert.NotEmpty(t, violations)
 						for _, violation := range violations {
-							assert.Contains(t, actualViolations[id], violation)
+							protoassert.SliceContains(t, actualViolations[id], violation)
 						}
 					} else {
-						assert.Equal(t, violations, actualViolations[id])
+						protoassert.SlicesEqual(t, violations, actualViolations[id])
 					}
 				} else {
 					assert.NotContains(t, actualViolations, id)
@@ -1778,7 +1779,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 			for id, violations := range c.expectedViolations {
 				assert.Contains(t, actualViolations, id)
-				assert.Equal(t, violations, actualViolations[id])
+				protoassert.SlicesEqual(t, violations, actualViolations[id])
 			}
 			if len(c.shouldNotMatch) > 0 {
 				if c.policyName == "Required Image Label" {
@@ -1797,7 +1798,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				for id := range suite.images {
 					if _, shouldNotMatch := c.shouldNotMatch[id]; !shouldNotMatch {
 						assert.Contains(t, actualViolations, id)
-						assert.Equal(t, actualViolations[id], []*storage.Alert_Violation{{Message: c.sampleViolationForMatched}})
+						protoassert.SlicesEqual(t, actualViolations[id], []*storage.Alert_Violation{{Message: c.sampleViolationForMatched}})
 					}
 				}
 			}
@@ -1858,7 +1859,7 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 			for _, v := range c.expectedViolations {
 				expectedMessages = append(expectedMessages, &storage.Alert_Violation{Message: v})
 			}
-			suite.Equal(matched.AlertViolations, expectedMessages)
+			protoassert.SlicesEqual(suite.T(), matched.AlertViolations, expectedMessages)
 		})
 	}
 }
@@ -1953,7 +1954,7 @@ func assertNetworkBaselineMessagesEqual(
 		cp.Time = nil
 		thatWithoutTime = append(thatWithoutTime, cp)
 	}
-	suite.ElementsMatch(thisWithoutTime, thatWithoutTime)
+	protoassert.ElementsMatch(suite.T(), thisWithoutTime, thatWithoutTime)
 }
 
 func privilegedMessage(dep *storage.Deployment) []*storage.Alert_Violation {
@@ -2035,7 +2036,7 @@ func (suite *DefaultPoliciesTestSuite) TestK8sRBACField() {
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					matched.Add(depRef)
-					assert.Equal(t, violations.AlertViolations, c.expectedViolations[depRef])
+					protoassert.SlicesEqual(t, violations.AlertViolations, c.expectedViolations[depRef])
 				} else {
 					assert.Empty(t, c.expectedViolations[depRef])
 				}
@@ -2624,7 +2625,7 @@ func (suite *DefaultPoliciesTestSuite) TestAutomountServiceAccountToken() {
 			violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 			suite.NoError(err, "deployment matcher run must succeed")
 			suite.Empty(violations.ProcessViolation)
-			suite.Equal(c.ExpectedAlerts, violations.AlertViolations)
+			protoassert.SlicesEqual(suite.T(), c.ExpectedAlerts, violations.AlertViolations)
 		})
 	}
 }
@@ -3027,7 +3028,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 
 			for id, violations := range c.expectedViolations {
 				assert.Contains(t, actualViolations, id)
-				assert.ElementsMatch(t, violations, actualViolations[id])
+				protoassert.ElementsMatch(t, violations, actualViolations[id])
 			}
 		})
 	}
@@ -3101,7 +3102,7 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 			if len(c.expectedViolations) == 0 {
 				assert.Nil(t, actualViolations.AlertViolations)
 			} else {
-				assert.ElementsMatch(t, c.expectedViolations, actualViolations.AlertViolations)
+				protoassert.ElementsMatch(t, c.expectedViolations, actualViolations.AlertViolations)
 			}
 		})
 	}
@@ -3177,7 +3178,7 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventDefaultPolicies() {
 
 				assert.Nil(t, actualViolations.AlertViolations)
 			} else {
-				assert.ElementsMatch(t, c.expectedViolations, actualViolations.AlertViolations)
+				protoassert.ElementsMatch(t, c.expectedViolations, actualViolations.AlertViolations)
 			}
 		})
 	}
@@ -3289,7 +3290,7 @@ func (suite *DefaultPoliciesTestSuite) TestReplicasPolicyCriteria() {
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
-			suite.Equal(violations.AlertViolations, testCase.alerts)
+			protoassert.SlicesEqual(suite.T(), violations.AlertViolations, testCase.alerts)
 		})
 	}
 }
@@ -3372,7 +3373,7 @@ func (suite *DefaultPoliciesTestSuite) TestLivenessProbePolicyCriteria() {
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
-			suite.Equal(violations.AlertViolations, testCase.alerts)
+			protoassert.SlicesEqual(suite.T(), violations.AlertViolations, testCase.alerts)
 		})
 	}
 }
@@ -3474,7 +3475,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 			for i, expected := range testCase.alerts {
 				suite.Equal(expected.GetType(), allAlerts[i].Type)
 				suite.Equal(expected.GetMessage(), allAlerts[i].Message)
-				suite.Equal(expected.GetKeyValueAttrs(), allAlerts[i].GetKeyValueAttrs())
+				protoassert.Equal(suite.T(), expected.GetKeyValueAttrs(), allAlerts[i].GetKeyValueAttrs())
 				// We do not want to compare time, as the violation timestamp uses now()
 				suite.NotNil(allAlerts[i].GetTime())
 			}
@@ -3560,7 +3561,7 @@ func (suite *DefaultPoliciesTestSuite) TestReadinessProbePolicyCriteria() {
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
-			suite.Equal(violations.AlertViolations, testCase.alerts)
+			protoassert.SlicesEqual(suite.T(), violations.AlertViolations, testCase.alerts)
 		})
 	}
 }
@@ -3750,7 +3751,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 						require.NoError(b, err)
 					}
 				})
-				assert.Equal(b, resNoCaching, resWithCaching)
+				assertViolations(b, resNoCaching, resWithCaching)
 			})
 		}
 	}
@@ -3833,4 +3834,10 @@ func podPortForwardEvent(pod string, port int32) *storage.KubernetesEvent {
 			},
 		},
 	}
+}
+
+func assertViolations(t testing.TB, expected, actual Violations) {
+	t.Helper()
+	protoassert.Equal(t, expected.ProcessViolation, actual.ProcessViolation)
+	protoassert.SlicesEqual(t, expected.AlertViolations, actual.AlertViolations)
 }

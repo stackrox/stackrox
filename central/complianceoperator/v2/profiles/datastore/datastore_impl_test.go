@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -112,7 +113,7 @@ func (s *complianceProfileDataStoreTestSuite) TestUpsertProfile() {
 	retrieveRec1, found, err := s.storage.Get(s.hasReadCtx, rec1.GetId())
 	s.Require().NoError(err)
 	s.Require().True(found)
-	s.Require().Equal(rec1, retrieveRec1)
+	protoassert.Equal(s.T(), rec1, retrieveRec1)
 }
 
 func (s *complianceProfileDataStoreTestSuite) TestDeleteProfileOfCluster() {
@@ -155,7 +156,7 @@ func (s *complianceProfileDataStoreTestSuite) TestDeleteProfileForCluster() {
 	retrieveRec1, found, err := s.storage.Get(s.hasReadCtx, rec1.GetId())
 	s.Require().NoError(err)
 	s.Require().True(found)
-	s.Require().Equal(rec1, retrieveRec1)
+	protoassert.Equal(s.T(), rec1, retrieveRec1)
 
 	s.Require().NoError(s.dataStore.DeleteProfileForCluster(s.hasWriteCtx, profileUID1, testconsts.Cluster1))
 
@@ -191,13 +192,13 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfilesByCluster() {
 		desc           string
 		clusterID      string
 		testContext    context.Context
-		expectedRecord *storage.ComplianceOperatorProfileV2
+		expectedRecord []*storage.ComplianceOperatorProfileV2
 	}{
 		{
 			desc:           "Cluster 1 - Full access",
 			clusterID:      testconsts.Cluster1,
 			testContext:    s.testContexts[testutils.UnrestrictedReadCtx],
-			expectedRecord: rec1,
+			expectedRecord: []*storage.ComplianceOperatorProfileV2{rec1},
 		},
 		{
 			desc:           "Cluster 1 - Only cluster 2 access",
@@ -209,7 +210,7 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfilesByCluster() {
 			desc:           "Cluster 2 query - Only cluster 2 access",
 			clusterID:      testconsts.Cluster2,
 			testContext:    s.testContexts[testutils.Cluster2ReadWriteCtx],
-			expectedRecord: rec2,
+			expectedRecord: []*storage.ComplianceOperatorProfileV2{rec2},
 		},
 		{
 			desc:           "Cluster 3 query - Cluster 1 and 2 access",
@@ -222,13 +223,7 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfilesByCluster() {
 	for _, tc := range testCases {
 		profiles, err := s.dataStore.GetProfilesByClusters(tc.testContext, []string{tc.clusterID})
 		s.Require().NoError(err)
-		if tc.expectedRecord == nil {
-			s.Require().Equal(0, len(profiles))
-		} else {
-			s.Require().Contains(profiles, tc.expectedRecord)
-			s.Require().Equal(1, len(profiles))
-		}
-
+		protoassert.SlicesEqual(s.T(), profiles, tc.expectedRecord)
 	}
 }
 
@@ -249,7 +244,7 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfile() {
 		returnedProfile, found, err := s.dataStore.GetProfile(s.testContexts[testutils.Cluster1ReadWriteCtx], profileID)
 		s.Require().NoError(err)
 		s.Require().True(found)
-		s.Require().Equal(profile, returnedProfile)
+		protoassert.Equal(s.T(), profile, returnedProfile)
 	}
 
 	// Test with no access to cluster 1
@@ -274,7 +269,7 @@ func (s *complianceProfileDataStoreTestSuite) TestSearchProfiles() {
 		AddExactMatches(search.ComplianceOperatorProfileName, rec1.GetName()).ProtoQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(1, len(returnedProfiles))
-	s.Require().Contains(returnedProfiles, rec1)
+	protoassert.SliceContains(s.T(), returnedProfiles, rec1)
 
 	returnedProfiles, err = s.dataStore.SearchProfiles(s.hasReadCtx, search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorProfileName, "bogus name").ProtoQuery())

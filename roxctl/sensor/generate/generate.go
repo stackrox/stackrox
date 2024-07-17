@@ -212,7 +212,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().StringVar(&generateCmd.cluster.MainImage, mainImageRepository, "", "Image repository sensor should be deployed with (if unset, a default will be used)")
 	c.PersistentFlags().StringVar(&generateCmd.cluster.CollectorImage, "collector-image-repository", "", "Image repository collector should be deployed with (if unset, a default will be derived according to the effective --"+mainImageRepository+" value)")
 
-	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "Which collection method to use for runtime support (none, default, ebpf, core_bpf)")
+	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "Which collection method to use for runtime support (none, default, core_bpf)")
 
 	c.PersistentFlags().BoolVar(&generateCmd.createUpgraderSA, "create-upgrader-sa", true, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades")
 
@@ -230,13 +230,17 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "admission-controller-listen-on-creates", false, "Whether or not to configure the admission controller webhook to listen on deployment creates")
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", false, "Whether or not to configure the admission controller webhook to listen on deployment updates")
-	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", true, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
+	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
 
 	// Admission controller config
 	ac := generateCmd.cluster.DynamicConfig.AdmissionControllerConfig
 	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enabled", false, "Dynamic enable for the admission controller (WARNING: deprecated; use --admission-controller-enforce-on-creates instead")
 	utils.Must(c.PersistentFlags().MarkHidden("admission-controller-enabled"))
 
+	// TODO(ROX-24956): As part of ROX-21288 this default timeout should be adjusted as well. On the other hand it is questionable to have this default timeout set
+	// in multiple places (the Helm chart defaults, on central side, within roxctl). It might be a better approach to have roxctl not propagate a default
+	// timeout to central, allowing central to inject a default timeout. This could, in principle, be achieved by having a default timeout of 0 here. But, due to
+	// the bug described in ROX-24956, this is currently not testable. Hence, we should pick this up again when that ticket has been taken care of.
 	c.PersistentFlags().Int32Var(&ac.TimeoutSeconds, "admission-controller-timeout", 3, "Timeout in seconds for the admission controller")
 	c.PersistentFlags().BoolVar(&ac.ScanInline, "admission-controller-scan-inline", false, "Get scans inline when using the admission controller")
 	c.PersistentFlags().BoolVar(&ac.DisableBypass, "admission-controller-disable-bypass", false, "Disable the bypass annotations for the admission controller")

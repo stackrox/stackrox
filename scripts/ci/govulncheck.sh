@@ -2,8 +2,10 @@
 
 source "scripts/ci/lib.sh"
 
-GOVULNCHECK_BIN="$(make  which-govulncheck --silent)"
-find bin/linux_amd64 -type f | while read -r file;
+binary_path="${1:-bin/linux_amd64}"
+
+GOVULNCHECK_BIN="$(make which-govulncheck --silent)"
+find "$binary_path" -type f | while read -r file;
 do
     echo "Analyzing binary $file"
     $GOVULNCHECK_BIN -mode=binary --json "$file" > vulns.json

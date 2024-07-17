@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -110,7 +111,7 @@ func (s *podDatastoreSACSuite) TestGetPod() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(pod, res)
+				protoassert.Equal(s.T(), pod, res)
 			} else {
 				s.False(found)
 				s.Nil(res)

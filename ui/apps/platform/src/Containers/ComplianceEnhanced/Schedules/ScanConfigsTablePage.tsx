@@ -47,8 +47,7 @@ import { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
-import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
-import { SCAN_CONFIG_NAME_QUERY } from './compliance.scanConfigs.constants';
+import { DEFAULT_COMPLIANCE_PAGE_SIZE, SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import {
     formatScanSchedule,
@@ -94,7 +93,7 @@ function ScanConfigsTablePage({
         () => listComplianceScanConfigurations(sortOption, page - 1, perPage),
         [sortOption, page, perPage]
     );
-    const { data: listData, loading: isLoading, error, refetch } = useRestQuery(listQuery);
+    const { data: listData, isLoading, error, refetch } = useRestQuery(listQuery);
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
 
@@ -267,14 +266,14 @@ function ScanConfigsTablePage({
         <>
             <PageTitle title="Compliance - Schedules" />
             <PageSection component="div" variant="light">
-                <Flex direction={{ default: 'row' }}>
-                    <FlexItem>
+                <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsCenter' }}>
+                    <Flex direction={{ default: 'column' }}>
                         <Title headingLevel="h1">Schedules</Title>
                         <Text>
                             Configure scan schedules to run profile compliance checks on selected
                             clusters
                         </Text>
-                    </FlexItem>
+                    </Flex>
                     {hasWriteAccessForCompliance && (
                         <FlexItem align={{ default: 'alignRight' }}>
                             <CreateScanConfigButton />

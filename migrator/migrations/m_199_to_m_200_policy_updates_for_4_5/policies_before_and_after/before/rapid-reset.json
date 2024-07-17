@@ -1,0 +1,36 @@
+{
+  "id": "db79755e-6e03-40f5-b914-b0bee9e1c20b",
+  "name": "Rapid Reset: Denial of Service Vulnerability in HTTP/2 Protocol",
+  "description": "Alert on deployments with images containing components that are susceptible to a Denial of Service (DoS) vulnerability for HTTP/2 servers.",
+  "rationale": "This is a flaw in the handling of multiplexed streams in http/2. A client can rapidly create a request and immediately reset them, which creates extra work for the server while avoiding hitting any server-side limits, resulting in a denial of service attack.",
+  "remediation": "Upgrade vulnerable components or images to the latest version.",
+  "categories": [
+    "Vulnerability Management"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "severity": "CRITICAL_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "CVE",
+          "values": [
+            {
+              "value": "CVE-2023-44487"
+            },
+            {
+              "value": "CVE-2023-39325"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

@@ -3,6 +3,8 @@ import { hasFeatureFlag } from '../../../helpers/features';
 import {
     cancelAllCveExceptions,
     typeAndSelectCustomSearchFilterValue,
+    viewCvesByObservationState,
+    visitWorkloadCveOverview,
 } from '../workloadCves/WorkloadCves.helpers';
 import {
     markFalsePositiveAndVisitRequestDetails,
@@ -10,6 +12,7 @@ import {
     approveRequest,
 } from './ExceptionManagement.helpers';
 import { selectors } from './ExceptionManagement.selectors';
+import { selectors as workloadSelectors } from '../workloadCves/WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 const comment = 'False positive!';
@@ -55,8 +58,26 @@ describe('Exception Management - Approved False Positives Table', () => {
 
         // the deferred request should be approved
         cy.get(
-            'table tr:first-child td[data-label="Requested action"]:contains("False positive")'
+            'table tr:nth(1) td[data-label="Requested action"]:contains("False positive")'
         ).should('exist');
+    });
+
+    it('should navigate from Workload CVEs to a request list filtered by the specific CVE', () => {
+        markFalsePositiveAndVisitRequestDetails({ comment, scope }).then(
+            ({ requestName, cveName }) => {
+                approveRequest();
+
+                visitWorkloadCveOverview();
+                viewCvesByObservationState('False positives');
+
+                // Verify correct CVE filter
+                cy.get('td[data-label="Request details"] a:contains("View")').click();
+                cy.get(workloadSelectors.filterChipGroupItem('CVE', cveName));
+
+                // Verify a link in the table containing the request
+                cy.get('td a').contains(requestName);
+            }
+        );
     });
 
     it('should be able to navigate to the Request Details page by clicking on the request name', () => {
@@ -67,7 +88,7 @@ describe('Exception Management - Approved False Positives Table', () => {
         approveRequest();
         visitApprovedFalsePositivesTab();
 
-        const requestNameSelector = 'table tr:first-child td[data-label="Request name"]';
+        const requestNameSelector = 'table tr:nth(1) td[data-label="Request name"]';
 
         cy.get(requestNameSelector)
             .invoke('text')
@@ -185,12 +206,12 @@ describe('Exception Management - Approved False Positives Table', () => {
         approveRequest();
         visitApprovedFalsePositivesTab();
 
-        cy.get('table tr:first-child td[data-label="Request name"] a').then((element) => {
+        cy.get('table tr:nth(1) td[data-label="Request name"] a').then((element) => {
             const requestName = element.text().trim();
             typeAndSelectCustomSearchFilterValue('Request name', requestName);
             cy.get(vulnSelectors.clearFiltersButton).click();
             typeAndSelectCustomSearchFilterValue('Request name', 'BLAH');
-            cy.get('table tr:first-child td[data-label="Request name"] a').should('not.exist');
+            cy.get('table tr:nth(1) td[data-label="Request name"] a').should('not.exist');
         });
     });
 
@@ -203,9 +224,9 @@ describe('Exception Management - Approved False Positives Table', () => {
         visitApprovedFalsePositivesTab();
 
         typeAndSelectCustomSearchFilterValue('Requester', 'ui_tests');
-        cy.get('table tr:first-child td[data-label="Request name"] a').should('exist');
+        cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
         cy.get(vulnSelectors.clearFiltersButton).click();
         typeAndSelectCustomSearchFilterValue('Requester', 'BLAH');
-        cy.get('table tr:first-child td[data-label="Request name"] a').should('not.exist');
+        cy.get('table tr:nth(1) td[data-label="Request name"] a').should('not.exist');
     });
 });

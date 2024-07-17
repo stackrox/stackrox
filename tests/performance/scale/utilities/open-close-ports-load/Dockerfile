@@ -1,4 +1,4 @@
-FROM ubuntu:jammy
+FROM ubuntu:noble
 
 COPY open-close-ports-load.c /open-close-ports-load.c
 COPY open-close-ports-load.sh /open-close-ports-load.sh

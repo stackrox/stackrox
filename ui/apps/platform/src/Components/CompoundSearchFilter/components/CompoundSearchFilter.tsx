@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Split } from '@patternfly/react-core';
+import { Flex } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
 import {
@@ -19,6 +19,7 @@ export type CompoundSearchFilterProps = {
     defaultEntity?: SearchFilterEntityName;
     defaultAttribute?: SearchFilterAttributeName;
     searchFilter: SearchFilter;
+    additionalContextFilter?: SearchFilter;
     onSearch: ({ action, category, value }: OnSearchPayload) => void;
 };
 
@@ -27,6 +28,7 @@ function CompoundSearchFilter({
     defaultEntity,
     defaultAttribute,
     searchFilter,
+    additionalContextFilter,
     onSearch,
 }: CompoundSearchFilterProps) {
     const [selectedEntity, setSelectedEntity] = useState<SelectedEntity>(() => {
@@ -62,8 +64,14 @@ function CompoundSearchFilter({
     }, [defaultAttribute]);
 
     return (
-        <Split className="pf-v5-u-flex-grow-1">
+        <Flex
+            direction={{ default: 'row' }}
+            spaceItems={{ default: 'spaceItemsNone' }}
+            flexWrap={{ default: 'nowrap' }}
+            className="pf-v5-u-w-100"
+        >
             <EntitySelector
+                menuToggleClassName="pf-v5-u-flex-shrink-0"
                 selectedEntity={selectedEntity}
                 onChange={(value) => {
                     setSelectedEntity(value as SearchFilterEntityName);
@@ -77,6 +85,7 @@ function CompoundSearchFilter({
                 config={config}
             />
             <AttributeSelector
+                menuToggleClassName="pf-v5-u-flex-shrink-0"
                 selectedEntity={selectedEntity}
                 selectedAttribute={selectedAttribute}
                 onChange={(value) => {
@@ -93,18 +102,22 @@ function CompoundSearchFilter({
                     setInputValue(value);
                 }}
                 searchFilter={searchFilter}
+                additionalContextFilter={additionalContextFilter}
                 onSearch={(payload) => {
-                    // If the search value is non-empty and not in the searchFilter, trigger onSearch
-                    if (
-                        !searchFilter?.[payload.category]?.includes(payload.value) &&
-                        payload.value !== ''
-                    ) {
+                    const { action, category, value } = payload;
+                    const shouldSearch =
+                        (action === 'ADD' &&
+                            value !== '' &&
+                            !searchFilter?.[category]?.includes(value)) ||
+                        (action === 'REMOVE' && value !== '');
+
+                    if (shouldSearch) {
                         onSearch(payload);
                     }
                 }}
                 config={config}
             />
-        </Split>
+        </Flex>
     );
 }
 

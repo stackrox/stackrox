@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -eou pipefail
 
-# Runs the script get-info-about-osci-jobs.sh to get infromation about which kernel versions and
-# collection methods were used for OSCI jobs, from artifacts for multiple CI runs. The artifacts
-# are obtained by downloading them from gcp buckets. The buckets are specified with commit shas.
+# Runs the script get-info-about-osci-jobs.sh to get infromation about which kernel versions
+# were used for OSCI jobs, from artifacts for multiple CI runs. The artifacts are obtained
+# by downloading them from gcp buckets. The buckets are specified with commit shas.
 #
 # The output is a set of csv files and stdout with only unique lines from the set of csv files
 #

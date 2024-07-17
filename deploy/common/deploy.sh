@@ -18,9 +18,6 @@ echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 export MAIN_IMAGE="${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
 echo "StackRox image set to $MAIN_IMAGE"
 
-export ROX_POSTGRES_DATASTORE="true"
-echo "ROX_POSTGRES_DATASTORE set to $ROX_POSTGRES_DATASTORE"
-
 export CENTRAL_DB_IMAGE_REPO="${CENTRAL_DB_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/central-db}"
 echo "CENTRAL_DB_IMAGE_REPO set to $CENTRAL_DB_IMAGE_REPO"
 
@@ -149,7 +146,8 @@ function get_cluster_zip {
     if [[ "$COLLECTION_METHOD" == "core_bpf" ]]; then
        COLLECTION_METHOD_ENUM="CORE_BPF"
     elif [[ "$COLLECTION_METHOD" == "ebpf" ]]; then
-      COLLECTION_METHOD_ENUM="EBPF"
+      echo "WARNING: ebpf has been removed; switch to core_bpf"
+      COLLECTION_METHOD_ENUM="CORE_BPF"
     elif [[ "$COLLECTION_METHOD" == "none" ]]; then
       COLLECTION_METHOD_ENUM="NO_COLLECTION"
     else

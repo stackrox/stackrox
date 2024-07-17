@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -484,7 +485,7 @@ func (s *PostgresPruningSuite) TestPruneDiscoveredClusters() {
 
 	storedClusters, err := datastore.ListDiscoveredClusters(s.ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.ElementsMatch([]*storage.DiscoveredCluster{clusters[1], clusters[3]}, storedClusters)
+	protoassert.ElementsMatch(s.T(), []*storage.DiscoveredCluster{clusters[1], clusters[3]}, storedClusters)
 }
 
 func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
@@ -534,7 +535,7 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 
 	storedEvents, err := datastore.ListEvents(s.ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.ElementsMatch([]*storage.AdministrationEvent{events[0], events[1], events[3], events[4]}, storedEvents)
+	protoassert.ElementsMatch(s.T(), []*storage.AdministrationEvent{events[0], events[1], events[3], events[4]}, storedEvents)
 }
 
 // Helper functions.

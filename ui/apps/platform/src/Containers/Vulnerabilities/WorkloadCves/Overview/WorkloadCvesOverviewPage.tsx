@@ -13,7 +13,6 @@ import { gql, useApolloClient, useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import difference from 'lodash/difference';
 import isEmpty from 'lodash/isEmpty';
-import { Link } from 'react-router-dom';
 
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -25,6 +24,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useAnalytics, {
     WATCH_IMAGE_MODAL_OPENED,
     WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
+    WORKLOAD_CVE_FILTER_APPLIED,
 } from 'hooks/useAnalytics';
 import useLocalStorage from 'hooks/useLocalStorage';
 import { SearchFilter } from 'types/search';
@@ -48,6 +48,10 @@ import {
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
+import LinkShim from 'Components/PatternFly/LinkShim';
+import { SearchFilterEntityName } from 'Components/CompoundSearchFilter/types';
+
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import {
     DefaultFilters,
     WorkloadEntityTab,
@@ -128,10 +132,25 @@ function mergeDefaultAndLocalFilters(
     return { ...filter, SEVERITY, FIXABLE };
 }
 
+function getSearchFilterEntityByTab(
+    entityTab: WorkloadEntityTab
+): SearchFilterEntityName | undefined {
+    switch (entityTab) {
+        case 'CVE':
+            return 'Image CVE';
+        case 'Image':
+            return 'Image';
+        case 'Deployment':
+            return 'Deployment';
+        default:
+            return undefined;
+    }
+}
+
 const searchFilterConfig = {
     Image: imageSearchFilterConfig,
-    ImageCVE: imageCVESearchFilterConfig,
-    ImageComponent: imageComponentSearchFilterConfig,
+    'Image CVE': imageCVESearchFilterConfig,
+    'Image Component': imageComponentSearchFilterConfig,
     Deployment: deploymentSearchFilterConfig,
     Namespace: namespaceSearchFilterConfig,
     Cluster: clusterSearchFilterConfig,
@@ -140,16 +159,16 @@ const searchFilterConfig = {
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
 
-    const { hasReadWriteAccess } = usePermissions();
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
-    const hasReadAccessForNamespaces = hasReadWriteAccess('Namespace');
+    const hasReadAccessForNamespaces = hasReadAccess('Namespace');
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
     const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
     const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
     const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
     const currentVulnerabilityState = useVulnerabilityState();
 
@@ -163,6 +182,9 @@ function WorkloadCvesOverviewPage() {
         'observedCveMode',
         observedCveModeValues
     );
+
+    const defaultSearchFilterEntity = getSearchFilterEntityByTab(activeEntityTabKey);
+
     const isViewingWithCves = observedCveMode === 'WITH_CVES';
 
     // If the user is viewing observed CVEs, we need to scope the query based on
@@ -313,16 +335,16 @@ function WorkloadCvesOverviewPage() {
             className="pf-v5-u-py-md"
             searchFilterConfig={searchFilterConfig}
             searchFilter={searchFilter}
+            additionalContextFilter={{ 'Image CVE Count': isViewingWithCves ? '>0' : '0' }}
             defaultFilters={localStorageValue.preferences.defaultFilters}
-            onFilterChange={(newFilter, { action }) => {
+            onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);
                 pagination.setPage(1, 'replace');
-
-                if (action === 'ADD') {
-                    // TODO - Add analytics tracking ROX-24532
-                }
+                trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
             }}
-            includeCveFilters={isViewingWithCves}
+            includeCveSeverityFilters={isViewingWithCves}
+            includeCveStatusFilters={isViewingWithCves}
+            defaultSearchFilterEntity={defaultSearchFilterEntity}
         />
     ) : (
         <WorkloadCveFilterToolbar
@@ -424,11 +446,13 @@ function WorkloadCvesOverviewPage() {
                                                 spaceItems={{ default: 'spaceItemsSm' }}
                                             >
                                                 {hasReadAccessForNamespaces && (
-                                                    <Link to={vulnerabilityNamespaceViewPath}>
-                                                        <Button variant="secondary">
-                                                            Prioritize by namespace view
-                                                        </Button>
-                                                    </Link>
+                                                    <Button
+                                                        variant="secondary"
+                                                        href={vulnerabilityNamespaceViewPath}
+                                                        component={LinkShim}
+                                                    >
+                                                        Prioritize by namespace view
+                                                    </Button>
                                                 )}
                                                 {isFixabilityFiltersEnabled && (
                                                     <DefaultFilterModal
@@ -453,7 +477,6 @@ function WorkloadCvesOverviewPage() {
                                     workloadCvesScopedQueryString={workloadCvesScopedQueryString}
                                     isFiltered={isFiltered}
                                     vulnerabilityState={currentVulnerabilityState}
-                                    isUnifiedDeferralsEnabled={isUnifiedDeferralsEnabled}
                                 />
                             )}
                             {activeEntityTabKey === 'Image' && (

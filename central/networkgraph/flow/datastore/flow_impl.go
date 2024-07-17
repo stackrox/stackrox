@@ -84,7 +84,11 @@ func (fds *flowDataStoreImpl) adjustFlowsForGraphConfig(_ context.Context, flows
 }
 
 func (fds *flowDataStoreImpl) isDeletedDeployment(id string) bool {
-	deleted, _ := fds.deletedDeploymentsCache.Get(id).(bool)
+	v, ok := fds.deletedDeploymentsCache.Get(id)
+	if !ok {
+		return false
+	}
+	deleted, _ := v.(bool)
 	return deleted
 }
 

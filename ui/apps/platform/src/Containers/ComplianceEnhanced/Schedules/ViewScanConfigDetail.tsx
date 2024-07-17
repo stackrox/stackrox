@@ -33,7 +33,7 @@ import {
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import {
-    customBodyDefault,
+    getBodyDefault,
     getSubjectDefault,
     getTimeWithHourMinuteFromISO8601,
 } from './compliance.scanConfigs.utils';
@@ -218,9 +218,12 @@ function ViewScanConfigDetail({
                                 />
                                 {isComplianceReportingEnabled && (
                                     <NotifierConfigurationView
-                                        customBodyDefault={customBodyDefault}
+                                        customBodyDefault={getBodyDefault(
+                                            scanConfig.scanConfig.profiles
+                                        )}
                                         customSubjectDefault={getSubjectDefault(
-                                            scanConfig.scanName
+                                            scanConfig.scanName,
+                                            scanConfig.scanConfig.profiles
                                         )}
                                         notifierConfigurations={scanConfig.scanConfig.notifiers}
                                     />

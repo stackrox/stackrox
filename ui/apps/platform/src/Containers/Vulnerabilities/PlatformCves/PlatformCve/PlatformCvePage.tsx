@@ -6,9 +6,12 @@ import {
     BreadcrumbItem,
     Skeleton,
     Flex,
+    Label,
+    LabelGroup,
     Pagination,
     Split,
     SplitItem,
+    Text,
     Title,
     pluralize,
 } from '@patternfly/react-core';
@@ -24,34 +27,51 @@ import {
     SummaryCardLayout,
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import useURLSort from 'hooks/useURLSort';
+import { getDateTime } from 'utils/dateUtils';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import useAnalytics, { PLATFORM_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
+import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
-import CvePageHeader from '../../components/CvePageHeader';
-import { getOverviewPagePath, getRegexScopedQueryString } from '../../utils/searchUtils';
+import {
+    getOverviewPagePath,
+    getRegexScopedQueryString,
+    parseQuerySearchFilter,
+} from '../../utils/searchUtils';
 import useAffectedClusters from './useAffectedClusters';
 import AffectedClustersTable, { sortFields, defaultSortOption } from './AffectedClustersTable';
 import usePlatformCveMetadata from './usePlatformCveMetadata';
 import ClustersByTypeSummaryCard from './ClustersByTypeSummaryCard';
 import AffectedClustersSummaryCard from './AffectedClustersSummaryCard';
+import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
+import { clusterSearchFilterConfig } from '../../searchFilterConfig';
+import usePlatformCveSummaryData from './usePlatformCveSummaryData';
 
 const workloadCveOverviewCvePath = getOverviewPagePath('Platform', {
     entityTab: 'CVE',
 });
 
-function PlatformCvePage() {
-    const { searchFilter } = useURLSearch();
-    // TODO - Need an equivalent function implementation for filter sanitization for Platform CVEs
-    const querySearchFilter = searchFilter;
+const searchFilterConfig = {
+    Cluster: clusterSearchFilterConfig,
+};
 
-    // We need to scope all queries to the *exact* CVE name so that we don't accidentally get
-    // data that matches a prefix of the CVE name in the nested fields
-    const { cveId } = useParams() as { cveId: string };
-    const exactCveIdSearchRegex = `^${cveId}$`;
+function PlatformCvePage() {
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
+
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+
+    const params = useParams() as { cveId: string };
+    // CVE ID needs to be decoded here as it will contain the `#` character
+    const cveId = decodeURIComponent(params.cveId);
+
     const query = getRegexScopedQueryString({
         ...querySearchFilter,
-        CVE: [exactCveIdSearchRegex],
+        'CVE ID': [cveId],
     });
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
@@ -67,8 +87,10 @@ function PlatformCvePage() {
         perPage,
         sortOption,
     });
-    const metadataRequest = usePlatformCveMetadata({ cve: cveId, query, page, perPage });
-    const cveName = metadataRequest.data?.platformCVE?.cve;
+    const metadataRequest = usePlatformCveMetadata(cveId);
+    const summaryDataRequest = usePlatformCveSummaryData({ cveId, query });
+    const cveMetadata = metadataRequest.data?.platformCVE;
+    const cveName = cveMetadata?.cve;
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const tableState = getTableUIState({
@@ -93,16 +115,59 @@ function PlatformCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light">
-                <CvePageHeader data={metadataRequest.data?.platformCVE} />
+                {cveMetadata ? (
+                    <Flex
+                        direction={{ default: 'column' }}
+                        alignItems={{ default: 'alignItemsFlexStart' }}
+                    >
+                        <Title headingLevel="h1" className="pf-v5-u-mb-sm">
+                            {cveMetadata.cve}
+                        </Title>
+                        {cveMetadata.firstDiscoveredTime && (
+                            <LabelGroup numLabels={1}>
+                                <Label>
+                                    First discovered in system:{' '}
+                                    {getDateTime(cveMetadata.firstDiscoveredTime)}
+                                </Label>
+                            </LabelGroup>
+                        )}
+                        <Text>{cveMetadata.clusterVulnerability.summary}</Text>
+                        <ExternalLink>
+                            <a
+                                href={cveMetadata.clusterVulnerability.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {cveMetadata.clusterVulnerability.link}
+                            </a>
+                        </ExternalLink>
+                    </Flex>
+                ) : (
+                    <HeaderLoadingSkeleton
+                        nameScreenreaderText="Loading CVE name"
+                        metadataScreenreaderText="Loading CVE metadata"
+                    />
+                )}
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-v5-u-flex-grow-1">
+                <AdvancedFiltersToolbar
+                    className="pf-v5-u-pb-0 pf-v5-u-px-sm"
+                    searchFilter={searchFilter}
+                    searchFilterConfig={searchFilterConfig}
+                    cveStatusFilterField="CLUSTER CVE FIXABLE"
+                    onFilterChange={(newFilter, searchPayload) => {
+                        setSearchFilter(newFilter);
+                        trackAppliedFilter(PLATFORM_CVE_FILTER_APPLIED, searchPayload);
+                    }}
+                    includeCveSeverityFilters={false}
+                />
                 <SummaryCardLayout
-                    error={metadataRequest.error}
-                    isLoading={metadataRequest.loading}
+                    error={summaryDataRequest.error}
+                    isLoading={summaryDataRequest.loading}
                 >
                     <SummaryCard
-                        data={metadataRequest.data}
+                        data={summaryDataRequest.data}
                         loadingText="Loading affected nodes summary"
                         renderer={({ data }) => (
                             <AffectedClustersSummaryCard
@@ -112,11 +177,11 @@ function PlatformCvePage() {
                         )}
                     />
                     <SummaryCard
-                        data={metadataRequest.data}
+                        data={summaryDataRequest.data}
                         loadingText="Loading affected nodes by CVE severity summary"
                         renderer={({ data }) => (
                             <ClustersByTypeSummaryCard
-                                clusterCounts={data.platformCVE.clusterCountByType}
+                                clusterCounts={data.platformCVE?.clusterCountByType}
                             />
                         )}
                     />
@@ -144,7 +209,14 @@ function PlatformCvePage() {
                             />
                         </SplitItem>
                     </Split>
-                    <AffectedClustersTable tableState={tableState} getSortParams={getSortParams} />
+                    <AffectedClustersTable
+                        tableState={tableState}
+                        getSortParams={getSortParams}
+                        onClearFilters={() => {
+                            setSearchFilter({});
+                            setPage(1, 'replace');
+                        }}
+                    />
                 </div>
             </PageSection>
         </>

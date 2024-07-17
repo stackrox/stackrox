@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -62,7 +63,7 @@ func TestCachedUpsert(t *testing.T) {
 	assert.NoError(t, store.Upsert(cachedStoreCtx, testObject))
 
 	objAfter, foundAfter, errAfter := store.Get(cachedStoreCtx, key)
-	assert.Equal(t, testObject, objAfter)
+	protoassert.Equal(t, testObject, objAfter)
 	assert.True(t, foundAfter)
 	assert.NoError(t, errAfter)
 }
@@ -84,7 +85,7 @@ func TestCachedUpsertMany(t *testing.T) {
 
 	for _, obj := range testObjects {
 		objAfter, foundAfter, errAfter := store.Get(cachedStoreCtx, pkGetterForCache(obj))
-		assert.Equal(t, obj, objAfter)
+		protoassert.Equal(t, obj, objAfter)
 		assert.True(t, foundAfter)
 		assert.NoError(t, errAfter)
 	}
@@ -101,7 +102,7 @@ func TestCachedDelete(t *testing.T) {
 	require.NoError(t, store.Upsert(cachedStoreCtx, testObject))
 
 	objBefore, foundBefore, errBefore := store.Get(cachedStoreCtx, key)
-	require.Equal(t, testObject, objBefore)
+	protoassert.Equal(t, testObject, objBefore)
 	require.True(t, foundBefore)
 	require.NoError(t, errBefore)
 
@@ -125,7 +126,6 @@ func TestCachedDelete(t *testing.T) {
 	require.Nil(t, missingObjAfter)
 	require.False(t, missingFoundAfter)
 	require.NoError(t, missingErrAfter)
-
 }
 
 func TestCachedDeleteMany(t *testing.T) {
@@ -142,7 +142,7 @@ func TestCachedDeleteMany(t *testing.T) {
 		identifiersToRemove = append(identifiersToRemove, key)
 		// ensure object is in DB before call to remove
 		objBefore, foundBefore, errBefore := store.Get(cachedStoreCtx, key)
-		assert.Equal(t, obj, objBefore)
+		protoassert.Equal(t, obj, objBefore)
 		assert.True(t, foundBefore)
 		assert.NoError(t, errBefore)
 	}
@@ -246,7 +246,80 @@ func TestCachedWalk(t *testing.T) {
 	assert.NoError(t, store.Walk(cachedStoreCtx, walkFn))
 
 	assert.ElementsMatch(t, walkedNames, injectedNames)
-	assert.ElementsMatch(t, testObjects, walkedObjects)
+	protoassert.ElementsMatch(t, testObjects, walkedObjects)
+}
+
+func TestCachedWalkContextCancelation(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newCachedStore(testDB)
+	require.NotNil(t, store)
+
+	testObjects := sampleCachedTestSingleKeyStructArray("Walk")
+	err := store.UpsertMany(cachedStoreCtx, testObjects)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(cachedStoreCtx)
+	cancel()
+	walkFn := func(obj *storage.TestSingleKeyStruct) error {
+		return nil
+	}
+	err = store.Walk(ctx, walkFn)
+
+	assert.ErrorIs(t, err, context.Canceled)
+}
+
+func TestCachedWalkByQuery(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newCachedStore(testDB)
+	require.NotNil(t, store)
+
+	testObjects := sampleCachedTestSingleKeyStructArray("WalkByQuery")
+	err := store.UpsertMany(cachedStoreCtx, testObjects)
+	require.NoError(t, err)
+
+	query2 := getCachedMatchFieldQuery("Test Name", "Test WalkByQuery 2")
+	query4 := getCachedMatchFieldQuery("Test Key", "TestWalkByQuery4")
+	query := getCachedDisjunctionQuery(query2, query4)
+
+	walkedNames := make([]string, 0, len(testObjects))
+	walkedObjects := make([]*storage.TestSingleKeyStruct, 0, len(testObjects))
+	walkFn := func(obj *storage.TestSingleKeyStruct) error {
+		walkedNames = append(walkedNames, obj.Name)
+		walkedObjects = append(walkedObjects, obj)
+		return nil
+	}
+	err = store.WalkByQuery(cachedStoreCtx, query, walkFn)
+	require.NoError(t, err)
+
+	expectedNames := []string{
+		"Test WalkByQuery 2",
+		"Test WalkByQuery 4",
+	}
+	expectedObjects := []*storage.TestSingleKeyStruct{
+		testObjects[1],
+		testObjects[3],
+	}
+	assert.ElementsMatch(t, expectedNames, walkedNames)
+	protoassert.ElementsMatch(t, expectedObjects, walkedObjects)
+}
+
+func TestCachedWalkByQueryContextCancelation(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newCachedStore(testDB)
+	require.NotNil(t, store)
+
+	testObjects := sampleCachedTestSingleKeyStructArray("WalkByQuery")
+	err := store.UpsertMany(cachedStoreCtx, testObjects)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(cachedStoreCtx)
+	cancel()
+	walkFn := func(obj *storage.TestSingleKeyStruct) error {
+		return nil
+	}
+	err = store.WalkByQuery(ctx, nil, walkFn)
+
+	assert.ErrorIs(t, err, context.Canceled)
 }
 
 func TestCachedGetAll(t *testing.T) {
@@ -259,7 +332,7 @@ func TestCachedGetAll(t *testing.T) {
 
 	fetchedObjects, err := store.GetAll(cachedStoreCtx)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, fetchedObjects, testObjects)
+	protoassert.ElementsMatch(t, fetchedObjects, testObjects)
 }
 
 func TestCachedGetIDs(t *testing.T) {
@@ -293,7 +366,7 @@ func TestCachedGet(t *testing.T) {
 
 	// Object with ID "TestGet" is in DB
 	obj, found, err := store.Get(cachedStoreCtx, key)
-	assert.Equal(t, testObject, obj)
+	protoassert.Equal(t, testObject, obj)
 	assert.True(t, found)
 	assert.NoError(t, err)
 
@@ -325,7 +398,7 @@ func TestCachedGetMany(t *testing.T) {
 
 	fetchedObjects, missingIndices, err := store.GetMany(cachedStoreCtx, identifiersToFetch)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, fetchedObjects, expectedObjects)
+	protoassert.ElementsMatch(t, fetchedObjects, expectedObjects)
 	assert.Equal(t, []int{0}, missingIndices)
 }
 
@@ -350,7 +423,7 @@ func TestCachedGetByQuery(t *testing.T) {
 		testObjects[1],
 		testObjects[3],
 	}
-	assert.ElementsMatch(t, objectsAfter, expectedObjectsAfter)
+	protoassert.ElementsMatch(t, objectsAfter, expectedObjectsAfter)
 }
 
 func TestCachedDeleteByQuery(t *testing.T) {
@@ -372,7 +445,7 @@ func TestCachedDeleteByQuery(t *testing.T) {
 	assert.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
 	for _, obj := range testObjects {
 		objBefore, fetchedBefore, errBefore := store.Get(cachedStoreCtx, pkGetterForCache(obj))
-		assert.Equal(t, obj, objBefore)
+		protoassert.Equal(t, obj, objBefore)
 		assert.True(t, fetchedBefore)
 		assert.NoError(t, errBefore)
 	}
@@ -387,7 +460,7 @@ func TestCachedDeleteByQuery(t *testing.T) {
 			assert.Nil(t, objAfter)
 			assert.False(t, fetchedAfter)
 		} else {
-			assert.Equal(t, obj, objAfter)
+			protoassert.Equal(t, obj, objAfter)
 			assert.True(t, fetchedAfter)
 		}
 	}
@@ -413,7 +486,7 @@ func TestCachedDeleteByQueryReturningIDs(t *testing.T) {
 	assert.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
 	for _, obj := range testObjects {
 		objBefore, fetchedBefore, errBefore := store.Get(cachedStoreCtx, pkGetterForCache(obj))
-		assert.Equal(t, obj, objBefore)
+		protoassert.Equal(t, obj, objBefore)
 		assert.True(t, fetchedBefore)
 		assert.NoError(t, errBefore)
 	}
@@ -430,7 +503,7 @@ func TestCachedDeleteByQueryReturningIDs(t *testing.T) {
 			assert.Nil(t, objAfter)
 			assert.False(t, fetchedAfter)
 		} else {
-			assert.Equal(t, obj, objAfter)
+			protoassert.Equal(t, obj, objAfter)
 			assert.True(t, fetchedAfter)
 		}
 	}
@@ -513,7 +586,6 @@ func pkGetterForCache(obj *storage.TestSingleKeyStruct) string {
 
 // copied from tools/generate-helpers/pg-table-bindings/test/postgres/store.go
 func insertIntoTestSingleKeyStructsWithCache(batch *pgx.Batch, obj *storage.TestSingleKeyStruct) error {
-
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -56,22 +57,22 @@ func TestMultiTree(t *testing.T) {
 
 	multiTree := NewMultiNetworkTree(tree1, tree2)
 
-	assert.Equal(t, e1, multiTree.Get("1"))
+	protoassert.Equal(t, e1, multiTree.Get("1"))
 
-	assert.Equal(t, e2, multiTree.GetSupernet("1"))
-	assert.Equal(t, e6, multiTree.GetSupernet("5"))
+	protoassert.Equal(t, e2, multiTree.GetSupernet("1"))
+	protoassert.Equal(t, e6, multiTree.GetSupernet("5"))
 
 	assert.Equal(t, networkgraph.InternetExternalSourceID, multiTree.GetMatchingSupernet("5", func(entity *storage.NetworkEntityInfo) bool {
 		return entity.GetId() != e6.GetId()
 	}).GetId())
 
-	assert.Equal(t, e6, multiTree.GetSupernetForCIDR("36.188.144.0/24"))
+	protoassert.Equal(t, e6, multiTree.GetSupernetForCIDR("36.188.144.0/24"))
 
 	assert.Equal(t, networkgraph.InternetExternalSourceID, multiTree.GetMatchingSupernetForCIDR("36.188.144.0/24", func(entity *storage.NetworkEntityInfo) bool {
 		return entity.GetId() != e6.GetId()
 	}).GetId())
 
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3, e6}, multiTree.GetSubnets(networkgraph.InternetExternalSourceID))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3, e6}, multiTree.GetSubnets(networkgraph.InternetExternalSourceID))
 
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3, e6}, multiTree.GetSubnetsForCIDR("32.0.0.0/5"))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3, e6}, multiTree.GetSubnetsForCIDR("32.0.0.0/5"))
 }

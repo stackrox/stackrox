@@ -10,10 +10,12 @@ import shutil
 import subprocess
 from typing import List
 
+from common import log_print
+
 
 class PostTestsConstants:
     API_TIMEOUT = 5 * 60
-    COLLECT_TIMEOUT = 10 * 60
+    COLLECT_TIMEOUT = 15 * 60
     COLLECT_INFRA_TIMEOUT = 12 * 60
     CHECK_TIMEOUT = 5 * 60
     STORE_TIMEOUT = 5 * 60
@@ -44,7 +46,7 @@ class RunWithBestEffortMixin:
         self.failed_commands: List[List[str]] = []
 
     def run_with_best_effort(self, args: List[str], timeout: int):
-        print(f"Running post command: {args}")
+        log_print(f"Running post command: {args}")
         runs_ok = False
         try:
             subprocess.run(
@@ -54,7 +56,7 @@ class RunWithBestEffortMixin:
             )
             runs_ok = True
         except Exception as err:
-            print(f"Exception raised in {args}, {err}")
+            log_print(f"Exception raised in {args}, {err}")
             self.failed_commands.append(args)
             self.exitstatus = 1
         return runs_ok
@@ -62,7 +64,7 @@ class RunWithBestEffortMixin:
     def handle_run_failure(self):
         if self.exitstatus != 0:
             for args in self.failed_commands:
-                print(f"Post failure in: {args}")
+                log_print(f"Post failure in: {args}")
             raise RuntimeError(f"Post failed: exit {self.exitstatus}")
 
 
@@ -105,7 +107,7 @@ class StoreArtifacts(RunWithBestEffortMixin):
     def _store_osci_artifacts(self):
         for source in self.dirs_to_store_to_osci_artifacts:
             if not os.path.exists(source):
-                print(f"Skipping missing artifact: {source}")
+                log_print(f"Skipping missing artifact: {source}")
                 continue
             self._store_osci_artifact(source)
 
@@ -131,7 +133,7 @@ class StoreArtifacts(RunWithBestEffortMixin):
         # similar to run_with_best_effort(), save any failure until all post
         # steps are complete.
         except Exception as err:
-            print(f"Exception with artifact copy of {source}, {err}")
+            log_print(f"Exception with artifact copy of {source}, {err}")
             self.failed_commands.append(["artifact copy", source])
             self.exitstatus = 1
 
@@ -140,9 +142,12 @@ class StoreArtifacts(RunWithBestEffortMixin):
 class PostClusterTest(StoreArtifacts):
     """The standard cluster test suite of debug gathering and analysis"""
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
+        collect_collector_metrics=True,
         collect_central_artifacts=True,
+        collect_service_logs=True,
         check_stackrox_logs=False,
         artifact_destination_prefix=None,
     ):
@@ -153,6 +158,8 @@ class PostClusterTest(StoreArtifacts):
                                                          "k8s-logs")
         else:
             self.service_logs_destination = PostTestsConstants.K8S_LOG_DIR
+        self._collect_collector_metrics = collect_collector_metrics
+        self._collect_service_logs = collect_service_logs
         self._check_stackrox_logs = check_stackrox_logs
         self.k8s_namespaces = [
             "stackrox",
@@ -174,12 +181,14 @@ class PostClusterTest(StoreArtifacts):
         self.collect_central_artifacts = collect_central_artifacts
 
     def run(self, test_outputs=None):
-        self.collect_collector_metrics()
+        if self._collect_collector_metrics:
+            self.collect_collector_metrics()
         if self.collect_central_artifacts and self.wait_for_central_api():
             self.get_central_debug_dump()
             self.get_central_diagnostics()
             self.grab_central_data()
-        self.collect_service_logs()
+        if self._collect_service_logs:
+            self.collect_service_logs()
         if self._check_stackrox_logs:
             self.check_stackrox_logs()
         self.store_artifacts(test_outputs)

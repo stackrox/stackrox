@@ -1,5 +1,13 @@
 import withAuth from '../../../helpers/basicAuth';
+import { assertAvailableFilters } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
+import {
+    assertCannotFindThePage,
+    visitWithStaticResponseForPermissions,
+} from '../../../helpers/visit';
+import navSelectors from '../../../selectors/navigation';
+import { visitNodeCveOverviewPage } from './NodeCve.helpers';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Node CVEs - Overview Page', () => {
     withAuth();
@@ -11,13 +19,53 @@ describe('Node CVEs - Overview Page', () => {
     });
 
     it('should restrict access to users with insufficient permissions', () => {
-        // check that users without Node access do not see Node CVEs in the navigation
-        // check that users without Node access cannot access the Node CVEs page directly
+        // When lacking the minimum permissions:
+        // - Check that the Node CVEs link is not visible in the left navigation
+        // - Check that direct navigation fails
+
+        // Missing 'Cluster' permission
+        visitWithStaticResponseForPermissions('/main', {
+            body: { resourceToAccess: { Node: 'READ_ACCESS' } },
+        });
+        cy.get(navSelectors.allNavLinks).contains('Node CVEs').should('not.exist');
+        visitNodeCveOverviewPage();
+        assertCannotFindThePage();
+
+        // Missing 'Node' permission
+        visitWithStaticResponseForPermissions('/main', {
+            body: { resourceToAccess: { Cluster: 'READ_ACCESS' } },
+        });
+        cy.get(navSelectors.allNavLinks).contains('Node CVEs').should('not.exist');
+        visitNodeCveOverviewPage();
+        assertCannotFindThePage();
+
+        // Has both 'Node' and 'Cluster' permissions
+        visitWithStaticResponseForPermissions('/main', {
+            body: { resourceToAccess: { Node: 'READ_ACCESS', Cluster: 'READ_ACCESS' } },
+        });
+        // Link should be visible in the left navigation
+        cy.get(navSelectors.allNavLinks).contains('Node CVEs');
+        // Clicking the link should navigate to the Node CVEs page
+        cy.get(navSelectors.navExpandableVulnerabilityManagement).click();
+        cy.get(navSelectors.nestedNavLinks).contains('Node CVEs').click();
+        cy.get('h1').contains('Node CVEs');
     });
 
     it('should only show relevant filters for the Node CVEs page', () => {
+        visitNodeCveOverviewPage();
+        const expectedFilters = {
+            CVE: ['Name', 'CVSS', 'Discovered Time'],
+            Node: ['Name', 'Operating System', 'Label', 'Annotation', 'Scan Time'],
+            'Node Component': ['Name', 'Version'],
+            Cluster: ['Name', 'Label', 'Type', 'Platform type'],
+        };
+
         // check the advanced filters and ensure only the relevant filters are displayed for CVEs
+        assertAvailableFilters(expectedFilters);
+
         // check the advanced filters and ensure only the relevant filters are displayed for Nodes
+        cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
+        assertAvailableFilters(expectedFilters);
     });
 
     it('should link to the correct details pages', () => {

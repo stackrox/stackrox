@@ -70,7 +70,7 @@ jobs:
             # We need a monospaced font for the table layout, and `terraform` has
             # nicer color highlighting than the default language agnostic code block.
             echo '```terraform'
-            roxctl image scan --output=table \
+            roxctl image scan --output=table --force \
               --image="quay.io/rhacs-eng/${{ matrix.image }}:${{ inputs.version }}" \
               --severity="MODERATE,IMPORTANT,CRITICAL" \
               --headers="COMPONENT,VERSION,CVE,SEVERITY,FIXED_VERSION,LINK" \
@@ -81,7 +81,7 @@ jobs:
 
       - name: Fail if critical or important vulnerabilities have been found
         run: |
-          RESULT=$(roxctl image scan --output=json \
+          RESULT=$(roxctl image scan --output=json --force \
             --image="quay.io/rhacs-eng/${{ matrix.image }}:${{ inputs.version }}")
           CRITICAL_CNT=$(jq ".result.summary.CRITICAL" <<< "$RESULT")
           IMPORTANT_CNT=$(jq ".result.summary.IMPORTANT" <<< "$RESULT")

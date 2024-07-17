@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -253,7 +254,7 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 		}
 	}
 	s.Require().NotNilf(initBundleMeta, "failed to find newly generated init bundle with ID %s in listing", id)
-	s.Require().Equal(initBundle.Meta, initBundleMeta, "init bundle meta data changed between generation and listing")
+	protoassert.Equal(s.T(), initBundle.Meta, initBundleMeta, "init bundle meta data changed between generation and listing")
 
 	// Verify it is not revoked.
 	s.Require().False(initBundleMeta.IsRevoked, "newly generated init bundle is revoked")

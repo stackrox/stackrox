@@ -2,7 +2,6 @@ import static util.Helpers.withRetry
 
 import com.google.common.base.CaseFormat
 import io.fabric8.openshift.api.model.PolicyRule
-import orchestratormanager.OrchestratorTypes
 import org.javers.core.Javers
 import org.javers.core.JaversBuilder
 import org.javers.core.diff.Diff
@@ -21,10 +20,8 @@ import objects.K8sServiceAccount
 import objects.K8sSubject
 import services.RbacService
 import services.ServiceAccountService
-import util.Env
 import util.Helpers
 
-import spock.lang.IgnoreIf
 import spock.lang.Stepwise
 import spock.lang.Tag
 
@@ -63,8 +60,6 @@ class K8sRbacTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("COMPATIBILITY")
-    // TODO(ROX-14666): This test times out under openshift
-    @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
     def "Verify scraped service accounts"() {
         given:
         List<K8sServiceAccount> orchestratorSAs = null

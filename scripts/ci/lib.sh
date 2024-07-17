@@ -159,7 +159,7 @@ get_central_debug_dump() {
 get_prometheus_metrics_parser() {
     local parserBin
     local parserDir
-    parserBin=$(make prometheus-metric-parser -C "$ROOT" --silent)
+    parserBin=$(make prometheus-metric-parser -C "$ROOT" --silent | tail -1)
     parserDir=$(dirname "${parserBin}")
     export PATH="$parserDir":$PATH
     prometheus-metric-parser help
@@ -489,7 +489,7 @@ poll_for_system_test_images() {
 
     local image_list
     image_list="$(mktemp)"
-    populate_image_list "${image_list}"
+    populate_stackrox_image_list "${image_list}"
     info "Will poll for: $(awk '{print $1}' "${image_list}")"
 
     local start_time
@@ -525,13 +525,73 @@ poll_for_system_test_images() {
     touch "${STATE_IMAGES_AVAILABLE}"
 }
 
-image_prefetcher_start() {
+# Image prefetch is broken into two sets:
+# - prebuilt: test fixture images that already exist prior to CI job execution.
+#   Prefetch for these images can start as soon as the cluster is ready.
+# - system: the product images under test 'stackrox-images'. Prefetch for these
+#   should not start until the images are built to avoid backoff noise in the
+#   prefetcher logs.
+
+image_prefetcher_prebuilt_start() {
+    info "Starting image pre-fetcher of pre-built images (NOT built for current commit)."
+    junit_wrap image-prefetcher-prebuilt-start \
+               "Start image pre-fetcher for pre-built images (NOT built for current commit)." \
+               "See log for error details." \
+               _image_prefetcher_prebuilt_start
+}
+
+image_prefetcher_system_start() {
+    info "Starting image pre-fetcher of system images (built for current commit)."
+    junit_wrap image-prefetcher-system-start \
+               "Start image pre-fetcher for system images (built for current commit)." \
+               "See log for error details." \
+               _image_prefetcher_system_start
+}
+
+_image_prefetcher_prebuilt_start() {
+    case "$CI_JOB_NAME" in
+    *qa-e2e-tests)
+        image_prefetcher_start_set qa-e2e
+        # Override the default image pull policy for containers with quay.io
+        # images to rely on prefetched images. This helps ensure that the static
+        # prefect list stays up to date with additions.
+        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        ;;
+    # TODO(ROX-20508): for operaror-e2e jobs, pre-fetch images of the release from which operator upgrade test starts.
+    *)
+        info "No pre-built image prefetching is currently performed for: ${CI_JOB_NAME}"
+        ;;
+    esac
+}
+
+_image_prefetcher_system_start() {
+    case "$CI_JOB_NAME" in
+    # ROX-24818: GKE is excluded from system image prefetch as it causes
+    # flakes in test.
+    *-operator-e2e-tests|*ocp*qa-e2e-tests)
+        image_prefetcher_start_set stackrox-images
+        ;;
+    *)
+        info "No system image prefetching is performed for: ${CI_JOB_NAME}"
+        ;;
+    esac
+}
+
+image_prefetcher_start_set() {
     local ns="prefetch-images"
     local name="$1"
-    local image_prefetcher_deploy="$2"
-    local image_prefetcher_version="$3"
+
+    make image-prefetcher-deploy-bin
+    local image_prefetcher_deploy_bin
+    image_prefetcher_deploy_bin="$(make print-image-prefetcher-deploy-bin)"
+    local image_prefetcher_version
+    image_prefetcher_version="$(go -C tools/test list -m -f '{{.Version}}' github.com/stackrox/image-prefetcher/deploy)"
+
+    info "Using ${image_prefetcher_deploy_bin} ${image_prefetcher_version} for image prefetch deployment"
+
     local manifest
     manifest=$(mktemp)
+
     case "${ORCHESTRATOR_FLAVOR}" in
     k8s)
         flavor=vanilla
@@ -545,36 +605,85 @@ image_prefetcher_start() {
     esac
 
     # daemonset, etc
-    ${image_prefetcher_deploy} \
-        --version="$image_prefetcher_version" \
+    ${image_prefetcher_deploy_bin} \
+        --version="${image_prefetcher_version}" \
         --k8s-flavor="$flavor" \
         --secret=stackrox \
         --collect-metrics \
         "$name" > "$manifest"
 
     # image list
-    local image_tag_list
-    image_tag_list=$(mktemp)
-    populate_image_list "${image_tag_list}"
-    # convert format from "basename tag" to "quay.io/.../basename:tag" expected by pre-fetcher
     local image_list
     image_list=$(mktemp)
-    awk '{print "quay.io/rhacs-eng/" $1 ":" $2}' "$image_tag_list" > "$image_list"
-    rm -f "$image_tag_list"
+    populate_prefetcher_image_list "$name" "${image_list}"
     echo "---" >> "$manifest"
     kubectl create --dry-run=client -o yaml --namespace=$ns configmap "$name" --from-file="images.txt=$image_list" >> "$manifest"
 
     # pull secret
-    NAMESPACE=$ns make -C operator stackrox-image-pull-secret
+    REGISTRY_PASSWORD="${QUAY_RHACS_ENG_RO_PASSWORD}" \
+    REGISTRY_USERNAME="${QUAY_RHACS_ENG_RO_USERNAME}" \
+    NAMESPACE=$ns \
+      make -C operator stackrox-image-pull-secret
 
     # apply configmap, daemonset etc
     retry 5 true kubectl apply --namespace=$ns -f "$manifest"
     rm -f "$image_list" "$manifest"
 }
 
-image_prefetcher_await() {
+image_prefetcher_prebuilt_await() {
+    if [[ "${IMAGE_PREFETCH_DISABLED:-false}" == "true" ]]; then
+        return
+    fi
+
+    info "Waiting for pre-fetcher of pre-built images to complete."
+    junit_wrap image-prefetcher-prebuilt-await \
+               "Waiting for pre-fetcher of pre-built images to complete." \
+               "See log for error details." \
+               _image_prefetcher_prebuilt_await
+}
+
+image_prefetcher_system_await() {
+    if [[ "${IMAGE_PREFETCH_DISABLED:-false}" == "true" ]]; then
+        return
+    fi
+
+    info "Waiting for pre-fetcher of system images to complete."
+    junit_wrap image-prefetcher-system-await \
+               "Waiting for pre-fetcher of system images to complete." \
+               "See log for error details." \
+               _image_prefetcher_system_await
+}
+
+_image_prefetcher_prebuilt_await() {
+    case "$CI_JOB_NAME" in
+    *qa-e2e-tests)
+        image_prefetcher_await_set qa-e2e
+        ;;
+    # TODO(ROX-20508): for operaror-e2e jobs, pre-fetch images of the release from which operator upgrade test starts.
+    *)
+        info "No pre-built image prefetching is currently performed for: ${CI_JOB_NAME}"
+        ;;
+    esac
+}
+
+_image_prefetcher_system_await() {
+    case "$CI_JOB_NAME" in
+    # ROX-24818: GKE is excluded from system image prefetch as it causes
+    # flakes in test.
+    *-operator-e2e-tests|*ocp*qa-e2e-tests)
+        image_prefetcher_await_set stackrox-images
+        ;;
+    *)
+        info "No system image prefetching is performed for: ${CI_JOB_NAME}"
+        ;;
+    esac
+}
+
+image_prefetcher_await_set() {
     local ns="prefetch-images"
     local name="$1"
+
+    info "Waiting for image prefetcher set ${name} to complete."
     kubectl rollout status daemonset "$name" -n "$ns" --timeout 15m
     # All images fetched, now retrieve metrics.
     local attempt=0
@@ -608,7 +717,29 @@ image_prefetcher_await() {
     rm -f "${fetcher_metrics}"
 }
 
-populate_image_list() {
+populate_prefetcher_image_list() {
+    local name="$1"
+    local image_list="$2"
+
+    case "$name" in
+    stackrox-images)
+        local image_tag_list
+        image_tag_list=$(mktemp)
+        populate_stackrox_image_list "${image_tag_list}"
+        # convert format from "basename tag" to "quay.io/.../basename:tag" expected by pre-fetcher
+        awk '{print "quay.io/rhacs-eng/" $1 ":" $2}' "$image_tag_list" > "$image_list"
+        rm -f "$image_tag_list"
+        ;;
+    qa-e2e)
+        cp "$SCRIPTS_ROOT/qa-tests-backend/scripts/images-to-prefetch.txt" "$image_list"
+        ;;
+    *)
+        die "ERROR: An unsupported image prefetcher target was requested: $name"
+        ;;
+    esac
+}
+
+populate_stackrox_image_list() {
     local image_list="$1"
 
     local tag
@@ -636,6 +767,7 @@ END
             ;;
         *-race-condition-qa-e2e-tests)
             cat >> "${image_list}" << END
+central-db ${tag}
 main ${tag}-rcd
 roxctl ${tag}
 END
@@ -649,17 +781,12 @@ END
             ;;
         *)
             cat >> "${image_list}" << END
+central-db ${tag}
 main ${tag}
 roxctl ${tag}
 END
             ;;
     esac
-
-    if [[ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]]; then
-            cat >> "${image_list}" << END
-central-db ${tag}
-END
-    fi
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
             cat >> "${image_list}" << END
@@ -1070,7 +1197,7 @@ get_pr_details() {
 
     url="https://api.github.com/repos/${org}/${repo}/pulls/${pull_request}"
 
-    if ! pr_details=$(curl --retry 5 -sS "${headers[@]}" "${url}"); then
+    if ! pr_details=$(curl --retry 5 --retry-connrefused -sS "${headers[@]}" "${url}"); then
         echo "Github API error: $pr_details, exit code: $?" >&2
         exit 2
     fi
@@ -1368,7 +1495,7 @@ post_process_test_results() {
         # we will fallback to short commit
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.20/junit2jira -o junit2jira && \
+        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.20/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
@@ -1474,7 +1601,7 @@ send_slack_failure_summary() {
     local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${commit_sha}"
     local exitstatus=0
     local commit_details
-    commit_details=$(curl --retry 5 -sS "${commit_details_url}") || exitstatus="$?"
+    commit_details=$(curl --retry 5 --retry-connrefused -sS "${commit_details_url}") || exitstatus="$?"
     if [[ "$exitstatus" != "0" ]]; then
         _send_slack_error "Cannot get commit details: ${commit_details}"
         return 1
@@ -1777,6 +1904,19 @@ Author: \($author_name)\($slack_mention).",
          --data @- --header 'Content-Type: application/json' \
          "${webhook_url}"
 }
+
+# junit_wrap() - runs a command and creates a JUNIT record if the command
+# succeeds or fails. Some output of the command is included in the failure
+# JUNIT.
+#
+# WARNING: If this is used to wrap a bash function and not a separate binary
+# or script file there are two side effects that may not be expected:
+#
+# 1. errexit is not propagated to the function context and the function will
+#    continue on error. This is contrary to the typical approach from `set -e`
+#    used throughout this repo.
+# 2. exports are not propagated back to the calling context because the command
+#    runs in a subshell.
 
 junit_wrap() {
     if [[ "$#" -lt 4 ]]; then

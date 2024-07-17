@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -96,7 +97,7 @@ func (s *networkPolicySACSuite) TestGetNetworkPolicy() {
 			s.NoError(err)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(networkPolicy, policy)
+				protoassert.Equal(s.T(), networkPolicy, policy)
 			} else {
 				s.False(found)
 				s.Nil(policy)
@@ -123,9 +124,9 @@ func (s *networkPolicySACSuite) TestGetNetworkPolicies() {
 			policies, err := s.datastore.GetNetworkPolicies(ctx, testconsts.Cluster2, testconsts.NamespaceB)
 			s.NoError(err)
 			if c.ExpectedFound {
-				s.ElementsMatch([]*storage.NetworkPolicy{networkPolicy1}, policies)
+				protoassert.ElementsMatch(s.T(), []*storage.NetworkPolicy{networkPolicy1}, policies)
 			} else {
-				s.ElementsMatch([]*storage.NetworkPolicy{}, policies)
+				s.Empty(policies)
 			}
 		})
 	}

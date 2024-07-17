@@ -10,8 +10,11 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-func Equal(t *testing.T, expected, actual proto.Message, msgAndArgs ...interface{}) bool {
+func Equal(t testing.TB, expected, actual proto.Message, msgAndArgs ...interface{}) bool {
 	t.Helper()
+	if proto.Equal(expected, actual) {
+		return true
+	}
 	e, err := toJson(expected)
 	require.NoError(t, err)
 	a, err := toJson(actual)
@@ -19,7 +22,12 @@ func Equal(t *testing.T, expected, actual proto.Message, msgAndArgs ...interface
 	return assert.JSONEq(t, e, a, msgAndArgs)
 }
 
-func SlicesEqual[T proto.Message](t *testing.T, expected, actual []T, msgAndArgs ...interface{}) bool {
+func NotEqual(t testing.TB, expected, actual proto.Message, msgAndArgs ...interface{}) bool {
+	t.Helper()
+	return assert.False(t, proto.Equal(expected, actual), msgAndArgs)
+}
+
+func SlicesEqual[T proto.Message](t testing.TB, expected, actual []T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	areEqual := assert.Len(t, actual, len(expected))
 	for i, e := range expected {
@@ -32,7 +40,42 @@ func SlicesEqual[T proto.Message](t *testing.T, expected, actual []T, msgAndArgs
 	return areEqual
 }
 
-func MapSliceEqual[K comparable, T proto.Message](t *testing.T, expected, actual map[K][]T, msgAndArgs ...interface{}) bool {
+func SliceContains[T proto.Message](t testing.TB, slice []T, element T, msgAndArgs ...interface{}) bool {
+	t.Helper()
+	for _, e := range slice {
+		if proto.Equal(e, element) {
+			return true
+		}
+	}
+	return assert.Failf(t, "Slice does not contain element", "%q %v", element.String(), msgAndArgs)
+}
+
+func SliceNotContains[T proto.Message](t testing.TB, slice []T, element T, msgAndArgs ...interface{}) bool {
+	t.Helper()
+	for _, e := range slice {
+		if proto.Equal(e, element) {
+			return assert.Failf(t, "Slice contain element", "%q %v", element.String(), msgAndArgs)
+		}
+	}
+	return true
+}
+
+func ElementsMatch[T proto.Message](t testing.TB, expected, actual []T, msgAndArgs ...interface{}) bool {
+	t.Helper()
+	areEqual := assert.Len(t, actual, len(expected))
+	for _, e := range expected {
+		areEqual = SliceContains(t, actual, e) && areEqual
+	}
+	for _, a := range actual {
+		areEqual = SliceContains(t, expected, a) && areEqual
+	}
+	if !areEqual {
+		t.Log(msgAndArgs...)
+	}
+	return areEqual
+}
+
+func MapSliceEqual[K comparable, T proto.Message](t testing.TB, expected, actual map[K][]T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	expectedKeys := maps.Keys(expected)
 	actualKeys := maps.Keys(actual)
@@ -47,7 +90,7 @@ func MapSliceEqual[K comparable, T proto.Message](t *testing.T, expected, actual
 	return areEqual
 }
 
-func MapEqual[K comparable, T proto.Message](t *testing.T, expected, actual map[K]T, msgAndArgs ...interface{}) bool {
+func MapEqual[K comparable, T proto.Message](t testing.TB, expected, actual map[K]T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	expectedKeys := maps.Keys(expected)
 	actualKeys := maps.Keys(actual)

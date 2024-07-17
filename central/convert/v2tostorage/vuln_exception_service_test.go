@@ -9,43 +9,44 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
 func TestVulnerabilityRequest(t *testing.T) {
-	assert.EqualValues(
+	protoassert.Equal(
 		t,
 		testutils.GetTestVulnDeferralRequestFull(t),
 		VulnerabilityRequest(testutils.GetTestVulnDeferralExceptionFull(t)),
 	)
 
-	assert.EqualValues(
+	protoassert.Equal(
 		t,
 		testutils.GetTestVulnFPRequestFull(t),
 		VulnerabilityRequest(testutils.GetTestVulnFPExceptionFull(t)),
 	)
 
-	assert.EqualValues(
+	protoassert.Equal(
 		t,
 		testutils.GetTestVulnRequestNoComments(t),
 		VulnerabilityRequest(testutils.GetTestVulnExceptionNoComments(t)),
 	)
 
-	assert.EqualValues(
+	protoassert.Equal(
 		t,
 		testutils.GetTestVulnRequestNoUsers(t),
 		VulnerabilityRequest(testutils.GetTestVulnExceptionNoUsers(t)),
 	)
 
-	assert.EqualValues(
+	protoassert.Equal(
 		t,
 		testutils.GetTestVulnRequestWithUpdate(t),
 		VulnerabilityRequest(testutils.GetTestVulnExceptionWithUpdate(t)),
 	)
 
-	assert.EqualValues(
+	protoassert.Equal(
 		t,
 		func() *storage.VulnerabilityRequest {
 			req := testutils.GetTestVulnRequestWithUpdate(t)
@@ -63,7 +64,7 @@ func TestVulnerabilityRequest(t *testing.T) {
 		}(),
 	)
 
-	assert.EqualValues(
+	protoassert.Equal(
 		t,
 		func() *storage.VulnerabilityRequest {
 			req := testutils.GetTestVulnRequestWithUpdate(t)
@@ -90,7 +91,7 @@ func TestVulnerabilityRequest(t *testing.T) {
 	id.EXPECT().FriendlyName().Return("userName").AnyTimes()
 	ctx := authn.ContextWithIdentity(sac.WithAllAccess(context.Background()), id, t)
 
-	assert.EqualValues(
+	protoassert.Equal(
 		t,
 		func() *storage.VulnerabilityRequest {
 			req := testutils.GetTestVulnDeferralRequestFull(t)
@@ -117,7 +118,7 @@ func TestVulnerabilityRequest(t *testing.T) {
 		}(),
 	)
 
-	assert.EqualValues(
+	protoassert.Equal(
 		t,
 		func() *storage.VulnerabilityRequest {
 			req := testutils.GetTestVulnFPRequestFull(t)

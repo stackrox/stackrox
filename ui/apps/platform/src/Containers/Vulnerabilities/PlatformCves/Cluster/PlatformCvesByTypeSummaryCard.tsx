@@ -18,7 +18,7 @@ const statusDisplays = [
 ] as const;
 
 export const platformCveCountByTypeFragment = gql`
-    fragment PlatformCveCountByType on PlatformCVECountByType {
+    fragment PlatformCveCountByTypeFragment on PlatformCVECountByType {
         kubernetes
         openshift
         istio

@@ -167,7 +167,7 @@ tests:
     env.openshift: 4
     scannerV4.disable: false
     monitoring.openshift.enabled: true
-    system.enableNetworkPolicies: true
+    network.enableNetworkPolicies: true
   expect: |
     .networkpolicys["sensor-monitoring-tls"] | assertThat(. != null)
     .networkpolicys["scanner-v4-indexer-monitoring-tls"] | assertThat(. != null)
@@ -177,7 +177,7 @@ tests:
     env.openshift: 4
     scannerV4.disable: false
     monitoring.openshift.enabled: true
-    system.enableNetworkPolicies: false
+    network.enableNetworkPolicies: false
   expect: |
     .networkpolicys["sensor-monitoring-tls"] | assertThat(. == null)
     .networkpolicys["scanner-v4-indexer-monitoring-tls"] | assertThat(. == null)

@@ -191,6 +191,8 @@ message Signature {
 message CosignSignature {
   bytes raw_signature = 1;
   bytes signature_payload = 2;
+  bytes cert_pem = 3;
+  bytes cert_chain_pem = 4;
 }
 
 message V2Metadata {

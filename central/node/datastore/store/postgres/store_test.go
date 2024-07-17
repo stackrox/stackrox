@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -75,7 +76,7 @@ func (s *NodesStoreSuite) TestStore() {
 			vuln.CveBaseInfo.CreatedAt = node.GetLastUpdated()
 		}
 	}
-	s.Equal(cloned, foundNode)
+	protoassert.Equal(s.T(), cloned, foundNode)
 
 	nodeCount, err := store.Count(s.ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -92,7 +93,7 @@ func (s *NodesStoreSuite) TestStore() {
 
 	// Reconcile the timestamps that are set during upsert.
 	cloned.LastUpdated = foundNode.LastUpdated
-	s.Equal(cloned, foundNode)
+	protoassert.Equal(s.T(), cloned, foundNode)
 
 	s.NoError(store.Delete(s.ctx, node.GetId()))
 	foundNode, exists, err = store.Get(s.ctx, node.GetId())
@@ -129,5 +130,5 @@ func (s *NodesStoreSuite) TestStore_UpsertWithoutScan() {
 
 	// We expect only LastUpdated to have changed.
 	foundNode.LastUpdated = newNode.GetLastUpdated()
-	s.Equal(foundNode, newNode)
+	protoassert.Equal(s.T(), foundNode, newNode)
 }

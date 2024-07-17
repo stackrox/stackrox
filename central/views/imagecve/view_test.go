@@ -15,10 +15,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -120,7 +123,7 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 		cloned := actual.Clone()
 		// Adjust dynamic fields and ensure images in ACS are as expected.
 		standardizeImages(image, cloned)
-		s.Require().EqualValues(image, cloned)
+		protoassert.Equal(s.T(), image, cloned)
 
 		// Now that we confirmed that images match, use stored image to establish the expected test results.
 		// This makes dynamic fields matching (e.g. created at) straightforward.
@@ -959,5 +962,175 @@ func standardizeImages(images ...*storage.Image) {
 			}
 			return components[i].Name < components[j].Name
 		})
+	}
+}
+
+func TestImageCVEEdgeIsJoinedLast(t *testing.T) {
+	t.Setenv(env.ImageCVEEdgeCustomJoin.EnvVar(), "true")
+	if !env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+		t.Skip("Skip tests when ROX_IMAGE_CVE_EDGE_CUSTOM_JOIN disabled")
+		t.SkipNow()
+	}
+	ctx := sac.WithAllAccess(context.Background())
+	testDB := pgtest.ForT(t)
+
+	// Initialize the datastore.
+	imageStore := imageDS.GetTestPostgresDataStore(t, testDB.DB)
+
+	// Upsert test images.
+	images := testImages()
+	for _, image := range images {
+		assert.NoError(t, imageStore.UpsertImage(ctx, image))
+	}
+
+	cveView := NewCVEView(testDB.DB)
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.CVE, "cve-2018-1").
+		AddBools(search.Fixable, false).
+		AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).
+		ProtoQuery()
+	imageIDs, err := cveView.GetImageIDs(ctx, query)
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, []string{"sha2"}, imageIDs)
+}
+
+func testImages() []*storage.Image {
+	t1, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 1000))
+	utils.CrashOnError(err)
+	t2, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 2000))
+	utils.CrashOnError(err)
+	return []*storage.Image{
+		{
+			Id: "sha1",
+			Name: &storage.ImageName{
+				Registry: "reg1",
+				Remote:   "img1",
+				Tag:      "tag1",
+				FullName: "reg1/img1:tag1",
+			},
+			SetCves: &storage.Image_Cves{
+				Cves: 3,
+			},
+			Scan: &storage.ImageScan{
+				Components: []*storage.EmbeddedImageScanComponent{
+					{
+						Name:    "comp1",
+						Version: "0.9",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve: "cve-2018-1",
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+									FixedBy: "1.1",
+								},
+								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+							},
+						},
+					},
+					{
+						Name:    "comp2",
+						Version: "1.1",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve: "cve-2018-1",
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+									FixedBy: "1.5",
+								},
+								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+							},
+						},
+					},
+					{
+						Name:     "comp3",
+						Version:  "1.0",
+						Source:   storage.SourceType_JAVA,
+						Location: "p/q/r",
+						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+							LayerIndex: 10,
+						},
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:      "cve-2019-1",
+								Cvss:     4,
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+							},
+							{
+								Cve:      "cve-2019-2",
+								Cvss:     3,
+								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+							},
+						},
+					},
+				},
+				ScanTime: t1,
+			},
+		},
+		{
+			Id: "sha2",
+			Name: &storage.ImageName{
+				Registry: "reg2",
+				Remote:   "img2",
+				Tag:      "tag2",
+				FullName: "reg2/img2:tag2",
+			},
+			SetCves: &storage.Image_Cves{
+				Cves: 5,
+			},
+			Scan: &storage.ImageScan{
+				Components: []*storage.EmbeddedImageScanComponent{
+					{
+						Name:    "comp5",
+						Version: "0.9",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:      "cve-2018-1",
+								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+								State:    storage.VulnerabilityState_DEFERRED,
+							},
+						},
+					},
+					{
+						Name:     "comp3",
+						Version:  "1.0",
+						Source:   storage.SourceType_JAVA,
+						Location: "p/q/r",
+						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+							LayerIndex: 10,
+						},
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:      "cve-2019-1",
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+								Cvss:     4,
+							},
+							{
+								Cve:      "cve-2019-2",
+								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+								Cvss:     3,
+							},
+						},
+					},
+					{
+						Name:     "comp4",
+						Version:  "1.0",
+						Source:   storage.SourceType_PYTHON,
+						Location: "a/b/c",
+						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+							LayerIndex: 10,
+						},
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:      "cve-2017-1",
+								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+							},
+							{
+								Cve:      "cve-2017-2",
+								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+							},
+						},
+					},
+				},
+				ScanTime: t2,
+			},
+		},
 	}
 }

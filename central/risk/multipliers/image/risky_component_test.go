@@ -6,7 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/rox/pkg/protoassert"
 )
 
 func TestRiskyComponentCountScore(t *testing.T) {
@@ -54,5 +54,5 @@ func TestRiskyComponentCountScore(t *testing.T) {
 		Score: 1.3,
 	}
 	score := riskyMultiplier.Score(context.Background(), images[0])
-	assert.Equal(t, expectedScore, score)
+	protoassert.Equal(t, expectedScore, score)
 }

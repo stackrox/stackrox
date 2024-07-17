@@ -127,6 +127,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.start-sha.outputs.start-sha }}
+          fetch-depth: 0
       - name: Check out code (patch release)
         if: needs.variables.outputs.patch != 0
         uses: actions/checkout@v4
@@ -152,19 +153,10 @@ jobs:
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
           git switch --create "${{needs.variables.outputs.branch}}"
-          # Tagging the branching point so that the commits on the main branch
-          # be correctly described.
+          git commit --allow-empty --message \
+            "Empty commit to diverge ${{needs.variables.outputs.release}} from ${{env.main_branch}}"
           git tag --annotate --message "Upstream automation" \
-            "${{needs.variables.outputs.release}}.x" HEAD
-
-          # TODO: tag the first commit on the release branch with the current
-          #       release version when main branch versioning is changed to
-          #       'next.version-dev'.
-      - name: Switch to existing ${{needs.variables.outputs.branch}} branch
-        if: steps.check-existing.outputs.branch-exists == 'true'
-        run: |
-          git fetch origin
-          git switch "${{needs.variables.outputs.branch}}"
+            "${{needs.variables.outputs.release}}.0-rc.0" HEAD
       - name: Update the changelog
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
@@ -174,14 +166,25 @@ jobs:
             git commit --message "Changelog for ${{inputs.version}}"
             echo "\`CHANGELOG.md\` has been updated on the release branch." >> "$GITHUB_STEP_SUMMARY"
           fi
+      - name: Tag ${{env.main_branch}} for next release
+        if: steps.check-existing.outputs.branch-exists == 'false'
+        run: |
+          # There could be several commits between the starting point of the release branch and the HEAD
+          # on main/master tagged with the next release.  While this leaves those intermediate
+          # commits tagged with the previous release, this is better than changing the build tag for
+          # those commits after all their artifacts have already been built and tested.
+          git switch ${{env.main_branch}}
+          git pull origin --rebase ${{env.main_branch}}
+          git tag --annotate --message "Upstream automation" \
+            "${{needs.variables.outputs.next-minor-release}}.x" HEAD
       - name: Push changes
         if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
+        env:
+          GH_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
         run: |
+          git switch "${{needs.variables.outputs.branch}}"
+          # This command pushes all new tags, not just the ones on the current branch. Therefore, it will push the tag we put on ${{env.main_branch}}.
           git push --follow-tags --set-upstream origin "${{needs.variables.outputs.branch}}"
-      - name: Push changes
-        if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'true'
-        run: |
-          git push --follow-tags
 
   ci:
     name: Configure OpenShift CI jobs

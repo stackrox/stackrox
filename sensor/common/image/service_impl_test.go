@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	cacheMocks "github.com/stackrox/rox/pkg/expiringcache/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
 	imageMocks "github.com/stackrox/rox/sensor/common/image/mocks"
 	"github.com/stretchr/testify/suite"
@@ -147,40 +148,36 @@ func (s *imageServiceSuite) TestGetImage() {
 			} else {
 				s.Assert().NoError(err)
 			}
-			s.Assert().Equal(c.expectedResponse, res)
+			protoassert.Equal(s.T(), c.expectedResponse, res)
 		})
 	}
 }
 
 func expectCacheHelper(mockCache *cacheMocks.MockCache, times int, retValue any) expectFn {
 	return func() {
-		mockCache.EXPECT().Get(gomock.Any()).Times(times).DoAndReturn(func(_ any) any {
-			return retValue
-		})
+		mockCache.EXPECT().Get(gomock.Any()).Times(times).
+			Return(retValue, retValue != nil)
 	}
 }
 
 func expectRegistryHelper(mockRegistryStore *imageMocks.MockregistryStore, times int, retValue bool) expectFn {
 	return func() {
-		mockRegistryStore.EXPECT().IsLocal(gomock.Any()).Times(times).DoAndReturn(func(_ any) bool {
-			return retValue
-		})
+		mockRegistryStore.EXPECT().IsLocal(gomock.Any()).Times(times).
+			Return(retValue)
 	}
 }
 
 func expectCentralCall(mockCentral *imageMocks.MockcentralClient, times int, retValue *v1.ScanImageInternalResponse, retErr error) expectFn {
 	return func() {
-		mockCentral.EXPECT().ScanImageInternal(gomock.Any(), gomock.Any()).Times(times).DoAndReturn(func(_, _ any, _ ...any) (*v1.ScanImageInternalResponse, error) {
-			return retValue, retErr
-		})
+		mockCentral.EXPECT().ScanImageInternal(gomock.Any(), gomock.Any()).Times(times).
+			Return(retValue, retErr)
 	}
 }
 
 func expectLocalScan(mockLocalScan *imageMocks.MocklocalScan, times int, retValue *storage.Image, retErr error) expectFn {
 	return func() {
-		mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(times).DoAndReturn(func(_, _, _, _, _, _ any) (*storage.Image, error) {
-			return retValue, retErr
-		})
+		mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(times).
+			Return(retValue, retErr)
 	}
 }
 

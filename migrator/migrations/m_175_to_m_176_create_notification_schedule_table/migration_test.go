@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	notificationschedulestore "github.com/stackrox/rox/migrator/migrations/m_175_to_m_176_create_notification_schedule_table/notificationschedulestore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
@@ -47,7 +48,7 @@ func TestMigration(t *testing.T) {
 	fetchedSchedule, found, fetchErr := scheduleStore.Get(ctx)
 	assert.NoError(t, fetchErr)
 	assert.True(t, found)
-	assert.Equal(t, scheduleToInsert, fetchedSchedule)
+	protoassert.Equal(t, scheduleToInsert, fetchedSchedule)
 
 	// Test Delete
 	deleteErr := scheduleStore.Delete(ctx)

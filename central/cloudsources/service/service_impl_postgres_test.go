@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/secrets"
@@ -115,7 +116,7 @@ func (s *servicePostgresTestSuite) TestGetCloudSource() {
 		Id: cloudSources[0].GetId(),
 	})
 	s.Require().NoError(err)
-	s.Assert().Equal(cloudSources[0], resp.GetCloudSource())
+	protoassert.Equal(s.T(), cloudSources[0], resp.GetCloudSource())
 	s.Assert().Equal(secrets.ScrubReplacementStr, cloudSources[0].GetCredentials().GetSecret())
 }
 
@@ -125,7 +126,7 @@ func (s *servicePostgresTestSuite) TestListCloudSources() {
 	// 1. Count cloud sources without providing a query filter.
 	resp, err := s.service.ListCloudSources(s.readCtx, &v1.ListCloudSourcesRequest{})
 	s.Require().NoError(err)
-	s.Assert().Equal(cloudSources, resp.GetCloudSources())
+	protoassert.SlicesEqual(s.T(), cloudSources, resp.GetCloudSources())
 
 	// 2.a. Filter cloud sources based on the name - no match.
 	resp, err = s.service.ListCloudSources(s.readCtx, &v1.ListCloudSourcesRequest{
@@ -143,7 +144,7 @@ func (s *servicePostgresTestSuite) TestListCloudSources() {
 		},
 	})
 	s.Require().NoError(err)
-	s.Assert().Equal([]*v1.CloudSource{cloudSources[0]}, resp.GetCloudSources())
+	protoassert.SlicesEqual(s.T(), []*v1.CloudSource{cloudSources[0]}, resp.GetCloudSources())
 	s.Assert().Equal(secrets.ScrubReplacementStr, resp.GetCloudSources()[0].GetCredentials().GetSecret())
 
 	// 3. Filter cloud sources based on the type.
@@ -153,7 +154,7 @@ func (s *servicePostgresTestSuite) TestListCloudSources() {
 		},
 	})
 	s.Require().NoError(err)
-	s.Assert().Equal(cloudSources[0:25], resp.GetCloudSources())
+	protoassert.SlicesEqual(s.T(), cloudSources[0:25], resp.GetCloudSources())
 }
 
 func (s *servicePostgresTestSuite) TestCreateCloudSource() {
@@ -170,7 +171,7 @@ func (s *servicePostgresTestSuite) TestCreateCloudSource() {
 	// 2. Read back the created cloud source.
 	getResp, err := s.service.GetCloudSource(s.readCtx, &v1.GetCloudSourceRequest{Id: createdCloudSource.GetId()})
 	s.Require().NoError(err)
-	s.Assert().Equal(createdCloudSource, getResp.GetCloudSource())
+	protoassert.Equal(s.T(), createdCloudSource, getResp.GetCloudSource())
 	s.Assert().Equal(secrets.ScrubReplacementStr, getResp.GetCloudSource().GetCredentials().GetSecret())
 
 	// 3. Try to create a cloud source with existing name.
@@ -275,7 +276,7 @@ func (s *servicePostgresTestSuite) TestUpdateCloudSource() {
 		UpdateCredentials: true,
 	})
 	s.Require().NoError(err)
-	s.Assert().Equal(&v1.Empty{}, updateResp)
+	protoassert.Equal(s.T(), &v1.Empty{}, updateResp)
 
 	// 2. Read back the created cloud source.
 	getResp, err := s.service.GetCloudSource(s.readCtx, &v1.GetCloudSourceRequest{Id: cloudSource.GetId()})
@@ -283,7 +284,7 @@ func (s *servicePostgresTestSuite) TestUpdateCloudSource() {
 	cloudSource.Credentials = &v1.CloudSource_Credentials{
 		Secret: secrets.ScrubReplacementStr,
 	}
-	s.Assert().Equal(cloudSource, getResp.GetCloudSource())
+	protoassert.Equal(s.T(), cloudSource, getResp.GetCloudSource())
 	s.Assert().Equal(secrets.ScrubReplacementStr, getResp.GetCloudSource().GetCredentials().GetSecret())
 
 	// 3. Try to create a cloud source with existing name.
@@ -302,7 +303,7 @@ func (s *servicePostgresTestSuite) TestUpdateCloudSource() {
 		CloudSource:       cloudSource,
 		UpdateCredentials: false,
 	})
-	s.Assert().Equal(&v1.Empty{}, updateResp)
+	protoassert.Equal(s.T(), &v1.Empty{}, updateResp)
 	s.Require().NoError(err)
 
 	// 5. Read back the updated cloud source.
@@ -311,7 +312,7 @@ func (s *servicePostgresTestSuite) TestUpdateCloudSource() {
 	cloudSource.Credentials = &v1.CloudSource_Credentials{
 		Secret: secrets.ScrubReplacementStr,
 	}
-	s.Assert().Equal(cloudSource, getResp.GetCloudSource())
+	protoassert.Equal(s.T(), cloudSource, getResp.GetCloudSource())
 	s.Assert().Equal(secrets.ScrubReplacementStr, getResp.GetCloudSource().GetCredentials().GetSecret())
 }
 
@@ -402,7 +403,7 @@ func (s *servicePostgresTestSuite) TestDeleteCloudSource() {
 	deleteResp, err := s.service.DeleteCloudSource(s.writeCtx, &v1.DeleteCloudSourceRequest{
 		Id: cloudSources[0].GetId(),
 	})
-	s.Assert().Equal(&v1.Empty{}, deleteResp)
+	protoassert.Equal(s.T(), &v1.Empty{}, deleteResp)
 	s.Require().NoError(err)
 
 	_, err = s.service.GetCloudSource(s.readCtx, &v1.GetCloudSourceRequest{Id: cloudSources[0].GetId()})

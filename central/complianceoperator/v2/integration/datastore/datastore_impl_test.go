@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -137,7 +138,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegration()
 		retrievedIntegration, exists, err := s.dataStore.GetComplianceIntegration(s.testContexts[tc.scopeKey], tc.requestID)
 		s.NoError(err)
 		s.True(exists != (tc.expectedResult == nil))
-		s.Equal(tc.expectedResult, retrievedIntegration)
+		protoassert.Equal(s.T(), tc.expectedResult, retrievedIntegration)
 	}
 }
 
@@ -189,7 +190,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrationBy
 		s.NoError(err)
 		// Set the ID to the result object if a result is expected.
 		if tc.expectedResult != nil {
-			s.Contains(clusterIntegrations, tc.expectedResult)
+			protoassert.SliceContains(s.T(), clusterIntegrations, tc.expectedResult)
 		} else {
 			s.Nil(clusterIntegrations)
 		}
@@ -242,7 +243,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrations(
 	for _, tc := range testCases {
 		clusterIntegrations, err := s.dataStore.GetComplianceIntegrations(s.testContexts[tc.scopeKey], tc.query)
 		s.NoError(err)
-		s.Equal(tc.expectedResult, clusterIntegrations)
+		protoassert.SlicesEqual(s.T(), tc.expectedResult, clusterIntegrations)
 	}
 }
 
@@ -323,7 +324,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestRemoveComplianceIntegratio
 	integrations, _, err = s.storage.GetMany(s.hasWriteCtx, ids)
 	s.NoError(err)
 	s.Greater(len(ids), len(integrations))
-	s.NotContains(integrations, testIntegrations[0])
+	protoassert.SliceNotContains(s.T(), integrations, testIntegrations[0])
 }
 
 func (s *complianceIntegrationDataStoreTestSuite) TestRemoveComplianceIntegrationByCluster() {
@@ -343,9 +344,9 @@ func (s *complianceIntegrationDataStoreTestSuite) TestRemoveComplianceIntegratio
 	integrations, _, err = s.storage.GetMany(s.hasWriteCtx, ids)
 	s.NoError(err)
 	s.Equal(len(ids)-1, len(integrations))
-	s.NotContains(integrations, testIntegrations[0])
-	s.Contains(integrations, testIntegrations[1])
-	s.Contains(integrations, testIntegrations[2])
+	protoassert.SliceNotContains(s.T(), integrations, testIntegrations[0])
+	protoassert.SliceContains(s.T(), integrations, testIntegrations[1])
+	protoassert.SliceContains(s.T(), integrations, testIntegrations[2])
 }
 
 func (s *complianceIntegrationDataStoreTestSuite) TestCountIntegrations() {

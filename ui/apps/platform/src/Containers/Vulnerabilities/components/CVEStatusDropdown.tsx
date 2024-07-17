@@ -5,12 +5,17 @@ import { SearchFilter } from 'types/search';
 
 import './FilterDropdowns.css';
 
-type CVEStatusDropdownProps = {
+type CVEStatusDropdownProps<FilterField> = {
+    filterField: FilterField;
     searchFilter: SearchFilter;
-    onSelect: (filterType: 'FIXABLE', checked: boolean, selection: string) => void;
+    onSelect: (filterType: FilterField, checked: boolean, selection: string) => void;
 };
 
-function CVEStatusDropdown({ searchFilter, onSelect }: CVEStatusDropdownProps) {
+function CVEStatusDropdown<FilterField extends 'FIXABLE' | 'CLUSTER CVE FIXABLE'>({
+    filterField,
+    searchFilter,
+    onSelect,
+}: CVEStatusDropdownProps<FilterField>) {
     const [cveStatusIsOpen, setCveStatusIsOpen] = useState(false);
 
     function onCveStatusToggle(isOpen: boolean) {
@@ -25,14 +30,14 @@ function CVEStatusDropdown({ searchFilter, onSelect }: CVEStatusDropdownProps) {
             toggleAriaLabel="CVE status filter menu toggle"
             onToggle={(_event, isOpen: boolean) => onCveStatusToggle(isOpen)}
             onSelect={(e, selection) => {
-                onSelect('FIXABLE', (e.target as HTMLInputElement).checked, selection as string);
+                onSelect(filterField, (e.target as HTMLInputElement).checked, selection as string);
             }}
-            selections={searchFilter.FIXABLE}
+            selections={searchFilter[filterField]}
             isOpen={cveStatusIsOpen}
             placeholderText="CVE status"
         >
             <SelectOption key="Fixable" value="Fixable" />
-            <SelectOption key="Important" value="Not fixable" />
+            <SelectOption key="NotFixable" value="Not fixable" />
         </Select>
     );
 }

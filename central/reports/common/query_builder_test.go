@@ -10,6 +10,7 @@ import (
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -165,7 +166,7 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 			assertQueries: func(t testing.TB, expected *v1.Query, actual *v1.Query) {
 				switch typedQ := actual.GetQuery().(type) {
 				case *v1.Query_Disjunction:
-					assert.ElementsMatch(t,
+					protoassert.ElementsMatch(t,
 						expected.GetQuery().(*v1.Query_Disjunction).Disjunction.GetQueries(),
 						typedQ.Disjunction.GetQueries())
 				default:
@@ -191,5 +192,5 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 }
 
 func assertByDirectComparison(t testing.TB, expected *v1.Query, actual *v1.Query) {
-	assert.Equal(t, expected, actual)
+	protoassert.Equal(t, expected, actual)
 }

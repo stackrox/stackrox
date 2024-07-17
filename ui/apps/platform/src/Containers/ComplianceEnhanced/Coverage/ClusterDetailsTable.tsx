@@ -1,5 +1,5 @@
-import React from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
     Pagination,
     Text,
@@ -8,16 +8,14 @@ import {
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
-    Tooltip,
 } from '@patternfly/react-core';
-import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import {
     OnSearchPayload,
     PartialCompoundSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
-import IconText from 'Components/PatternFly/IconText/IconText';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
@@ -31,6 +29,9 @@ import { CHECK_NAME_QUERY, CHECK_STATUS_QUERY } from './compliance.coverage.cons
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
+import ControlLabels from './components/ControlLabels';
+import StatusIcon from './components/StatusIcon';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
 
 export type ClusterDetailsTableProps = {
     checkResultsCount: number;
@@ -46,6 +47,7 @@ export type ClusterDetailsTableProps = {
         checked: boolean,
         selection: string
     ) => void;
+    onClearFilters: () => void;
 };
 
 function ClusterDetailsTable({
@@ -58,8 +60,24 @@ function ClusterDetailsTable({
     searchFilter,
     onSearch,
     onCheckStatusSelect,
+    onClearFilters,
 }: ClusterDetailsTableProps) {
+    /* eslint-disable no-nested-ternary */
     const { page, perPage, setPage, setPerPage } = pagination;
+    const { generatePathWithScanConfig } = useScanConfigRouter();
+    const [expandedRows, setExpandedRows] = useState<number[]>([]);
+
+    function toggleRow(selectedRowIndex: number) {
+        const newExpandedRows = expandedRows.includes(selectedRowIndex)
+            ? expandedRows.filter((index) => index !== selectedRowIndex)
+            : [...expandedRows, selectedRowIndex];
+        setExpandedRows(newExpandedRows);
+    }
+
+    useEffect(() => {
+        setExpandedRows([]);
+    }, [page, perPage, tableState]);
+
     return (
         <>
             <Toolbar>
@@ -123,56 +141,92 @@ function ClusterDetailsTable({
                         title: 'There was an error loading results for this cluster',
                     }}
                     emptyProps={{
-                        message: 'No results found for this cluster',
+                        message:
+                            'If you have recently created a scan schedule, please wait a few minutes for the results to become available.',
                     }}
-                    filteredEmptyProps={{
-                        title: 'No results found',
-                        message: 'Clear all filters and try again',
-                    }}
+                    filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) => (
-                        <Tbody>
-                            {data.map((checkResult) => {
-                                const { checkName, rationale, status } = checkResult;
+                        <>
+                            {data.map((checkResult, rowIndex) => {
+                                const { checkName, rationale, status, controls } = checkResult;
                                 const clusterStatusObject = getClusterResultsStatusObject(status);
+                                const isRowExpanded = expandedRows.includes(rowIndex);
 
                                 return (
-                                    <Tr key={checkName}>
-                                        <Td dataLabel="Check">
-                                            <Link
-                                                to={`${generatePath(coverageCheckDetailsPath, {
-                                                    checkName,
-                                                    profileName,
-                                                })}?${TAB_NAV_QUERY}=${DETAILS_TAB}`}
-                                            >
-                                                {checkName}
-                                            </Link>
-                                            {/*
-                                                grid display is required to prevent the cell from
-                                                expanding to the text length. The Truncate PF component
-                                                is not used here because it displays a tooltip on hover
-                                            */}
-                                            <div style={{ display: 'grid' }}>
-                                                <Text
-                                                    component={TextVariants.small}
-                                                    className="pf-v5-u-color-200 pf-v5-u-text-truncate"
+                                    <Tbody isExpanded={isRowExpanded} key={checkName}>
+                                        <Tr>
+                                            <Td dataLabel="Check">
+                                                <Link
+                                                    to={`${generatePathWithScanConfig(
+                                                        coverageCheckDetailsPath,
+                                                        {
+                                                            checkName,
+                                                            profileName,
+                                                        },
+                                                        {
+                                                            customParams: {
+                                                                [TAB_NAV_QUERY]: DETAILS_TAB,
+                                                            },
+                                                        }
+                                                    )}`}
                                                 >
-                                                    {rationale}
-                                                </Text>
-                                            </div>
-                                        </Td>
-                                        <Td dataLabel="Controls">placeholder</Td>
-                                        <Td dataLabel="Compliance status" modifier="fitContent">
-                                            <Tooltip content={clusterStatusObject.tooltipText}>
-                                                <IconText
-                                                    icon={clusterStatusObject.icon}
-                                                    text={clusterStatusObject.statusText}
+                                                    {checkName}
+                                                </Link>
+                                                {/*
+                                                    grid display is required to prevent the cell from
+                                                    expanding to the text length. The Truncate PF component
+                                                    is not used here because it displays a tooltip on hover
+                                                */}
+                                                <div style={{ display: 'grid' }}>
+                                                    <Text
+                                                        component={TextVariants.small}
+                                                        className="pf-v5-u-color-200 pf-v5-u-text-truncate"
+                                                    >
+                                                        {rationale}
+                                                    </Text>
+                                                </div>
+                                            </Td>
+                                            <Td
+                                                dataLabel="Controls"
+                                                modifier="fitContent"
+                                                compoundExpand={
+                                                    controls.length > 1
+                                                        ? {
+                                                              isExpanded: isRowExpanded,
+                                                              onToggle: () => toggleRow(rowIndex),
+                                                              rowIndex,
+                                                              columnIndex: 1,
+                                                          }
+                                                        : undefined
+                                                }
+                                            >
+                                                {controls.length > 1 ? (
+                                                    `${controls.length} controls`
+                                                ) : controls.length === 1 ? (
+                                                    <ControlLabels controls={controls} />
+                                                ) : (
+                                                    '-'
+                                                )}
+                                            </Td>
+                                            <Td dataLabel="Compliance status" modifier="fitContent">
+                                                <StatusIcon
+                                                    clusterStatusObject={clusterStatusObject}
                                                 />
-                                            </Tooltip>
-                                        </Td>
-                                    </Tr>
+                                            </Td>
+                                        </Tr>
+                                        {isRowExpanded && (
+                                            <Tr isExpanded={isRowExpanded}>
+                                                <Td colSpan={6}>
+                                                    <ExpandableRowContent>
+                                                        <ControlLabels controls={controls} />
+                                                    </ExpandableRowContent>
+                                                </Td>
+                                            </Tr>
+                                        )}
+                                    </Tbody>
                                 );
                             })}
-                        </Tbody>
+                        </>
                     )}
                 />
             </Table>

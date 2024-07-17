@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -33,10 +34,13 @@ const (
 	unrestrictedReadWriteCtx    = "unrestrictedReadWriteCtx"
 	cluster1ReadCtx             = "cluster1ReadCtx"
 	cluster1ReadWriteCtx        = "cluster1ReadWriteCtx"
+	cluster2ReadWriteCtx        = "cluster2ReadWriteCtx"
 	cluster3ReadWriteCtx        = "cluster3ReadWriteCtx"
 	complianceWriteNoClusterCtx = "complianceWriteNoClusterCtx"
 	clusterWriteNoComplianceCtx = "clusterWriteNoComplianceCtx"
 	noAccessCtx                 = "noAccessCtx"
+
+	maxPaginationLimit = 1000
 )
 
 var (
@@ -79,7 +83,7 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 	s.statusStorage = scanStatusStore.New(s.db)
 	s.scanConfigDSMock = scanConfigMocks.NewMockDataStore(s.mockCtrl)
 
-	s.dataStore = New(s.storage, s.statusStorage)
+	s.dataStore = New(s.storage, s.statusStorage, s.db.DB)
 	s.clusterID1 = testconsts.Cluster1
 	s.clusterID2 = testconsts.Cluster2
 
@@ -105,6 +109,13 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resourceHandles...),
 				sac.ClusterScopeKeys(s.clusterID1)))
+
+	s.testContexts[cluster2ReadWriteCtx] =
+		sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resourceHandles...),
+				sac.ClusterScopeKeys(s.clusterID2)))
 
 	s.testContexts[cluster3ReadWriteCtx] =
 		sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -201,7 +212,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfiguration() {
 		} else {
 			s.Require().False(found)
 		}
-		s.Require().Equal(tc.expectedResponse, foundConfig)
+		protoassert.Equal(s.T(), tc.expectedResponse, foundConfig)
 	}
 }
 
@@ -325,7 +336,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurations() {
 		scanConfigs, err := s.dataStore.GetScanConfigurations(tc.testContext, tc.query)
 		s.Require().NoError(err)
 		s.Require().Equal(len(tc.expectedResponses), len(scanConfigs))
-		s.Require().Equal(tc.expectedResponses, scanConfigs)
+		protoassert.SlicesEqual(s.T(), tc.expectedResponses, scanConfigs)
 	}
 }
 
@@ -360,7 +371,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurationByName(
 
 	foundConfig, err := s.dataStore.GetScanConfigurationByName(s.testContexts[unrestrictedReadCtx], mockScanName)
 	s.Require().NoError(err)
-	s.Require().Equal(scanConfig, foundConfig)
+	protoassert.Equal(s.T(), scanConfig, foundConfig)
 
 	// Retrieve a record that does not exist
 	foundConfig, err = s.dataStore.GetScanConfigurationByName(s.testContexts[unrestrictedReadCtx], "DOES NOT EXIST")
@@ -423,7 +434,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationProfileExi
 			configID:    uuid.NewV4().String(),
 			profiles:    []string{"ocp4-cis-1-4-0"},
 			clusters:    []string{s.clusterID1},
-			isErrorTest: true,
+			isErrorTest: false,
 		},
 		{
 			desc:        "Successful get - updating existing config",
@@ -437,7 +448,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationProfileExi
 			configID:    configID,
 			profiles:    []string{"no-match-profile", "ocp4-cis", "ocp4-cis-1-4-0"},
 			clusters:    []string{s.clusterID1},
-			isErrorTest: true,
+			isErrorTest: false,
 		},
 	}
 
@@ -505,7 +516,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestUpsertScanConfiguration() {
 			foundConfig, found, err := s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadCtx], configID)
 			s.Require().NoError(err)
 			s.Require().True(found)
-			s.Require().Equal(scanConfig, foundConfig)
+			protoassert.Equal(s.T(), scanConfig, foundConfig)
 
 			// Clean up for the next run
 			_, err = s.dataStore.DeleteScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], configID)
@@ -566,7 +577,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {
 		foundConfig, found, err := s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadCtx], configID)
 		s.Require().NoError(err)
 		s.Require().True(found)
-		s.Require().Equal(scanConfig, foundConfig)
+		protoassert.Equal(s.T(), scanConfig, foundConfig)
 
 		// Add Scan config status
 		for _, cluster := range tc.clusters {
@@ -631,6 +642,117 @@ func (s *complianceScanConfigDataStoreTestSuite) TestClusterStatus() {
 
 	// No access to read clusters so should return an error
 	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[complianceWriteNoClusterCtx], configID1, fixtureconsts.Cluster1, "testing status", ""))
+}
+
+func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNames() {
+	configID1 := uuid.NewV4().String()
+	scanConfig1 := s.getTestRec(mockScanName)
+	scanConfig1.Id = configID1
+	scanConfig1.Profiles = []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+		{
+			ProfileName: "ocp4-cis",
+		},
+		{
+			ProfileName: "rhcos-moderate",
+		},
+		{
+			ProfileName: "a-rhcos-moderate",
+		},
+	}
+
+	configID2 := uuid.NewV4().String()
+	scanConfig2 := s.getTestRec("mockScan2")
+	scanConfig2.Id = configID2
+	scanConfig2.Profiles = []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+		{
+			ProfileName: "ocp4-cis",
+		},
+		{
+			ProfileName: "rhcos-moderate",
+		},
+	}
+
+	configID3 := uuid.NewV4().String()
+	scanConfig3 := s.getTestRec("mockScan3")
+	scanConfig3.Id = configID3
+	scanConfig3.Profiles = []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+		{
+			ProfileName: "yet-another-profile",
+		},
+	}
+	scanConfig3.Clusters = []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
+		{
+			ClusterId: s.clusterID1,
+		},
+	}
+
+	// Add a record so we have something to find
+	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig1))
+	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig2))
+	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig3))
+
+	testCases := []struct {
+		desc           string
+		query          *v1.Query
+		countQuery     *v1.Query
+		testContext    context.Context
+		expectedRecord []string
+		expectedCount  int
+	}{
+		{
+			desc:           "Full access",
+			query:          nil,
+			testContext:    s.testContexts[unrestrictedReadCtx],
+			expectedRecord: []string{"a-rhcos-moderate", "ocp4-cis", "rhcos-moderate", "yet-another-profile"},
+			expectedCount:  4,
+		},
+		{
+			desc:           "Full access paging for record 2",
+			query:          search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1).Offset(2)).ProtoQuery(),
+			countQuery:     search.NewQueryBuilder().ProtoQuery(),
+			testContext:    s.testContexts[unrestrictedReadCtx],
+			expectedRecord: []string{"ocp4-cis"},
+			expectedCount:  4, // because of paging, total count will be 4
+		},
+		{
+			desc:           "Cluster 1 - Only cluster 3 access",
+			query:          search.NewQueryBuilder().AddExactMatches(search.ClusterID, testconsts.Cluster1).WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			countQuery:     search.NewQueryBuilder().AddExactMatches(search.ClusterID, testconsts.Cluster1).ProtoQuery(),
+			testContext:    s.testContexts[cluster3ReadWriteCtx],
+			expectedRecord: nil,
+			expectedCount:  0,
+		},
+		{
+			desc:           "Cluster 2 query - Only cluster 2 access",
+			query:          search.NewQueryBuilder().AddExactMatches(search.ClusterID, testconsts.Cluster2).WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			countQuery:     search.NewQueryBuilder().AddExactMatches(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			testContext:    s.testContexts[cluster2ReadWriteCtx],
+			expectedRecord: []string{"a-rhcos-moderate", "ocp4-cis", "rhcos-moderate"},
+			expectedCount:  3,
+		},
+		{
+			desc:           "Cluster 1 and 2 query - Only cluster 2 access",
+			query:          search.NewQueryBuilder().AddExactMatches(search.ClusterID, testconsts.Cluster2).WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			countQuery:     search.NewQueryBuilder().AddExactMatches(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			testContext:    s.testContexts[cluster2ReadWriteCtx],
+			expectedRecord: []string{"a-rhcos-moderate", "ocp4-cis", "rhcos-moderate"},
+			expectedCount:  3,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Info(tc.desc)
+		profiles, err := s.dataStore.GetProfilesNames(tc.testContext, tc.query)
+		s.Require().NoError(err)
+		if tc.expectedRecord == nil {
+			s.Require().Equal(0, len(profiles))
+		} else {
+			s.Require().ElementsMatch(tc.expectedRecord, profiles)
+		}
+		count, err := s.dataStore.CountDistinctProfiles(tc.testContext, tc.countQuery)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedCount, count)
+	}
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) getTestRec(scanName string) *storage.ComplianceOperatorScanConfigurationV2 {

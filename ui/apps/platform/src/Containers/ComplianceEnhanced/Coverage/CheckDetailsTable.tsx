@@ -1,21 +1,18 @@
 import React from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
     Pagination,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
-    Tooltip,
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import IconText from 'Components/PatternFly/IconText/IconText';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { ClusterCheckStatus } from 'services/ComplianceResultsService';
-import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { TableUIState } from 'utils/getTableUIState';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
@@ -25,10 +22,18 @@ import {
     PartialCompoundSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
 import { SearchFilter } from 'types/search';
+
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
-import { getClusterResultsStatusObject } from './compliance.coverage.utils';
+import {
+    getClusterResultsStatusObject,
+    getTimeDifferenceAsPhrase,
+} from './compliance.coverage.utils';
 import { CHECK_STATUS_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
+import StatusIcon from './components/StatusIcon';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
+
+export const tabContentIdForResults = 'check-details-Results-tab-section';
 
 export type CheckDetailsTableProps = {
     checkResultsCount: number;
@@ -45,6 +50,7 @@ export type CheckDetailsTableProps = {
         checked: boolean,
         selection: string
     ) => void;
+    onClearFilters: () => void;
 };
 
 function CheckDetailsTable({
@@ -58,11 +64,13 @@ function CheckDetailsTable({
     searchFilter,
     onSearch,
     onCheckStatusSelect,
+    onClearFilters,
 }: CheckDetailsTableProps) {
+    const { generatePathWithScanConfig } = useScanConfigRouter();
     const { page, perPage, setPage, setPerPage } = pagination;
 
     return (
-        <>
+        <div id={tabContentIdForResults}>
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarGroup className="pf-v5-u-w-100">
@@ -120,12 +128,10 @@ function CheckDetailsTable({
                         title: 'There was an error loading results for this check',
                     }}
                     emptyProps={{
-                        message: 'No results found for this check',
+                        message:
+                            'If you have recently created a scan schedule, please wait a few minutes for the results to become available.',
                     }}
-                    filteredEmptyProps={{
-                        title: 'No results found',
-                        message: 'Clear all filters and try again',
-                    }}
+                    filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) => (
                         <Tbody>
                             {data.map((clusterInfo) => {
@@ -135,7 +141,7 @@ function CheckDetailsTable({
                                     status,
                                 } = clusterInfo;
                                 const clusterStatusObject = getClusterResultsStatusObject(status);
-                                const firstDiscoveredAsPhrase = getDistanceStrictAsPhrase(
+                                const lastScanTimeAsPhrase = getTimeDifferenceAsPhrase(
                                     lastScanTime,
                                     currentDatetime
                                 );
@@ -144,22 +150,20 @@ function CheckDetailsTable({
                                     <Tr key={clusterId}>
                                         <Td dataLabel="Cluster">
                                             <Link
-                                                to={generatePath(coverageClusterDetailsPath, {
-                                                    clusterId,
-                                                    profileName,
-                                                })}
+                                                to={generatePathWithScanConfig(
+                                                    coverageClusterDetailsPath,
+                                                    {
+                                                        clusterId,
+                                                        profileName,
+                                                    }
+                                                )}
                                             >
                                                 {clusterName}
                                             </Link>
                                         </Td>
-                                        <Td dataLabel="Last scanned">{firstDiscoveredAsPhrase}</Td>
+                                        <Td dataLabel="Last scanned">{lastScanTimeAsPhrase}</Td>
                                         <Td dataLabel="Compliance status">
-                                            <Tooltip content={clusterStatusObject.tooltipText}>
-                                                <IconText
-                                                    icon={clusterStatusObject.icon}
-                                                    text={clusterStatusObject.statusText}
-                                                />
-                                            </Tooltip>
+                                            <StatusIcon clusterStatusObject={clusterStatusObject} />
                                         </Td>
                                     </Tr>
                                 );
@@ -168,7 +172,7 @@ function CheckDetailsTable({
                     )}
                 />
             </Table>
-        </>
+        </div>
     );
 }
 

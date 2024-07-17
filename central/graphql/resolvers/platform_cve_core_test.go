@@ -59,6 +59,7 @@ func (s *PlatformCVEResolverTestSuite) TestGetPlatformCVEsEmpty() {
 	q := &PaginatedQuery{}
 	expectedQ, err := q.AsV1QueryOrEmpty()
 	s.Require().NoError(err)
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 
 	s.platformCVEView.EXPECT().Get(s.ctx, expectedQ).Return(nil, nil)
 	response, err := s.resolver.PlatformCVEs(s.ctx, *q)
@@ -70,6 +71,7 @@ func (s *PlatformCVEResolverTestSuite) TestGetPlatformCVEsNonEmpty() {
 	q := &PaginatedQuery{}
 	expectedQ, err := q.AsV1QueryOrEmpty()
 	s.Require().NoError(err)
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 
 	expected := []platformcve.CveCore{
 		platformCVEViewMock.NewMockCveCore(s.mockCtrl),
@@ -89,6 +91,7 @@ func (s *PlatformCVEResolverTestSuite) TestGetPlatformCVEsWithQuery() {
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.CVE, "cve-2022-xyz").
 		WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 
 	expected := []platformcve.CveCore{
 		platformCVEViewMock.NewMockCveCore(s.mockCtrl),
@@ -118,6 +121,7 @@ func (s *PlatformCVEResolverTestSuite) TestPlatformCVEsCVEsWithPaginatedQuery() 
 			search.NewSortOption(search.CVSS).AggregateBy(aggregatefunc.Max, false),
 		).Limit(math.MaxInt32),
 	).ProtoQuery()
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 
 	s.platformCVEView.EXPECT().Get(s.ctx, expectedQ).Return(nil, nil)
 	_, err := s.resolver.PlatformCVEs(s.ctx, *q)
@@ -134,6 +138,7 @@ func (s *PlatformCVEResolverTestSuite) TestPlatformCVECount() {
 	q := &RawQuery{}
 	expectedQ, err := q.AsV1QueryOrEmpty()
 	s.Require().NoError(err)
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 
 	s.platformCVEView.EXPECT().Count(s.ctx, expectedQ).Return(0, nil)
 	response, err := s.resolver.PlatformCVECount(s.ctx, *q)
@@ -146,6 +151,7 @@ func (s *PlatformCVEResolverTestSuite) TestPlatformCVECountWithQuery() {
 		Query: pointers.String("Cluster:c1"),
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.Cluster, "c1").ProtoQuery()
+	expectedQ = tryUnsuppressedQuery(expectedQ)
 
 	s.platformCVEView.EXPECT().Count(s.ctx, expectedQ).Return(3, nil)
 	response, err := s.resolver.PlatformCVECount(s.ctx, *q)

@@ -45,19 +45,19 @@ func New(db postgres.DB) Store {
 }
 
 func (s *storeImpl) Get(ctx context.Context) (*storage.SystemInfo, bool, error) {
-	return pgutils.Retry3(func() (*storage.SystemInfo, bool, error) {
+	return pgutils.Retry3(ctx, func() (*storage.SystemInfo, bool, error) {
 		return s.get(ctx)
 	})
 }
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.SystemInfo) error {
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableUpsert(ctx, obj)
 	})
 }
 
 func (s *storeImpl) Delete(ctx context.Context) error {
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableDelete(ctx)
 	})
 }

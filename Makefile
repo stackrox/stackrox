@@ -138,10 +138,8 @@ $(call go-tool, MOCKGEN_BIN, go.uber.org/mock/mockgen)
 $(call go-tool, GO_JUNIT_REPORT_BIN, github.com/jstemmer/go-junit-report/v2, tools/test)
 $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tools/linters)
 $(call go-tool, GOVULNCHECK_BIN, golang.org/x/vuln/cmd/govulncheck, tools/linters)
-$(call go-tool, IMAGE_PREFETCHER_DEPLOY, github.com/stackrox/image-prefetcher/deploy, tools/test)
+$(call go-tool, IMAGE_PREFETCHER_DEPLOY_BIN, github.com/stackrox/image-prefetcher/deploy, tools/test)
 $(call go-tool, PROMETHEUS_METRIC_PARSER_BIN, github.com/stackrox/prometheus-metric-parser, tools/test)
-
-IMAGE_PREFETCHER_DEPLOY_VERSION = $(shell go -C tools/test list -m -f '{{.Version}}' github.com/stackrox/image-prefetcher/deploy)
 
 ###########
 ## Style ##
@@ -456,7 +454,7 @@ sensor-kubernetes-build:
 .PHONY: main-build-dockerized
 main-build-dockerized: build-volumes
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e SHORTCOMMIT -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps
@@ -528,7 +526,7 @@ sensor-pipeline-benchmark: build-prep test-prep
 go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
-	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
+	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git grep -rl "//go:build sql_integration" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
@@ -536,7 +534,7 @@ go-postgres-unit-tests: build-prep test-prep
 go-postgres-bench-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
-	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
+	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
   $(shell git grep -rl "testing.B" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
@@ -781,6 +779,9 @@ roxvet: $(ROXVET_BIN)
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
 	$(SILENT)go list -e ./... \
 	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
+	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)" -donotcompareproto -gogoprotofunctions -tags "sql_integration"
+	$(SILENT)go list -e ./... \
+	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
 	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)"
 
 ##########
@@ -793,10 +794,6 @@ clean-offline-bundle:
 .PHONY: offline-bundle
 offline-bundle: clean-offline-bundle
 	$(SILENT)./scripts/offline-bundle/create.sh
-
-.PHONY: ui-publish-packages
-ui-publish-packages:
-	make -C ui publish-packages
 
 .PHONY: check-debugger
 check-debugger:
@@ -821,13 +818,12 @@ mitre:
 bootstrap_migration:
 	$(SILENT)if [[ "x${DESCRIPTION}" == "x" ]]; then echo "Please set a description for your migration in the DESCRIPTION environment variable"; else go run tools/generate-helpers/bootstrap-migration/main.go --root . --description "${DESCRIPTION}" ;fi
 
-.PHONY: image-prefetcher-start
-image-prefetcher-start: $(IMAGE_PREFETCHER_DEPLOY)
-	. scripts/ci/lib.sh; image_prefetcher_start stackrox-images $(IMAGE_PREFETCHER_DEPLOY) $(IMAGE_PREFETCHER_DEPLOY_VERSION)
+.PHONY: image-prefetcher-deploy-bin
+image-prefetcher-deploy-bin: $(IMAGE_PREFETCHER_DEPLOY_BIN) ## download and install
 
-.PHONY: image-prefetcher-await
-image-prefetcher-await:
-	. scripts/ci/lib.sh; image_prefetcher_await stackrox-images
+.PHONY: print-image-prefetcher-deploy-bin
+print-image-prefetcher-deploy-bin:
+	@echo $(IMAGE_PREFETCHER_DEPLOY_BIN)
 
 .PHONY: prometheus-metric-parser
 prometheus-metric-parser: $(PROMETHEUS_METRIC_PARSER_BIN)

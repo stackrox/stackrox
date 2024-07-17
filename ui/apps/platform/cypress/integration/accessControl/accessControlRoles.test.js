@@ -66,7 +66,7 @@ describe('Access Control Roles', () => {
         const entityName = 'Admin';
         clickEntityNameInTable(entitiesKey, entityName);
 
-        cy.get('h2').should('have.text', entityName);
+        cy.get('h1').should('have.text', entityName);
         cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
         cy.get(selectors.form.notEditableLabel).should('exist');
@@ -109,7 +109,7 @@ describe('Access Control Roles', () => {
 
         cy.get('button:contains("Create role")').click();
 
-        cy.get('h2').should('have.text', 'Create role');
+        cy.get('h1').should('have.text', 'Create role');
         cy.get(selectors.form.notEditableLabel).should('not.exist');
         cy.get(selectors.form.editButton).should('not.exist');
         cy.get(selectors.form.saveButton).should('be.disabled');
@@ -136,7 +136,7 @@ describe('Access Control Roles', () => {
         cy.contains('h2', /^\d+ results? found$/).should('exist');
         cy.get(`td[data-label="Name"] a:contains("${name}")`).click();
 
-        cy.get('h2').should('have.text', name);
+        cy.get('h1').should('have.text', name);
         cy.get(selectors.form.inputName).should('be.disabled').should('have.value', name);
         cy.get(selectors.form.notEditableLabel).should('not.exist');
         cy.get(selectors.form.editButton).should('exist');

@@ -1,6 +1,11 @@
 package imagecacheutils
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/expiringcache"
+)
+
+type ImageCache expiringcache.Cache
 
 // CacheKeyProvider represents an interface from which image cache can be generated.
 type CacheKeyProvider interface {

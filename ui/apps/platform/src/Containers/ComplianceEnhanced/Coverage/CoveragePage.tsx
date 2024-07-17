@@ -16,27 +16,22 @@ import ClusterDetailsPage from './ClusterDetailsPage';
 import ComplianceProfilesProvider, {
     ComplianceProfilesContext,
 } from './ComplianceProfilesProvider';
-import ProfileChecksPage from './ProfileChecksPage';
-import ProfileClustersPage from './ProfileClustersPage';
+import CoverageEmptyState from './CoverageEmptyState';
+import CoveragesPage from './CoveragesPage';
+import ScanConfigurationsProvider from './ScanConfigurationsProvider';
 
 function CoveragePage() {
     return (
-        <ComplianceProfilesProvider>
-            <CoverageContent />
-        </ComplianceProfilesProvider>
+        <ScanConfigurationsProvider>
+            <ComplianceProfilesProvider>
+                <CoverageContent />
+            </ComplianceProfilesProvider>
+        </ScanConfigurationsProvider>
     );
 }
 
 function CoverageContent() {
-    const { profileScanStats, isLoading, error } = useContext(ComplianceProfilesContext);
-
-    if (isLoading) {
-        return (
-            <Bullseye>
-                <Spinner />
-            </Bullseye>
-        );
-    }
+    const { scanConfigProfilesResponse, isLoading, error } = useContext(ComplianceProfilesContext);
 
     if (error) {
         return (
@@ -46,15 +41,17 @@ function CoverageContent() {
         );
     }
 
-    if (profileScanStats?.scanStats.length === 0) {
-        // TODO: Add a message for when there are no profiles
-        return <div>No profiles, create a scan schedule</div>;
+    if (!isLoading && scanConfigProfilesResponse.totalCount === 0) {
+        return <CoverageEmptyState />;
     }
 
     return (
         <Switch>
-            <Route exact path={coverageProfileChecksPath} component={ProfileChecksPage} />
-            <Route exact path={coverageProfileClustersPath} component={ProfileClustersPage} />
+            <Route
+                exact
+                path={[coverageProfileChecksPath, coverageProfileClustersPath]}
+                component={CoveragesPage}
+            />
             <Route exact path={coverageCheckDetailsPath} component={CheckDetailsPage} />
             <Route exact path={coverageClusterDetailsPath} component={ClusterDetailsPage} />
             <Route
@@ -70,13 +67,19 @@ function CoverageContent() {
 }
 
 function ProfilesRedirectHandler() {
-    const { profileScanStats } = useContext(ComplianceProfilesContext);
-    const firstProfile = profileScanStats.scanStats[0];
+    const { scanConfigProfilesResponse, isLoading } = useContext(ComplianceProfilesContext);
+    const firstProfile = scanConfigProfilesResponse.profiles[0];
+
+    if (isLoading) {
+        return (
+            <Bullseye>
+                <Spinner />
+            </Bullseye>
+        );
+    }
 
     return (
-        <Redirect
-            to={`${complianceEnhancedCoveragePath}/profiles/${firstProfile.profileName}/checks`}
-        />
+        <Redirect to={`${complianceEnhancedCoveragePath}/profiles/${firstProfile.name}/checks`} />
     );
 }
 

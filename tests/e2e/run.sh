@@ -59,7 +59,7 @@ test_e2e() {
     [[ ! -f FAIL ]] || die "e2e API tests failed"
 
     if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
-        info "Temporarily skipping proxy test on OCP. TODO(ROX-24688)"
+        info "Temporarily skipping proxy test on OCP. TODO(ROX-25172)"
     else
         # Give some time for previous tests to finish up
         wait_for_api
@@ -99,7 +99,7 @@ test_preamble() {
 
     export ROX_PLAINTEXT_ENDPOINTS="8080,grpc@8081"
     export ROXDEPLOY_CONFIG_FILE_MAP="$ROOT/scripts/ci/endpoints/endpoints.yaml"
-    export TRUSTED_CA_FILE="$ROOT/tests/bad-ca/untrusted-root-badssl-com.pem"
+    export TRUSTED_CA_FILE="$ROOT/tests/bad-ca/root.crt"
 }
 
 prepare_for_endpoints_test() {
@@ -110,7 +110,7 @@ prepare_for_endpoints_test() {
     setup_client_CA_auth_provider
     setup_generated_certs_for_test "$gencerts_dir"
     if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
-        info "Skipping resource patching for skipped endpoints_test.go. TODO(ROX-24688)"
+        info "Skipping resource patching for skipped endpoints_test.go. TODO(ROX-25172)"
     else
         patch_resources_for_test
     fi

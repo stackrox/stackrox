@@ -18,13 +18,13 @@ const routeMatcherMapForComplianceScanConfigs = {
 };
 
 export function visitComplianceEnhancedCoverageFromLeftNav(staticResponseMap) {
-    visitFromLeftNavExpandable('Compliance (2.0)', 'Coverage', null, staticResponseMap);
+    visitFromLeftNavExpandable('Compliance', 'Coverage', null, staticResponseMap);
 
     cy.get(`h1:contains("Cluster compliance")`); // TODO obsolete but function is not called
 }
 
 export function visitComplianceEnhancedSchedulesFromLeftNav(staticResponseMap) {
-    visitFromLeftNavExpandable('Compliance (2.0)', 'Schedules', null, staticResponseMap);
+    visitFromLeftNavExpandable('Compliance', 'Schedules', null, staticResponseMap);
 
     cy.get(`h1:contains("Schedules")`);
 }
@@ -42,5 +42,5 @@ export function visitComplianceEnhancedScanConfigs(staticResponseMap) {
         staticResponseMap
     );
 
-    cy.get('a.pf-v5-c-nav__link').contains('Schedules').should('have.class', 'pf-m-current');
+    cy.get('a.pf-v5-c-nav__link:contains("Schedules")').should('have.class', 'pf-m-current');
 }

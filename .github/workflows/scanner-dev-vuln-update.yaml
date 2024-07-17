@@ -40,25 +40,71 @@ jobs:
         path: scanner/bin/updater
         if-no-files-found: error
 
-  run-updater:
-    needs:
-      - build-updater
+  download-nvd:
     runs-on: ubuntu-latest
-    env:
-      STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-      STACKROX_NVD_API_CALL_INTERVAL: 6s
+    if: >
+      github.event_name == 'schedule' ||
+      (github.event_name == 'pull_request' &&
+       contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns'))
     steps:
-    # Checkout to run ./.github/actions/{download,upload}-artifact-with-retry
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - name: Download NVD
+      run: |
+        set -eu
+        since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
+        curl \
+            -o nvd.zip \
+            -w "%{http_code}" \
+            -H "If-Modified-Since: $since_time" \
+            https://definitions.stackrox.io/v4/nvd/nvd.zip \
+        | grep 200
+
+    - uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: nvd
+        path: nvd.zip
+        if-no-files-found: error
+
+  run-updater:
+    needs:
+    - build-updater
+    - download-nvd
+    runs-on: ubuntu-latest
+    env:
+      STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+      STACKROX_NVD_API_CALL_INTERVAL: 6s
+
+    steps:
+    # Checkout to run ./.github/actions/{download,upload}-artifact-with-retry
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.ref }}
+
+    - name: Set MANUAL_URL
+      id: set-manual-url
+      run: |
+        if [ "${{ github.event_name }}" == "schedule" ]; then
+          echo "MANUAL_URL=https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml" >> "$GITHUB_ENV"
+        else
+          echo "MANUAL_URL=https://raw.githubusercontent.com/stackrox/stackrox/${{ github.event.pull_request.head.sha }}/scanner/updater/manual/vulns.yaml" >> "$GITHUB_ENV"
+        fi
+
     - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: updater
         path: /usr/local/bin
+
+    - uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: nvd
+        path: .
 
     - name: Set updater
       run: |
@@ -66,12 +112,16 @@ jobs:
         mkdir vulns
 
     - name: Run updater (single bundle)
+      env:
+        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
-        updater export vulns
+        updater export vulns --manual-url "$MANUAL_URL"
 
     - name: Run updater (multi bundle)
+      env:
+        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
-        updater export --split bundles
+        updater export --manual-url "$MANUAL_URL" --split bundles
         zip vulns/vulnerabilities.zip bundles/*.json.zst
 
     - uses: ./.github/actions/upload-artifact-with-retry
@@ -83,7 +133,7 @@ jobs:
   upload-vulnerabilities:
     runs-on: ubuntu-latest
     needs:
-      - run-updater
+    - run-updater
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
     - name: Checkout repository

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -115,7 +116,7 @@ func (s *riskDatastoreSACSuite) TestGetRisk() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.Require().True(found)
-				s.Equal(risk, res)
+				protoassert.Equal(s.T(), risk, res)
 			} else {
 				s.False(found)
 				s.Nil(res)
@@ -146,7 +147,7 @@ func (s *riskDatastoreSACSuite) TestGetRiskForDeployment() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.Require().True(found)
-				s.Equal(risk, res)
+				protoassert.Equal(s.T(), risk, res)
 			} else {
 				s.False(found)
 				s.Nil(res)

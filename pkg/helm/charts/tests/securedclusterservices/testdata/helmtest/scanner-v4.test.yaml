@@ -250,7 +250,7 @@ tests:
   set:
     scannerV4.disable: false
     imagePullSecrets.allowNone: true
-    system.enableNetworkPolicies: true
+    network.enableNetworkPolicies: true
   expect: |
     .networkpolicys["scanner-v4-indexer"] | assertThat(. != null)
     .networkpolicys["scanner-v4-matcher"] | assertThat(. == null)  # No matcher in secured cluster
@@ -259,7 +259,7 @@ tests:
   set:
     scannerV4.disable: false
     imagePullSecrets.allowNone: true
-    system.enableNetworkPolicies: false
+    network.enableNetworkPolicies: false
   expect: |
     .networkpolicys["scanner-v4-indexer"] | assertThat(. == null)
     .networkpolicys["scanner-v4-matcher"] | assertThat(. == null)

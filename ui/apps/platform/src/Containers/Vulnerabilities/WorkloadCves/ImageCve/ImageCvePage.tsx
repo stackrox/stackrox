@@ -26,7 +26,10 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import { Pagination as PaginationParam } from 'services/types';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
-import useAnalytics, { WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED } from 'hooks/useAnalytics';
+import useAnalytics, {
+    WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
+    WORKLOAD_CVE_FILTER_APPLIED,
+} from 'hooks/useAnalytics';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
@@ -41,6 +44,7 @@ import {
     namespaceSearchFilterConfig,
     clusterSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import {
     SearchOption,
     IMAGE_SEARCH_OPTION,
@@ -58,7 +62,6 @@ import {
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
-import { getDefaultWorkloadSortOption } from '../../utils/sortUtils';
 import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
@@ -148,8 +151,8 @@ export const imageCveAffectedDeploymentsQuery = gql`
     }
 `;
 
-const imageSortFields = ['Image', 'Operating System'];
-const imageDefaultSort = { field: 'Image', direction: 'desc' } as const;
+const imageSortFields = ['Image', 'Severity', 'Operating System'];
+const imageDefaultSort = { field: 'Severity', direction: 'desc' } as const;
 
 const deploymentSortFields = ['Deployment', 'Cluster', 'Namespace'];
 const deploymentDefaultSort = { field: 'Deployment', direction: 'desc' } as const;
@@ -197,6 +200,7 @@ function ImageCvePage() {
     const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
     const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
     const currentVulnerabilityState = useVulnerabilityState();
 
     const urlParams = useParams();
@@ -218,7 +222,7 @@ function ImageCvePage() {
     const { sortOption, setSortOption, getSortParams } = useURLSort({
         sortFields: getSortFields(entityTab),
         defaultSortOption: getDefaultSortOption(entityTab),
-        onSort: () => setPage(1),
+        onSort: () => setPage(1, 'replace'),
     });
 
     const metadataRequest = useQuery<{ imageCVE: CveMetadata | null }, { cve: string }>(
@@ -312,8 +316,10 @@ function ImageCvePage() {
     }
 
     function onEntityTypeChange(entityTab: WorkloadEntityTab) {
-        setSortOption(getDefaultWorkloadSortOption(entityTab));
         setPage(1);
+        if (entityTab !== 'CVE') {
+            setSortOption(getDefaultSortOption(entityTab), 'replace');
+        }
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
             properties: {
@@ -399,7 +405,10 @@ function ImageCvePage() {
                 <VulnerabilityStateTabs
                     titleOverrides={{ observed: 'Workloads' }}
                     isBox
-                    onChange={() => setPage(1)}
+                    onChange={() => {
+                        setSearchFilter({});
+                        setPage(1, 'replace');
+                    }}
                 />
                 <div className="pf-v5-u-background-color-100">
                     <div className="pf-v5-u-px-sm">
@@ -408,13 +417,10 @@ function ImageCvePage() {
                                 className="pf-v5-u-py-md"
                                 searchFilterConfig={searchFilterConfig}
                                 searchFilter={searchFilter}
-                                onFilterChange={(newFilter, { action }) => {
+                                onFilterChange={(newFilter, searchPayload) => {
                                     setSearchFilter(newFilter);
                                     setPage(1, 'replace');
-
-                                    if (action === 'ADD') {
-                                        // TODO - Add analytics tracking ROX-24532
-                                    }
+                                    trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
                                 }}
                             />
                         ) : (

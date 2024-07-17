@@ -447,6 +447,41 @@ func (s *NodeCVEViewTestSuite) testCases() []testCase {
 				}),
 		},
 		{
+			desc: "search fixable",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddBools(search.Fixable, true).
+				ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withVulnFilter(func(vuln *storage.NodeVulnerability) bool {
+					return vuln.GetFixedBy() != ""
+				}),
+		},
+		{
+			desc: "search one cve + fixable",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.CVE, "CVE-2014-6230").
+				AddBools(search.Fixable, true).
+				ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withVulnFilter(func(vuln *storage.NodeVulnerability) bool {
+					return vuln.GetCveBaseInfo().GetCve() == "CVE-2014-6230" && vuln.GetFixedBy() != ""
+				}),
+		},
+		{
+			desc: "search one cve + not fixable",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.CVE, "CVE-2014-6230").
+				AddBools(search.Fixable, false).
+				ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withVulnFilter(func(vuln *storage.NodeVulnerability) bool {
+					return vuln.GetCveBaseInfo().GetCve() == "CVE-2014-6230" && vuln.GetFixedBy() == ""
+				}),
+		},
+		{
 			desc: "search critical severity",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
@@ -714,6 +749,8 @@ type coreWithStats struct {
 	operatingSystems set.StringSet
 
 	severityToNodes map[storage.VulnerabilitySeverity]set.StringSet
+
+	severityToFixableNodes map[storage.VulnerabilitySeverity]set.StringSet
 }
 
 func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []CveCore {
@@ -745,7 +782,8 @@ func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []Cve
 							CVE:                     cve,
 							FirstDiscoveredInSystem: &cveCreatedTime,
 						},
-						severityToNodes: make(map[storage.VulnerabilitySeverity]set.StringSet),
+						severityToNodes:        make(map[storage.VulnerabilitySeverity]set.StringSet),
+						severityToFixableNodes: make(map[storage.VulnerabilitySeverity]set.StringSet),
 					}
 					cveMap[v.GetCveBaseInfo().GetCve()] = withStats
 				}
@@ -764,6 +802,13 @@ func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []Cve
 				if !ok {
 					withStats.severityToNodes[v.GetSeverity()] = nSet
 				}
+				if v.GetFixedBy() != "" {
+					fixableNSet, ok := withStats.severityToFixableNodes[v.GetSeverity()]
+					fixableNSet.Add(n.Id)
+					if !ok {
+						withStats.severityToFixableNodes[v.GetSeverity()] = fixableNSet
+					}
+				}
 			}
 		}
 	}
@@ -781,9 +826,16 @@ func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []Cve
 		core.NodeCount = len(core.GetNodeIDs())
 		core.OperatingSystemCount = withStats.operatingSystems.Cardinality()
 		core.NodesWithLowSeverity = withStats.severityToNodes[storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY].Cardinality()
+		core.FixableNodesWithLowSeverity = withStats.severityToFixableNodes[storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY].Cardinality()
+
 		core.NodesWithModerateSeverity = withStats.severityToNodes[storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY].Cardinality()
+		core.FixableNodesWithModerateSeverity = withStats.severityToFixableNodes[storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY].Cardinality()
+
 		core.NodesWithImportantSeverity = withStats.severityToNodes[storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY].Cardinality()
+		core.FixableNodesWithImportantSeverity = withStats.severityToFixableNodes[storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY].Cardinality()
+
 		core.NodesWithCriticalSeverity = withStats.severityToNodes[storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY].Cardinality()
+		core.FixableNodesWithCriticalSeverity = withStats.severityToNodes[storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY].Cardinality()
 		expected = append(expected, core)
 	}
 	return expected
@@ -791,7 +843,8 @@ func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []Cve
 
 func (s *NodeCVEViewTestSuite) compileExpectedCountBySeverity(filter *filterImpl) common.ResourceCountByCVESeverity {
 	var expected countByNodeCVESeverity
-	cveMap := make(map[string]set.Set[storage.VulnerabilitySeverity])
+	severityToCVEs := make(map[storage.VulnerabilitySeverity]set.StringSet)
+	severityToFixableCVEs := make(map[storage.VulnerabilitySeverity]set.StringSet)
 	for _, n := range s.nodeMap {
 		if !filter.matchNode(n) {
 			continue
@@ -804,29 +857,36 @@ func (s *NodeCVEViewTestSuite) compileExpectedCountBySeverity(filter *filterImpl
 				if !filter.matchVuln(v) {
 					continue
 				}
-				cve := v.GetCveBaseInfo().GetCve()
-				severities := cveMap[cve]
-				severities.Add(v.GetSeverity())
-				cveMap[cve] = severities
-			}
-		}
-	}
-	for _, severities := range cveMap {
-		for severity := range severities {
-			switch severity {
-			case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
-				expected.LowSeverityCount++
-			case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
-				expected.ModerateSeverityCount++
-			case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
-				expected.ImportantSeverityCount++
-			case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
-				expected.CriticalSeverityCount++
-			default:
 
+				cve := v.GetCveBaseInfo().GetCve()
+				cveSet, ok := severityToCVEs[v.GetSeverity()]
+				cveSet.Add(cve)
+				if !ok {
+					severityToCVEs[v.GetSeverity()] = cveSet
+				}
+				if v.GetFixedBy() != "" {
+					fixableCVESet, ok := severityToFixableCVEs[v.GetSeverity()]
+					fixableCVESet.Add(cve)
+					if !ok {
+						severityToFixableCVEs[v.GetSeverity()] = fixableCVESet
+					}
+				}
 			}
 		}
 	}
+
+	expected.LowSeverityCount = severityToCVEs[storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY].Cardinality()
+	expected.FixableLowSeverityCount = severityToFixableCVEs[storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY].Cardinality()
+
+	expected.ModerateSeverityCount = severityToCVEs[storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY].Cardinality()
+	expected.FixableModerateSeverityCount = severityToFixableCVEs[storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY].Cardinality()
+
+	expected.ImportantSeverityCount = severityToCVEs[storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY].Cardinality()
+	expected.FixableImportantSeverityCount = severityToFixableCVEs[storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY].Cardinality()
+
+	expected.CriticalSeverityCount = severityToCVEs[storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY].Cardinality()
+	expected.FixableCriticalSeverityCount = severityToFixableCVEs[storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY].Cardinality()
+
 	return &expected
 }
 
@@ -905,9 +965,11 @@ func getTestNodes() map[string]*storage.Node {
 			for _, c := range n.GetScan().GetComponents() {
 				for _, v := range c.GetVulnerabilities() {
 					v.Severity = storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
+					v.SetFixedBy = &storage.NodeVulnerability_FixedBy{
+						FixedBy: "",
+					}
 				}
 			}
-
 		}
 	}
 	return map[string]*storage.Node{n1.GetId(): n1, n2.GetId(): n2, n3.GetId(): n3}

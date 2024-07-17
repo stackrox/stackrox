@@ -21,10 +21,12 @@ import io.stackrox.proto.api.v1.PolicyServiceGrpc
 import io.stackrox.proto.api.v1.SearchServiceGrpc
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
+import io.stackrox.proto.api.v1.SecretServiceGrpc
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.DeploymentOuterClass.ContainerImage
 import io.stackrox.proto.storage.DeploymentOuterClass.Deployment
 import io.stackrox.proto.storage.DeploymentOuterClass.ListDeployment
+import io.stackrox.proto.storage.SecretOuterClass.ListSecret
 import io.stackrox.proto.storage.DeploymentOuterClass.Pod
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
@@ -75,6 +77,10 @@ class Services extends BaseService {
         return DeploymentServiceGrpc.newBlockingStub(getChannel())
     }
 
+    static SecretServiceGrpc.SecretServiceBlockingStub getSecretClient() {
+        return SecretServiceGrpc.newBlockingStub(getChannel())
+    }
+
     static PodServiceGrpc.PodServiceBlockingStub getPodClient() {
         return PodServiceGrpc.newBlockingStub(getChannel())
     }
@@ -117,6 +123,10 @@ class Services extends BaseService {
 
     static List<ListDeployment> getDeployments(RawQuery query = RawQuery.newBuilder().build()) {
         return getDeploymentClient().listDeployments(query).deploymentsList
+    }
+
+    static List<ListSecret> getSecrets(RawQuery query = RawQuery.newBuilder().build()) {
+        return getSecretClient().listSecrets(query).secretsList
     }
 
     static DeploymentServiceOuterClass.GetDeploymentWithRiskResponse getDeploymentWithRisk(String id) {

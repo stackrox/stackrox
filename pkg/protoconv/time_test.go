@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ func TestConvertTimeString(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			assert.Equal(t, c.output, ConvertTimeString(c.input))
+			protoassert.Equal(t, c.output, ConvertTimeString(c.input))
 		})
 	}
 }

@@ -1,21 +1,26 @@
 import React from 'react';
-import { DatePicker, SearchInput, SelectOption } from '@patternfly/react-core';
+import { Button, DatePicker, Flex, SearchInput, SelectOption } from '@patternfly/react-core';
+import { ArrowRightIcon } from '@patternfly/react-icons';
 
 import { SearchFilter } from 'types/search';
 import { getDate } from 'utils/dateUtils';
-import { dateFormat } from 'constants/dateTimeFormat';
 import { SelectedEntity } from './EntitySelector';
 import { SelectedAttribute } from './AttributeSelector';
 import {
     OnSearchPayload,
     PartialCompoundSearchFilterConfig,
     SearchFilterAttribute,
-    SelectSearchFilterAttribute,
 } from '../types';
-import { ensureConditionNumber, ensureString, ensureStringArray } from '../utils/utils';
+import {
+    conditionMap,
+    ensureConditionNumber,
+    ensureString,
+    ensureStringArray,
+    isSelectType,
+} from '../utils/utils';
 
 import CheckboxSelect from './CheckboxSelect';
-import ConditionNumber, { conditionMap } from './ConditionNumber';
+import ConditionNumber from './ConditionNumber';
 import SearchFilterAutocomplete from './SearchFilterAutocomplete';
 
 export type InputFieldValue =
@@ -31,15 +36,26 @@ export type CompoundSearchFilterInputFieldProps = {
     selectedAttribute: SelectedAttribute;
     value: InputFieldValue;
     searchFilter: SearchFilter;
+    additionalContextFilter?: SearchFilter;
     onSearch: ({ action, category, value }: OnSearchPayload) => void;
     onChange: InputFieldOnChange;
     config: PartialCompoundSearchFilterConfig;
 };
 
-function isSelectType(
-    attributeObject: SearchFilterAttribute
-): attributeObject is SelectSearchFilterAttribute {
-    return attributeObject.inputType === 'select';
+function dateParse(date: string): Date {
+    const split = date.split('/');
+    if (split.length !== 3) {
+        return new Date('Invalid Date');
+    }
+    const month = split[0];
+    const day = split[1];
+    const year = split[2];
+    if (month.length !== 2 || day.length !== 2 || year.length !== 4) {
+        return new Date('Invalid Date');
+    }
+    return new Date(
+        `${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00`
+    );
 }
 
 function CompoundSearchFilterInputField({
@@ -47,6 +63,7 @@ function CompoundSearchFilterInputField({
     selectedAttribute,
     value,
     searchFilter,
+    additionalContextFilter,
     onSearch,
     onChange,
     config,
@@ -63,7 +80,7 @@ function CompoundSearchFilterInputField({
     }
 
     if (attributeObject.inputType === 'text') {
-        const textLabel = `Filter results by ${attributeObject.filterChipLabel.toLowerCase()}`;
+        const textLabel = `Filter results by ${attributeObject.filterChipLabel}`;
         return (
             <SearchInput
                 aria-label={textLabel}
@@ -84,23 +101,39 @@ function CompoundSearchFilterInputField({
         );
     }
     if (attributeObject.inputType === 'date-picker') {
+        const dateValue = ensureString(value);
+
         return (
-            <DatePicker
-                aria-label="Filter by date"
-                buttonAriaLabel="Filter by date toggle"
-                value={ensureString(value)}
-                onChange={(_event, _value) => {
-                    const formattedValue = _value ? getDate(_value) : '';
-                    onChange(_value);
-                    onSearch({
-                        action: 'ADD',
-                        category: attributeObject.searchTerm,
-                        value: formattedValue,
-                    });
-                }}
-                dateFormat={getDate}
-                placeholder={dateFormat}
-            />
+            <Flex spaceItems={{ default: 'spaceItemsNone' }}>
+                <DatePicker
+                    aria-label="Filter by date"
+                    buttonAriaLabel="Filter by date toggle"
+                    value={dateValue}
+                    onChange={(_event, _value) => {
+                        onChange(_value);
+                    }}
+                    dateFormat={getDate}
+                    dateParse={dateParse}
+                    placeholder="MM/DD/YYYY"
+                />
+                <Button
+                    variant="control"
+                    aria-label="Apply date input to search"
+                    onClick={() => {
+                        const date = dateParse(dateValue);
+                        if (!Number.isNaN(date.getTime())) {
+                            onSearch({
+                                action: 'ADD',
+                                category: attributeObject.searchTerm,
+                                value: dateValue,
+                            });
+                            onChange('');
+                        }
+                    }}
+                >
+                    <ArrowRightIcon />
+                </Button>
+            </Flex>
         );
     }
     if (attributeObject.inputType === 'condition-number') {
@@ -129,7 +162,7 @@ function CompoundSearchFilterInputField({
     ) {
         const { searchCategory } = entityObject;
         const { searchTerm, filterChipLabel } = attributeObject;
-        const textLabel = `Filter results by ${filterChipLabel.toLowerCase()}`;
+        const textLabel = `Filter results by ${filterChipLabel}`;
         return (
             <SearchFilterAutocomplete
                 searchCategory={searchCategory}
@@ -147,11 +180,13 @@ function CompoundSearchFilterInputField({
                     onChange('');
                 }}
                 textLabel={textLabel}
+                searchFilter={searchFilter}
+                additionalContextFilter={additionalContextFilter}
             />
         );
     }
     if (isSelectType(attributeObject)) {
-        const attributeLabel = attributeObject.displayName.toLowerCase();
+        const attributeLabel = attributeObject.displayName;
         const selectOptions = attributeObject.inputProps.options;
         const { searchTerm } = attributeObject;
         const selection = ensureStringArray(searchFilter?.[searchTerm]);

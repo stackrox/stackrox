@@ -1,5 +1,27 @@
+import { graphql } from '../../../constants/apiEndpoints';
 import withAuth from '../../../helpers/basicAuth';
+import { assertAvailableFilters } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
+import {
+    assertCannotFindThePage,
+    visitWithStaticResponseForPermissions,
+} from '../../../helpers/visit';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
+import { visitFirstNodeLinkFromTable, visitNodeCveOverviewPage } from './NodeCve.helpers';
+
+const nodeBaseUrl = '/main/vulnerabilities/node-cves/nodes';
+const mockNodeId = '1';
+const mockNodeName = 'cypress-node-1';
+
+function mockNodePageRequests() {
+    const opnames = ['getNodeMetadata', 'getNodeVulnSummary', 'getNodeVulnerabilities'];
+    opnames.forEach((opname) => {
+        cy.intercept(
+            { method: 'POST', url: graphql(opname) },
+            { fixture: `vulnerabilities/nodeCves/${opname}.json` }
+        ).as(opname);
+    });
+}
 
 describe('Node CVEs - Node Detail Page', () => {
     withAuth();
@@ -11,11 +33,36 @@ describe('Node CVEs - Node Detail Page', () => {
     });
 
     it('should restrict access to users with insufficient permissions', () => {
-        // check that users without Node access cannot access the Node Detail page directly
+        mockNodePageRequests();
+
+        const url = `${nodeBaseUrl}/${mockNodeId}`;
+
+        visitWithStaticResponseForPermissions(url, {
+            body: { resourceToAccess: { Node: 'READ_ACCESS' } },
+        });
+        assertCannotFindThePage();
+
+        visitWithStaticResponseForPermissions(url, {
+            body: { resourceToAccess: { Cluster: 'READ_ACCESS' } },
+        });
+        assertCannotFindThePage();
+
+        visitWithStaticResponseForPermissions(url, {
+            body: { resourceToAccess: { Node: 'READ_ACCESS', Cluster: 'READ_ACCESS' } },
+        });
+        cy.get('h1').contains(mockNodeName);
     });
 
     it('should only show relevant filters for the Node Detail page', () => {
-        // check the advanced filters and ensure only the relevant filters are displayed
+        visitNodeCveOverviewPage();
+        cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
+
+        visitFirstNodeLinkFromTable();
+
+        assertAvailableFilters({
+            CVE: ['Name', 'CVSS', 'Discovered Time'],
+            'Node Component': ['Name', 'Version'],
+        });
     });
 
     it('should link to the correct pages', () => {

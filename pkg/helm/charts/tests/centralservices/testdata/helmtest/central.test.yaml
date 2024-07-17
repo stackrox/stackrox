@@ -64,17 +64,15 @@ tests:
     .clusterroles["stackrox-central-psp"] | assertThat(. == null)
 
 - name: "central with network policies enabled"
-  values:
-    system:
-      enableNetworkPolicies: true
+  set:
+    network.enableNetworkPolicies: true
   expect: |
     .networkpolicys["allow-ext-to-central"] | assertThat(. != null)
     .networkpolicys["central-db"] | assertThat(. != null)
 
 - name: "central with network policies disabled"
-  values:
-    system:
-      enableNetworkPolicies: false
+  set:
+    network.enableNetworkPolicies: false
   expect: |
     .networkpolicys["allow-ext-to-central"] | assertThat(. == null)
     .networkpolicys["central-db"] | assertThat(. == null)

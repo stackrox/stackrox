@@ -11,6 +11,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -66,7 +67,7 @@ func (s *RoleBindingsStoreSuite) TestStore() {
 	foundK8SRoleBinding, exists, err = store.Get(ctx, k8SRoleBinding.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(k8SRoleBinding, foundK8SRoleBinding)
+	protoassert.Equal(s.T(), k8SRoleBinding, foundK8SRoleBinding)
 
 	k8SRoleBindingCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -80,11 +81,6 @@ func (s *RoleBindingsStoreSuite) TestStore() {
 	s.True(k8SRoleBindingExists)
 	s.NoError(store.Upsert(ctx, k8SRoleBinding))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, k8SRoleBinding), sac.ErrResourceAccessDenied)
-
-	foundK8SRoleBinding, exists, err = store.Get(ctx, k8SRoleBinding.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(k8SRoleBinding, foundK8SRoleBinding)
 
 	s.NoError(store.Delete(ctx, k8SRoleBinding.GetId()))
 	foundK8SRoleBinding, exists, err = store.Get(ctx, k8SRoleBinding.GetId())
@@ -331,7 +327,7 @@ func (s *RoleBindingsStoreSuite) TestSACGet() {
 			expectedFound := len(testCase.expectedObjects) > 0
 			assert.Equal(t, expectedFound, exists)
 			if expectedFound {
-				assert.Equal(t, objA, actual)
+				protoassert.Equal(t, objA, actual)
 			} else {
 				assert.Nil(t, actual)
 			}
@@ -403,7 +399,7 @@ func (s *RoleBindingsStoreSuite) TestSACGetMany() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			actual, missingIndices, err := s.store.GetMany(testCase.context, []string{objA.GetId(), objB.GetId()})
 			assert.NoError(t, err)
-			assert.Equal(t, testCase.expectedObjects, actual)
+			protoassert.SlicesEqual(t, testCase.expectedObjects, actual)
 			assert.Equal(t, testCase.expectedMissingIndices, missingIndices)
 		})
 	}

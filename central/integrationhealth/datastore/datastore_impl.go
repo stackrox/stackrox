@@ -113,7 +113,7 @@ func (ds *datastoreImpl) getIntegrationsOfType(ctx context.Context, integrationT
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
 	return integrationHealth, nil

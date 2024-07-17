@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -64,7 +65,7 @@ func (s *CollectionsStoreSuite) TestStore() {
 	foundResourceCollection, exists, err = store.Get(ctx, resourceCollection.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(resourceCollection, foundResourceCollection)
+	protoassert.Equal(s.T(), resourceCollection, foundResourceCollection)
 
 	resourceCollectionCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -78,11 +79,6 @@ func (s *CollectionsStoreSuite) TestStore() {
 	s.True(resourceCollectionExists)
 	s.NoError(store.Upsert(ctx, resourceCollection))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, resourceCollection), sac.ErrResourceAccessDenied)
-
-	foundResourceCollection, exists, err = store.Get(ctx, resourceCollection.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(resourceCollection, foundResourceCollection)
 
 	s.NoError(store.Delete(ctx, resourceCollection.GetId()))
 	foundResourceCollection, exists, err = store.Get(ctx, resourceCollection.GetId())

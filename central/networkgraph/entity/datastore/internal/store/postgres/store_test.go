@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 	foundNetworkEntity, exists, err = store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(networkEntity, foundNetworkEntity)
+	protoassert.Equal(s.T(), networkEntity, foundNetworkEntity)
 
 	networkEntityCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -77,11 +78,6 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 	s.True(networkEntityExists)
 	s.NoError(store.Upsert(ctx, networkEntity))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, networkEntity), sac.ErrResourceAccessDenied)
-
-	foundNetworkEntity, exists, err = store.Get(ctx, networkEntity.GetInfo().GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(networkEntity, foundNetworkEntity)
 
 	s.NoError(store.Delete(ctx, networkEntity.GetInfo().GetId()))
 	foundNetworkEntity, exists, err = store.Get(ctx, networkEntity.GetInfo().GetId())

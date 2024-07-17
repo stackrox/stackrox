@@ -4,19 +4,16 @@ import { ClientPagination, Pagination } from 'services/types';
 import { QuerySearchFilter } from '../../types';
 import { getRegexScopedQueryString } from '../../utils/searchUtils';
 
-// TODO Validate types with BE implementation
 type PlatformCVE = {
+    id: string;
     cve: string;
     isFixable: boolean;
     cveType: string;
     cvss: number;
-    scoreVersion: string;
-    distroTuples: {
-        summary: string;
-        operatingSystem: string;
-        cvss: number;
+    clusterVulnerability: {
         scoreVersion: string;
-    }[];
+        summary: string;
+    };
     clusterCountByType: {
         generic: number;
         kubernetes: number;
@@ -28,14 +25,14 @@ type PlatformCVE = {
 const cveListQuery = gql`
     query getPlatformCves($query: String, $pagination: Pagination) {
         platformCVEs(query: $query, pagination: $pagination) {
+            id
             cve
             isFixable
             cveType
             cvss
-            scoreVersion
-            distroTuples {
+            clusterVulnerability {
+                scoreVersion
                 summary
-                operatingSystem
             }
             clusterCountByType {
                 generic

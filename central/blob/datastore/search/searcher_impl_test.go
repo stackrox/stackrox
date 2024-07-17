@@ -8,6 +8,7 @@ import (
 
 	mockStore "github.com/stackrox/rox/central/blob/datastore/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -110,5 +111,5 @@ func (suite *BlobSearchTestSuite) TestSearchForAll() {
 	suite.store.EXPECT().GetMetadataByQuery(suite.allowAllCtx, testutils.AssertionMatcher(assert.Empty)).Times(1).Return(blobs, nil)
 	results, err = suite.searcher.SearchMetadata(suite.allowAllCtx, q)
 	suite.NoError(err)
-	suite.Equal(blobs, results)
+	protoassert.SlicesEqual(suite.T(), blobs, results)
 }

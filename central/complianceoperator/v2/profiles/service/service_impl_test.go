@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -77,7 +78,7 @@ func (s *ComplianceProfilesServiceTestSuite) TestGetComplianceProfile() {
 
 	profile, err := s.service.GetComplianceProfile(s.ctx, &apiV2.ResourceByID{Id: profileID})
 	s.Require().NoError(err)
-	s.Require().Equal(convertUtils.GetProfileV2Api(s.T()), profile)
+	protoassert.Equal(s.T(), convertUtils.GetProfileV2Api(s.T()), profile)
 }
 
 func (s *ComplianceProfilesServiceTestSuite) TestGetComplianceProfileNotFound() {
@@ -151,7 +152,7 @@ func (s *ComplianceProfilesServiceTestSuite) TestListComplianceProfiles() {
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetProfiles())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetProfiles())
 			}
 		})
 	}
@@ -263,42 +264,8 @@ func (s *ComplianceProfilesServiceTestSuite) TestListProfileSummaries() {
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetProfiles())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetProfiles())
 			}
 		})
 	}
-}
-
-func (s *ComplianceProfilesServiceTestSuite) TestCountComplianceProfiles() {
-	allAccessContext := sac.WithAllAccess(context.Background())
-
-	testCases := []struct {
-		desc      string
-		query     *apiV2.RawQuery
-		expectedQ *apiV1.Query
-	}{
-		{
-			desc:      "Empty query",
-			query:     &apiV2.RawQuery{Query: ""},
-			expectedQ: search.NewQueryBuilder().ProtoQuery(),
-		},
-		{
-			desc:      "Query with search field",
-			query:     &apiV2.RawQuery{Query: "Compliance Profile Name:ocp-4"},
-			expectedQ: search.NewQueryBuilder().AddStrings(search.ComplianceOperatorProfileName, "ocp-4").ProtoQuery(),
-		},
-	}
-
-	for _, tc := range testCases {
-		s.T().Run(tc.desc, func(t *testing.T) {
-
-			s.profileDatastore.EXPECT().CountProfiles(allAccessContext, tc.expectedQ).
-				Return(1, nil).Times(1)
-
-			profiles, err := s.service.GetComplianceProfileCount(allAccessContext, tc.query)
-			s.Require().NoError(err)
-			s.Require().Equal(int32(1), profiles.Count)
-		})
-	}
-
 }

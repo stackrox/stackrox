@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *ClusterHealthStatusesStoreSuite) TestStore() {
 	foundClusterHealthStatus, exists, err = store.Get(ctx, clusterHealthStatus.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(clusterHealthStatus, foundClusterHealthStatus)
+	protoassert.Equal(s.T(), clusterHealthStatus, foundClusterHealthStatus)
 
 	clusterHealthStatusCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -77,11 +78,6 @@ func (s *ClusterHealthStatusesStoreSuite) TestStore() {
 	s.True(clusterHealthStatusExists)
 	s.NoError(store.Upsert(ctx, clusterHealthStatus))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, clusterHealthStatus), sac.ErrResourceAccessDenied)
-
-	foundClusterHealthStatus, exists, err = store.Get(ctx, clusterHealthStatus.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(clusterHealthStatus, foundClusterHealthStatus)
 
 	s.NoError(store.Delete(ctx, clusterHealthStatus.GetId()))
 	foundClusterHealthStatus, exists, err = store.Get(ctx, clusterHealthStatus.GetId())

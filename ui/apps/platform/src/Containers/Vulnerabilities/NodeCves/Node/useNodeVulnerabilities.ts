@@ -26,7 +26,7 @@ export default function useNodeVulnerabilities({
 }: { nodeId: string; query: string } & ClientPagination) {
     return useQuery<
         {
-            node: {
+            node?: {
                 nodeVulnerabilityCount: number;
                 nodeVulnerabilities: NodeVulnerability[];
             };

@@ -2,17 +2,23 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 	statusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -23,6 +29,7 @@ var (
 )
 
 type datastoreImpl struct {
+	db            pgPkg.DB
 	storage       postgres.Store
 	statusStorage statusStore.Store
 	keyedMutex    *concurrency.KeyedMutex
@@ -61,10 +68,9 @@ func (ds *datastoreImpl) GetScanConfigurationByName(ctx context.Context, scanNam
 
 // ScanConfigurationProfileExists takes all the profiles being referenced by the scan configuration and checks if any cluster in the configuration is using it in any existing scan configurations.
 func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id string, profiles []string, clusters []string) error {
-	// use areProfilesEqual to check if there are any duplicate profiles in the scan request profiles
 	for i := 0; i < len(profiles); i++ {
 		for j := i + 1; j < len(profiles); j++ {
-			if areProfilesEqual(profiles[i], profiles[j]) {
+			if strings.EqualFold(profiles[i], profiles[j]) {
 				return errors.Errorf("the scan configuration contains duplicate profiles.  Profile %q and profile %q", profiles[i], profiles[j])
 			}
 		}
@@ -97,35 +103,13 @@ func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id 
 	// Check if any of the profiles are being used by any of the existing scan configurations.
 	for _, profile := range profiles {
 		for profileName, configs := range profileMap {
-			if areProfilesEqual(profile, profileName) {
+			if strings.EqualFold(profile, profileName) {
 				return errors.Errorf("a cluster in scan configurations %v already uses profile %q", configs.AsSlice(), profileName)
 			}
 		}
 	}
 
 	return nil
-}
-
-// areProfilesEqual returns true if the two profiles are equal
-func areProfilesEqual(ProfileNameA string, ProfileNameB string) bool {
-	// we use hasPrefix to handle the comparesion of profiles with version string in the name
-	// first get the shorter profile name
-	var shorterProfileName string
-	var longerProfileName string
-	if len(ProfileNameA) < len(ProfileNameB) {
-		shorterProfileName = ProfileNameA
-		longerProfileName = ProfileNameB
-	} else {
-		shorterProfileName = ProfileNameB
-		longerProfileName = ProfileNameA
-	}
-
-	// if the shorter profile name is a prefix of the longer profile name, and their substring are not equal to "node", then they are equal
-	if longerProfileName[:len(shorterProfileName)] == shorterProfileName && longerProfileName[len(shorterProfileName):] != "-node" {
-		return true
-	}
-
-	return false
 }
 
 // GetScanConfigurations retrieves the scan configurations specified by query
@@ -304,4 +288,91 @@ func (ds *datastoreImpl) RemoveClusterFromScanConfig(ctx context.Context, cluste
 		}
 	}
 	return nil
+}
+
+type distinctProfileName struct {
+	ProfileName string `db:"compliance_config_profile_name"`
+}
+
+// GetProfilesNames gets the list of distinct profile names for the query
+func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]string, error) {
+	var err error
+	q, err = withSACFilter(ctx, resources.Compliance, q)
+	if err != nil {
+		return nil, err
+	}
+
+	clonedQuery := q.Clone()
+
+	// Build the select and group by on distinct profile name
+	clonedQuery.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ComplianceOperatorConfigProfileName).Distinct().Proto(),
+	}
+	clonedQuery.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorConfigProfileName.String(),
+		},
+	}
+
+	clonedQuery.Pagination = q.GetPagination()
+
+	var results []*distinctProfileName
+	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, d.db, schema.ComplianceOperatorScanConfigurationV2Schema, clonedQuery)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, nil
+	}
+	profileNames := make([]string, 0, len(results))
+	for _, result := range results {
+		profileNames = append(profileNames, result.ProfileName)
+	}
+
+	return profileNames, err
+}
+
+type distinctProfileCount struct {
+	TotalCount int    `db:"compliance_config_profile_name_count"`
+	Name       string `db:"compliance_config_profile_name"`
+}
+
+// CountDistinctProfiles returns count of distinct profiles matching query
+func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query) (int, error) {
+	var err error
+	q, err = withSACFilter(ctx, resources.Compliance, q)
+	if err != nil {
+		return 0, err
+	}
+
+	query := q.Clone()
+
+	query.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorConfigProfileName.String(),
+		},
+	}
+
+	var results []*distinctProfileCount
+	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, d.db, schema.ComplianceOperatorScanConfigurationV2Schema, withCountQuery(query, search.ComplianceOperatorConfigProfileName))
+	if err != nil {
+		return 0, err
+	}
+	return len(results), nil
+}
+
+func withCountQuery(query *v1.Query, field search.FieldLabel) *v1.Query {
+	cloned := query.Clone()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Proto(),
+	}
+	return cloned
+}
+
+func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetadata, query *v1.Query) (*v1.Query, error) {
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, err
+	}
+	return search.FilterQueryByQuery(query, sacQueryFilter), nil
 }

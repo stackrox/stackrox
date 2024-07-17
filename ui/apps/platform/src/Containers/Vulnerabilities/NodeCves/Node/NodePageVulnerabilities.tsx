@@ -25,6 +25,8 @@ import {
     nodeCVESearchFilterConfig,
     nodeComponentSearchFilterConfig,
 } from 'Components/CompoundSearchFilter/types';
+import useAnalytics, { NODE_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
+import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
@@ -41,7 +43,7 @@ import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 
 const searchFilterConfig = {
     NodeCVE: nodeCVESearchFilterConfig,
-    'Node Component': nodeComponentSearchFilterConfig,
+    'Node component': nodeComponentSearchFilterConfig,
 };
 
 export type NodePageVulnerabilitiesProps = {
@@ -49,6 +51,8 @@ export type NodePageVulnerabilitiesProps = {
 };
 
 function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -76,7 +80,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
     const tableState = getTableUIState({
         isLoading: loading,
         error,
-        data: data?.node.nodeVulnerabilities,
+        data: data?.node?.nodeVulnerabilities,
         searchFilter: querySearchFilter,
     });
 
@@ -90,12 +94,9 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                     className="pf-v5-u-px-sm pf-v5-u-pb-0"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
-                    onFilterChange={(newFilter, { action }) => {
+                    onFilterChange={(newFilter, searchPayload) => {
                         setSearchFilter(newFilter);
-
-                        if (action === 'ADD') {
-                            // TODO - Add analytics tracking ROX-24509
-                        }
+                        trackAppliedFilter(NODE_CVE_FILTER_APPLIED, searchPayload);
                     }}
                 />
                 <SummaryCardLayout isLoading={summaryRequest.loading} error={summaryRequest.error}>
@@ -105,7 +106,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                         renderer={({ data }) => (
                             <BySeveritySummaryCard
                                 title="CVEs by severity"
-                                severityCounts={data.node.cveCountBySeverityAndFixability}
+                                severityCounts={data.node.nodeCVECountBySeverity}
                                 hiddenSeverities={hiddenSeverities}
                             />
                         )}
@@ -115,7 +116,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                         data={summaryRequest.data}
                         renderer={({ data }) => (
                             <CvesByStatusSummaryCard
-                                cveStatusCounts={data.node.cveCountBySeverityAndFixability}
+                                cveStatusCounts={data.node.nodeCVECountBySeverity}
                                 hiddenStatuses={hiddenStatuses}
                                 isBusy={summaryRequest.loading}
                             />
@@ -128,7 +129,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <Title headingLevel="h2">
-                                    {data ? (
+                                    {data && data.node ? (
                                         `${pluralize(
                                             data.node.nodeVulnerabilityCount,
                                             'result'
@@ -152,7 +153,14 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                             />
                         </SplitItem>
                     </Split>
-                    <CVEsTable tableState={tableState} getSortParams={getSortParams} />
+                    <CVEsTable
+                        tableState={tableState}
+                        getSortParams={getSortParams}
+                        onClearFilters={() => {
+                            setSearchFilter({});
+                            setPage(1, 'replace');
+                        }}
+                    />
                 </div>
             </PageSection>
         </>

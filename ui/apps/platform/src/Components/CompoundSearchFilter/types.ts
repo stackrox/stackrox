@@ -32,49 +32,31 @@ export const imageSearchFilterConfig = {
     attributes: {
         Name: {
             displayName: 'Name',
-            filterChipLabel: 'Image Name',
+            filterChipLabel: 'Image name',
             searchTerm: 'Image',
             inputType: 'autocomplete',
         },
-        'Operating System': {
-            displayName: 'Operating System',
-            filterChipLabel: 'Image Operating System',
+        'Operating system': {
+            displayName: 'Operating system',
+            filterChipLabel: 'Image operating system',
             searchTerm: 'Image OS',
-            inputType: 'text',
+            inputType: 'autocomplete',
         },
         Tag: {
             displayName: 'Tag',
-            filterChipLabel: 'Image Tag',
+            filterChipLabel: 'Image tag',
             searchTerm: 'Image Tag',
             inputType: 'text',
         },
-        CVSS: {
-            displayName: 'CVSS',
-            filterChipLabel: 'Image CVSS',
-            searchTerm: 'Image Top CVSS',
-            inputType: 'condition-number',
-        },
         Label: {
             displayName: 'Label',
-            filterChipLabel: 'Image Label',
+            filterChipLabel: 'Image label',
             searchTerm: 'Image Label',
             inputType: 'autocomplete',
         },
-        'Created Time': {
-            displayName: 'Created Time',
-            filterChipLabel: 'Image Created Time',
-            searchTerm: 'Image Created Time',
-            inputType: 'date-picker',
-        },
-        'Scan Time': {
-            displayName: 'Scan Time',
-            filterChipLabel: 'Image Scan Time',
-            searchTerm: 'Image Scan Time',
-            inputType: 'date-picker',
-        },
         Registry: {
             displayName: 'Registry',
-            filterChipLabel: 'Image Registry',
+            filterChipLabel: 'Image registry',
             searchTerm: 'Image Registry',
             inputType: 'text',
         },
@@ -99,19 +81,19 @@ export const deploymentSearchFilterConfig = {
     attributes: {
         Name: {
             displayName: 'Name',
-            filterChipLabel: 'Deployment Name',
+            filterChipLabel: 'Deployment name',
             searchTerm: 'Deployment',
             inputType: 'autocomplete',
         },
         Label: {
             displayName: 'Label',
-            filterChipLabel: 'Deployment Label',
+            filterChipLabel: 'Deployment label',
             searchTerm: 'Deployment Label',
             inputType: 'autocomplete',
         },
         Annotation: {
             displayName: 'Annotation',
-            filterChipLabel: 'Deployment Annotation',
+            filterChipLabel: 'Deployment annotation',
             searchTerm: 'Deployment Annotation',
             inputType: 'autocomplete',
         },
@@ -138,19 +120,19 @@ export const namespaceSearchFilterConfig = {
     attributes: {
         Name: {
             displayName: 'Name',
-            filterChipLabel: 'Namespace Name',
+            filterChipLabel: 'Namespace name',
             searchTerm: 'Namespace',
             inputType: 'autocomplete',
         },
         Label: {
             displayName: 'Label',
-            filterChipLabel: 'Namespace Label',
+            filterChipLabel: 'Namespace label',
             searchTerm: 'Namespace Label',
             inputType: 'autocomplete',
         },
         Annotation: {
             displayName: 'Annotation',
-            filterChipLabel: 'Namespace Annotation',
+            filterChipLabel: 'Namespace annotation',
             searchTerm: 'Namespace Annotation',
             inputType: 'autocomplete',
         },
@@ -177,20 +159,26 @@ export const clusterSearchFilterConfig = {
     attributes: {
         Name: {
             displayName: 'Name',
-            filterChipLabel: 'Cluster Name',
+            filterChipLabel: 'Cluster name',
             searchTerm: 'Cluster',
             inputType: 'autocomplete',
         },
         Label: {
             displayName: 'Label',
-            filterChipLabel: 'Cluster Label',
+            filterChipLabel: 'Cluster label',
             searchTerm: 'Cluster Label',
             inputType: 'autocomplete',
         },
         Type: {
             displayName: 'Type',
-            filterChipLabel: 'Cluster Type',
+            filterChipLabel: 'Cluster type',
             searchTerm: 'Cluster Type',
+            inputType: 'autocomplete',
+        },
+        'Platform Type': {
+            displayName: 'Platform Type',
+            filterChipLabel: 'Platform type',
+            searchTerm: 'Cluster Platform Type',
             inputType: 'autocomplete',
         },
     },
@@ -216,43 +204,31 @@ export const nodeSearchFilterConfig = {
     attributes: {
         Name: {
             displayName: 'Name',
-            filterChipLabel: 'Node Name',
+            filterChipLabel: 'Node name',
             searchTerm: 'Node',
             inputType: 'autocomplete',
         },
-        'Operating System': {
-            displayName: 'Operating System',
-            filterChipLabel: 'Node Operating System',
+        'Operating system': {
+            displayName: 'Operating system',
+            filterChipLabel: 'Node operating system',
             searchTerm: 'Operating System',
             inputType: 'text',
         },
-        'Top CVSS': {
-            displayName: 'Top CVSS',
-            filterChipLabel: 'Node Top CVSS',
-            searchTerm: 'Node Top CVSS',
-            inputType: 'condition-number',
-        },
         Label: {
             displayName: 'Label',
-            filterChipLabel: 'Node Label',
+            filterChipLabel: 'Node label',
             searchTerm: 'Node Label',
             inputType: 'autocomplete',
         },
         Annotation: {
             displayName: 'Annotation',
-            filterChipLabel: 'Node Annotation',
+            filterChipLabel: 'Node annotation',
             searchTerm: 'Node Annotation',
             inputType: 'autocomplete',
         },
-        'Join Time': {
-            displayName: 'Join Time',
-            filterChipLabel: 'Node Join Time',
-            searchTerm: 'Node Join Time',
-            inputType: 'date-picker',
-        },
-        'Scan Time': {
-            displayName: 'Scan Time',
-            filterChipLabel: 'Node Scan Time',
+        'Scan time': {
+            displayName: 'Scan time',
+            filterChipLabel: 'Node scan time',
             searchTerm: 'Node Scan Time',
             inputType: 'date-picker',
         },
@@ -272,7 +248,7 @@ export type NodeAttributeInputType = ValueOf<NodeSearchFilterConfig['attributes'
 // Image CVE search filter
 
 export const imageCVESearchFilterConfig = {
-    displayName: 'Image CVE',
+    displayName: 'CVE',
     searchCategory: 'IMAGE_VULNERABILITIES',
     attributes: {
         Name: {
@@ -281,15 +257,15 @@ export const imageCVESearchFilterConfig = {
             searchTerm: 'CVE',
             inputType: 'autocomplete',
         },
-        'Discovered Time': {
-            displayName: 'Discovered Time',
-            filterChipLabel: 'Image CVE Discovered Time',
+        'Discovered time': {
+            displayName: 'Discovered time',
+            filterChipLabel: 'Image CVE discovered time',
             searchTerm: 'CVE Created Time',
             inputType: 'date-picker',
         },
         CVSS: {
             displayName: 'CVSS',
-            filterChipLabel: 'Image CVE CVSS',
+            filterChipLabel: 'CVSS',
             searchTerm: 'CVSS',
             inputType: 'condition-number',
         },
@@ -311,40 +287,28 @@ export type ImageCVEAttributeInputType = ValueOf<
 // Node CVE search filter
 
 export const nodeCVESearchFilterConfig = {
-    displayName: 'Node CVE',
+    displayName: 'CVE',
     searchCategory: 'NODE_VULNERABILITIES',
     attributes: {
         Name: {
             displayName: 'Name',
-            filterChipLabel: 'Node CVE',
+            filterChipLabel: 'CVE',
             searchTerm: 'CVE',
             inputType: 'autocomplete',
         },
-        'Discovered Time': {
-            displayName: 'Discovered Time',
-            filterChipLabel: 'Node CVE Discovered Time',
+        'Discovered time': {
+            displayName: 'Discovered time',
+            filterChipLabel: 'CVE discovered time',
             searchTerm: 'CVE Created Time',
             inputType: 'date-picker',
         },
         CVSS: {
             displayName: 'CVSS',
-            filterChipLabel: 'Node CVE CVSS',
+            filterChipLabel: 'CVE CVSS',
             searchTerm: 'CVSS',
             inputType: 'condition-number',
         },
         // TODO: Add Top CVSS
-        Snoozed: {
-            displayName: 'Snoozed',
-            filterChipLabel: 'Node CVE Snoozed',
-            searchTerm: 'CVE Snoozed',
-            inputType: 'select',
-            inputProps: {
-                options: [
-                    { label: 'True', value: 'true' },
-                    { label: 'False', value: 'false' },
-                ],
-            },
-        },
     },
 } as const;
 
@@ -363,42 +327,30 @@ export type NodeCVEAttributeInputType = ValueOf<
 // Platform CVE search filter
 
 export const platformCVESearchFilterConfig = {
-    displayName: 'Platform CVE',
+    displayName: 'CVE',
     searchCategory: 'CLUSTER_VULNERABILITIES',
     attributes: {
-        ID: {
-            displayName: 'ID',
-            filterChipLabel: 'Platform CVE ID',
-            searchTerm: 'CVE ID',
+        Name: {
+            displayName: 'Name',
+            filterChipLabel: 'CVE',
+            searchTerm: 'CVE',
             inputType: 'autocomplete',
         },
-        'Discovered Time': {
-            displayName: 'Discovered Time',
-            filterChipLabel: 'Platform CVE Discovered Time',
+        'Discovered time': {
+            displayName: 'Discovered time',
+            filterChipLabel: 'CVE discovered time',
             searchTerm: 'CVE Created Time',
             inputType: 'date-picker',
         },
         CVSS: {
             displayName: 'CVSS',
-            filterChipLabel: 'Platform CVE CVSS',
+            filterChipLabel: 'CVE CVSS',
             searchTerm: 'CVSS',
             inputType: 'condition-number',
         },
-        Snoozed: {
-            displayName: 'Snoozed',
-            filterChipLabel: 'Platform CVE Snoozed',
-            searchTerm: 'CVE Snoozed',
-            inputType: 'select',
-            inputProps: {
-                options: [
-                    { label: 'True', value: 'true' },
-                    { label: 'False', value: 'false' },
-                ],
-            },
-        },
         Type: {
             displayName: 'Type',
-            filterChipLabel: 'Platform CVE Type',
+            filterChipLabel: 'CVE type',
             searchTerm: 'CVE Type',
             inputType: 'select',
             inputProps: {
@@ -427,18 +379,18 @@ export type PlatformCVEAttributeInputType = ValueOf<
 // Image Component search filter
 
 export const imageComponentSearchFilterConfig = {
-    displayName: 'Image Component',
+    displayName: 'Image component',
     searchCategory: 'IMAGE_COMPONENTS',
     attributes: {
         Name: {
             displayName: 'Name',
-            filterChipLabel: 'Image Component Name',
+            filterChipLabel: 'Image component name',
             searchTerm: 'Component',
             inputType: 'autocomplete',
         },
         Source: {
             displayName: 'Source',
-            filterChipLabel: 'Image Component Source',
+            filterChipLabel: 'Image component source',
             searchTerm: 'Component Source',
             inputType: 'select',
             inputProps: {
@@ -449,7 +401,7 @@ export const imageComponentSearchFilterConfig = {
         },
         Version: {
             displayName: 'Version',
-            filterChipLabel: 'Image Component Version',
+            filterChipLabel: 'Image component version',
             searchTerm: 'Component Version',
             inputType: 'text',
         },
@@ -471,18 +423,18 @@ export type ImageComponentAttributeInputType = ValueOf<
 // Node Component search filter
 
 export const nodeComponentSearchFilterConfig = {
-    displayName: 'Node Component',
+    displayName: 'Node component',
     searchCategory: 'NODE_COMPONENTS',
     attributes: {
         Name: {
             displayName: 'Name',
-            filterChipLabel: 'Node Component Name',
+            filterChipLabel: 'Node component name',
             searchTerm: 'Component',
             inputType: 'autocomplete',
         },
         Version: {
             displayName: 'Version',
-            filterChipLabel: 'Node Component Version',
+            filterChipLabel: 'Node component version',
             searchTerm: 'Component Version',
             inputType: 'text',
         },
@@ -504,12 +456,12 @@ export type NodeComponentAttributeInputType = ValueOf<
 // Profile Check search filter
 
 export const profileCheckSearchFilterConfig = {
-    displayName: 'Profile Check',
+    displayName: 'Profile check',
     searchCategory: 'COMPLIANCE', //@TODO: Update this once we know what to use
     attributes: {
         Name: {
             displayName: 'Name',
-            filterChipLabel: 'Profile Check Name',
+            filterChipLabel: 'Profile check name',
             searchTerm: 'Compliance Check Name',
             inputType: 'text',
         },
@@ -531,12 +483,12 @@ export type ProfileCheckAttributeInputType = ValueOf<
 // Compliance Rule search filter
 
 export const complianceScanSearchFilterConfig = {
-    displayName: 'Compliance Scan',
+    displayName: 'Compliance scan',
     searchCategory: 'COMPLIANCE', //@TODO: Update this once we know what to use
     attributes: {
         'Config ID': {
             displayName: 'Config ID',
-            filterChipLabel: 'Compliance Scan Config ID',
+            filterChipLabel: 'Compliance scan config ID',
             searchTerm: 'Compliance Scan Config Id',
             inputType: 'text',
         },
@@ -566,10 +518,10 @@ export const compoundSearchFilter: CompoundSearchFilterConfig = {
     'Image CVE': imageCVESearchFilterConfig,
     'Node CVE': nodeCVESearchFilterConfig,
     'Platform CVE': platformCVESearchFilterConfig,
-    'Image Component': imageComponentSearchFilterConfig,
-    'Node Component': nodeComponentSearchFilterConfig,
-    'Profile Check': profileCheckSearchFilterConfig,
-    'Compliance Scan': complianceScanSearchFilterConfig,
+    'Image component': imageComponentSearchFilterConfig,
+    'Node component': nodeComponentSearchFilterConfig,
+    'Profile check': profileCheckSearchFilterConfig,
+    'Compliance scan': complianceScanSearchFilterConfig,
 };
 
 export type CompoundSearchFilterConfig = {
@@ -581,10 +533,10 @@ export type CompoundSearchFilterConfig = {
     'Image CVE': ImageCVESearchFilterConfig;
     'Node CVE': NodeCVESearchFilterConfig;
     'Platform CVE': PlatformCVESearchFilterConfig;
-    'Image Component': ImageComponentSearchFilterConfig;
-    'Node Component': NodeComponentSearchFilterConfig;
-    'Profile Check': ProfileCheckSearchFilterConfig;
-    'Compliance Scan': ComplianceScanSearchFilterConfig;
+    'Image component': ImageComponentSearchFilterConfig;
+    'Node component': NodeComponentSearchFilterConfig;
+    'Profile check': ProfileCheckSearchFilterConfig;
+    'Compliance scan': ComplianceScanSearchFilterConfig;
 };
 
 // @TODO: Consider Dave's suggestion about reorganizing and readjusting types (https://github.com/stackrox/stackrox/pull/11349#discussion_r1628428375)

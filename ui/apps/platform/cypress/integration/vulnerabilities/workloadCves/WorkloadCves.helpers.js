@@ -159,7 +159,7 @@ export function typeAndEnterCustomSearchFilterValue(entity, searchTerm, value) {
  * @param {('CVE' | 'Image' | 'Deployment')} entityType
  */
 export function selectEntityTab(entityType) {
-    cy.get(selectors.entityTypeToggleItem(entityType)).click();
+    cy.get(vulnSelectors.entityTypeToggleItem(entityType)).click();
 }
 
 const allSeverities = ['Critical', 'Important', 'Moderate', 'Low'];
@@ -468,5 +468,9 @@ export function waitForTableLoadCompleteIndicator() {
 }
 
 export function visitNamespaceView() {
-    cy.get('button:contains("Prioritize by namespace view")').click();
+    cy.get('a:contains("Prioritize by namespace view")').click();
+}
+
+export function viewCvesByObservationState(observationState) {
+    cy.get('button[role="tab"]').contains(observationState).click();
 }

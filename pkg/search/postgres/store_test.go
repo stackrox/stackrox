@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -61,7 +62,7 @@ func TestUpsert(t *testing.T) {
 	assert.NoError(t, store.Upsert(ctx, testObject))
 
 	objAfter, foundAfter, errAfter := store.Get(ctx, key)
-	assert.Equal(t, testObject, objAfter)
+	protoassert.Equal(t, testObject, objAfter)
 	assert.True(t, foundAfter)
 	assert.NoError(t, errAfter)
 }
@@ -83,7 +84,7 @@ func TestUpsertMany(t *testing.T) {
 
 	for _, obj := range testObjects {
 		objAfter, foundAfter, errAfter := store.Get(ctx, pkGetter(obj))
-		assert.Equal(t, obj, objAfter)
+		protoassert.Equal(t, obj, objAfter)
 		assert.True(t, foundAfter)
 		assert.NoError(t, errAfter)
 	}
@@ -100,7 +101,7 @@ func TestDelete(t *testing.T) {
 	require.NoError(t, store.Upsert(ctx, testObject))
 
 	objBefore, foundBefore, errBefore := store.Get(ctx, key)
-	require.Equal(t, testObject, objBefore)
+	protoassert.Equal(t, testObject, objBefore)
 	require.True(t, foundBefore)
 	require.NoError(t, errBefore)
 
@@ -141,7 +142,7 @@ func TestDeleteMany(t *testing.T) {
 		identifiersToRemove = append(identifiersToRemove, key)
 		// ensure object is in DB before call to remove
 		objBefore, foundBefore, errBefore := store.Get(ctx, key)
-		assert.Equal(t, obj, objBefore)
+		protoassert.Equal(t, obj, objBefore)
 		assert.True(t, foundBefore)
 		assert.NoError(t, errBefore)
 	}
@@ -241,7 +242,7 @@ func TestWalk(t *testing.T) {
 	assert.NoError(t, store.Walk(ctx, walkFn))
 
 	assert.ElementsMatch(t, walkedNames, injectedNames)
-	assert.ElementsMatch(t, testObjects, walkedObjects)
+	protoassert.ElementsMatch(t, testObjects, walkedObjects)
 }
 
 func TestWalkByQuery(t *testing.T) {
@@ -261,7 +262,7 @@ func TestWalkByQuery(t *testing.T) {
 	}
 
 	assert.NoError(t, store.WalkByQuery(ctx, query, walkFn))
-	assert.ElementsMatch(t, expectedObjects, walkedObjects)
+	protoassert.ElementsMatch(t, expectedObjects, walkedObjects)
 }
 
 func TestGetAll(t *testing.T) {
@@ -274,7 +275,7 @@ func TestGetAll(t *testing.T) {
 
 	fetchedObjects, err := store.GetAll(ctx)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, fetchedObjects, testObjects)
+	protoassert.ElementsMatch(t, fetchedObjects, testObjects)
 }
 
 func TestGetIDs(t *testing.T) {
@@ -308,7 +309,7 @@ func TestGet(t *testing.T) {
 
 	// Object with ID "TestGet" is in DB
 	obj, found, err := store.Get(ctx, key)
-	assert.Equal(t, testObject, obj)
+	protoassert.Equal(t, testObject, obj)
 	assert.True(t, found)
 	assert.NoError(t, err)
 
@@ -340,7 +341,7 @@ func TestGetMany(t *testing.T) {
 
 	fetchedObjects, missingIndices, err := store.GetMany(ctx, identifiersToFetch)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, fetchedObjects, expectedObjects)
+	protoassert.ElementsMatch(t, fetchedObjects, expectedObjects)
 	assert.Equal(t, []int{0}, missingIndices)
 }
 
@@ -365,7 +366,7 @@ func TestGetByQuery(t *testing.T) {
 		testObjects[1],
 		testObjects[3],
 	}
-	assert.ElementsMatch(t, objectsAfter, expectedObjectsAfter)
+	protoassert.ElementsMatch(t, objectsAfter, expectedObjectsAfter)
 }
 
 func TestDeleteByQuery(t *testing.T) {
@@ -387,7 +388,7 @@ func TestDeleteByQuery(t *testing.T) {
 	assert.NoError(t, store.UpsertMany(ctx, testObjects))
 	for _, obj := range testObjects {
 		objBefore, fetchedBefore, errBefore := store.Get(ctx, pkGetter(obj))
-		assert.Equal(t, obj, objBefore)
+		protoassert.Equal(t, obj, objBefore)
 		assert.True(t, fetchedBefore)
 		assert.NoError(t, errBefore)
 	}
@@ -402,7 +403,7 @@ func TestDeleteByQuery(t *testing.T) {
 			assert.Nil(t, objAfter)
 			assert.False(t, fetchedAfter)
 		} else {
-			assert.Equal(t, obj, objAfter)
+			protoassert.Equal(t, obj, objAfter)
 			assert.True(t, fetchedAfter)
 		}
 	}
@@ -428,7 +429,7 @@ func TestDeleteByQueryReturningIDs(t *testing.T) {
 	assert.NoError(t, store.UpsertMany(ctx, testObjects))
 	for _, obj := range testObjects {
 		objBefore, fetchedBefore, errBefore := store.Get(ctx, pkGetter(obj))
-		assert.Equal(t, obj, objBefore)
+		protoassert.Equal(t, obj, objBefore)
 		assert.True(t, fetchedBefore)
 		assert.NoError(t, errBefore)
 	}
@@ -445,10 +446,53 @@ func TestDeleteByQueryReturningIDs(t *testing.T) {
 			assert.Nil(t, objAfter)
 			assert.False(t, fetchedAfter)
 		} else {
-			assert.Equal(t, obj, objAfter)
+			protoassert.Equal(t, obj, objAfter)
 			assert.True(t, fetchedAfter)
 		}
 	}
+}
+
+func TestPruneMany(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newStore(testDB)
+	require.NotNil(t, store)
+
+	objectBatch := sampleTestSingleKeyStructArray("PruneMany")
+	require.NoError(t, store.UpsertMany(ctx, objectBatch))
+
+	identifiersToRemove := make([]string, 0, len(objectBatch)+1)
+	for _, obj := range objectBatch {
+		key := pkGetter(obj)
+		identifiersToRemove = append(identifiersToRemove, key)
+		// ensure object is in DB before call to remove
+		objBefore, foundBefore, errBefore := store.Get(ctx, key)
+		protoassert.Equal(t, obj, objBefore)
+		assert.True(t, foundBefore)
+		assert.NoError(t, errBefore)
+	}
+
+	missingKey := "TestPruneManyMissingKey"
+	identifiersToRemove = append(identifiersToRemove, missingKey)
+	missingObjBefore, missingFoundBefore, missingErrBefore := store.Get(ctx, missingKey)
+	assert.Nil(t, missingObjBefore)
+	assert.False(t, missingFoundBefore)
+	assert.NoError(t, missingErrBefore)
+
+	assert.NoError(t, store.PruneMany(ctx, identifiersToRemove))
+
+	for _, obj := range objectBatch {
+		key := pkGetter(obj)
+		// ensure object is NOT in DB after call to remove
+		objAfter, foundAfter, errAfter := store.Get(ctx, key)
+		assert.Nil(t, objAfter)
+		assert.False(t, foundAfter)
+		assert.NoError(t, errAfter)
+	}
+
+	missingObjAfter, missingFoundAfter, missingErrAfter := store.Get(ctx, missingKey)
+	assert.Nil(t, missingObjAfter)
+	assert.False(t, missingFoundAfter)
+	assert.NoError(t, missingErrAfter)
 }
 
 // region Helper Functions

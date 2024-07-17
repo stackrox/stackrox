@@ -1,6 +1,7 @@
 package orchestratormanager
 
 import io.fabric8.kubernetes.api.model.EnvVar
+import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration
 import objects.ConfigMap
@@ -118,7 +119,8 @@ interface OrchestratorMain {
     def addNamespaceAnnotation(String ns, String key, String value)
     def removeNamespaceAnnotation(String ns, String key)
     def getAllNetworkPoliciesNamesByNamespace(Boolean ignoreUndoneStackroxGenerated)
-    List<Namespace> getNamespaceDetails()
+    Namespace getNamespaceDetailsByName(String name)
+    boolean ownerIsTracked(ObjectMeta obj)
     List<String> getNamespaces()
 
     //NetworkPolicies

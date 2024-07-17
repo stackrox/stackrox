@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -108,7 +109,7 @@ func TestSubnetToSupernetAggregator(t *testing.T) {
 	aggr, err := NewSubnetToSupernetConnAggregator(tree.NewMultiNetworkTree(tree1, tree2))
 	assert.NoError(t, err)
 	actual := aggr.Aggregate(flows)
-	assert.ElementsMatch(t, expected, actual)
+	protoassert.ElementsMatch(t, expected, actual)
 }
 
 func TestHideDefaultExtSrcsAggregator(t *testing.T) {
@@ -166,7 +167,7 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 	networkTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1, e2, e3, e4, e5, e6})
 	assert.NoError(t, err)
 
-	assert.Equal(t, e2, networkTree.GetSupernet(e1.GetId()))
+	protoassert.Equal(t, e2, networkTree.GetSupernet(e1.GetId()))
 	assert.Equal(t, internet.GetId(), networkTree.GetSupernet(e6.GetId()).GetId())
 	/*
 
@@ -229,7 +230,7 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 	aggr, err := NewDefaultToCustomExtSrcConnAggregator(networkTree)
 	assert.NoError(t, err)
 	actual := aggr.Aggregate(flows)
-	assert.ElementsMatch(t, expected, actual)
+	protoassert.ElementsMatch(t, expected, actual)
 }
 
 func TestAggregateExtConnsByName(t *testing.T) {
@@ -294,5 +295,5 @@ func TestAggregateExtConnsByName(t *testing.T) {
 	actual := NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
 
 	assert.Len(t, actual, len(expected))
-	assert.ElementsMatch(t, expected, actual)
+	protoassert.ElementsMatch(t, expected, actual)
 }

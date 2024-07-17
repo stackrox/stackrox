@@ -168,9 +168,10 @@ import (
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
 	versionUtils "github.com/stackrox/rox/central/version/utils"
-	vulnRequestManager "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
-	vulnRequestService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
-	vulnRequestServiceV2 "github.com/stackrox/rox/central/vulnerabilityrequest/service/v2"
+	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
+	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
+	vulnRequestService "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service"
+	vulnRequestServiceV2 "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/iap"
@@ -358,13 +359,10 @@ func startServices() {
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
 	administrationUsageInjector.Singleton().Start()
+	gcp.Singleton().Start()
 
 	if features.AdministrationEvents.Enabled() {
 		administrationEventHandler.Singleton().Start()
-	}
-
-	if features.CloudCredentials.Enabled() {
-		gcp.Singleton().Start()
 	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
@@ -373,15 +371,19 @@ func startServices() {
 func servicesToRegister() []pkgGRPC.APIService {
 	// PLEASE KEEP THE FOLLOWING LIST SORTED.
 	servicesToRegister := []pkgGRPC.APIService{
+		administrationUsageService.Singleton(),
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
-		authService.Singleton(),
 		authProviderSvc.New(authProviderRegistry.Singleton(), groupDataStore.Singleton()),
+		authService.Singleton(),
 		backupRestoreService.Singleton(),
 		centralHealthService.Singleton(),
 		certgen.ServiceSingleton(),
+		cloudSourcesService.Singleton(),
+		clusterCVEService.Singleton(),
 		clusterInitService.Singleton(),
 		clusterService.Singleton(),
+		collectionService.Singleton(),
 		complianceManagerService.Singleton(),
 		complianceService.Singleton(),
 		configService.Singleton(),
@@ -391,11 +393,14 @@ func servicesToRegister() []pkgGRPC.APIService {
 		delegatedRegistryConfigService.Singleton(),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
+		discoveredClustersService.Singleton(),
 		featureFlagService.Singleton(),
 		groupService.Singleton(),
+		grpcPreferences.Singleton(),
 		helmcharts.NewService(),
-		imageService.Singleton(),
 		iiService.Singleton(),
+		imageCVEService.Singleton(),
+		imageService.Singleton(),
 		integrationHealthService.Singleton(),
 		metadataService.New(),
 		mitreService.Singleton(),
@@ -403,16 +408,17 @@ func servicesToRegister() []pkgGRPC.APIService {
 		networkBaselineService.Singleton(),
 		networkFlowService.Singleton(),
 		networkPolicyService.Singleton(),
+		nodeCVEService.Singleton(),
 		nodeService.Singleton(),
 		notifierService.Singleton(),
 		pingService.Singleton(),
-		grpcPreferences.Singleton(),
 		podService.Singleton(),
+		policyCategoryService.Singleton(),
 		policyService.Singleton(),
 		probeUploadService.Singleton(),
-		processIndicatorService.Singleton(),
 		processBaselineService.Singleton(),
-		administrationUsageService.Singleton(),
+		processIndicatorService.Singleton(),
+		processListeningOnPorts.Singleton(),
 		rbacService.Singleton(),
 		roleService.Singleton(),
 		searchService.Singleton(),
@@ -421,20 +427,15 @@ func servicesToRegister() []pkgGRPC.APIService {
 		sensorUpgradeControlService.Singleton(),
 		sensorUpgradeService.Singleton(),
 		serviceAccountService.Singleton(),
-		signatureIntegrationService.Singleton(),
 		siService.Singleton(),
+		signatureIntegrationService.Singleton(),
 		summaryService.Singleton(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
+		vulnMgmtService.Singleton(),
 		// TODO: [ROX-20245] Make the "/v1/cve/requests" APIs unavailable.
 		// This cannot be now because the frontend is not ready with the feature flag checks.
 		vulnRequestService.Singleton(),
-		clusterCVEService.Singleton(),
-		imageCVEService.Singleton(),
-		nodeCVEService.Singleton(),
-		collectionService.Singleton(),
-		policyCategoryService.Singleton(),
-		processListeningOnPorts.Singleton(),
 	}
 
 	// The scheduled backup service is not applicable when using an external database
@@ -465,11 +466,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.UnifiedCVEDeferral.Enabled() {
 		servicesToRegister = append(servicesToRegister, vulnRequestServiceV2.Singleton())
-	}
-
-	if features.CloudSources.Enabled() {
-		servicesToRegister = append(servicesToRegister, cloudSourcesService.Singleton())
-		servicesToRegister = append(servicesToRegister, discoveredClustersService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -554,9 +550,7 @@ func startGRPCServer() {
 		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
 	}
 
-	if features.CloudSources.Enabled() {
-		cloudSourcesManager.Singleton().Start()
-	}
+	cloudSourcesManager.Singleton().Start()
 
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
@@ -921,13 +915,15 @@ func waitForTerminationSignal() {
 	stoppables := []stoppableWithName{
 		{reprocessor.Singleton(), "reprocessor loop"},
 		{suppress.Singleton(), "cve unsuppress loop"},
-		{pruning.Singleton(), "gargage collector"},
+		{pruning.Singleton(), "garbage collector"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 		{administrationUsageInjector.Singleton(), "administration usage injector"},
 		{apiTokenExpiration.Singleton(), "api token expiration notifier"},
+		{gcp.Singleton(), "GCP cloud credentials manager"},
+		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
@@ -946,15 +942,6 @@ func waitForTerminationSignal() {
 	if features.AdministrationEvents.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{administrationEventHandler.Singleton(), "administration events handler"})
-	}
-
-	if features.CloudCredentials.Enabled() {
-		stoppables = append(stoppables, stoppableWithName{gcp.Singleton(), "GCP cloud credentials manager"})
-	}
-
-	if features.CloudSources.Enabled() {
-		stoppables = append(stoppables,
-			stoppableWithName{cloudSourcesManager.Singleton(), "cloud sources manager"})
 	}
 
 	var wg sync.WaitGroup

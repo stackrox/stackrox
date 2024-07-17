@@ -333,10 +333,6 @@ func updateImageFromRequest(existingImg *storage.Image, reqImgName *storage.Imag
 	log.Debugf("Updated existing image name from %q to %q", existingImgName.GetFullName(), reqImgName.GetFullName())
 	existingImg.Name = reqImgName
 
-	// Because there is no metadata for the existing image we assume the existing Names are
-	// invalid and reset them. If this was an incorrect assumption, Names will be re-populated
-	// over time via the various reprocessing workflows.
-	existingImg.Names = []*storage.ImageName{reqImgName}
 	return true
 }
 

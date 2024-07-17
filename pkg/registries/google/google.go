@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/auth"
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/utils"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -72,9 +71,6 @@ func validate(google *storage.GoogleConfig) error {
 	if !google.GetWifEnabled() && google.GetServiceAccount() == "" {
 		errorList.AddString("Service account must be specified for Google registry")
 	}
-	if google.GetWifEnabled() && !features.CloudCredentials.Enabled() {
-		return errors.Errorf("cannot use workload identities without the feature flag %s being enabled", features.CloudCredentials.Name())
-	}
 	return errorList.ToError()
 }
 
@@ -101,22 +97,13 @@ func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 		tokenSource oauth2.TokenSource
 		err         error
 	)
-	if features.CloudCredentials.Enabled() {
-		tokenSource, err = utils.CreateTokenSourceFromConfigWithManager(
-			context.Background(),
-			manager,
-			[]byte(config.GetServiceAccount()),
-			config.GetWifEnabled(),
-			artifactv1.DefaultAuthScopes()...,
-		)
-	} else {
-		tokenSource, err = utils.CreateTokenSourceFromConfig(
-			context.Background(),
-			[]byte(config.GetServiceAccount()),
-			config.GetWifEnabled(),
-			artifactv1.DefaultAuthScopes()...,
-		)
-	}
+	tokenSource, err = utils.CreateTokenSourceFromConfigWithManager(
+		context.Background(),
+		manager,
+		[]byte(config.GetServiceAccount()),
+		config.GetWifEnabled(),
+		artifactv1.DefaultAuthScopes()...,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create token source")
 	}

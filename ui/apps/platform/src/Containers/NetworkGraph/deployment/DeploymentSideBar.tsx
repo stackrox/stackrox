@@ -188,7 +188,7 @@ function DeploymentSideBar({
                             {hasReadAccessForNetworkPolicy && (
                                 <Tab
                                     eventKey={deploymentTabs.NETWORK_POLICIES}
-                                    tabContentId={deploymentTabs.NETWORK_POLICIES}
+                                    tabContentId="Network_policies"
                                     title={
                                         <TabTitleText>
                                             {deploymentTabs.NETWORK_POLICIES}
@@ -251,7 +251,7 @@ function DeploymentSideBar({
                         {hasReadAccessForNetworkPolicy && (
                             <TabContent
                                 eventKey={deploymentTabs.NETWORK_POLICIES}
-                                id={deploymentTabs.NETWORK_POLICIES}
+                                id="Network_policies"
                                 hidden={activeKeyTab !== deploymentTabs.NETWORK_POLICIES}
                             >
                                 <NetworkPolicies

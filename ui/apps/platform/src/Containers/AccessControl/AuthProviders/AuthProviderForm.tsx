@@ -291,7 +291,7 @@ function AuthProviderForm({
             <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
-                        <Title headingLevel="h2">{formTitle}</Title>
+                        <Title headingLevel="h1">{formTitle}</Title>
                     </ToolbarItem>
                     {action !== 'create' && (
                         <ToolbarItem>
@@ -416,7 +416,7 @@ function AuthProviderForm({
                 />
             )}
             <FormikProvider value={formik}>
-                <FormSection title="Configuration" titleElement="h3" className="pf-v5-u-mt-0">
+                <FormSection title="Configuration" titleElement="h2" className="pf-v5-u-mt-0">
                     <Grid hasGutter>
                         <GridItem span={12} lg={6}>
                             <FormGroup label="Name" fieldId="name" isRequired>
@@ -475,7 +475,7 @@ function AuthProviderForm({
                 </FormSection>
                 <FormSection
                     title={`Assign roles to your ${selectedAuthProvider.type} users`}
-                    titleElement="h3"
+                    titleElement="h2"
                 >
                     <FormGroup
                         className="pf-v5-u-w-100 pf-v5-u-w-75-on-md pf-v5-u-w-50-on-lg"
@@ -514,7 +514,7 @@ function AuthProviderForm({
                     {selectedAuthProvider.type === 'oidc' && (
                         <FormSection
                             title="Required attributes for the authentication provider"
-                            titleElement="h3"
+                            titleElement="h2"
                         >
                             <Alert
                                 isInline
@@ -631,7 +631,7 @@ function AuthProviderForm({
                     {selectedAuthProvider.type === 'oidc' && (
                         <FormSection
                             title="Claim mappings for the authentication provider"
-                            titleElement="h3"
+                            titleElement="h2"
                         >
                             <Alert
                                 isInline
@@ -735,7 +735,7 @@ function AuthProviderForm({
                             />
                         </FormSection>
                     )}
-                    <FormSection title="Rules" titleElement="h3" className="pf-v5-u-mt-0">
+                    <FormSection title="Rules" titleElement="h2" className="pf-v5-u-mt-0">
                         <RuleGroups
                             authProviderId={selectedAuthProvider.id}
                             groups={values.groups}

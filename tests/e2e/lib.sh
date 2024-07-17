@@ -129,7 +129,6 @@ export_test_environment() {
     ci_export ADMISSION_CONTROLLER_UPDATES "${ADMISSION_CONTROLLER_UPDATES:-true}"
     ci_export ADMISSION_CONTROLLER "${ADMISSION_CONTROLLER:-true}"
     ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-core_bpf}"
-    ci_export FORCE_COLLECTION_METHOD "${FORCE_COLLECTION_METHOD:-true}"
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "${DEPLOY_STACKROX_VIA_OPERATOR:-false}"
     ci_export INSTALL_COMPLIANCE_OPERATOR "${INSTALL_COMPLIANCE_OPERATOR:-false}"
     ci_export LOAD_BALANCER "${LOAD_BALANCER:-lb}"
@@ -156,7 +155,6 @@ export_test_environment() {
     ci_export ROX_POLICY_CRITERIA_MODAL "${ROX_POLICY_CRITERIA_MODAL:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
     ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-false}"
-    ci_export ROX_CLOUD_SOURCES "${ROX_CLOUD_SOURCES:-true}"
     ci_export ROX_AUTH_MACHINE_TO_MACHINE "${ROX_AUTH_MACHINE_TO_MACHINE:-true}"
     ci_export ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA "${ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA:-true}"
     ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
@@ -165,6 +163,11 @@ export_test_environment() {
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
+    fi
+
+    if [[ "${CI_JOB_NAME}" =~ gke ]]; then
+        # GKE uses this network for services. Consider it as a private subnet.
+        ci_export ROX_NON_AGGREGATED_NETWORKS "${ROX_NON_AGGREGATED_NETWORKS:-34.118.224.0/20}"
     fi
 }
 
@@ -258,8 +261,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_BASELINE_OBSERVATION_PERIOD'
     customize_envVars+=$'\n        value: '"${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD}"
-    customize_envVars+=$'\n      - name: ROX_POSTGRES_DATASTORE'
-    customize_envVars+=$'\n        value: "'"${ROX_POSTGRES_DATASTORE:-false}"'"'
     customize_envVars+=$'\n      - name: ROX_PROCESSES_LISTENING_ON_PORT'
     customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-true}"'"'
     customize_envVars+=$'\n      - name: ROX_TELEMETRY_STORAGE_KEY_V1'
@@ -267,8 +268,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_RISK_REPROCESSING_INTERVAL'
     customize_envVars+=$'\n        value: "15s"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_ENHANCEMENTS'
-    customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_CLOUD_SOURCES'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_AUTH_MACHINE_TO_MACHINE'
     customize_envVars+=$'\n        value: "true"'
@@ -948,6 +947,11 @@ wait_for_api() {
 
     start_time="$(date '+%s')"
     max_seconds=${MAX_WAIT_SECONDS:-300}
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
+        # OCP Interop tests are run on minimal instances and will take longer
+        # Allow override with MAX_WAIT_SECONDS
+        max_seconds=${MAX_WAIT_SECONDS:-600}
+    fi
 
     while true; do
         central_json="$(kubectl -n "${central_namespace}" get deploy/central -o json)"
@@ -966,12 +970,11 @@ wait_for_api() {
         if (( elapsed_seconds > max_seconds )); then
             kubectl -n "${central_namespace}" get pod -o wide
             kubectl -n "${central_namespace}" get deploy -o wide
-            echo >&2 "wait_for_api() timeout after $max_seconds seconds."
-            exit 1
+            die "wait_for_api() timeout after $max_seconds seconds."
         fi
 
         # Otherwise report and retry
-        echo "waiting ($elapsed_seconds/$max_seconds)"
+        info "Still waiting (${elapsed_seconds}s/${max_seconds}s)..."
         sleep 5
     done
 
@@ -998,13 +1001,14 @@ wait_for_api() {
 
     API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
     PING_URL="https://${API_ENDPOINT}/v1/ping"
-    info "PING_URL is set to ${PING_URL}"
-
-    set +e
     NUM_SUCCESSES_IN_A_ROW=0
     SUCCESSES_NEEDED_IN_A_ROW=3
+
+    info "Attempting to get ${SUCCESSES_NEEDED_IN_A_ROW} 'ok' responses in a row from ${PING_URL}"
+
+    set +e
     # shellcheck disable=SC2034
-    for i in $(seq 1 60); do
+    for i in $(seq 1 120); do
         pong="$(curl -sk --connect-timeout 5 --max-time 10 "${PING_URL}")"
         pong_exitstatus="$?"
         status="$(echo "$pong" | jq -r '.status')"
@@ -1018,12 +1022,12 @@ wait_for_api() {
             continue
         fi
         NUM_SUCCESSES_IN_A_ROW=0
-        echo -n .
+        info "Curl exited with status ${pong_exitstatus} and returned '${pong}'."
         sleep 5
     done
     echo
     if [[ "${NUM_SUCCESSES_IN_A_ROW}" != "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
-        info "Failed to connect to Central in namespace ${central_namespace}. Failed with ${NUM_SUCCESSES_IN_A_ROW} successes in a row"
+        info "Failed to connect to Central in namespace ${central_namespace}. Saw at most ${NUM_SUCCESSES_IN_A_ROW} successes in a row."
         info "port-forwards:"
         pgrep port-forward
         info "pods:"
@@ -1154,13 +1158,8 @@ db_backup_and_restore_test() {
     update_public_config
 
     if [[ ! -e DB_TEST_FAIL ]]; then
-        if [ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]; then
-            info "Restoring from ${output_dir}/postgres_db_*"
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
-        else
-            info "Restoring from ${output_dir}/stackrox_db_*"
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_* || touch DB_TEST_FAIL
-        fi
+        info "Restoring from ${output_dir}/postgres_db_*"
+        roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
     fi
 
     wait_for_api "${central_namespace}"
@@ -1208,6 +1207,83 @@ _EO_DETAILS_
         fi
     else
         save_junit_skipped "${stackrox_deployed[@]}"
+    fi
+
+    record_job_specific_progress
+}
+
+record_job_specific_progress() {
+    case "$CI_JOB_NAME" in
+    *gke-upgrade-tests)
+        record_upgrade_test_progess
+        ;;
+    *)
+        info "No job specific progress markers are saved for: ${CI_JOB_NAME}"
+        ;;
+    esac
+}
+
+record_upgrade_test_progess() {
+    # Record the progress of the upgrade test. This order is tightly coupled to
+    # the order of execution in .openshift-ci/ci_tests.py UpgradeTest and the
+    # files listed below. This is essentially a check for the existence of state
+    # tracking files that the upgrade test leaves in its wake as it progresses.
+
+    # tests/upgrade/postgres_sensor_run.sh
+    record_progress_step "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" "${STATE_DEPLOYED}" \
+        "postgres_sensor_run" "roxctl sensor bundle test"
+    record_progress_step "${UPGRADE_PROGRESS_UPGRADER}" "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" \
+        "postgres_sensor_run" "bin/upgrader tests"
+
+    # tests/upgrade/legacy_to_postgres_run.sh
+    record_progress_step "${UPGRADE_PROGRESS_LEGACY_PREP}" "${UPGRADE_PROGRESS_UPGRADER}" \
+        "legacy_to_postgres_run" "Preparation for legacy to postgres testing"
+    record_progress_step "${UPGRADE_PROGRESS_LEGACY_ROCKSDB_CENTRAL}" "${UPGRADE_PROGRESS_LEGACY_PREP}" \
+        "legacy_to_postgres_run" "Deployed an earlier rocksdb central"
+    record_progress_step "${UPGRADE_PROGRESS_LEGACY_TO_RELEASE}" "${UPGRADE_PROGRESS_LEGACY_ROCKSDB_CENTRAL}" \
+        "legacy_to_postgres_run" "Helm upgrade to latest postgres release from rocksdb"
+    record_progress_step "${UPGRADE_PROGRESS_RELEASE_BACK_TO_LEGACY}" "${UPGRADE_PROGRESS_LEGACY_TO_RELEASE}" \
+        "legacy_to_postgres_run" "Rollback to rocksdb"
+
+    # tests/upgrade/postgres_run.sh
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_PREP}" "${UPGRADE_PROGRESS_RELEASE_BACK_TO_LEGACY}" \
+        "postgres_run" "Preparation for postgres testing"
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}" "${UPGRADE_PROGRESS_POSTGRES_PREP}" \
+        "postgres_run" "Deployed earlier postgres central"
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_BOUNCE}" "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}" \
+        "postgres_run" "Bounced central"
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}" "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_BOUNCE}" \
+        "postgres_run" "Bounced central-db"
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_MIGRATIONS}" "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}" \
+        "postgres_run" "Test migrations with an upgrade to current"
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_ROLLBACK}" "${UPGRADE_PROGRESS_POSTGRES_MIGRATIONS}" \
+        "postgres_run" "Test rollback to earlier postgres"
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_SMOKE_TESTS}" "${UPGRADE_PROGRESS_POSTGRES_ROLLBACK}" \
+        "postgres_run" "Smoke tests"
+}
+
+record_progress_step() {
+    if [[ "$#" -ne 4 ]]; then
+        die "Missing args. Usage: record_upgrade_test_progess " \
+            "<this_step_file> <previous_step_file> <JUNIT Class> <JUNIT Description>"
+    fi
+
+    local this_step_file="$1"
+    local previous_step_file="$2"
+    local junit_class="$3"
+    local junit_step_description="$4"
+
+    if [[ -f "${previous_step_file}" ]] && [[ -f "${this_step_file}" ]]; then
+        save_junit_success "${junit_class}" "${junit_step_description}"
+    elif [[ -f "${previous_step_file}" ]]; then
+        save_junit_failure "${junit_class}" "${junit_step_description}" "See build.log for error details."
+    elif [[ -f "${this_step_file}" ]]; then
+        die "ERROR: This step file exists but the previous step does not. " \
+            "This indicates a change in the order of test execution that needs to be resolved " \
+            "against the record steps. " \
+            "this: ${this_step_file}, previous: ${previous_step_file}"
+    else
+        save_junit_skipped "${junit_class}" "${junit_step_description}"
     fi
 }
 

@@ -135,7 +135,7 @@ function WatchedImagesModal({
                     watchedImagesRequest={currentWatchedImagesRequest}
                 />
                 <Divider component="div" />
-                {currentWatchedImagesRequest.loading && !currentWatchedImagesRequest.data && (
+                {currentWatchedImagesRequest.isLoading && !currentWatchedImagesRequest.data && (
                     <Bullseye>
                         <Spinner aria-label="Loading current watched images" />
                     </Bullseye>

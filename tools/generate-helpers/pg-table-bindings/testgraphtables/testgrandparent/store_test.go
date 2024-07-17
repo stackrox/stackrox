@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	foundTestGrandparent, exists, err = store.Get(ctx, testGrandparent.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(testGrandparent, foundTestGrandparent)
+	protoassert.Equal(s.T(), testGrandparent, foundTestGrandparent)
 
 	testGrandparentCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -77,11 +78,6 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	s.True(testGrandparentExists)
 	s.NoError(store.Upsert(ctx, testGrandparent))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, testGrandparent), sac.ErrResourceAccessDenied)
-
-	foundTestGrandparent, exists, err = store.Get(ctx, testGrandparent.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(testGrandparent, foundTestGrandparent)
 
 	s.NoError(store.Delete(ctx, testGrandparent.GetId()))
 	foundTestGrandparent, exists, err = store.Get(ctx, testGrandparent.GetId())

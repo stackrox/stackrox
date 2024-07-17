@@ -76,7 +76,8 @@ export function getPlatformEntityPagePath(
     const queryString = getQueryString(queryOptions);
     switch (platformCveEntity) {
         case 'CVE':
-            return `${vulnerabilitiesPlatformCvesPath}/cves/${id}${queryString}`;
+            // We need to encode the id here due to the `#` character literal in Platform CVE IDs
+            return `${vulnerabilitiesPlatformCvesPath}/cves/${encodeURIComponent(id)}${queryString}`;
         case 'Cluster':
             return `${vulnerabilitiesPlatformCvesPath}/clusters/${id}${queryString}`;
         default:
@@ -137,6 +138,14 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
 
     if (fixable.length > 0) {
         cleanSearchFilter.FIXABLE = fixable.filter(isFixableStatus).map(fixableStatusToFixability);
+    }
+
+    const clusterCveFixable = searchValueAsArray(rawSearchFilter['CLUSTER CVE FIXABLE']);
+
+    if (clusterCveFixable.length > 0) {
+        cleanSearchFilter['CLUSTER CVE FIXABLE'] = clusterCveFixable
+            .filter(isFixableStatus)
+            .map(fixableStatusToFixability);
     }
 
     const severity = searchValueAsArray(rawSearchFilter.SEVERITY);

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -8,7 +8,7 @@ import {
     Tabs,
     TabsComponent,
 } from '@patternfly/react-core';
-import { generatePath, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { OnSearchPayload, clusterSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
@@ -20,43 +20,42 @@ import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
-import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
 import { getComplianceProfileCheckStats } from 'services/ComplianceResultsStatsService';
 import {
     getComplianceProfileCheckDetails,
     getComplianceProfileCheckResult,
 } from 'services/ComplianceResultsService';
 import { getTableUIState } from 'utils/getTableUIState';
+import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
-import CheckDetailsTable from './CheckDetailsTable';
+import CheckDetailsHeader from './CheckDetailsHeader';
+import CheckDetailsTable, { tabContentIdForResults } from './CheckDetailsTable';
+import {
+    combineSearchFilterWithScanConfig,
+    createScanConfigFilter,
+    isScanConfigurationDisabled,
+} from './compliance.coverage.utils';
 import CheckDetailsInfo from './components/CheckDetailsInfo';
-import DetailsPageHeader, { PageHeaderLabel } from './components/DetailsPageHeader';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { CLUSTER_QUERY } from './compliance.coverage.constants';
-import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
+import ScanConfigurationSelect from './components/ScanConfigurationSelect';
+import useScanConfigRouter from './hooks/useScanConfigRouter';
+import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 
 export const DETAILS_TAB = 'Details';
 const RESULTS_TAB = 'Results';
 
+const tabContentIdForDetails = 'check-details-Details-tab-section';
+
 export const TAB_NAV_QUERY = 'detailsTab';
 const TAB_NAV_VALUES = [RESULTS_TAB, DETAILS_TAB] as const;
 
-function sortCheckStats(a: ComplianceCheckStatusCount, b: ComplianceCheckStatusCount) {
-    const order: ComplianceCheckStatus[] = [
-        'PASS',
-        'FAIL',
-        'MANUAL',
-        'ERROR',
-        'INFO',
-        'NOT_APPLICABLE',
-        'INCONSISTENT',
-    ];
-    return order.indexOf(a.status) - order.indexOf(b.status);
-}
-
 function CheckDetails() {
+    const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
+        useContext(ScanConfigurationsContext);
     const { checkName, profileName } = useParams();
+    const { generatePathWithScanConfig } = useScanConfigRouter();
     const [currentDatetime, setCurrentDatetime] = useState(new Date());
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { page, perPage, setPage } = pagination;
@@ -69,12 +68,17 @@ function CheckDetails() {
     const [activeTabKey, setActiveTabKey] = useURLStringUnion(TAB_NAV_QUERY, TAB_NAV_VALUES);
 
     const fetchCheckStats = useCallback(
-        () => getComplianceProfileCheckStats(profileName, checkName),
-        [profileName, checkName]
+        () =>
+            getComplianceProfileCheckStats(
+                profileName,
+                checkName,
+                createScanConfigFilter(selectedScanConfigName)
+            ),
+        [profileName, checkName, selectedScanConfigName]
     );
     const {
         data: checkStatsResponse,
-        loading: isLoadingCheckStats,
+        isLoading: isLoadingCheckStats,
         error: checkStatsError,
     } = useRestQuery(fetchCheckStats);
 
@@ -84,23 +88,26 @@ function CheckDetails() {
     );
     const {
         data: checkDetailsResponse,
-        loading: isLoadingCheckDetails,
+        isLoading: isLoadingCheckDetails,
         error: CheckDetailsError,
     } = useRestQuery(fetchCheckDetails);
 
-    const fetchCheckResults = useCallback(
-        () =>
-            getComplianceProfileCheckResult(profileName, checkName, {
-                page,
-                perPage,
-                sortOption,
-                searchFilter,
-            }),
-        [page, perPage, checkName, profileName, sortOption, searchFilter]
-    );
+    const fetchCheckResults = useCallback(() => {
+        const regexSearchFilter = addRegexPrefixToFilters(searchFilter, [CLUSTER_QUERY]);
+        const combinedFilter = combineSearchFilterWithScanConfig(
+            regexSearchFilter,
+            selectedScanConfigName
+        );
+        return getComplianceProfileCheckResult(profileName, checkName, {
+            page,
+            perPage,
+            sortOption,
+            searchFilter: combinedFilter,
+        });
+    }, [page, perPage, checkName, profileName, sortOption, searchFilter, selectedScanConfigName]);
     const {
         data: checkResultsResponse,
-        loading: isLoadingCheckResults,
+        isLoading: isLoadingCheckResults,
         error: checkResultsError,
     } = useRestQuery(fetchCheckResults);
 
@@ -112,25 +119,8 @@ function CheckDetails() {
         isLoading: isLoadingCheckResults,
         data: checkResultsResponse?.checkResults,
         error: checkResultsError,
-        searchFilter: {},
+        searchFilter,
     });
-
-    const checkStatsLabels =
-        checkStatsResponse?.checkStats
-            .sort(sortCheckStats)
-            .reduce((acc, checkStat) => {
-                const statusObject = getClusterResultsStatusObject(checkStat.status);
-                if (statusObject && checkStat.count > 0) {
-                    const label: PageHeaderLabel = {
-                        text: `${statusObject.statusText}: ${checkStat.count}`,
-                        icon: statusObject.icon,
-                        color: statusObject.color,
-                    };
-                    return [...acc, label];
-                }
-                return acc;
-            }, [] as PageHeaderLabel[])
-            .filter((component) => component !== null) || [];
 
     useEffect(() => {
         if (checkResultsResponse) {
@@ -141,6 +131,11 @@ function CheckDetails() {
     const onSearch = (payload: OnSearchPayload) => {
         onURLSearch(searchFilter, setSearchFilter, payload);
     };
+
+    function onClearFilters() {
+        setSearchFilter({});
+        setPage(1, 'replace');
+    }
 
     const onCheckStatusSelect = (
         filterType: 'Compliance Check Status',
@@ -158,9 +153,8 @@ function CheckDetails() {
             <PageTitle title="Compliance coverage - Check" />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItem>Compliance coverage</BreadcrumbItem>
                     <BreadcrumbItemLink
-                        to={generatePath(coverageProfileChecksPath, {
+                        to={generatePathWithScanConfig(coverageProfileChecksPath, {
                             profileName,
                         })}
                     >
@@ -170,16 +164,22 @@ function CheckDetails() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
+            <ScanConfigurationSelect
+                isLoading={scanConfigurationsQuery.isLoading}
+                scanConfigs={scanConfigurationsQuery.response.configurations}
+                selectedScanConfigName={selectedScanConfigName}
+                isScanConfigDisabled={(config) =>
+                    isScanConfigurationDisabled(config, { profileName })
+                }
+                setSelectedScanConfigName={setSelectedScanConfigName}
+            />
+            <Divider component="div" />
             <PageSection variant="light">
-                <DetailsPageHeader
+                <CheckDetailsHeader
+                    checkName={checkName}
+                    checkStatsResponse={checkStatsResponse}
                     isLoading={isLoadingCheckStats}
-                    name={checkName}
-                    labels={checkStatsLabels}
-                    summary={checkStatsResponse?.rationale}
-                    nameScreenReaderText="Loading profile check details"
-                    metadataScreenReaderText="Loading profile check details"
                     error={checkStatsError}
-                    errorAlertTitle="Unable to fetch profile check stats"
                 />
             </PageSection>
             <Divider component="div" />
@@ -190,10 +190,17 @@ function CheckDetails() {
                 }}
                 component={TabsComponent.nav}
                 className="pf-v5-u-pl-md pf-v5-u-background-color-100 pf-v5-u-flex-shrink-0"
-                role="region"
             >
-                <Tab eventKey={RESULTS_TAB} title={RESULTS_TAB} />
-                <Tab eventKey={DETAILS_TAB} title={DETAILS_TAB} />
+                <Tab
+                    eventKey={RESULTS_TAB}
+                    title={RESULTS_TAB}
+                    tabContentId={tabContentIdForResults}
+                />
+                <Tab
+                    eventKey={DETAILS_TAB}
+                    title={DETAILS_TAB}
+                    tabContentId={tabContentIdForDetails}
+                />
             </Tabs>
             <PageSection>
                 {activeTabKey === RESULTS_TAB && (
@@ -208,10 +215,11 @@ function CheckDetails() {
                         searchFilter={searchFilter}
                         onSearch={onSearch}
                         onCheckStatusSelect={onCheckStatusSelect}
+                        onClearFilters={onClearFilters}
                     />
                 )}
                 {activeTabKey === DETAILS_TAB && (
-                    <PageSection variant="light" component="div">
+                    <PageSection variant="light" component="div" id={tabContentIdForDetails}>
                         <CheckDetailsInfo
                             checkDetails={checkDetailsResponse}
                             isLoading={isLoadingCheckDetails}

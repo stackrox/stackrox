@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -146,6 +147,7 @@ func (s *serviceImpl) ListAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*
 			result = append(result, role.GetRoleName())
 		}
 	}
+	slices.Sort(result)
 	return &v1.ListAllowedTokenRolesResponse{
 		RoleNames: result,
 	}, nil
