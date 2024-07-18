@@ -85,7 +85,7 @@ FROM scratch
 ARG FINAL_STAGE_PATH
 COPY --from=rpm-installer "$FINAL_STAGE_PATH" /
 
-COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
+COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/apps/platform/build /ui/
 
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/migrator /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/central /stackrox/
