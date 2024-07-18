@@ -1,19 +1,18 @@
 package registry
 
 import (
-	pkgErrors "github.com/pkg/errors"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/registries/docker"
-	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
-	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
+	"github.com/stackrox/rox/pkg/registries/rhel"
 	"github.com/stackrox/rox/pkg/registries/types"
 )
 
 var (
 	lazyEligibleCreators = []types.CreatorWrapper{
-		dockerFactory.CreatorWithoutRepoList,
-		rhelFactory.CreatorWithoutRepoList,
+		docker.CreatorWithoutRepoList,
+		rhel.CreatorWithoutRepoList,
 	}
 )
 
@@ -42,23 +41,23 @@ func newLazyFactory(tlsCheckCache *tlsCheckCacheImpl) registries.Factory {
 // be surfaced, otherwise errors may be lost during lazy initialization.
 func (e *lazyFactory) CreateRegistry(source *storage.ImageIntegration, options ...types.CreatorOption) (types.ImageRegistry, error) {
 	if source == nil {
-		return nil, pkgErrors.New("image integration is nil")
+		return nil, errors.New("image integration is nil")
 	}
 
 	creator, exists := e.creators[source.GetType()]
 	if !exists {
-		return nil, pkgErrors.Errorf("registry with type '%s' does not exist", source.GetType())
+		return nil, errors.Errorf("registry with type '%s' does not exist", source.GetType())
 	}
 
 	dockerConfig := source.GetDocker()
 	if dockerConfig == nil {
 		// Only integrations with a docker config are eligible for lazy tls checking
-		return nil, pkgErrors.New("docker config is nil")
+		return nil, errors.New("docker config is nil")
 	}
 
 	hostname, url := docker.RegistryHostnameURL(dockerConfig.GetEndpoint())
 	if hostname == "" {
-		return nil, pkgErrors.New("empty registry hostname")
+		return nil, errors.New("empty registry hostname")
 	}
 
 	return &lazyTLSCheckRegistry{
