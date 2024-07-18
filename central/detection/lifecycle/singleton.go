@@ -33,7 +33,7 @@ func initialize() {
 		baselineDataStore.Singleton(),
 		alertmanager.Singleton(),
 		reprocessor.Singleton(),
-		cache.DeletedDeploymentCacheSingleton(),
+		cache.DeletedDeploymentsSingleton(),
 		filter.Singleton(),
 		aggregator.Singleton(),
 	)
