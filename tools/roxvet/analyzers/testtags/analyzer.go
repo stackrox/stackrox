@@ -52,7 +52,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	common.FilteredPreorder(inspectResult, common.IsTestFile, nodeFilter, func(n ast.Node) {
-		goBuildDirectiveCount := 0
+		hasGoBuildDirective := false
 		fileNode := n.(*ast.File)
 		pos := fileNode.Pos()
 		fileContainsTestFunction := false
@@ -68,13 +68,11 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		if fileContainsTestFunction {
 			for _, comment := range fileNode.Comments {
 				if strings.HasPrefix(comment.Text(), "//go:build") {
-					goBuildDirectiveCount++
+					hasGoBuildDirective = true
 				}
 			}
-			if goBuildDirectiveCount == 0 {
+			if !hasGoBuildDirective {
 				pass.Reportf(pos, "Missing //go:build directive.")
-			} else if goBuildDirectiveCount > 1 {
-				pass.Reportf(pos, "Multiple //go:build directives, there should be exactly one.")
 			}
 		}
 	})
