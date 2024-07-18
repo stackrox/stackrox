@@ -281,4 +281,5 @@ message ComplianceOperatorRemediationV2 {
   string outdated_object = 6;
   string enforcement_type = 7;
   string cluster_id = 8; // @gotags: search:"Cluster ID,hidden"
+  string new_field_makes_lock_out_of_date = 9;
 }
