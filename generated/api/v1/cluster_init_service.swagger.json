@@ -200,7 +200,8 @@
           }
         },
         "idpToken": {
-          "type": "string"
+          "type": "boolean",
+          "title": "Switching type as a demonstration of a breaking change flagged by proto.lock"
         }
       },
       "description": "User is an object that allows us to track the roles a user is tied to, and how they logged in."

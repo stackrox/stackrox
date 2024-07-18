@@ -19,7 +19,8 @@ message User {
 
   repeated UserAttribute attributes = 3;
 
-  string idp_token = 4;
+  // Switching type as a demonstration of a breaking change flagged by proto.lock
+  bool idp_token = 4;
 }
 
 message UserAttribute {
