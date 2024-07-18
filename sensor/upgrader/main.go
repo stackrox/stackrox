@@ -69,6 +69,6 @@ func mainCmd() error {
 		return runner.Run(upgradeCtx, *workflow)
 	}
 
-	// Else, run the metarunner.
+	// Else, run the metarunner. It will get the instructions from Central which workflow to run
 	return metarunner.Run(upgradeCtx)
 }

@@ -171,7 +171,8 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 		ownerResourceClient := c.DynamicClientForResource(ownerRes, config.Owner.Namespace)
 		ownerObj, err := ownerResourceClient.Get(ctx, config.Owner.Name, metav1.GetOptions{})
 		if err != nil {
-			return nil, errors.Wrapf(err, "could not retrieve supposed owner %v", config.Owner)
+			return nil, errors.Wrapf(err, "could not retrieve supposed owner %v. Name=%q, Namespace=%q, GVK=%q",
+				config.Owner, config.Owner.Name, config.Owner.Namespace, config.Owner.GVK.String())
 		}
 		c.ownerRef = &metav1.OwnerReference{
 			APIVersion: config.Owner.GVK.GroupVersion().String(),

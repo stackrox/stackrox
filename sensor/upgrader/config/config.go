@@ -44,7 +44,8 @@ func (c *UpgraderConfig) Validate() error {
 		errs.AddString("kubernetes REST config not present")
 	}
 	if c.Owner != nil && c.Owner.Namespace != common.Namespace {
-		errs.AddStringf("owner %v is in disallowed namespace", c.Owner)
+		errs.AddStringf("owner %v is in disallowed namespace (%q). Allowed namespace: %s",
+			c.Owner, c.Owner.Namespace, common.Namespace)
 	}
 	return errs.ToError()
 }

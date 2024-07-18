@@ -82,7 +82,7 @@ func runLoop(upgradeCtx *upgradectx.UpgradeContext, svc central.SensorUpgradeCon
 			return errors.New("central did not specify a workflow to execute")
 		}
 
-		log.Infof("Received instruction from Central to run workflow: %s", newWorkflow)
+		log.Infof("Received instruction from Central to run new workflow: %s (current: %s)", newWorkflow, workflow)
 		if newWorkflow != workflow {
 			// New workflow. Abandon old runner.
 			currRunner, err = runner.New(upgradeCtx, newWorkflow)
@@ -104,6 +104,7 @@ func runLoop(upgradeCtx *upgradectx.UpgradeContext, svc central.SensorUpgradeCon
 		// there's nothing for us to do. Let's just keep polling it until it tells us to do something
 		// else.
 		if currRunner.Finished() {
+			log.Infof("Current runner is finished, but Central told us to keep running the same workflow. stage is %s", stage.String())
 			time.Sleep(sleepDurationBetweenPolls)
 		} else {
 			currRunner.RunNextStage()
