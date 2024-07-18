@@ -106,6 +106,7 @@ func (e *expiringCacheImpl[K, V]) Get(key K) (V, bool) {
 	e.cleanNoLock(e.clock.Now())
 	value := e.getValue(key)
 	if value == nil {
+		var empty V
 		return empty, false
 	}
 
