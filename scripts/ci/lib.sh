@@ -727,7 +727,7 @@ populate_prefetcher_image_list() {
         image_tag_list=$(mktemp)
         populate_stackrox_image_list "${image_tag_list}"
         # convert format from "basename tag" to "quay.io/.../basename:tag" expected by pre-fetcher
-        awk '{print "quay.io/rhacs-eng/" $1 ":" $2 "-fast"}' "$image_tag_list" > "$image_list"
+        awk '{print "quay.io/rhacs-eng/" $1 ":" $2}' "$image_tag_list" > "$image_list"
         rm -f "$image_tag_list"
         ;;
     qa-e2e)

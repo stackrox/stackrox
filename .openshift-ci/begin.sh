@@ -15,8 +15,6 @@ openshift_ci_import_creds
 
 create_job_record "${JOB_NAME:-missing}"
 
-set_ci_shared_export MAIN_TAG_SUFFIX "-fast"
-
 if [[ -z "${SHARED_DIR:-}" ]]; then
     echo "ERROR: There is no SHARED_DIR for step env sharing"
     exit 0 # not fatal but worth highlighting
