@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
 )
@@ -201,7 +201,7 @@ func (ds *DeploymentStore) findDeploymentIDsByImageNoLock(image *storage.Image) 
 	ids := set.NewStringSet()
 	for _, d := range ds.deployments {
 		for _, c := range d.GetContainers() {
-			if imagecacheutils.CompareImageCacheKey(c.GetImage(), image) {
+			if cache.CompareKeys(c.GetImage(), image) {
 				ids.Add(d.GetId())
 				// The deployment id is already the set, we can break here
 				break

@@ -12,8 +12,8 @@ import (
 	cacheMocks "github.com/stackrox/rox/pkg/expiringcache/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/image/cache"
 	imageMocks "github.com/stackrox/rox/sensor/common/image/mocks"
-	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -25,7 +25,7 @@ func TestImageService(t *testing.T) {
 type imageServiceSuite struct {
 	suite.Suite
 	mockCtrl          *gomock.Controller
-	mockCache         *cacheMocks.MockCache[imagecacheutils.Key, imagecacheutils.Value]
+	mockCache         *cacheMocks.MockCache[cache.Key, cache.Value]
 	mockRegistryStore *imageMocks.MockregistryStore
 	mockCentral       *imageMocks.MockcentralClient
 	mockLocalScan     *imageMocks.MocklocalScan
@@ -36,7 +36,7 @@ var _ suite.SetupTestSuite = (*imageServiceSuite)(nil)
 
 func (s *imageServiceSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	s.mockCache = cacheMocks.NewMockCache[imagecacheutils.Key, imagecacheutils.Value](s.mockCtrl)
+	s.mockCache = cacheMocks.NewMockCache[cache.Key, cache.Value](s.mockCtrl)
 	s.mockRegistryStore = imageMocks.NewMockregistryStore(s.mockCtrl)
 	s.mockCentral = imageMocks.NewMockcentralClient(s.mockCtrl)
 	s.mockLocalScan = imageMocks.NewMocklocalScan(s.mockCtrl)
@@ -154,7 +154,7 @@ func (s *imageServiceSuite) TestGetImage() {
 	}
 }
 
-func expectCacheHelper(mockCache *cacheMocks.MockCache[imagecacheutils.Key, imagecacheutils.Value], times int, retValue imagecacheutils.Value) expectFn {
+func expectCacheHelper(mockCache *cacheMocks.MockCache[cache.Key, cache.Value], times int, retValue cache.Value) expectFn {
 	return func() {
 		mockCache.EXPECT().Get(gomock.Any()).Times(times).
 			Return(retValue, retValue != nil)
@@ -201,7 +201,7 @@ func (d *dummyValue) GetIfDone() *storage.Image {
 	return d.image
 }
 
-func createScannedImage(name, id string) imagecacheutils.Value {
+func createScannedImage(name, id string) cache.Value {
 	return &dummyValue{image: &storage.Image{
 		Id: id,
 		Name: &storage.ImageName{

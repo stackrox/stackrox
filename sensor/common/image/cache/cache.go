@@ -1,11 +1,12 @@
-package imagecacheutils
+package cache
 
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 )
 
-type ImageCache expiringcache.Cache[Key, Value]
+// Image is a cache for scanned images
+type Image expiringcache.Cache[Key, Value]
 
 // Value represents the value stored in image cache
 type Value interface {
@@ -16,25 +17,25 @@ type Value interface {
 }
 
 // Key is the type for keys in image cache to prevent accidental use,
-// it should be obtained from image with GetImageCacheKey
+// it should be obtained from image with GetKey
 type Key string
 
-// CacheKeyProvider represents an interface from which image cache can be generated.
-type CacheKeyProvider interface {
+// KeyProvider represents an interface from which image cache can be generated.
+type KeyProvider interface {
 	GetId() string
 	GetName() *storage.ImageName
 }
 
-// GetImageCacheKey generates image cache key from a cache key provider.
-func GetImageCacheKey(provider CacheKeyProvider) Key {
+// GetKey generates image cache key from a cache key provider.
+func GetKey(provider KeyProvider) Key {
 	if id := provider.GetId(); id != "" {
 		return Key(id)
 	}
 	return Key(provider.GetName().GetFullName())
 }
 
-// CompareImageCacheKey given two CacheKeyProvider, compares if they're equal
-func CompareImageCacheKey(a, b CacheKeyProvider) bool {
+// CompareKeys given two KeyProvider, compares if they're equal
+func CompareKeys(a, b KeyProvider) bool {
 	if a.GetId() != "" && b.GetId() != "" {
 		return a.GetId() == b.GetId()
 	}

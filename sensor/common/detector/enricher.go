@@ -19,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
-	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -49,7 +49,7 @@ type enricher struct {
 
 	serviceAccountStore store.ServiceAccountStore
 	localScan           *scan.LocalScan
-	imageCache          imagecacheutils.ImageCache
+	imageCache          cache.Image
 	stopSig             concurrency.Signal
 	regStore            *registry.Store
 }
@@ -237,7 +237,7 @@ func (c *cacheValue) updateImageNoLock(image *storage.Image) {
 	c.image.Names = protoutils.SliceUnique(append(c.image.GetNames(), existingNames...))
 }
 
-func newEnricher(cache imagecacheutils.ImageCache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
+func newEnricher(cache cache.Image, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
 	return &enricher{
 		scanResultChan:      make(chan scanResult),
 		serviceAccountStore: serviceAccountStore,
@@ -248,7 +248,7 @@ func newEnricher(cache imagecacheutils.ImageCache, serviceAccountStore store.Ser
 	}
 }
 
-func (e *enricher) getImageFromCache(key imagecacheutils.Key) (*storage.Image, bool) {
+func (e *enricher) getImageFromCache(key cache.Key) (*storage.Image, bool) {
 	value, ok := e.imageCache.Get(key)
 	if !ok {
 		return nil, false
@@ -260,7 +260,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	// Cache key is either going to be image full name or image ID.
 	// In case of image full name, we can skip. In case of image ID, we should make sure to check if the image's name
 	// is equal / contained in the images `Names` field.
-	key := imagecacheutils.GetImageCacheKey(req.containerImage)
+	key := cache.GetKey(req.containerImage)
 
 	// If the container image says that the image is not pullable, don't even bother trying to scan
 	if req.containerImage.GetNotPullable() {

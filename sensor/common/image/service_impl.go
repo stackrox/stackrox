@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"google.golang.org/grpc"
@@ -42,7 +42,7 @@ type ServiceComponent interface {
 }
 
 // NewService returns the ImageService API for the Admission Controller to use.
-func NewService(imageCache imagecacheutils.ImageCache, registryStore registryStore, mirrorStore registrymirror.Store) ServiceComponent {
+func NewService(imageCache cache.Image, registryStore registryStore, mirrorStore registrymirror.Store) ServiceComponent {
 	return &serviceImpl{
 		imageCache:    imageCache,
 		registryStore: registryStore,
@@ -55,7 +55,7 @@ type serviceImpl struct {
 	sensor.UnimplementedImageServiceServer
 
 	centralClient centralClient
-	imageCache    imagecacheutils.ImageCache
+	imageCache    cache.Image
 	registryStore registryStore
 	localScan     localScan
 	centralReady  concurrency.Signal
@@ -67,7 +67,7 @@ func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
 
 func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest) (*sensor.GetImageResponse, error) {
 	id := req.GetImage().GetId()
-	v, ok := s.imageCache.Get(imagecacheutils.GetImageCacheKey(req.GetImage()))
+	v, ok := s.imageCache.Get(cache.GetKey(req.GetImage()))
 	if id != "" && ok {
 		img := v.GetIfDone()
 		if img != nil && (!req.GetScanInline() || img.GetScan() != nil) {
