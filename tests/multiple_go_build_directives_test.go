@@ -1,3 +1,6 @@
+//go:build test_e2e
+//go:build sql_integration
+
 package tests
 
 import (
