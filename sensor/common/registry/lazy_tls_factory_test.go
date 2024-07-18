@@ -21,13 +21,6 @@ func TestCreateRegistryErrors(t *testing.T) {
 		{"unknown type", "registry with type", &storage.ImageIntegration{
 			Type: "fake",
 		}},
-		{"ii nil config", "integration config is nil", &storage.ImageIntegration{
-			Type: types.DockerType,
-		}},
-		{"ii nil docker config", "integration docker config is nil", &storage.ImageIntegration{
-			Type:              types.DockerType,
-			IntegrationConfig: &storage.ImageIntegration_Azure{},
-		}},
 		{"nil docker config", "docker config is nil", &storage.ImageIntegration{
 			Type:              types.DockerType,
 			IntegrationConfig: &storage.ImageIntegration_Docker{},

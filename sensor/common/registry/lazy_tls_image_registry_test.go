@@ -262,11 +262,7 @@ func genImageIntegration(endpoint string) *storage.ImageIntegration {
 }
 
 func createReg(source *storage.ImageIntegration, creator types.Creator, tlsCheckFunc CheckTLS, options ...types.CreatorOption) (*lazyTLSCheckRegistry, error) {
-	cfg, err := extractDockerConfig(source)
-	if err != nil {
-		return nil, err
-	}
-
+	cfg := source.GetDocker()
 	host, url := docker.RegistryHostnameURL(cfg.GetEndpoint())
 	reg := &lazyTLSCheckRegistry{
 		source:           source,

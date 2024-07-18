@@ -155,9 +155,9 @@ func (l *lazyTLSCheckRegistry) lazyInit() {
 
 	// Clone the source to prevent a race.
 	newSrc := l.source.Clone()
-	dockerCfg, err := extractDockerConfig(newSrc)
-	if err != nil {
-		l.initError = err
+	dockerCfg := newSrc.GetDocker()
+	if dockerCfg == nil {
+		l.initError = errors.New("docker config is nil")
 		return
 	}
 	dockerCfg.Insecure = !secure

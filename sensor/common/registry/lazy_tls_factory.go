@@ -50,10 +50,10 @@ func (e *lazyFactory) CreateRegistry(source *storage.ImageIntegration, options .
 		return nil, pkgErrors.Errorf("registry with type '%s' does not exist", source.GetType())
 	}
 
-	dockerConfig, err := extractDockerConfig(source)
-	if err != nil {
+	dockerConfig := source.GetDocker()
+	if dockerConfig == nil {
 		// Only integrations with a docker config are eligible for lazy tls checking
-		return nil, pkgErrors.Wrap(err, "extracting docker config")
+		return nil, pkgErrors.New("docker config is nil")
 	}
 
 	hostname, url := docker.RegistryHostnameURL(dockerConfig.GetEndpoint())
@@ -74,23 +74,4 @@ func (e *lazyFactory) CreateRegistry(source *storage.ImageIntegration, options .
 		},
 		tlsCheckCache: e.tlsCheckCache,
 	}, nil
-}
-
-func extractDockerConfig(ii *storage.ImageIntegration) (*storage.DockerConfig, error) {
-	protoCfg := ii.GetIntegrationConfig()
-	if protoCfg == nil {
-		return nil, pkgErrors.New("image integration config is nil")
-	}
-
-	cfg, ok := protoCfg.(*storage.ImageIntegration_Docker)
-	if !ok || cfg == nil {
-		return nil, pkgErrors.New("image integration docker config is nil")
-	}
-
-	dockerConfig := cfg.Docker
-	if dockerConfig == nil {
-		return nil, pkgErrors.New("docker config is nil")
-	}
-
-	return dockerConfig, nil
 }
