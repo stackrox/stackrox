@@ -64,6 +64,7 @@ func (e *lazyFactory) CreateRegistry(source *storage.ImageIntegration, options .
 	return &lazyTLSCheckRegistry{
 		source:           source,
 		creator:          creator,
+		creatorOptions:   options,
 		dockerConfig:     dockerConfig,
 		url:              url,
 		registryHostname: hostname,

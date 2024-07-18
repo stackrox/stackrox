@@ -27,7 +27,8 @@ type lazyTLSCheckRegistry struct {
 
 	// creater creates the underlying registry from source during
 	// initialization.
-	creator types.Creator
+	creator        types.Creator
+	creatorOptions []types.CreatorOption
 
 	// registry is populated after successful initialization.
 	registry types.Registry
@@ -163,7 +164,7 @@ func (l *lazyTLSCheckRegistry) lazyInit() {
 	l.source = newSrc
 
 	// Create the registry.
-	l.registry, l.initError = l.creator(l.source)
+	l.registry, l.initError = l.creator(l.source, l.creatorOptions...)
 	if l.initError != nil {
 		log.Warnf("Lazy init failed for %q (%s), secure: %t: %v", l.source.GetName(), l.source.GetId(), secure, l.initError)
 	} else {

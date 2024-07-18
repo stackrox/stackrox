@@ -150,13 +150,15 @@ func TestMetadata(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		mockReg := regMocks.NewMockRegistry(ctrl)
 		fakeMetadata := &storage.ImageMetadata{}
+		testOpts := []types.CreatorOption{types.WithMetricsHandler(nil)}
 		creator := func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			assert.Equal(t, testOpts, options)
 			return mockReg, nil
 		}
 
 		source := genImageIntegration("example.com")
 
-		reg, err := createReg(source, creator, alwaysInsecureCheckTLS)
+		reg, err := createReg(source, creator, alwaysInsecureCheckTLS, testOpts...)
 		require.NoError(t, err)
 
 		mockReg.EXPECT().Metadata(img).Return(fakeMetadata, nil)
@@ -259,7 +261,7 @@ func genImageIntegration(endpoint string) *storage.ImageIntegration {
 	}
 }
 
-func createReg(source *storage.ImageIntegration, creator types.Creator, tlsCheckFunc CheckTLS) (*lazyTLSCheckRegistry, error) {
+func createReg(source *storage.ImageIntegration, creator types.Creator, tlsCheckFunc CheckTLS, options ...types.CreatorOption) (*lazyTLSCheckRegistry, error) {
 	cfg, err := extractDockerConfig(source)
 	if err != nil {
 		return nil, err
@@ -269,6 +271,7 @@ func createReg(source *storage.ImageIntegration, creator types.Creator, tlsCheck
 	reg := &lazyTLSCheckRegistry{
 		source:           source,
 		creator:          creator,
+		creatorOptions:   options,
 		dockerConfig:     cfg,
 		url:              url,
 		registryHostname: host,
