@@ -37,7 +37,7 @@ func TestConfig(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockReg := regMocks.NewMockRegistry(ctrl)
 	creator := func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
-		cfg := integration.GetIntegrationConfig().(*storage.ImageIntegration_Docker).Docker
+		cfg := integration.GetDocker()
 		mockReg.EXPECT().Config().Return(&types.Config{
 			Insecure: cfg.Insecure,
 		})
