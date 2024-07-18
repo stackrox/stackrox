@@ -92,14 +92,13 @@ func (m *SlimUser) Clone() *SlimUser {
 
 // User is an object that allows us to track the roles a user is tied to, and how they logged in.
 type User struct {
-	Id             string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	AuthProviderId string           `protobuf:"bytes,2,opt,name=auth_provider_id,json=authProviderId,proto3" json:"auth_provider_id,omitempty"`
-	Attributes     []*UserAttribute `protobuf:"bytes,3,rep,name=attributes,proto3" json:"attributes,omitempty"`
-	// Switching type as a demonstration of a breaking change flagged by proto.lock
-	IdpToken             string   `protobuf:"bytes,4,opt,name=idp_token,json=idpToken,proto3" json:"idp_token,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	AuthProviderId       string           `protobuf:"bytes,2,opt,name=auth_provider_id,json=authProviderId,proto3" json:"auth_provider_id,omitempty"`
+	Attributes           []*UserAttribute `protobuf:"bytes,3,rep,name=attributes,proto3" json:"attributes,omitempty"`
+	IdpToken             string           `protobuf:"bytes,4,opt,name=idp_token,json=idpToken,proto3" json:"idp_token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *User) Reset()         { *m = User{} }
