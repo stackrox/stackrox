@@ -1,7 +1,7 @@
 name: Create combined mono repo lock file
 description: Create combined mono repo lock file
 inputs:
-  lockFile: 
+  lockFile:
     description: Where the lockfile is written
     required: true
     default: "ui/monorepo.lock"
