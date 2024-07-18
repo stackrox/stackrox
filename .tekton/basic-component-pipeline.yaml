@@ -105,7 +105,7 @@ spec:
     value: $(tasks.clone-repository.results.commit)
   - description: ""
     name: JAVA_COMMUNITY_DEPENDENCIES
-    value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
+    value: $(tasks.build-container-amd64.results.JAVA_COMMUNITY_DEPENDENCIES)
 
   workspaces:
   - name: git-auth
@@ -206,10 +206,10 @@ spec:
     taskRef:
       name: output-image-tag-construction
 
-  - name: build-container
+  - name: build-container-amd64
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.output-image-tag-construction.results.FINAL_IMAGE_TAG)
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-amd64
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -244,13 +244,13 @@ spec:
       operator: in
       values: [ "true" ]
 
-  - name: apply-tags
+  - name: apply-tags-amd64
     params:
     - name: IMAGE
-      value: $(tasks.build-container.results.IMAGE_URL)
+      value: $(tasks.build-container.results.IMAGE_URL)-amd64
     - name: ADDITIONAL_TAGS
       value:
-      - konflux-$(params.revision)
+      - konflux-$(params.revision)-amd64
     taskRef:
       params:
       - name: name
@@ -261,12 +261,97 @@ spec:
         value: task
       resolver: bundles
 
+  - name: build-container-s390x
+    params:
+    - name: IMAGE
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
+    - name: DOCKERFILE
+      value: $(params.dockerfile)
+    - name: CONTEXT
+      value: $(params.path-context)
+    - name: HERMETIC
+      value: $(params.hermetic)
+    - name: PREFETCH_INPUT
+      value: $(params.prefetch-input)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.image-expires-after)
+    - name: COMMIT_SHA
+      value: $(tasks.clone-repository.results.commit)
+    - name: BUILD_ARGS
+      value:
+      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: PLATFORM
+      value: linux/s390x
+    taskRef:
+      params:
+      - name: name
+        value: buildah-remote-oci-ta
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.1
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(tasks.init.results.build)
+      operator: in
+      values: [ "true" ]
+
+  - name: apply-tags-s390x
+    params:
+    - name: IMAGE
+      value: $(tasks.build-container.results.IMAGE_URL)-s390x
+    - name: ADDITIONAL_TAGS
+      value:
+      - konflux-$(params.revision)-s390x
+    taskRef:
+      params:
+      - name: name
+        value: apply-tags
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-apply-tags:0.1@sha256:29add9a49a2281a3755a9b580d2b9c5cb110231b14cccf8ade2fd7895a9b4b4a
+      - name: kind
+        value: task
+      resolver: bundles
+
+  - name: build-container
+    params:
+    - name: IMAGE
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+    - name: COMMIT_SHA
+      value: $(tasks.clone-repository.results.commit)
+    - name: IMAGES
+      value:
+        - $(tasks.build-container-amd64.results.IMAGE_URL)@$(tasks.build-container-amd64.results.IMAGE_DIGEST)
+        - $(tasks.build-container-s390x.results.IMAGE_URL)@$(tasks.build-container-s390x.results.IMAGE_DIGEST)
+    runAfter:
+      - build-container-amd64
+      - build-container-s390x
+    taskRef:
+      params:
+        - name: name
+          value: build-image-manifest
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-build-image-manifest:0.1@sha256:fd0a0cf019621d6b577f1b9ab774bb1832f7cba61b4ceee2fd1bffc96895abf9
+        - name: kind
+          value: task
+      resolver: bundles
+    when:
+      - input: $(tasks.init.results.build)
+        operator: in
+        values:
+          - "true"
+
   - name: build-source-image
     params:
     - name: BINARY_IMAGE
       value: $(tasks.build-container.results.IMAGE_URL)
     - name: BASE_IMAGES
-      value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+      value: $(tasks.build-container-amd64.results.BASE_IMAGES_DIGESTS)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -291,11 +376,11 @@ spec:
   - name: deprecated-base-image-check
     params:
     - name: BASE_IMAGES_DIGESTS
-      value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+      value: $(tasks.build-container-amd64.results.BASE_IMAGES_DIGESTS)
     - name: IMAGE_URL
-      value: $(tasks.build-container.results.IMAGE_URL)
+      value: $(tasks.build-container-amd64.results.IMAGE_URL)
     - name: IMAGE_DIGEST
-      value: $(tasks.build-container.results.IMAGE_DIGEST)
+      value: $(tasks.build-container-amd64.results.IMAGE_DIGEST)
     taskRef:
       params:
       - name: name
