@@ -7,11 +7,15 @@ import {
     CardBody,
     Button,
     Divider,
+    EmptyState,
+    EmptyStateBody,
+    EmptyStateHeader,
+    EmptyStateIcon,
     Flex,
     FlexItem,
     TextInput,
 } from '@patternfly/react-core';
-import { PencilAltIcon, TrashIcon, CheckIcon } from '@patternfly/react-icons';
+import { PencilAltIcon, TrashIcon, CheckIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useModal from 'hooks/useModal';
@@ -25,11 +29,19 @@ import './PolicySection.css';
 
 type PolicySectionProps = {
     sectionIndex: number;
+    onChangeSelected: (sectionIndex: number) => void;
     descriptors: Descriptor[];
     readOnly?: boolean;
+    selectedSectionIndex?: number;
 };
 
-function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySectionProps) {
+function PolicySection({
+    sectionIndex,
+    onChangeSelected,
+    descriptors,
+    readOnly = false,
+    selectedSectionIndex = -1,
+}: PolicySectionProps) {
     const [isEditingName, setIsEditingName] = React.useState(false);
     const { isModalOpen, openModal, closeModal } = useModal();
     const { values, setFieldValue, handleChange } = useFormikContext<Policy>();
@@ -37,12 +49,20 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const showPolicyCriteriaModal = isFeatureFlagEnabled('ROX_POLICY_CRITERIA_MODAL');
+    const showAccessiblePolicyCriteria = isFeatureFlagEnabled(
+        'ROX_ACCESSIBLE_POLICY_CRITERIA_EDITING'
+    );
+
+    const isSelected = sectionIndex === selectedSectionIndex;
 
     function onEditSectionName(_, e) {
         handleChange(e);
     }
 
     function onDeleteSection() {
+        const newSelectedSection = selectedSectionIndex - 1;
+        onChangeSelected(newSelectedSection);
+
         setFieldValue(
             'policySections',
             values.policySections.filter((_, i) => i !== sectionIndex)
@@ -58,7 +78,13 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
 
     return (
         <>
-            <Card isFlat isCompact className={!readOnly ? 'policy-section-card' : ''}>
+            <Card
+                isFlat
+                isCompact
+                isSelected={isSelected}
+                isSelectable={showAccessiblePolicyCriteria}
+                className={!readOnly ? 'policy-section-card' : ''}
+            >
                 <CardHeader
                     {...(!readOnly && {
                         actions: {
@@ -91,6 +117,15 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                             ),
                             hasNoOffset: true,
                             className: undefined,
+                        },
+                        selectableActions: {
+                            selectableActionId: `policy-section-${sectionIndex}`,
+                            selectableActionAriaLabel: `Policy section ${sectionIndex + 1}: ${sectionName}`,
+                            variant: 'single',
+                            onChange: () => {
+                                onChangeSelected(sectionIndex);
+                            },
+                            isChecked: isSelected,
                         },
                     })}
                     className="policy-section-card-header pf-v5-u-p-0"
@@ -141,7 +176,18 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                             )
                         );
                     })}
-                    {!showPolicyCriteriaModal && !readOnly && (
+                    {showAccessiblePolicyCriteria && !readOnly && (
+                        <EmptyState>
+                            <EmptyStateHeader
+                                titleText=""
+                                icon={<EmptyStateIcon icon={PlusCircleIcon} />}
+                            />
+                            <EmptyStateBody>
+                                Add a policy criterion from the panel to the right
+                            </EmptyStateBody>
+                        </EmptyState>
+                    )}
+                    {!showPolicyCriteriaModal && !showAccessiblePolicyCriteria && !readOnly && (
                         <PolicySectionDropTarget
                             sectionIndex={sectionIndex}
                             descriptors={descriptors}

@@ -1,0 +1,28 @@
+#policy-criteria-options-container .pf-v5-c-title {
+    margin-left: var(--pf-v5-global--spacer--md) !important;
+}
+
+#policy-criteria-options-container .pf-v5-c-tree-view {
+    --pf-v5-c-tree-view--PaddingTop: 0 !important;
+}
+
+#policy-criteria-options-container .pf-v5-c-tree-view__search {
+    --pf-v5-c-tree-view__search--PaddingLeft: var(--pf-v5-global--spacer--md) !important;
+}
+
+#policy-criteria-options-container .pf-v5-c-tree-view__content {
+    outline-color: 0 0 #000 !important;
+}
+
+#policy-criteria-options-container .pf-v5-c-tree-view__list-item .pf-v5-c-tree-view__list-item .pf-v5-c-tree-view__node-container:hover {
+    background-color: var(--pf-v5-global--BackgroundColor--200) !important;
+    cursor: pointer;
+}
+
+#policy-criteria-options-container .pf-v5-c-tree-view__node.pf-m-current .pf-v5-c-tree-view__node-container {
+    background-color: var(--pf-v5-global--palette--blue-50) !important;
+}
+
+#policy-criteria-options-container .pf-v5-c-tree-view.pf-m-compact .pf-v5-c-tree-view__list-item {
+    --pf-v5-c-tree-view--m-compact__list-item--BorderBottomColor: none;
+}
