@@ -57,7 +57,7 @@ jobs:
       - download-nvd
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-3-gd893fbbf15
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-4-g0476c57d6d
       volumes:
         # The updater makes heavy use of /tmp files.
         - /tmp:/tmp
