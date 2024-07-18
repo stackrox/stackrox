@@ -9,7 +9,9 @@ type ImageCache expiringcache.Cache[Key, Value]
 
 // Value represents the value stored in image cache
 type Value interface {
+	// WaitAndGet wait for image scan before returning the image
 	WaitAndGet() *storage.Image
+	// GetIfDone returns image if scan was done, otherwise it returns nil
 	GetIfDone() *storage.Image
 }
 

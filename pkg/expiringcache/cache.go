@@ -99,7 +99,6 @@ func (e *expiringCacheImpl[K, V]) addNoLock(key K, value interface{}) {
 
 // Get takes in a key and returns nil if the item doesn't exist or if the item has expired
 func (e *expiringCacheImpl[K, V]) Get(key K) (V, bool) {
-	var empty V
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
