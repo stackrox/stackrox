@@ -271,6 +271,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	protoassert.Equal(suite.T(), expectedPlopStorage, newPlopsFromDB[0])
 
 	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
 		plopObjects[0].GetDeploymentId(): 1,
@@ -325,6 +326,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoDeployments() {
 	protoassert.Equal(suite.T(), expectedPlopStorage, newPlopsFromDB[0])
 
 	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{}
 	suite.Equal(expectedPlopCounts, plopCounts)
