@@ -106,6 +106,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         def processesListeningOnPorts = waitForResponseToHaveNumElements(2, deploymentId1, 240)
 
+        def counts = ProcessesListeningOnPortsService.getProcessesListeningOnPortsResponse()
+
         assert processesListeningOnPorts
 
         def list = processesListeningOnPorts.listeningEndpointsList
@@ -136,6 +138,13 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint2.signal.name == "socat"
         assert endpoint2.signal.execFilePath == "/usr/bin/socat"
         assert endpoint2.signal.args == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
+
+        assert counts
+
+        assert counts.size() == 3
+        assert counts[deploymentId1] == 1
+        assert counts[deploymentId2] == 1
+        assert counts[deploymentId3] == 0
 
         processesListeningOnPorts = waitForResponseToHaveNumElements(1, deploymentId2, 240)
 
