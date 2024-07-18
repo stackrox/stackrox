@@ -432,7 +432,7 @@ spec:
         value: task
       resolver: bundles
 
-  - name: build-manifest
+  - name: build-container
     params:
     - name: IMAGE
       value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
@@ -464,7 +464,7 @@ spec:
         values:
           - "true"
 
-  - name: build-manifest-konflux
+  - name: build-container-konflux
     params:
     - name: IMAGE
       value: konflux-$(params.revision)
