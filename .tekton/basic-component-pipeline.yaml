@@ -467,15 +467,15 @@ spec:
   - name: build-container-konflux
     params:
     - name: IMAGE
-      value: konflux-$(params.revision)
+      value: $(params.output-image-repo):konflux-$(params.revision)
     - name: COMMIT_SHA
       value: $(tasks.clone-repository.results.commit)
     - name: IMAGES
       value:
-      - konflux-$(params.revision)-amd64
-      - konflux-$(params.revision)-s390x
-      - konflux-$(params.revision)-ppc64le
-      - konflux-$(params.revision)-arm64
+      - $(params.output-image-repo):konflux-$(params.revision)-amd64
+      - $(params.output-image-repo):konflux-$(params.revision)-s390x
+      - $(params.output-image-repo):konflux-$(params.revision)-ppc64le
+      - $(params.output-image-repo):konflux-$(params.revision)-arm64
     runAfter:
       - apply-tags-amd64
       - apply-tags-s390x
