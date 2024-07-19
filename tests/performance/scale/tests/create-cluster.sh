@@ -26,3 +26,6 @@ for machineset in `oc get machineset.machine.openshift.io --namespace openshift-
 done
 
 ./isolate-monitoring.sh
+
+
+echo "export KUBECONFIG=$KUBECONFIG"
