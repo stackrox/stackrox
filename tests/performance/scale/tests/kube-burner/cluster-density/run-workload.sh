@@ -29,6 +29,7 @@ OPTION:
   --num-patches        Number of times the deployments will be patched. (default 100)
                        This is only applied if the used template has a job type patch.
   --template           Indicates the template to the config to be used by kube-burner. (default cluster-density-template.yml)
+  --test-name          The test name
   --kube-burner-path   Path to kube-burner executable. (default: kube-burner)
   --help               Prints help information.
 
@@ -218,7 +219,8 @@ function main() {
       "${num_configs}" \
       "${num_patches}" \
       "${template}" \
-      "${kube_burner_path}"
+      "${kube_burner_path}" \
+      "${test_name:-}"
 }
 
 main "$@"

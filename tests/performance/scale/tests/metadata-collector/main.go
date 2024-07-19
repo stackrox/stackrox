@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"unicode"
 
@@ -279,13 +280,13 @@ func getGitRevision() (string, error) {
 
 func truncateVersion(version string) string {
     // Version should match x.y
-    re := regexp.MustCompile(`^\d+\.\d+`)
+    re := regexp.MustCompile(`^[vV]?(\d+\.\d+)`)
 
-    match := re.FindString(version)
+    match := re.FindStringSubmatch(version)
 
     // If the version is valid return it. Otherwise return 0.0
-    if match != "" {
-        return match
+    if len(match) > 1 {
+        return match[1]
     }
     return "0.0"
 }
