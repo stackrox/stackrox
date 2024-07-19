@@ -18,28 +18,6 @@ spec:
       - name: kind
         value: task
       resolver: bundles
-  - name: show-summary
-    params:
-    - name: pipelinerun-name
-      value: $(context.pipelineRun.name)
-    - name: git-url
-      value: $(tasks.clone-repository.results.url)?rev=$(tasks.clone-repository.results.commit)
-    - name: image-url
-      value: $(tasks.build-container.results.IMAGE_URL)
-    - name: build-task-status
-      value: $(tasks.build-container.status)
-    workspaces:
-    - name: workspace
-      workspace: workspace
-    taskRef:
-      params:
-      - name: name
-        value: summary
-      - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-summary:0.2@sha256:51d5aaa4e13e9fb4303f667e38d07e758820040032ed9fb3ab5f6afaaffc60d8
-      - name: kind
-        value: task
-      resolver: bundles
 
   params:
   - description: Source Repository URL
@@ -103,6 +81,10 @@ spec:
     description: Fetch tags with git clone
     name: clone-fetch-tags
     type: string
+  - default: "1d"
+    description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
+    name: oci-artifact-expires-after
+    type: string
 
   results:
   - description: ""
@@ -122,7 +104,6 @@ spec:
     value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
 
   workspaces:
-  - name: workspace
   - name: git-auth
 
   tasks:
@@ -158,14 +139,16 @@ spec:
       value: $(params.clone-depth)
     - name: fetchTags
       value: $(params.clone-fetch-tags)
-    runAfter:
-    - init
+    - name: ociStorage
+      value: $(params.output-image-repo):konflux-$(params.revision).git
+    - name: ociArtifactExpiresAfter
+      value: $(params.oci-artifact-expires-after)
     taskRef:
       params:
       - name: name
-        value: git-clone
+        value: git-clone-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-git-clone:0.1@sha256:2be7c9c83159c5247f1f9aab8fa1a2cb29d0df66f6c5bb48a012320bdcb03c7d
+        value: quay.io/redhat-appstudio-tekton-catalog/task-git-clone-oci-ta:0.1@sha256:f1e58dcdb32efa9ca5b6f44e3600814624b9a8cfd59a1701379c789eeb8eef5b
       - name: kind
         value: task
       resolver: bundles
@@ -174,59 +157,53 @@ spec:
       operator: in
       values: [ "true" ]
     workspaces:
-    - name: output
-      workspace: workspace
     - name: basic-auth
       workspace: git-auth
 
   - name: determine-image-tag
     params:
-    - name: tag-suffix
+    - name: TAG_SUFFIX
       value: $(params.output-tag-suffix)
-    runAfter:
-    # This task must run on a freshly cloned repository to prevent seeing any changes from other tasks.
-    - clone-repository
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
-      name: determine-image-tag
-    workspaces:
-    - name: source
-      workspace: workspace
+      name: determine-image-tag-oci-ta
 
-  - name: fetch-vuln-mappings
-    runAfter:
-    - determine-image-tag
-    taskSpec:
-      steps:
-      - name: fetch-vuln-mappings
-        image: registry.access.redhat.com/ubi8-minimal:latest
-        script: '"$(workspaces.source.path)/source/scanner/image/scanner/download-mappings.sh" "$(workspaces.source.path)/source/.konflux/scanner-data"'
-    workspaces:
-    - name: source
-      workspace: workspace
+  - name: fetch-scanner-vuln-mappings
+    params:
+      - name: SOURCE_ARTIFACT
+        value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+      - name: ociStorage
+        value: $(params.output-image-repo):konflux-$(params.revision).vuln-mappings
+      - name: ociArtifactExpiresAfter
+        value: $(params.oci-artifact-expires-after)
+    taskRef:
+      name: fetch-scanner-vuln-mappings-oci-ta
 
   - name: prefetch-dependencies
     params:
     - name: input
       value: $(params.prefetch-input)
-    runAfter:
-    - determine-image-tag
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.fetch-scanner-vuln-mappings.results.SOURCE_ARTIFACT)
+    - name: ociStorage
+      value: $(params.output-image-repo):konflux-$(params.revision).prefetch
+    - name: ociArtifactExpiresAfter
+      value: $(params.oci-artifact-expires-after)
     taskRef:
       params:
       - name: name
-        value: prefetch-dependencies
+        value: prefetch-dependencies-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-prefetch-dependencies:0.1@sha256:9aec3ae9f0f50a05abdc739faf4cbc82832cff16c77ac74e1d54072a882c0503
+        value: quay.io/redhat-appstudio-tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:a977d1a1b8cb79f29056e20a2e225b1018d84daad8b546de82f30b6326afee22
       - name: kind
         value: task
       resolver: bundles
-    workspaces:
-    - name: source
-      workspace: workspace
 
   - name: build-container
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.image-tag)
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -242,16 +219,17 @@ spec:
     - name: BUILD_ARGS
       value:
       - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.image-tag)
-    runAfter:
-    - prefetch-dependencies
-    - fetch-vuln-mappings
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     taskRef:
       params:
       - name: name
-        value: buildah
+        value: buildah-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:021f7029d0d8a1834bc45a4cd3cc451c03d0f87a5793eb19e1902f8b00dd3d4c
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.1@sha256:2a42822363c83b95a84c2f6a10c4d957835431d812b1e4a045b51fab1cca9769
       - name: kind
         value: task
       resolver: bundles
@@ -259,9 +237,6 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
-    workspaces:
-    - name: source
-      workspace: workspace
 
   - name: apply-tags
     params:
@@ -270,8 +245,6 @@ spec:
     - name: ADDITIONAL_TAGS
       value:
       - konflux-$(params.revision)
-    runAfter:
-    - build-container
     taskRef:
       params:
       - name: name
@@ -288,14 +261,16 @@ spec:
       value: $(tasks.build-container.results.IMAGE_URL)
     - name: BASE_IMAGES
       value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
-    runAfter:
-    - build-container
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     taskRef:
       params:
       - name: name
-        value: source-build
+        value: source-build-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-source-build:0.1@sha256:83ee909cb8f7d659fac380a2521fb60f30c309e5ecb91f3aad2433936e690d98
+        value: quay.io/redhat-appstudio-tekton-catalog/task-source-build-oci-ta:0.1@sha256:eae2e52027120286bcd3c1e3a48bf3f1281d9718549b9cd4098dcf11b06b71b8
       - name: kind
         value: task
       resolver: bundles
@@ -306,9 +281,6 @@ spec:
     - input: $(params.build-source-image)
       operator: in
       values: [ "true" ]
-    workspaces:
-    - name: workspace
-      workspace: workspace
 
   - name: deprecated-base-image-check
     params:
@@ -318,8 +290,6 @@ spec:
       value: $(tasks.build-container.results.IMAGE_URL)
     - name: IMAGE_DIGEST
       value: $(tasks.build-container.results.IMAGE_DIGEST)
-    runAfter:
-    - build-container
     taskRef:
       params:
       - name: name
@@ -340,8 +310,6 @@ spec:
       value: $(tasks.build-container.results.IMAGE_DIGEST)
     - name: image-url
       value: $(tasks.build-container.results.IMAGE_URL)
-    runAfter:
-    - build-container
     taskRef:
       params:
       - name: name
@@ -357,14 +325,15 @@ spec:
       values: [ "false" ]
 
   - name: sast-snyk-check
-    runAfter:
-    - clone-repository
+    params:
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     taskRef:
       params:
       - name: name
-        value: sast-snyk-check
+        value: sast-snyk-check-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-sast-snyk-check:0.1@sha256:60774c68333a34579d4f5044d395ee8edf87738a7d56205bfb1b83e93dbe0a41
+        value: quay.io/redhat-appstudio-tekton-catalog/task-sast-snyk-check-oci-ta:0.1@sha256:80f44bd76a16a687681420f04b1d3e5ee974856eee2b5853311660e6fb0422bf
       - name: kind
         value: task
       resolver: bundles
@@ -372,9 +341,6 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
-    workspaces:
-    - name: workspace
-      workspace: workspace
 
   - name: clamav-scan
     params:
@@ -382,8 +348,6 @@ spec:
       value: $(tasks.build-container.results.IMAGE_DIGEST)
     - name: image-url
       value: $(tasks.build-container.results.IMAGE_URL)
-    runAfter:
-    - build-container
     taskRef:
       params:
       - name: name
@@ -404,8 +368,6 @@ spec:
       value: $(tasks.build-container.results.IMAGE_URL)
     - name: IMAGE_DIGEST
       value: $(tasks.build-container.results.IMAGE_DIGEST)
-    runAfter:
-    - build-container
     taskRef:
       params:
       - name: name
