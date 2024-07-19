@@ -15,7 +15,7 @@ spec:
     type: string
   - name: ociArtifactExpiresAfter
     description: Expiration date for the trusted artifacts created in the
-      OCI repository. An empty string means the artifacts do not expire.
+      OCI repository.
     type: string
   results:
   - name: SOURCE_ARTIFACT
