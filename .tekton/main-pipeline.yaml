@@ -285,6 +285,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: PLATFORM
+      value: linux/s390x
     taskRef:
       params:
       - name: name
@@ -340,6 +342,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: PLATFORM
+      value: linux/ppc64le
     taskRef:
       params:
       - name: name
@@ -395,6 +399,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: PLATFORM
+      value: linux/arm64
     taskRef:
       params:
       - name: name
