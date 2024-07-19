@@ -1,11 +1,14 @@
 import React from 'react';
+import isEmpty from 'lodash/isEmpty';
+import qs from 'qs';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import TableCellLink from 'Components/TableCellLink';
 import { resourceTypes, standardBaseTypes } from 'constants/entityTypes';
 import { sortVersion } from 'sorters/sorters';
+import { complianceBasePath } from 'routePaths';
 
 const getColumnValue = (row, accessor) => (row[accessor] ? row[accessor] : 'N/A');
-const getNameCell = (name) => <div data-testid="table-row-name">{name}</div>;
 
 const columnsForStandard = (function getColumnsForStandards() {
     const ret = {};
@@ -37,7 +40,14 @@ const getClusterColumns = (standards) => [
     {
         accessor: 'name',
         Header: 'Cluster',
-        Cell: ({ original }) => getNameCell(original.name),
+        Cell: ({ original, pdf }) => {
+            const url = `${complianceBasePath}/clusters/${original.id}`;
+            return (
+                <TableCellLink pdf={pdf} url={url}>
+                    {original.name}
+                </TableCellLink>
+            );
+        },
     },
     ...standards.map(({ id }) => getColumnForStandard(id)),
     {
@@ -46,6 +56,8 @@ const getClusterColumns = (standards) => [
     },
 ];
 
+// TODO verify that this is obsolete.
+// If not obsolete, it might need query argument like getColumnsForControl function.
 const getStandardColumns = (standard) => [
     {
         accessor: 'id',
@@ -59,7 +71,14 @@ const getStandardColumns = (standard) => [
         Header: `${standard} Controls`,
         headerClassName: `w-5/6 ${defaultHeaderClassName}`,
         className: `w-5/6 ${defaultColumnClassName}`,
-        Cell: ({ original }) => getNameCell(`${original.control} - ${original.description}`),
+        Cell: ({ original, pdf }) => {
+            const url = `${complianceBasePath}/controls/${original.id}`;
+            return (
+                <TableCellLink pdf={pdf} url={url}>
+                    {`${original.control} - ${original.description}`}
+                </TableCellLink>
+            );
+        },
     },
     {
         accessor: 'compliance',
@@ -79,7 +98,14 @@ const getNodeColumns = (standards) => [
     {
         accessor: 'name',
         Header: 'Node',
-        Cell: ({ original }) => getNameCell(original.name),
+        Cell: ({ original, pdf }) => {
+            const url = `${complianceBasePath}/nodes/${original.id}`;
+            return (
+                <TableCellLink pdf={pdf} url={url}>
+                    {original.name}
+                </TableCellLink>
+            );
+        },
     },
     {
         accessor: 'cluster',
@@ -102,7 +128,14 @@ const getNamespaceColumns = (standards) => [
     {
         accessor: 'name',
         Header: 'Namespace',
-        Cell: ({ original }) => getNameCell(original.name),
+        Cell: ({ original, pdf }) => {
+            const url = `${complianceBasePath}/namespaces/${original.id}`;
+            return (
+                <TableCellLink pdf={pdf} url={url}>
+                    {original.name}
+                </TableCellLink>
+            );
+        },
     },
     {
         accessor: 'cluster',
@@ -125,17 +158,22 @@ const getDeploymentColumns = (standards) => [
     {
         accessor: 'name',
         Header: 'Name',
-        Cell: ({ original }) => getNameCell(original.name),
+        Cell: ({ original, pdf }) => {
+            const url = `${complianceBasePath}/deployments/${original.id}`;
+            return (
+                <TableCellLink pdf={pdf} url={url}>
+                    {original.name}
+                </TableCellLink>
+            );
+        },
     },
     {
         accessor: 'cluster',
         Header: 'Cluster Name',
-        Cell: ({ original }) => getNameCell(original.cluster),
     },
     {
         accessor: 'namespace',
         Header: 'Namespace',
-        Cell: ({ original }) => getNameCell(original.namespace),
     },
     ...standards.map(({ id }) => columnsForStandard[id]),
     {
@@ -144,28 +182,44 @@ const getDeploymentColumns = (standards) => [
     },
 ];
 
-const controlColumns = [
-    {
-        accessor: 'id',
-        Header: 'id',
-        headerClassName: 'hidden',
-        className: 'hidden',
-    },
-    {
-        accessor: 'control',
-        sortMethod: sortVersion,
-        Header: `Control`,
-        headerClassName: `w-5/6 ${defaultHeaderClassName}`,
-        className: `w-5/6 ${defaultColumnClassName}`,
-        Cell: ({ original }) => getNameCell(`${original.control} - ${original.description}`),
-    },
-    {
-        accessor: 'compliance',
-        Header: 'Compliance',
-        headerClassName: `w-1/8 flex justify-end pr-4 ${defaultHeaderClassName}`,
-        className: `w-1/8 justify-end pr-4 ${defaultColumnClassName}`,
-    },
-];
+export function getColumnsForControl(query) {
+    return [
+        {
+            accessor: 'id',
+            Header: 'id',
+            headerClassName: 'hidden',
+            className: 'hidden',
+        },
+        {
+            accessor: 'control',
+            sortMethod: sortVersion,
+            Header: `Control`,
+            headerClassName: `w-5/6 ${defaultHeaderClassName}`,
+            className: `w-5/6 ${defaultColumnClassName}`,
+            Cell: ({ original, pdf }) => {
+                const search = isEmpty(query)
+                    ? ''
+                    : qs.stringify(query, {
+                          addQueryPrefix: true,
+                          arrayFormat: 'indices',
+                          encodeValuesOnly: true,
+                      });
+                const url = `${complianceBasePath}/controls/${original.id}${search}`;
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {`${original.control} - ${original.description}`}
+                    </TableCellLink>
+                );
+            },
+        },
+        {
+            accessor: 'compliance',
+            Header: 'Compliance',
+            headerClassName: `w-1/8 flex justify-end pr-4 ${defaultHeaderClassName}`,
+            className: `w-1/8 justify-end pr-4 ${defaultColumnClassName}`,
+        },
+    ];
+}
 
 export function getColumnsByEntity(entityType, standards) {
     const filteredStandards = standards.filter(({ scopes }) => scopes.includes(entityType));
@@ -179,10 +233,11 @@ export function getColumnsByEntity(entityType, standards) {
         case resourceTypes.DEPLOYMENT:
             return getDeploymentColumns(filteredStandards);
         default:
-            return controlColumns;
+            return [];
     }
 }
 
+// TODO verify that this is obsolete.
 export function getColumnsByStandard(standardID) {
     return getStandardColumns(standardBaseTypes[standardID]);
 }
