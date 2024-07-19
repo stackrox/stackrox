@@ -32,7 +32,8 @@
 
 7. **Feature Completeness**
    - The features or bug fixes introduced by the PR must be complete and fully functional.
-   - A feature under development must be gated by a feature flag, disabled by default.
+   - A feature under development must be gated by a feature flag of the "dev-preview" type, disabled by default.
+   - A technological preview feature must be gated by a feature flag of the "tech-preview" type, disabled by default.
    - All acceptance criteria specified in the related issue or task must be met.
 
 8. **User Interface (if applicable)**
