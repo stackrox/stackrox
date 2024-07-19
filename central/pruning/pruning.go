@@ -413,7 +413,6 @@ func (g *garbageCollectorImpl) removeOrphanedProcesses() {
 }
 
 func (g *garbageCollectorImpl) removeProcesses(processesToRemove []string, processParent string) (int, error) {
-	defer metrics.SetPruningDuration(time.Now(), "Processes")
 	if len(processesToRemove) == 0 {
 		log.Infof("[Pruning] Found no processes orphaned by %s...", processParent)
 		return 0, nil
