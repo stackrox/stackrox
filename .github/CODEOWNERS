@@ -25,6 +25,7 @@ tests/upgrade/*                     @stackrox/core-workflows
 */declarativeconfig/**/*    @stackrox/merlin
 */discoveredclusters/**/    @stackrox/merlin
 */signatureintegration/**/* @stackrox/merlin
+pkg/features/**/*           @stackrox/merlin
 pkg/sac/**/*                @stackrox/merlin
 pkg/signatures/**/*         @stackrox/merlin
 roxctl/**/*                 @stackrox/merlin
