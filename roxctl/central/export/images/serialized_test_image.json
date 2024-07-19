@@ -1,0 +1,33 @@
+{
+	"id": "sha256:SHA1",
+	"name": {
+		"registry": "docker.io",
+		"remote": "library/nginx",
+		"tag": "1.10"
+	},
+	"metadata": {
+		"v1": {
+			"layers": [
+				{
+					"instruction": "ADD",
+					"value": "FILE:blah"
+				}
+			]
+		}
+	},
+	"scan": {
+		"components": [
+			{
+				"name": "name",
+				"vulns": [
+					{
+						"cve": "cve",
+						"cvss": 5,
+						"summary": "Vuln summary"
+					}
+				]
+			}
+		],
+		"scanTime": "2020-12-24T23:59:59.999999999Z"
+	}
+}
