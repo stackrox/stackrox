@@ -15,7 +15,6 @@ settings=(
     --set enableOpenShiftMonitoring=true
     --set central.db.enabled=true
     --set central.persistence.none=true
-    --set scannerV4.disable=false
 )
 
 if [[ -n ${ROX_SCANNER_V4:-} ]]; then
