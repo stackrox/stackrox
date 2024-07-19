@@ -13,7 +13,7 @@ from pathlib import Path
 
 from pre_tests import (
     PreSystemTests,
-    CollectionPreTest
+    CollectionMethodOverridePreTest
 )
 from ci_tests import QaE2eTestCompatibility
 from post_tests import PostClusterTest, FinalPost
@@ -89,19 +89,20 @@ for test_tuple in test_tuples:
     os.environ["ROX_TELEMETRY_STORAGE_KEY_V1"] = 'DISABLED'
     test_versions = f'{test_tuple.central_version}--{test_tuple.sensor_version}'
 
-    is_374_sensor = test_tuple.sensor_version.startswith('74')
+    # expected version string is like 74.x.x for ACS 3.74 versions
+    is_3_74_sensor = test_tuple.sensor_version.startswith('74')
 
     sets.append(
         {
             "name": f'version compatibility tests: {test_versions}',
             "test": QaE2eTestCompatibility(test_tuple.central_version, test_tuple.sensor_version),
             "post_test": PostClusterTest(
-                    collect_collector_metrics=not is_374_sensor,
+                    collect_collector_metrics=not is_3_74_sensor,
                     check_stackrox_logs=True,
                     artifact_destination_prefix=test_versions,
             ),
             # Collection not supported on 3.74
-            "pre_test": CollectionPreTest(None if is_374_sensor else "core_bpf")
+            "pre_test": CollectionMethodOverridePreTest("NO_COLLECTION" if is_3_74_sensor else "core_bpf")
         },
     )
 ClusterTestSetsRunner(
