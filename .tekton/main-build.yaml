@@ -58,15 +58,19 @@ spec:
     secret:
       secretName: '{{ git_auth_secret }}'
 
-  # The pipeline regularly takes >1h to finish.
+  # The pipeline regularly takes >2h to finish with multi-arch builds being the slowest.
   timeouts:
-    pipeline: 1h30m0s
+    pipeline: 3h30m0s
 
   pipelineRef:
     name: main-pipeline
 
   taskRunSpecs:
-  - pipelineTaskName: build-container
+  # For all sbom-syft-generate steps:
+  # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container
+  # exits with 137 (OOMKilled):
+  # /tekton/scripts/script-2-h7nll: line 7:    33 Killed                  syft dir:$(cat /shared/container_path) --output cyclonedx-json=/var/workdir/sbom-image.json
+  - pipelineTaskName: build-container-amd64
     stepSpecs:
     - name: build
       # CPU requests are increased to speed up builds compared to the defaults.
@@ -85,8 +89,30 @@ spec:
           cpu: 4
           memory: 7Gi
     - name: sbom-syft-generate
-      # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container exits with 137 (OOMKilled):
-      # /tekton/scripts/script-2-h7nll: line 7:    33 Killed                  syft dir:$(cat /shared/container_path) --output cyclonedx-json=/var/workdir/sbom-image.json
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
+  - pipelineTaskName: build-container-s390x
+    stepSpecs:
+    - name: sbom-syft-generate
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
+  - pipelineTaskName: build-container-ppc64le
+    stepSpecs:
+    - name: sbom-syft-generate
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
+  - pipelineTaskName: build-container-arm64
+    stepSpecs:
+    - name: sbom-syft-generate
       computeResources:
         limits:
           memory: 3Gi
