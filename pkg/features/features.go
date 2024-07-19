@@ -14,6 +14,7 @@ type FeatureFlag interface {
 	EnvVar() string
 	Enabled() bool
 	Default() bool
+	Stage() string
 }
 
 var (
@@ -22,16 +23,16 @@ var (
 )
 
 // registerFeature global registers and returns a new feature flag that can be overridden from the default state regardless of build.
-func registerFeature(name, envVar string, defaultValue bool) FeatureFlag {
-	return saveFeature(name, envVar, defaultValue, true)
+func registerFeature(name, envVar string, defaultValue bool, release stage) FeatureFlag {
+	return saveFeature(name, envVar, defaultValue, true, release)
 }
 
 // registerUnchangeableFeature global registers and returns a new feature flag that is always locked to the default value.
-func registerUnchangeableFeature(name, envVar string, defaultValue bool) FeatureFlag {
-	return saveFeature(name, envVar, defaultValue, !buildinfo.ReleaseBuild)
+func registerUnchangeableFeature(name, envVar string, defaultValue bool, release stage) FeatureFlag {
+	return saveFeature(name, envVar, defaultValue, !buildinfo.ReleaseBuild, release)
 }
 
-func saveFeature(name, envVar string, defaultValue, overridable bool) FeatureFlag {
+func saveFeature(name, envVar string, defaultValue, overridable bool, release stage) FeatureFlag {
 	if !strings.HasPrefix(envVar, "ROX_") {
 		panic(fmt.Sprintf("invalid env var: %s, must start with ROX_", envVar))
 	}
@@ -40,6 +41,7 @@ func saveFeature(name, envVar string, defaultValue, overridable bool) FeatureFla
 		envVar:       envVar,
 		defaultValue: defaultValue,
 		overridable:  overridable,
+		techPreview:  release,
 	}
 	Flags[f.envVar] = f
 	return f
