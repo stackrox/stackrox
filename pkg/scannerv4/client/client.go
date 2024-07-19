@@ -40,6 +40,9 @@ type Scanner interface {
 	// report.
 	IndexAndScanImage(context.Context, name.Digest, authn.Authenticator, ImageRegistryOpt) (*v4.VulnerabilityReport, error)
 
+	// GetNodeVulnerabilities will match vulnerabilities to a node identified by the contents provided
+	GetNodeVulnerabilities(ctx context.Context, os string, arch string, package_base string) (*v4.VulnerabilityReport, error)
+
 	// GetVulnerabilities will match vulnerabilities to the contents provided.
 	GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error)
 
@@ -263,6 +266,12 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, err
 
 func getImageManifestID(ref name.Digest) string {
 	return fmt.Sprintf("/v4/containerimage/%s", ref.DigestStr())
+}
+
+func (c *gRPCScanner) GetNodeVulnerabilities(ctx context.Context, os string, arch string, package_base string) (*v4.VulnerabilityReport, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "CreateNodeIndexReport")
+	zlog.Info(ctx).Msgf("In GetNodeVulnerabilities with Node %s_%s.%s", os, arch, package_base)
+	return &v4.VulnerabilityReport{}, nil
 }
 
 // retryWithBackoff is a utility function to wrap backoff.Retry to handle common

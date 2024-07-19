@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package scanner.v4;
+
+import "internalapi/scanner/v4/vulnerability_report.proto";
+
+option go_package = "v4";
+
+message CreateNodeVulnerabilityReportRequest {
+  string os = 1;
+  string arch = 2;
+  string package_base = 3;
+}
+
+service NodeIndexer {
+  rpc CreateNodeVulnerabilityReport(CreateNodeVulnerabilityReportRequest) returns (VulnerabilityReport);
+}
