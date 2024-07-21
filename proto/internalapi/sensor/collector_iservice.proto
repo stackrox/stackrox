@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package sensor;
+
+import "storage/collector_runtime_config.proto";
+
+option go_package = "sensor";
+
+message MsgToCollector {
+  oneof msg {
+    CollectorRuntimeConfigWithCluster config_with_cluster = 1;
+  }
+}
+
+message MsgFromCollector {
+  oneof msg {
+    CollectorRuntimeConfigACK collector_runtime_config_ack = 1;
+  }
+}
+
+service CollectorService {
+  rpc Communicate(stream MsgFromCollector) returns (stream MsgToCollector);
+}
+
+message CollectorRuntimeConfigACK {
+  storage.CollectorRuntimeConfigACK collector_runtime_config_ack = 1;
+}
+
+message CollectorRuntimeConfigWithCluster {
+  storage.CollectorRuntimeConfigWithCluster config_with_cluster = 1;
+}
