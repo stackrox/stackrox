@@ -103,10 +103,11 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         String deploymentId1 = targetDeployments.find { it.name == TCPCONNECTIONTARGET1 }?.deploymentUid
         String deploymentId2 = targetDeployments.find { it.name == TCPCONNECTIONTARGET2 }?.deploymentUid
+        String deploymentId3 = targetDeployments.find { it.name == TCPCONNECTIONTARGET3 }?.deploymentUid
 
         def processesListeningOnPorts = waitForResponseToHaveNumElements(2, deploymentId1, 240)
 
-        def counts = ProcessesListeningOnPortsService.countProcessesListeningOnPortsResponse()
+        def listeningEndpointsCounts = ProcessesListeningOnPortsService.countProcessesListeningOnPortsResponse()
 
         assert processesListeningOnPorts
 
@@ -139,14 +140,31 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint2.signal.execFilePath == "/usr/bin/socat"
         assert endpoint2.signal.args == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
 
-        assert counts
+        //assert listeningEndpointsCounts.counts[deploytmentId1] == 2
+        //assert listeningEndpointsCounts.counts[deploytmentId2] == 1
+        //assert listeningEndpointsCounts.counts[deploytmentId3] == 0
 
-        println(counts.metaClass.methods*.name)
-        println(counts.metaClass.properties*.name)
+        //assert counts
 
+        println(listeningEndpointsCounts.metaClass.methods*.name)
+        println("")
+        println("")
+        println(listeningEndpointsCounts.metaClass.properties*.name)
+        println("")
+        println("")
         println(deploymentId1)
-
-        println(counts)
+        println(deploymentId2)
+        println(deploymentId3)
+        println("")
+        println("")
+        println(listeningEndpointsCounts)
+        println("")
+        println("")
+        println(listeningEndpointsCounts.counts)
+        println("")
+        println("")
+        println("listeningEndpointsCounts.counts[deploymentId1]")
+        println(listeningEndpointsCounts.counts[deploymentId1])
 
         //def counts1 = counts.find { it.getKey() == deploymentId1 }
         //assert counts1 != null
@@ -186,6 +204,14 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint.signal.name == "socat"
         assert endpoint.signal.execFilePath == "/usr/bin/socat"
         assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
+
+        def count1 = listeningEndpointsCounts.counts[deploymentId1]
+        def count2 = listeningEndpointsCounts.counts[deploymentId2]
+        def count3 = listeningEndpointsCounts.counts[deploymentId3]
+
+        assert count1 == 2
+        assert count2 == 1
+        assert count3 == 0
     }
 
     def "Networking endpoints are no longer in the API when deployments are deleted"() {
@@ -196,6 +222,9 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         destroyDeployments()
 
         def processesListeningOnPorts = waitForResponseToHaveNumElements(0, deploymentId1, 240)
+        def listeningEndpointsCounts = ProcessesListeningOnPortsService.countProcessesListeningOnPortsResponse()
+
+        assert !listeningEndpointsCounts.counts[deploymentId1]
 
         assert processesListeningOnPorts
 
