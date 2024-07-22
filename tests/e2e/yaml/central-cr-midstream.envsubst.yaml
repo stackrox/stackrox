@@ -38,7 +38,7 @@ spec:
     additionalCAs:
     - name: additional-ca
       content: |
-$centralAdditionalCA
+$centralAdditionalCAIndented
   customize:
     envVars:$customize_envVars
   scanner:
