@@ -237,6 +237,8 @@ deploy_central_via_operator() {
     ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
     centralAdminPasswordBase64="$(echo "$ROX_PASSWORD" | base64)"
 
+    centralAdditionalCABase64="$(base64 -w0 < "${TRUSTED_CA_FILE}")"
+
     centralDefaultTlsSecretKeyBase64="$(base64 -w0 < "${ROX_DEFAULT_TLS_KEY_FILE}")"
     centralDefaultTlsSecretCertBase64="$(base64 -w0 < "${ROX_DEFAULT_TLS_CERT_FILE}")"
 
@@ -296,6 +298,7 @@ deploy_central_via_operator() {
     fi
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
+      centralAdditionalCABase64="$centralAdditionalCABase64" \
       centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
       centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
       central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \

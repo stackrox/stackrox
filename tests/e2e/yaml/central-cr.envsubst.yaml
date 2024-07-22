@@ -27,6 +27,10 @@ spec:
         requests:
           cpu: 1
           memory: 1Gi
+  tls:
+    additionalCAs:
+    - name: additional-ca
+      content: $centralAdditionalCABase64
   customize:
     envVars:$customize_envVars
   scanner:

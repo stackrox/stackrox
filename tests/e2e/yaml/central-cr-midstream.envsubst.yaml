@@ -34,6 +34,10 @@ spec:
     persistence:
       persistentVolumeClaim:
         claimName: stackrox-db
+  tls:
+    additionalCAs:
+    - name: additional-ca
+      content: $centralAdditionalCABase64
   customize:
     envVars:$customize_envVars
   scanner:
