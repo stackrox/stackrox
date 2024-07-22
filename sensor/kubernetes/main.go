@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -35,6 +36,7 @@ func main() {
 
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
+	features.LogFeatureFlags()
 	// Start the prometheus metrics server
 	metrics.NewServer(metrics.SensorSubsystem, metrics.NewTLSConfigurerFromEnv()).RunForever()
 	metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())

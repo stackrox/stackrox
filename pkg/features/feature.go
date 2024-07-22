@@ -3,6 +3,8 @@ package features
 import (
 	"os"
 	"strings"
+
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 type feature struct {
@@ -45,4 +47,7 @@ func (f *feature) Stage() string {
 		return "tech-preview"
 	}
 	return "dev-preview"
+
+func (f *feature) LoggingContext() interface{} {
+	return logging.Any(f.EnvVar(), f.Enabled())
 }

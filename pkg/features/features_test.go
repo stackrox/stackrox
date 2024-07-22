@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 type envTest struct {
@@ -118,4 +119,12 @@ func TestStage(t *testing.T) {
 
 	f = registerFeature("test_feat", "ROX_TEST_FEAT", techPreview)
 	assert.Equal(t, "tech-preview", f.Stage())
+}
+
+func TestLoggingContext(t *testing.T) {
+	feature := registerFeature("test_feat", "ROX_TEST_FEAT", true)
+	context := feature.LoggingContext()
+	expectedContext := zap.Any("ROX_TEST_FEAT", true)
+	assert.Equal(t, context, expectedContext)
+	LogFeatureFlags()
 }

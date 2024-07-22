@@ -4,6 +4,9 @@ package features
 import (
 	"fmt"
 	"strings"
+
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 // A FeatureFlag is a product behavior that can be enabled or disabled using an
@@ -14,11 +17,14 @@ type FeatureFlag interface {
 	Enabled() bool
 	Default() bool
 	Stage() string
+	LoggingContext() interface{}
 }
 
 var (
 	// Flags contains all defined FeatureFlags by name.
 	Flags = make(map[string]FeatureFlag)
+
+	log = logging.LoggerForModule()
 )
 
 // registerFeature registers and returns a new feature flag, configured with the
@@ -36,4 +42,13 @@ func registerFeature(name, envVar string, options ...option) FeatureFlag {
 	}
 	Flags[f.envVar] = f
 	return f
+}
+
+// LogFeatureFlags logs the global state of all features flags.
+func LogFeatureFlags() {
+	var context []interface{}
+	for _, flag := range Flags {
+		context = append(context, flag.LoggingContext())
+	}
+	log.Infow("Feature flags", context...)
 }
