@@ -30,7 +30,8 @@ spec:
   tls:
     additionalCAs:
     - name: additional-ca
-      content: $centralAdditionalCABase64
+      content:
+$centralAdditionalCA
   customize:
     envVars:$customize_envVars
   scanner:
