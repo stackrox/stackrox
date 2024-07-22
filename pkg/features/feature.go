@@ -8,8 +8,8 @@ import (
 type stage bool
 
 const (
-	DevPreview  = false
-	TechPreview = true
+	devPreview  stage = false
+	techPreview stage = true
 )
 
 type feature struct {
