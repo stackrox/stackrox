@@ -36,3 +36,23 @@ class SplunkAlertDeployment {
 class SplunkAlertViolations {
     String message
 }
+
+class SplunkHECTokens {
+    List<SplunkHECEntryRaw> entry
+}
+
+class SplunkHECEntryRaw {
+    String _raw
+}
+
+class SplunkHECEntry {
+    String content
+}
+
+class SplunkHECContentRaw {
+    String _raw
+}
+
+class SplunkHECContent {
+    String token
+}

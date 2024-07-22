@@ -124,7 +124,14 @@ class SplunkNotifier extends Notifier {
 
     SplunkNotifier(boolean legacy, String collectorServiceName, int port, String integrationName = "Splunk Test") {
         splunkPort = port
-        notifier = NotifierService.getSplunkIntegrationConfig(legacy, collectorServiceName, integrationName)
+        String hecToken  = "00000000-0000-0000-0000-000000000000" // default for Splunk 6
+        if (!legacy) {
+            // For current Splunk images an ingest token needs to be created
+            log.info("Creating HEC ingest token")
+            hecToken = SplunkUtil.createHECToken(splunkPort)
+        }
+        log.debug("Using HEC token #hecToken for Splunk communication")
+        notifier = NotifierService.getSplunkIntegrationConfig(legacy, collectorServiceName, integrationName, hecToken)
     }
 
     def createNotifier() {
@@ -137,6 +144,7 @@ class SplunkNotifier extends Notifier {
 
     void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
         def response = SplunkUtil.waitForSplunkAlerts(splunkPort, 30)
+
 
         assert response.find { it.deployment.id == deployment.deploymentUid }
         assert response.find { it.deployment.name == deployment.name }

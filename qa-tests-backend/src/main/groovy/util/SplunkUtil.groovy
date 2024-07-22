@@ -16,6 +16,11 @@ import objects.Service
 import objects.SplunkAlert
 import objects.SplunkAlertRaw
 import objects.SplunkAlerts
+import objects.SplunkHECContent
+import objects.SplunkHECContentRaw
+import objects.SplunkHECEntry
+import objects.SplunkHECEntryRaw
+import objects.SplunkHECTokens
 import objects.SplunkSearch
 
 import org.junit.AssumptionViolatedException
@@ -138,6 +143,31 @@ class SplunkUtil {
         } else {
             log.debug "New Search created: ${searchId}"
             return searchId
+        }
+    }
+
+    static String createHECToken(int port, String tokenName = "stackrox") {
+        Response response = null
+        withRetry(6, 15) {
+            response =  given().auth()
+                .basic("admin", SPLUNK_ADMIN_PASSWORD)
+                .formParam("name", tokenName)
+                .formParam("output_mode", "json")
+                .post("https://127.0.0.1:${port}/servicesNS/nobody/search/data/inputs/http")
+        }
+        log.debug(response?.asString())
+        return unmarshalHEC(response?.asString())
+    }
+
+    static String unmarshalHEC(String response) {
+        SplunkHECTokens tokens = GSON.fromJson(response, SplunkHECTokens)
+        // This structure only ever contains one entry in the array, so we return after parsing the first one
+        for (SplunkHECEntryRaw raw: tokens.entry) {
+            log.debug(raw?.toString())
+            SplunkHECEntry hecEntry = GSON.fromJson(raw._raw, SplunkHECEntry)
+            SplunkHECContentRaw hecContentRaw = GSON.fromJson(hecEntry.content)
+            SplunkHECContent hecContent = GSON.fromJson(hecContentRaw._raw, SplunkHECContent)
+            return hecContent.token
         }
     }
 
