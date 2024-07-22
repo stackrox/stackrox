@@ -2,9 +2,8 @@ apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   annotations:
-    build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
+    build.appstudio.openshift.io/repo: https://github.com/konflux-ci/olm-operator-konflux-sample?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
-    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch == "master" && 
@@ -14,10 +13,10 @@ metadata:
       "operator".pathChanged())
   creationTimestamp: null
   labels:
-    appstudio.openshift.io/application: acs
+    appstudio.openshift.io/application: olm-operator
     appstudio.openshift.io/component: operator-bundle
     pipelines.appstudio.openshift.io/type: build
-  name: operator-bundle-on-pull-request
+  name: operator-bundle-on-push
   namespace: rh-acs-tenant
 spec:
   params:
@@ -27,13 +26,10 @@ spec:
     value: '{{revision}}'
   - name: output-image
     value: quay.io/rhacs-eng/stackrox-operator-bundle:on-pr-{{revision}}
-  # TODO(ROX-24530): return expiration for non-released images to 13w
-  - name: image-expires-after
-    value: 5d
   - name: dockerfile
     value: operator/Containerfile.operator-bundle
-  # Do not use hermetic for now as we are going to generate our manifest at build time. We need to pull in content.
   # TODO(ROX-20234): Enable hermetic builds
+  # Do not use hermetic for now as we are going to generate our manifest at build time. We need to pull in content.
   - name: hermetic
     value: "false"
   pipelineRef:
