@@ -16,6 +16,7 @@ import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPag
 import { nodeSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
+import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
 import NoEntitiesIconText from './utilities/NoEntitiesIconText';
 
@@ -58,6 +59,14 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Node`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            Cell: ({ original, pdf }) => {
+                const url = getConfigMgmtPathForEntitiesAndId('NODE', original.id);
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {original.name}
+                    </TableCellLink>
+                );
+            },
             accessor: 'name',
             id: nodeSortFields.NODE,
             sortField: nodeSortFields.NODE,
