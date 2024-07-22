@@ -114,8 +114,8 @@ func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, polic
 }
 
 func (ds *datastoreImpl) GetPolicyCategoriesForPolicy(ctx context.Context, policyID string) ([]*storage.PolicyCategory, error) {
-	ds.categoryMutex.RLock()
-	defer ds.categoryMutex.RUnlock()
+	//ds.categoryMutex.RLock()
+	//defer ds.categoryMutex.RUnlock()
 
 	return ds.SearchRawPolicyCategories(ctx, searchPkg.NewQueryBuilder().AddStrings(searchPkg.PolicyID, policyID).ProtoQuery())
 }
