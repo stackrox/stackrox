@@ -1,6 +1,9 @@
 package exchange
 
 import (
+	"bytes"
+	"encoding/json"
+	sysIO "io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -12,6 +15,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
@@ -23,6 +27,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+)
+
+const (
+	expectedToken1 = "some-token"
+	responseToken1 = "test-token"
+
+	expectedToken2 = "some-other-token"
+	responseToken2 = "other-test-token"
 )
 
 func mockEnvWithHTTPClient(t *testing.T, store *cfgMock.MockStore) environment.Environment {
@@ -42,29 +54,56 @@ func mockEnvWithHTTPClient(t *testing.T, store *cfgMock.MockStore) environment.E
 }
 
 func TestExchange_From_TokenFlag(t *testing.T) {
-	env, closeFn := setup(t)
+	env, closeFn := setupTest(t, expectedToken1, responseToken1, exchangeHandle)
 	defer closeFn()
 
 	exchangeCmd := Command(env)
-	exchangeCmd.SetArgs([]string{"--token", "some-token"})
+	exchangeCmd.SetArgs([]string{"--token", expectedToken1})
 	assert.NoError(t, exchangeCmd.Execute())
 }
 
 func TestExchange_From_TokenFile(t *testing.T) {
-	env, closeFn := setup(t)
+	env, closeFn := setupTest(t, expectedToken1, responseToken1, exchangeHandle)
 	defer closeFn()
 
 	tokenFilePath := path.Join(t.TempDir(), "token-file")
 
-	require.NoError(t, os.WriteFile(tokenFilePath, []byte("some-token"), 0644))
+	require.NoError(t, os.WriteFile(tokenFilePath, []byte(expectedToken1), 0644))
 
 	exchangeCmd := Command(env)
 	exchangeCmd.SetArgs([]string{"--token-file", tokenFilePath})
 	assert.NoError(t, exchangeCmd.Execute())
 }
 
-func setup(t *testing.T) (environment.Environment, func()) {
-	server := httptest.NewServer(exchangeHandle(t, "some-token", "test-token"))
+func TestExchange_Raw_From_TokenFlag(t *testing.T) {
+	env, closeFn := setupTest(t, expectedToken2, responseToken2, exchangeRawHandle)
+	defer closeFn()
+
+	exchangeCmd := Command(env)
+	exchangeCmd.SetArgs([]string{"--token", expectedToken2})
+	assert.NoError(t, exchangeCmd.Execute())
+}
+
+func TestExchange_Raw_From_TokenFile(t *testing.T) {
+	env, closeFn := setupTest(t, expectedToken2, responseToken2, exchangeRawHandle)
+	defer closeFn()
+
+	tokenFilePath := path.Join(t.TempDir(), "token-file")
+
+	require.NoError(t, os.WriteFile(tokenFilePath, []byte(expectedToken2), 0644))
+
+	exchangeCmd := Command(env)
+	exchangeCmd.SetArgs([]string{"--token-file", tokenFilePath})
+	assert.NoError(t, exchangeCmd.Execute())
+}
+
+func setupTest(
+	t *testing.T,
+	expectedToken string,
+	responseToken string,
+	handlerFactory func(*testing.T, string, string) http.HandlerFunc,
+) (environment.Environment, func()) {
+	server := httptest.NewServer(handlerFactory(t, expectedToken, responseToken))
 	// Required for picking up the endpoint used by GetRoxctlHTTPClient. Currently, it is not possible to inject this
 	// otherwise.
 	t.Setenv("ROX_ENDPOINT", server.URL)
@@ -78,7 +117,7 @@ func setup(t *testing.T) (environment.Environment, func()) {
 	cfgKey := config.NewConfigKey(serverURL)
 	mockStore.EXPECT().Write(matchesConfig(&config.RoxctlConfig{CentralConfigs: map[config.CentralURL]*config.CentralConfig{
 		cfgKey: {AccessConfig: &config.CentralAccessConfig{
-			AccessToken: "test-token",
+			AccessToken: responseToken,
 		}},
 	}}, cfgKey)).AnyTimes().Return(nil)
 
@@ -128,4 +167,39 @@ func exchangeHandle(t *testing.T, expectedToken, responseToken string) http.Hand
 			AccessToken: responseToken,
 		}))
 	}
+}
+
+func exchangeRawHandle(t *testing.T, expectedToken, responseToken string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		reqBody := request.Body
+		defer utils.IgnoreError(reqBody.Close)
+		reqBodyData, err := sysIO.ReadAll(reqBody)
+		assert.NoError(t, err)
+		assert.JSONEq(t, `{"idToken":"`+expectedToken+`"}`, string(reqBodyData))
+		assert.Equal(t, http.MethodPost, request.Method)
+		assert.Equal(t, "/v1/auth/m2m/exchange", request.URL.Path)
+
+		resp := map[string]string{
+			"accessToken":    responseToken,
+			"dummyTestField": "to test backward/forward compatibility",
+		}
+		encoder := json.NewEncoder(writer)
+		err = encoder.Encode(resp)
+		assert.NoError(t, err)
+	}
+}
+
+func TestExchangeRawHandle(t *testing.T) {
+	requestPayload := `{"idToken":"` + expectedToken2 + `"}`
+	requestPayloadBuffer := bytes.NewBufferString(requestPayload)
+	testReq := httptest.NewRequest(http.MethodPost, "/v1/auth/m2m/exchange", requestPayloadBuffer)
+	responseWriter := httptest.NewRecorder()
+	handler := exchangeRawHandle(t, expectedToken2, responseToken2)
+	handler.ServeHTTP(responseWriter, testReq)
+	expectedResponseBody := `{
+	"accessToken": "` + responseToken2 + `",
+	"dummyTestField": "to test backward/forward compatibility"
+}`
+	assert.Equal(t, http.StatusOK, responseWriter.Code)
+	assert.JSONEq(t, expectedResponseBody, responseWriter.Body.String())
 }

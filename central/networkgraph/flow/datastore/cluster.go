@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/central/deployment/cache"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/postgres"
 )
 
@@ -22,7 +22,7 @@ type ClusterDataStore interface {
 }
 
 // NewClusterDataStore returns a new instance of ClusterDataStore using the input storage underneath.
-func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.DataStore, networkTreeMgr networktree.Manager, deletedDeploymentsCache expiringcache.Cache) ClusterDataStore {
+func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.DataStore, networkTreeMgr networktree.Manager, deletedDeploymentsCache cache.DeletedDeployments) ClusterDataStore {
 	return &clusterDataStoreImpl{
 		storage:                 storage,
 		graphConfig:             graphConfig,

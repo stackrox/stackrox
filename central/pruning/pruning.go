@@ -98,7 +98,8 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	logimbueStore logimbueDataStore.Store,
 	reportSnapshotDS snapshotDS.DataStore,
 	plops plopDataStore.DataStore,
-	blobStore blobDatastore.Datastore) GarbageCollector {
+	blobStore blobDatastore.Datastore,
+) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
@@ -176,9 +177,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 		g.removeOldReportHistory(pvtConfig)
 		g.removeOldReportBlobs(pvtConfig)
 	}
-	if features.AdministrationEvents.Enabled() {
-		g.removeExpiredAdministrationEvents(pvtConfig)
-	}
+	g.removeExpiredAdministrationEvents(pvtConfig)
 	g.removeExpiredDiscoveredClusters()
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)

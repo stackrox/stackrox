@@ -23,7 +23,7 @@ var (
 
 func initialize() {
 	var err error
-	ad, err = New(globaldb.GetPostgres(), imageDatastore.Singleton(), pbDS.Singleton(), nfDS.Singleton(), riskDS.Singleton(), cache.DeletedDeploymentCacheSingleton(), filter.Singleton(), ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
+	ad, err = New(globaldb.GetPostgres(), imageDatastore.Singleton(), pbDS.Singleton(), nfDS.Singleton(), riskDS.Singleton(), cache.DeletedDeploymentsSingleton(), filter.Singleton(), ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
 	if err != nil {
 		log.Fatalf("could not initialize deployment datastore: %v", err)
 	}

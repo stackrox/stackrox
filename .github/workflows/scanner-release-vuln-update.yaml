@@ -3,10 +3,22 @@ on:
   schedule:
   - cron: "0 */3 * * *"
   workflow_dispatch:
+    inputs:
+      job:
+        type: choice
+        description: "Choose the NVD source"
+        options:
+        - nvd-api
+        - nvd-feeds
+        required: true
+        default: nvd-api
 
 jobs:
   download-nvd:
     runs-on: ubuntu-latest
+    env:
+      JOB: ${{ github.event.inputs.job || 'nvd-api' }}
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -18,11 +30,17 @@ jobs:
       run: |
         set -eu
         since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
+        if [ "$JOB" = "nvd-api" ]; then
+          url="https://definitions.stackrox.io/v4/nvd/nvd-api.zip"
+        else
+          url="https://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
+        fi
+
         code=$(curl \
             -o nvd.zip \
             -w "%{http_code}" \
             -H "If-Modified-Since: $since_time" \
-            https://definitions.stackrox.io/v4/nvd/nvd.zip)
+            "$url")
 
         echo "code: $code"
         echo "$code" | grep -q 200
