@@ -27,17 +27,17 @@ func registerFeature(name, envVar string, defaultValue bool) FeatureFlag {
 	return saveFeature(name, envVar, defaultValue, true, DevPreview)
 }
 
-// registerFeature global registers and returns a new feature flag that can be overridden from the default state regardless of build.
+// registerTechPreviewFeature is like registerFeature, but registers a tech-preview feature.
 func registerTechPreviewFeature(name, envVar string, defaultValue bool) FeatureFlag {
 	return saveFeature(name, envVar, defaultValue, true, TechPreview)
 }
 
-// registerUnchangeableFeature global registers and returns a new feature flag that is always locked to the default value.
+// registerUnchangeableFeature global registers and returns a new feature flag that is locked to the default value in release builds.
 func registerUnchangeableFeature(name, envVar string, defaultValue bool) FeatureFlag {
 	return saveFeature(name, envVar, defaultValue, !buildinfo.ReleaseBuild, DevPreview)
 }
 
-// registerUnchangeableFeature global registers and returns a new feature flag that is always locked to the default value.
+// registerUnchangeableTechPreviewFeature is like registerUnchangeableFeature, but registers a tech-preview feature.
 func registerUnchangeableTechPreviewFeature(name, envVar string, defaultValue bool) FeatureFlag {
 	return saveFeature(name, envVar, defaultValue, !buildinfo.ReleaseBuild, TechPreview)
 }
