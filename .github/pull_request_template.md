@@ -12,7 +12,7 @@ change me!
 ### User-facing documentation
 
 - [ ] CHANGELOG is updated **OR** update is not needed
-- [ ] Documentation PR is created and linked above **OR** is not needed
+- [ ] documentation PR is created and linked above **OR** is not needed
 
 ### Testing
 
