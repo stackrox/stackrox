@@ -8,7 +8,7 @@ spec:
   - name: show-sbom
     params:
     - name: IMAGE_URL
-      value: $(tasks.build-container.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL)
     taskRef:
       params:
       - name: name
@@ -93,10 +93,10 @@ spec:
   results:
   - description: ""
     name: IMAGE_URL
-    value: $(tasks.build-container.results.IMAGE_URL)
+    value: $(tasks.build-image-manifest.results.IMAGE_URL)
   - description: ""
     name: IMAGE_DIGEST
-    value: $(tasks.build-container.results.IMAGE_DIGEST)
+    value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
   - description: ""
     name: CHAINS-GIT_URL
     value: $(tasks.clone-repository.results.url)
@@ -436,7 +436,7 @@ spec:
         value: task
       resolver: bundles
 
-  - name: build-container
+  - name: build-image-manifest
     params:
     - name: IMAGE
       value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
@@ -448,11 +448,6 @@ spec:
         - $(tasks.build-container-s390x.results.IMAGE_URL)@$(tasks.build-container-s390x.results.IMAGE_DIGEST)
         - $(tasks.build-container-ppc64le.results.IMAGE_URL)@$(tasks.build-container-ppc64le.results.IMAGE_DIGEST)
         - $(tasks.build-container-arm64.results.IMAGE_URL)@$(tasks.build-container-arm64.results.IMAGE_DIGEST)
-    runAfter:
-      - build-container-amd64
-      - build-container-s390x
-      - build-container-ppc64le
-      - build-container-arm64
     taskRef:
       params:
         - name: name
@@ -468,7 +463,7 @@ spec:
         values:
           - "true"
 
-  - name: build-container-konflux
+  - name: build-image-manifest-konflux
     params:
     - name: IMAGE
       value: $(params.output-image-repo):konflux-$(params.revision)
@@ -503,7 +498,7 @@ spec:
   - name: build-source-image
     params:
     - name: BINARY_IMAGE
-      value: $(tasks.build-container.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL)
     - name: BASE_IMAGES
       value: $(tasks.build-container-amd64.results.BASE_IMAGES_DIGESTS)
     - name: SOURCE_ARTIFACT
@@ -552,9 +547,9 @@ spec:
   - name: clair-scan
     params:
     - name: image-digest
-      value: $(tasks.build-container.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
     - name: image-url
-      value: $(tasks.build-container.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL)
     taskRef:
       params:
       - name: name
@@ -590,9 +585,9 @@ spec:
   - name: clamav-scan
     params:
     - name: image-digest
-      value: $(tasks.build-container.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
     - name: image-url
-      value: $(tasks.build-container.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL)
     taskRef:
       params:
       - name: name
@@ -610,9 +605,9 @@ spec:
   - name: sbom-json-check
     params:
     - name: IMAGE_URL
-      value: $(tasks.build-container.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL)
     - name: IMAGE_DIGEST
-      value: $(tasks.build-container.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
     taskRef:
       params:
       - name: name
