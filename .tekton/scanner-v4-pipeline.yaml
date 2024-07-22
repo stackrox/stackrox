@@ -286,7 +286,7 @@ spec:
       - name: name
         value: buildah-remote-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.1@sha256:d4a156d82e94de1008dc605ce0a34c4f3de92cf1393397006457d9f85234e56f
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.1@sha256:7f07fd3e10eaeec2835880bd3cb12e73dca42e4bb3fa15ffac1b8bfcd53df435
       - name: kind
         value: task
       resolver: bundles
@@ -343,7 +343,7 @@ spec:
       - name: name
         value: buildah-remote-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.1@sha256:d4a156d82e94de1008dc605ce0a34c4f3de92cf1393397006457d9f85234e56f
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.1@sha256:7f07fd3e10eaeec2835880bd3cb12e73dca42e4bb3fa15ffac1b8bfcd53df435
       - name: kind
         value: task
       resolver: bundles
@@ -400,7 +400,7 @@ spec:
       - name: name
         value: buildah-remote-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.1@sha256:d4a156d82e94de1008dc605ce0a34c4f3de92cf1393397006457d9f85234e56f
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.1@sha256:7f07fd3e10eaeec2835880bd3cb12e73dca42e4bb3fa15ffac1b8bfcd53df435
       - name: kind
         value: task
       resolver: bundles
