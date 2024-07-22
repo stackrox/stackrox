@@ -35,7 +35,7 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-# Ensure there will be no unintended -dirty suffix. package and package-lock are restored 
+# Ensure there will be no unintended -dirty suffix. package and package-lock are restored
 # because they are touched by Cachi2.
 RUN git restore ui/apps/platform/package.json ui/apps/platform/package-lock.json && \
     .konflux/scripts/fail-build-if-git-is-dirty.sh
