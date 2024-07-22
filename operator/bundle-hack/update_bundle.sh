@@ -4,7 +4,7 @@ export STACKROX_MAIN_IMAGE_PULLSPEC="quay.io/rhacs-eng/main@sha256:cbb656d5167ce
 
 export STACKROX_OPERATOR_IMAGE_PULLSPEC="quay.io/rhacs-eng/stackrox-operator@sha256:cbb656d5167ceb65a0127f7d9fd2fc0eaf932e3fd127f0047dfd29e7f0d1990f"
 
-export CSV_FILE=/manifests/gatekeeper-operator.clusterserviceversion.yaml
+export CSV_FILE=/manifests/rhacs-operator.clusterserviceversion.yaml
 
 sed -i -e "s|quay.io/rhacs-eng/main:v.*|\"${STACKROX_MAIN_IMAGE_PULLSPEC}\"|g" \
 	-e "s|quay.io/rhacs-eng/rhacs-operator:v.*|\"${STACKROX_OPERATOR_IMAGE_PULLSPEC}\"|g" \
