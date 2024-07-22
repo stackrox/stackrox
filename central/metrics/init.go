@@ -39,5 +39,6 @@ func init() {
 		deploymentEnhancementRoundTripDuration,
 		reprocessorDurationGauge,
 		signatureVerificationReprocessorDurationGauge,
+		pruningDurationHistogramVec,
 	)
 }
