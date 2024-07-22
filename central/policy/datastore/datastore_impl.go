@@ -107,6 +107,7 @@ func (ds *datastoreImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]
 			log.Errorf("Failed to find categories associated with policy %s: %q. Error: %v", p.GetId(), p.GetName(), err)
 			continue
 		}
+		log.Infof("SHREWS -- context not canceled for %s: %q", p.GetId(), p.GetName())
 		for _, c := range categories {
 			p.Categories = append(p.Categories, c.GetName())
 		}
