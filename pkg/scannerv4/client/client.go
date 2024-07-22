@@ -271,6 +271,17 @@ func getImageManifestID(ref name.Digest) string {
 func (c *gRPCScanner) GetNodeVulnerabilities(ctx context.Context, os string, arch string, package_base string) (*v4.VulnerabilityReport, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "CreateNodeIndexReport")
 	zlog.Info(ctx).Msgf("In GetNodeVulnerabilities with Node %s_%s.%s", os, arch, package_base)
+	// TODO: Contact matcher here. Prodvide an IndexReport as payload.
+	//rc := &v4.Contents{
+	//	Packages: []*v4.Package{
+	//		{
+	//			Id:      "1",
+	//			Name:    "rhcos",
+	//			Version: os,
+	//		},
+	//	},
+	//}
+	//c.getVulnerabilities(ctx, "/v4/containerimage/insert_hash", rc)
 	return &v4.VulnerabilityReport{}, nil
 }
 
