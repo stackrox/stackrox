@@ -17,9 +17,11 @@ import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entit
 import removeEntityContextColumns from 'utils/tableUtils';
 import { componentSortFields } from 'constants/sortFields';
 
+import TableCellLink from 'Components/TableCellLink';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import { getFilteredComponentColumns } from './ListImageComponents.utils';
 import WorkflowListPage from '../WorkflowListPage';
+import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 
 export const defaultComponentSort = [
     {
@@ -41,9 +43,13 @@ export function getComponentTableColumns() {
                 Header: `Component`,
                 headerClassName: `w-1/4 ${defaultHeaderClassName}`,
                 className: `w-1/4 ${defaultColumnClassName}`,
-                Cell: ({ original }) => {
-                    const { version, name } = original;
-                    return `${name} ${version}`;
+                Cell: ({ original, pdf }) => {
+                    const url = getVulnMgmtPathForEntitiesAndId('IMAGE_COMPONENT', original.id);
+                    return (
+                        <TableCellLink pdf={pdf} url={url}>
+                            {`${original.name} ${original.version}`}
+                        </TableCellLink>
+                    );
                 },
                 id: componentSortFields.COMPONENT,
                 accessor: 'name',
