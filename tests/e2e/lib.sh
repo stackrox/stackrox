@@ -532,6 +532,12 @@ wait_for_collectors_to_be_operational() {
     local timeout=300
     local retry_interval=10
 
+    if [[ "$COLLECTION_METHOD" == "NO_COLLECTION" ]]; then
+        # With NO_COLLECTION, no collector containers are deployed
+        # so no need to check for readiness
+        return
+    fi
+
     local start_time
     start_time="$(date '+%s')"
     local all_ready="false"
