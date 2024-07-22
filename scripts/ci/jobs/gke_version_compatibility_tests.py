@@ -112,6 +112,6 @@ if len(test_tuples) > 0:
         ),
     ).run()
 else:
-logging.info("There are currently no supported older versions or support exceptions that require compatibility "
+    logging.info("There are currently no supported older versions or support exceptions that require compatibility "
              "testing.")
 
