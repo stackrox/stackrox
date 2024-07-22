@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	errorsPkg "github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
@@ -96,7 +97,11 @@ func (ds *datastoreImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1
 
 // SearchRawPolicies
 func (ds *datastoreImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error) {
+	deadline, _ := ctx.Deadline()
+	log.Infof("SHREWS -- SearchRawPolicies context deadline %v", time.Until(deadline))
 	policies, err := ds.searcher.SearchRawPolicies(ctx, q)
+	deadline, _ = ctx.Deadline()
+	log.Infof("SHREWS -- after searcher call context deadline %v", time.Until(deadline))
 	if err != nil {
 		return nil, err
 	}
