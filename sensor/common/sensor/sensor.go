@@ -41,7 +41,7 @@ import (
 
 const (
 	// The 127.0.0.1 ensures we do not expose it externally and must be port-forwarded to
-	pprofServer = "127.0.0.1:6060"
+	defaultPprofServer = "127.0.0.1:6060"
 
 	publicAPIEndpoint = ":8443"
 
@@ -136,6 +136,12 @@ func (s *Sensor) startProfilingServer() *http.Server {
 	for path, debugHandler := range routes.DebugRoutes {
 		handler.Handle(path, debugHandler)
 	}
+	pprofServer := defaultPprofServer
+	if env.PprofServerEnabled.BooleanSetting() {
+		pprofServer = env.PprofAddress.Setting()
+	}
+	log.Infof("Starting pprof server in %s", pprofServer)
+
 	srv := &http.Server{Addr: pprofServer, Handler: handler}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {

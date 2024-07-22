@@ -18,6 +18,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/grafana/pyroscope-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,6 +34,7 @@ import (
 	"github.com/stackrox/rox/sensor/debugger/collector"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
+	"github.com/stackrox/rox/sensor/debugger/profiler"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
@@ -249,6 +251,24 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 //
 // If a KUBECONFIG file is provided, then local-sensor will use that file to connect to a remote cluster.
 func main() {
+	runtime.SetMutexProfileFraction(5)
+	runtime.SetBlockProfileRate(5)
+
+	_, err := pyroscope.Start(pyroscope.Config{
+		ApplicationName: "sensor",
+		ServerAddress:   "http://localhost:4040",
+		Logger:          nil,
+		ProfileTypes: []pyroscope.ProfileType{
+			pyroscope.ProfileCPU,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
+			pyroscope.ProfileInuseObjects,
+			pyroscope.ProfileInuseSpace,
+		},
+	})
+	if err != nil {
+		log.Fatalf("error starting profiler: %v", err)
+	}
 	localConfig := mustGetCommandLineArgs()
 	if localConfig.WithMetrics {
 		// Start the prometheus metrics server
@@ -256,7 +276,6 @@ func main() {
 		metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
 	}
 	var k8sClient client.Interface
-	k8sClient, err := k8s.MakeOutOfClusterClient()
 	// when replying a trace, there is no need to connect to K8s cluster
 	if localConfig.ReplayK8sEnabled {
 		k8sClient = k8s.MakeFakeClient()
@@ -268,7 +287,11 @@ func main() {
 			WithWorkloadFile(localConfig.FakeWorkloadFile))
 		k8sClient = workloadManager.Client()
 	}
-	utils.CrashOnError(err)
+	if k8sClient == nil {
+		var err error
+		k8sClient, err = k8s.MakeOutOfClusterClient()
+		utils.CrashOnError(err)
+	}
 	if !localConfig.NoCPUProfile {
 		f, err := os.Create(fmt.Sprintf("local-sensor-cpu-%s.prof", time.Now().UTC().Format(time.RFC3339)))
 		if err != nil {
@@ -378,6 +401,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	go func() {
+		time.Sleep(30 * time.Second)
+		pyroCli := profiler.NewClient()
+		_, err := pyroCli.Query("{service_name=\"sensor\"}")
+		if err != nil {
+			fmt.Printf("Error in query: %v", err)
+		}
+	}()
 
 	go s.Start()
 	go registerHostKillSignals(startTime, spyCentral, !localConfig.NoMemProfile, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc, s)

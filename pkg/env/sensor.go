@@ -1,6 +1,8 @@
 package env
 
-import "time"
+import (
+	"time"
+)
 
 // These environment variables are used in the deployment file.
 // Please check the files before deleting.
@@ -78,4 +80,9 @@ var (
 	// DiagnosticDataCollectionTimeout defines the timeout for the diagnostic data collection on Sensor side.
 	DiagnosticDataCollectionTimeout = registerDurationSetting("ROX_DIAGNOSTIC_DATA_COLLECTION_TIMEOUT",
 		2*time.Minute)
+
+	ContinuousProfilerEnabled = RegisterBooleanSetting("CONTINUOUS_PROFILER", false)
+	ContinuousProfilerAddress = RegisterSetting("CONTINUOUS_PROFILER", WithDefault("http://localhost:4040"))
+	PprofServerEnabled        = RegisterBooleanSetting("PPROF_SERVER_ENABLED", true)
+	PprofAddress              = RegisterSetting("PPROF_ADDRESS", WithDefault(":6060"))
 )

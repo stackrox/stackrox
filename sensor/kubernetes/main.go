@@ -3,7 +3,9 @@ package main
 import (
 	"os"
 	"os/signal"
+	"runtime"
 
+	"github.com/grafana/pyroscope-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/devmode"
@@ -34,6 +36,26 @@ func main() {
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
 
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
+	if env.ContinuousProfilerEnabled.BooleanSetting() {
+		runtime.SetMutexProfileFraction(5)
+		runtime.SetBlockProfileRate(5)
+
+		_, err := pyroscope.Start(pyroscope.Config{
+			ApplicationName: "sensor",
+			ServerAddress:   env.ContinuousProfilerAddress.Setting(),
+			Logger:          nil,
+			ProfileTypes: []pyroscope.ProfileType{
+				pyroscope.ProfileCPU,
+				pyroscope.ProfileAllocObjects,
+				pyroscope.ProfileAllocSpace,
+				pyroscope.ProfileInuseObjects,
+				pyroscope.ProfileInuseSpace,
+			},
+		})
+		if err != nil {
+			log.Errorf("error starting profiler: %v", err)
+		}
+	}
 
 	// Start the prometheus metrics server
 	metrics.NewServer(metrics.SensorSubsystem, metrics.NewTLSConfigurerFromEnv()).RunForever()
