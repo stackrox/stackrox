@@ -16,6 +16,7 @@ import DateTimeField from 'Components/DateTimeField';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import Menu from 'Components/Menu';
+import TableCellLink from 'Components/TableCellLink';
 import TableCountLinks from 'Components/workflow/TableCountLinks';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
@@ -45,6 +46,7 @@ import CveType from 'Components/CveType';
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
 import { entityCountNounOrdinaryCase } from '../../entitiesForVulnerabilityManagement';
+import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 import WorkflowListPage from '../WorkflowListPage';
 import { getFilteredCVEColumns, parseCveNamesFromIds } from './ListCVEs.utils';
 
@@ -81,6 +83,14 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
             Header: `CVE`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original, pdf }) => {
+                const url = getVulnMgmtPathForEntitiesAndId(currentEntityType, original.id);
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {original.cve}
+                    </TableCellLink>
+                );
+            },
             id: cveSortFields.CVE,
             accessor: 'cve',
             sortField: cveSortFields.CVE,
