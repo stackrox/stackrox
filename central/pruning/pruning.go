@@ -255,6 +255,7 @@ func (g *garbageCollectorImpl) removeOrphanedPods() {
 
 // Remove nodes where the cluster has been deleted.
 func (g *garbageCollectorImpl) removeOrphanedNodes() {
+	defer metrics.SetPruningDuration(time.Now(), "Nodes")
 	nodesToRemove, err := postgres.GetOrphanedNodeIDs(pruningCtx, g.postgres)
 	if err != nil {
 		log.Errorf("Error finding orphaned nodes: %v", err)
@@ -513,7 +514,7 @@ func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context) ([]string,
 }
 
 func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved() {
-	defer metrics.SetPruningDuration(time.Now(), "OrphanedAlerts")
+	defer metrics.SetPruningDuration(time.Now(), "ResolveOrphanedAlerts")
 	alertsToResolve, err := g.getOrphanedAlerts(pruningCtx)
 	if err != nil {
 		log.Errorf("[Alert pruning] error getting orphaned alert ids: %v", err)

@@ -8,7 +8,6 @@ func init() {
 	// general
 
 	prometheus.MustRegister(
-		pruningDurationHistogramVec,
 		pipelinePanicCounter,
 		graphQLOperationHistogramVec,
 		graphQLQueryHistogramVec,
@@ -40,5 +39,6 @@ func init() {
 		deploymentEnhancementRoundTripDuration,
 		reprocessorDurationGauge,
 		signatureVerificationReprocessorDurationGauge,
+		pruningDurationHistogramVec,
 	)
 }
