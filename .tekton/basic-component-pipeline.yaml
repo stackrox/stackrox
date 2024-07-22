@@ -496,7 +496,7 @@ spec:
     - name: BINARY_IMAGE
       value: $(tasks.build-image-manifest.results.IMAGE_URL)
     - name: BASE_IMAGES
-      value: $(tasks.build-image-manifest-amd64.results.BASE_IMAGES_DIGESTS)
+      value: $(tasks.build-container-amd64.results.BASE_IMAGES_DIGESTS)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
