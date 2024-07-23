@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"time"
@@ -243,7 +244,11 @@ func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, con
 	if err != nil {
 		return nil, fmt.Errorf("get vulns: %w", err)
 	}
-
+	jsonData, err := json.MarshalIndent(vr, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(string(jsonData))
 	return vr, nil
 }
 
