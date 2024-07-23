@@ -10,9 +10,6 @@ ROX_PRODUCT_BRANDING ?= $(shell $(MAKE) --quiet --no-print-directory -C .. produ
 export REACT_APP_ROX_PRODUCT_BRANDING := $(ROX_PRODUCT_BRANDING)
 
 deps: apps/platform/package.json apps/platform/package-lock.json
-	# TODO Need to test and verify correct cache behavior in CI - we may
-	# need to specify a different cache folder to ensure deps are not
-	# downloaded each time, unless GH can cache the home-level .npm folder
 	npm ci --prefix apps/platform --prefer-offline --fetch-timeout=$(UI_PKG_INSTALL_NETWORK_TIMEOUT)
 	@touch deps
 
