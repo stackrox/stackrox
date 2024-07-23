@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: single-arch-build-pipeline
+  name: operator-bundle-build-pipeline
 spec:
     tasks:
     - name: init
@@ -73,6 +73,24 @@ spec:
         value: $(params.output-image).prefetch
       - name: ociArtifactExpiresAfter
         value: $(params.image-expires-after)
+    - name: pre-building
+      runAfter:
+      - prefetch-dependencies
+      workspaces:
+      - name: source
+        workspace: workspace
+      taskSpec:
+        steps:
+        - name: operator-bundle-post-process
+          image: registry.access.redhat.com/ubi9:latest
+          workingDir: "$(workspaces.source.path)/source/$(params.path-context)"
+          script: |
+            #!/usr/bin/env bash
+            set -xe
+            dnf install -y --nodocs --noplugins --refresh --best make git golang findutils python3 jq
+            echo "tag: $(make tag)"
+            export QUAY_RHACS_ENG_BEARER_TOKEN="NOT_A_TOKEN" # makes the following command succeed by disabling the actual logic
+            make bundle-post-process
     - name: build-container
       taskRef:
         resolver: bundles

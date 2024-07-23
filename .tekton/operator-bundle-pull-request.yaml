@@ -37,7 +37,7 @@ spec:
   - name: hermetic
     value: "false"
   pipelineRef:
-    name: single-arch-build-pipeline
+    name: operator-bundle-build-pipeline
   workspaces:
   - name: git-auth
     secret:

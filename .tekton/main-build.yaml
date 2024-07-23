@@ -10,7 +10,6 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: (event == "push" && target_branch == "master") || (event == "pull_request" && (source_branch.contains("rhtap") || source_branch.contains("konflux")))
-    build.appstudio.openshift.io/build-nudge-files: "operator/bundle-hack/update_bundle.sh"
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
