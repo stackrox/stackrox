@@ -22,13 +22,26 @@ spec:
       - name: skip-checks
         value: "$(params.skip-checks)"
     - name: clone-repository
+      params:
+      - name: url
+        value: "$(params.git-url)"
+      - name: revision
+        value: "$(params.revision)"
+      - name: depth
+        value: $(params.clone-depth)
+      - name: fetchTags
+        value: $(params.clone-fetch-tags)
+      - name: ociStorage
+        value: $(params.output-image-repo):konflux-$(params.revision).git
+      - name: ociArtifactExpiresAfter
+        value: $(params.oci-artifact-expires-after)
       taskRef:
         resolver: bundles
         params:
         - name: name
           value: git-clone-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:b44ea49656037376056e62cb39d4ed73e5215814556be832f2a425eec31204ab
+          value: quay.io/redhat-appstudio-tekton-catalog/task-git-clone-oci-ta:0.1@sha256:75ea089fefa3c81a5afd7d94ebf3674f76bd683f4e60191411dfd8adeb6c9e4b
         - name: kind
           value: task
       when:
@@ -38,18 +51,17 @@ spec:
         - 'true'
       runAfter:
       - init
-      params:
-      - name: url
-        value: "$(params.git-url)"
-      - name: revision
-        value: "$(params.revision)"
-      - name: ociStorage
-        value: "$(params.output-image).git"
-      - name: ociArtifactExpiresAfter
-        value: "$(params.image-expires-after)"
       workspaces:
       - name: basic-auth
         workspace: git-auth
+    - name: determine-image-tag
+      params:
+      - name: TAG_SUFFIX
+        value: $(params.output-tag-suffix)
+      - name: SOURCE_ARTIFACT
+        value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+      taskRef:
+        name: determine-image-tag-oci-ta
     - name: prefetch-dependencies
       taskRef:
         resolver: bundles
@@ -76,9 +88,6 @@ spec:
     - name: pre-building
       runAfter:
       - prefetch-dependencies
-      workspaces:
-      - name: source
-        workspace: workspace
       taskSpec:
         steps:
         - name: operator-bundle-post-process
@@ -283,6 +292,10 @@ spec:
       - name: IMAGE_DIGEST
         value: "$(tasks.build-container.results.IMAGE_DIGEST)"
     params:
+    - default: "-fast"
+      description: Suffix that will be appended to the output image tag and embedded in version strings.
+      name: output-tag-suffix
+      type: string
     - name: git-url
       type: string
       description: Source Repository URL
