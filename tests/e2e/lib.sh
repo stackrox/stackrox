@@ -881,7 +881,7 @@ remove_existing_stackrox_resources() {
             kubectl annotate -n stackrox \
             securedclusters.platform.stackrox.io \
             stackrox-secured-cluster-services \
-            stackrox.io/pause-reconcile=true
+            stackrox.io/pause-reconcile-
 
             kubectl get securedclusters -o name | while read -r securedcluster; do
                 kubectl -n "${namespace}" delete --ignore-not-found --wait "${securedcluster}"
