@@ -6,11 +6,10 @@ metadata:
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch == "master" && 
-      (".tekton/single-arch-build-pipeline.yaml".pathChanged() || 
-      ".tekton/operator-bundle-build-pipeline.yaml".pathChanged() || 
-      ".tekton/operator-bundle-pull-request.yaml".pathChanged() || 
-      ".tekton/operator-bundle-push.yaml".pathChanged() || 
+    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch == "master" && 
+      (".tekton/operator-bundle-build-pipeline.yaml".pathChanged() ||
+      ".tekton/operator-bundle-pull-request.yaml".pathChanged() ||
+      ".tekton/operator-bundle-push.yaml".pathChanged() ||
       "operator".pathChanged())
   creationTimestamp: null
   labels:
