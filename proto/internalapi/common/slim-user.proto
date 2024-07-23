@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package common;
+
+option go_package = "./internalapi/common;common";
+
+message SlimUser {
+  string id = 1;
+  string name = 2;
+}
