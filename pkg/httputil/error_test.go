@@ -38,6 +38,14 @@ func TestWriteError(t *testing.T) {
 			expectedGRPCMessage: `{"code":5,"message":"Origin: HTTPError"}`,
 		},
 		{
+			name:                "HTTPError.code is propagated to response header with a message",
+			incomingErr:         errors.WithMessage(NewError(404, "Origin: HTTPError"), "with message"),
+			grpcCode:            codes.NotFound,
+			expectedStatus:      404,
+			expectedMessage:     `{"code":13, "message":"with message: Origin: HTTPError"}`,
+			expectedGRPCMessage: `{"code":5, "message":"with message: Origin: HTTPError"}`,
+		},
+		{
 			name:                "gRPC's Status.code is propagated to response header",
 			incomingErr:         status.New(codes.NotFound, "Origin: gRPC Status").Err(),
 			grpcCode:            codes.NotFound,
@@ -52,6 +60,14 @@ func TestWriteError(t *testing.T) {
 			expectedStatus:      404,
 			expectedMessage:     `{"code":5, "message":"Origin: known internal error: not found"}`,
 			expectedGRPCMessage: `{"code":5, "message":"Origin: known internal error: not found"}`,
+		},
+		{
+			name:                "gRPC's Status.code is propagated to response header with a message",
+			incomingErr:         errors.WithMessage(status.New(codes.NotFound, "Origin: gRPC Status").Err(), "with message"),
+			grpcCode:            codes.NotFound,
+			expectedStatus:      404,
+			expectedMessage:     `{"code":5, "message":"with message: rpc error: code = NotFound desc = Origin: gRPC Status"}`,
+			expectedGRPCMessage: `{"code":5, "message":"with message: rpc error: code = NotFound desc = Origin: gRPC Status"}`,
 		},
 		{
 			name:                "Error of an unknown type yields 500",

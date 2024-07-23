@@ -21,9 +21,7 @@ func ResponseToError(resp *http.Response) HTTPError {
 		errMsg = string(body)
 	}
 	return httpError{
-		httpStatus: httpStatus{
-			code:    resp.StatusCode,
-			message: fmt.Sprintf("received response code %s, but expected 2xx; error message: %s", resp.Status, errMsg),
-		},
+		code:    resp.StatusCode,
+		message: fmt.Sprintf("received response code %s, but expected 2xx; error message: %s", resp.Status, errMsg),
 	}
 }
