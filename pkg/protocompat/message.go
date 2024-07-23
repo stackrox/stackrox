@@ -18,6 +18,11 @@ func Clone(msg proto.Message) proto.Message {
 	return proto.Clone(msg)
 }
 
+// Equalable is an interface for proto objects that have generated Equal method.
+type Equalable[T any] interface {
+	EqualVT(t T) bool
+}
+
 // Equal returns true iff protocol buffers a and b are equal. The arguments must both be pointers to protocol buffer structs.
 //
 // Equality is defined in this way:
@@ -32,8 +37,8 @@ func Clone(msg proto.Message) proto.Message {
 // * Every other combination of things are not equal.
 //
 // The return value is undefined if a and b are not protocol buffers.
-func Equal(a proto.Message, b proto.Message) bool {
-	return proto.Equal(a, b)
+func Equal[T Equalable[T]](a T, b T) bool {
+	return a.EqualVT(b)
 }
 
 // ErrNil is the error returned if Marshal is called with nil.
