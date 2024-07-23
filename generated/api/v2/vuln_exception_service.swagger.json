@@ -4,6 +4,11 @@
     "title": "api/v2/vuln_exception_service.proto",
     "version": "version not set"
   },
+  "tags": [
+    {
+      "name": "VulnerabilityExceptionService"
+    }
+  ],
   "consumes": [
     "application/json"
   ],
@@ -25,7 +30,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -101,7 +106,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -134,7 +139,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -167,7 +172,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -196,7 +201,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -225,7 +230,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -242,7 +247,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2UpdateVulnerabilityExceptionRequest"
+              "$ref": "#/definitions/VulnerabilityExceptionServiceUpdateVulnerabilityExceptionBody"
             }
           }
         ],
@@ -265,7 +270,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -282,7 +287,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2ApproveVulnerabilityExceptionRequest"
+              "$ref": "#/definitions/VulnerabilityExceptionServiceApproveVulnerabilityExceptionBody"
             }
           }
         ],
@@ -305,7 +310,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -336,7 +341,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -353,7 +358,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2DenyVulnerabilityExceptionRequest"
+              "$ref": "#/definitions/VulnerabilityExceptionServiceDenyVulnerabilityExceptionBody"
             }
           }
         ],
@@ -396,24 +401,53 @@
         }
       }
     },
-    "protobufAny": {
+    "VulnerabilityExceptionServiceApproveVulnerabilityExceptionBody": {
       "type": "object",
       "properties": {
-        "typeUrl": {
-          "type": "string"
-        },
-        "value": {
+        "comment": {
           "type": "string",
-          "format": "byte"
+          "description": "REQUIRED. The rationale for approving the exception."
         }
       }
     },
-    "runtimeError": {
+    "VulnerabilityExceptionServiceDenyVulnerabilityExceptionBody": {
       "type": "object",
       "properties": {
-        "error": {
-          "type": "string"
+        "comment": {
+          "type": "string",
+          "description": "REQUIRED. The rationale for denying the exception."
+        }
+      }
+    },
+    "VulnerabilityExceptionServiceUpdateVulnerabilityExceptionBody": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string",
+          "description": "REQUIRED. The rationale for updating the exception."
         },
+        "deferralUpdate": {
+          "$ref": "#/definitions/v2DeferralUpdate",
+          "description": "Use this field to update a deferral exception."
+        },
+        "falsePositiveUpdate": {
+          "$ref": "#/definitions/v2FalsePositiveUpdate",
+          "description": "Use this field to update a false-positive exception."
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
         "code": {
           "type": "integer",
           "format": "int32"
@@ -424,6 +458,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
@@ -449,19 +484,6 @@
         "MAX"
       ],
       "default": "UNSET"
-    },
-    "v2ApproveVulnerabilityExceptionRequest": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "REQUIRED. The ID of vulnerability exception to be approved."
-        },
-        "comment": {
-          "type": "string",
-          "description": "REQUIRED. The rationale for approving the exception."
-        }
-      }
     },
     "v2ApproveVulnerabilityExceptionResponse": {
       "type": "object",
@@ -582,19 +604,6 @@
         }
       }
     },
-    "v2DenyVulnerabilityExceptionRequest": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "REQUIRED. The ID of vulnerability exception to be denied."
-        },
-        "comment": {
-          "type": "string",
-          "description": "REQUIRED. The rationale for denying the exception."
-        }
-      }
-    },
     "v2DenyVulnerabilityExceptionResponse": {
       "type": "object",
       "properties": {
@@ -660,6 +669,7 @@
         "exceptions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2VulnerabilityException"
           }
         }
@@ -682,6 +692,7 @@
         "sortOptions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2SortOption"
           },
           "description": "This field is under development. It is not supported on any REST APIs."
@@ -711,27 +722,6 @@
         "aggregateBy": {
           "$ref": "#/definitions/v2AggregateBy",
           "description": "This field is under development. It is not supported on any REST APIs."
-        }
-      }
-    },
-    "v2UpdateVulnerabilityExceptionRequest": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "REQUIRED. The ID of vulnerability exception to be updated."
-        },
-        "comment": {
-          "type": "string",
-          "description": "REQUIRED. The rationale for updating the exception."
-        },
-        "deferralUpdate": {
-          "$ref": "#/definitions/v2DeferralUpdate",
-          "description": "Use this field to update a deferral exception."
-        },
-        "falsePositiveUpdate": {
-          "$ref": "#/definitions/v2FalsePositiveUpdate",
-          "description": "Use this field to update a false-positive exception."
         }
       }
     },
@@ -771,6 +761,7 @@
         "approvers": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2SlimUser"
           }
         },
@@ -785,6 +776,7 @@
         "comments": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2Comment"
           }
         },
@@ -824,7 +816,7 @@
         "FALSE_POSITIVE"
       ],
       "default": "OBSERVED",
-      "description": "VulnerabilityState are the possible applicable to CVE. By default all vulnerabilities are in observed state.\n\n - OBSERVED: This is the default state and indicates that the CVE is not excluded from policy evaluation and risk evaluation.\n - DEFERRED: Indicates that the vulnerability is deferred. A deferred CVE is excluded from policy evaluation and risk evaluation.\n - FALSE_POSITIVE: Indicates that the vulnerability is a false-positive. A false-positive CVE is excluded from policy evaluation and risk evaluation."
+      "description": "VulnerabilityState are the possible applicable to CVE. By default all vulnerabilities are in observed state.\n\n - OBSERVED: This is the default state and indicates that the CVE is not excluded from policy evaluation and risk evaluation.\n\n[Default state]\n - DEFERRED: Indicates that the vulnerability is deferred. A deferred CVE is excluded from policy evaluation and risk evaluation.\n - FALSE_POSITIVE: Indicates that the vulnerability is a false-positive. A false-positive CVE is excluded from policy evaluation and risk evaluation."
     }
   }
 }

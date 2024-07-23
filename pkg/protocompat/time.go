@@ -4,16 +4,17 @@ import (
 	"reflect"
 	"time"
 
-	gogoTimestamp "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
 	// TimestampPtrType is a variable containing a nil pointer of Timestamp type
-	TimestampPtrType = reflect.TypeOf((*gogoTimestamp.Timestamp)(nil))
+	TimestampPtrType = reflect.TypeOf((*timestamppb.Timestamp)(nil))
 
 	// TimestampType is the type representing a proto timestamp.
-	TimestampType = reflect.TypeOf(gogoTimestamp.Timestamp{})
+	TimestampType = reflect.TypeOf(timestamppb.Timestamp{})
 )
 
 // Timestamp represents a point in time independent of any time zone or local calendar, encoded
@@ -28,31 +29,30 @@ var (
 // The range is from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59.999999999Z. By restricting to that
 // range, we ensure that we can convert to and from
 // [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt ) date strings.
-type Timestamp = gogoTimestamp.Timestamp
+type Timestamp = timestamppb.Timestamp
 
 // TimestampNow returns a protobuf timestamp set to the current time.
-func TimestampNow() *gogoTimestamp.Timestamp {
-	return gogoTimestamp.TimestampNow()
+func TimestampNow() *timestamppb.Timestamp {
+	return timestamppb.Now()
 }
 
 // ConvertTimestampToCSVString converts a proto timestamp to a string for display in a CSV report.
-func ConvertTimestampToCSVString(timestamp *gogoTimestamp.Timestamp) string {
+func ConvertTimestampToCSVString(timestamp *timestamppb.Timestamp) string {
 	if timestamp == nil {
 		return "N/A"
 	}
-	ts, err := gogoTimestamp.TimestampFromProto(timestamp)
-	if err != nil {
+	if timestamp.CheckValid() != nil {
 		return "ERR"
 	}
-	return ts.Format(time.RFC1123)
+	return timestamp.AsTime().Format(time.RFC1123)
 }
 
 // ConvertTimestampToTimeOrNil converts a proto timestamp to a golang Time, defaulting to nil in case of error.
-func ConvertTimestampToTimeOrNil(gogo *gogoTimestamp.Timestamp) *time.Time {
-	if gogo == nil {
+func ConvertTimestampToTimeOrNil(pbTime *timestamppb.Timestamp) *time.Time {
+	if pbTime == nil {
 		return nil
 	}
-	goTime, err := ConvertTimestampToTimeOrError(gogo)
+	goTime, err := ConvertTimestampToTimeOrError(pbTime)
 	if err != nil {
 		return nil
 	}
@@ -60,40 +60,45 @@ func ConvertTimestampToTimeOrNil(gogo *gogoTimestamp.Timestamp) *time.Time {
 }
 
 // ConvertTimeToTimestampOrNil converts a golang Time to a proto timestamp, defaulting to nil in case of error.
-func ConvertTimeToTimestampOrNil(goTime *time.Time) *gogoTimestamp.Timestamp {
+func ConvertTimeToTimestampOrNil(goTime *time.Time) *timestamppb.Timestamp {
 	if goTime == nil {
 		return nil
 	}
-	gogo, err := ConvertTimeToTimestampOrError(*goTime)
+	pbTime, err := ConvertTimeToTimestampOrError(*goTime)
 	if err != nil {
 		return nil
 	}
-	return gogo
+	return pbTime
 }
 
 // ConvertTimestampToGraphqlTimeOrError converts a proto timestamp
 // to a graphql Time, or returns an error if there is one.
-func ConvertTimestampToGraphqlTimeOrError(gogo *gogoTimestamp.Timestamp) (*graphql.Time, error) {
-	if gogo == nil {
+func ConvertTimestampToGraphqlTimeOrError(pbTime *timestamppb.Timestamp) (*graphql.Time, error) {
+	if pbTime == nil {
 		return nil, nil
 	}
-	t, err := gogoTimestamp.TimestampFromProto(gogo)
-	return &graphql.Time{Time: t}, err
+
+	return &graphql.Time{Time: pbTime.AsTime()}, pbTime.CheckValid()
 }
 
 // ConvertTimestampToTimeOrError converts a proto timestamp
 // to a golang Time, or returns an error if there is one.
-func ConvertTimestampToTimeOrError(gogo *gogoTimestamp.Timestamp) (time.Time, error) {
-	return gogoTimestamp.TimestampFromProto(gogo)
+func ConvertTimestampToTimeOrError(pbTime *timestamppb.Timestamp) (time.Time, error) {
+	return pbTime.AsTime(), pbTime.CheckValid()
 }
 
 // ConvertTimeToTimestampOrError converts golang time to proto timestamp.
-func ConvertTimeToTimestampOrError(goTime time.Time) (*gogoTimestamp.Timestamp, error) {
-	return gogoTimestamp.TimestampProto(goTime)
+func ConvertTimeToTimestampOrError(goTime time.Time) (*timestamppb.Timestamp, error) {
+	ts := timestamppb.New(goTime)
+	if err := ts.CheckValid(); err != nil {
+		return nil, err
+	}
+
+	return ts, nil
 }
 
 // GetProtoTimestampFromRFC3339NanoString generates a proto timestamp from a time string in RFC3339Nano format.
-func GetProtoTimestampFromRFC3339NanoString(timeStr string) (*gogoTimestamp.Timestamp, error) {
+func GetProtoTimestampFromRFC3339NanoString(timeStr string) (*timestamppb.Timestamp, error) {
 	stringTime, err := time.Parse(time.RFC3339Nano, timeStr)
 	if err != nil {
 		return nil, err
@@ -107,24 +112,24 @@ func GetProtoTimestampFromRFC3339NanoString(timeStr string) (*gogoTimestamp.Time
 
 // GetProtoTimestampFromSeconds instantiates a protobuf Timestamp structure initialized
 // with the input to the seconds granularity.
-func GetProtoTimestampFromSeconds(seconds int64) *gogoTimestamp.Timestamp {
-	return &gogoTimestamp.Timestamp{Seconds: seconds}
+func GetProtoTimestampFromSeconds(seconds int64) *timestamppb.Timestamp {
+	return &timestamppb.Timestamp{Seconds: seconds}
 }
 
 // GetProtoTimestampFromSecondsAndNanos instantiates a protobuf Timestamp structure initialized
 // with the input to the seconds and nanoseconds granularity.
-func GetProtoTimestampFromSecondsAndNanos(seconds int64, nanos int32) *gogoTimestamp.Timestamp {
-	return &gogoTimestamp.Timestamp{Seconds: seconds, Nanos: nanos}
+func GetProtoTimestampFromSecondsAndNanos(seconds int64, nanos int32) *timestamppb.Timestamp {
+	return &timestamppb.Timestamp{Seconds: seconds, Nanos: nanos}
 }
 
 // GetProtoTimestampZero instantiates a protobuf Timestamp structure initialized
 // with the zero values for all fields.
-func GetProtoTimestampZero() *gogoTimestamp.Timestamp {
-	return &gogoTimestamp.Timestamp{}
+func GetProtoTimestampZero() *timestamppb.Timestamp {
+	return &timestamppb.Timestamp{}
 }
 
 // NilOrNow allows for a proto timestamp to be stored a timestamp type in Postgres
-func NilOrNow(t *gogoTimestamp.Timestamp) *time.Time {
+func NilOrNow(t *timestamppb.Timestamp) *time.Time {
 	now := time.Now()
 	if t == nil {
 		return &now
@@ -138,7 +143,7 @@ func NilOrNow(t *gogoTimestamp.Timestamp) *time.Time {
 }
 
 // NilOrTime allows for a proto timestamp to be stored a timestamp type in Postgres
-func NilOrTime(t *gogoTimestamp.Timestamp) *time.Time {
+func NilOrTime(t *timestamppb.Timestamp) *time.Time {
 	if t == nil {
 		return nil
 	}
@@ -151,7 +156,7 @@ func NilOrTime(t *gogoTimestamp.Timestamp) *time.Time {
 }
 
 // ParseRFC3339NanoTimestamp converts a time string in RFC 3339 Nano format to a protobuf timestamp.
-func ParseRFC3339NanoTimestamp(timestamp string) (*gogoTimestamp.Timestamp, error) {
+func ParseRFC3339NanoTimestamp(timestamp string) (*timestamppb.Timestamp, error) {
 	t, err := time.Parse(time.RFC3339Nano, timestamp)
 	if err != nil {
 		return nil, err
@@ -166,8 +171,8 @@ func ParseRFC3339NanoTimestamp(timestamp string) (*gogoTimestamp.Timestamp, erro
 // CompareTimestamps compares two timestamps and returns zero if equal, a negative value if
 // the first timestamp is before the second or a positive value if the first timestamp is
 // after the second.
-func CompareTimestamps(t1 *gogoTimestamp.Timestamp, t2 *gogoTimestamp.Timestamp) int {
-	return t1.Compare(t2)
+func CompareTimestamps(t1 *timestamppb.Timestamp, t2 *timestamppb.Timestamp) int {
+	return t1.AsTime().Compare(t2.AsTime())
 }
 
 // CompareTimestampToTime compares a proto timestamp to a time.
@@ -175,7 +180,7 @@ func CompareTimestamps(t1 *gogoTimestamp.Timestamp, t2 *gogoTimestamp.Timestamp)
 // * -1 if the proto timestamp is before the time
 // * 0 if both represent the same time
 // * 1 if the proto timestamp is after the time
-func CompareTimestampToTime(t1 *gogoTimestamp.Timestamp, t2 *time.Time) int {
+func CompareTimestampToTime(t1 *timestamppb.Timestamp, t2 *time.Time) int {
 	ts2 := ConvertTimeToTimestampOrNil(t2)
 	return CompareTimestamps(t1, ts2)
 }
@@ -184,13 +189,18 @@ func CompareTimestampToTime(t1 *gogoTimestamp.Timestamp, t2 *time.Time) int {
 //
 // DurationFromProto returns an error if the Duration is invalid or is too large
 // to be represented in a time.Duration.
-func DurationFromProto(d *gogoTimestamp.Duration) (time.Duration, error) {
-	return gogoTimestamp.DurationFromProto(d)
+func DurationFromProto(d *durationpb.Duration) (time.Duration, error) {
+	// TODO: We didn't cover error case in unit tests!
+	if err := d.CheckValid(); err != nil {
+		return 0, err
+	}
+
+	return d.AsDuration(), nil
 }
 
 // DurationProto converts a time.Duration to a proto Duration.
-func DurationProto(d time.Duration) *gogoTimestamp.Duration {
-	return gogoTimestamp.DurationProto(d)
+func DurationProto(d time.Duration) *durationpb.Duration {
+	return durationpb.New(d)
 }
 
 var (
@@ -200,6 +210,6 @@ var (
 )
 
 // IsZeroTimestamp returns whether a Timestamp pointer is either nil, or pointing to the zero of the type.
-func IsZeroTimestamp(ts *gogoTimestamp.Timestamp) bool {
+func IsZeroTimestamp(ts *timestamppb.Timestamp) bool {
 	return ts == nil || Equal(ts, GetProtoTimestampZero()) || Equal(ts, zeroProtoTimestampFromTime)
 }

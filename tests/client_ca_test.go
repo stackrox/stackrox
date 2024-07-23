@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/client/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -209,7 +210,7 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	actualAuthProvider.Config = expectedAuthProvider.GetConfig()
 	actualAuthProvider.Validated = expectedAuthProvider.GetValidated()
 	actualAuthProvider.Active = expectedAuthProvider.GetActive()
-	actualAuthProvider.LastUpdated = expectedAuthProvider.GetLastUpdated().Clone()
+	actualAuthProvider.LastUpdated = protocompat.GetProtoTimestampFromSecondsAndNanos(expectedAuthProvider.GetLastUpdated().GetSeconds(), expectedAuthProvider.GetLastUpdated().GetNanos())
 	protoassert.Equal(t, expectedAuthProvider, actualAuthProvider)
 
 	validateAuthStatusResponseForClientCert(t, leafCert, authStatusWithToken)

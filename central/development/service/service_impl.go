@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -188,7 +188,7 @@ func (s *serviceImpl) EnvVars(_ context.Context, _ *central.Empty) (*central.Env
 
 func (s *serviceImpl) RandomData(_ context.Context, req *central.RandomDataRequest) (*central.RandomDataResponse, error) {
 	resp := &central.RandomDataResponse{
-		Data: make([]byte, req.GetSize_()),
+		Data: make([]byte, req.GetSize()),
 	}
 
 	_, _ = rand.Read(resp.Data)

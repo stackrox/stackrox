@@ -4,17 +4,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestConvertTimeString(t *testing.T) {
 	cases := []struct {
 		input  string
-		output *types.Timestamp
+		output *timestamppb.Timestamp
 	}{
 		{
 			input:  "",
@@ -68,7 +68,7 @@ func TestConvertMicroTSToProtobufTS(t *testing.T) {
 	assert.Equal(t, int64(0), timestamp0.Seconds)
 	assert.Equal(t, int32(0), timestamp0.Nanos)
 
-	timestamp1 := &types.Timestamp{
+	timestamp1 := &timestamppb.Timestamp{
 		Seconds: 1518046140,
 		Nanos:   123456789,
 	}
@@ -81,7 +81,7 @@ func TestConvertMicroTSToProtobufTS(t *testing.T) {
 
 func TestConvertTimestampToTimeOrDefault(t *testing.T) {
 	defaultGoTime := time.Unix(0x7E57ED, 0xAC5)
-	protoTime := &types.Timestamp{
+	protoTime := &timestamppb.Timestamp{
 		Seconds: 1518046140,
 		Nanos:   123456789,
 	}
@@ -93,7 +93,7 @@ func TestConvertTimestampToTimeOrDefault(t *testing.T) {
 	assert.Equal(t, goTime.UTC(), defaultGoTime.UTC())
 
 	// Negative Nanos is not valid for Timestamp.
-	invalidProtoTime := &types.Timestamp{
+	invalidProtoTime := &timestamppb.Timestamp{
 		Nanos: -1,
 	}
 	goTime = ConvertTimestampToTimeOrDefault(invalidProtoTime, defaultGoTime)
