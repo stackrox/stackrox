@@ -243,7 +243,7 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
-    timeout: 1h30m0s
+    timeout: 2h00m0s
 
   - name: apply-tags-amd64
     params:
@@ -301,7 +301,7 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
-    timeout: 1h30m0s
+    timeout: 2h00m0s
 
   - name: apply-tags-s390x
     params:
@@ -359,7 +359,7 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
-    timeout: 1h30m0s
+    timeout: 2h00m0s
 
   - name: apply-tags-ppc64le
     params:
@@ -417,7 +417,7 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
-    timeout: 1h30m0s
+    timeout: 2h00m0s
 
   - name: apply-tags-arm64
     params:

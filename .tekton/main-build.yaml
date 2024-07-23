@@ -57,9 +57,9 @@ spec:
     secret:
       secretName: '{{ git_auth_secret }}'
 
-  # The pipeline regularly takes >1h to finish.
+  # The pipeline regularly takes >2h to finish.
   timeouts:
-    pipeline: 1h30m0s
+    pipeline: 2h30m0s
 
   pipelineRef:
     name: main-pipeline
