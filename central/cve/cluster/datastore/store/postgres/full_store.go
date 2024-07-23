@@ -281,7 +281,7 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 			return nil, err
 		}
 		msg := &storage.ClusterCVE{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg
