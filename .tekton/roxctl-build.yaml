@@ -67,33 +67,3 @@ spec:
           cpu: 2
         requests:
           cpu: 2
-  - pipelineTaskName: build-container-s390x
-    stepSpecs:
-    - name: build
-      # CPU requests are increased to speed up builds compared to the defaults.
-      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L147
-      computeResources:
-        limits:
-          cpu: 2
-        requests:
-          cpu: 2
-  - pipelineTaskName: build-container-ppc64le
-    stepSpecs:
-    - name: build
-      # CPU requests are increased to speed up builds compared to the defaults.
-      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L147
-      computeResources:
-        limits:
-          cpu: 2
-        requests:
-          cpu: 2
-  - pipelineTaskName: build-container-arm64
-    stepSpecs:
-    - name: build
-      # CPU requests are increased to speed up builds compared to the defaults.
-      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L147
-      computeResources:
-        limits:
-          cpu: 2
-        requests:
-          cpu: 2
