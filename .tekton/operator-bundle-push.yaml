@@ -9,7 +9,7 @@ metadata:
     pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch == "master"
   creationTimestamp: null
   labels:
-    appstudio.openshift.io/application: olm-operator
+    appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: operator-bundle
     pipelines.appstudio.openshift.io/type: build
   name: operator-bundle-on-push
