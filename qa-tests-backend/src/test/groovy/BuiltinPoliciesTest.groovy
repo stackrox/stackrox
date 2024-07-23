@@ -176,7 +176,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
         "Shell Spawned by Java Application"                          | TRIGGER_MOST
         // ROX-22691: The test for systemctl execution is disabled until the trigger-most image is rebuilt to not use
         // the --version argument which now no longer triggers the violation
-        // "systemctl Execution"                                        | TRIGGER_MOST
+        "systemctl Execution"                                        | TRIGGER_MOST
         "systemd Execution"                                          | TRIGGER_MOST
         "Ubuntu Package Manager Execution"                           | TRIGGER_MOST
         "Wget in Image"                                              | TRIGGER_MOST
