@@ -211,5 +211,9 @@ var (
 
 // IsZeroTimestamp returns whether a Timestamp pointer is either nil, or pointing to the zero of the type.
 func IsZeroTimestamp(ts *timestamppb.Timestamp) bool {
-	return ts == nil || Equal(ts, GetProtoTimestampZero()) || Equal(ts, zeroProtoTimestampFromTime)
+	return ts == nil || equal(ts, GetProtoTimestampZero()) || equal(ts, zeroProtoTimestampFromTime)
+}
+
+func equal(a, b *timestamppb.Timestamp) bool {
+	return a.Nanos == b.Nanos && a.Seconds == b.Seconds
 }

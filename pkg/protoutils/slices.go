@@ -5,7 +5,7 @@ import (
 )
 
 // SliceContains returns whether the given slice of proto objects contains the given proto object.
-func SliceContains[T protocompat.Message](msg T, slice []T) bool {
+func SliceContains[T protocompat.Equalable[T]](msg T, slice []T) bool {
 	for _, elem := range slice {
 		if protocompat.Equal(elem, msg) {
 			return true
@@ -15,7 +15,7 @@ func SliceContains[T protocompat.Message](msg T, slice []T) bool {
 }
 
 // SlicesEqual returns whether the given two slices of proto objects have equal values.
-func SlicesEqual[T protocompat.Message](first, second []T) bool {
+func SlicesEqual[T protocompat.Equalable[T]](first, second []T) bool {
 	if len(first) != len(second) {
 		return false
 	}
@@ -29,7 +29,7 @@ func SlicesEqual[T protocompat.Message](first, second []T) bool {
 }
 
 // SliceUnique returns a slice returning unique values from the given slice.
-func SliceUnique[T protocompat.Message](slice []T) []T {
+func SliceUnique[T protocompat.Equalable[T]](slice []T) []T {
 	var uniqueSlice []T
 	for _, elem := range slice {
 		if !SliceContains(elem, uniqueSlice) {

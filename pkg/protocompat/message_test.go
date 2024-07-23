@@ -19,14 +19,14 @@ func TestClone(t *testing.T) {
 
 	cloned := Clone(m1)
 
-	assert.True(t, Equal(m1, cloned))
+	assert.True(t, Equal(m1, cloned.(*storage.NamespaceMetadata)))
 
 	// Change a field value to ensure the clone does not point
 	// to the original struct.
 	clonedNamespace, casted := cloned.(*storage.NamespaceMetadata)
 	assert.True(t, casted)
 	clonedNamespace.Name = "Namespace AA"
-	assert.False(t, Equal(m1, cloned))
+	assert.False(t, Equal(m1, cloned.(*storage.NamespaceMetadata)))
 }
 
 func TestEqual(t *testing.T) {
