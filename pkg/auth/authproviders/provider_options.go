@@ -58,7 +58,7 @@ func WithRoleMapper(roleMapper permissions.RoleMapper) ProviderOption {
 // WithStorageView sets the values in the store auth provider from the input value.
 func WithStorageView(stored *storage.AuthProvider) ProviderOption {
 	return func(pr *providerImpl) error {
-		pr.storedInfo = stored.Clone()
+		pr.storedInfo = stored.CloneVT()
 		return nil
 	}
 }

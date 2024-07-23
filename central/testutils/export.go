@@ -149,7 +149,7 @@ func (h *ExportServicePostgresTestHelper) InjectImages(
 		img := baseImages[i]
 		imgName := img.GetName()
 		for j := 0; j < copyCount; j++ {
-			clone := img.Clone()
+			clone := img.CloneVT()
 			hash, err := random.GenerateString(64, random.HexValues)
 			if err != nil {
 				return nil, nil, err

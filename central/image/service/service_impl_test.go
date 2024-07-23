@@ -206,7 +206,7 @@ func TestUpdatingImageFromRequest(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			pkgTestUtils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, tc.feature)
 
-			clone := tc.existingImg.Clone()
+			clone := tc.existingImg.CloneVT()
 			updateImageFromRequest(clone, tc.reqImgName)
 			protoassert.Equal(t, tc.expectedName, clone.Name)
 		})

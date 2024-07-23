@@ -225,7 +225,7 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 }
 
 func enrichImageDataSource(sourceImage *storage.ContainerImage, reg registryTypes.ImageRegistry, targetImg *storage.Image) {
-	ds := reg.DataSource().Clone()
+	ds := reg.DataSource().CloneVT()
 
 	// If target is a mirror, then add mirror details to the data source.
 	if sourceImage.GetName().GetFullName() != targetImg.GetName().GetFullName() {

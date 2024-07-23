@@ -949,11 +949,11 @@ func getTestNodes() map[string]*storage.Node {
 	os2NodeTemplate.ClusterId = fixtureconsts.Cluster2
 	os2NodeTemplate.ClusterName = fixtureconsts.ClusterName2
 
-	n1 := os1NodeTemplate.Clone()
+	n1 := os1NodeTemplate.CloneVT()
 	n1.Id = fixtureconsts.Node1
-	n2 := os1NodeTemplate.Clone()
+	n2 := os1NodeTemplate.CloneVT()
 	n2.Id = fixtureconsts.Node2
-	n3 := os2NodeTemplate.Clone()
+	n3 := os2NodeTemplate.CloneVT()
 	n3.Id = fixtureconsts.Node3
 	n3.Labels = map[string]string{"searchLabel": "something"}
 	nodes := []*storage.Node{n1, n2, n3}

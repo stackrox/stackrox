@@ -85,7 +85,7 @@ func migrateReplacedResourcesInPermissionSets(db postgres.DB) error {
 		// Copy the permission set, removing the deprecated resource permissions, and keeping the
 		// lowest access level between that of deprecated resource and their replacement
 		// for the replacement resource.
-		newPermissionSet := obj.Clone()
+		newPermissionSet := obj.CloneVT()
 		newPermissionSet.ResourceToAccess = make(map[string]storage.Access, len(obj.GetResourceToAccess()))
 		for resource, accessLevel := range obj.GetResourceToAccess() {
 			if replacement, found := replacements[resource]; found {

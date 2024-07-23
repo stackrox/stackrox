@@ -83,7 +83,7 @@ type Unmarshaler[T any] interface {
 // ClonedUnmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler
 // and that have a Clone deep-copy method.
 type ClonedUnmarshaler[T any] interface {
-	Clone() *T
+	CloneVT() *T
 	Unmarshal(dAtA []byte) error
 	*T
 }

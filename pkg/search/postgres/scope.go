@@ -31,7 +31,7 @@ func cloneAndCombine(q *v1.Query, scopeQ *v1.Query) *v1.Query {
 	// Select, Group By, and Pagination must be set on the top-level query to be picked up by the query parser.
 	// Therefore, move them to the top-level query.
 
-	cloned := q.Clone()
+	cloned := q.CloneVT()
 	selects := cloned.GetSelects()
 	groupBy := cloned.GetGroupBy()
 	pagination := cloned.GetPagination()

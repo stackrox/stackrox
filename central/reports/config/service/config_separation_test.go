@@ -123,7 +123,7 @@ func (s *ServiceLevelConfigSeparationSuite) TestCountReportConfigurations() {
 
 func (s *ServiceLevelConfigSeparationSuite) TestPostReportConfiguration() {
 	// Error on v2 config
-	config := s.v2Configs[0].Clone()
+	config := s.v2Configs[0].CloneVT()
 	config.Id = ""
 	config.NotifierConfig = s.v1Configs[0].NotifierConfig
 	_, err := s.service.PostReportConfiguration(s.ctx, &apiV1.PostReportConfigurationRequest{ReportConfig: config})
@@ -131,7 +131,7 @@ func (s *ServiceLevelConfigSeparationSuite) TestPostReportConfiguration() {
 
 	// No error on v1 config
 	s.manager.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-	config = s.v1Configs[0].Clone()
+	config = s.v1Configs[0].CloneVT()
 	config.Id = ""
 	res, err := s.service.PostReportConfiguration(s.ctx, &apiV1.PostReportConfigurationRequest{ReportConfig: config})
 	s.Require().NoError(err)
@@ -142,7 +142,7 @@ func (s *ServiceLevelConfigSeparationSuite) TestPostReportConfiguration() {
 
 func (s *ServiceLevelConfigSeparationSuite) TestUpdateReportConfiguration() {
 	// Error on v2 config
-	config := s.v2Configs[0].Clone()
+	config := s.v2Configs[0].CloneVT()
 	config.NotifierConfig = s.v1Configs[0].NotifierConfig
 	config.GetVulnReportFilters().SinceLastReport = true
 	_, err := s.service.UpdateReportConfiguration(s.ctx, &apiV1.UpdateReportConfigurationRequest{ReportConfig: config})
@@ -162,7 +162,7 @@ func (s *ServiceLevelConfigSeparationSuite) TestDeleteReportConfiguration() {
 
 	// No error on v1 config ID
 	s.manager.EXPECT().Remove(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-	config := s.v1Configs[0].Clone()
+	config := s.v1Configs[0].CloneVT()
 	config.Id = ""
 	config.Name = "Delete report config"
 	config.Id, err = s.reportConfigDatastore.AddReportConfiguration(s.ctx, config)

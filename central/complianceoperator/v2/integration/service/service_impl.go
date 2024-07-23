@@ -69,7 +69,7 @@ func (s *serviceImpl) ListComplianceIntegrations(ctx context.Context, req *v2.Ra
 	}
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, req.GetPagination(), maxPaginationLimit)

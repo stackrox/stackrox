@@ -302,7 +302,7 @@ func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]st
 		return nil, err
 	}
 
-	clonedQuery := q.Clone()
+	clonedQuery := q.CloneVT()
 
 	// Build the select and group by on distinct profile name
 	clonedQuery.Selects = []*v1.QuerySelect{
@@ -345,7 +345,7 @@ func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query) 
 		return 0, err
 	}
 
-	query := q.Clone()
+	query := q.CloneVT()
 
 	query.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{
@@ -362,7 +362,7 @@ func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query) 
 }
 
 func withCountQuery(query *v1.Query, field search.FieldLabel) *v1.Query {
-	cloned := query.Clone()
+	cloned := query.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Proto(),
 	}

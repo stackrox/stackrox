@@ -11,7 +11,7 @@ import (
 // Split splits the input image into a set of parts.
 func Split(image *storage.Image, withComponents bool) ImageParts {
 	parts := ImageParts{
-		Image:         image.Clone(),
+		Image:         image.CloneVT(),
 		ImageCVEEdges: make(map[string]*storage.ImageCVEEdge),
 	}
 
@@ -89,7 +89,7 @@ func GenerateImageComponent(os string, from *storage.EmbeddedImageScanComponent)
 		Id:              scancomponent.ComponentID(from.GetName(), from.GetVersion(), os),
 		Name:            from.GetName(),
 		Version:         from.GetVersion(),
-		License:         from.GetLicense().Clone(),
+		License:         from.GetLicense().CloneVT(),
 		Source:          from.GetSource(),
 		FixedBy:         from.GetFixedBy(),
 		RiskScore:       from.GetRiskScore(),

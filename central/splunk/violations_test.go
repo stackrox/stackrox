@@ -621,11 +621,11 @@ func TestViolations(t *testing.T) {
 }
 
 func (s *violationsTestSuite) SetupTest() {
-	s.deployAlert = deployAlert.Clone()
-	s.processAlert = processAlert.Clone()
-	s.k8sAlert = k8sAlert.Clone()
-	s.networkAlert = networkAlert.Clone()
-	s.resourceAlert = resourceAlert.Clone()
+	s.deployAlert = deployAlert.CloneVT()
+	s.processAlert = processAlert.CloneVT()
+	s.k8sAlert = k8sAlert.CloneVT()
+	s.networkAlert = networkAlert.CloneVT()
+	s.resourceAlert = resourceAlert.CloneVT()
 	s.allowCtx = sac.WithAllAccess(context.Background())
 }
 
@@ -790,7 +790,7 @@ func (s *violationsTestSuite) TestViolationIdsAreDistinct() {
 }
 
 func (s *violationsTestSuite) TestWithDeploymentImage() {
-	alert := s.processAlert.Clone()
+	alert := s.processAlert.CloneVT()
 	// Change alert's Entity from Alert_Deployment to Alert_Image. Conveniently the former Alert_Deployment has a ContainerImage we can use for testing.
 	alert.Entity = &storage.Alert_Image{
 		Image: alert.GetDeployment().Containers[0].GetImage(),
@@ -806,7 +806,7 @@ func (s *violationsTestSuite) TestWithDeploymentImage() {
 }
 
 func (s *violationsTestSuite) TestAlertWithoutPolicy() {
-	alert := s.processAlert.Clone()
+	alert := s.processAlert.CloneVT()
 	alert.Policy = nil
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
@@ -814,13 +814,13 @@ func (s *violationsTestSuite) TestAlertWithoutPolicy() {
 }
 
 func (s *violationsTestSuite) TestProcessAlertWithoutProcessIndicators() {
-	alert := s.processAlert.Clone()
+	alert := s.processAlert.CloneVT()
 	alert.ProcessViolation.Processes = []*storage.ProcessIndicator{}
 	s.Empty(s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody()))
 }
 
 func (s *violationsTestSuite) TestProcessAlertWithoutProcessSignal() {
-	alert := s.processAlert.Clone()
+	alert := s.processAlert.CloneVT()
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	alert.ProcessViolation.Processes[0].Signal = nil
 	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
@@ -833,13 +833,13 @@ func (s *violationsTestSuite) TestProcessAlertWithoutProcessSignal() {
 }
 
 func (s *violationsTestSuite) TestAlertWithoutViolations() {
-	alert := s.deployAlert.Clone()
+	alert := s.deployAlert.CloneVT()
 	alert.Violations = []*storage.Alert_Violation{}
 	s.Empty(s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody()))
 }
 
 func (s *violationsTestSuite) TestK8sAlertWithoutDeploymentOrResource() {
-	alert := s.k8sAlert.Clone()
+	alert := s.k8sAlert.CloneVT()
 	alert.Entity = nil
 	alert.Violations = alert.Violations[:1]
 	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
@@ -848,7 +848,7 @@ func (s *violationsTestSuite) TestK8sAlertWithoutDeploymentOrResource() {
 }
 
 func (s *violationsTestSuite) TestProcessAlertWithoutDeployment() {
-	alert := s.processAlert.Clone()
+	alert := s.processAlert.CloneVT()
 	alert.Entity = nil
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
@@ -857,7 +857,7 @@ func (s *violationsTestSuite) TestProcessAlertWithoutDeployment() {
 }
 
 func (s *violationsTestSuite) TestProcessAlertNotMatchingDeploymentId() {
-	alert := s.processAlert.Clone()
+	alert := s.processAlert.CloneVT()
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	alert.ProcessViolation.Processes[0].DeploymentId = "blah"
 	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
@@ -867,7 +867,7 @@ func (s *violationsTestSuite) TestProcessAlertNotMatchingDeploymentId() {
 }
 
 func (s *violationsTestSuite) TestProcessAlertNotMatchingDeploymentInfo() {
-	alert := s.processAlert.Clone()
+	alert := s.processAlert.CloneVT()
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	alert.ProcessViolation.Processes[0].ClusterId = "blah-cluster"
 	alert.ProcessViolation.Processes[0].Namespace = "blah-namespace"
@@ -1360,7 +1360,7 @@ func (s *violationsTestSuite) TestGenerateViolationId() {
 	id3, err := generateViolationID("alert1", &v3)
 	s.Require().NoError(err)
 
-	v4 := v3.Clone()
+	v4 := v3.CloneVT()
 	v4.Message = "mock message4"
 	id4, err := generateViolationID("alert1", v4)
 	s.Require().NoError(err)
@@ -1369,8 +1369,8 @@ func (s *violationsTestSuite) TestGenerateViolationId() {
 }
 
 func BenchmarkGenerateViolationId(b *testing.B) {
-	violations := deployAlert.Clone().Violations
-	violations = append(violations, k8sAlert.Clone().Violations...)
+	violations := deployAlert.CloneVT().Violations
+	violations = append(violations, k8sAlert.CloneVT().Violations...)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		v := violations[i%len(violations)]

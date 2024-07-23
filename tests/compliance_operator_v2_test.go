@@ -561,7 +561,7 @@ func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
 	assertScanSettingBinding(t, *req, scanSettingBinding)
 
 	// Update the scan configuration
-	updateReq := req.Clone()
+	updateReq := req.CloneVT()
 	updateReq.Id = resp.GetId()
 	updateReq.ScanConfig.ScanSchedule = &v2.Schedule{
 		IntervalType: 1,

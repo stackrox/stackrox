@@ -183,20 +183,20 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportOverwriteDefaultPolicy() {
 	basePolicy := fixtures.GetPolicy()
 	basePolicy.Scope = []*storage.Scope{} // clear out scope to avoid unrelated "removed_clusters_or_notifiers" errors
 
-	sameIDExistingPolicy := basePolicy.Clone()
+	sameIDExistingPolicy := basePolicy.CloneVT()
 	sameIDExistingPolicy.Id = "ID1"
 	sameIDExistingPolicy.Name = "existing name 1"
 
-	sameNameExistingPolicy := basePolicy.Clone()
+	sameNameExistingPolicy := basePolicy.CloneVT()
 	sameNameExistingPolicy.Id = "existing ID 2"
 	sameNameExistingPolicy.Name = "A very good name"
 
 	// Same ID as sameIDExistingPolicy, unique name
-	sameIDNewPolicy := sameIDExistingPolicy.Clone()
+	sameIDNewPolicy := sameIDExistingPolicy.CloneVT()
 	sameIDNewPolicy.Name = "New Name"
 
 	// Same name as sameNameExistingPolicy, unique ID
-	sameNameNewPolicy := sameNameExistingPolicy.Clone()
+	sameNameNewPolicy := sameNameExistingPolicy.CloneVT()
 	sameNameNewPolicy.Id = "new ID 2"
 
 	cases := []struct {
