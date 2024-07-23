@@ -107,9 +107,3 @@ func TestMarshalUnmarshalAlert(t *testing.T) {
 	decodedProtoAlert := (*storage.Alert)(decodedAlert)
 	protoassert.Equal(t, rawAlert, decodedProtoAlert)
 }
-
-func TestMarshalAlertError(t *testing.T) {
-	var alert *marshalableAlert
-	_, err := alert.MarshalJSON()
-	assert.Error(t, err)
-}

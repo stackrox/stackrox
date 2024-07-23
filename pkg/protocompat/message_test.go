@@ -99,12 +99,18 @@ func TestMarshalTextString(t *testing.T) {
 		ClusterName: "Cluster 1",
 	}
 	asString := MarshalTextString(msg)
-	expectedString := `id: "namespaceA"
-` + `name: "Namespace A"
-` + `cluster_id: "aaaaaaaa-bbbb-4011-0000-111111111111"
-` + `cluster_name: "Cluster 1"
+
+	// String output is not guarantied.
+	// Info: https://pkg.go.dev/google.golang.org/protobuf@v1.34.1/encoding/prototext#Format
+	// There is randomization added to output to ensure that library users
+	// are not relaying on stable output format.
+	// Info: https://go-review.googlesource.com/c/protobuf/+/151340
+	expectedRegex := `id: +"namespaceA"
+` + `name: +"Namespace A"
+` + `cluster_id: +"aaaaaaaa-bbbb-4011-0000-111111111111"
+` + `cluster_name: +"Cluster 1"
 `
-	assert.Equal(t, expectedString, asString)
+	assert.Regexp(t, expectedRegex, asString)
 }
 
 func TestUnmarshal(t *testing.T) {

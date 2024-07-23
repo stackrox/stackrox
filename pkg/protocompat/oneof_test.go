@@ -26,9 +26,9 @@ func testHelperGetFieldProtoName(field reflect.StructField) string {
 }
 
 func TestGetOneOfTypesByFieldIndex(t *testing.T) {
-	msg := storage.TestSingleUUIDKeyStruct{}
+	msg := &storage.TestSingleUUIDKeyStruct{}
 
-	msgType := reflect.TypeOf(msg)
+	msgType := reflect.TypeOf(msg).Elem()
 	assert.NotNil(t, msgType)
 
 	fieldsToTest := map[string]set.StringSet{
@@ -56,9 +56,9 @@ func TestGetOneOfTypesByFieldIndex(t *testing.T) {
 }
 
 func TestGetOneOfTypesByInterface(t *testing.T) {
-	msg := storage.TestSingleUUIDKeyStruct{}
+	msg := &storage.TestSingleUUIDKeyStruct{}
 
-	msgType := reflect.TypeOf(msg)
+	msgType := reflect.TypeOf(msg).Elem()
 	assert.NotNil(t, msgType)
 
 	fieldOneof, found := msgType.FieldByName("Oneof")
