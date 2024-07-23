@@ -8,7 +8,7 @@ import (
 type feature struct {
 	envVar       string
 	name         string
-	enabled      bool
+	defaultValue bool
 	unchangeable bool
 	techPreview  bool
 }
@@ -22,12 +22,12 @@ func (f *feature) Name() string {
 }
 
 func (f *feature) Default() bool {
-	return f.enabled
+	return f.defaultValue
 }
 
 func (f *feature) Enabled() bool {
 	if f.unchangeable {
-		return f.Default()
+		return f.defaultValue
 	}
 
 	switch strings.ToLower(os.Getenv(f.envVar)) {
@@ -36,7 +36,7 @@ func (f *feature) Enabled() bool {
 	case "true":
 		return true
 	default:
-		return f.Default()
+		return f.defaultValue
 	}
 }
 

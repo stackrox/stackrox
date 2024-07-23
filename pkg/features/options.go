@@ -4,15 +4,15 @@ import "github.com/stackrox/rox/pkg/buildinfo"
 
 type option func(*feature)
 
-func withDefault(value bool) option {
+func withEnabledByDefault() option {
 	return func(f *feature) {
-		f.enabled = value
+		f.defaultValue = true
 	}
 }
 
-func withTechPreviewStage(stage bool) option {
+func withTechPreviewStage() option {
 	return func(f *feature) {
-		f.techPreview = stage
+		f.techPreview = true
 	}
 }
 
@@ -23,10 +23,8 @@ func withUnchangeable(unchangeable bool) option {
 }
 
 var (
-	disabled           = withDefault(false)
-	enabled            = withDefault(true)
-	devPreview         = withTechPreviewStage(false)
-	techPreview        = withTechPreviewStage(true)
+	enabled            = withEnabledByDefault()
+	techPreview        = withTechPreviewStage()
 	unchangeable       = withUnchangeable(true)
 	unchangeableInProd = withUnchangeable(buildinfo.ReleaseBuild)
 )

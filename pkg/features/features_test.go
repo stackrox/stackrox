@@ -65,7 +65,7 @@ func testFlagEnabled(t *testing.T, feature FeatureFlag, envSetting string, expec
 func TestFeatureEnvVarStartsWithRox(t *testing.T) {
 	// Use two blocks because it should fail if either of them doesn't panic
 	assert.Panics(t, func() {
-		registerFeature("blah", "NOT_ROX_WHATEVER", disabled)
+		registerFeature("blah", "NOT_ROX_WHATEVER")
 	})
 	assert.Panics(t, func() {
 		registerFeature("blah", "NOT_ROX_WHATEVER", unchangeableInProd)
@@ -77,7 +77,7 @@ func TestFeatureFlags(t *testing.T) {
 	for _, test := range defaultTrueCases {
 		testFlagEnabled(t, defaultTrueFeature, test.env, test.expected)
 	}
-	defaultFalseFeature := registerFeature("default_false", "ROX_DEFAULT_FALSE", devPreview)
+	defaultFalseFeature := registerFeature("default_false", "ROX_DEFAULT_FALSE")
 	for _, test := range defaultFalseCases {
 		testFlagEnabled(t, defaultFalseFeature, test.env, test.expected)
 	}
@@ -112,8 +112,8 @@ func TestOverridesOnReleaseBuilds(t *testing.T) {
 	}
 }
 
-func TestMode(t *testing.T) {
-	f := registerFeature("test_feat", "ROX_TEST_FEAT", devPreview)
+func TestStage(t *testing.T) {
+	f := registerFeature("test_feat", "ROX_TEST_FEAT")
 	assert.Equal(t, "dev-preview", f.Stage())
 
 	f = registerFeature("test_feat", "ROX_TEST_FEAT", techPreview)
