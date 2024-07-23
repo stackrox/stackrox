@@ -68,7 +68,7 @@ echo "For: Remote File Copy Binary Execution"
 test_exec scp
 
 echo "For: systemctl Execution"
-systemctl --version
+systemctl get-default
 
 echo "For: systemd Execution"
 test_exec systemd
