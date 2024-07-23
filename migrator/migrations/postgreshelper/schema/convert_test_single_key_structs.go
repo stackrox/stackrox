@@ -10,7 +10,7 @@ import (
 
 // ConvertTestSingleKeyStructFromProto converts a `*storage.TestSingleKeyStruct` to Gorm model
 func ConvertTestSingleKeyStructFromProto(obj *storage.TestSingleKeyStruct) (*TestSingleKeyStructs, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

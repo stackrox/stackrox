@@ -10,7 +10,7 @@ import (
 
 // ConvertTestStructFromProto converts a `*storage.TestStruct` to Gorm model
 func ConvertTestStructFromProto(obj *storage.TestStruct) (*TestStructs, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

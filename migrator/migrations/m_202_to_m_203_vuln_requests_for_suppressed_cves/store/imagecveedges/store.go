@@ -51,7 +51,7 @@ func pkGetter(obj *storeType) string {
 
 func insertIntoImageCveEdges(batch *pgx.Batch, obj *storage.ImageCVEEdge) error {
 
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -95,7 +95,7 @@ func copyFromImageCveEdges(ctx context.Context, s pgSearch.Deleter, tx *postgres
 			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 			"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}

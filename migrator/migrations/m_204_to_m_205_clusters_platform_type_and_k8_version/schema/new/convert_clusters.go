@@ -7,7 +7,7 @@ import (
 
 // ConvertClusterFromProto converts a `*storage.Cluster` to Gorm model
 func ConvertClusterFromProto(obj *storage.Cluster) (*Clusters, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

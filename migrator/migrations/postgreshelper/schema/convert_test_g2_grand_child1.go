@@ -7,7 +7,7 @@ import (
 
 // ConvertTestG2GrandChild1FromProto converts a `*storage.TestG2GrandChild1` to Gorm model
 func ConvertTestG2GrandChild1FromProto(obj *storage.TestG2GrandChild1) (*TestG2GrandChild1, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}
