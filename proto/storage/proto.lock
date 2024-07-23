@@ -7152,6 +7152,24 @@
     {
       "protopath": "external_backup.proto",
       "def": {
+        "enums": [
+          {
+            "name": "S3URLStyle",
+            "enum_fields": [
+              {
+                "name": "S3_URL_STYLE_UNSPECIFIED"
+              },
+              {
+                "name": "S3_URL_STYLE_VIRTUAL_HOSTED",
+                "integer": 1
+              },
+              {
+                "name": "S3_URL_STYLE_PATH",
+                "integer": 2
+              }
+            ]
+          }
+        ],
         "messages": [
           {
             "name": "ExternalBackup",
@@ -7191,6 +7209,12 @@
                 "id": 7,
                 "name": "gcs",
                 "type": "GCSConfig",
+                "oneof_parent": "Config"
+              },
+              {
+                "id": 9,
+                "name": "s3compatible",
+                "type": "S3Compatible",
                 "oneof_parent": "Config"
               },
               {
@@ -7244,6 +7268,46 @@
                 "id": 7,
                 "name": "endpoint",
                 "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "S3Compatible",
+            "fields": [
+              {
+                "id": 1,
+                "name": "bucket",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "access_key_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "secret_access_key",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "region",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "object_prefix",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "endpoint",
+                "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "url_style",
+                "type": "S3URLStyle"
               }
             ]
           },

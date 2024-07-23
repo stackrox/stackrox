@@ -15,15 +15,21 @@ class CloudSourcesTest extends BaseSpecification {
     def "Create OCM cloud source and verify discovered clusters exist"() {
         when:
         "OCM cloud source is created and tested"
-        def cloudSourceId = CloudSourcesService.createCloudSource(CloudSourceService.CloudSource.newBuilder().
-                setName(CLOUD_SOURCE_NAME).
-                setType(CloudSourceService.CloudSource.Type.TYPE_OCM).
-                setOcm(CloudSourceService.OCMConfig.newBuilder().
-                        setEndpoint("https://api.openshift.com").build()).
-                setCredentials(CloudSourceService.CloudSource.Credentials.newBuilder().
-                        setSecret(Env.mustGetOcmOfflineToken()).build())
-                .build())
-        assert cloudSourceId
+        // On create we call "api.openshift.com" to ensure that configuration works. Internal timeout is ~8sec.
+        // In case API service is not temporally available, we should add longer retry times to give API service
+        // enough time to recover. Our options are limited here, because we depend on 3rd party service availability.
+        def cloudSourceId
+        withRetry(5, 20) {
+            cloudSourceId = CloudSourcesService.createCloudSource(CloudSourceService.CloudSource.newBuilder().
+                    setName(CLOUD_SOURCE_NAME).
+                    setType(CloudSourceService.CloudSource.Type.TYPE_OCM).
+                    setOcm(CloudSourceService.OCMConfig.newBuilder().
+                            setEndpoint("https://api.openshift.com").build()).
+                    setCredentials(CloudSourceService.CloudSource.Credentials.newBuilder().
+                            setSecret(Env.mustGetOcmOfflineToken()).build())
+                    .build())
+            assert cloudSourceId
+        }
 
         then:
         "verify we have discovered clusters"

@@ -109,17 +109,14 @@ func initialize() {
 	cachePublicConfig(config.GetPublicConfig())
 
 	privateConfig := config.GetPrivateConfig()
-	needsUpsert := false
 	if privateConfig == nil {
 		privateConfig = &defaultPrivateConfig
-		needsUpsert = true
 	}
 
 	if privateConfig.GetDecommissionedClusterRetention() == nil {
 		privateConfig.DecommissionedClusterRetention = &storage.DecommissionedClusterRetentionConfig{
 			RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
 		}
-		needsUpsert = true
 	}
 
 	if privateConfig.GetReportRetentionConfig() == nil {
@@ -128,30 +125,24 @@ func initialize() {
 			DownloadableReportRetentionDays:        DefaultDownloadableReportRetentionDays,
 			DownloadableReportGlobalRetentionBytes: DefaultDownloadableReportGlobalRetentionBytes,
 		}
-		needsUpsert = true
 	}
 
 	if features.UnifiedCVEDeferral.Enabled() {
 		if privateConfig.GetVulnerabilityExceptionConfig() == nil {
 			privateConfig.VulnerabilityExceptionConfig = defaultVulnerabilityDeferralConfig
 		}
-		needsUpsert = true
 	}
 
-	if features.AdministrationEvents.Enabled() {
-		if privateConfig.GetAdministrationEventsConfig() == nil {
-			privateConfig.AdministrationEventsConfig = &storage.AdministrationEventsConfig{
-				RetentionDurationDays: DefaultAdministrationEventsRetention}
+	if privateConfig.GetAdministrationEventsConfig() == nil {
+		privateConfig.AdministrationEventsConfig = &storage.AdministrationEventsConfig{
+			RetentionDurationDays: DefaultAdministrationEventsRetention,
 		}
-		needsUpsert = true
 	}
 
-	if needsUpsert {
-		utils.Must(d.UpsertConfig(ctx, &storage.Config{
-			PublicConfig:  config.GetPublicConfig(),
-			PrivateConfig: privateConfig,
-		}))
-	}
+	utils.Must(d.UpsertConfig(ctx, &storage.Config{
+		PublicConfig:  config.GetPublicConfig(),
+		PrivateConfig: privateConfig,
+	}))
 }
 
 // Singleton provides the interface for non-service external interaction.

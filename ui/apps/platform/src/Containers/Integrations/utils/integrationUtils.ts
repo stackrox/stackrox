@@ -128,19 +128,24 @@ export const daysOfWeek = [
     'Saturday',
 ];
 
-const getTimes = () => {
-    const times = ['12:00'];
-    for (let i = 1; i <= 11; i += 1) {
-        if (i < 10) {
-            times.push(`0${i}:00`);
-        } else {
-            times.push(`${i}:00`);
-        }
-    }
-    return times.map((x) => `${x}AM`).concat(times.map((x) => `${x}PM`));
-};
+// ["00:00", ..., "23:00"]
+export const timesOfDay = new Array(24)
+    .fill(1)
+    .map((_, t) => `${t.toString().padStart(2, '0')}:00`);
 
-export const timesOfDay = getTimes();
+export function backupScheduleDescriptor() {
+    return {
+        accessor: ({ schedule }) => {
+            if (schedule.intervalType === 'WEEKLY') {
+                return `Weekly on ${daysOfWeek[schedule.weekly.day]} at ${
+                    timesOfDay[schedule.hour]
+                } UTC`;
+            }
+            return `Daily at ${timesOfDay[schedule.hour]} UTC`;
+        },
+        Header: 'Schedule',
+    };
+}
 
 // Utilities for image integrations which can have either or both of two categories.
 

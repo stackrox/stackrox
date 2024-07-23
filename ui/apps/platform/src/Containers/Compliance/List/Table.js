@@ -12,7 +12,6 @@ import Table from 'Components/Table';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import Loader from 'Components/Loader';
 import TablePagination from 'Components/TablePagination';
-import { getColumnsByEntity, getColumnsByStandard } from 'constants/tableColumns';
 import Query from 'Components/CacheFirstQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
@@ -23,6 +22,7 @@ import queryService from 'utils/queryService';
 
 import { complianceEntityTypes, entityCountNounOrdinaryCase } from '../entitiesForCompliance';
 import TableGroup from './TableGroup';
+import { getColumnsByEntity, getColumnsByStandard, getColumnsForControl } from './tableColumns';
 
 function getQuery(entityType) {
     switch (entityType) {
@@ -272,6 +272,8 @@ const ListTable = ({
     let tableColumns;
     if (standardId) {
         tableColumns = getColumnsByStandard(standardId);
+    } else if (isControlList) {
+        tableColumns = getColumnsForControl(query);
     } else {
         tableColumns = getColumnsByEntity(entityType, standardsData.results);
     }

@@ -1,4 +1,3 @@
-import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import { defaultClusterSort } from 'Containers/ConfigManagement/List/Clusters';
 import { defaultNamespaceSort } from 'Containers/ConfigManagement/List/Namespaces';
@@ -10,36 +9,35 @@ import { defaultRoleSort } from 'Containers/ConfigManagement/List/Roles';
 import { defaultSecretSort } from 'Containers/ConfigManagement/List/Secrets';
 import { defaultServiceAccountSort } from 'Containers/ConfigManagement/List/ServiceAccounts';
 import { defaultSubjectSort } from 'Containers/ConfigManagement/List/Subjects';
+import { GraphQLSortOption } from 'types/search';
+import { ConfigurationManagementEntityType } from 'utils/entityRelationships';
 
-const defaultSortFieldMap = {
-    [entityTypes.CLUSTER]: defaultClusterSort,
-    [entityTypes.DEPLOYMENT]: defaultDeploymentSort,
-    [entityTypes.NAMESPACE]: defaultNamespaceSort,
-    [entityTypes.IMAGE]: defaultImageSort,
-    [entityTypes.NODE]: defaultNodeSort,
-    [entityTypes.POLICY]: defaultPolicyrSort,
-    [entityTypes.ROLE]: defaultRoleSort,
-    [entityTypes.SECRET]: defaultSecretSort,
-    [entityTypes.SERVICE_ACCOUNT]: defaultServiceAccountSort,
-    [entityTypes.SUBJECT]: defaultSubjectSort,
+const defaultSortFieldMap: Record<ConfigurationManagementEntityType, GraphQLSortOption[]> = {
+    CLUSTER: defaultClusterSort,
+    CONTROL: [],
+    DEPLOYMENT: defaultDeploymentSort,
+    IMAGE: defaultImageSort,
+    NAMESPACE: defaultNamespaceSort,
+    NODE: defaultNodeSort,
+    POLICY: defaultPolicyrSort,
+    ROLE: defaultRoleSort,
+    SECRET: defaultSecretSort,
+    SERVICE_ACCOUNT: defaultServiceAccountSort,
+    SUBJECT: defaultSubjectSort,
 };
 
-export function getConfigMgmtDefaultSort(entityListType = '') {
+export function getConfigMgmtDefaultSort(
+    entityListType: ConfigurationManagementEntityType
+): GraphQLSortOption[] {
     const defaultSort = defaultSortFieldMap[entityListType];
 
-    return defaultSort || [];
+    return defaultSort ?? [];
 }
 
-export function getConfigMgmtCountQuery(entityListType = '') {
+export function getConfigMgmtCountQuery(entityListType: ConfigurationManagementEntityType) {
     const parsedEntityListTypeCount = defaultCountKeyMap[entityListType];
 
-    return !parsedEntityListTypeCount ||
-        entityListType === entityTypes.CONTROL ||
-        entityListType === entityTypes.POLICY
+    return !parsedEntityListTypeCount || entityListType === 'CONTROL' || entityListType === 'POLICY'
         ? ''
         : `count: ${parsedEntityListTypeCount}(query: $query)`;
 }
-
-export default {
-    getConfigMgmtCountQuery,
-};

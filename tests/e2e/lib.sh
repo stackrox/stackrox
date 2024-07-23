@@ -151,7 +151,6 @@ export_test_environment() {
     ci_export ROX_WORKLOAD_CVES_FIXABILITY_FILTERS "${ROX_WORKLOAD_CVES_FIXABILITY_FILTERS:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
-    ci_export ROX_ADMINISTRATION_EVENTS "${ROX_ADMINISTRATION_EVENTS:-true}"
     ci_export ROX_POLICY_CRITERIA_MODAL "${ROX_POLICY_CRITERIA_MODAL:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
     ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-false}"
@@ -532,6 +531,12 @@ wait_for_collectors_to_be_operational() {
     local readiness_indicator="Successfully established GRPC stream for signals"
     local timeout=300
     local retry_interval=10
+
+    if [[ "$COLLECTION_METHOD" == "NO_COLLECTION" ]]; then
+        # With NO_COLLECTION, no collector containers are deployed
+        # so no need to check for readiness
+        return
+    fi
 
     local start_time
     start_time="$(date '+%s')"
