@@ -89,7 +89,6 @@ spec:
             set -xe
             dnf install -y --nodocs --noplugins --refresh --best make git golang findutils python3 jq
             echo "tag: $(make tag)"
-            export QUAY_RHACS_ENG_BEARER_TOKEN="NOT_A_TOKEN" # makes the following command succeed by disabling the actual logic
             make bundle-post-process
     - name: build-container
       taskRef:

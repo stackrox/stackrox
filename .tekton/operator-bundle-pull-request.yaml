@@ -31,7 +31,7 @@ spec:
   - name: image-expires-after
     value: 5d
   - name: dockerfile
-    value: operator/Containerfile.operator-bundle
+    value: operator/bundle.Dockerfile
   # Do not use hermetic for now as we are going to generate our manifest at build time. We need to pull in content.
   # TODO(ROX-20234): Enable hermetic builds
   - name: hermetic

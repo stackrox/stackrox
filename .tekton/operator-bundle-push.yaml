@@ -27,7 +27,7 @@ spec:
   - name: output-image
     value: quay.io/rhacs-eng/stackrox-operator-bundle:on-pr-{{revision}}
   - name: dockerfile
-    value: operator/Containerfile.operator-bundle
+    value: operator/bundle.Dockerfile
   # TODO(ROX-20234): Enable hermetic builds
   # Do not use hermetic for now as we are going to generate our manifest at build time. We need to pull in content.
   - name: hermetic
