@@ -1410,8 +1410,8 @@ github.com/stackrox/oauth2 v0.0.0-20240521152739-4d3f7e4f6b49 h1:FUX/fzXDu/TkYZQ
 github.com/stackrox/oauth2 v0.0.0-20240521152739-4d3f7e4f6b49/go.mod h1:XYTD2NtWslqkgxebSiOHnXEap4TF09sJSc7H1sXbhtI=
 github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d h1:aLCTq23tpBhbmrLa/3+21rESx7VXgkrjIKJpbhcrvVk=
 github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d/go.mod h1:zwEXo3PEZZb6QQZBrBORMX0Hvnnwst3PduSaTQZMFYc=
-github.com/stackrox/scanner v0.0.0-20240718152233-398ae3f5b1e5 h1:mVNwDL2VJXCJjDYjvyOKIQM9xKGmLm3HFU5ONzJEJT4=
-github.com/stackrox/scanner v0.0.0-20240718152233-398ae3f5b1e5/go.mod h1:7/ukl7J9J1cP9+4SDp+bFGgxXVhyEliJ3T5KqNHFPmI=
+github.com/stackrox/scanner v0.0.0-20240723082853-9da484b1a94e h1:xpThhd/IXW0+QM1cF/KaxVWXAcN2owMouh9R/ht4F4I=
+github.com/stackrox/scanner v0.0.0-20240723082853-9da484b1a94e/go.mod h1:r8K3aiQY1eVhTCua3yPuUSz8/WvvqrXLu6WXwc13B0o=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d h1:jeM6QMtwE9BU0rfDYcmkI/aOChOUfIO18LDp/DSnZpI=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/stackrox/yaml/v2 v2.4.1 h1:09ux+QFfvp+Lk73pwGlMTAHeZoS2pqs6CCngYaJ6EQo=
