@@ -5,8 +5,8 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func GoMockMatcherEqualMessage(expectedMsg protocompat.Message) gomock.Matcher {
+func GoMockMatcherEqualMessage[T protocompat.Equalable[T]](expectedMsg T) gomock.Matcher {
 	return gomock.Cond(func(msg any) bool {
-		return protocompat.Equal(expectedMsg, msg.(protocompat.Message))
+		return protocompat.Equal(expectedMsg, msg.(T))
 	})
 }
