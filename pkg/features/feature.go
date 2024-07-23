@@ -9,23 +9,15 @@ import (
 
 type mode int
 
-// mode bits:
 const (
-	releaseStageBit mode = 1 << iota
-	defaultValueBit
-	unchangeableBit
-)
+	techPreview mode = 1 << iota
+	enabled
+	unchangeable
 
-const (
+	devPreview mode = 0
+	disabled   mode = 0
 	// Const integer 1 for release, 0 for development build:
-	releaseBuild int = 1 - (len(buildinfo.BuildFlavor)-len("release"))/4
-
-	// mode values:
-	devPreview         mode = 0 * releaseStageBit
-	techPreview        mode = 1 * releaseStageBit
-	disabled           mode = 0 * defaultValueBit
-	enabled            mode = 1 * defaultValueBit
-	unchangeable       mode = 1 * unchangeableBit
+	releaseBuild       int  = 1 - (len(buildinfo.BuildFlavor)-len("release"))/4
 	unchangeableInProd mode = unchangeable * mode(releaseBuild)
 )
 
@@ -44,11 +36,11 @@ func (f *feature) Name() string {
 }
 
 func (f *feature) Default() bool {
-	return f.mode&defaultValueBit == enabled
+	return f.mode&enabled != 0
 }
 
 func (f *feature) Enabled() bool {
-	if f.mode&unchangeableBit == unchangeable {
+	if f.mode&unchangeable != 0 {
 		return f.Default()
 	}
 
@@ -63,7 +55,7 @@ func (f *feature) Enabled() bool {
 }
 
 func (f *feature) Stage() string {
-	if f.mode&releaseStageBit == techPreview {
+	if f.mode&techPreview != 0 {
 		return "tech-preview"
 	}
 	return "dev-preview"
