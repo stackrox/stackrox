@@ -168,3 +168,44 @@ func TestBuildAndValidateOutputFileName(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+
+func serveRawMetadata(t *testing.T) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/v1/metadata", r.URL.Path)
+
+		responsePayload := `{
+	"version": "4.3.2.1",
+	"buildFlavor": "unitTest",
+	"releaseBuild": false,
+	"licenseStatus": "VALID",
+	"dummyTestField": "to test backward/forward compatibility"
+}`
+		_, _ = w.Write([]byte(responsePayload))
+	}
+}
+
+func TestVersionFromCentral(t *testing.T) {
+	server := httptest.NewServer(serveRawMetadata(t))
+	defer server.Close()
+
+	// Required for picking up the endpoint used by GetRoxctlHTTPClient. Currently, it is not possible to inject this
+	// otherwise.
+	t.Setenv("ROX_ENDPOINT", server.URL)
+
+	t.Setenv("ROX_ADMIN_PASSWORD", "fake")
+	t.Setenv("ROX_INSECURE_CLIENT", "true")
+	flags.AddPassword(&cobra.Command{})           // init flags.passwordChanged to avoid nil pointer
+	_, _, _ = flags.EndpointAndPlaintextSetting() // allow unencrypted http communication
+
+	testIO, _, _, _ := roxctlio.TestIO()
+	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
+
+	cmd := &scannerDownloadDBCommand{
+		env: env,
+	}
+
+	version, err := cmd.versionFromCentral()
+	assert.NoError(t, err)
+	assert.Equal(t, "4.3.2.1", version)
+}
