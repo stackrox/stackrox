@@ -38,21 +38,16 @@ class SplunkAlertViolations {
 }
 
 class SplunkHECTokens {
-    List<SplunkHECEntryRaw> entry
-}
-
-class SplunkHECEntryRaw {
-    String _raw
+    List<SplunkHECEntry> entry
 }
 
 class SplunkHECEntry {
-    String content
+    public SplunkHECContent content;
+    static class SplunkHECContent {
+        public String token;
+    }
 }
 
-class SplunkHECContentRaw {
-    String _raw
-}
 
-class SplunkHECContent {
-    String token
-}
+
+

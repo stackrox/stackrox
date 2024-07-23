@@ -16,10 +16,7 @@ import objects.Service
 import objects.SplunkAlert
 import objects.SplunkAlertRaw
 import objects.SplunkAlerts
-import objects.SplunkHECContent
-import objects.SplunkHECContentRaw
 import objects.SplunkHECEntry
-import objects.SplunkHECEntryRaw
 import objects.SplunkHECTokens
 import objects.SplunkSearch
 
@@ -67,26 +64,20 @@ class SplunkUtil {
         return syslogStrings
     }
 
-    static List<SplunkAlert> waitForSplunkAlerts(int port, int timeoutSeconds) {
-        int intervalSeconds = 3
-        int iterations = timeoutSeconds / intervalSeconds
+    static List<SplunkAlert> waitForSplunkAlerts(int port, int timeoutSeconds, String search = "search") {
         List results = []
-        Exception exception = null
-        Timer t = new Timer(iterations, intervalSeconds)
-        while (results.size() == 0 && t.IsValid()) {
+        withRetry(30, 10) {
             def searchId = null
             try {
-                searchId = createSearch(port)
-                exception = null
+                log.info("Creating search with query param: " + search)
+                searchId = createSearch(port, search)
             } catch (Exception e) {
-                exception = e
+                throw e
             }
             results = getSplunkAlerts(port, searchId)
+            assert results.size() > 0
         }
-
-        if (exception) {
-            throw exception
-        }
+        log.info("Found violations in Splunk: \n" + results)
         return results
     }
 
@@ -148,7 +139,7 @@ class SplunkUtil {
 
     static String createHECToken(int port, String tokenName = "stackrox") {
         Response response = null
-        withRetry(6, 15) {
+        withRetry(20, 15) {
             response =  given().auth()
                 .basic("admin", SPLUNK_ADMIN_PASSWORD)
                 .formParam("name", tokenName)
@@ -162,12 +153,8 @@ class SplunkUtil {
     static String unmarshalHEC(String response) {
         SplunkHECTokens tokens = GSON.fromJson(response, SplunkHECTokens)
         // This structure only ever contains one entry in the array, so we return after parsing the first one
-        for (SplunkHECEntryRaw raw: tokens.entry) {
-            log.debug(raw?.toString())
-            SplunkHECEntry hecEntry = GSON.fromJson(raw._raw, SplunkHECEntry)
-            SplunkHECContentRaw hecContentRaw = GSON.fromJson(hecEntry.content)
-            SplunkHECContent hecContent = GSON.fromJson(hecContentRaw._raw, SplunkHECContent)
-            return hecContent.token
+        for (SplunkHECEntry entry: tokens.entry) {
+            return entry.content.token
         }
     }
 

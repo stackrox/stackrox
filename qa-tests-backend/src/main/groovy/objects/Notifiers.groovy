@@ -130,7 +130,6 @@ class SplunkNotifier extends Notifier {
             log.info("Creating HEC ingest token")
             hecToken = SplunkUtil.createHECToken(splunkPort)
         }
-        log.debug("Using HEC token #hecToken for Splunk communication")
         notifier = NotifierService.getSplunkIntegrationConfig(legacy, collectorServiceName, integrationName, hecToken)
     }
 
@@ -143,7 +142,8 @@ class SplunkNotifier extends Notifier {
     }
 
     void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
-        def response = SplunkUtil.waitForSplunkAlerts(splunkPort, 30)
+        def response =
+                SplunkUtil.waitForSplunkAlerts(splunkPort, 30, "search sourcetype=stackrox-alert")
 
 
         assert response.find { it.deployment.id == deployment.deploymentUid }
