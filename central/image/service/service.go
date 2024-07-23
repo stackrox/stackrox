@@ -12,8 +12,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/waiter"
@@ -40,7 +40,7 @@ func New(
 	riskManager manager.Manager,
 	connManager connection.Manager,
 	enricher enricher.ImageEnricher,
-	metadataCache expiringcache.Cache,
+	metadataCache cache.ImageMetadata,
 	scanWaiterManager waiter.Manager[*storage.Image],
 	clusterSACHelper sachelper.ClusterSacHelper,
 ) Service {
