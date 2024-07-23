@@ -34,10 +34,10 @@ spec:
     persistence:
       persistentVolumeClaim:
         claimName: stackrox-db
-  tls:
-    additionalCAs:
-    - name: additional-ca
-      content: |
+${disableSpecTLS}  tls:
+${disableSpecTLS}    additionalCAs:
+${disableSpecTLS}    - name: additional-ca
+${disableSpecTLS}      content: |
 $centralAdditionalCAIndented
   customize:
     envVars:$customize_envVars

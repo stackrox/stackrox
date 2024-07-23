@@ -27,10 +27,10 @@ spec:
         requests:
           cpu: 1
           memory: 1Gi
-  tls:
-    additionalCAs:
-    - name: additional-ca
-      content:
+${disableSpecTLS}  tls:
+${disableSpecTLS}    additionalCAs:
+${disableSpecTLS}    - name: additional-ca
+${disableSpecTLS}      content:
 $centralAdditionalCAIndented
   customize:
     envVars:$customize_envVars
