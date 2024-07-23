@@ -5,8 +5,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
@@ -313,7 +315,173 @@ func TestJSONRemarks(t *testing.T) {
 
 			raw, err := os.ReadFile(c.goldenFile)
 			a.NoError(err)
-			a.Equal(buf.String(), string(raw))
+			a.JSONEq(buf.String(), string(raw))
 		})
 	}
+
+	errorCases := map[string]struct {
+		alerts        []*storage.Alert
+		remarks       []*v1.DeployDetectionRemark
+		writeableLen  int
+		expectedError error
+	}{
+		"multi alerts with remarks, payload write fails": {
+			alerts:        []*storage.Alert{&imageAlertOne, &imageAlertTwo},
+			remarks:       []*v1.DeployDetectionRemark{&remarkOne, &remarkTwo},
+			writeableLen:  100,
+			expectedError: errors.Wrap(capacityExhaustedErr, "could not marshal alerts"),
+		},
+		"multi alerts with remarks, trailing newline write fails": {
+			alerts:        []*storage.Alert{&imageAlertOne, &imageAlertTwo},
+			remarks:       []*v1.DeployDetectionRemark{&remarkOne, &remarkTwo},
+			writeableLen:  1704,
+			expectedError: errors.Wrap(capacityExhaustedErr, "could not write final newline for alerts"),
+		},
+	}
+
+	for name, tc := range errorCases {
+		t.Run(name, func(t *testing.T) {
+			writer := newTestWriter(tc.writeableLen)
+			err := JSONWithRemarks(writer, tc.alerts, tc.remarks)
+			require.Error(t, err)
+			assert.EqualError(t, err, tc.expectedError.Error())
+		})
+	}
+}
+
+func TestJSON(t *testing.T) {
+	testCases := []struct {
+		name           string
+		alerts         []*storage.Alert
+		writeableLen   int
+		expectedError  error
+		expectedOutput string
+	}{
+		{
+			name:          "One alert, write succeeds",
+			alerts:        []*storage.Alert{&imageAlertOne},
+			writeableLen:  0,
+			expectedError: nil,
+			expectedOutput: `{
+  "alerts":[
+    {
+      "policy":{
+        "name":"CI Test Policy One",
+        "description":"CI policy one that is used for tests",
+        "rationale":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nec orci bibendum sapien suscipit maximus. Quisque dapibus accumsan tempor. Vivamus at justo tellus. Vivamus vel sem vel mauris cursus ullamcorper.",
+        "remediation":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus cursus convallis lacinia.",
+        "severity":"CRITICAL_SEVERITY",
+        "enforcementActions":["FAIL_BUILD_ENFORCEMENT"]
+      },
+      "violations":[
+        {"message":"This is awesome"},
+        {"message":"This is more awesome"}
+      ]
+    }
+  ]
+}`,
+		},
+		{
+			name:          "One alert, payload write fails",
+			alerts:        []*storage.Alert{&imageAlertOne},
+			writeableLen:  100,
+			expectedError: errors.Wrap(capacityExhaustedErr, "could not marshal alerts"),
+		},
+		{
+			name:          "One alert, trailing newline write fails",
+			alerts:        []*storage.Alert{&imageAlertOne},
+			writeableLen:  788,
+			expectedError: errors.Wrap(capacityExhaustedErr, "could not write alerts"),
+		},
+		{
+			name:          "Two alerts, write succeeds",
+			alerts:        []*storage.Alert{&imageAlertOne, &deploymentAlertTwo},
+			writeableLen:  0,
+			expectedError: nil,
+			expectedOutput: `{
+  "alerts":[
+    {
+      "policy":{
+        "name":"CI Test Policy One",
+        "description":"CI policy one that is used for tests",
+        "rationale":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nec orci bibendum sapien suscipit maximus. Quisque dapibus accumsan tempor. Vivamus at justo tellus. Vivamus vel sem vel mauris cursus ullamcorper.",
+        "remediation":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus cursus convallis lacinia.",
+        "severity":"CRITICAL_SEVERITY",
+        "enforcementActions":["FAIL_BUILD_ENFORCEMENT"]
+      },
+      "violations":[
+        {"message":"This is awesome"},
+        {"message":"This is more awesome"}
+      ]
+    },
+    {
+      "deployment":{"name":"deployment2"},
+      "policy":{
+        "name":"CI Test Policy Two",
+        "description":"CI policy two that is used for tests",
+        "rationale":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean eleifend ac purus id vehicula. Vivamus malesuada eros at malesuada scelerisque. Praesent pellentesque ipsum mauris, eu tempus diam interdum quis.",
+        "remediation":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nec vehicula magna.",
+        "severity":"MEDIUM_SEVERITY"
+      },
+      "violations":[
+        {"message":"This is cool"},
+        {"message":"This is more cool"}
+      ]
+    }
+  ]
+}`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			writer := newTestWriter(tc.writeableLen)
+			err := JSON(writer, tc.alerts)
+			if tc.expectedError != nil {
+				require.Error(t, err)
+				assert.EqualError(t, err, tc.expectedError.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.JSONEq(t, tc.expectedOutput, writer.String())
+			}
+		})
+	}
+}
+
+type testWriter struct {
+	writer strings.Builder
+	cap    int
+}
+
+func newTestWriter(capacity int) *testWriter {
+	if capacity == 0 {
+		// 0 should mean "infinite" capacity.
+		// Ensure the writer should have enough capacity.
+		capacity = 1024 * 1024 * 1024 * 2
+	}
+	return &testWriter{
+		writer: strings.Builder{},
+		cap:    capacity,
+	}
+}
+
+var (
+	capacityExhaustedErrorText = "could not write, capacity exhausted"
+	capacityExhaustedErr       = errors.New(capacityExhaustedErrorText)
+)
+
+func (w *testWriter) Write(p []byte) (n int, err error) {
+	written := 0
+	for _, b := range p {
+		if w.cap == 0 {
+			return written, capacityExhaustedErr
+		}
+		w.writer.WriteByte(b)
+		w.cap--
+	}
+	return written, nil
+}
+
+func (w *testWriter) String() string {
+	return w.writer.String()
 }
