@@ -61,8 +61,8 @@ func TestCheckTLS(t *testing.T) {
 }
 
 func TestAysncCheckTLS(t *testing.T) {
-	callCounts := map[string]int{}
-	callCountsMutex := sync.Mutex{}
+	callCounts := make(map[string]int)
+	var callCountsMutex sync.Mutex
 
 	countingCheckTLSFunc := func(_ context.Context, registry string) (bool, error) {
 		callCountsMutex.Lock()
@@ -77,7 +77,7 @@ func TestAysncCheckTLS(t *testing.T) {
 
 	assert.Len(t, callCounts, len(regs))
 	assert.Len(t, c.results.GetAll(), len(regs))
-	// Ensure that the checkTLSFunc was not called more then once per registry.
+	// Ensure that the checkTLSFunc was not called more than once per registry.
 	for _, reg := range callCounts {
 		assert.Equal(t, 1, reg)
 	}
@@ -92,11 +92,11 @@ func TestAysncCheckTLS(t *testing.T) {
 	for _, reg := range callCounts {
 		assert.Equal(t, 2, reg)
 	}
-
 }
 
 func runAsyncTLSChecks(cache *tlsCheckCacheImpl, regs []string) {
-	wg := &sync.WaitGroup{}
+	var wg sync.WaitGroup
+
 	for i := 0; i < 100; i++ {
 		for _, reg := range regs {
 			wg.Add(1)

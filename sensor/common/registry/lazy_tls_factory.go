@@ -10,6 +10,8 @@ import (
 )
 
 var (
+	// These are the only two possible registry types Sensor 'auto-creates'.
+	// See `createImageIntegration` in sensor/common/registry/registry_store.go.
 	lazyEligibleCreators = []types.CreatorWrapper{
 		docker.CreatorWithoutRepoList,
 		rhel.CreatorWithoutRepoList,

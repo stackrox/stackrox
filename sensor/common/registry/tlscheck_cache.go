@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type tlsCheckResult uint8
@@ -36,6 +37,8 @@ type cacheEntry struct {
 	result tlsCheckResult
 }
 
+// checkTLS performs a TLS check on a registry or returns the result from a
+// previous check. Returns true for skip if there was a previous error.
 func (e *cacheEntry) checkTLS(ctx context.Context, registry string, checkTLSFunc CheckTLS) (secure bool, skip bool, err error) {
 	e.once.Do(func() {
 		secure, err = checkTLSFunc(ctx, registry)
@@ -64,7 +67,7 @@ func (e *cacheEntry) checkTLS(ctx context.Context, registry string, checkTLSFunc
 	}
 
 	// Should not be reachable.
-	return false, false, errors.Errorf("Unknown TLS check result: %v", e.result)
+	return false, false, utils.ShouldErr(errors.Errorf("Unknown TLS check result: %v", e.result))
 }
 
 func newTLSCheckCache(checkTLSFunc CheckTLS) *tlsCheckCacheImpl {
@@ -78,11 +81,10 @@ func (c *tlsCheckCacheImpl) Cleanup() {
 	c.results.RemoveAll()
 }
 
-// checkTLS performs a TLS check on a registry or returns the result from a
-// previous check. Returns true for skip if there was a previous error and the
-// registry should not be upserted into the store.
+// CheckTLS performs a TLS check on a registry or returns the result from a
+// previous check. Returns true for skip if there was a previous error.
 func (c *tlsCheckCacheImpl) CheckTLS(ctx context.Context, registry string) (secure bool, skip bool, err error) {
-	// First check the cache for an entry and if found perform
+	// First check the cache for an entry, and, if found, perform
 	// the TLS check. This is an optimization to avoid unnecessary
 	// allocations on cache hits.
 	entryI, ok := c.results.Get(registry)
