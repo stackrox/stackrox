@@ -44,6 +44,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 	testCases := map[string]struct {
 		req               *v1.UpdateSensorUpgradeConfigRequest
 		managedCentral    bool
+		upgraderDisabled  bool
 		expectedErr       error
 		upsertTimesCalled int
 	}{
@@ -52,8 +53,17 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 			expectedErr:       errox.InvalidArgs,
 			upsertTimesCalled: 0,
 		},
-		"Error: can't set toggle = true on managed centrals": {
+		"Success: can set toggle = true on managed centrals": {
 			managedCentral: true,
+			req: &v1.UpdateSensorUpgradeConfigRequest{
+				Config: configWith(true),
+			},
+			expectedErr:       nil,
+			upsertTimesCalled: 1,
+		},
+		"Error: can't set when upgrader disabled": {
+			managedCentral:   true,
+			upgraderDisabled: true,
 			req: &v1.UpdateSensorUpgradeConfigRequest{
 				Config: configWith(true),
 			},
@@ -86,6 +96,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 	for caseName, testCase := range testCases {
 		s.Run(caseName, func() {
 			s.T().Setenv(env.ManagedCentral.EnvVar(), strconv.FormatBool(testCase.managedCentral))
+			s.T().Setenv(env.UpgraderEnabled.EnvVar(), strconv.FormatBool(!testCase.upgraderDisabled))
 			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
 			s.dataStore.EXPECT().UpsertSensorUpgradeConfig(gomock.Any(), gomock.Any()).Times(1)
 			serviceInstance, err := New(s.dataStore, s.manager)
@@ -133,21 +144,21 @@ func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_WithValueNot
 		expectedAutoUpdate     bool
 		expectedFeatureEnabled v1.GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus
 	}{
-		"true": {
+		"false": {
 			expectedAutoUpdate:     false,
 			expectedFeatureEnabled: v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED,
 		},
-		"false": {
+		"true": {
 			expectedAutoUpdate:     true,
 			expectedFeatureEnabled: v1.GetSensorUpgradeConfigResponse_SUPPORTED,
 		},
 	}
 
 	for envValue, expectations := range testCases {
-		s.Run(fmt.Sprintf("ROX_MANAGED_CENTRAL=%v", envValue), func() {
+		s.Run(fmt.Sprintf("ROX_UPGRADER_ENABLED=%v", envValue), func() {
 			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
 			s.dataStore.EXPECT().UpsertSensorUpgradeConfig(gomock.Any(), &UpgradeConfigMatcher{expectations.expectedAutoUpdate})
-			s.T().Setenv(env.ManagedCentral.EnvVar(), envValue)
+			s.T().Setenv(env.UpgraderEnabled.EnvVar(), envValue)
 
 			instance, err := New(s.dataStore, s.manager)
 			s.NoError(err)
