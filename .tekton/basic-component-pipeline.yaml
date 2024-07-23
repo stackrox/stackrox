@@ -166,6 +166,8 @@ spec:
       value: $(params.output-tag-suffix)
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: IMAGE_TAG_STYLE
+      value: $(params.image-tag-style)
     taskRef:
       name: determine-image-tag-oci-ta
 

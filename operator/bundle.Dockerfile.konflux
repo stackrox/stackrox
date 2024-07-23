@@ -8,6 +8,8 @@ COPY . /stackrox
 WORKDIR /stackrox/operator
 
 ARG MAIN_IMAGE_TAG
+ENV VERSION=$MAIN_IMAGE_TAG
+
 RUN make bundle-post-process
 
 FROM scratch

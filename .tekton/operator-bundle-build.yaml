@@ -42,6 +42,8 @@ spec:
     value: '0'
   - name: clone-fetch-tags
     value: 'true'
+  - name: image-tag-style
+    value: 'operator'
 
   pipelineRef:
     name: basic-component-pipeline
