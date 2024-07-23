@@ -130,8 +130,8 @@ func (m *manifestGenerator) createScannerTlsSecrets(ctx context.Context) error {
 }
 
 func (m *manifestGenerator) applyScannerDbDeployment(ctx context.Context) error {
-	// image := "quay.io/stackrox-io/scanner-db:4.3.4"
-	image := "quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner-db:on-pr-4312c58932be0a656654d7d0adb1d010c326ca54"
+	image := "quay.io/stackrox-io/scanner-db:4.3.4"
+	// image := "quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner-db:on-pr-4312c58932be0a656654d7d0adb1d010c326ca54"
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
