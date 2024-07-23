@@ -22,8 +22,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var (
-	namespace = "openshift-compliance"
+const (
+	coNamespace = "openshift-compliance"
 
 	// rhcos4 constants
 	rhcosProfileName    = "rhcos4-moderate"
@@ -164,7 +164,7 @@ func TestDeleteAndAddRule(t *testing.T) {
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 	// Remove a rule from the profile and verify it's gone from the results
-	ruleClient := dynamicClientGenerator.Resource(complianceoperator.Rule.GroupVersionResource()).Namespace(namespace)
+	ruleClient := dynamicClientGenerator.Resource(complianceoperator.Rule.GroupVersionResource()).Namespace(coNamespace)
 	rule, err := ruleClient.Get(context.Background(), envVarRule, metav1.GetOptions{})
 	assert.NoError(t, err)
 
@@ -205,7 +205,7 @@ func TestDeleteAndAddScanSettingBinding(t *testing.T) {
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 
 	// Delete a scansettingbinding
-	ssbClient := dynamicClientGenerator.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(namespace)
+	ssbClient := dynamicClientGenerator.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(coNamespace)
 	ssb, err := ssbClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
@@ -237,7 +237,7 @@ func TestDeleteAndAddProfile(t *testing.T) {
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 
 	// Remove a profile and verify that the profile is gone
-	profileClient := dynamicClientGenerator.Resource(complianceoperator.Profile.GroupVersionResource()).Namespace(namespace)
+	profileClient := dynamicClientGenerator.Resource(complianceoperator.Profile.GroupVersionResource()).Namespace(coNamespace)
 	profile, err := profileClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
@@ -269,7 +269,7 @@ func TestUpdateProfile(t *testing.T) {
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 
 	// Remove a profile and verify that the profile is gone
-	profileClient := dynamicClientGenerator.Resource(complianceoperator.Profile.GroupVersionResource()).Namespace(namespace)
+	profileClient := dynamicClientGenerator.Resource(complianceoperator.Profile.GroupVersionResource()).Namespace(coNamespace)
 	profileObj, err := profileClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
