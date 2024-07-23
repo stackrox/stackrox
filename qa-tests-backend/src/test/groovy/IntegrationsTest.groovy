@@ -185,7 +185,7 @@ class IntegrationsTest extends BaseSpecification {
         given:
         "the integration is tested"
         SplunkUtil.SplunkDeployment parts = SplunkUtil.createSplunk(orchestrator,
-                Constants.ORCHESTRATOR_NAMESPACE, false)
+                Constants.ORCHESTRATOR_NAMESPACE, legacy)
 
         when:
         "call the grpc API for the splunk integration."
@@ -235,7 +235,7 @@ class IntegrationsTest extends BaseSpecification {
 
         where:
         "Data inputs are"
-        legacy << false//[false, true]
+        legacy << [false, true]
     }
 
     @Unroll

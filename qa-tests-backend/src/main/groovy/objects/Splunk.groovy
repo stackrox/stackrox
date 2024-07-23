@@ -41,13 +41,10 @@ class SplunkHECTokens {
     List<SplunkHECEntry> entry
 }
 
+// codenarc-disable PublicInstanceField
 class SplunkHECEntry {
-    public SplunkHECContent content;
+    public SplunkHECContent content
     static class SplunkHECContent {
-        public String token;
+        public String token
     }
 }
-
-
-
-

@@ -142,10 +142,9 @@ class SplunkNotifier extends Notifier {
     }
 
     void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
-        def response =
-                SplunkUtil.waitForSplunkAlerts(splunkPort, 30, "search sourcetype=stackrox-alert")
+        def response = SplunkUtil.waitForSplunkAlerts(splunkPort, "search sourcetype=stackrox-alert")
 
-
+        log.info("Verifying data in Splunk")
         assert response.find { it.deployment.id == deployment.deploymentUid }
         assert response.find { it.deployment.name == deployment.name }
         assert response.find { it.deployment.namespace == deployment.namespace }

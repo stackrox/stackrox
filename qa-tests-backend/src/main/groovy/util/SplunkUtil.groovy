@@ -64,20 +64,16 @@ class SplunkUtil {
         return syslogStrings
     }
 
-    static List<SplunkAlert> waitForSplunkAlerts(int port, int timeoutSeconds, String search = "search") {
+    static List<SplunkAlert> waitForSplunkAlerts(int port, String search = "search") {
+        log.info("Waiting for data to arrive in Splunk for search query: " + search)
         List results = []
-        withRetry(30, 10) {
-            def searchId = null
-            try {
-                log.info("Creating search with query param: " + search)
-                searchId = createSearch(port, search)
-            } catch (Exception e) {
-                throw e
-            }
+        withRetry(30, 15) {
+            def searchId
+            searchId = createSearch(port, search)
             results = getSplunkAlerts(port, searchId)
             assert results.size() > 0
         }
-        log.info("Found violations in Splunk: \n" + results)
+        log.info("Data arrived in Splunk!")
         return results
     }
 
@@ -146,7 +142,6 @@ class SplunkUtil {
                 .formParam("output_mode", "json")
                 .post("https://127.0.0.1:${port}/servicesNS/nobody/search/data/inputs/http")
         }
-        log.debug(response?.asString())
         return unmarshalHEC(response?.asString())
     }
 
