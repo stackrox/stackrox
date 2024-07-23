@@ -1,0 +1,44 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/max-keep-runs: "3"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch == "master" && 
+      (".tekton/single-arch-build-pipeline.yaml".pathChanged() || 
+      ".tekton/operator-bundle-pull-request.yaml".pathChanged() || 
+      "Containerfile.operator-bundle".pathChanged() ||
+      "operator".pathChanged() ||
+      "bundle-hack/***".pathChanged())
+  creationTimestamp: null
+  labels:
+    appstudio.openshift.io/application: acs
+    appstudio.openshift.io/component: operator-bundle
+    pipelines.appstudio.openshift.io/type: build
+  name: operator-bundle-on-pull-request
+  namespace: rh-acs-tenant
+spec:
+  params:
+  - name: git-url
+    value: '{{source_url}}'
+  - name: revision
+    value: '{{revision}}'
+  - name: output-image
+    value: quay.io/rhacs-eng/stackrox-operator-bundle:on-pr-{{revision}}
+  # TODO(ROX-24530): return expiration for non-released images to 13w
+  - name: image-expires-after
+    value: 5d
+  - name: dockerfile
+    value: operator/Containerfile.operator-bundle
+  # TODO(ROX-20234): Enable hermetic builds
+  - name: hermetic
+    value: "false"
+  pipelineRef:
+    name: single-arch-build-pipeline
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
