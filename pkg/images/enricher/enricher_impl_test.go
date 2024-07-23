@@ -13,6 +13,7 @@ import (
 	delegatorMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/integration/mocks"
 	imgTypes "github.com/stackrox/rox/pkg/images/types"
@@ -1414,6 +1415,6 @@ func newEnricher(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) I
 		mockReporter, emptySignatureIntegrationGetter, nil)
 }
 
-func newCache() expiringcache.Cache {
-	return expiringcache.NewExpiringCache(1 * time.Minute)
+func newCache() cache.ImageMetadata {
+	return cache.ImageMetadata(expiringcache.NewExpiringCache(1 * time.Minute))
 }
