@@ -69,8 +69,15 @@ func ProtoToJSON(m protocompat.Message, options ...ConversionOption) (string, er
 	}
 
 	if contains(options, OptCompact) {
+		// There is a space randomization added to output to ensure that library
+		// users are not relaying on stable output format.
+		// Info: https://pkg.go.dev/google.golang.org/protobuf@v1.34.1/encoding/prototext#Format
+		// Code: https://github.com/protocolbuffers/protobuf-go/blob/219bda23ffda544ed4cc5d5a75d34ce3b100ce51/internal/encoding/json/encode.go#L242
+		// Change Info: https://go-review.googlesource.com/c/protobuf/+/151340
+		// We will try to remove all spaces to have compact output.
 		compactBuf := &bytes.Buffer{}
 		if err := json.Compact(compactBuf, x); err != nil {
+			// Minified (no-spaces) JSON format is non-functional requirement (best effort).
 			return string(x), nil
 		}
 
