@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sensor/hash"
 	"github.com/stackrox/rox/sensor/common"
 	configMocks "github.com/stackrox/rox/sensor/common/config/mocks"
@@ -374,7 +373,7 @@ func newMessagesMatcher(errorMsg string, msgs ...*central.MsgFromSensor) *messag
 			if x.GetEvent() == nil || y.GetEvent() == nil {
 				return false
 			}
-			return x.GetEvent().GetId() == y.GetEvent().GetId() && protocompat.Equal(x.GetEvent().GetDeployment(), y.GetEvent().GetDeployment())
+			return x.GetEvent().GetId() == y.GetEvent().GetId() && x.GetEvent().GetDeployment().EqualVT(y.GetEvent().GetDeployment())
 		},
 	}
 	for _, m := range msgs {

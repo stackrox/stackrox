@@ -7,6 +7,6 @@ import (
 
 func GoMockMatcherEqualMessage[T protocompat.Equalable[T]](expectedMsg T) gomock.Matcher {
 	return gomock.Cond(func(msg any) bool {
-		return protocompat.Equal(expectedMsg, msg.(T))
+		return expectedMsg.EqualVT(msg.(T))
 	})
 }
