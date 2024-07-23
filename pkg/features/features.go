@@ -21,14 +21,16 @@ var (
 )
 
 // registerFeature global registers and returns a new feature flag that can be overridden from the default state regardless of build.
-func registerFeature(m mode, name, envVar string) FeatureFlag {
+func registerFeature(name, envVar string, options ...option) FeatureFlag {
 	if !strings.HasPrefix(envVar, "ROX_") {
 		panic(fmt.Sprintf("invalid env var: %s, must start with ROX_", envVar))
 	}
 	f := &feature{
 		name:   name,
 		envVar: envVar,
-		mode:   m,
+	}
+	for _, o := range options {
+		o(f)
 	}
 	Flags[f.envVar] = f
 	return f
