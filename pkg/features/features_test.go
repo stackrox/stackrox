@@ -126,5 +126,4 @@ func TestLoggingContext(t *testing.T) {
 	context := feature.LoggingContext()
 	expectedContext := zap.Any("ROX_TEST_FEAT", true)
 	assert.Equal(t, context, expectedContext)
-	LogFeatureFlags()
 }

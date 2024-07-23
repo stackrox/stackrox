@@ -3,6 +3,7 @@ package features
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -44,11 +45,20 @@ func registerFeature(name, envVar string, options ...option) FeatureFlag {
 	return f
 }
 
+func sortEnvVars() []string {
+	sortedEnvVars := []string{}
+	for envVar := range Flags {
+		sortedEnvVars = append(sortedEnvVars, envVar)
+	}
+	sort.Strings(sortedEnvVars)
+	return sortedEnvVars
+}
+
 // LogFeatureFlags logs the global state of all features flags.
 func LogFeatureFlags() {
-	var context []interface{}
-	for _, flag := range Flags {
-		context = append(context, flag.LoggingContext())
+	context := []interface{}{}
+	for _, envVar := range sortEnvVars() {
+		context = append(context, Flags[envVar].LoggingContext())
 	}
 	log.Infow("Feature flags", context...)
 }
