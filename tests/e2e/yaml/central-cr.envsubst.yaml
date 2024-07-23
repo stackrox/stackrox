@@ -30,7 +30,7 @@ spec:
 ${disableSpecTLS}  tls:
 ${disableSpecTLS}    additionalCAs:
 ${disableSpecTLS}    - name: additional-ca
-${disableSpecTLS}      content:
+${disableSpecTLS}      content: |
 $centralAdditionalCAIndented
   customize:
     envVars:$customize_envVars

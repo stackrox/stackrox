@@ -23,11 +23,6 @@ class ApplicationHealth {
         this.waitTimeForHealthiness = waitTimeForHealthiness
     }
 
-    void waitForSensorHealthiness() {
-        Deployment sensor = new Deployment().setNamespace(Constants.STACKROX_NAMESPACE).setName("sensor")
-        waitForHealthiness(sensor)
-    }
-
     void waitForCollectorHealthiness() {
         Deployment collector = new DaemonSet().setNamespace(Constants.STACKROX_NAMESPACE).setName("collector")
         waitForHealthiness(collector)
