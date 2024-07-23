@@ -639,7 +639,7 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
-	err = ds.storage.DeleteMany(ctx, plopsToDelete)
+	err = ds.storage.PruneMany(ctx, plopsToDelete)
 	if err != nil {
 		return 0, err
 	}
