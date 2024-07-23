@@ -118,7 +118,7 @@ require (
 	github.com/stackrox/helmtest v0.0.1
 	github.com/stackrox/k8s-overlay-patch v0.0.0-20240610103501-74a2a4fd2bae
 	github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d
-	github.com/stackrox/scanner v0.0.0-20240718152233-398ae3f5b1e5
+	github.com/stackrox/scanner v0.0.0-20240723082853-9da484b1a94e
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/gjson v1.17.1
 	github.com/tkuchiki/go-timezone v0.2.3
