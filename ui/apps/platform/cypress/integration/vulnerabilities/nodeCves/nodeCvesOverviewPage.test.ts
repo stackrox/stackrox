@@ -19,11 +19,7 @@ import {
 } from '../../../helpers/tableHelpers';
 import { expectRequestedSort } from '../../../helpers/sort';
 import { waitForTableLoadCompleteIndicator } from '../workloadCves/WorkloadCves.helpers';
-import {
-    getRouteMatcherMapForGraphQL,
-    interactAndInspectGraphQLVariables,
-    interactAndWaitForResponses,
-} from '../../../helpers/request';
+import { interactAndInspectGraphQLVariables } from '../../../helpers/request';
 
 describe('Node CVEs - Overview Page', () => {
     withAuth();
@@ -142,7 +138,7 @@ describe('Node CVEs - Overview Page', () => {
 
         // check sorting of Affected Nodes column
         interactAndInspectGraphQLVariables(
-            () => sortByTableHeader('Affected Nodes'),
+            () => sortByTableHeader('Affected nodes'),
             'getNodeCVEs'
         ).then(
             expectRequestedSort({
@@ -152,7 +148,7 @@ describe('Node CVEs - Overview Page', () => {
             })
         );
         interactAndInspectGraphQLVariables(
-            () => sortByTableHeader('Affected Nodes'),
+            () => sortByTableHeader('Affected nodes'),
             'getNodeCVEs'
         ).then(
             expectRequestedSort({
@@ -162,19 +158,17 @@ describe('Node CVEs - Overview Page', () => {
             })
         );
 
-        // check that the First Discovered column is not sortable
-        queryTableHeader('First Discovered');
-        queryTableSortHeader('First Discovered').should('not.exist');
+        // check that the First discovered column is not sortable
+        queryTableHeader('First discovered');
+        queryTableSortHeader('First discovered').should('not.exist');
     });
 
     it('should sort Node table columns', () => {
-        visitNodeCveOverviewPage();
-
         // Visit Node tab and wait for initial load - sorting will be pre-applied to the Node column
-        interactAndWaitForResponses(
-            () => cy.get(vulnSelectors.entityTypeToggleItem('Node')).click(),
-            getRouteMatcherMapForGraphQL(['getNodes'])
-        );
+        interactAndInspectGraphQLVariables(() => {
+            visitNodeCveOverviewPage();
+            cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
+        }, 'getNodes');
 
         // check sorting of Node column
         interactAndInspectGraphQLVariables(() => sortByTableHeader('Node'), 'getNodes').then(
@@ -198,11 +192,11 @@ describe('Node CVEs - Overview Page', () => {
 
         // check sorting of Operating System column
         interactAndInspectGraphQLVariables(
-            () => sortByTableHeader('Operating System'),
+            () => sortByTableHeader('Operating system'),
             'getNodes'
         ).then(expectRequestedSort({ field: 'Operating System', reversed: true }));
         interactAndInspectGraphQLVariables(
-            () => sortByTableHeader('Operating System'),
+            () => sortByTableHeader('Operating system'),
             'getNodes'
         ).then(expectRequestedSort({ field: 'Operating System', reversed: false }));
 

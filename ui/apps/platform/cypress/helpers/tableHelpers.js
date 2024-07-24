@@ -26,13 +26,13 @@ export function editIntegration(name) {
 }
 
 export function queryTableHeader(headerName) {
-    return cy.get(`th`).contains(new RegExp(`^${headerName}$`, 'i'));
+    return cy.get(`th`).contains(new RegExp(`^${headerName}$`));
 }
 
 export function queryTableSortHeader(headerName) {
     return cy
         .get(`th button:has('.pf-v5-c-table__sort-indicator')`)
-        .contains(new RegExp(`^${headerName}$`, 'i'));
+        .contains(new RegExp(`^${headerName}$`));
 }
 
 export function sortByTableHeader(headerName) {

@@ -104,14 +104,13 @@ export function interactAndWaitForResponses(
  * @returns {Cypress.Chainable<Interception>}
  */
 export function interactAndInspectGraphQLVariables(interactionCallback, opname) {
-    const key = 'graphql';
     const url = `/api/graphql?opname=${opname}`;
 
-    cy.intercept({ method: 'POST', url, times: 1 }).as(key);
+    cy.intercept({ method: 'POST', url, times: 1 }).as(opname);
 
     interactionCallback();
 
-    return cy.wait(`@${key}`).then((interception) => {
+    return cy.wait(`@${opname}`).then((interception) => {
         return cy.wrap(interception.request.body.variables);
     });
 }
