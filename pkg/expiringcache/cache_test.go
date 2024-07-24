@@ -35,7 +35,7 @@ func TestExpiringCache(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	clock := mocks.NewMockClock(mockCtrl)
 
-	ec := NewExpiringCacheWithClock(clock, 10*time.Second)
+	ec := NewExpiringCacheWithClock[string, string](clock, 10*time.Second)
 
 	// Insert all values one second apart.
 	addTime := time.Time{}
@@ -52,7 +52,7 @@ func TestExpiringCache(t *testing.T) {
 		clock.EXPECT().Now().Return(getTime)
 		v, ok := ec.Get(p.key)
 		assert.True(t, ok)
-		assert.Equal(t, p.value, v.(string))
+		assert.Equal(t, p.value, v)
 	}
 
 	// Move forward 11 seconds, and the first element should get pruned but the rest should be available.
@@ -61,7 +61,7 @@ func TestExpiringCache(t *testing.T) {
 	// First is gone.
 	clock.EXPECT().Now().Return(getTime)
 	v, ok := ec.Get(pairs[0].key)
-	assert.Nil(t, v)
+	assert.Empty(t, v)
 	assert.False(t, ok)
 
 	// Other two are still available.
@@ -69,7 +69,7 @@ func TestExpiringCache(t *testing.T) {
 	currentValues := ec.GetAll()
 	assert.Equal(t, 2, len(currentValues))
 	for i, value := range currentValues {
-		assert.Equal(t, pairs[i+1].value, value.(string))
+		assert.Equal(t, pairs[i+1].value, value)
 	}
 
 	// Move forward another second, and the second element should drop off.
@@ -78,12 +78,12 @@ func TestExpiringCache(t *testing.T) {
 	// First and second elements are gone.
 	clock.EXPECT().Now().Return(getTime)
 	v, ok = ec.Get(pairs[0].key)
-	assert.Nil(t, v)
+	assert.Empty(t, v)
 	assert.False(t, ok)
 
 	clock.EXPECT().Now().Return(getTime)
 	v, ok = ec.Get(pairs[1].key)
-	assert.Nil(t, v)
+	assert.Empty(t, v)
 	assert.False(t, ok)
 
 	// Third element is still there.
@@ -91,7 +91,7 @@ func TestExpiringCache(t *testing.T) {
 	currentValues = ec.GetAll()
 	assert.Equal(t, 1, len(currentValues))
 	for i, value := range currentValues {
-		assert.Equal(t, pairs[i+2].value, value.(string))
+		assert.Equal(t, pairs[i+2].value, value)
 	}
 
 	mockCtrl.Finish()

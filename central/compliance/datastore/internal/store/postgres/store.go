@@ -48,7 +48,7 @@ var (
 
 	domainCacheExpiry = 30 * time.Second
 	cacheLock         = concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize)
-	domainCache       = expiringcache.NewExpiringCache(domainCacheExpiry, expiringcache.UpdateExpirationOnGets)
+	domainCache       = expiringcache.NewExpiringCache(domainCacheExpiry, expiringcache.UpdateExpirationOnGets[string, *storage.ComplianceDomain])
 	targetResource    = resources.Compliance
 
 	runResultsCache   *expirable.LRU[string, *storage.ComplianceRunResults]
@@ -93,7 +93,7 @@ func (s *storeImpl) getDomain(ctx context.Context, domainID string) (*storage.Co
 	defer cacheLock.Unlock(domainID)
 
 	if cachedDomain, ok := domainCache.Get(domainID); ok {
-		return cachedDomain.(*storage.ComplianceDomain), nil
+		return cachedDomain, nil
 	}
 
 	domain, exists, err := s.domain.Get(ctx, domainID)

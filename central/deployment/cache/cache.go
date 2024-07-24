@@ -12,7 +12,7 @@ const (
 
 var (
 	cache = &deploymentCache{
-		cache: expiringcache.NewExpiringCache(deletedDeploymentsRetentionPeriod),
+		cache: expiringcache.NewExpiringCache[string, struct{}](deletedDeploymentsRetentionPeriod),
 	}
 )
 
@@ -22,7 +22,7 @@ type DeletedDeployments interface {
 }
 
 type deploymentCache struct {
-	cache expiringcache.Cache
+	cache expiringcache.Cache[string, struct{}]
 }
 
 func (c *deploymentCache) Add(id string) {

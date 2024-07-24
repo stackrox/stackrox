@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/detector"
-	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
@@ -27,7 +27,7 @@ type Handler interface {
 }
 
 // NewHandler returns a new instance of a deployment reprocessor.
-func NewHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, detector detector.Detector, imageCache imagecacheutils.ImageCache) Handler {
+func NewHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, detector detector.Detector, imageCache cache.Image) Handler {
 	return &handlerImpl{
 		admCtrlSettingsMgr: admCtrlSettingsMgr,
 		detector:           detector,
@@ -39,7 +39,7 @@ func NewHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, detector
 type handlerImpl struct {
 	admCtrlSettingsMgr admissioncontroller.SettingsManager
 	detector           detector.Detector
-	imageCache         imagecacheutils.ImageCache
+	imageCache         cache.Image
 	stopSig            concurrency.ErrorSignal
 }
 
@@ -84,13 +84,13 @@ func (h *handlerImpl) ProcessInvalidateImageCache(req *central.InvalidateImageCa
 	default:
 		h.admCtrlSettingsMgr.FlushCache()
 
-		keysToDelete := make([]interface{}, 0, len(req.GetImageKeys()))
+		keysToDelete := make([]cache.Key, 0, len(req.GetImageKeys()))
 		for _, image := range req.GetImageKeys() {
 			key := image.GetImageId()
 			if key == "" {
 				key = image.GetImageFullName()
 			}
-			keysToDelete = append(keysToDelete, key)
+			keysToDelete = append(keysToDelete, cache.Key(key))
 		}
 		h.imageCache.Remove(keysToDelete...)
 	}
