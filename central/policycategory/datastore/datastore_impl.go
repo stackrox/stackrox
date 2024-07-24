@@ -36,7 +36,7 @@ type datastoreImpl struct {
 	storage              store.Store
 	searcher             search.Searcher
 	policyCategoryEdgeDS datastore.DataStore
-	categoryMutex        sync.RWMutex
+	categoryMutex        sync.Mutex
 
 	categoryNameIDMap map[string]string
 }
@@ -114,8 +114,8 @@ func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, polic
 }
 
 func (ds *datastoreImpl) GetPolicyCategoriesForPolicy(ctx context.Context, policyID string) ([]*storage.PolicyCategory, error) {
-	//ds.categoryMutex.RLock()
-	//defer ds.categoryMutex.RUnlock()
+	ds.categoryMutex.Lock()
+	defer ds.categoryMutex.Unlock()
 
 	return ds.SearchRawPolicyCategories(ctx, searchPkg.NewQueryBuilder().AddStrings(searchPkg.PolicyID, policyID).ProtoQuery())
 }
