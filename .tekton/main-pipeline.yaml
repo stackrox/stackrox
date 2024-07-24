@@ -235,7 +235,7 @@ spec:
       - name: name
         value: buildah-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.1@sha256:c4f5ad3ce5a5c60c58b8ae093c807bdf6963b243cc46d78abb60cff25ccbe587
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.2
       - name: kind
         value: task
       resolver: bundles
@@ -245,27 +245,28 @@ spec:
       values: [ "true" ]
     timeout: 2h00m0s
 
-  - name: apply-tags-amd64
+  - name: build-container-multi-arch
+    matrix:
+      include:
+        - name: s390x
+          params:
+            - name: PLATFORM
+              value: linux/s390x
+            - name: IMAGE
+              value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
+        - name: ppc64le
+          params:
+            - name: PLATFORM
+              value: linux/ppc64le
+            - name: IMAGE
+              value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
+        - name: arm64
+          params:
+            - name: PLATFORM
+              value: linux/arm64
+            - name: IMAGE
+              value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-arm64
     params:
-    - name: IMAGE
-      value: $(tasks.build-container-amd64.results.IMAGE_URL)
-    - name: ADDITIONAL_TAGS
-      value:
-      - konflux-$(params.revision)-amd64
-    taskRef:
-      params:
-      - name: name
-        value: apply-tags
-      - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-apply-tags:0.1@sha256:7cf2482a7f50a4c493af0604ff388ff5cc2e2579cb3bf889cfa2587c723aa312
-      - name: kind
-        value: task
-      resolver: bundles
-
-  - name: build-container-s390x
-    params:
-    - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -286,14 +287,12 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: PLATFORM
-      value: linux/s390x
     taskRef:
       params:
       - name: name
-        value: buildah-remote-oci-ta
+        value: buildah-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.1
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.2
       - name: kind
         value: task
       resolver: bundles
@@ -302,139 +301,6 @@ spec:
       operator: in
       values: [ "true" ]
     timeout: 2h00m0s
-
-  - name: apply-tags-s390x
-    params:
-    - name: IMAGE
-      value: $(tasks.build-container-s390x.results.IMAGE_URL)
-    - name: ADDITIONAL_TAGS
-      value:
-      - konflux-$(params.revision)-s390x
-    taskRef:
-      params:
-      - name: name
-        value: apply-tags
-      - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-apply-tags:0.1@sha256:29add9a49a2281a3755a9b580d2b9c5cb110231b14cccf8ade2fd7895a9b4b4a
-      - name: kind
-        value: task
-      resolver: bundles
-
-  - name: build-container-ppc64le
-    params:
-    - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
-    - name: DOCKERFILE
-      value: $(params.dockerfile)
-    - name: CONTEXT
-      value: $(params.path-context)
-    - name: HERMETIC
-      value: $(params.hermetic)
-    - name: PREFETCH_INPUT
-      value: $(params.prefetch-input)
-    - name: IMAGE_EXPIRES_AFTER
-      value: $(params.image-expires-after)
-    - name: COMMIT_SHA
-      value: $(tasks.clone-repository.results.commit)
-    - name: BUILD_ARGS
-      value:
-      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    - name: CACHI2_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: PLATFORM
-      value: linux/ppc64le
-    taskRef:
-      params:
-      - name: name
-        value: buildah-remote-oci-ta
-      - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.1
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values: [ "true" ]
-    timeout: 2h00m0s
-
-  - name: apply-tags-ppc64le
-    params:
-    - name: IMAGE
-      value: $(tasks.build-container-ppc64le.results.IMAGE_URL)
-    - name: ADDITIONAL_TAGS
-      value:
-      - konflux-$(params.revision)-ppc64le
-    taskRef:
-      params:
-      - name: name
-        value: apply-tags
-      - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-apply-tags:0.1@sha256:29add9a49a2281a3755a9b580d2b9c5cb110231b14cccf8ade2fd7895a9b4b4a
-      - name: kind
-        value: task
-      resolver: bundles
-
-  - name: build-container-arm64
-    params:
-    - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-arm64
-    - name: DOCKERFILE
-      value: $(params.dockerfile)
-    - name: CONTEXT
-      value: $(params.path-context)
-    - name: HERMETIC
-      value: $(params.hermetic)
-    - name: PREFETCH_INPUT
-      value: $(params.prefetch-input)
-    - name: IMAGE_EXPIRES_AFTER
-      value: $(params.image-expires-after)
-    - name: COMMIT_SHA
-      value: $(tasks.clone-repository.results.commit)
-    - name: BUILD_ARGS
-      value:
-      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    - name: CACHI2_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: PLATFORM
-      value: linux/arm64
-    taskRef:
-      params:
-      - name: name
-        value: buildah-remote-oci-ta
-      - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.1
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values: [ "true" ]
-    timeout: 2h00m0s
-
-  - name: apply-tags-arm64
-    params:
-    - name: IMAGE
-      value: $(tasks.build-container-arm64.results.IMAGE_URL)
-    - name: ADDITIONAL_TAGS
-      value:
-      - konflux-$(params.revision)-arm64
-    taskRef:
-      params:
-      - name: name
-        value: apply-tags
-      - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-apply-tags:0.1@sha256:29add9a49a2281a3755a9b580d2b9c5cb110231b14cccf8ade2fd7895a9b4b4a
-      - name: kind
-        value: task
-      resolver: bundles
 
   - name: build-image-manifest
     params:
@@ -444,10 +310,13 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: IMAGES
       value:
-        - $(tasks.build-container-amd64.results.IMAGE_URL)@$(tasks.build-container-amd64.results.IMAGE_DIGEST)
-        - $(tasks.build-container-s390x.results.IMAGE_URL)@$(tasks.build-container-s390x.results.IMAGE_DIGEST)
-        - $(tasks.build-container-ppc64le.results.IMAGE_URL)@$(tasks.build-container-ppc64le.results.IMAGE_DIGEST)
-        - $(tasks.build-container-arm64.results.IMAGE_URL)@$(tasks.build-container-arm64.results.IMAGE_DIGEST)
+        - $(tasks.build-container-amd64.results.IMAGE_REF)
+        - $(tasks.build-container-multi-arch.results.IMAGE_REF[*])
+    runAfter:
+      # tekton doesn't work out the dependencies for the matrix, so we have
+      # to be explicit
+      - build-container-multi-arch
+      - build-container-amd64
     taskRef:
       params:
         - name: name
@@ -463,23 +332,15 @@ spec:
         values:
           - "true"
 
-  - name: build-image-manifest-konflux
+  - name: apply-tags
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):konflux-$(params.revision)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL)
     - name: COMMIT_SHA
       value: $(tasks.clone-repository.results.commit)
     - name: IMAGES
       value:
-      - $(params.output-image-repo):konflux-$(params.revision)-amd64
-      - $(params.output-image-repo):konflux-$(params.revision)-s390x
-      - $(params.output-image-repo):konflux-$(params.revision)-ppc64le
-      - $(params.output-image-repo):konflux-$(params.revision)-arm64
-    runAfter:
-      - apply-tags-amd64
-      - apply-tags-s390x
-      - apply-tags-ppc64le
-      - apply-tags-arm64
+      - konflux-$(params.revision)
     taskRef:
       params:
         - name: name
@@ -498,9 +359,7 @@ spec:
   - name: build-source-image
     params:
     - name: BINARY_IMAGE
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
-    - name: BASE_IMAGES
-      value: $(tasks.build-container-amd64.results.BASE_IMAGES_DIGESTS)
+      value: $(tasks.build-container-amd64.results.IMAGE_URL)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -524,8 +383,6 @@ spec:
 
   - name: deprecated-base-image-check
     params:
-    - name: BASE_IMAGES_DIGESTS
-      value: $(tasks.build-container-amd64.results.BASE_IMAGES_DIGESTS)
     - name: IMAGE_URL
       value: $(tasks.build-container-amd64.results.IMAGE_URL)
     - name: IMAGE_DIGEST
