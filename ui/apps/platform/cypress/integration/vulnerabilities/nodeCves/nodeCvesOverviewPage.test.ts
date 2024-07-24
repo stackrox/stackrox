@@ -7,7 +7,8 @@ import {
 } from '../../../helpers/visit';
 import navSelectors from '../../../selectors/navigation';
 import {
-    mockOverviewNodeCveListRequest,
+    getNodeCvesOpname,
+    routeMatcherMapForNodeCves,
     visitFirstNodeLinkFromTable,
     visitNodeCveOverviewPage,
 } from './NodeCve.helpers';
@@ -17,9 +18,14 @@ import {
     queryTableSortHeader,
     sortByTableHeader,
 } from '../../../helpers/tableHelpers';
-import { expectRequestedSort } from '../../../helpers/sort';
 import { waitForTableLoadCompleteIndicator } from '../workloadCves/WorkloadCves.helpers';
-import { interactAndInspectGraphQLVariables } from '../../../helpers/request';
+import { expectRequestedSort, interactAndInspectGraphQLVariables } from '../../../helpers/request';
+
+const staticResponseMapForNodeCVES = {
+    [getNodeCvesOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getNodeCvesOpname}`,
+    },
+};
 
 describe('Node CVEs - Overview Page', () => {
     withAuth();
@@ -90,8 +96,7 @@ describe('Node CVEs - Overview Page', () => {
     it('should link a CVE table row to the correct CVE detail page', () => {
         // Having a CVE in CI is unreliable, so we mock the request and assert
         // on the link construction instead of the content of the detail page.
-        mockOverviewNodeCveListRequest();
-        visitNodeCveOverviewPage();
+        visitNodeCveOverviewPage(routeMatcherMapForNodeCves, staticResponseMapForNodeCVES);
 
         cy.get('tbody tr td[data-label="CVE"] a')
             .first()

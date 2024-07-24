@@ -1,4 +1,3 @@
-import { graphql } from '../../../constants/apiEndpoints';
 import withAuth from '../../../helpers/basicAuth';
 import { assertAvailableFilters } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
@@ -7,21 +6,30 @@ import {
     visitWithStaticResponseForPermissions,
 } from '../../../helpers/visit';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
-import { visitFirstNodeLinkFromTable, visitNodeCveOverviewPage } from './NodeCve.helpers';
+import {
+    getNodeMetadataOpname,
+    getNodeVulnerabilitiesOpname,
+    getNodeVulnSummaryOpname,
+    routeMatcherMapForNodePage,
+    visitFirstNodeLinkFromTable,
+    visitNodeCveOverviewPage,
+} from './NodeCve.helpers';
 
 const nodeBaseUrl = '/main/vulnerabilities/node-cves/nodes';
 const mockNodeId = '1';
 const mockNodeName = 'cypress-node-1';
 
-function mockNodePageRequests() {
-    const opnames = ['getNodeMetadata', 'getNodeVulnSummary', 'getNodeVulnerabilities'];
-    opnames.forEach((opname) => {
-        cy.intercept(
-            { method: 'POST', url: graphql(opname) },
-            { fixture: `vulnerabilities/nodeCves/${opname}.json` }
-        ).as(opname);
-    });
-}
+const staticResponseMapForNodePage = {
+    [getNodeMetadataOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getNodeMetadataOpname}`,
+    },
+    [getNodeVulnSummaryOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getNodeVulnSummaryOpname}`,
+    },
+    [getNodeVulnerabilitiesOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getNodeVulnerabilitiesOpname}`,
+    },
+};
 
 const mockNodePageUrl = `${nodeBaseUrl}/${mockNodeId}`;
 
@@ -35,8 +43,6 @@ describe('Node CVEs - Node Detail Page', () => {
     });
 
     it('should restrict access to users with insufficient "Node" permission', () => {
-        mockNodePageRequests();
-
         visitWithStaticResponseForPermissions(mockNodePageUrl, {
             body: { resourceToAccess: { Node: 'READ_ACCESS' } },
         });
@@ -44,7 +50,6 @@ describe('Node CVEs - Node Detail Page', () => {
     });
 
     it('should restrict access to users with insufficient "Cluster" permission', () => {
-        mockNodePageRequests();
         visitWithStaticResponseForPermissions(mockNodePageUrl, {
             body: { resourceToAccess: { Cluster: 'READ_ACCESS' } },
         });
@@ -52,10 +57,14 @@ describe('Node CVEs - Node Detail Page', () => {
     });
 
     it('should allow access to users with sufficient permissions', () => {
-        mockNodePageRequests();
-        visitWithStaticResponseForPermissions(mockNodePageUrl, {
-            body: { resourceToAccess: { Node: 'READ_ACCESS', Cluster: 'READ_ACCESS' } },
-        });
+        visitWithStaticResponseForPermissions(
+            mockNodePageUrl,
+            {
+                body: { resourceToAccess: { Node: 'READ_ACCESS', Cluster: 'READ_ACCESS' } },
+            },
+            routeMatcherMapForNodePage,
+            staticResponseMapForNodePage
+        );
         cy.get('h1').contains(mockNodeName);
     });
 
