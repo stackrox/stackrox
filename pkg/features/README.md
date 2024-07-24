@@ -6,7 +6,8 @@ Currently, feature flags use environment variables to power the toggles.
 
 Feature flags can be valuable to ship features in a preview state, to provide the end user a way to disable some functionality or to control any boolean setting.
 
-> :warning: Feature flags cannot be used inside migrations or schema changes. In other words any such change will always be applied regardless of any feature flag value.
+> :warning: Feature flags cannot be used inside migrations or schema changes.
+> Migrations must be merged to the master branch without any feature flag gate, and must not break any current features.
 
 ## Adding a feature flag
 
@@ -16,6 +17,7 @@ To add a feature flag, add a variable with your feature to `list.go`. To registe
 * Environment Variable name: This is the environment variable which needs to be set to override the default value of this flag. Env var names **must** start with `ROX_`
 * Type: This is the type of the feature flag. An unchangeable or a changeable one. See below for more details
 * Default value: The default value to use if the flag has not been overridden
+* Release stage: Either `DevPreview` for features in early stage of development, or `TechPreview` for features we are ready to collect customers' feedback. Consult [the article on Products & Services](https://access.redhat.com/articles/6966848) for the differences between the both
 
 The variable can be one of two types of feature flag:
 
@@ -27,7 +29,7 @@ On development builds, the setting _can_ be changed.
 This is the default feature flag. The value of the flag can be changed in both release and development builds.
 Use this if you want the end user to be able to enable or disable the setting.
 
-> :warning: To introduce features that could be disabled in release builds, you must be cautious to ensure that Central returns to "normal" state after disabling the feature.
+> :warning: To introduce features that could be disabled in release builds, you must be cautious to ensure that Central returns to "normal" state after disabling the feature. Especially for the features at the tech-preview stage.
 > Sometimes it is not as simple as turning off the feature flag to return Central to the "normal" state for various reasons, including (but not limited to) schema and data changes.
 
 ## Overriding the default value of a feature flag
