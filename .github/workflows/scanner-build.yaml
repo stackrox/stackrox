@@ -30,7 +30,11 @@ jobs:
         source './scripts/ci/lib.sh'
 
         # If goarch is updated, be sure to update architectures in push-manifests below.
-        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64", "ppc64le", "s390x"] }, "push_manifests": { "name":["default"] } }'
+        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64"] }, "push_manifests": { "name":["default"] } }'
+
+        if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+          matrix="$(jq '.build_and_push.arch += ["arm64", "ppc64le", "s390x"]' <<< "$matrix")"
+        fi;
 
         # Conditionally add a prerelease build (binaries built with GOTAGS=release)
         if ! is_tagged; then
@@ -275,7 +279,10 @@ jobs:
         source ./scripts/ci/lib.sh
 
         # If this is updated, be sure to update goarch in define-scanner-job-matrix above.
-        architectures="amd64,arm64,ppc64le,s390x"
+        architectures="amd64"
+        if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+          architectures="amd64,arm64,ppc64le,s390x"
+        fi
         if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
           architectures="amd64"
         fi
