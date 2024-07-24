@@ -1,6 +1,6 @@
 
 # Bump this when you make changes
-VERSION=0.19
+VERSION=0.20
 
 .PHONY: image
 image:
