@@ -102,6 +102,7 @@ func analyzeUpgraderPodStates(states []*central.UpgradeCheckInFromSensorRequest_
 	}
 
 	errMsg := relevantErrCond.GetMessage()
+	// TODO: Is this message used when the image does not exist?
 	if relevantErrCond.GetImageRelated() {
 		errMsg = fmt.Sprintf("The upgrader pods have trouble pulling the new image: %s", errMsg)
 	}

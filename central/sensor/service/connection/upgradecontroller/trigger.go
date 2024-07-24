@@ -140,6 +140,7 @@ func (u *upgradeController) doTriggerUpgrade() (common.MessageInjector, *central
 	if err != nil {
 		return nil, nil, err
 	}
+	log.Infof("Sensor upgrader will run with image: %s", process.GetUpgraderImage())
 
 	u.makeProcessActive(cluster, process)
 

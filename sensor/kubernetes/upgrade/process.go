@@ -241,6 +241,8 @@ func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) erro
 	}
 }
 
+// createUpgraderDeploymentIfNecessary creates the upgrader deployment.
+// The returned error will be sent to Central inside of UpgradeCheckInFromSensorRequest
 func (p *process) createUpgraderDeploymentIfNecessary() error {
 	deploymentsClient := p.k8sClient.AppsV1().Deployments(namespaces.StackRox)
 

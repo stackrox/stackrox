@@ -44,6 +44,9 @@ func (p *process) determineImage() (string, error) {
 		return image, nil
 	}
 
+	log.Infof("Sensor was instructed to run the upgrader with image: %s", p.trigger.GetImage())
+	// TODO: check the pullability of that image
+
 	// If the image is not specified, sensor uses the same image it's using to launch the upgrader.
 	// This code path will be hit during cert rotation.
 	sensorDeployment, err := p.k8sClient.AppsV1().Deployments(namespaces.StackRox).Get(p.ctx(), sensorDeploymentName, metav1.GetOptions{})

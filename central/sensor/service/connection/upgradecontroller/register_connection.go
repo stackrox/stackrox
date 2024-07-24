@@ -86,9 +86,10 @@ func (u *upgradeController) maybeTriggerAutoUpgrade() {
 	if err != nil {
 		// This is not a critical error, it just means we can't auto-trigger. NBD.
 		log.Errorf("Cannot automatically trigger auto-upgrade for sensor in cluster %s: %v", u.clusterID, err)
-	} else {
-		u.makeProcessActive(cluster, process)
+		return
 	}
+	log.Infof("Sensor upgrader will run with image: %s", process.GetUpgraderImage())
+	u.makeProcessActive(cluster, process)
 }
 
 func (u *upgradeController) reconcileInitialUpgradeStatus(sensorVersion string, conn SensorConn) {
