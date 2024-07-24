@@ -7,6 +7,16 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
+type stage bool
+
+const (
+	devPreview  stage = false
+	techPreview stage = true
+
+	devPreviewString  string = "dev-preview"
+	techPreviewString string = "tech-preview"
+)
+
 type feature struct {
 	envVar       string
 	name         string
@@ -44,9 +54,9 @@ func (f *feature) Enabled() bool {
 
 func (f *feature) Stage() string {
 	if f.techPreview {
-		return "tech-preview"
+		return techPreviewString
 	}
-	return "dev-preview"
+	return devPreviewString
 }
 
 func (f *feature) Logging() interface{} {

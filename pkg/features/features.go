@@ -56,9 +56,15 @@ func sortEnvVars() []string {
 
 // LogFeatureFlags logs the global state of all features flags.
 func LogFeatureFlags() {
-	data := []interface{}{}
+	data := map[string][]interface{}{}
 	for _, envVar := range sortEnvVars() {
-		data = append(data, Flags[envVar].Logging())
+		flag := Flags[envVar]
+		data[flag.Stage()] = append(data[flag.Stage()], flag.Logging())
 	}
-	log.Infow("Feature flags", data...)
+	if len(data[devPreviewString]) > 0 {
+		log.Infow("Feature flags [dev-preview]", data[devPreviewString]...)
+	}
+	if len(data[techPreviewString]) > 0 {
+		log.Infow("Feature flags [tech-preview]", data[techPreviewString]...)
+	}
 }
