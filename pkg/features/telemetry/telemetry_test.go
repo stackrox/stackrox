@@ -18,9 +18,9 @@ func TestGather(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedProps := map[string]any{
-		`Feature "ROX_SCANNER_V4"`:              true,
-		`Feature "ROX_SCANNER_V4_SUPPORT"`:      true,
-		`Feature "ROX_COMPLIANCE_ENHANCEMENTS"`: false,
+		"Feature ROX_SCANNER_V4":              true,
+		"Feature ROX_SCANNER_V4_SUPPORT":      true,
+		"Feature ROX_COMPLIANCE_ENHANCEMENTS": false,
 	}
 	assert.Subset(t, props, expectedProps)
 }

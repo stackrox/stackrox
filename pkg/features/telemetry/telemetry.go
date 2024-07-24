@@ -13,7 +13,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	props := make(map[string]any)
 
 	for _, flag := range features.Flags {
-		props[fmt.Sprintf("Feature %q", flag.EnvVar())] = flag.Enabled()
+		props[fmt.Sprintf("Feature %s", flag.EnvVar())] = flag.Enabled()
 	}
 
 	return props, nil
