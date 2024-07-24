@@ -30,7 +30,7 @@ describe('Node CVEs - Overview Page', () => {
         }
     });
 
-    it('should restrict access to users with insufficient permissions', () => {
+    it('should restrict access to users with insufficient "Cluster" permission', () => {
         // When lacking the minimum permissions:
         // - Check that the Node CVEs link is not visible in the left navigation
         // - Check that direct navigation fails
@@ -42,7 +42,12 @@ describe('Node CVEs - Overview Page', () => {
         cy.get(navSelectors.allNavLinks).contains('Node CVEs').should('not.exist');
         visitNodeCveOverviewPage();
         assertCannotFindThePage();
+    });
 
+    it('should restrict access to users with insufficient "Node" permission', () => {
+        // When lacking the minimum permissions:
+        // - Check that the Node CVEs link is not visible in the left navigation
+        // - Check that direct navigation fails
         // Missing 'Node' permission
         visitWithStaticResponseForPermissions('/main', {
             body: { resourceToAccess: { Cluster: 'READ_ACCESS' } },
@@ -50,7 +55,9 @@ describe('Node CVEs - Overview Page', () => {
         cy.get(navSelectors.allNavLinks).contains('Node CVEs').should('not.exist');
         visitNodeCveOverviewPage();
         assertCannotFindThePage();
+    });
 
+    it('should allow access to users with sufficient "Node" and "Cluster" permissions', () => {
         // Has both 'Node' and 'Cluster' permissions
         visitWithStaticResponseForPermissions('/main', {
             body: { resourceToAccess: { Node: 'READ_ACCESS', Cluster: 'READ_ACCESS' } },

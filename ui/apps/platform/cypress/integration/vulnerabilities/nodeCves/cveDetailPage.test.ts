@@ -23,6 +23,8 @@ function mockNodeCvePageRequests() {
     });
 }
 
+const mockNodeCvePageUrl = `${nodeCveBaseUrl}/${mockCveName}`;
+
 describe('Node CVEs - CVE Detail Page', () => {
     withAuth();
 
@@ -38,28 +40,29 @@ describe('Node CVEs - CVE Detail Page', () => {
         mockNodeCvePageRequests();
     });
 
-    it('should restrict access to users with insufficient permissions', () => {
-        const url = `${nodeCveBaseUrl}/${mockCveName}`;
-
-        visitWithStaticResponseForPermissions(url, {
+    it('should restrict access to users with insufficient "Node" permission', () => {
+        visitWithStaticResponseForPermissions(mockNodeCvePageUrl, {
             body: { resourceToAccess: { Node: 'READ_ACCESS' } },
         });
         assertCannotFindThePage();
+    });
 
-        visitWithStaticResponseForPermissions(url, {
+    it('should restrict access to users with insufficient "Cluster" permission', () => {
+        visitWithStaticResponseForPermissions(mockNodeCvePageUrl, {
             body: { resourceToAccess: { Cluster: 'READ_ACCESS' } },
         });
         assertCannotFindThePage();
+    });
 
-        visitWithStaticResponseForPermissions(url, {
+    it('should allow access to users with sufficient permissions', () => {
+        visitWithStaticResponseForPermissions(mockNodeCvePageUrl, {
             body: { resourceToAccess: { Node: 'READ_ACCESS', Cluster: 'READ_ACCESS' } },
         });
         cy.get('h1').contains(mockCveName);
     });
 
     it('should only show relevant filters for the page', () => {
-        const url = `${nodeCveBaseUrl}/${mockCveName}`;
-        visit(url, getRouteMatcherMapForGraphQL(['getNodeCVEMetadata']), {});
+        visit(mockNodeCvePageUrl, getRouteMatcherMapForGraphQL(['getNodeCVEMetadata']), {});
         assertAvailableFilters({
             Cluster: ['Name', 'Label', 'Type', 'Platform type'],
             Node: ['Name', 'Operating System', 'Label', 'Annotation', 'Scan Time'],

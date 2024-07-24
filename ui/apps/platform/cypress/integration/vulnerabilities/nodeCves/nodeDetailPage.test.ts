@@ -23,6 +23,8 @@ function mockNodePageRequests() {
     });
 }
 
+const mockNodePageUrl = `${nodeBaseUrl}/${mockNodeId}`;
+
 describe('Node CVEs - Node Detail Page', () => {
     withAuth();
 
@@ -32,22 +34,26 @@ describe('Node CVEs - Node Detail Page', () => {
         }
     });
 
-    it('should restrict access to users with insufficient permissions', () => {
+    it('should restrict access to users with insufficient "Node" permission', () => {
         mockNodePageRequests();
 
-        const url = `${nodeBaseUrl}/${mockNodeId}`;
-
-        visitWithStaticResponseForPermissions(url, {
+        visitWithStaticResponseForPermissions(mockNodePageUrl, {
             body: { resourceToAccess: { Node: 'READ_ACCESS' } },
         });
         assertCannotFindThePage();
+    });
 
-        visitWithStaticResponseForPermissions(url, {
+    it('should restrict access to users with insufficient "Cluster" permission', () => {
+        mockNodePageRequests();
+        visitWithStaticResponseForPermissions(mockNodePageUrl, {
             body: { resourceToAccess: { Cluster: 'READ_ACCESS' } },
         });
         assertCannotFindThePage();
+    });
 
-        visitWithStaticResponseForPermissions(url, {
+    it('should allow access to users with sufficient permissions', () => {
+        mockNodePageRequests();
+        visitWithStaticResponseForPermissions(mockNodePageUrl, {
             body: { resourceToAccess: { Node: 'READ_ACCESS', Cluster: 'READ_ACCESS' } },
         });
         cy.get('h1').contains(mockNodeName);
