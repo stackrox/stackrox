@@ -1,6 +1,5 @@
 package orchestratormanager
 
-import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration

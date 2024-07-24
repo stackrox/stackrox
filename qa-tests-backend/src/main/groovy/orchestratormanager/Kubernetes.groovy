@@ -59,7 +59,6 @@ import io.fabric8.kubernetes.api.model.apps.DaemonSetBuilder
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder
 import io.fabric8.kubernetes.api.model.apps.DeploymentList
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec
 import io.fabric8.kubernetes.api.model.apps.StatefulSet as K8sStatefulSet
