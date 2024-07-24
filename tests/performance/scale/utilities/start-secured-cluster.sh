@@ -19,6 +19,10 @@ settings=(
     --set collector.forceCollectionMethod=true
 )
 
+if [[ -n ${ROX_RESYNC_DISABLED:-} ]]; then
+    settings+=(--set customize.envVars.ROX_RESYNC_DISABLED="${ROX_RESYNC_DISABLED}")
+fi
+
 if [[ -n ${collector_image_tag:-} ]]; then
     settings+=(--set image.collector.registry="$collector_image_registry")
     settings+=(--set image.collector.name=collector)

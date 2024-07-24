@@ -17,4 +17,6 @@ export PROMETHEUS_URL="https://$(oc get route --namespace openshift-monitoring p
 
 export PROMETHEUS_TOKEN="$(oc serviceaccounts new-token --namespace openshift-monitoring prometheus-k8s)"
 
+export ROX_RESYNC_DISABLED=false
+
 source ./env.sh
