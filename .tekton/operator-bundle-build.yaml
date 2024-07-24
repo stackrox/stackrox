@@ -14,7 +14,7 @@ metadata:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: operator-bundle
     pipelines.appstudio.openshift.io/type: build
-  name: operator-bundle-on-pull-request
+  name: operator-bundle-build
   namespace: rh-acs-tenant
 spec:
   params:
