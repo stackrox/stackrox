@@ -153,7 +153,7 @@ func (suite *RetryTestSuite) TestWithContext() {
 	inBetweenCount := 0
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// We should only try once. No retries, no onFailure or between, since Tries == 1.
+	// We should only try 3 times, as the context gets cancelled on the third run.
 	suite.Error(WithRetry(func() error {
 		runCount = runCount + 1
 		if runCount == 3 {
