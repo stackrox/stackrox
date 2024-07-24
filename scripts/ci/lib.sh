@@ -816,7 +816,7 @@ check_rhacs_eng_image_exists() {
         extra_args+=("-H" "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}")
     else
         # shellcheck disable=SC2076
-        if [[ ! " ${public_images[*]} " =~  " ${name} " ]]; then
+        if [[ ! " ${public_images[*]} " =~ " ${name} " ]]; then
             info "Warning: Checking for image existence without QUAY_RHACS_ENG_BEARER_TOKEN is not supported for image ${name}:${tag}"
             info "Warning: It is only supported for the following public image repositories: ${public_images[*]}"
         fi
