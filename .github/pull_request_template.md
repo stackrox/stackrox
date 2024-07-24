@@ -16,7 +16,7 @@ change me!
 
 ### Quality Assurance
 
-- [ ] This PR meets all [General Availability requirements](https://github.com/stackrox/stackrox/blob/master/PR_GA.md), and the change is ready to be de deployed in production
+- [ ] this PR meets all [General Availability requirements](https://github.com/stackrox/stackrox/blob/master/PR_GA.md), and the change is ready to be de deployed in production
 - [ ] CI results are inspected
 
 #### Automated testing
