@@ -6,30 +6,32 @@ Currently, feature flags use environment variables to power the toggles.
 
 Feature flags can be valuable to ship features in a preview state, to provide the end user a way to disable some functionality or to control any boolean setting.
 
+## Feature lifecycle
+
+1. A feature is being developed on a branch, gated by a dev-preview feature flag.
+2. The code meets the [GA requirements](../../PR_GA.md) with the feature disabled: the branch can be merged to the master branch.
+3. The feature is ready to be tested by the customers: the flag can be upgraded to tech-preview. Consult [the article on Products & Services](https://access.redhat.com/articles/6966848) for the differences between the two stages.
+4. The feature needs to be enabled for everybody: the flag should be removed.
+
 > :warning: Feature flags cannot be used inside migrations or schema changes.
 > Migrations must be merged to the master branch without any feature flag gate, and must not break any current features.
+>
+> :warning: There are flags today, which are enabled by default for two reasons:
+>
+> 1. The feature has been delivered and enabled: such flags need to be deleted.
+> 2. The enabled flag disables the feature: we don't want more of such flags.
 
 ## Adding a feature flag
 
 To add a feature flag, add a variable with your feature to `list.go`. To register this feature flag variables, you are required to provide the following:
 
-* Name: This is a short description of what this flag is about
-* Environment Variable name: This is the environment variable which needs to be set to override the default value of this flag. Env var names **must** start with `ROX_`
-* Type: This is the type of the feature flag. An unchangeable or a changeable one. See below for more details
-* Default value: The default value to use if the flag has not been overridden
-* Release stage: Either `DevPreview` for features in early stage of development, or `TechPreview` for features we are ready to collect customers' feedback. Consult [the article on Products & Services](https://access.redhat.com/articles/6966848) for the differences between the both
+* Name: This is a short description of what this flag is about.
+* Environment Variable name: This is the environment variable which needs to be set to override the default value of this flag. Env var names **must** start with `ROX_`.
+* Options:
+  * `devPreview` or `techPreview`: whether the feature is in early development or ready to be tested by customers. Flags are of the **dev-preview** stage by default.
+  * `unchangeableInProd`: whether the flag state can be changed via the associated environment variable setting on release builds. Flags are **changeable** by default.
 
-The variable can be one of two types of feature flag:
-
-#### An unchangeable feature:
-This flag cannot be changed from its default value on release builds (i.e. "production"). To enable or disable it, you must make a code change.
-On development builds, the setting _can_ be changed.
-
-#### A changeable feature:
-This is the default feature flag. The value of the flag can be changed in both release and development builds.
-Use this if you want the end user to be able to enable or disable the setting.
-
-> :warning: To introduce features that could be disabled in release builds, you must be cautious to ensure that Central returns to "normal" state after disabling the feature. Especially for the features at the tech-preview stage.
+> :warning: To introduce features that could be disabled in release builds, you must be cautious to ensure that Central returns to "normal" state after disabling the feature.
 > Sometimes it is not as simple as turning off the feature flag to return Central to the "normal" state for various reasons, including (but not limited to) schema and data changes.
 
 ## Overriding the default value of a feature flag
@@ -37,6 +39,7 @@ Use this if you want the end user to be able to enable or disable the setting.
 To change the value of a feature flag on a running container, you must set or update the underlying environment variable to the desired value.
 
 For example, if there exists a feature flag with an environment variable `ROX_MY_FEATURE_FLAG` and a default value of `false` and you want to override it to `true` in central (stackrox namespace), then run:
+
 ```sh
 kubectl set env -n=stackrox deploy/central ROX_MY_FEATURE_FLAG=true
 ```
@@ -65,6 +68,6 @@ These values can be read by the UI to determine if a feature should be displayed
 
 Feature flags can be removed safely by following these steps:
 
-1. First ensure that the feature is enabled by default and a sufficient amount of time has passed such that no one will want to disable it again.
-2. Remove all references in code to the feature flag variable. Remove any unreachable code. Take note of any tests and scripts (for example deploy scripts). Take note to remove references in UI as well.
-3. Delete the variable from `list.go`
+1. First ensure that when enabled, the feature meets all GA requirements for being deployed in production.
+2. Remove all references in code to the feature flag variable and the associated environment variable. Remove any unreachable code. Take note of any tests and scripts (for example deploy scripts). Take note to remove references in UI as well.
+3. Delete the variable from `list.go`.
