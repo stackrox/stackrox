@@ -27,6 +27,7 @@ func (m *FeatureFlag) CloneVT() *FeatureFlag {
 	r.Name = m.Name
 	r.EnvVar = m.EnvVar
 	r.Enabled = m.Enabled
+	r.Stage = m.Stage
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -74,6 +75,9 @@ func (this *FeatureFlag) EqualVT(that *FeatureFlag) bool {
 		return false
 	}
 	if this.Enabled != that.Enabled {
+		return false
+	}
+	if this.Stage != that.Stage {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -148,6 +152,13 @@ func (m *FeatureFlag) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Stage) > 0 {
+		i -= len(m.Stage)
+		copy(dAtA[i:], m.Stage)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Stage)))
+		i--
+		dAtA[i] = 0x22
 	}
 	if m.Enabled {
 		i--
@@ -237,6 +248,10 @@ func (m *FeatureFlag) SizeVT() (n int) {
 	}
 	if m.Enabled {
 		n += 2
+	}
+	l = len(m.Stage)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -371,6 +386,38 @@ func (m *FeatureFlag) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.Enabled = bool(v != 0)
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Stage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Stage = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

@@ -85,8 +85,8 @@ func TestFeatureFlags(t *testing.T) {
 
 // Test that the feature override works as expected given an appropriate overridable setting
 func TestFeatureOverrideSetting(t *testing.T) {
-	overridableFeature := saveFeature("test_feat", "ROX_TEST_FEAT", true, true)
-	unchangeableFeature := saveFeature("test_feat", "ROX_TEST_FEAT", true, false)
+	overridableFeature := saveFeature("test_feat", "ROX_TEST_FEAT", true, true, devPreview)
+	unchangeableFeature := saveFeature("test_feat", "ROX_TEST_FEAT", true, false, devPreview)
 
 	// overridable features can be changed from the default value (true)
 	testFlagEnabled(t, overridableFeature, "false", false)
@@ -110,4 +110,16 @@ func TestOverridesOnReleaseBuilds(t *testing.T) {
 	} else {
 		testFlagEnabled(t, unchangeableFeature, "false", false)
 	}
+}
+
+func TestStage(t *testing.T) {
+	devFeature := registerFeature("test_feat", "ROX_TEST_FEAT", true)
+	assert.Equal(t, "dev-preview", devFeature.Stage())
+	devFeature = registerUnchangeableFeature("test_feat", "ROX_TEST_FEAT", true)
+	assert.Equal(t, "dev-preview", devFeature.Stage())
+
+	techFeature := registerTechPreviewFeature("test_feat", "ROX_TEST_FEAT", true)
+	assert.Equal(t, "tech-preview", techFeature.Stage())
+	techFeature = registerUnchangeableTechPreviewFeature("test_feat", "ROX_TEST_FEAT", true)
+	assert.Equal(t, "tech-preview", techFeature.Stage())
 }

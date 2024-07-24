@@ -14,6 +14,7 @@ type FeatureFlag interface {
 	EnvVar() string
 	Enabled() bool
 	Default() bool
+	Stage() string
 }
 
 var (
@@ -23,15 +24,25 @@ var (
 
 // registerFeature global registers and returns a new feature flag that can be overridden from the default state regardless of build.
 func registerFeature(name, envVar string, defaultValue bool) FeatureFlag {
-	return saveFeature(name, envVar, defaultValue, true)
+	return saveFeature(name, envVar, defaultValue, true, devPreview)
 }
 
-// registerUnchangeableFeature global registers and returns a new feature flag that is always locked to the default value.
+// registerTechPreviewFeature is like registerFeature, but registers a tech-preview feature.
+func registerTechPreviewFeature(name, envVar string, defaultValue bool) FeatureFlag {
+	return saveFeature(name, envVar, defaultValue, true, techPreview)
+}
+
+// registerUnchangeableFeature global registers and returns a new feature flag that is locked to the default value in release builds.
 func registerUnchangeableFeature(name, envVar string, defaultValue bool) FeatureFlag {
-	return saveFeature(name, envVar, defaultValue, !buildinfo.ReleaseBuild)
+	return saveFeature(name, envVar, defaultValue, !buildinfo.ReleaseBuild, devPreview)
 }
 
-func saveFeature(name, envVar string, defaultValue, overridable bool) FeatureFlag {
+// registerUnchangeableTechPreviewFeature is like registerUnchangeableFeature, but registers a tech-preview feature.
+func registerUnchangeableTechPreviewFeature(name, envVar string, defaultValue bool) FeatureFlag {
+	return saveFeature(name, envVar, defaultValue, !buildinfo.ReleaseBuild, techPreview)
+}
+
+func saveFeature(name, envVar string, defaultValue, overridable bool, release stage) FeatureFlag {
 	if !strings.HasPrefix(envVar, "ROX_") {
 		panic(fmt.Sprintf("invalid env var: %s, must start with ROX_", envVar))
 	}
@@ -40,6 +51,7 @@ func saveFeature(name, envVar string, defaultValue, overridable bool) FeatureFla
 		envVar:       envVar,
 		defaultValue: defaultValue,
 		overridable:  overridable,
+		techPreview:  release,
 	}
 	Flags[f.envVar] = f
 	return f

@@ -81,6 +81,9 @@
         },
         "enabled": {
           "type": "boolean"
+        },
+        "stage": {
+          "type": "string"
         }
       }
     },
