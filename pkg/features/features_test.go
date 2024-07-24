@@ -121,9 +121,9 @@ func TestStage(t *testing.T) {
 	assert.Equal(t, "tech-preview", f.Stage())
 }
 
-func TestLoggingContext(t *testing.T) {
+func TestLogging(t *testing.T) {
 	feature := registerFeature("test_feat", "ROX_TEST_FEAT", true)
-	context := feature.LoggingContext()
-	expectedContext := zap.Any("ROX_TEST_FEAT", true)
-	assert.Equal(t, context, expectedContext)
+	data := feature.Logging()
+	expectedData := zap.Any("ROX_TEST_FEAT", true)
+	assert.Equal(t, data, expectedData)
 }

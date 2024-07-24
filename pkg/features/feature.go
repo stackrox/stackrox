@@ -47,7 +47,8 @@ func (f *feature) Stage() string {
 		return "tech-preview"
 	}
 	return "dev-preview"
+}
 
-func (f *feature) LoggingContext() interface{} {
+func (f *feature) Logging() interface{} {
 	return logging.Any(f.EnvVar(), f.Enabled())
 }
