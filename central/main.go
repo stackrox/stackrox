@@ -188,6 +188,7 @@ import (
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	featuresTelemetry "github.com/stackrox/rox/pkg/features/telemetry"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -619,6 +620,7 @@ func startGRPCServer() {
 				gs.AddGatherer(imageintegrationsDS.Gather)
 				gs.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
 				gs.AddGatherer(authDS.Gather)
+				gs.AddGatherer(featuresTelemetry.Gather)
 			}
 		}
 	}
