@@ -1393,6 +1393,9 @@ spec:
                     memory: 200Mi
                 securityContext:
                   allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
               securityContext:
                 runAsNonRoot: true
               serviceAccountName: rhacs-operator-controller-manager
