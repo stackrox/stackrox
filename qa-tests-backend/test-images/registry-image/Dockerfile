@@ -1,4 +1,4 @@
-FROM debian:8.11
+FROM debian:12.6
 
 RUN apt-get -y update || true
 RUN apt-get -y install libssh-4=0.6.3-4+deb8u2 wget=1.16-1+deb8u7 tomcat7=7.0.56-3+deb8u11 openjdk-7-jre-headless=7u261-2.6.22-1~deb8u1 && \
