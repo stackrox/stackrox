@@ -8,7 +8,7 @@ spec:
     description: ls the workspace
     taskSpec:
       steps:
-      - image: registry.access.redhat.com/ubi9/skopeo:9.4@sha256:23557ecf3de07618968affb59adfb3db80336b976501032b5da9e4e92b943776
+      - image: registry.access.redhat.com/ubi9/skopeo:9.4@sha256:61871ab37e9b1291e3547f36ba692a4dc59c22e9e045a5b4d5bf9a55155ab779
         script: |
           ls
 
