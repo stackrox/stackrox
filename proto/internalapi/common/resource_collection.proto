@@ -8,6 +8,9 @@ import "internalapi/common/slim-user.proto";
 
 option go_package = "./internalapi/common;common";
 
+// This file has been copied from proto/storage/resource_collection.proto
+// It may have diverged from it
+
 message ResourceCollection {
   message EmbeddedResourceCollection {
     string id = 1;
