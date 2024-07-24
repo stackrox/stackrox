@@ -1,0 +1,28 @@
+{
+  // This configures Konflux Renovate bot, the thing that keeps our pipelines use up-to-date tasks.
+
+  // After making changes to this file, you can validate it by running something like this in the root of the repo:
+  // $ docker run --rm -it --entrypoint=/usr/local/bin/renovate-config-validator -v "$(pwd)":/mnt -w /mnt renovate/renovate --strict
+  // There are more validation options, see https://docs.renovatebot.com/config-validation/
+
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    // This inherits the base Konflux config.
+    // Clickable link https://github.com/konflux-ci/mintmaker/blob/main/config/renovate/renovate.json
+    // The following was used as example (we may want to check it if the base config gets suddenly moved):
+    // https://github.com/enterprise-contract/ec-cli/blob/407847910ad420850385eea1db78e2a2e49c7e25/renovate.json#L1C1-L7C2
+    "github>konflux-ci/mintmaker//config/renovate/renovate.json"
+  ],
+  "timezone": "Etc/UTC",
+  "schedule": [
+    // TODO(ROX-22359): switch to non-working hours like in https://github.com/stackrox/stackrox/pull/9787/files#diff-20ab1190d08a53a3012bc191ed56205c8f0ffb8fa1715e9d36ecfd1d2ea8a790R17
+    "at any time"
+  ],
+  "dockerfile": {
+    "fileMatch": [
+      // Instruct Renovate not try to update Dockerfiles other than */konflux.Dockerfile to have less PR noise.
+      // See https://redhat-internal.slack.com/archives/C04PZ7H0VA8/p1721809083784519
+      "(^|\\/)konflux\\.([Dd]ocker|[Cc]ontainer)file$"
+    ]
+  }
+}
