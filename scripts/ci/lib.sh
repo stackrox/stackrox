@@ -485,6 +485,8 @@ poll_for_system_test_images() {
 
     local time_limit="$1"
 
+    require_environment "QUAY_RHACS_ENG_BEARER_TOKEN"
+
     local image_list
     image_list="$(mktemp)"
     populate_stackrox_image_list "${image_list}"
