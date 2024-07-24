@@ -45,17 +45,19 @@ var (
 
 	d DataStore
 
-	defaultPrivateConfig = storage.PrivateConfig{
-		ImageRetentionDurationDays: DefaultImageRetention,
-		AlertRetention: &storage.PrivateConfig_AlertConfig{
-			AlertConfig: &storage.AlertRetentionConfig{
-				ResolvedDeployRetentionDurationDays:   DefaultDeployAlertRetention,
-				DeletedRuntimeRetentionDurationDays:   DefaultDeletedRuntimeAlertRetention,
-				AllRuntimeRetentionDurationDays:       DefaultRuntimeAlertRetention,
-				AttemptedDeployRetentionDurationDays:  DefaultAttemptedDeployAlertRetention,
-				AttemptedRuntimeRetentionDurationDays: DefaultAttemptedRuntimeAlertRetention,
-			},
+	defaultAlertRetention = &storage.PrivateConfig_AlertConfig{
+		AlertConfig: &storage.AlertRetentionConfig{
+			ResolvedDeployRetentionDurationDays:   DefaultDeployAlertRetention,
+			DeletedRuntimeRetentionDurationDays:   DefaultDeletedRuntimeAlertRetention,
+			AllRuntimeRetentionDurationDays:       DefaultRuntimeAlertRetention,
+			AttemptedDeployRetentionDurationDays:  DefaultAttemptedDeployAlertRetention,
+			AttemptedRuntimeRetentionDurationDays: DefaultAttemptedRuntimeAlertRetention,
 		},
+	}
+
+	defaultPrivateConfig = storage.PrivateConfig{
+		ImageRetentionDurationDays:          DefaultImageRetention,
+		AlertRetention:                      defaultAlertRetention,
 		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
 	}
 
@@ -87,19 +89,29 @@ var (
 			Indefinite: false,
 		},
 	}
+
+	defaultDecommissionedClusterRetention = &storage.DecommissionedClusterRetentionConfig{
+		RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
+	}
+
+	defaultReportRetentionConfig = &storage.ReportRetentionConfig{
+		HistoryRetentionDurationDays:           DefaultReportHistoryRetentionWindow,
+		DownloadableReportRetentionDays:        DefaultDownloadableReportRetentionDays,
+		DownloadableReportGlobalRetentionBytes: DefaultDownloadableReportGlobalRetentionBytes,
+	}
+
+	defaultAdministrationEventsConfig = &storage.AdministrationEventsConfig{
+		RetentionDurationDays: DefaultAdministrationEventsRetention,
+	}
 )
 
-func initialize() {
-	store := pgStore.New(globaldb.GetPostgres())
-
-	d = New(store)
-
+func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 	ctx := sac.WithGlobalAccessScopeChecker(
 		context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
-	config, err := d.GetConfig(ctx)
+	config, err := datastore.GetConfig(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -111,23 +123,17 @@ func initialize() {
 	needsUpsert := false
 	privateConfig := config.GetPrivateConfig()
 	if privateConfig == nil {
-		privateConfig = &defaultPrivateConfig
+		privateConfig = defaultPrivateConfig.Clone()
 		needsUpsert = true
 	}
 
 	if privateConfig.GetDecommissionedClusterRetention() == nil {
-		privateConfig.DecommissionedClusterRetention = &storage.DecommissionedClusterRetentionConfig{
-			RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
-		}
+		privateConfig.DecommissionedClusterRetention = defaultDecommissionedClusterRetention
 		needsUpsert = true
 	}
 
 	if privateConfig.GetReportRetentionConfig() == nil {
-		privateConfig.ReportRetentionConfig = &storage.ReportRetentionConfig{
-			HistoryRetentionDurationDays:           DefaultReportHistoryRetentionWindow,
-			DownloadableReportRetentionDays:        DefaultDownloadableReportRetentionDays,
-			DownloadableReportGlobalRetentionBytes: DefaultDownloadableReportGlobalRetentionBytes,
-		}
+		privateConfig.ReportRetentionConfig = defaultReportRetentionConfig
 		needsUpsert = true
 	}
 
@@ -139,18 +145,24 @@ func initialize() {
 	}
 
 	if privateConfig.GetAdministrationEventsConfig() == nil {
-		privateConfig.AdministrationEventsConfig = &storage.AdministrationEventsConfig{
-			RetentionDurationDays: DefaultAdministrationEventsRetention,
-		}
+		privateConfig.AdministrationEventsConfig = defaultAdministrationEventsConfig
 		needsUpsert = true
 	}
 
 	if needsUpsert {
-		utils.Must(d.UpsertConfig(ctx, &storage.Config{
+		utils.Must(datastore.UpsertConfig(ctx, &storage.Config{
 			PublicConfig:  config.GetPublicConfig(),
 			PrivateConfig: privateConfig,
 		}))
 	}
+}
+
+func initialize() {
+	store := pgStore.New(globaldb.GetPostgres())
+
+	d = New(store)
+
+	validateConfigAndPopulateMissingDefaults(d)
 }
 
 // Singleton provides the interface for non-service external interaction.
