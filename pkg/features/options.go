@@ -4,6 +4,7 @@ import "github.com/stackrox/rox/pkg/buildinfo"
 
 type option func(*feature)
 
+// Deprecated: once the feature needs to be enabled by default, the flag must be removed.
 func withEnabledByDefault() option {
 	return func(f *feature) {
 		f.defaultValue = true
@@ -23,8 +24,7 @@ func withUnchangeable(unchangeable bool) option {
 }
 
 var (
-	enabled            = withEnabledByDefault()
+	enabled            = withEnabledByDefault() // Deprecated: just remove the flag.
 	techPreview        = withTechPreviewStage()
-	unchangeable       = withUnchangeable(true)
 	unchangeableInProd = withUnchangeable(buildinfo.ReleaseBuild)
 )

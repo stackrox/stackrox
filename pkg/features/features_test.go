@@ -86,7 +86,7 @@ func TestFeatureFlags(t *testing.T) {
 // Test that the feature override works as expected given an appropriate overridable setting
 func TestFeatureOverrideSetting(t *testing.T) {
 	overridableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", enabled)
-	nonoverridableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", enabled, unchangeable)
+	nonoverridableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", enabled, withUnchangeable(true))
 
 	// overridable features can be changed from the default value (true)
 	testFlagEnabled(t, overridableFeature, "false", false)
