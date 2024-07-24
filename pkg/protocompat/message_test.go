@@ -19,52 +19,14 @@ func TestClone(t *testing.T) {
 
 	cloned := Clone(m1)
 
-	assert.True(t, Equal(m1, cloned.(*storage.NamespaceMetadata)))
+	assert.True(t, m1.EqualVT(cloned.(*storage.NamespaceMetadata)))
 
 	// Change a field value to ensure the clone does not point
 	// to the original struct.
 	clonedNamespace, casted := cloned.(*storage.NamespaceMetadata)
 	assert.True(t, casted)
 	clonedNamespace.Name = "Namespace AA"
-	assert.False(t, Equal(m1, cloned.(*storage.NamespaceMetadata)))
-}
-
-func TestEqual(t *testing.T) {
-
-	m1 := &storage.NamespaceMetadata{
-		Id:          testconsts.NamespaceA,
-		Name:        "Namespace A",
-		ClusterId:   testconsts.Cluster1,
-		ClusterName: "Cluster 1",
-	}
-	m2 := &storage.NamespaceMetadata{
-		Id:          testconsts.NamespaceA,
-		Name:        "Namespace A",
-		ClusterId:   testconsts.Cluster1,
-		ClusterName: "Cluster 1",
-	}
-	m3 := &storage.NamespaceMetadata{
-		Id:          testconsts.NamespaceA,
-		Name:        "Namespace A",
-		ClusterId:   testconsts.Cluster2,
-		ClusterName: "Cluster 2",
-	}
-	m4 := &storage.NamespaceMetadata{
-		Id:          testconsts.NamespaceB,
-		Name:        "Namespace B",
-		ClusterId:   testconsts.Cluster2,
-		ClusterName: "Cluster 2",
-	}
-	assert.True(t, Equal(m1, m1))
-	assert.True(t, Equal(m1, m2))
-	assert.False(t, Equal(m1, m3))
-	assert.False(t, Equal(m1, m4))
-	assert.True(t, Equal(m2, m2))
-	assert.False(t, Equal(m2, m3))
-	assert.False(t, Equal(m2, m4))
-	assert.True(t, Equal(m3, m3))
-	assert.False(t, Equal(m3, m4))
-	assert.True(t, Equal(m4, m4))
+	assert.False(t, m1.EqualVT(cloned.(*storage.NamespaceMetadata)))
 }
 
 func TestMarshal(t *testing.T) {
@@ -126,7 +88,7 @@ func TestUnmarshal(t *testing.T) {
 	decoded := &storage.NamespaceMetadata{}
 	err = Unmarshal(data, decoded)
 	assert.NoError(t, err)
-	assert.True(t, Equal(msg, decoded))
+	assert.True(t, msg.EqualVT(decoded))
 }
 
 func TestMerge(t *testing.T) {

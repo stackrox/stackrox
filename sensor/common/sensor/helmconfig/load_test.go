@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -80,5 +79,5 @@ clusterConfig:
 		NotHelmManaged: true,
 	}
 
-	assert.True(t, protocompat.Equal(expectedConfig, config), "Converted proto and expected proto do not match")
+	assert.True(t, expectedConfig.EqualVT(config), "Converted proto and expected proto do not match")
 }
