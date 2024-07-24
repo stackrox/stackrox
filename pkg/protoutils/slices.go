@@ -7,7 +7,7 @@ import (
 // SliceContains returns whether the given slice of proto objects contains the given proto object.
 func SliceContains[T protocompat.Equalable[T]](msg T, slice []T) bool {
 	for _, elem := range slice {
-		if protocompat.Equal(elem, msg) {
+		if elem.EqualVT(msg) {
 			return true
 		}
 	}
@@ -21,7 +21,7 @@ func SlicesEqual[T protocompat.Equalable[T]](first, second []T) bool {
 	}
 	for i, firstElem := range first {
 		secondElem := second[i]
-		if !protocompat.Equal(firstElem, secondElem) {
+		if !firstElem.EqualVT(secondElem) {
 			return false
 		}
 	}

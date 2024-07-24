@@ -239,7 +239,7 @@ func (c *cachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error
 
 // Count returns the number of objects in the store matching the query.
 func (c *cachedStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if q == nil || protocompat.Equal(q, search.EmptyQuery()) {
+	if q == nil || q.EqualVT(search.EmptyQuery()) {
 		return c.countFromCache(ctx)
 	}
 	return c.underlyingStore.Count(ctx, q)
@@ -307,7 +307,7 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 
 // WalkByQuery iterates over all the objects scoped by the query applies the closure.
 func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
-	if query == nil || protocompat.Equal(query, search.EmptyQuery()) {
+	if query == nil || query.EqualVT(search.EmptyQuery()) {
 		c.cacheLock.RLock()
 		defer c.cacheLock.RUnlock()
 		return c.walkCacheNoLock(ctx, fn)
