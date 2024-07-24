@@ -1,7 +1,9 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: main-test-pipeline
+  name: gke-qa-e2e-tests-pipeline
+  labels:
+    build.appstudio.redhat.com/pipeline: "gke-qa-e2e-tests"
 spec:
   tasks:
   - name:
