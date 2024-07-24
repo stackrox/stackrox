@@ -50,7 +50,7 @@ func New(db postgres.DB) Store {
 }
 
 func insertIntoNotifierEncConfigs(ctx context.Context, tx *postgres.Tx, obj *storage.NotifierEncConfig) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
