@@ -347,7 +347,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 		// The metadata in the cache is always up-to-date with respect to the current metadataVersion
 		if metadataValue, ok := e.metadataCache.Get(getRef(image)); ok {
 			e.metrics.IncrementMetadataCacheHit()
-			image.Metadata = metadataValue.(*storage.ImageMetadata).Clone()
+			image.Metadata = metadataValue.Clone()
 			return true, nil
 		}
 		e.metrics.IncrementMetadataCacheMiss()

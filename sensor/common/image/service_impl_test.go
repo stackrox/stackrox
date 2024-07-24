@@ -12,6 +12,7 @@ import (
 	cacheMocks "github.com/stackrox/rox/pkg/expiringcache/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/image/cache"
 	imageMocks "github.com/stackrox/rox/sensor/common/image/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -24,7 +25,7 @@ func TestImageService(t *testing.T) {
 type imageServiceSuite struct {
 	suite.Suite
 	mockCtrl          *gomock.Controller
-	mockCache         *cacheMocks.MockCache
+	mockCache         *cacheMocks.MockCache[cache.Key, cache.Value]
 	mockRegistryStore *imageMocks.MockregistryStore
 	mockCentral       *imageMocks.MockcentralClient
 	mockLocalScan     *imageMocks.MocklocalScan
@@ -35,7 +36,7 @@ var _ suite.SetupTestSuite = (*imageServiceSuite)(nil)
 
 func (s *imageServiceSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	s.mockCache = cacheMocks.NewMockCache(s.mockCtrl)
+	s.mockCache = cacheMocks.NewMockCache[cache.Key, cache.Value](s.mockCtrl)
 	s.mockRegistryStore = imageMocks.NewMockregistryStore(s.mockCtrl)
 	s.mockCentral = imageMocks.NewMockcentralClient(s.mockCtrl)
 	s.mockLocalScan = imageMocks.NewMocklocalScan(s.mockCtrl)
@@ -120,7 +121,7 @@ func (s *imageServiceSuite) TestGetImage() {
 			notify:           common.SensorComponentEventCentralReachable,
 			expectCache:      expectCacheHelper(s.mockCache, 1, nil),
 			expectRegistry:   expectRegistryHelper(s.mockRegistryStore, 1, true),
-			expectLocalScan:  expectLocalScan(s.mockLocalScan, 1, createScannedImage(imageName, imageID), nil),
+			expectLocalScan:  expectLocalScan(s.mockLocalScan, 1, createScannedImage(imageName, imageID).GetIfDone(), nil),
 			expectedError:    nil,
 			expectedResponse: createImageResponse(imageName, imageID),
 		},
@@ -153,7 +154,7 @@ func (s *imageServiceSuite) TestGetImage() {
 	}
 }
 
-func expectCacheHelper(mockCache *cacheMocks.MockCache, times int, retValue any) expectFn {
+func expectCacheHelper(mockCache *cacheMocks.MockCache[cache.Key, cache.Value], times int, retValue cache.Value) expectFn {
 	return func() {
 		mockCache.EXPECT().Get(gomock.Any()).Times(times).
 			Return(retValue, retValue != nil)
@@ -189,14 +190,25 @@ func (f expectFn) runIfSet() {
 	}
 }
 
-func createScannedImage(name, id string) *storage.Image {
-	return &storage.Image{
+type dummyValue struct {
+	image *storage.Image
+}
+
+func (d *dummyValue) WaitAndGet() *storage.Image {
+	panic("not implemented")
+}
+func (d *dummyValue) GetIfDone() *storage.Image {
+	return d.image
+}
+
+func createScannedImage(name, id string) cache.Value {
+	return &dummyValue{image: &storage.Image{
 		Id: id,
 		Name: &storage.ImageName{
 			FullName: name,
 		},
 		Scan: &storage.ImageScan{},
-	}
+	}}
 }
 
 func createImageRequest(name, id string, scanInline bool) *sensor.GetImageRequest {

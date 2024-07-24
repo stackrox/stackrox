@@ -49,7 +49,7 @@ func (rs *Store) getCachedTLSCheckResult(registry string) tlsCheckResult {
 		return tlsCheckResultUnknown
 	}
 
-	return resultI.(tlsCheckResult)
+	return resultI
 }
 
 func (rs *Store) doAndCacheTLSCheck(ctx context.Context, registry string) (bool, error) {
