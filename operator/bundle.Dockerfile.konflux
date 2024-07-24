@@ -43,6 +43,6 @@ LABEL com.redhat.delivery.operator.bundle=true
 LABEL com.redhat.openshift.versions="v4.12"
 
 # Use post-processed files (instead of the original ones).
-COPY --from=builder /stackrox/operator/bundle/manifests /manifests/
-COPY --from=builder /stackrox/operator/bundle/metadata /metadata/
-COPY --from=builder /stackrox/operator/bundle/tests/scorecard /tests/scorecard/
+COPY --from=builder /stackrox/operator/build/bundle/manifests /manifests/
+COPY --from=builder /stackrox/operator/build/bundle/metadata /metadata/
+COPY --from=builder /stackrox/operator/build/bundle/tests/scorecard /tests/scorecard/
