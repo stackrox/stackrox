@@ -535,6 +535,8 @@ class IntegrationsTest extends BaseSpecification {
         where:
         "configurations are:"
 
+        // Cloudflare R2 requires an active credit card subscription to access the buckets.
+        // See BitWarden item `180af798-5f0e-486c-a595-b1a901445715` for the account details.
         integrationName                          | endpoint
         | urlStyle
         "Cloudflare R2/path-based/no-prefix"     | Env.mustGetCloudflareR2Endpoint()
