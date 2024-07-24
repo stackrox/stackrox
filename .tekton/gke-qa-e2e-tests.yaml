@@ -6,7 +6,7 @@ metadata:
     build.appstudio.redhat.com/pipeline: "gke-qa-e2e-tests"
 spec:
   tasks:
-  - name:
+  - name: Listing the workspace items
     description: ls the workspace
     taskSpec:
       steps:
