@@ -24,5 +24,8 @@
       // See https://redhat-internal.slack.com/archives/C04PZ7H0VA8/p1721809083784519
       "(^|\\/)konflux\\.([Dd]ocker|[Cc]ontainer)file$"
     ]
+  },
+  "git-submodules": {
+    "enabled": false
   }
 }
