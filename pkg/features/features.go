@@ -3,7 +3,7 @@ package features
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -50,7 +50,7 @@ func sortEnvVars() []string {
 	for envVar := range Flags {
 		sortedEnvVars = append(sortedEnvVars, envVar)
 	}
-	sort.Strings(sortedEnvVars)
+	slices.Sort(sortedEnvVars)
 	return sortedEnvVars
 }
 
