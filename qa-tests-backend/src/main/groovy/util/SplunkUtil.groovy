@@ -136,6 +136,7 @@ class SplunkUtil {
     static String createHECToken(int port, String tokenName = "stackrox") {
         Response response = null
         withRetry(20, 15) {
+            log.info("Attempting to create new HEC ingest token")
             response =  given().auth()
                 .basic("admin", SPLUNK_ADMIN_PASSWORD)
                 .formParam("name", tokenName)
