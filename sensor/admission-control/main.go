@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
@@ -43,6 +44,7 @@ func init() {
 
 func main() {
 	log.Infof("StackRox Sensor Admission Control Service, version %s", version.GetMainVersion())
+	features.LogFeatureFlags()
 
 	utils.Must(mainCmd())
 }

@@ -5,6 +5,11 @@ import (
 	"strings"
 )
 
+const (
+	devPreviewString  = "dev-preview"
+	techPreviewString = "tech-preview"
+)
+
 type feature struct {
 	envVar       string
 	name         string
@@ -42,7 +47,7 @@ func (f *feature) Enabled() bool {
 
 func (f *feature) Stage() string {
 	if f.techPreview {
-		return "tech-preview"
+		return techPreviewString
 	}
-	return "dev-preview"
+	return devPreviewString
 }
