@@ -28,30 +28,6 @@ func TestClone(t *testing.T) {
 	assert.False(t, m1.EqualVT(cloned.(*storage.NamespaceMetadata)))
 }
 
-func TestMarshal(t *testing.T) {
-	msg := &storage.NamespaceMetadata{
-		Id:          testconsts.NamespaceA,
-		Name:        "Namespace A",
-		ClusterId:   testconsts.Cluster1,
-		ClusterName: "Cluster 1",
-	}
-	bytes, err := Marshal(msg)
-	assert.NoError(t, err)
-	expectedBytes := []byte{
-		'\x0a', '\x0a', '\x6e', '\x61', '\x6d', '\x65', '\x73', '\x70',
-		'\x61', '\x63', '\x65', '\x41', '\x12', '\x0b', '\x4e', '\x61',
-		'\x6d', '\x65', '\x73', '\x70', '\x61', '\x63', '\x65', '\x20',
-		'\x41', '\x1a', '\x24', '\x61', '\x61', '\x61', '\x61', '\x61',
-		'\x61', '\x61', '\x61', '\x2d', '\x62', '\x62', '\x62', '\x62',
-		'\x2d', '\x34', '\x30', '\x31', '\x31', '\x2d', '\x30', '\x30',
-		'\x30', '\x30', '\x2d', '\x31', '\x31', '\x31', '\x31', '\x31',
-		'\x31', '\x31', '\x31', '\x31', '\x31', '\x31', '\x31', '\x22',
-		'\x09', '\x43', '\x6c', '\x75', '\x73', '\x74', '\x65', '\x72',
-		'\x20', '\x31',
-	}
-	assert.Equal(t, expectedBytes, bytes)
-}
-
 func TestMarshalTextString(t *testing.T) {
 	msg := &storage.NamespaceMetadata{
 		Id:          testconsts.NamespaceA,

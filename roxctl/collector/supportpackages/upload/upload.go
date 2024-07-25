@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/probeupload"
-	"github.com/stackrox/rox/pkg/protocompat"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/central/db/transfer"
@@ -120,7 +119,7 @@ func (cmd *collectorSPUploadCommand) doFileUpload(manifest *v1.ProbeUploadManife
 		return utils.ShouldErr(errors.Wrap(err, "generated invalid manifest"))
 	}
 
-	manifestBytes, err := protocompat.Marshal(manifest)
+	manifestBytes, err := manifest.MarshalVT()
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal manifest")
 	}
