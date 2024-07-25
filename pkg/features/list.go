@@ -115,4 +115,8 @@ var (
 	// time. Will only have an affect if UnqualifiedSearchRegistries is also enabled.
 	// TODO(ROX-24641): Remove dependency on the UnqualifiedSearchRegistries feature so that this is enabled by default.
 	SensorSingleScanPerImage = registerFeature("Sensor will only allow a single active scan per image", "ROX_SENSOR_SINGLE_SCAN", enabled)
+
+	// SensorLazyTLSChecks when set to enabled forces Sensor to perform lazy TLS checks during local scanning, otherwise the
+	// checks will be performed on startup and immediately when secrets are discovered.
+	SensorLazyTLSChecks = registerFeature("Sensor will perform lazy TLS checks instead of immediate", "ROX_SENSOR_LAZY_TLS_CHECKS", enabled)
 )
