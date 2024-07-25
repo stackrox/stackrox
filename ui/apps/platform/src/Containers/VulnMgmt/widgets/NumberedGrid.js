@@ -1,19 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
-const NumberedGrid = ({ data, history }) => {
-    const onClick = (url) => () => {
-        if (!url) {
-            return null;
-        }
-        history.push(url);
-        return 0;
-    };
-
+const NumberedGrid = ({ data }) => {
     const stacked = data.length < 4;
-    const list = data.map(({ text, subText, url, component }, index) => {
+    const list = data.map(({ text, url, component }, index) => {
         const className = `inline-block w-full px-2 border-b border-base-300 ${
             url ? 'hover:bg-base-200 cursor-pointer' : ''
         } ${stacked ? 'py-4' : 'py-2 border-r'}`;
@@ -21,21 +12,16 @@ const NumberedGrid = ({ data, history }) => {
             <div className="flex flex-1 items-center">
                 <span className="text-base-600 self-center pl-2 pr-4">{index + 1}</span>
                 <div className={`flex flex-1 ${stacked ? 'justify-between' : 'flex-col'}`}>
-                    {subText && (
-                        <div className="text-base-500 text-sm mb-1 whitespace-nowrap truncate">
-                            {subText}
-                        </div>
-                    )}
-                    <div className="text-base-600 flex items-center text-base mr-4 whitespace-nowrap truncate">
+                    <Link to={url} className="flex items-center mr-4 whitespace-nowrap truncate">
                         {text}
-                    </div>
+                    </Link>
                     {component && <div className={`${stacked ? '' : 'mt-2'}`}>{component}</div>}
                 </div>
             </div>
         );
 
         return (
-            <li key={text} className={className} onClick={onClick(url)}>
+            <li key={text} className={className}>
                 {content}
             </li>
         );
@@ -54,16 +40,14 @@ NumberedGrid.propTypes = {
     data: PropTypes.arrayOf(
         PropTypes.shape({
             text: PropTypes.string.isRequired,
-            subText: PropTypes.string,
-            components: PropTypes.element,
-            url: PropTypes.string,
+            components: PropTypes.element.isRequired,
+            url: PropTypes.string.isRequired,
         })
     ),
-    history: ReactRouterPropTypes.history.isRequired,
 };
 
 NumberedGrid.defaultProps = {
     data: [],
 };
 
-export default withRouter(NumberedGrid);
+export default NumberedGrid;

@@ -10,10 +10,10 @@ import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 import { cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import Loader from 'Components/Loader';
-import NumberedList from 'Components/NumberedList';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
+import NumberedList from './NumberedList';
 import ViewAllButton from './ViewAllButton';
 
 const MOST_COMMON_IMAGE_VULNERABILITIES = gql`

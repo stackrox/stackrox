@@ -13,7 +13,7 @@ import max from 'lodash/max';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
-import BarGradient from './BarGradient';
+import BarGradient from 'Components/visuals/BarGradient';
 
 const Lollipop = ({ data, history }) => {
     function getGridLineValues() {
@@ -96,12 +96,11 @@ const Lollipop = ({ data, history }) => {
                 />
                 <LabelSeries
                     data={labelData}
-                    className="text-xs"
                     labelAnchorX="start-alignment"
                     labelAnchorY="baseline"
                     onValueClick={onValueClickHandler}
                     style={{
-                        fill: 'var(--primary-800)',
+                        fill: 'var(--pf-v5-global--link--Color)',
                         cursor: 'pointer',
                         transform: 'translate(15px,35px)',
                     }}
