@@ -235,7 +235,7 @@ spec:
       - name: name
         value: buildah-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.2
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.2@sha256:1911dc8ec67b3f8ae365b4cbe8d61a56ed69e4b46658b01caee486cfdfd38e89
       - name: kind
         value: task
       resolver: bundles
@@ -290,9 +290,9 @@ spec:
     taskRef:
       params:
       - name: name
-        value: buildah-oci-ta
+        value: buildah-remote-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.2
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:b62eadffad6737b237cbfa3e78114daba18da17e5028fe71707388cf8a102f31
       - name: kind
         value: task
       resolver: bundles
