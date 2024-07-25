@@ -1,0 +1,53 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/max-keep-runs: "3"
+    # TODO(ROX-21073): re-enable for all PR branches
+    pipelinesascode.tekton.dev/on-cel-expression: (event == "push" && target_branch == "master") || (event == "pull_request" && (source_branch.contains("rhtap") || source_branch.contains("konflux") || source_branch.contains("appstudio")))
+  creationTimestamp: null
+  labels:
+    appstudio.openshift.io/application: acs
+    appstudio.openshift.io/component: operator-bundle
+    pipelines.appstudio.openshift.io/type: build
+  name: operator-bundle-build
+  namespace: rh-acs-tenant
+spec:
+  params:
+  - name: dockerfile
+    value: operator/bundle.Dockerfile.konflux
+  - name: git-url
+    value: '{{source_url}}'
+  # TODO(ROX-24530): return expiration for non-released images to 13w
+  - name: image-expires-after
+    value: 5d
+  - name: output-image-repo
+    value: quay.io/rhacs-eng/stackrox-operator-bundle
+  - name: revision
+    value: '{{revision}}'
+  - name: rebuild
+    value: 'true'
+  # TODO(ROX-20234): Enable hermetic builds
+  # - name: hermetic
+  #   value: 'true'
+  - name: prefetch-input
+    value: ''
+  - name: build-source-image
+    value: 'true'
+  - name: clone-depth
+    value: '0'
+  - name: clone-fetch-tags
+    value: 'true'
+  - name: image-tag-style
+    value: 'operator'
+
+  pipelineRef:
+    name: basic-component-pipeline
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
