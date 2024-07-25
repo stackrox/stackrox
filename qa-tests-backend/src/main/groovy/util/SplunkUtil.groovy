@@ -69,7 +69,7 @@ class SplunkUtil {
     static List<SplunkAlert> waitForSplunkAlerts(int port, String search = "search") {
         log.info("Waiting for data to arrive in Splunk for search query: " + search)
         List results = []
-        withRetry(30, 15) {
+        withRetry(40, 15) {
             def searchId
             searchId = createSearch(port, search)
             results = getSplunkAlerts(port, searchId)
