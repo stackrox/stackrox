@@ -16,7 +16,12 @@ change me!
 
 ### Quality Assurance
 
-- [ ] this PR meets all [General Availability requirements](https://github.com/stackrox/stackrox/blob/master/PR_GA.md), and the change is ready to be de deployed in production
+<!--
+General Availability requirements: https://github.com/stackrox/stackrox/blob/master/PR_GA.md
+Feature Flags usage: https://github.com/stackrox/stackrox/blob/master/pkg/features/README.md
+-->
+
+- [ ] the change is ready to be deployed in production: the feature is complete xor gated by a feature flag, and security and performance implications have been considered
 - [ ] CI results are inspected
 
 #### Automated testing
