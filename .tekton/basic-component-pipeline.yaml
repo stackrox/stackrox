@@ -391,54 +391,32 @@ spec:
         values:
           - "true"
 
-  - name: apply-tags-konflux
+  - name: build-image-manifest-konflux
     params:
     - name: IMAGE
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
-    - name: ADDITIONAL_TAGS
+      value: $(params.output-image-repo):konflux-$(params.revision)
+    - name: COMMIT_SHA
+      value: $(tasks.clone-repository.results.commit)
+    - name: IMAGES
       value:
-      - konflux-$(params.revision)
+        - $(tasks.build-container-amd64.results.IMAGE_URL)@$(tasks.build-container-amd64.results.IMAGE_DIGEST)
+        - $(tasks.build-container-s390x.results.IMAGE_URL)@$(tasks.build-container-s390x.results.IMAGE_DIGEST)
+        - $(tasks.build-container-ppc64le.results.IMAGE_URL)@$(tasks.build-container-ppc64le.results.IMAGE_DIGEST)
+        - $(tasks.build-container-arm64.results.IMAGE_URL)@$(tasks.build-container-arm64.results.IMAGE_DIGEST)
     taskRef:
       params:
-      - name: name
-        value: apply-tags
-      - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-apply-tags:0.1@sha256:29add9a49a2281a3755a9b580d2b9c5cb110231b14cccf8ade2fd7895a9b4b4a
-      - name: kind
-        value: task
+        - name: name
+          value: build-image-manifest
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-build-image-manifest:0.1@sha256:fd0a0cf019621d6b577f1b9ab774bb1832f7cba61b4ceee2fd1bffc96895abf9
+        - name: kind
+          value: task
       resolver: bundles
-
-#   - name: build-image-manifest-konflux
-#     params:
-#     - name: IMAGE
-#       value: $(params.output-image-repo):konflux-$(params.revision)
-#     - name: COMMIT_SHA
-#       value: $(tasks.clone-repository.results.commit)
-#     - name: IMAGES
-#       value:
-#       - $(params.output-image-repo):konflux-$(params.revision)-amd64
-#       - $(params.output-image-repo):konflux-$(params.revision)-s390x
-#       - $(params.output-image-repo):konflux-$(params.revision)-ppc64le
-#       - $(params.output-image-repo):konflux-$(params.revision)-arm64
-#     runAfter:
-#       - apply-tags-amd64
-#       - apply-tags-s390x
-#       - apply-tags-ppc64le
-#       - apply-tags-arm64
-#     taskRef:
-#       params:
-#         - name: name
-#           value: build-image-manifest
-#         - name: bundle
-#           value: quay.io/konflux-ci/tekton-catalog/task-build-image-manifest:0.1@sha256:fd0a0cf019621d6b577f1b9ab774bb1832f7cba61b4ceee2fd1bffc96895abf9
-#         - name: kind
-#           value: task
-#       resolver: bundles
-#     when:
-#       - input: $(tasks.init.results.build)
-#         operator: in
-#         values:
-#           - "true"
+    when:
+      - input: $(tasks.init.results.build)
+        operator: in
+        values:
+          - "true"
 
   - name: build-source-image
     params:
