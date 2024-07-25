@@ -12,12 +12,15 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Added Features
 
 - ROX-25066: Add new external backup integration for non-AWS S3 compatible providers.
+- ROX-25376: Add the release stage property to the `/v1/featureflags` response.
 
 ### Removed Features
 
 ### Deprecated Fatures
 
 ### Technical Changes
+- ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered, this should reduce Sensor startup time.
+  - To revert back to synchronous TLS checks set `ROX_SENSOR_LAZY_TLS_CHECKS` to `false` on Sensor.
 
 ## [4.5.0]
 
@@ -46,6 +49,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-23155: EBPF collection has been removed. If EBPF is configured, it
   will be automatically converted to CORE_BPF. forceCollection no longer has an
   effect.
+- The `ROX_CLOUD_CREDENTIALS` feature flag has been removed. Its effect is now enabled by default.
 
 ### Deprecated Features
 

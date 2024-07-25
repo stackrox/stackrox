@@ -60,6 +60,7 @@ const routeMatcherMapForAuthenticatedRoutes = {
  * @param {string} pageUrl
  * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ * @param {Parameters<Cypress.Chainable['wait']>[1]} [waitOptions]
  * @returns {{ request: Record<string, unknown>, response: Record<string, unknown>}[]}
  */
 export function visit(pageUrl, routeMatcherMap, staticResponseMap, waitOptions) {

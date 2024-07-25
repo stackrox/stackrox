@@ -213,6 +213,18 @@ func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []strin
 	return nil
 }
 
+// PruneMany removes the objects associated to the specified IDs from the store.
+func (c *cachedStore[T, PT]) PruneMany(ctx context.Context, identifiers []string) error {
+	if len(identifiers) == 0 {
+		return nil
+	}
+
+	// Ideally we could use PruneMany, but since a batch of pruning can fail that could lead
+	// to inconsistencies with the cache.  So for the cache it is best to continue to using
+	// the cachedStore DeleteMany as it does batched deletion at DB level as well as cache synchronization.
+	return c.DeleteMany(ctx, identifiers)
+}
+
 // Exists tells whether the ID exists in the store.
 func (c *cachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Exists)
@@ -227,7 +239,7 @@ func (c *cachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error
 
 // Count returns the number of objects in the store matching the query.
 func (c *cachedStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if q == nil || protocompat.Equal(q, search.EmptyQuery()) {
+	if q == nil || q.EqualVT(search.EmptyQuery()) {
 		return c.countFromCache(ctx)
 	}
 	return c.underlyingStore.Count(ctx, q)
@@ -295,7 +307,7 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 
 // WalkByQuery iterates over all the objects scoped by the query applies the closure.
 func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
-	if query == nil || protocompat.Equal(query, search.EmptyQuery()) {
+	if query == nil || query.EqualVT(search.EmptyQuery()) {
 		c.cacheLock.RLock()
 		defer c.cacheLock.RUnlock()
 		return c.walkCacheNoLock(ctx, fn)

@@ -78,7 +78,7 @@ function CheckDetails() {
     );
     const {
         data: checkStatsResponse,
-        loading: isLoadingCheckStats,
+        isLoading: isLoadingCheckStats,
         error: checkStatsError,
     } = useRestQuery(fetchCheckStats);
 
@@ -88,7 +88,7 @@ function CheckDetails() {
     );
     const {
         data: checkDetailsResponse,
-        loading: isLoadingCheckDetails,
+        isLoading: isLoadingCheckDetails,
         error: CheckDetailsError,
     } = useRestQuery(fetchCheckDetails);
 
@@ -107,7 +107,7 @@ function CheckDetails() {
     }, [page, perPage, checkName, profileName, sortOption, searchFilter, selectedScanConfigName]);
     const {
         data: checkResultsResponse,
-        loading: isLoadingCheckResults,
+        isLoading: isLoadingCheckResults,
         error: checkResultsError,
     } = useRestQuery(fetchCheckResults);
 

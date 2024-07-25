@@ -1,8 +1,11 @@
 import { graphql } from '../../../constants/apiEndpoints';
 import withAuth from '../../../helpers/basicAuth';
+import { assertAvailableFilters } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
+import { getRouteMatcherMapForGraphQL } from '../../../helpers/request';
 import {
     assertCannotFindThePage,
+    visit,
     visitWithStaticResponseForPermissions,
 } from '../../../helpers/visit';
 
@@ -55,7 +58,13 @@ describe('Node CVEs - CVE Detail Page', () => {
     });
 
     it('should only show relevant filters for the page', () => {
-        // check the advanced filters and ensure only the relevant filters are displayed
+        const url = `${nodeCveBaseUrl}/${mockCveName}`;
+        visit(url, getRouteMatcherMapForGraphQL(['getNodeCVEMetadata']), {});
+        assertAvailableFilters({
+            Cluster: ['Name', 'Label', 'Type', 'Platform type'],
+            Node: ['Name', 'Operating System', 'Label', 'Annotation', 'Scan Time'],
+            'Node Component': ['Name', 'Version'],
+        });
     });
 
     it('should link to the overview page from the breadcrumbs', () => {

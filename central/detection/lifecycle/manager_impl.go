@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
+	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/queue"
 	"github.com/stackrox/rox/central/detection/alertmanager"
@@ -22,7 +23,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -65,7 +65,7 @@ type managerImpl struct {
 	deploymentDataStore     deploymentDatastore.DataStore
 	processesDataStore      processIndicatorDatastore.DataStore
 	baselines               baselineDataStore.DataStore
-	deletedDeploymentsCache expiringcache.Cache
+	deletedDeploymentsCache cache.DeletedDeployments
 	processFilter           filter.Filter
 
 	queuedIndicators           map[string]*storage.ProcessIndicator
@@ -188,8 +188,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 	// Map copiedQueue to slice
 	indicatorSlice := make([]*storage.ProcessIndicator, 0, len(copiedQueue))
 	for _, indicator := range copiedQueue {
-		_, deleted := m.deletedDeploymentsCache.Get(indicator.GetDeploymentId())
-		if deleted {
+		if m.deletedDeploymentsCache.Contains(indicator.GetDeploymentId()) {
 			continue
 		}
 		indicatorSlice = append(indicatorSlice, indicator)

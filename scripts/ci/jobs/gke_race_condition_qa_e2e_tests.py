@@ -15,7 +15,6 @@ os.environ["GCP_IMAGE_TYPE"] = "cos_containerd"
 os.environ["MAIN_IMAGE_TAG"] = os.environ["STACKROX_BUILD_TAG"] + "-rcd"
 os.environ["CENTRAL_DB_IMAGE_TAG"] = os.environ["STACKROX_BUILD_TAG"]
 os.environ["USE_LOCAL_ROXCTL"] = "true"
-os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 

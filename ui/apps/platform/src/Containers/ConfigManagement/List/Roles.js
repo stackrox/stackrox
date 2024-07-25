@@ -15,6 +15,7 @@ import { roleSortFields } from 'constants/sortFields';
 import { K8S_ROLES_QUERY } from 'queries/role';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
+import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
 import NoEntitiesIconText from './utilities/NoEntitiesIconText';
 
@@ -37,6 +38,14 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Role`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            Cell: ({ original, pdf }) => {
+                const url = getConfigMgmtPathForEntitiesAndId('ROLE', original.id);
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {original.name}
+                    </TableCellLink>
+                );
+            },
             accessor: 'name',
             id: roleSortFields.ROLE,
             sortField: roleSortFields.ROLE,

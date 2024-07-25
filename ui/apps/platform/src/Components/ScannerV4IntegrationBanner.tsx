@@ -10,11 +10,11 @@ import { scannerV4ImageIntegrationType } from 'types/imageIntegration.proto';
 
 function ScannerV4IntegrationBanner() {
     const { version } = useMetadata();
-    const { data, loading, error } = useRestQuery(fetchImageIntegrations);
+    const { data, isLoading, error } = useRestQuery(fetchImageIntegrations);
     const branding = getProductBranding();
 
     // Don't show the banner if we don't have successful responses
-    if (!data || loading || error || !version) {
+    if (!data || isLoading || error || !version) {
         return null;
     }
 

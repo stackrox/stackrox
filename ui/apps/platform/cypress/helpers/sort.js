@@ -152,3 +152,13 @@ export const callbackForPairOfDescendingVulnerabilitySeverityValuesFromElements 
         isValidVulnerabilitySeverityValue,
         isPairOfDescendingVulnerabilitySeverityValues
     );
+
+export function expectRequestedSort(expectedSort) {
+    return (variables) => {
+        const { sortOption } = variables.pagination;
+        expect(sortOption).to.deep.equal(
+            expectedSort,
+            `Expected sort option ${JSON.stringify(expectedSort)} but received ${JSON.stringify(sortOption)}`
+        );
+    };
+}

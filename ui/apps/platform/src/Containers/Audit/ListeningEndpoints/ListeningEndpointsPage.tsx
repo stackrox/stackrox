@@ -93,7 +93,7 @@ function ListeningEndpointsPage() {
 
     const countQuery = useRestQuery(deploymentCountFetcher);
 
-    const { data, error, loading } = useDeploymentListeningEndpoints(
+    const { data, error, isLoading } = useDeploymentListeningEndpoints(
         searchFilter,
         sortOption,
         page,
@@ -238,12 +238,12 @@ function ListeningEndpointsPage() {
                             </EmptyStateTemplate>
                         </Bullseye>
                     )}
-                    {loading && (
+                    {isLoading && (
                         <Bullseye>
                             <Spinner aria-label="Loading listening endpoints for deployments" />
                         </Bullseye>
                     )}
-                    {!error && !loading && data && (
+                    {!error && !isLoading && data && (
                         <>
                             {data.length === 0 ? (
                                 <Bullseye>

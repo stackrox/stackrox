@@ -11,3 +11,4 @@ Dockerfile
 */bin
 */testbin
 */cover.out
+bundle_helpers/.venv

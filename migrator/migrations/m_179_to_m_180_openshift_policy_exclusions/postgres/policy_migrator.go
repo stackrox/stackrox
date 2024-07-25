@@ -10,7 +10,6 @@ import (
 	pglog "github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -70,7 +69,7 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 	beforePolicy.Exclusions = nil
 	afterPolicy.Exclusions = nil
 
-	if !protocompat.Equal(beforePolicy, afterPolicy) {
+	if !beforePolicy.EqualVT(afterPolicy) {
 		return PolicyUpdates{}, errors.New("policies have diff after nil-ing out fields we checked, please update this function " +
 			"to be able to diff more fields")
 	}
@@ -81,7 +80,7 @@ func getExclusionsUpdates(beforePolicy *storage.Policy, afterPolicy *storage.Pol
 	matchedAfterExclusionsIdxs := set.NewSet[int]()
 	for _, beforeExclusion := range beforePolicy.GetExclusions() {
 		for afterExclusionIdx, afterExclusion := range afterPolicy.GetExclusions() {
-			if protocompat.Equal(beforeExclusion, afterExclusion) {
+			if beforeExclusion.EqualVT(afterExclusion) {
 				matchedAfterExclusionsIdxs.Add(afterExclusionIdx)
 				break
 			}

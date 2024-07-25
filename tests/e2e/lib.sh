@@ -151,11 +151,9 @@ export_test_environment() {
     ci_export ROX_WORKLOAD_CVES_FIXABILITY_FILTERS "${ROX_WORKLOAD_CVES_FIXABILITY_FILTERS:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
-    ci_export ROX_ADMINISTRATION_EVENTS "${ROX_ADMINISTRATION_EVENTS:-true}"
     ci_export ROX_POLICY_CRITERIA_MODAL "${ROX_POLICY_CRITERIA_MODAL:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
     ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-false}"
-    ci_export ROX_CLOUD_SOURCES "${ROX_CLOUD_SOURCES:-true}"
     ci_export ROX_AUTH_MACHINE_TO_MACHINE "${ROX_AUTH_MACHINE_TO_MACHINE:-true}"
     ci_export ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA "${ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA:-true}"
     ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
@@ -164,6 +162,11 @@ export_test_environment() {
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
+    fi
+
+    if [[ "${CI_JOB_NAME}" =~ gke ]]; then
+        # GKE uses this network for services. Consider it as a private subnet.
+        ci_export ROX_NON_AGGREGATED_NETWORKS "${ROX_NON_AGGREGATED_NETWORKS:-34.118.224.0/20}"
     fi
 }
 
@@ -234,6 +237,11 @@ deploy_central_via_operator() {
     ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
     centralAdminPasswordBase64="$(echo "$ROX_PASSWORD" | base64)"
 
+    centralAdditionalCAIndented="$(sed 's,^,        ,' "${TRUSTED_CA_FILE:-/dev/null}")"
+    if [[ -z $centralAdditionalCAIndented ]]; then
+        disableSpecTLS="#"
+    fi
+
     centralDefaultTlsSecretKeyBase64="$(base64 -w0 < "${ROX_DEFAULT_TLS_KEY_FILE}")"
     centralDefaultTlsSecretCertBase64="$(base64 -w0 < "${ROX_DEFAULT_TLS_CERT_FILE}")"
 
@@ -257,8 +265,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_BASELINE_OBSERVATION_PERIOD'
     customize_envVars+=$'\n        value: '"${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD}"
-    customize_envVars+=$'\n      - name: ROX_POSTGRES_DATASTORE'
-    customize_envVars+=$'\n        value: "'"${ROX_POSTGRES_DATASTORE:-false}"'"'
     customize_envVars+=$'\n      - name: ROX_PROCESSES_LISTENING_ON_PORT'
     customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-true}"'"'
     customize_envVars+=$'\n      - name: ROX_TELEMETRY_STORAGE_KEY_V1'
@@ -266,8 +272,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_RISK_REPROCESSING_INTERVAL'
     customize_envVars+=$'\n        value: "15s"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_ENHANCEMENTS'
-    customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_CLOUD_SOURCES'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_AUTH_MACHINE_TO_MACHINE'
     customize_envVars+=$'\n        value: "true"'
@@ -297,6 +301,8 @@ deploy_central_via_operator() {
     fi
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
+      disableSpecTLS="${disableSpecTLS:-}" \
+      centralAdditionalCAIndented="$centralAdditionalCAIndented" \
       centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
       centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
       central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
@@ -532,6 +538,12 @@ wait_for_collectors_to_be_operational() {
     local readiness_indicator="Successfully established GRPC stream for signals"
     local timeout=300
     local retry_interval=10
+
+    if [[ "$COLLECTION_METHOD" == "NO_COLLECTION" ]]; then
+        # With NO_COLLECTION, no collector containers are deployed
+        # so no need to check for readiness
+        return
+    fi
 
     local start_time
     start_time="$(date '+%s')"
@@ -1158,13 +1170,8 @@ db_backup_and_restore_test() {
     update_public_config
 
     if [[ ! -e DB_TEST_FAIL ]]; then
-        if [ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]; then
-            info "Restoring from ${output_dir}/postgres_db_*"
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
-        else
-            info "Restoring from ${output_dir}/stackrox_db_*"
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_* || touch DB_TEST_FAIL
-        fi
+        info "Restoring from ${output_dir}/postgres_db_*"
+        roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
     fi
 
     wait_for_api "${central_namespace}"

@@ -1,3 +1,5 @@
+//go:build test_e2e
+
 package tests
 
 import (
@@ -122,6 +124,6 @@ func TestAdmissionControllerConfigMapWithPostgres(t *testing.T) {
 
 		var newConfig storage.DynamicClusterConfig
 		require.NoError(t, protocompat.Unmarshal(newConfigData, &newConfig), "could not unmarshal config")
-		assert.True(t, protocompat.Equal(&newConfig, &config), "new and old config should be equal")
+		assert.True(t, (&newConfig).EqualVT(&config), "new and old config should be equal")
 	})
 }

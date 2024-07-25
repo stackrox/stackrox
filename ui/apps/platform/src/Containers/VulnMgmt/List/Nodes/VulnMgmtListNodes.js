@@ -16,6 +16,7 @@ import removeEntityContextColumns from 'utils/tableUtils';
 import { nodeSortFields } from 'constants/sortFields';
 
 import WorkflowListPage from '../WorkflowListPage';
+import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 
 const nodeListUpdatedQuery = gql`
     query getNodes($query: String, $pagination: Pagination) {
@@ -50,6 +51,14 @@ export function getNodeTableColumns() {
                 Header: `Node`,
                 headerClassName: `w-1/6 ${defaultHeaderClassName}`,
                 className: `w-1/6 word-break-all ${defaultColumnClassName}`,
+                Cell: ({ original, pdf }) => {
+                    const url = getVulnMgmtPathForEntitiesAndId('NODE', original.id);
+                    return (
+                        <TableCellLink pdf={pdf} url={url}>
+                            {original.name}
+                        </TableCellLink>
+                    );
+                },
                 id: nodeSortFields.NODE,
                 accessor: 'name',
                 sortField: nodeSortFields.NODE,

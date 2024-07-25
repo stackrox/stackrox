@@ -271,10 +271,11 @@ check-service-protos:
 no-large-files:
 	$(BASE_DIR)/tools/detect-large-files.sh "$(BASE_DIR)/tools/allowed-large-files"
 
+# adding the uptodate flag will inform us if the protos and lock are out of date if they pass the compatibility check.
 .PHONY: storage-protos-compatible
 storage-protos-compatible: $(PROTOLOCK_BIN)
 	@echo "+ $@"
-	$(SILENT)$(PROTOLOCK_BIN) status -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage
+	$(SILENT)$(PROTOLOCK_BIN) status -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage --uptodate true
 
 .PHONY: blanks
 blanks:
@@ -307,7 +308,7 @@ dev: install-dev-tools
 ## Generated Code and Dependencies ##
 #####################################
 
-PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_SRCS) $(GENERATED_API_GW_SRCS)
+PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_VT_SRCS) $(GENERATED_COMPAT_SRCS) $(GENERATED_API_SRCS) $(GENERATED_API_GW_SRCS)
 
 include make/protogen.mk
 
@@ -327,7 +328,7 @@ go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(ST
 	@echo "+ $@"
 	PATH="$(GOTOOLS_BIN):$(PATH):$(BASE_DIR)/tools/generate-helpers" MOCKGEN_BIN="$(MOCKGEN_BIN)" go generate -v -x ./...
 
-proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS) $(GENERATED_API_SWAGGER_SPECS_V2) inject-proto-tags
+proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS) $(GENERATED_API_SWAGGER_SPECS_V2) inject-proto-tags cleanup-swagger-json-gotags
 	@echo "+ $@"
 	$(SILENT)touch proto-generated-srcs
 	$(SILENT)$(MAKE) clean-obsolete-protos
@@ -510,7 +511,7 @@ go-unit-tests: build-prep test-prep
 		done; \
 	done
 
-.PHONE: sensor-integration-test
+.PHONY: sensor-integration-test
 sensor-integration-test: build-prep test-prep
 	set -eo pipefail ; \
 	rm -rf  $(GO_TEST_OUTPUT_PATH); \
@@ -526,7 +527,7 @@ sensor-pipeline-benchmark: build-prep test-prep
 go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
-	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
+	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git grep -rl "//go:build sql_integration" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
@@ -534,7 +535,7 @@ go-postgres-unit-tests: build-prep test-prep
 go-postgres-bench-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
-	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
+	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
   $(shell git grep -rl "testing.B" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
@@ -779,7 +780,7 @@ roxvet: $(ROXVET_BIN)
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
 	$(SILENT)go list -e ./... \
 	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
-	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)" -donotcompareproto -gogoprotofunctions -tags "sql_integration"
+	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)" -donotcompareproto -gogoprotofunctions -tags "sql_integration test_e2e"
 	$(SILENT)go list -e ./... \
 	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
 	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)"
@@ -794,10 +795,6 @@ clean-offline-bundle:
 .PHONY: offline-bundle
 offline-bundle: clean-offline-bundle
 	$(SILENT)./scripts/offline-bundle/create.sh
-
-.PHONY: ui-publish-packages
-ui-publish-packages:
-	make -C ui publish-packages
 
 .PHONY: check-debugger
 check-debugger:

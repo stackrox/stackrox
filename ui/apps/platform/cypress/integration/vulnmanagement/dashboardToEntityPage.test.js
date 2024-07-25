@@ -25,7 +25,7 @@ function getItemTextSelectorForWidget(widgetHeading, itemTextSelector) {
 
 const itemTextSelectorForNumberedList = '[data-testid="numbered-list-item-name"]';
 const itemTextSelectorForLabelText = '.rv-xy-plot__series--label text';
-const itemTextSelectorForClusters = 'li > div > div > div';
+const itemTextSelectorForClusters = 'li > div > div > a';
 
 function getHeaderTextFromItemTextWithColonSeparators(itemText) {
     const [, itemTextAfterNumberBeforeSlash] = /^\d+\.([^:]+):.*$/.exec(itemText);

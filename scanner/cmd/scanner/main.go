@@ -15,6 +15,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -94,6 +95,7 @@ func main() {
 		proxy.WatchProxyConfig(ctx, cfg.Proxy.ConfigDir, cfg.Proxy.ConfigFile, true)
 	}
 
+	features.LogFeatureFlags()
 	// Initialize metrics and metrics server.
 	metricsSrv := metrics.NewServer(metrics.ScannerSubsystem, metrics.NewTLSConfigurerFromEnv())
 	metricsSrv.RunForever()

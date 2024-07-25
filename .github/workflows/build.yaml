@@ -32,12 +32,17 @@ jobs:
 
           # The base matrix
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
-          matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64", "ppc64le", "s390x"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.arch += ["amd64"]' <<< "$matrix")"
 
-          matrix="$(jq '.build_and_push_main.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64", "ppc64le", "s390x"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.arch += ["amd64"]' <<< "$matrix")"
 
-          matrix="$(jq '.push_main_multiarch_manifests.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
+
+          if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+            matrix="$(jq '.pre_build_go_binaries.arch += ["arm64", "ppc64le", "s390x"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_main.arch += ["arm64", "ppc64le", "s390x"]' <<< "$matrix")"
+          fi;
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
           if ! is_tagged; then
@@ -89,8 +94,6 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
-
       - uses: ./.github/actions/cache-ui-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
@@ -106,7 +109,7 @@ jobs:
           name: ui-${{env.ROX_PRODUCT_BRANDING}}-build
           path: |
             ui/build
-            ui/monorepo.lock
+            ui/apps/platform/yarn.lock
 
   pre-build-cli:
     runs-on: ubuntu-latest
@@ -360,8 +363,6 @@ jobs:
           name: docs-build
           path: image/rhel/docs
 
-      - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
-
       # needed to restore node_modules for ossls-nostice
       - uses: ./.github/actions/cache-ui-dependencies
 
@@ -512,7 +513,10 @@ jobs:
         if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
           push_context="merge-to-master"
         fi
-        architectures="amd64,arm64,ppc64le,s390x"
+        architectures="amd64"
+        if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+          architectures="amd64,arm64,ppc64le,s390x"
+        fi
         if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
           architectures="amd64"
         fi

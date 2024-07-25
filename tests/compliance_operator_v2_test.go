@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	coNamespace       = "openshift-compliance"
+	coNamespaceV2     = "openshift-compliance"
 	stackroxNamespace = "stackrox"
 )
 
@@ -256,7 +256,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 			Id: res.GetId(),
 		}
 		_, _ = scanConfigService.DeleteComplianceScanConfiguration(ctx, reqDelete)
-		cleanUpResources(ctx, t, scanName, coNamespace)
+		cleanUpResources(ctx, t, scanName, coNamespaceV2)
 	})
 
 	// Scale up Sensor
@@ -266,8 +266,8 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	// Assert the ScanSetting and the ScanSettingBinding are created
 	scanSetting := &complianceoperatorv1.ScanSetting{}
 	scanSettingBinding := &complianceoperatorv1.ScanSettingBinding{}
-	assertResourceDoesExist(ctx, t, scanName, coNamespace, scanSetting)
-	assertResourceDoesExist(ctx, t, scanName, coNamespace, scanSettingBinding)
+	assertResourceDoesExist(ctx, t, scanName, coNamespaceV2, scanSetting)
+	assertResourceDoesExist(ctx, t, scanName, coNamespaceV2, scanSettingBinding)
 	assertScanSetting(t, scanConfig, scanSetting)
 	assertScanSettingBinding(t, scanConfig, scanSettingBinding)
 
@@ -287,8 +287,8 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	waitForDeploymentReady(ctx, t, "sensor", stackroxNamespace, 1)
 
 	// Assert the ScanSetting and the ScanSettingBinding are updated
-	assertResourceWasUpdated(ctx, t, scanName, coNamespace, scanSetting)
-	assertResourceWasUpdated(ctx, t, scanName, coNamespace, scanSettingBinding)
+	assertResourceWasUpdated(ctx, t, scanName, coNamespaceV2, scanSetting)
+	assertResourceWasUpdated(ctx, t, scanName, coNamespaceV2, scanSettingBinding)
 	assertScanSetting(t, scanConfig, scanSetting)
 	assertScanSettingBinding(t, scanConfig, scanSettingBinding)
 
@@ -307,8 +307,8 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	waitForDeploymentReady(ctx, t, "sensor", stackroxNamespace, 1)
 
 	// Assert the ScanSetting and the ScanSettingBinding are deleted
-	assertResourceDoesNotExist(ctx, t, scanName, coNamespace, scanSetting)
-	assertResourceDoesNotExist(ctx, t, scanName, coNamespace, scanSettingBinding)
+	assertResourceDoesNotExist(ctx, t, scanName, coNamespaceV2, scanSetting)
+	assertResourceDoesNotExist(ctx, t, scanName, coNamespaceV2, scanSettingBinding)
 }
 
 // ACS API test suite for integration testing for the Compliance Operator.
@@ -543,7 +543,7 @@ func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
 	assert.Equal(t, req.GetScanName(), resp.GetScanName())
 	t.Cleanup(func() {
 		_ = deleteScanConfig(ctx, resp.GetId(), scanConfigService)
-		cleanUpResources(ctx, t, req.GetScanName(), coNamespace)
+		cleanUpResources(ctx, t, req.GetScanName(), coNamespaceV2)
 	})
 
 	query := &v2.RawQuery{Query: ""}
@@ -555,8 +555,8 @@ func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
 	// Assert the ScanSetting and the ScanSettingBinding are created
 	scanSetting := &complianceoperatorv1.ScanSetting{}
 	scanSettingBinding := &complianceoperatorv1.ScanSettingBinding{}
-	assertResourceDoesExist(ctx, t, scanName, coNamespace, scanSetting)
-	assertResourceDoesExist(ctx, t, scanName, coNamespace, scanSettingBinding)
+	assertResourceDoesExist(ctx, t, scanName, coNamespaceV2, scanSetting)
+	assertResourceDoesExist(ctx, t, scanName, coNamespaceV2, scanSettingBinding)
 	assertScanSetting(t, *req, scanSetting)
 	assertScanSettingBinding(t, *req, scanSettingBinding)
 
@@ -584,8 +584,8 @@ func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
 	assert.GreaterOrEqual(t, scanConfigs.TotalCount, int32(1))
 
 	// Assert the ScanSetting and the ScanSettingBinding are updated
-	assertResourceWasUpdated(ctx, t, scanName, coNamespace, scanSetting)
-	assertResourceWasUpdated(ctx, t, scanName, coNamespace, scanSettingBinding)
+	assertResourceWasUpdated(ctx, t, scanName, coNamespaceV2, scanSetting)
+	assertResourceWasUpdated(ctx, t, scanName, coNamespaceV2, scanSettingBinding)
 	assertScanSetting(t, *updateReq, scanSetting)
 	assertScanSettingBinding(t, *updateReq, scanSettingBinding)
 }

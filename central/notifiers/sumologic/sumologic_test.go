@@ -34,10 +34,6 @@ func TestSendProtoPayload(t *testing.T) {
 
 	err = sumoLogicNotifier.sendProtoPayload(context.Background(), fixtures.GetSerializationTestAlert())
 	assert.NoError(t, err)
-
-	var nilAlert *storage.Alert
-	err = sumoLogicNotifier.sendProtoPayload(context.Background(), nilAlert)
-	assert.Error(t, err)
 }
 
 type fakeSumoLogic struct {

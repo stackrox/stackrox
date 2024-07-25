@@ -15,6 +15,10 @@ spec:
       the application source code. This should be the result of the git-clone task,
       results from other tasks might fail as dirty.
     type: string
+  - name: IMAGE_TAG_STYLE
+    description: Image Tag style to be used, valid options are 'main' or 'operator'.
+    type: string
+    default: main
   results:
   - name: IMAGE_TAG
     description: Image Tag determined by custom logic.
@@ -41,4 +45,18 @@ spec:
       dnf -y install git make
 
       .konflux/scripts/fail-build-if-git-is-dirty.sh
-      echo -n "$(make --quiet --no-print-directory tag)$(params.TAG_SUFFIX)" | tee "$(results.IMAGE_TAG.path)"
+      image_tag=""
+      image_tag_style="$(params.IMAGE_TAG_STYLE)"
+      case "$image_tag_style" in
+        main)
+          image_tag="$(make --quiet --no-print-directory tag)$(params.TAG_SUFFIX)"
+          ;;
+        operator)
+          image_tag="$(make -C operator --quiet --no-print-directory tag)$(params.TAG_SUFFIX)"
+          ;;
+        *)
+          echo >&2 "Invalid IMAGE_TAG_STYLE '$image_tag_style'"
+          exit 1
+          ;;
+      esac
+      echo -n "$image_tag" | tee "$(results.IMAGE_TAG.path)"

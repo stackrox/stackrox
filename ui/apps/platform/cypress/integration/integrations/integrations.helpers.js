@@ -162,6 +162,7 @@ const integrationTitleMap = {
     backups: {
         gcs: 'Google Cloud Storage',
         s3: 'Amazon S3',
+        s3compatible: 'S3 API Compatible',
     },
     imageIntegrations: {
         artifactory: 'JFrog Artifactory',

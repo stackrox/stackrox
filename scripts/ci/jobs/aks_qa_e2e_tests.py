@@ -10,7 +10,6 @@ from clusters import AutomationFlavorsCluster
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
-os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
