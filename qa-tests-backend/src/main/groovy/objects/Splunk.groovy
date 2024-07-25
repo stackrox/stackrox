@@ -48,3 +48,15 @@ class SplunkHECEntry {
         public String token
     }
 }
+
+class SplunkHealthResults {
+    List<SplunkHealthEntry> entry
+}
+
+// codenarc-disable PublicInstanceField
+class SplunkHealthEntry {
+    public SplunkHealthContent content
+    static class SplunkHealthContent {
+        public String health
+    }
+}

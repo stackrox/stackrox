@@ -186,6 +186,7 @@ class IntegrationsTest extends BaseSpecification {
         "the integration is tested"
         SplunkUtil.SplunkDeployment parts = SplunkUtil.createSplunk(orchestrator,
                 Constants.ORCHESTRATOR_NAMESPACE, legacy)
+        SplunkUtil.waitForSplunkBoot(parts.splunkPortForward.localPort)
 
         when:
         "call the grpc API for the splunk integration."

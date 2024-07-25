@@ -134,10 +134,6 @@ class SplunkNotifier extends Notifier {
     }
 
     def createNotifier() {
-        log.debug "validating splunk deployment is ready to accept events before creating notifier..."
-        withRetry(20, 2) {
-            SplunkUtil.createSearch(splunkPort)
-        }
         notifier = NotifierService.addNotifier(notifier)
     }
 

@@ -18,6 +18,8 @@ import objects.SplunkAlertRaw
 import objects.SplunkAlerts
 import objects.SplunkHECEntry
 import objects.SplunkHECTokens
+import objects.SplunkHealthEntry
+import objects.SplunkHealthResults
 import objects.SplunkSearch
 
 import org.junit.AssumptionViolatedException
@@ -204,6 +206,24 @@ class SplunkUtil {
             throw e
         }
         return new SplunkDeployment(uid, collectorSvc, splunkPortForward, syslogSvc, deployment)
+    }
+
+    static void waitForSplunkBoot(int port) {
+        log.info("Waiting for Splunk to boot...")
+        Response response = null
+        withRetry(30, 10) {
+            response = given().auth()
+                    .basic("admin", SPLUNK_ADMIN_PASSWORD)
+                    .param("output_mode", "json")
+                    .get("https://127.0.0.1:${port}/services/server/health/splunkd/details")
+            assert response != null
+            log.debug("Splunkd status: \n" + response?.asString())
+            SplunkHealthResults results = GSON.fromJson(response?.asString(), SplunkHealthResults)
+            for (SplunkHealthEntry entry: results.entry) {
+                assert entry.content.health == "green" // Splunk status is modeled as green/yellow/red
+            }
+            log.info("Splunk has completed booting")
+        }
     }
 
     static void tearDownSplunk(OrchestratorMain orchestrator, SplunkDeployment splunkDeployment) {
