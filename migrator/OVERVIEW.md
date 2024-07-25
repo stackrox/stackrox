@@ -28,9 +28,9 @@ is as follows:
 
 - Data migrations (if necessary)
     - Pull data from old Postgres schema if necessary
-    - Apply Postgres schema updates for table(s) where data is updated
+    - Apply Postgres schema updates with GORM AutoMigrate for table(s) where data is updated
     - Update the data
-- Apply all Postgres schema updates
+- Apply all Postgres schema updates with GORM AutoMigrate
 
 It is important to note that we use GORM for managing the schemas.  As such we use the GORM auto migration feature
 that ensures that no breaking changes are permitted to the schema.  For instance, GORM will not remove unused 
