@@ -12,8 +12,10 @@ SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 SECRET_NAME_IN_KONFLUX="subscription-manager-activation-key"
 SECRET_KONFLUX_WORKSPACE_PATH="/workspace/${SECRET_NAME_IN_KONFLUX}"
+# The mount is provided by the buildah task when the ACTIVATION_KEY parameter is set to a valid secret name.
+SECRET_MOUNT_PATH="/activation-key"
 SECRET_KEY="activation-key"
-SECRET_LOCAL_PATH="${SCRIPT_DIR}/${SECRET_KEY}"
+SECRET_LOCAL_PATH="${SECRET_MOUNT_PATH}/${SECRET_KEY}"
 SECRET_INFO_URL='https://docs.engineering.redhat.com/pages/viewpage.action?pageId=407312060'
 
 RED_HAT_ORG_ID="11009103"

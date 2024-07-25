@@ -109,7 +109,6 @@ spec:
 
   workspaces:
   - name: git-auth
-  - name: subscription-manager-activation-key
 
   tasks:
 
@@ -174,24 +173,10 @@ spec:
     taskRef:
       name: determine-image-tag-oci-ta
 
-  - name: copy-subscription-manager-activation-key
-    params:
-      - name: SOURCE_ARTIFACT
-        value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-      - name: ociStorage
-        value: $(params.output-image-repo):konflux-$(params.revision).subscription-manager
-      - name: ociArtifactExpiresAfter
-        value: $(params.oci-artifact-expires-after)
-    workspaces:
-    - name: subscription-manager-activation-key
-      workspace: subscription-manager-activation-key
-    taskRef:
-      name: copy-subscription-manager-activation-key-oci-ta
-
   - name: fetch-external-networks
     params:
       - name: SOURCE_ARTIFACT
-        value: $(tasks.copy-subscription-manager-activation-key.results.SOURCE_ARTIFACT)
+        value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
       - name: ociStorage
         value: $(params.output-image-repo):konflux-$(params.revision).external-networks
       - name: ociArtifactExpiresAfter
