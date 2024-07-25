@@ -1,7 +1,5 @@
 package objects
 
-import static util.Helpers.withRetry
-
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 
