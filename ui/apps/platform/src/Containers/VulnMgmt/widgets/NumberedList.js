@@ -5,13 +5,11 @@ import { Tooltip } from '@patternfly/react-core';
 
 import DetailedTooltipContent from 'Components/DetailedTooltipContent';
 
-const leftSideClasses = 'p-2 text-sm text-primary-800 w-full';
+const leftSideClasses = 'p-2 text-sm w-full';
 
 const NumberedList = ({ data, linkLeftOnly }) => {
     const list = data.map(({ text, subText, url, component, tooltip }, i) => {
-        const className = `flex items-center ${i !== 0 ? 'border-t border-base-300' : ''} ${
-            url ? 'hover:bg-base-200' : ''
-        }`;
+        const className = `flex items-center ${i !== 0 ? 'border-t border-base-300' : ''}`;
         let leftSide = (
             <>
                 {i + 1}.&nbsp;{text}&nbsp;
@@ -22,7 +20,7 @@ const NumberedList = ({ data, linkLeftOnly }) => {
             leftSide = (
                 <Link
                     data-testid="numbered-list-item-name"
-                    className={`${leftSideClasses} no-underline w-full truncate`}
+                    className={`${leftSideClasses} w-full truncate`}
                     to={url}
                 >
                     <span className="w-full block truncate">{leftSide}</span>
@@ -48,7 +46,7 @@ const NumberedList = ({ data, linkLeftOnly }) => {
         );
         if (url && !linkLeftOnly) {
             content = (
-                <Link className="flex items-center no-underline w-full" to={url}>
+                <Link className="flex items-center w-full" to={url}>
                     {content}
                 </Link>
             );
