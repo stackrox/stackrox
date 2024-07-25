@@ -22,7 +22,6 @@ class SunburstDetailSection extends Component {
             name: PropTypes.string,
         }),
         clicked: PropTypes.bool.isRequired,
-        units: PropTypes.string,
     };
 
     static defaultProps = {
@@ -42,7 +41,7 @@ class SunburstDetailSection extends Component {
     };
 
     getContent = () => {
-        const { rootData, selectedDatum, units } = this.props;
+        const { rootData, selectedDatum } = this.props;
         const parentDatum = this.getParentData();
 
         let bullets = [];
@@ -64,13 +63,13 @@ class SunburstDetailSection extends Component {
                     ({
                         text,
                         link,
-                        className,
-                        color: graphColor,
-                        textColor,
-                        labelValue,
-                        labelColor,
+                        // Render links and text with PatternFly colors.
+                        // className,
+                        // color: graphColor,
+                        // textColor,
+                        // labelValue,
+                        // labelColor,
                     }) => {
-                        const color = textColor || graphColor;
                         return (
                             <div
                                 key={text}
@@ -79,10 +78,7 @@ class SunburstDetailSection extends Component {
                                 {link && (
                                     <Link
                                         title={text}
-                                        className={`underline leading-normal flex w-full word-break ${
-                                            className ?? ''
-                                        }`}
-                                        style={color ? { color } : null}
+                                        className="leading-normal flex w-full word-break"
                                         to={link}
                                     >
                                         <Truncate lines={6} ellipsis={<>...</>}>
@@ -90,17 +86,11 @@ class SunburstDetailSection extends Component {
                                         </Truncate>
                                     </Link>
                                 )}
-                                <span
-                                    className="flex w-full word-break leading-tight"
-                                    style={color ? { color } : null}
-                                >
+                                <span className="flex w-full word-break leading-tight">
                                     <Truncate lines={4} ellipsis={<>...</>}>
                                         {!link && text}
                                     </Truncate>
                                 </span>
-                                {selectedDatum && units !== 'percentage' && (
-                                    <span style={{ color: labelColor }}>{labelValue}</span>
-                                )}
                             </div>
                         );
                     }

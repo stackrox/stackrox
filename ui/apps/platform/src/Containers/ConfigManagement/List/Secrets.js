@@ -133,7 +133,7 @@ const buildTableColumns = (match, location, entityContext) => {
                     .url();
                 const text = `${deploymentCount} ${pluralize('Deployment', deploymentCount)}`;
                 return (
-                    <TableCellLink testid="deployment" pdf={pdf} url={url}>
+                    <TableCellLink pdf={pdf} url={url}>
                         {text}
                     </TableCellLink>
                 );

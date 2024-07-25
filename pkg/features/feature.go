@@ -5,19 +5,17 @@ import (
 	"strings"
 )
 
-type stage bool
-
 const (
-	devPreview  stage = false
-	techPreview stage = true
+	devPreviewString  = "dev-preview"
+	techPreviewString = "tech-preview"
 )
 
 type feature struct {
 	envVar       string
 	name         string
 	defaultValue bool
-	overridable  bool
-	techPreview  stage
+	unchangeable bool
+	techPreview  bool
 }
 
 func (f *feature) EnvVar() string {
@@ -33,7 +31,7 @@ func (f *feature) Default() bool {
 }
 
 func (f *feature) Enabled() bool {
-	if !f.overridable {
+	if f.unchangeable {
 		return f.defaultValue
 	}
 
@@ -49,7 +47,7 @@ func (f *feature) Enabled() bool {
 
 func (f *feature) Stage() string {
 	if f.techPreview {
-		return "tech-preview"
+		return techPreviewString
 	}
-	return "dev-preview"
+	return devPreviewString
 }

@@ -13,7 +13,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
@@ -42,29 +41,6 @@ const (
 var (
 	log = logging.LoggerForModule()
 )
-
-//lint:ignore U1000 Ignore unused code check since this function could be useful in future.
-func assumeFeatureFlagHasValue(t *testing.T, featureFlag features.FeatureFlag, assumedValue bool) {
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	featureService := v1.NewFeatureFlagServiceClient(conn)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	featureFlagsResp, err := featureService.GetFeatureFlags(ctx, &v1.Empty{})
-	require.NoError(t, err, "failed to get feature flags from central")
-
-	for _, flag := range featureFlagsResp.GetFeatureFlags() {
-		if flag.GetEnvVar() == featureFlag.EnvVar() {
-			if flag.GetEnabled() == assumedValue {
-				return
-			}
-			t.Skipf("skipping test because value of feature flag %s is not %t", featureFlag.EnvVar(), assumedValue)
-		}
-	}
-
-	t.Fatalf("Central has no knowledge about feature flag %s", featureFlag.EnvVar())
-}
 
 func retrieveDeployment(service v1.DeploymentServiceClient, deploymentID string) (*storage.Deployment, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

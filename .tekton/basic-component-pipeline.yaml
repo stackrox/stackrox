@@ -85,6 +85,10 @@ spec:
     description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
     name: oci-artifact-expires-after
     type: string
+  - name: image-tag-style
+    description: Image tag style to be used, valid options are 'main' or 'operator'.
+    default: 'main'
+    type: string
 
   results:
   - description: ""
@@ -166,6 +170,8 @@ spec:
       value: $(params.output-tag-suffix)
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: IMAGE_TAG_STYLE
+      value: $(params.image-tag-style)
     taskRef:
       name: determine-image-tag-oci-ta
 
@@ -189,10 +195,21 @@ spec:
         value: task
       resolver: bundles
 
+  - name: output-image-tag-construction
+    params:
+    - name: IMAGE_TAG
+      value: $(tasks.determine-image-tag.results.IMAGE_TAG)
+    - name: IMAGE_TAG_STYLE
+      value: $(params.image-tag-style)
+    results:
+    - name: FINAL_IMAGE_TAG
+    taskRef:
+      name: output-image-tag-construction
+
   - name: build-container
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+      value: $(params.output-image-repo):$(tasks.output-image-tag-construction.results.FINAL_IMAGE_TAG)
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT

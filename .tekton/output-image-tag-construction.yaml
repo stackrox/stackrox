@@ -1,0 +1,28 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: output-image-tag-construction
+  namespace: rh-acs-tenant
+spec:
+  description: Operator-aware post-processing of output image depending on the main image style.
+  params:
+  - name: IMAGE_TAG
+    type: string
+    description: Image tag to be potentially post-processed to satisfy tagging conventions.
+  - name: IMAGE_TAG_STYLE
+    type: string
+    description: Image tag style to be used, valid options are 'main' or 'operator'.
+    default: main
+  results:
+  - name: FINAL_IMAGE_TAG
+    description: Final image tag determined by custom logic.
+  steps:
+  - name: post-process-image-tag
+    image: registry.access.redhat.com/ubi9:latest
+    script: |
+      #!/usr/bin/env bash
+      image_tag="$(params.IMAGE_TAG)"
+      if [[ "$(params.IMAGE_TAG_STYLE)" == "operator" ]]; then
+        image_tag="v$image_tag"
+      fi
+      echo -n "$image_tag" | tee "$(results.FINAL_IMAGE_TAG.path)"

@@ -303,6 +303,7 @@ func main() {
 	}
 	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
+	features.LogFeatureFlags()
 	// Register telemetry prometheus metrics.
 	telemetry.Singleton().Start()
 	// Start the prometheus metrics server
