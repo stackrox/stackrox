@@ -11,8 +11,8 @@ const (
 	devPreview  stage = false
 	techPreview stage = true
 
-	devPreviewString  string = "dev-preview"
-	techPreviewString string = "tech-preview"
+	devPreviewString  = "dev-preview"
+	techPreviewString = "tech-preview"
 )
 
 type feature struct {
