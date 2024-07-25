@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/namespaces"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -40,6 +41,12 @@ func toK8sEnvVars(triggerEnvVars []*central.SensorUpgradeTrigger_EnvVarDef) []v1
 }
 
 func (p *process) determineImage() (string, error) {
+	log.Infof("Sensor was instructed to run the upgrader with image: %s", p.trigger.GetImage())
+	// TODO: check the pullability of that image
+	if env.UpgraderImageOverwrite.Setting() != "" {
+		log.Infof("Sensor will use the follownig upgrader image instead: %s", env.UpgraderImageOverwrite.Setting())
+		return env.UpgraderImageOverwrite.Setting(), nil
+	}
 	if image := p.trigger.GetImage(); image != "" {
 		return image, nil
 	}

@@ -78,4 +78,7 @@ var (
 	// DiagnosticDataCollectionTimeout defines the timeout for the diagnostic data collection on Sensor side.
 	DiagnosticDataCollectionTimeout = registerDurationSetting("ROX_DIAGNOSTIC_DATA_COLLECTION_TIMEOUT",
 		2*time.Minute)
+
+	// UpgraderImageOverwrite ignores the upgrader image suggested by central and uses this instead
+	UpgraderImageOverwrite = RegisterSetting("ROX_SENSOR_UPGRADER_IMAGE", WithDefault(""))
 )
