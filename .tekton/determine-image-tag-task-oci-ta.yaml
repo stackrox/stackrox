@@ -18,6 +18,7 @@ spec:
   - name: IMAGE_TAG_STYLE
     description: Image Tag style to be used, valid options are 'main' or 'operator'.
     type: string
+    default: main
   results:
   - name: IMAGE_TAG
     description: Image Tag determined by custom logic.
