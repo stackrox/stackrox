@@ -416,7 +416,7 @@ func (c *collector) Run() error {
 		for _, objCfg := range c.cfg.Objects {
 			objClient := clientMap[objCfg.GVK]
 			if objClient == nil {
-				log.Warningf("Error generating diagnostic bundle. No client found for %s", objCfg.GVK.String())
+				log.Infof("Missing CRD to collect for generating a diagnostic bundle. No client found for %s.", objCfg.GVK.String())
 				continue
 			}
 			if err := c.collectObjectsData(ns, objCfg, objClient); err != nil {
