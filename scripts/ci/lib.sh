@@ -810,7 +810,18 @@ check_rhacs_eng_image_exists() {
     local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"
     info "Checking for $name using $url"
     local check
-    check=$(curl --location -sS -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" "$url")
+    local extra_args=()
+    local public_images=("stackrox-operator-index")
+    if [[ -n "${QUAY_RHACS_ENG_BEARER_TOKEN:-}" ]]; then
+        extra_args+=("-H" "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}")
+    else
+        # shellcheck disable=SC2076
+        if [[ ! " ${public_images[*]} " =~ " ${name} " ]]; then
+            info "Warning: Checking for image existence without QUAY_RHACS_ENG_BEARER_TOKEN is not supported for image ${name}:${tag}"
+            info "Warning: It is only supported for the following public image repositories: ${public_images[*]}"
+        fi
+    fi
+    check=$(curl --location -sS "${extra_args[@]}" "$url")
     echo "$check"
     [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
 }

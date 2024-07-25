@@ -1,0 +1,111 @@
+{
+    "data": {
+        "nodeCVEs": [
+            {
+                "cve": "RHSA-2024:4533",
+                "affectedNodeCountBySeverity": {
+                    "critical": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "important": {
+                        "total": 14,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "moderate": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "low": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "__typename": "ResourceCountByCVESeverity"
+                },
+                "topCVSS": 7.099999904632568,
+                "affectedNodeCount": 14,
+                "firstDiscoveredInSystem": "2024-07-15T12:21:46.432487Z",
+                "distroTuples": [
+                    {
+                        "summary": "The kernel packages contain the Linux kernel, the core of any Linux operating system.\n\nSecurity Fix(es):\n\n* kernel: TIPC message reassembly use-after-free remote code execution vulnerability (CVE-2024-36886)\n\n* kernel: ethernet: hisilicon: hns: hns_dsaf_misc: fix a possible array overflow in hns_dsaf_ge_srst_by_port() (CVE-2021-47548)\n\n* kernel: net: hns3: fix use-after-free bug in hclgevf_send_mbx_msg (CVE-2021-47596)\n\n* kernel: vt: fix memory overlapping when deleting chars in the buffer (CVE-2022-48627)\n\n* kernel: can: j1939: prevent deadlock by changing j1939_socks_lock to rwlock (CVE-2023-52638)\n\n* kernel: tls: race between async notify and socket close (CVE-2024-26583)\n\n* kernel: tls: race between tx work scheduling and socket close (CVE-2024-26585)\n\n* kernel: mm/writeback: fix possible divide-by-zero in wb_dirty_limits(), again (CVE-2024-26720)\n\n* kernel: mm/vmscan: fix a bug calling wakeup_kswapd() with a wrong zone index (CVE-2024-26783)\n\n* kernel: Bluetooth: Avoid potential use-after-free in hci_error_reset (CVE-2024-26801)\n\n* kernel: net/ipv6: avoid possible UAF in ip6_route_mpath_notify() (CVE-2024-26852)\n\n* kernel: icmp: prevent possible NULL dereferences from icmp_build_probe() (CVE-2024-35857)\n\n* kernel: netfilter: nf_tables: Fix potential data-race in __nft_flowtable_type_get() (CVE-2024-35898)\n\n* kernel: ipv6: fix race condition between ipv6_get_ifaddr and ipv6_del_addr (CVE-2024-35969)\n\n* kernel: tty: n_gsm: fix possible out-of-bounds in gsm0_receive() (CVE-2024-36016)\n\n* kernel: netfilter: nf_tables: honor table dormant flag from netdev release event path (CVE-2024-36005)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.",
+                        "operatingSystem": "rhcos:4.14",
+                        "cvss": 7.099999904632568,
+                        "scoreVersion": "V3",
+                        "__typename": "NodeVulnerability"
+                    }
+                ],
+                "__typename": "NodeCVECore"
+            },
+            {
+                "cve": "RHSA-2024:4529",
+                "affectedNodeCountBySeverity": {
+                    "critical": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "important": {
+                        "total": 14,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "moderate": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "low": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "__typename": "ResourceCountByCVESeverity"
+                },
+                "topCVSS": 8.600000381469727,
+                "affectedNodeCount": 14,
+                "firstDiscoveredInSystem": "2024-07-15T04:45:15.639254Z",
+                "distroTuples": [
+                    {
+                        "summary": "The \"less\" utility is a text file browser that resembles \"more\", but allows users to move backwards in the file as well as forwards. Since \"less\" does not read the entire input file at startup, it also starts more quickly than ordinary text editors.\n\nSecurity Fix(es):\n\n* less: OS command injection (CVE-2024-32487)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.",
+                        "operatingSystem": "rhcos:4.14",
+                        "cvss": 8.600000381469727,
+                        "scoreVersion": "V3",
+                        "__typename": "NodeVulnerability"
+                    }
+                ],
+                "__typename": "NodeCVECore"
+            },
+            {
+                "cve": "RHSA-2024:4430",
+                "affectedNodeCountBySeverity": {
+                    "critical": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "important": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "moderate": {
+                        "total": 14,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "low": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "__typename": "ResourceCountByCVESeverity"
+                },
+                "topCVSS": 8.100000381469727,
+                "affectedNodeCount": 14,
+                "firstDiscoveredInSystem": "2024-07-15T01:18:15.765443Z",
+                "distroTuples": [
+                    {
+                        "summary": "HTTP::Tiny is a small and simple HTTP/1.1 client written in Perl.\n\nSecurity Fix(es):\n\n* http-tiny: insecure TLS cert default (CVE-2023-31486)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.",
+                        "operatingSystem": "rhcos:4.14",
+                        "cvss": 8.100000381469727,
+                        "scoreVersion": "V3",
+                        "__typename": "NodeVulnerability"
+                    }
+                ],
+                "__typename": "NodeCVECore"
+            }
+        ]
+    }
+}

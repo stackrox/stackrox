@@ -4,7 +4,7 @@ import (
 	"context"
 	"sort"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -36,6 +36,7 @@ func (s *serviceImpl) GetFeatureFlags(context.Context, *v1.Empty) (*v1.GetFeatur
 			Name:    feature.Name(),
 			EnvVar:  feature.EnvVar(),
 			Enabled: feature.Enabled(),
+			Stage:   feature.Stage(),
 		})
 	}
 

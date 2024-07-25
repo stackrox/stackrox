@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	grpc_errors "github.com/stackrox/rox/pkg/grpc/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

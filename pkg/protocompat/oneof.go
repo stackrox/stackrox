@@ -5,7 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/runtime/protoimpl"
 )
 
 func oneOfFieldTypeCmp(a reflect.Type, b reflect.Type) int {
@@ -17,36 +18,31 @@ func oneOfFieldTypeCmp(a reflect.Type, b reflect.Type) int {
 }
 
 func GetOneOfTypesByFieldIndex(msgType reflect.Type, fieldIndex int) []reflect.Type {
-	oneOfFieldTypes := make([]reflect.Type, 0)
-
-	structProps := proto.GetProperties(msgType)
-	for _, oneOfField := range structProps.OneofTypes {
-		if oneOfField.Field != fieldIndex {
-			continue
-		}
-
-		if !oneOfField.Type.Implements(msgType.Field(fieldIndex).Type) {
-			continue
-		}
-
-		oneOfFieldTypes = append(oneOfFieldTypes, oneOfField.Type)
-	}
-
-	slices.SortFunc(oneOfFieldTypes, oneOfFieldTypeCmp)
-
-	return oneOfFieldTypes
+	return GetOneOfTypesByInterface(msgType, msgType.Field(fieldIndex).Type)
 }
 
 func GetOneOfTypesByInterface(msgType reflect.Type, oneOfInterfaceType reflect.Type) []reflect.Type {
 	oneOfFieldTypes := make([]reflect.Type, 0)
 
-	structProps := proto.GetProperties(msgType)
-	for _, oneOfField := range structProps.OneofTypes {
-		if !oneOfField.Type.Implements(oneOfInterfaceType) {
-			continue
-		}
+	// Get proto message from Go reflect type.
+	msg, ok := reflect.New(msgType).Interface().(proto.Message)
+	if !ok {
+		return oneOfFieldTypes
+	}
 
-		oneOfFieldTypes = append(oneOfFieldTypes, oneOfField.Type)
+	// Get proto reflection information from proto message. We need to cast to
+	// protoimpl.MessageInfo, because protoreflect.MessageType interface
+	// does not provide way to get OneofWrappers.
+	msgInfo, ok := msg.ProtoReflect().Type().(*protoimpl.MessageInfo)
+	if !ok {
+		return oneOfFieldTypes
+	}
+
+	for _, oneOfWrapper := range msgInfo.OneofWrappers {
+		typ := reflect.TypeOf(oneOfWrapper)
+		if typ.Implements(oneOfInterfaceType) {
+			oneOfFieldTypes = append(oneOfFieldTypes, typ)
+		}
 	}
 
 	slices.SortFunc(oneOfFieldTypes, oneOfFieldTypeCmp)

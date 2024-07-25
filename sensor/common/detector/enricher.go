@@ -19,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
-	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -49,7 +49,7 @@ type enricher struct {
 
 	serviceAccountStore store.ServiceAccountStore
 	localScan           *scan.LocalScan
-	imageCache          imagecacheutils.ImageCache
+	imageCache          cache.Image
 	stopSig             concurrency.Signal
 	regStore            *registry.Store
 }
@@ -62,9 +62,18 @@ type cacheValue struct {
 	regStore  *registry.Store
 }
 
-func (c *cacheValue) waitAndGet() *storage.Image {
+func (c *cacheValue) WaitAndGet() *storage.Image {
 	// We need to wait before locking
 	c.signal.Wait()
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+	return c.image
+}
+
+func (c *cacheValue) GetIfDone() *storage.Image {
+	if !c.signal.IsDone() {
+		return nil
+	}
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 	return c.image
@@ -228,7 +237,7 @@ func (c *cacheValue) updateImageNoLock(image *storage.Image) {
 	c.image.Names = protoutils.SliceUnique(append(c.image.GetNames(), existingNames...))
 }
 
-func newEnricher(cache imagecacheutils.ImageCache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
+func newEnricher(cache cache.Image, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
 	return &enricher{
 		scanResultChan:      make(chan scanResult),
 		serviceAccountStore: serviceAccountStore,
@@ -239,23 +248,19 @@ func newEnricher(cache imagecacheutils.ImageCache, serviceAccountStore store.Ser
 	}
 }
 
-func (e *enricher) getImageFromCache(key string) (*storage.Image, bool) {
-	v, ok := e.imageCache.Get(key)
+func (e *enricher) getImageFromCache(key cache.Key) (*storage.Image, bool) {
+	value, ok := e.imageCache.Get(key)
 	if !ok {
 		return nil, false
 	}
-	value, _ := v.(*cacheValue)
-	if value == nil {
-		return nil, false
-	}
-	return value.waitAndGet(), true
+	return value.WaitAndGet(), true
 }
 
 func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	// Cache key is either going to be image full name or image ID.
 	// In case of image full name, we can skip. In case of image ID, we should make sure to check if the image's name
 	// is equal / contained in the images `Names` field.
-	key := imagecacheutils.GetImageCacheKey(req.containerImage)
+	key := cache.GetKey(req.containerImage)
 
 	// If the container image says that the image is not pullable, don't even bother trying to scan
 	if req.containerImage.GetNotPullable() {
@@ -298,7 +303,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
 	}
 	return imageChanResult{
-		image:        value.waitAndGet(),
+		image:        value.WaitAndGet(),
 		containerIdx: req.containerIdx,
 	}
 }

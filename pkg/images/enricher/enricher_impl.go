@@ -15,8 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
@@ -58,7 +58,7 @@ type enricherImpl struct {
 	integrationHealthReporter integrationhealth.Reporter
 
 	metadataLimiter *rate.Limiter
-	metadataCache   expiringcache.Cache
+	metadataCache   cache.ImageMetadata
 
 	signatureIntegrationGetter SignatureIntegrationGetter
 	signatureVerifier          signatureVerifierForIntegrations
@@ -347,7 +347,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 		// The metadata in the cache is always up-to-date with respect to the current metadataVersion
 		if metadataValue, ok := e.metadataCache.Get(getRef(image)); ok {
 			e.metrics.IncrementMetadataCacheHit()
-			image.Metadata = metadataValue.(*storage.ImageMetadata).Clone()
+			image.Metadata = metadataValue.Clone()
 			return true, nil
 		}
 		e.metrics.IncrementMetadataCacheMiss()

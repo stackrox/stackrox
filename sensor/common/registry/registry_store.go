@@ -67,7 +67,7 @@ type Store struct {
 	// the number of connections can be reduced to one.
 	//
 	// An expiring cache is used because the TLS state of a registry may change.
-	tlsCheckResults expiringcache.Cache
+	tlsCheckResults expiringcache.Cache[string, tlsCheckResult]
 }
 
 // CheckTLS defines a function which checks if the given address is using TLS.
@@ -97,7 +97,7 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 			types.WithGCPTokenManager(gcp.Singleton()),
 		),
 		clusterLocalRegistryHosts: set.NewStringSet(),
-		tlsCheckResults:           expiringcache.NewExpiringCache(tlsCheckTTL),
+		tlsCheckResults:           expiringcache.NewExpiringCache[string, tlsCheckResult](tlsCheckTTL),
 		knownSecretIDs:            set.NewStringSet(),
 	}
 

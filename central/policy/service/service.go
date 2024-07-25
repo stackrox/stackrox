@@ -13,8 +13,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/backgroundtasks"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/images/cache"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/notifier"
 )
@@ -38,7 +38,7 @@ func New(policies datastore.DataStore,
 	reprocessor reprocessor.Loop,
 	manager lifecycle.Manager,
 	processor notifier.Processor,
-	metadataCache expiringcache.Cache,
+	metadataCache cache.ImageMetadata,
 	connectionManager connection.Manager) Service {
 	backgroundTaskManager := backgroundtasks.NewManager()
 	backgroundTaskManager.Start()

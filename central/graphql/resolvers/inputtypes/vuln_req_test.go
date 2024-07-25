@@ -6,7 +6,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/suite"
 )
@@ -102,7 +101,7 @@ func (s *VulnReqInputResolversTestSuite) TestAsRequestExpiry() {
 
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-			s.True(protocompat.Equal(c.expectedExpiry, c.input.AsRequestExpiry()))
+			s.True(c.expectedExpiry.EqualVT(c.input.AsRequestExpiry()))
 		})
 	}
 }

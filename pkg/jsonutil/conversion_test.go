@@ -12,44 +12,17 @@ import (
 
 func TestConversion(t *testing.T) {
 	type conversionTestCase struct {
-		desc    string
-		str     string
-		escaped bool
-	}
-
-	testCases := []conversionTestCase{
-		{
-			"String without special characters is preserved",
-			"E = mc^2",
-			false,
-		},
-		{
-			"Some special characters (<, >, &) are escaped",
-			"A <= B & B >= C",
-			true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.desc, func(t *testing.T) {
-			verifyJSONToProtoToJSON(t, jsonify(tc.str), !tc.escaped, []ConversionOption{})
-		})
-
-		t.Run(tc.desc+" in compact JSON", func(t *testing.T) {
-			verifyJSONToProtoToJSON(t, jsonifyCompact(tc.str), !tc.escaped, []ConversionOption{OptCompact})
-		})
-	}
-}
-
-func TestConversionWithUnEscape(t *testing.T) {
-	type conversionTestCase struct {
 		desc string
 		str  string
 	}
 
 	testCases := []conversionTestCase{
 		{
-			"Single <, >, & are preserved",
+			"String without special characters is preserved",
+			"E = mc^2",
+		},
+		{
+			"Some special characters (<, >, &) are escaped",
 			"A <= B & B >= C",
 		},
 		{
@@ -62,18 +35,25 @@ func TestConversionWithUnEscape(t *testing.T) {
 		},
 		{
 			"Non-escaped but similar sequences are untouched",
-			`\\u003c \\\u003e`,
+			`\\u003c \\u003e`,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			verifyJSONToProtoToJSON(t, jsonify(tc.str), true, []ConversionOption{OptUnEscape})
+			verifyJSONToProtoToJSON(t, jsonify(tc.str), []ConversionOption{})
 		})
 
 		t.Run(tc.desc+" in compact JSON", func(t *testing.T) {
-			// Prevent JSON conversion from escaping specific charters.
-			verifyJSONToProtoToJSON(t, jsonifyCompact(tc.str), true, []ConversionOption{OptUnEscape, OptCompact})
+			verifyJSONToProtoToJSON(t, jsonifyCompact(tc.str), []ConversionOption{OptCompact})
+		})
+
+		t.Run(tc.desc+" with OptUnEscape", func(t *testing.T) {
+			verifyJSONToProtoToJSON(t, jsonify(tc.str), []ConversionOption{OptUnEscape})
+		})
+
+		t.Run(tc.desc+" in compact JSON with OptUnEscape", func(t *testing.T) {
+			verifyJSONToProtoToJSON(t, jsonifyCompact(tc.str), []ConversionOption{OptUnEscape, OptCompact})
 		})
 	}
 }
@@ -90,7 +70,7 @@ func jsonify(value string) string {
 }`, value)
 }
 
-func verifyJSONToProtoToJSON(t *testing.T, inputJSON string, shouldPreserve bool, options []ConversionOption) {
+func verifyJSONToProtoToJSON(t *testing.T, inputJSON string, options []ConversionOption) {
 	// Use ResourceByID proto because it contains a single string field.
 	var proto v1.ResourceByID
 
@@ -101,7 +81,11 @@ func verifyJSONToProtoToJSON(t *testing.T, inputJSON string, shouldPreserve bool
 	// Conversion to only JSON escapes characters if specified in options.
 	convertedJSON, err := ProtoToJSON(&proto, options...)
 	assert.NoError(t, err)
-	assert.Equalf(t, shouldPreserve, inputJSON == convertedJSON, "original JSON:\n%s\nconvertedJSON:\n%s", inputJSON, convertedJSON)
+	assert.JSONEq(t, inputJSON, convertedJSON)
+
+	if contains(options, OptCompact) {
+		assert.Equal(t, inputJSON, convertedJSON)
+	}
 }
 
 func TestNoErrorOnUnknownAttribute(t *testing.T) {

@@ -4,18 +4,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestCompareTimestamps(t *testing.T) {
-	protoTS1 := &types.Timestamp{
+	protoTS1 := &timestamppb.Timestamp{
 		Seconds: 2345678901,
 		Nanos:   234567891,
 	}
 
-	protoTS2 := &types.Timestamp{
+	protoTS2 := &timestamppb.Timestamp{
 		Seconds: 3456789012,
 		Nanos:   345678912,
 	}
@@ -26,17 +27,17 @@ func TestCompareTimestamps(t *testing.T) {
 }
 
 func TestConvertTimestampToCSVString(t *testing.T) {
-	var nilTS *types.Timestamp
+	var nilTS *timestamppb.Timestamp
 	nilStringRepresentation := ConvertTimestampToCSVString(nilTS)
 	assert.Equal(t, "N/A", nilStringRepresentation)
 
-	invalidTS := &types.Timestamp{
+	invalidTS := &timestamppb.Timestamp{
 		Seconds: -62234567890,
 	}
 	stringFromInvalid := ConvertTimestampToCSVString(invalidTS)
 	assert.Equal(t, "ERR", stringFromInvalid)
 
-	ts := &types.Timestamp{
+	ts := &timestamppb.Timestamp{
 		Seconds: 2345678901,
 		Nanos:   123456789,
 	}
@@ -48,8 +49,8 @@ func TestConvertTimestampToTimeOrError(t *testing.T) {
 	seconds := int64(2345678901)
 	nanos := int32(123456789)
 
-	var protoTS1 *types.Timestamp
-	protoTS2 := &types.Timestamp{
+	var protoTS1 *timestamppb.Timestamp
+	protoTS2 := &timestamppb.Timestamp{
 		Seconds: seconds,
 		Nanos:   nanos,
 	}
@@ -71,15 +72,15 @@ func TestConvertTimeToTimestampOrError(t *testing.T) {
 
 	protoTS1, errTS1 := ConvertTimeToTimestampOrError(time1)
 	assert.NoError(t, errTS1)
-	protoassert.Equal(t, &types.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
+	protoassert.Equal(t, &timestamppb.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
 }
 
 func TestConvertTimestampToTimeOrNil(t *testing.T) {
 	seconds := int64(2345678901)
 	nanos := int32(123456789)
 
-	var protoTS1 *types.Timestamp
-	protoTS2 := &types.Timestamp{
+	var protoTS1 *timestamppb.Timestamp
+	protoTS2 := &timestamppb.Timestamp{
 		Seconds: seconds,
 		Nanos:   nanos,
 	}
@@ -92,7 +93,7 @@ func TestConvertTimestampToTimeOrNil(t *testing.T) {
 	goTS2 := ConvertTimestampToTimeOrNil(protoTS2)
 	assert.Equal(t, expectedTimeTS2.Local(), goTS2.Local())
 
-	protoTSInvalid := &types.Timestamp{
+	protoTSInvalid := &timestamppb.Timestamp{
 		Seconds: -62135683200,
 	}
 	goTSInvalid := ConvertTimestampToTimeOrNil(protoTSInvalid)
@@ -109,7 +110,7 @@ func TestConvertTimeToTimestampOrNil(t *testing.T) {
 	time1 := time.Unix(seconds1, int64(nanos1))
 
 	protoTS1 := ConvertTimeToTimestampOrNil(&time1)
-	protoassert.Equal(t, &types.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
+	protoassert.Equal(t, &timestamppb.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
 
 	timeInvalid := time.Date(0, 12, 25, 23, 59, 59, 0, time.UTC)
 	protoTSInvalid := ConvertTimeToTimestampOrNil(&timeInvalid)
@@ -121,7 +122,7 @@ func TestConvertTimestampToGraphqlTimeOrError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, gqlTime)
 
-	protoTime := &types.Timestamp{
+	protoTime := &timestamppb.Timestamp{
 		Seconds: 2345678901,
 		Nanos:   234567891,
 	}
@@ -130,7 +131,7 @@ func TestConvertTimestampToGraphqlTimeOrError(t *testing.T) {
 	assert.Equal(t, int64(2345678901234567891), gqlTime.UnixNano())
 
 	// Negative Nanos is not valid for Timestamp.
-	invalidProtoTime := &types.Timestamp{
+	invalidProtoTime := &timestamppb.Timestamp{
 		Nanos: -1,
 	}
 	gqlTime, err = ConvertTimestampToGraphqlTimeOrError(invalidProtoTime)
@@ -187,14 +188,14 @@ func TestGetProtoTimestampZero(t *testing.T) {
 
 func TestNilOrNow(t *testing.T) {
 	now := time.Now()
-	var nilTS *types.Timestamp
+	var nilTS *timestamppb.Timestamp
 	nowFromNil := NilOrNow(nilTS)
 	assert.NotNil(t, nowFromNil)
 	deltaFromNil := nowFromNil.Sub(now)
 	// ensure the delta between "now" and the "now" from conversion is small enough
 	assert.Equal(t, "0s", deltaFromNil.Truncate(time.Second).String())
 
-	invalidTS := &types.Timestamp{
+	invalidTS := &timestamppb.Timestamp{
 		Seconds: -62234567890,
 	}
 	nowFromInvalid := NilOrNow(invalidTS)
@@ -203,7 +204,7 @@ func TestNilOrNow(t *testing.T) {
 	// ensure the delta between "now" and the "now" from conversion is small enough
 	assert.Equal(t, "0s", deltaFromInvalid.Truncate(time.Second).String())
 
-	ts := &types.Timestamp{
+	ts := &timestamppb.Timestamp{
 		Seconds: int64(2345678901),
 		Nanos:   int32(123456789),
 	}
@@ -223,7 +224,7 @@ func TestTimestampNow(t *testing.T) {
 }
 
 func TestDurationFromProto(t *testing.T) {
-	protoDuration := &types.Duration{
+	protoDuration := &durationpb.Duration{
 		Seconds: 1,
 		Nanos:   5,
 	}
@@ -233,7 +234,7 @@ func TestDurationFromProto(t *testing.T) {
 	assert.Equal(t, expectedDuration, timeDuration)
 
 	// Positive duration with negative Nanos is not valid.
-	protoInvalidDuration := &types.Duration{
+	protoInvalidDuration := &durationpb.Duration{
 		Seconds: 1,
 		Nanos:   -1,
 	}
@@ -244,7 +245,7 @@ func TestDurationFromProto(t *testing.T) {
 
 func TestDurationProto(t *testing.T) {
 	timeDuration := 1000000005 * time.Nanosecond
-	expectedProtoDuration := &types.Duration{
+	expectedProtoDuration := &durationpb.Duration{
 		Seconds: 1,
 		Nanos:   5,
 	}

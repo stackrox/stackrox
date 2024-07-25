@@ -16,85 +16,85 @@ import (
 )
 
 // MockCache is a mock of Cache interface.
-type MockCache struct {
+type MockCache[K comparable, V any] struct {
 	ctrl     *gomock.Controller
-	recorder *MockCacheMockRecorder
+	recorder *MockCacheMockRecorder[K, V]
 }
 
 // MockCacheMockRecorder is the mock recorder for MockCache.
-type MockCacheMockRecorder struct {
-	mock *MockCache
+type MockCacheMockRecorder[K comparable, V any] struct {
+	mock *MockCache[K, V]
 }
 
 // NewMockCache creates a new mock instance.
-func NewMockCache(ctrl *gomock.Controller) *MockCache {
-	mock := &MockCache{ctrl: ctrl}
-	mock.recorder = &MockCacheMockRecorder{mock}
+func NewMockCache[K comparable, V any](ctrl *gomock.Controller) *MockCache[K, V] {
+	mock := &MockCache[K, V]{ctrl: ctrl}
+	mock.recorder = &MockCacheMockRecorder[K, V]{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockCache) EXPECT() *MockCacheMockRecorder {
+func (m *MockCache[K, V]) EXPECT() *MockCacheMockRecorder[K, V] {
 	return m.recorder
 }
 
 // Add mocks base method.
-func (m *MockCache) Add(key, value any) {
+func (m *MockCache[K, V]) Add(key K, value V) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Add", key, value)
 }
 
 // Add indicates an expected call of Add.
-func (mr *MockCacheMockRecorder) Add(key, value any) *gomock.Call {
+func (mr *MockCacheMockRecorder[K, V]) Add(key, value any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockCache)(nil).Add), key, value)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockCache[K, V])(nil).Add), key, value)
 }
 
 // Get mocks base method.
-func (m *MockCache) Get(key any) (any, bool) {
+func (m *MockCache[K, V]) Get(key K) (V, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", key)
-	ret0, _ := ret[0].(any)
+	ret0, _ := ret[0].(V)
 	ret1, _ := ret[1].(bool)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockCacheMockRecorder) Get(key any) *gomock.Call {
+func (mr *MockCacheMockRecorder[K, V]) Get(key any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCache)(nil).Get), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCache[K, V])(nil).Get), key)
 }
 
 // GetAll mocks base method.
-func (m *MockCache) GetAll() []any {
+func (m *MockCache[K, V]) GetAll() []V {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll")
-	ret0, _ := ret[0].([]any)
+	ret0, _ := ret[0].([]V)
 	return ret0
 }
 
 // GetAll indicates an expected call of GetAll.
-func (mr *MockCacheMockRecorder) GetAll() *gomock.Call {
+func (mr *MockCacheMockRecorder[K, V]) GetAll() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockCache)(nil).GetAll))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockCache[K, V])(nil).GetAll))
 }
 
 // GetOrSet mocks base method.
-func (m *MockCache) GetOrSet(key, value any) any {
+func (m *MockCache[K, V]) GetOrSet(key K, value V) V {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOrSet", key, value)
-	ret0, _ := ret[0].(any)
+	ret0, _ := ret[0].(V)
 	return ret0
 }
 
 // GetOrSet indicates an expected call of GetOrSet.
-func (mr *MockCacheMockRecorder) GetOrSet(key, value any) *gomock.Call {
+func (mr *MockCacheMockRecorder[K, V]) GetOrSet(key, value any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrSet", reflect.TypeOf((*MockCache)(nil).GetOrSet), key, value)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrSet", reflect.TypeOf((*MockCache[K, V])(nil).GetOrSet), key, value)
 }
 
 // Remove mocks base method.
-func (m *MockCache) Remove(key ...any) {
+func (m *MockCache[K, V]) Remove(key ...K) {
 	m.ctrl.T.Helper()
 	varargs := []any{}
 	for _, a := range key {
@@ -104,19 +104,19 @@ func (m *MockCache) Remove(key ...any) {
 }
 
 // Remove indicates an expected call of Remove.
-func (mr *MockCacheMockRecorder) Remove(key ...any) *gomock.Call {
+func (mr *MockCacheMockRecorder[K, V]) Remove(key ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockCache)(nil).Remove), key...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockCache[K, V])(nil).Remove), key...)
 }
 
 // RemoveAll mocks base method.
-func (m *MockCache) RemoveAll() {
+func (m *MockCache[K, V]) RemoveAll() {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RemoveAll")
 }
 
 // RemoveAll indicates an expected call of RemoveAll.
-func (mr *MockCacheMockRecorder) RemoveAll() *gomock.Call {
+func (mr *MockCacheMockRecorder[K, V]) RemoveAll() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAll", reflect.TypeOf((*MockCache)(nil).RemoveAll))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAll", reflect.TypeOf((*MockCache[K, V])(nil).RemoveAll))
 }
