@@ -145,7 +145,9 @@ class SplunkUtil {
                 .formParam("output_mode", "json")
                 .post("https://127.0.0.1:${port}/servicesNS/nobody/search/data/inputs/http")
         }
-        return unmarshalHEC(response?.asString())
+        def hec = unmarshalHEC(response?.asString())
+        assert hec.size() == 36 // Splunk has a unified token format based on a hash-like
+        return hec
     }
 
     static String unmarshalHEC(String response) {
