@@ -1,5 +1,7 @@
 package objects
 
+import com.google.gson.annotations.SerializedName
+
 class SplunkSearch {
     String sid
 }
@@ -57,6 +59,17 @@ class SplunkHealthResults {
 class SplunkHealthEntry {
     public SplunkHealthContent content
     static class SplunkHealthContent {
+        public SplunkFeatureHealth features
         public String health
+        static class SplunkFeatureHealth {
+            @SerializedName("Index Processor") public SplunkIndexProcessorHealth indexProcessor
+            @SerializedName("Search Scheduler") public SplunkSearchSchedulerHealth searchScheduler
+            static class SplunkIndexProcessorHealth {
+                public String health
+            }
+            static class SplunkSearchSchedulerHealth {
+                public String health
+            }
+        }
     }
 }

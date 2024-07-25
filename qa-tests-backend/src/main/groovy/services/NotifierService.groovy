@@ -157,11 +157,9 @@ class NotifierService extends BaseService {
     /**
      * This function add a notifier for Splunk.
      *
-     * @param legacy Does this integration provide the full URL path or just the base
      * @param name Splunk Integration name
      */
     static NotifierOuterClass.Notifier getSplunkIntegrationConfig(
-            boolean legacy,
             String serviceName,
             String name,
             String token
@@ -178,9 +176,7 @@ class NotifierService extends BaseService {
                         .setDerivedSourceType(true)
                         .setHttpToken(token)
                         .setInsecure(true)
-                        .setHttpEndpoint(String.format(
-                                "https://${serviceName}.qa:8088%s",
-                                legacy ? "/services/collector/event" : "")))
+                        .setHttpEndpoint("https://${serviceName}.qa:8088/services/collector/event"))
                 .build()
     }
 

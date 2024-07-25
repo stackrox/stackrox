@@ -120,15 +120,11 @@ class SlackNotifier extends Notifier {
 class SplunkNotifier extends Notifier {
     def splunkPort
 
-    SplunkNotifier(boolean legacy, String collectorServiceName, int port, String integrationName = "Splunk Test") {
+    SplunkNotifier(String collectorServiceName, int port, String integrationName = "Splunk Test") {
         splunkPort = port
-        String hecToken  = "00000000-0000-0000-0000-000000000000" // default for Splunk 6
-        if (!legacy) {
-            // For current Splunk images an ingest token needs to be created
-            hecToken = SplunkUtil.createHECToken(splunkPort)
-        }
+        def hecToken = SplunkUtil.createHECToken(splunkPort)
         log.info("Using HEC ingest token: ${hecToken}")
-        notifier = NotifierService.getSplunkIntegrationConfig(legacy, collectorServiceName, integrationName, hecToken)
+        notifier = NotifierService.getSplunkIntegrationConfig(collectorServiceName, integrationName, hecToken)
     }
 
     def createNotifier() {

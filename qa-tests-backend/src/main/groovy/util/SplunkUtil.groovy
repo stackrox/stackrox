@@ -36,13 +36,6 @@ class SplunkUtil {
         // Splunk_Enterprise_does_not_start_due_to_unusable_filesystem
         // See https://github.com/splunk/splunk-ansible/issues/349
         "SPLUNK_LAUNCH_CONF": "OPTIMISTIC_ABOUT_FILE_LOCKING=1",]
-    private static final Map<String, String> LEGACY_ENV_VARIABLES = ["SPLUNK_START_ARGS" : "--accept-license",
-        "SPLUNK_USER": "root",
-        "SPLUNK_PASSWORD"   : SPLUNK_ADMIN_PASSWORD,
-        // This is required to get splunk 6.6.2 to start in an OpenShift crio environment
-        // https://docs.splunk.com/Documentation/Splunk/7.0.3/Troubleshooting/FSLockingIssues#
-        // Splunk_Enterprise_does_not_start_due_to_unusable_filesystem
-        "OPTIMISTIC_ABOUT_FILE_LOCKING": "1",]
 
     static List<SplunkAlert> getSplunkAlerts(int port, String searchId) {
         Response response = getSearchResults(port, searchId)
@@ -158,7 +151,7 @@ class SplunkUtil {
         }
     }
 
-    static SplunkDeployment createSplunk(OrchestratorMain orchestrator, String namespace, boolean useLegacySplunk) {
+    static SplunkDeployment createSplunk(OrchestratorMain orchestrator, String namespace) {
         def uid = UUID.randomUUID()
         def deploymentName = "splunk-${uid}"
         Deployment deployment
@@ -170,14 +163,12 @@ class SplunkUtil {
                     new Deployment()
                             .setNamespace(namespace)
                             .setName(deploymentName)
-                            .setImage(useLegacySplunk ?
-                                    "quay.io/rhacs-eng/qa:splunk-test-repo-6-6-2" :
-                                    "quay.io/rhacs-eng/qa:splunk-test-repo-9-0-5")
+                            .setImage("quay.io/rhacs-eng/qa:splunk-test-repo-9-0-5")
                             .addPort(8000)
                             .addPort(8088)
                             .addPort(8089)
                             .addPort(514)
-                            .setEnv(useLegacySplunk ? LEGACY_ENV_VARIABLES : ENV_VARIABLES)
+                            .setEnv(ENV_VARIABLES)
                             .addLabel("app", deploymentName)
             orchestrator.createDeployment(deployment)
 
@@ -222,7 +213,13 @@ class SplunkUtil {
             log.debug("Splunkd status: \n" + response?.asString())
             SplunkHealthResults results = GSON.fromJson(response?.asString(), SplunkHealthResults)
             for (SplunkHealthEntry entry: results.entry) {
-                assert entry.content.health == "green" // Splunk status is modeled as green/yellow/red
+                // Splunk status is modeled as green/yellow/red.
+                // We're only interested in the Index Processor and Search Scheduler,
+                // as overall health can be degraded because of IOWait or disk storage.
+                assert entry.content.features.searchScheduler.health == "green"
+                // The IndexProcessor can be yellow because of free disk space. That's okay for the short-lived test.
+                assert (entry.content.features.indexProcessor.health == "green" ||
+                        entry.content.features.indexProcessor.health == "yellow")
             }
             log.info("Splunk has completed booting")
         }
