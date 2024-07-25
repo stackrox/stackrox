@@ -54,21 +54,20 @@ func Unmarshal[T any, PT Unmarshaler[T]](dAtA []byte, msg PT) error {
 		return ErrNil
 	}
 
-	return msg.Unmarshal(dAtA)
+	return msg.UnmarshalVT(dAtA)
 }
 
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
 type Unmarshaler[T any] interface {
-	Unmarshal(dAtA []byte) error
+	UnmarshalVT(dAtA []byte) error
 	*T
 }
 
 // ClonedUnmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler
 // and that have a Clone deep-copy method.
 type ClonedUnmarshaler[T any] interface {
+	Unmarshaler[T]
 	Clone() *T
-	Unmarshal(dAtA []byte) error
-	*T
 }
 
 // Merge merges src into dst.
