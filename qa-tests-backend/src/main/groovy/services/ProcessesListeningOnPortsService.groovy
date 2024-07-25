@@ -32,24 +32,5 @@ class ProcessesListeningOnPortsService extends BaseService {
         } catch (Exception e) {
             log.warn("Failed to fetch listening endpoint counts", e)
         }
-
-        //return getProcessesListeningOnPortsService().getCountListeningEndpointsMethod()
-        return getProcessesListeningOnPortsService().countListeningEndpoints()
-
-        //CountProcessesListeningOnPortsRequest request =
-        //        CountProcessesListeningOnPortsRequest.newBuilder()
-        //                .build()
-
-        //def processesListeningOnPortsCounts = countProcessesListeningOnPortsService()
-        //                .countListeningEndpoints(request)
-
-        //return processesListeningOnPortsCounts
     }
 }
-    //static RoleServiceOuterClass.GetResourcesResponse getResources() {
-    //    try {
-    //        return getRoleService().getResources(EMPTY)
-    //    } catch (Exception e) {
-    //        log.warn("Failed to fetch resources", e)
-    //    }
-    //}

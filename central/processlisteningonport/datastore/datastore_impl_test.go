@@ -419,6 +419,12 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 				fixtureconsts.Deployment2: 0,
 			},
 		},
+		"no access": {
+			ctx:           sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker()),
+                        expectAllowed:  false,
+			expectedPlopCounts: map[string]int32{},
+                },
+
 	}
 
 	for name, c := range cases {
@@ -513,6 +519,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 
 	// It's closed and excluded from the API response
 	suite.Len(newPlops, 0)
+
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        0,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 	// Verify the state of the table after the test
 	newPlopsFromDB := suite.getPlopsFromDB()
