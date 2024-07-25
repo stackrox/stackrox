@@ -65,19 +65,19 @@ func testFlagEnabled(t *testing.T, feature FeatureFlag, envSetting string, expec
 func TestFeatureEnvVarStartsWithRox(t *testing.T) {
 	// Use two blocks because it should fail if either of them doesn't panic
 	assert.Panics(t, func() {
-		registerFeature("blah", "NOT_ROX_WHATEVER", false)
+		registerFeature("blah", "NOT_ROX_WHATEVER")
 	})
 	assert.Panics(t, func() {
-		registerUnchangeableFeature("blah", "NOT_ROX_WHATEVER", false)
+		registerFeature("blah", "NOT_ROX_WHATEVER", unchangeableInProd)
 	})
 }
 
 func TestFeatureFlags(t *testing.T) {
-	defaultTrueFeature := registerFeature("default_true", "ROX_DEFAULT_TRUE", true)
+	defaultTrueFeature := registerFeature("default_true", "ROX_DEFAULT_TRUE", enabled)
 	for _, test := range defaultTrueCases {
 		testFlagEnabled(t, defaultTrueFeature, test.env, test.expected)
 	}
-	defaultFalseFeature := registerFeature("default_false", "ROX_DEFAULT_FALSE", false)
+	defaultFalseFeature := registerFeature("default_false", "ROX_DEFAULT_FALSE")
 	for _, test := range defaultFalseCases {
 		testFlagEnabled(t, defaultFalseFeature, test.env, test.expected)
 	}
@@ -85,26 +85,26 @@ func TestFeatureFlags(t *testing.T) {
 
 // Test that the feature override works as expected given an appropriate overridable setting
 func TestFeatureOverrideSetting(t *testing.T) {
-	overridableFeature := saveFeature("test_feat", "ROX_TEST_FEAT", true, true, devPreview)
-	unchangeableFeature := saveFeature("test_feat", "ROX_TEST_FEAT", true, false, devPreview)
+	overridableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", enabled)
+	nonoverridableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", enabled, withUnchangeable(true))
 
 	// overridable features can be changed from the default value (true)
 	testFlagEnabled(t, overridableFeature, "false", false)
 
 	// unchangeable features cannot be changed from the default value (true)
-	testFlagEnabled(t, unchangeableFeature, "false", true)
+	testFlagEnabled(t, nonoverridableFeature, "false", true)
 }
 
 // This is a similar test as `TestFeatureOverrideSetting` but the difference is that this tests the fact that
 // registerUnchangeableFeature sets the correct overridable setting on a release build
 func TestOverridesOnReleaseBuilds(t *testing.T) {
-	overridableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", true)
-	unchangeableFeature := registerUnchangeableFeature("test_feat", "ROX_TEST_FEAT", true)
+	overridableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", enabled)
+	unchangeableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", enabled, unchangeableInProd)
 
 	// overridable features can be changed from the default value (true) regardless of the type of build
 	testFlagEnabled(t, overridableFeature, "false", false)
 
-	// unchangeable features canb only be changed from the default value (true) on non-release builds
+	// unchangeable features can only be changed from the default value (true) on non-release builds
 	if buildinfo.ReleaseBuild {
 		testFlagEnabled(t, unchangeableFeature, "false", true)
 	} else {
@@ -113,13 +113,9 @@ func TestOverridesOnReleaseBuilds(t *testing.T) {
 }
 
 func TestStage(t *testing.T) {
-	devFeature := registerFeature("test_feat", "ROX_TEST_FEAT", true)
-	assert.Equal(t, "dev-preview", devFeature.Stage())
-	devFeature = registerUnchangeableFeature("test_feat", "ROX_TEST_FEAT", true)
-	assert.Equal(t, "dev-preview", devFeature.Stage())
+	f := registerFeature("test_feat", "ROX_TEST_FEAT")
+	assert.Equal(t, "dev-preview", f.Stage())
 
-	techFeature := registerTechPreviewFeature("test_feat", "ROX_TEST_FEAT", true)
-	assert.Equal(t, "tech-preview", techFeature.Stage())
-	techFeature = registerUnchangeableTechPreviewFeature("test_feat", "ROX_TEST_FEAT", true)
-	assert.Equal(t, "tech-preview", techFeature.Stage())
+	f = registerFeature("test_feat", "ROX_TEST_FEAT", techPreview)
+	assert.Equal(t, "tech-preview", f.Stage())
 }
