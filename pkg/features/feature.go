@@ -5,12 +5,7 @@ import (
 	"strings"
 )
 
-type stage bool
-
 const (
-	devPreview  stage = false
-	techPreview stage = true
-
 	devPreviewString  = "dev-preview"
 	techPreviewString = "tech-preview"
 )

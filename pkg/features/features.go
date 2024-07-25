@@ -6,7 +6,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
