@@ -3,8 +3,6 @@ package features
 import (
 	"os"
 	"strings"
-
-	"github.com/stackrox/rox/pkg/logging"
 )
 
 type stage bool
@@ -57,8 +55,4 @@ func (f *feature) Stage() string {
 		return techPreviewString
 	}
 	return devPreviewString
-}
-
-func (f *feature) Logging() interface{} {
-	return logging.Any(f.EnvVar(), f.Enabled())
 }

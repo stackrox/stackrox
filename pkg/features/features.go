@@ -18,7 +18,6 @@ type FeatureFlag interface {
 	Enabled() bool
 	Default() bool
 	Stage() string
-	Logging() interface{}
 }
 
 var (
@@ -59,7 +58,7 @@ func LogFeatureFlags() {
 	data := map[string][]interface{}{}
 	for _, envVar := range sortEnvVars() {
 		flag := Flags[envVar]
-		data[flag.Stage()] = append(data[flag.Stage()], flag.Logging())
+		data[flag.Stage()] = append(data[flag.Stage()], logging.Any(flag.EnvVar(), flag.Enabled()))
 	}
 	if len(data[devPreviewString]) > 0 {
 		log.Infow("Feature flags [dev-preview]", data[devPreviewString]...)
