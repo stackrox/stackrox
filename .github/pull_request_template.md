@@ -21,7 +21,7 @@ General Availability requirements: https://github.com/stackrox/stackrox/blob/mas
 Feature Flags usage: https://github.com/stackrox/stackrox/blob/master/pkg/features/README.md
 -->
 
-- [ ] the change is ready to be deployed in production: the feature is complete xor gated by a feature flag, and security and performance implications have been considered
+- [ ] the change is production ready: the feature is GA or otherwise gated by a feature flag
 - [ ] CI results are inspected
 
 #### Automated testing
