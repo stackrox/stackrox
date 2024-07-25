@@ -81,7 +81,6 @@ import (
 	externalbackupsDS "github.com/stackrox/rox/central/externalbackups/datastore"
 	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
 	backupService "github.com/stackrox/rox/central/externalbackups/service"
-	featureFlagService "github.com/stackrox/rox/central/featureflags/service"
 	"github.com/stackrox/rox/central/globaldb"
 	dbAuthz "github.com/stackrox/rox/central/globaldb/authz"
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
@@ -188,6 +187,7 @@ import (
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	featureFlagService "github.com/stackrox/rox/pkg/features/service"
 	featuresTelemetry "github.com/stackrox/rox/pkg/features/telemetry"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
