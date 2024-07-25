@@ -434,8 +434,9 @@ func (m *manifestGenerator) applyCentralDeployment(ctx context.Context) error {
 				Spec: v1.PodSpec{
 					ServiceAccountName: "central",
 					Containers: []v1.Container{{
-						Name:            "central",
-						Image:           "quay.io/klape/stackrox:latest",
+						Name: "central",
+						// Image:           "quay.io/klape/stackrox:latest",
+						Image:           "localhost:5001/stackrox/main:latest",
 						ImagePullPolicy: v1.PullAlways,
 						Command:         []string{"/stackrox/central-entrypoint.sh"},
 						Ports: []v1.ContainerPort{{

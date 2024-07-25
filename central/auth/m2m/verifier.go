@@ -38,6 +38,16 @@ func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToM
 	if err != nil {
 		return nil, errors.Wrap(err, "creating TLS config for token verification")
 	}
+
+	log.Infof("m2m auth config type: %s", config.Type)
+	if config.Type == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
+		kubeServiceAccountVerifier, err := NewKubeServiceAccountVerifier(ctx, config.Issuer, tlsConfig)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating kube service account verifier")
+		}
+		return kubeServiceAccountVerifier, nil
+	}
+
 	provider, err := oidc.NewProvider(
 		oidc.ClientContext(ctx, &http.Client{Timeout: time.Minute,
 			Transport: proxy.RoundTripper(proxy.WithTLSConfig(tlsConfig))}),

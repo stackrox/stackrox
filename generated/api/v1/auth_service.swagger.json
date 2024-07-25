@@ -577,7 +577,8 @@
       "type": "string",
       "enum": [
         "GENERIC",
-        "GITHUB_ACTIONS"
+        "GITHUB_ACTIONS",
+        "KUBE_SERVICE_ACCOUNT"
       ],
       "default": "GENERIC",
       "description": "The type of the auth machine to machine config.\nCurrently supports GitHub actions or any other generic OIDC provider to use for verifying and\nexchanging the token."
