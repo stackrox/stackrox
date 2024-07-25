@@ -2,6 +2,7 @@ import static util.Helpers.withRetry
 import static util.SplunkUtil.SPLUNK_ADMIN_PASSWORD
 import static util.SplunkUtil.postToSplunk
 import static util.SplunkUtil.tearDownSplunk
+import static util.SplunkUtil.waitForSplunkBoot
 
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
@@ -57,6 +58,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
     def setup() {
         splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE)
+        waitForSplunkBoot(splunkDeployment.splunkPortForward.getLocalPort())
     }
 
     def cleanup() {
@@ -90,7 +92,9 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                 "sudo /opt/splunk/bin/splunk set minfreemb 200 -auth admin:${SPLUNK_ADMIN_PASSWORD}"
         )
         // Splunk needs to be restarted after TA installation
+        log.info "Restarting Splunk to apply settings and TA"
         postToSplunk(splunkDeployment.splunkPortForward.getLocalPort(), "/services/server/control/restart", [:])
+        waitForSplunkBoot(splunkDeployment.splunkPortForward.getLocalPort())
 
         log.info("Configuring Stackrox TA")
         def tokenResp = ApiTokenService.generateToken("splunk-token-${splunkDeployment.uid}", "Analyst")
@@ -120,7 +124,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         boolean hasNetworkViolation = false
         boolean hasProcessViolation = false
         def port = splunkDeployment.splunkPortForward.getLocalPort()
-        withRetry(20, 5) {
+        withRetry(40, 15) {
             def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
             TimeUnit.SECONDS.sleep(15)
             Response response = SplunkUtil.getSearchResults(port, searchId)
@@ -130,7 +134,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             assert !results.isEmpty()
             hasNetworkViolation = results.any { isNetworkViolation(it) }
             hasProcessViolation = results.any { isProcessViolation(it) }
-            log.debug "Found violations in Splunk: \n${results}"
+            log.debug "Violations currently indexed in Splunk: \n${results}"
             log.info "Current Splunk index contains " +
                     "any Network Violation: ${hasNetworkViolation} and any Process Violation: ${hasProcessViolation}"
             assert hasNetworkViolation && hasProcessViolation
@@ -148,7 +152,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         List<Map<String, String>> alerts = Collections.emptyList()
         boolean hasNetworkAlert = false
         boolean hasProcessAlert = false
-        withRetry(20, 5) {
+        withRetry(40, 15) {
             // Hint: If this produces no results, evaluate expanding the earliest_time, e.g. to -15m.
             // This can be done by expanding `createSearch` with a new parameter.
             def vSearchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
@@ -160,7 +164,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             assert !alerts.isEmpty()
             hasNetworkAlert = alerts.any { isNetworkViolation(it) }
             hasProcessAlert = alerts.any { isProcessViolation(it) }
-            log.debug "Found Alerts in Splunk: \n${alerts}"
+            log.debug "Alerts currently indexed in Splunk: \n${alerts}"
             log.info "Current Splunk index contains " +
                     "any Network Alert: ${hasNetworkAlert} and any Process Alert: ${hasProcessAlert}"
             assert hasNetworkAlert && hasProcessAlert
