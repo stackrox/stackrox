@@ -85,6 +85,10 @@ spec:
     description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
     name: oci-artifact-expires-after
     type: string
+  - name: image-tag-style
+    description: Image Tag style to be used, valid options are 'main' or 'operator'.
+    default: 'main'
+    type: string
 
   results:
   - description: ""
