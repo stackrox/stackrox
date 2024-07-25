@@ -43,20 +43,6 @@ func MarshalTextString(m proto.Message) string {
 	return prototext.MarshalOptions{Multiline: true}.Format(m)
 }
 
-// Unmarshal parses the protocol buffer representation in buf and places
-// the decoded result in pb. If the struct underlying pb does not match
-// the data in buf, the results can be unpredictable.
-//
-// Unmarshal resets pb before starting to unmarshal, so any existing data
-// in pb is always removed.
-func Unmarshal[T any, PT Unmarshaler[T]](dAtA []byte, msg PT) error {
-	if dAtA == nil {
-		return ErrNil
-	}
-
-	return msg.UnmarshalVT(dAtA)
-}
-
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
 type Unmarshaler[T any] interface {
 	UnmarshalVT(dAtA []byte) error
