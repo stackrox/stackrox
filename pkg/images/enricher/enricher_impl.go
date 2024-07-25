@@ -29,7 +29,6 @@ import (
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/ternary"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
 )
@@ -370,8 +369,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 		return false, errorList.ToError()
 	}
 
-	imgIDStr := ternary.String(image.GetId() != "", fmt.Sprintf(" (%s)", image.GetId()), "")
-	log.Infof("Getting metadata for image %s%s", image.GetName().GetFullName(), imgIDStr)
+	log.Infof("Getting metadata for image %q (id %q)", image.GetName().GetFullName(), image.GetId())
 	for _, registry := range registries {
 		updated, err := e.enrichImageWithRegistry(ctx, image, registry)
 		if err != nil {
@@ -590,8 +588,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 		return ScanNotDone, errorList.ToError()
 	}
 
-	imgIDStr := ternary.String(image.GetId() != "", fmt.Sprintf(" (%s)", image.GetId()), "")
-	log.Debugf("Scanning image %s%s", image.GetName().GetFullName(), imgIDStr)
+	log.Debugf("Scanning image %q (id %q)", image.GetName().GetFullName(), image.GetId())
 	for _, scanner := range scanners.GetAll() {
 		result, err := e.enrichImageWithScanner(ctx, image, scanner)
 		if err != nil {
