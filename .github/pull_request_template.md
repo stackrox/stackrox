@@ -14,7 +14,7 @@ change me!
 - [ ] CHANGELOG is updated **OR** update is not needed
 - [ ] [documentation PR](https://spaces.redhat.com/display/StackRox/Submitting+a+User+Documentation+Pull+Request) is created and is linked above **OR** is not needed
 
-### Quality Assurance
+### Quality assurance
 
 <!--
 General Availability requirements: https://github.com/stackrox/stackrox/blob/master/PR_GA.md
