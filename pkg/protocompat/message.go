@@ -11,16 +11,12 @@ import (
 type Message = proto.Message
 
 // Clone returns a deep copy of a protocol buffer.
+// Deprecated: Use CloneVT or CloneMessageVT instead.
 func Clone(msg proto.Message) proto.Message {
 	if vtMsg, ok := msg.(interface{ CloneMessageVT() proto.Message }); ok {
 		return vtMsg.CloneMessageVT()
 	}
 	return proto.Clone(msg)
-}
-
-// Equalable is an interface for proto objects that have generated Equal method.
-type Equalable[T any] interface {
-	EqualVT(t T) bool
 }
 
 // ErrNil is the error returned if Marshal is called with nil.
