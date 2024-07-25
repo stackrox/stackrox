@@ -19,6 +19,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Deprecated Fatures
 
 ### Technical Changes
+- ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered, this should reduce Sensor startup time.
+  - To revert back to synchronous TLS checks set `ROX_SENSOR_LAZY_TLS_CHECKS` to `false` on Sensor.
 
 ## [4.5.0]
 
