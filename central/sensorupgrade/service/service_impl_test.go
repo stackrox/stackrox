@@ -96,7 +96,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 	for caseName, testCase := range testCases {
 		s.Run(caseName, func() {
 			s.T().Setenv(env.ManagedCentral.EnvVar(), strconv.FormatBool(testCase.managedCentral))
-			s.T().Setenv(env.UpgraderEnabled.EnvVar(), strconv.FormatBool(!testCase.upgraderDisabled))
+			s.T().Setenv(env.SensorUpgraderEnabled.EnvVar(), strconv.FormatBool(!testCase.upgraderDisabled))
 			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
 			s.dataStore.EXPECT().UpsertSensorUpgradeConfig(gomock.Any(), gomock.Any()).Times(1)
 			serviceInstance, err := New(s.dataStore, s.manager)
@@ -155,10 +155,10 @@ func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_WithValueNot
 	}
 
 	for envValue, expectations := range testCases {
-		s.Run(fmt.Sprintf("ROX_UPGRADER_ENABLED=%v", envValue), func() {
+		s.Run(fmt.Sprintf("ROX_SENSOR_UPGRADER_ENABLED=%v", envValue), func() {
 			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
 			s.dataStore.EXPECT().UpsertSensorUpgradeConfig(gomock.Any(), &UpgradeConfigMatcher{expectations.expectedAutoUpdate})
-			s.T().Setenv(env.UpgraderEnabled.EnvVar(), envValue)
+			s.T().Setenv(env.SensorUpgraderEnabled.EnvVar(), envValue)
 
 			instance, err := New(s.dataStore, s.manager)
 			s.NoError(err)

@@ -113,10 +113,10 @@ func (s *service) AutoUpgradeSetting() *concurrency.Flag {
 }
 
 func getAutoUpgradeFeatureStatus() v1.GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus {
-	if env.ManagedCentral.BooleanSetting() {
-		return v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED
+	if env.SensorUpgraderEnabled.BooleanSetting() {
+		return v1.GetSensorUpgradeConfigResponse_SUPPORTED
 	}
-	return v1.GetSensorUpgradeConfigResponse_SUPPORTED
+	return v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED
 }
 
 func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateSensorUpgradeConfigRequest) (*v1.Empty, error) {
