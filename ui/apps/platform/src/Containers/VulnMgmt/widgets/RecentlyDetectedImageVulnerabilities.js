@@ -8,12 +8,12 @@ import queryService from 'utils/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
-import NumberedList from 'Components/NumberedList';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { cveSortFields } from 'constants/sortFields';
 
+import NumberedList from './NumberedList';
 import ViewAllButton from './ViewAllButton';
 
 const RECENTLY_DETECTED_IMAGE_VULNERABILITIES = gql`
