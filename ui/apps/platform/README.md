@@ -1,5 +1,6 @@
 # StackRox Kubernetes Security Platform Web Application (UI)
 
+
 Single-page application (SPA) for StackRox Kubernetes Security Platform. This
 application was bootstrapped with
 [Create React App](https://github.com/facebookincubator/create-react-app).
