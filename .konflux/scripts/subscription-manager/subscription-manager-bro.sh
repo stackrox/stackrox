@@ -48,8 +48,6 @@ function main {
     case "$cmd" in
     "help" | "--help" | "-h")
         fn=usage ;;
-    "smuggle")
-        fn=smuggle ;;
     "register")
         fn=register ;;
     "cleanup")
@@ -75,7 +73,7 @@ function main {
 function usage {
     local example_target_dir="/mnt"
 
-    echo "Usage: $SCRIPT_NAME smuggle|register|cleanup|self-test"
+    echo "Usage: $SCRIPT_NAME register|cleanup|self-test"
     echo
     echo "This script enables access to RHEL RPMs during Konflux builds. The intended usage is as follows."
     echo
@@ -84,31 +82,25 @@ function usage {
     echo "the actual activation key as a value."
     echo "   Find where to get the secret from ${SECRET_INFO_URL}"
 
-    echo -n "2. In a Tekton pipeline step before the container build, copy the subscription manager activation "
-    echo "key secret to the source workspace. Use:"
-    echo "   \$ <source-workspace>/$SCRIPT_NAME smuggle"
-    echo -n "   This expects the '$SECRET_NAME_IN_KONFLUX' secret to be mounted as a workspace with the same name "
-    echo "('$SECRET_KONFLUX_WORKSPACE_PATH')."
-
-    echo "3. Arrange Dockerfile stages to have UBI (normal) as an installer and other RHEL/UBI (any) as a target."
+    echo "2. Arrange Dockerfile stages to have UBI (normal) as an installer and other RHEL/UBI (any) as a target."
     echo "   Make sure to match major versions: 8/8 is ok but 9/8 or 8/9 will result in errors."
     echo "   Copy the target contents to some directory, e.g. ${example_target_dir}, in the installer stage."
     echo "   See self-test Dockerfiles as examples."
 
-    echo "4. In the installer stage, register the container with the subscription manager. Use:"
+    echo "3. In the installer stage, register the container with the subscription manager. Use:"
     echo "   \$ $SCRIPT_NAME register ${example_target_dir}"
     echo -n "   It is possible to provide multiple target directories as arguments if the script is used to prepare "
     echo "multiple distinct stages."
 
-    echo -n "5. Use 'dnf --installroot=${example_target_dir} ...' to install RHEL RPMs, enable RHEL modules, etc. "
+    echo -n "4. Use 'dnf --installroot=${example_target_dir} ...' to install RHEL RPMs, enable RHEL modules, etc. "
     echo "in the target contents."
 
-    echo -n "6. In the same installer stage, deregister the container so that the end users can't use "
+    echo -n "5. In the same installer stage, deregister the container so that the end users can't use "
     echo "our subscription on our behalf. Use:"
     echo "   \$ $SCRIPT_NAME cleanup"
     echo "   This step is mandatory because it cleans entitlements on the target in the right way."
 
-    echo -n "7. Copy out ${example_target_dir} contents from the installer stage to a new 'scratch' stage. "
+    echo -n "6. Copy out ${example_target_dir} contents from the installer stage to a new 'scratch' stage. "
     echo "That's your target container."
 
     echo
@@ -116,11 +108,6 @@ function usage {
     echo "   \$ $SCRIPT_NAME self-test"
     echo "For it to work, you need to put a valid activation key in ${SECRET_LOCAL_PATH} file."
     echo "Find out where to get it from ${SECRET_INFO_URL}"
-}
-
-function smuggle {
-    mkdir -p "$(dirname "${SECRET_LOCAL_PATH}" )"
-    cp --verbose "${SECRET_KONFLUX_WORKSPACE_PATH}/${SECRET_KEY}" "${SECRET_LOCAL_PATH}"
 }
 
 function register {
