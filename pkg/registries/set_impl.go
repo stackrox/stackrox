@@ -20,6 +20,7 @@ type setImpl struct {
 }
 
 func sortIntegrations(integrations []types.ImageRegistry) {
+	// TODO(ROX-25474) refactor to pass parent context.
 	ctx := context.Background()
 	// This just ensures that the registries that have username/passwords are processed first
 	sort.SliceStable(integrations, func(i, j int) bool {
@@ -64,6 +65,7 @@ func (e *setImpl) GetAllUnique() []types.ImageRegistry {
 
 	uniqueKeys := set.NewStringSet()
 	uniqueIntegrations := make([]types.ImageRegistry, 0, len(integrations))
+	// TODO(ROX-25474) refactor to pass parent context.
 	ctx := context.Background()
 	for _, i := range integrations {
 		// If it's a user generated integration, we will not attempt to dedupe it.
@@ -89,6 +91,7 @@ func (e *setImpl) GetRegistryMetadataByImage(image *storage.Image) *types.Config
 
 	reg := e.getRegistryByImageNoLock(image)
 	if reg != nil {
+		// TODO(ROX-25474) refactor to pass parent context.
 		return reg.Config(context.Background())
 	}
 

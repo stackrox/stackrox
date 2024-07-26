@@ -164,6 +164,7 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 		return reg, nil
 	}
 
+	// TODO(ROX-25474) refactor to pass parent context.
 	ctx := context.Background()
 	client, err := createECRClient(ctx, conf)
 	if err != nil {
