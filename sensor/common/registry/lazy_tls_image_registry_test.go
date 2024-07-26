@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -24,7 +25,7 @@ func TestNoPanics(t *testing.T) {
 		failCache := newTLSCheckCache(alwaysFailCheckTLS)
 
 		lazyRegistry := &lazyTLSCheckRegistry{tlsCheckCache: failCache}
-		lazyRegistry.Config()
+		lazyRegistry.Config(context.Background())
 		lazyRegistry.DataSource()
 		lazyRegistry.Match(nil)
 		_, _ = lazyRegistry.Metadata(nil)
@@ -36,9 +37,10 @@ func TestNoPanics(t *testing.T) {
 func TestConfig(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockReg := regMocks.NewMockRegistry(ctrl)
+	ctx := context.Background()
 	creator := func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
 		cfg := integration.GetDocker()
-		mockReg.EXPECT().Config().Return(&types.Config{
+		mockReg.EXPECT().Config(ctx).Return(&types.Config{
 			Insecure: cfg.Insecure,
 		})
 
@@ -50,13 +52,13 @@ func TestConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	// Before init Insecure should be at the default value (false).
-	assert.False(t, reg.Config().GetInsecure())
+	assert.False(t, reg.Config(ctx).GetInsecure())
 
 	// Simulate some other method triggering lazy init.
 	reg.lazyInit()
 
 	// After init Insecure should come from the backing registry.
-	assert.True(t, reg.Config().GetInsecure())
+	assert.True(t, reg.Config(ctx).GetInsecure())
 }
 
 func TestDataSource(t *testing.T) {
@@ -241,7 +243,7 @@ func TestAttemptToTriggerRace(t *testing.T) {
 			if i%2 == 0 {
 				time.Sleep(1 * time.Second)
 			}
-			cfg := reg.Config()
+			cfg := reg.Config(context.Background())
 			assert.False(t, cfg.Insecure)
 			wg.Done()
 		}(i)
