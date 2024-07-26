@@ -47,11 +47,13 @@ func (f *feature) Enabled() bool {
 }
 
 func (f *feature) Stage() string {
-	if f.defaultValue {
-		return releasedString
-	}
 	if f.techPreview {
 		return techPreviewString
+	}
+	// Allow tech-preview features to be enabled by default for backward
+	// compatibility.
+	if f.defaultValue {
+		return releasedString
 	}
 	return devPreviewString
 }

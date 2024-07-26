@@ -116,9 +116,12 @@ func TestStage(t *testing.T) {
 	f := registerFeature("test_feat", "ROX_TEST_FEAT")
 	assert.Equal(t, "dev-preview", f.Stage())
 
+	f = registerFeature("test_feat", "ROX_TEST_FEAT", enabled)
+	assert.Equal(t, "released", f.Stage())
+
 	f = registerFeature("test_feat", "ROX_TEST_FEAT", techPreview)
 	assert.Equal(t, "tech-preview", f.Stage())
 
 	f = registerFeature("test_feat", "ROX_TEST_FEAT", techPreview, enabled)
-	assert.Equal(t, "released", f.Stage())
+	assert.Equal(t, "tech-preview", f.Stage())
 }
