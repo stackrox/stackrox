@@ -3,6 +3,8 @@ package datastore
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/stackrox/rox/pkg/env"
 
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/auth/m2m"
@@ -147,6 +149,26 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 			continue
 		}
 	}
+
+	kubeSAIssuer, err := m2m.GetKubeServiceAccountIssuer()
+	if err != nil {
+		return errors.Join(tokenExchangerErrors, err)
+	}
+
+	// Unconditionally add K8s service account exchanger
+	// This is required for config-controller auth
+	err = d.set.UpsertTokenExchanger(ctx, &storage.AuthMachineToMachineConfig{
+		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
+		TokenExpirationDuration: "1h",
+		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{{
+			Key:             "sub",
+			ValueExpression: fmt.Sprintf("system:serviceaccount:%s:central", env.Namespace.Setting()),
+			Role:            "Admin",
+		}},
+		Issuer: kubeSAIssuer,
+	})
+	tokenExchangerErrors = errors.Join(tokenExchangerErrors, err)
+
 	if tokenExchangerErrors != nil {
 		return tokenExchangerErrors
 	}

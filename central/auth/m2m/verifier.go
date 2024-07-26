@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -33,24 +34,34 @@ type tokenVerifier interface {
 	VerifyIDToken(ctx context.Context, rawIDToken string) (*oidc.IDToken, error)
 }
 
+type authenticatedRoundTripper struct {
+	roundTripper http.RoundTripper
+	token        string
+}
+
+func (a authenticatedRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", a.token))
+	return a.roundTripper.RoundTrip(req)
+}
+
 func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (tokenVerifier, error) {
 	tlsConfig, err := tlsConfigWithCustomCertPool()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating TLS config for token verification")
 	}
 
-	log.Infof("m2m auth config type: %s", config.Type)
+	roundTripper := proxy.RoundTripper(proxy.WithTLSConfig(tlsConfig))
 	if config.Type == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
-		kubeServiceAccountVerifier, err := NewKubeServiceAccountVerifier(ctx, config.Issuer, tlsConfig)
+		token, err := readServiceAccountToken()
 		if err != nil {
-			return nil, errors.Wrap(err, "creating kube service account verifier")
+			return nil, errors.Wrap(err, "Failed to read kube service account token")
 		}
-		return kubeServiceAccountVerifier, nil
+
+		roundTripper = authenticatedRoundTripper{roundTripper: roundTripper, token: token}
 	}
 
 	provider, err := oidc.NewProvider(
-		oidc.ClientContext(ctx, &http.Client{Timeout: time.Minute,
-			Transport: proxy.RoundTripper(proxy.WithTLSConfig(tlsConfig))}),
+		oidc.ClientContext(ctx, &http.Client{Timeout: time.Minute, Transport: roundTripper}),
 		config.GetIssuer(),
 	)
 	if err != nil {
