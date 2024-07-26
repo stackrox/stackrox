@@ -20,6 +20,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Removed Features
 
+- The environment variable `ROX_SECRET_FILE_SEARCH` has been removed.
 - The Central PVC stackrox-db will be removed. Existing volumes will be released. Flags for configuring Central attached persistent storage have been removed from roxctl:
   - `roxctl central generate k8s pvc` and `roxctl central generate openshift pvc` no longer have the flags `--name`, `--size`, and `--storage-class`.
   - `roxctl central generate k8s hostpath` and `roxctl central generate openshift hostpath` no longer have the flags `--hostpath`, `--node-selector-key`, and `--node-selector-value`.
@@ -197,7 +198,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Secret terms that can be removed by setting ROX_DEPLOYMENT_SECRET_SEARCH=false:
     - Secret, Secret Path
 - The following search terms will be disabled in the next release and removed from the secret context in 2 releases. They can be removed in the current release by setting ROX_SECRET_FILE_SEARCH=false:
-  - Secret Type, Cert Expiration,Image Pull Secret Registry
+  - Secret Type, Cert Expiration, Image Pull Secret Registry
 - The `/v1/availableAuthProviders` endpoint will in a future release require authentication and at least READ permission on the `Access` resource.
   Ensure that any flow interacting with it is authenticated and has the proper permissions going forward.
 - The `/v1/tls-challenge` will  require authentication, ensure that all interactions with these endpoints include proper authentication going forward.

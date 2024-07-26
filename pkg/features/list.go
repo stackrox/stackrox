@@ -55,9 +55,6 @@ var (
 	// DeploymentEnvvarSearch enables search on the environment variable fields of deployments
 	_ = registerFeature("Enables search on the environment variable fields of deployments", "ROX_DEPLOYMENT_ENVVAR_SEARCH", enabled)
 
-	// SecretFileSearch enables search on the file fields of secrets
-	_ = registerFeature("Enables search on the file fields of secrets", "ROX_SECRET_FILE_SEARCH", enabled)
-
 	// SensorCapturesIntermediateEvents enables sensor to capture intermediate events when it is disconnected from central
 	SensorCapturesIntermediateEvents = registerFeature("Enables sensor to capture intermediate events when it is disconnected from central", "ROX_CAPTURE_INTERMEDIATE_EVENTS", enabled)
 
