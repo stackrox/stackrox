@@ -14,6 +14,8 @@ export const nodeCveBaseUrl = '/main/vulnerabilities/node-cves/cves';
 export const getNodesOpname = 'getNodes';
 export const getNodeCvesOpname = 'getNodeCVEs';
 
+export const getEntityTypeCountsOpname = 'getNodeCVEEntityCounts';
+
 // Node CVE page
 export const getNodeCveMetadataOpname = 'getNodeCVEMetadata';
 
@@ -33,6 +35,13 @@ export const routeMatcherMapForNodeCves = {
     [getNodeCvesOpname]: {
         method: 'POST',
         url: graphql(getNodeCvesOpname),
+    },
+};
+
+export const routeMatcherMapForEntityCounts = {
+    [getEntityTypeCountsOpname]: {
+        method: 'POST',
+        url: graphql(getEntityTypeCountsOpname),
     },
 };
 
@@ -61,9 +70,11 @@ export const routeMatcherMapForNodePage = {
 // visit
 export function visitNodeCveOverviewPage(
     routeMatcherMap?: Record<string, RouteMatcherOptions>,
-    staticResponseMap?: Record<string, RouteHandler>
+    staticResponseMap?: Record<string, RouteHandler>,
+    params?: Record<string, string>
 ) {
-    visit('/main/vulnerabilities/node-cves', routeMatcherMap, staticResponseMap);
+    const paramString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    visit(`/main/vulnerabilities/node-cves${paramString}`, routeMatcherMap, staticResponseMap);
 }
 
 export function visitNodeCvePageWithStaticPermissions(
