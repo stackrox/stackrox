@@ -73,7 +73,7 @@ func TestFeatureEnvVarStartsWithRox(t *testing.T) {
 }
 
 func TestFeatureFlags(t *testing.T) {
-	defaultTrueFeature := registerFeature("default_true", "ROX_DEFAULT_TRUE", enabled)
+	defaultTrueFeature := registerFeature("default_true", "ROX_DEFAULT_TRUE", released)
 	for _, test := range defaultTrueCases {
 		testFlagEnabled(t, defaultTrueFeature, test.env, test.expected)
 	}
@@ -85,8 +85,8 @@ func TestFeatureFlags(t *testing.T) {
 
 // Test that the feature override works as expected given an appropriate overridable setting
 func TestFeatureOverrideSetting(t *testing.T) {
-	overridableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", enabled)
-	nonoverridableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", enabled, withUnchangeable(true))
+	overridableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", released)
+	nonoverridableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", released, withUnchangeable(true))
 
 	// overridable features can be changed from the default value (true)
 	testFlagEnabled(t, overridableFeature, "false", false)
@@ -98,8 +98,8 @@ func TestFeatureOverrideSetting(t *testing.T) {
 // This is a similar test as `TestFeatureOverrideSetting` but the difference is that this tests the fact that
 // registerUnchangeableFeature sets the correct overridable setting on a release build
 func TestOverridesOnReleaseBuilds(t *testing.T) {
-	overridableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", enabled)
-	unchangeableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", enabled, unchangeableInProd)
+	overridableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", released)
+	unchangeableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", released, unchangeableInProd)
 
 	// overridable features can be changed from the default value (true) regardless of the type of build
 	testFlagEnabled(t, overridableFeature, "false", false)
@@ -116,12 +116,12 @@ func TestStage(t *testing.T) {
 	f := registerFeature("test_feat", "ROX_TEST_FEAT")
 	assert.Equal(t, "dev-preview", f.Stage())
 
-	f = registerFeature("test_feat", "ROX_TEST_FEAT", enabled)
+	f = registerFeature("test_feat", "ROX_TEST_FEAT", released)
 	assert.Equal(t, "released", f.Stage())
 
 	f = registerFeature("test_feat", "ROX_TEST_FEAT", techPreview)
 	assert.Equal(t, "tech-preview", f.Stage())
 
-	f = registerFeature("test_feat", "ROX_TEST_FEAT", techPreview, enabled)
+	f = registerFeature("test_feat", "ROX_TEST_FEAT", techPreview, released)
 	assert.Equal(t, "tech-preview", f.Stage())
 }

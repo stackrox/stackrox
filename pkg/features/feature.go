@@ -14,7 +14,7 @@ const (
 type feature struct {
 	envVar       string
 	name         string
-	defaultValue bool
+	released     bool
 	unchangeable bool
 	techPreview  bool
 }
@@ -28,12 +28,12 @@ func (f *feature) Name() string {
 }
 
 func (f *feature) Default() bool {
-	return f.defaultValue
+	return f.released
 }
 
 func (f *feature) Enabled() bool {
 	if f.unchangeable {
-		return f.defaultValue
+		return f.released
 	}
 
 	switch strings.ToLower(os.Getenv(f.envVar)) {
@@ -42,18 +42,19 @@ func (f *feature) Enabled() bool {
 	case "true":
 		return true
 	default:
-		return f.defaultValue
+		return f.released
 	}
 }
 
 func (f *feature) Stage() string {
-	if f.techPreview {
+	switch {
+	case f.techPreview:
 		return techPreviewString
-	}
-	// Allow tech-preview features to be enabled by default for backward
-	// compatibility.
-	if f.defaultValue {
+	case f.released:
+		// Allow tech-preview features to be enabled by default for backward
+		// compatibility.
 		return releasedString
+	default:
+		return devPreviewString
 	}
-	return devPreviewString
 }

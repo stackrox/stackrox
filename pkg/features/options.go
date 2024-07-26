@@ -4,9 +4,9 @@ import "github.com/stackrox/rox/pkg/buildinfo"
 
 type option func(*feature)
 
-func withEnabledByDefault() option {
+func withReleased() option {
 	return func(f *feature) {
-		f.defaultValue = true
+		f.released = true
 	}
 }
 
@@ -23,7 +23,7 @@ func withUnchangeable(unchangeable bool) option {
 }
 
 var (
-	enabled            = withEnabledByDefault()
+	released           = withReleased()
 	techPreview        = withTechPreviewStage()
 	unchangeableInProd = withUnchangeable(buildinfo.ReleaseBuild)
 )
