@@ -28,12 +28,18 @@ func TestSensorUpgradeService(t *testing.T) {
 	suite.Run(t, new(SensorUpgradeServiceTestSuite))
 }
 
-var _ suite.SetupTestSuite = (*SensorUpgradeServiceTestSuite)(nil)
+var _ suite.SetupSubTest = (*SensorUpgradeServiceTestSuite)(nil)
 
-func (s *SensorUpgradeServiceTestSuite) SetupTest() {
+func (s *SensorUpgradeServiceTestSuite) SetupSubTest() {
+	// Each subtest must use its own T object, thus the controller must be reinitialized for each subtest
 	s.mockCtrl = gomock.NewController(s.T())
 	s.dataStore = datastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
+}
+
+func (s *SensorUpgradeServiceTestSuite) SetupTest() {
+	// Not every test has subtest, so the same setup procedure must be repeated for standalone tests
+	s.SetupSubTest()
 }
 
 func configWith(v bool) *storage.SensorUpgradeConfig {
@@ -48,12 +54,12 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 		expectedErr       error
 		upsertTimesCalled int
 	}{
-		"Error: No config": {
+		"Nil config should yield an error": {
 			req:               &v1.UpdateSensorUpgradeConfigRequest{Config: nil},
 			expectedErr:       errox.InvalidArgs,
 			upsertTimesCalled: 0,
 		},
-		"Success: can set toggle = true on managed centrals": {
+		"Enabling upgrader through the config should work on managed centrals": {
 			managedCentral: true,
 			req: &v1.UpdateSensorUpgradeConfigRequest{
 				Config: configWith(true),
@@ -61,7 +67,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 			expectedErr:       nil,
 			upsertTimesCalled: 1,
 		},
-		"Error: can't set when upgrader disabled": {
+		"Enabling upgrader through the config should fail on managed centrals if upgrader is explicitly disabled": {
 			managedCentral:   true,
 			upgraderDisabled: true,
 			req: &v1.UpdateSensorUpgradeConfigRequest{
@@ -70,25 +76,34 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 			expectedErr:       errox.InvalidArgs,
 			upsertTimesCalled: 0,
 		},
-		"Success: can set toggle = false on managed centrals": {
+		"Disabling upgrader through the config should work on managed centrals": {
 			managedCentral: true,
 			req: &v1.UpdateSensorUpgradeConfigRequest{
 				Config: configWith(false),
 			},
 			upsertTimesCalled: 1,
 		},
-		"Success: can set toggle = true on non-managed centrals": {
+		"Enabling upgrader through the config should work on non-CS centrals": {
 			managedCentral: false,
 			req: &v1.UpdateSensorUpgradeConfigRequest{
 				Config: configWith(true),
 			},
 			upsertTimesCalled: 1,
 		},
-		"Success: can set toggle = false on non-managed centrals": {
+		"Disabling upgrader through the config should work on non-CS centrals": {
 			managedCentral: false,
 			req: &v1.UpdateSensorUpgradeConfigRequest{
 				Config: configWith(false),
 			},
+			upsertTimesCalled: 1,
+		},
+		"Disabling upgrader through the config should not yield an error on non-CS centrals even if upgrader is explicitly disabled": {
+			managedCentral:   false,
+			upgraderDisabled: true,
+			req: &v1.UpdateSensorUpgradeConfigRequest{
+				Config: configWith(false),
+			},
+			expectedErr:       nil,
 			upsertTimesCalled: 1,
 		},
 	}

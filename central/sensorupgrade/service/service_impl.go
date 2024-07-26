@@ -125,7 +125,7 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 	}
 
 	if req.GetConfig().GetEnableAutoUpgrade() && getAutoUpgradeFeatureStatus() == v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED {
-		return nil, errors.Wrap(errox.InvalidArgs, "auto-upgrade not supported on managed ACS")
+		return nil, errors.Wrap(errox.InvalidArgs, "sensor auto-upgrade is not supported")
 	}
 
 	if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, req.GetConfig()); err != nil {
