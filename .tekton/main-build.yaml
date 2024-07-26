@@ -94,7 +94,23 @@ spec:
           memory: 3Gi
         requests:
           memory: 3Gi
-  - pipelineTaskName: build-container-multi-arch
+  - pipelineTaskName: build-container-s390x
+    stepSpecs:
+    - name: sbom-syft-generate
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
+  - pipelineTaskName: build-container-ppc64le
+    stepSpecs:
+    - name: sbom-syft-generate
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
+  - pipelineTaskName: build-container-arm64
     stepSpecs:
     - name: sbom-syft-generate
       computeResources:

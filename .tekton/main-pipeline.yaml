@@ -223,7 +223,7 @@ spec:
     - name: BUILD_ARGS
       value:
       - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-amd64
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -243,30 +243,13 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
-    timeout: 2h00m0s
 
-  - name: build-container-multi-arch
-    matrix:
-      include:
-        - name: s390x
-          params:
-            - name: PLATFORM
-              value: linux/s390x
-            - name: IMAGE
-              value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
-        - name: ppc64le
-          params:
-            - name: PLATFORM
-              value: linux/ppc64le
-            - name: IMAGE
-              value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
-        - name: arm64
-          params:
-            - name: PLATFORM
-              value: linux/arm64
-            - name: IMAGE
-              value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-arm64
+  - name: build-container-s390x
     params:
+    - name: PLATFORM
+      value: linux/s390x
+    - name: IMAGE
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -282,7 +265,7 @@ spec:
     - name: BUILD_ARGS
       value:
       - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -300,7 +283,86 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
-    timeout: 2h00m0s
+
+  - name: build-container-ppc64le
+    params:
+    - name: PLATFORM
+      value: linux/ppc64le
+    - name: IMAGE
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
+    - name: DOCKERFILE
+      value: $(params.dockerfile)
+    - name: CONTEXT
+      value: $(params.path-context)
+    - name: HERMETIC
+      value: $(params.hermetic)
+    - name: PREFETCH_INPUT
+      value: $(params.prefetch-input)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.image-expires-after)
+    - name: COMMIT_SHA
+      value: $(tasks.clone-repository.results.commit)
+    - name: BUILD_ARGS
+      value:
+      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    taskRef:
+      params:
+      - name: name
+        value: buildah-remote-oci-ta
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:b62eadffad6737b237cbfa3e78114daba18da17e5028fe71707388cf8a102f31
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(tasks.init.results.build)
+      operator: in
+      values: [ "true" ]
+
+  - name: build-container-ppc64le
+    params:
+    - name: PLATFORM
+      value: linux/ppc64le
+    - name: IMAGE
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
+    - name: DOCKERFILE
+      value: $(params.dockerfile)
+    - name: CONTEXT
+      value: $(params.path-context)
+    - name: HERMETIC
+      value: $(params.hermetic)
+    - name: PREFETCH_INPUT
+      value: $(params.prefetch-input)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.image-expires-after)
+    - name: COMMIT_SHA
+      value: $(tasks.clone-repository.results.commit)
+    - name: BUILD_ARGS
+      value:
+      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    taskRef:
+      params:
+      - name: name
+        value: buildah-remote-oci-ta
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:b62eadffad6737b237cbfa3e78114daba18da17e5028fe71707388cf8a102f31
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(tasks.init.results.build)
+      operator: in
+      values: [ "true" ]
 
   - name: build-image-manifest
     params:
@@ -311,12 +373,9 @@ spec:
     - name: IMAGES
       value:
         - $(tasks.build-container-amd64.results.IMAGE_REF)
-        - $(tasks.build-container-multi-arch.results.IMAGE_REF[*])
-    runAfter:
-      # tekton doesn't work out the dependencies for the matrix, so we have
-      # to be explicit
-      - build-container-multi-arch
-      - build-container-amd64
+        - $(tasks.build-container-s390x.results.IMAGE_REF)
+        - $(tasks.build-container-ppc64le.results.IMAGE_REF)
+        - $(tasks.build-container-arm64.results.IMAGE_REF)
     taskRef:
       params:
         - name: name
@@ -341,12 +400,9 @@ spec:
     - name: IMAGES
       value:
         - $(tasks.build-container-amd64.results.IMAGE_REF)
-        - $(tasks.build-container-multi-arch.results.IMAGE_REF[*])
-    runAfter:
-      # tekton doesn't work out the dependencies for the matrix, so we have
-      # to be explicit
-      - build-container-multi-arch
-      - build-container-amd64
+        - $(tasks.build-container-s390x.results.IMAGE_REF)
+        - $(tasks.build-container-ppc64le.results.IMAGE_REF)
+        - $(tasks.build-container-arm64.results.IMAGE_REF)
     taskRef:
       params:
         - name: name
@@ -387,12 +443,72 @@ spec:
       operator: in
       values: [ "true" ]
 
-  - name: deprecated-base-image-check
+  - name: deprecated-base-image-check-amd64
     params:
     - name: IMAGE_URL
       value: $(tasks.build-container-amd64.results.IMAGE_URL)
     - name: IMAGE_DIGEST
       value: $(tasks.build-container-amd64.results.IMAGE_DIGEST)
+    taskRef:
+      params:
+      - name: name
+        value: deprecated-image-check
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.4@sha256:3f956e0cd9b0a183e4fd95e010aa668a788ef564d3af1f7aecaaf6e2ccc2ce93
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
+  - name: deprecated-base-image-check-s390x
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-container-s390x.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-container-s390x.results.IMAGE_DIGEST)
+    taskRef:
+      params:
+      - name: name
+        value: deprecated-image-check
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.4@sha256:3f956e0cd9b0a183e4fd95e010aa668a788ef564d3af1f7aecaaf6e2ccc2ce93
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
+  - name: deprecated-base-image-check-ppc64le
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-container-ppc64le.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-container-ppc64le.results.IMAGE_DIGEST)
+    taskRef:
+      params:
+      - name: name
+        value: deprecated-image-check
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.4@sha256:3f956e0cd9b0a183e4fd95e010aa668a788ef564d3af1f7aecaaf6e2ccc2ce93
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
+  - name: deprecated-base-image-check-arm64
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-container-arm64.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-container-arm64.results.IMAGE_DIGEST)
     taskRef:
       params:
       - name: name
