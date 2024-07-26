@@ -19,7 +19,7 @@ metadata:
 spec:
   params:
   - name: dockerfile
-    value: operator/bundle.Dockerfile.konflux
+    value: operator/konflux.bundle.Dockerfile
   - name: git-url
     value: '{{source_url}}'
   # TODO(ROX-24530): return expiration for non-released images to 13w
