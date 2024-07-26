@@ -8,6 +8,7 @@ import (
 const (
 	devPreviewString  = "dev-preview"
 	techPreviewString = "tech-preview"
+	releasedString    = "released"
 )
 
 type feature struct {
@@ -46,6 +47,9 @@ func (f *feature) Enabled() bool {
 }
 
 func (f *feature) Stage() string {
+	if f.defaultValue {
+		return releasedString
+	}
 	if f.techPreview {
 		return techPreviewString
 	}
