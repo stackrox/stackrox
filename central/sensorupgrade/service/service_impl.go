@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
@@ -34,6 +35,7 @@ var (
 			"/v1.SensorUpgradeService/TriggerSensorCertRotation",
 		},
 	})
+	log = logging.LoggerForModule()
 )
 
 type service struct {
@@ -123,6 +125,7 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 	if req.GetConfig() == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "need to specify a config")
 	}
+	log.Infof("UI triggered auto-upgrader change: %+v", req.GetConfig().String())
 
 	if req.GetConfig().GetEnableAutoUpgrade() && getAutoUpgradeFeatureStatus() == v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED {
 		return nil, errors.Wrap(errox.InvalidArgs, "sensor auto-upgrade is not supported")
@@ -132,6 +135,8 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 		return nil, err
 	}
 	s.autoTriggerFlag.Set(req.GetConfig().EnableAutoUpgrade)
+	log.Infof("autoTriggerFlag is set to: %t", req.GetConfig().EnableAutoUpgrade)
+
 	return &v1.Empty{}, nil
 }
 
