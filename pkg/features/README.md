@@ -11,15 +11,11 @@ Feature flags can be valuable to ship features in a preview state, to provide th
 1. A feature is being developed on a branch, gated by a dev-preview feature flag.
 2. The code meets the [GA requirements](../../PR_GA.md) with the feature disabled: the branch can be merged to the master branch.
 3. The feature is ready to be tested by the customers: the flag can be upgraded to tech-preview. Consult [the article on Products & Services](https://access.redhat.com/articles/6966848) for the differences between the two stages.
-4. The feature needs to be enabled for everybody: the flag should be removed.
+4. The feature can be enabled for everybody: the flag can be enabled.
+5. The feature has been *tested in production* for some time: the flag can be removed.
 
 > :warning: Feature flags cannot be used inside migrations or schema changes.
 > Migrations must be merged to the master branch without any feature flag gate, and must not break any current features.
->
-> :warning: There are flags today, which are enabled by default for two reasons:
->
-> 1. The feature has been delivered and enabled: such flags need to be deleted.
-> 2. The enabled flag disables the feature: we don't want more of such flags.
 
 ## Adding a feature flag
 
@@ -30,6 +26,7 @@ To add a feature flag, add a variable with your feature to `list.go`. To registe
 * Options:
   * `devPreview` or `techPreview`: whether the feature is in early development or ready to be tested by customers. Flags are of the **dev-preview** stage by default.
   * `unchangeableInProd`: whether the flag state can be changed via the associated environment variable setting on release builds. Flags are **changeable** by default.
+  * `enabled`: whether the change is activated by default.
 
 > :warning: To introduce features that could be disabled in release builds, you must be cautious to ensure that Central returns to "normal" state after disabling the feature.
 > Sometimes it is not as simple as turning off the feature flag to return Central to the "normal" state for various reasons, including (but not limited to) schema and data changes.
@@ -68,6 +65,6 @@ These values can be read by the UI to determine if a feature should be displayed
 
 Feature flags can be removed safely by following these steps:
 
-1. First ensure that when enabled, the feature meets all GA requirements for being deployed in production.
+1. First ensure that when the flag is disabled or enabled, the feature meets all GA requirements for being deployed in production, and a sufficient amount of time has passed such that no one will want to disable it again.
 2. Remove all references in code to the feature flag variable and the associated environment variable. Remove any unreachable code. Take note of any tests and scripts (for example deploy scripts). Take note to remove references in UI as well.
 3. Delete the variable from `list.go`.
