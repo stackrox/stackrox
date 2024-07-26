@@ -15,8 +15,11 @@
   ],
   "timezone": "Etc/UTC",
   "schedule": [
-    // TODO(ROX-22359): switch to non-working hours like in https://github.com/stackrox/stackrox/pull/9787/files#diff-20ab1190d08a53a3012bc191ed56205c8f0ffb8fa1715e9d36ecfd1d2ea8a790R17
-    "at any time"
+    // Allowed syntax: https://docs.renovatebot.com/configuration-options/#schedule
+    // The time was selected (with the help of https://time.fyi/timezones) so that Renovate isn't active during business
+    // hours from Germany to US West Coast. This way, after we merge a PR, a new one does not pop up immediately after
+    // that.
+    "after 3am and before 7am"
   ],
   "dockerfile": {
     "fileMatch": [
