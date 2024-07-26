@@ -596,6 +596,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 		},
 	})
 
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        1,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
+
 	// Verify that newly added PLOP object doesn't have Process field set in
 	// the serialized column (because all the info is stored in the referenced
 	// process indicator record)
@@ -646,6 +655,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseTwice() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
+
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        0,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 	// Verify that newly added PLOP object doesn't have Process field set in
 	// the serialized column (because all the info is stored in the referenced
@@ -723,6 +741,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 		},
 	})
 
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        1,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
+
 	// Verify that PLOP object was updated and no new records were created
 	newPlopsFromDB := suite.getPlopsFromDB()
 	suite.Len(newPlopsFromDB, 1)
@@ -780,6 +807,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 	// It's closed and excluded from the API response
 	suite.Len(newPlops, 0)
 
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        0,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
+
 	// Verify the state of the table after the test
 	newPlopsFromDB := suite.getPlopsFromDB()
 	suite.Len(newPlopsFromDB, 1)
@@ -828,6 +864,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 
 	// It's closed and excluded from the API response
 	suite.Len(newPlops, 0)
+
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        0,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 	// Verify the state of the table after the test
 	newPlopsFromDB := suite.getPlopsFromDB()
@@ -880,6 +925,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
+
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        0,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 	// Verify the state of the table after the test
 	newPlopsFromDB := suite.getPlopsFromDB()
@@ -953,6 +1007,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 		},
 	})
 
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        1,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
+
 	// Verify the state of the table after the test
 	// Process should not be nil as we were not able to find
 	// a matching process indicator
@@ -995,6 +1058,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
+
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        0,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 	// Verify that newly added PLOP has Process field set, because we were not
 	// able to establish reference to a process indicator and don't want to
@@ -1050,6 +1122,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenNoIndicatorThenClose() {
 
 	suite.Len(newPlops, 0)
 
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        0,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
+
 	// Verify that newly added PLOP has Process field set, because we were not
 	// able to establish reference to a process indicator and don't want to
 	// loose the data
@@ -1097,6 +1178,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenAndClosedNoIndicator() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
+
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        0,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 	// Verify that newly added PLOP has Process field set, because we were not
 	// able to establish reference to a process indicator and don't want to
@@ -1196,6 +1286,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 		},
 	})
 
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        1,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
+
 	// Verify the state of the table after the test
 	newPlopsFromDB := suite.getPlopsFromDB()
 	suite.Len(newPlopsFromDB, 1)
@@ -1253,6 +1352,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() 
 	// its original open state.
 	suite.Len(newPlops, 1)
 
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        1,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
+
 	// Verify the state of the table after the test
 	newPlopsFromDB := suite.getPlopsFromDB()
 	suite.Len(newPlopsFromDB, 1)
@@ -1308,6 +1416,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 
 	// It's closed and excluded from the API response
 	suite.Len(newPlops, 0)
+
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        0,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 	// Verify the state of the table after the test
 	newPlopsFromDB := suite.getPlopsFromDB()
@@ -1422,6 +1539,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 	// It's closed and excluded from the API response
 	suite.Len(newPlops, 0)
 
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        0,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
+
 	// Verify the state of the table after the test
 	newPlopsFromDB := suite.getPlopsFromDB()
 	suite.Len(newPlopsFromDB, 1)
@@ -1529,6 +1655,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 
 	// It's open and included into the API response
 	suite.Len(newPlops, 1)
+
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        1,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 	// Verify the state of the table after the test
 	newPlopsFromDB := suite.getPlopsFromDB()
@@ -1702,6 +1837,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 		},
 	})
 
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        0,
+		fixtureconsts.Deployment2:        1,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
+
 	// Fetch inserted PLOP back from the old deployment
 	oldPlops, err := suite.datastore.GetProcessListeningOnPort(
 		suite.hasReadCtx, fixtureconsts.Deployment1)
@@ -1765,6 +1909,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPNoProcessInformation() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
+
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        1,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 	// Verify that the PLOP is in the database
 	newPlopsFromDB := suite.getPlopsFromDB()
@@ -1862,6 +2015,15 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 		protoassert.Equal(suite.T(), expectedPlop, plopMap[key])
 	}
 
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        2,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
+
 	// Remove the PLOP for the pod
 	suite.NoError(suite.datastore.RemovePlopsByPod(
 		suite.hasWriteCtx, fixtureconsts.PodUID1))
@@ -1885,6 +2047,15 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 	}
 
 	protoassert.Equal(suite.T(), expectedPlopStorage1, newPlopsFromDB2[0])
+
+	plopCounts, err = suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts = map[string]int32{
+		fixtureconsts.Deployment1:        1,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 }
 
