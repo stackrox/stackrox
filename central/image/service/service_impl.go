@@ -363,7 +363,7 @@ func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetch
 	}
 
 	if _, err := s.enricher.EnrichImage(ctx, enrichmentContext, img); err != nil {
-		log.Errorw("error enriching image",
+		log.Errorw("Enriching image",
 			logging.ImageName(img.GetName().GetFullName()),
 			logging.ImageID(img.GetId()),
 			logging.Err(err),
@@ -558,7 +558,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		if forceScanUpdate {
 			if err := s.enrichWithVulnerabilities(img, request); err != nil {
 				imgName := ternary.String(existingImg != nil, existingImg.GetName().GetFullName(), request.GetImageName().GetFullName())
-				log.Errorw("error enriching image with vulnerabilities",
+				log.Errorw("Enriching image with vulnerabilities",
 					logging.ImageName(imgName),
 					logging.ImageID(imgID),
 					logging.Err(err),
