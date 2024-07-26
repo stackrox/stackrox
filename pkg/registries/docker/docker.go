@@ -167,7 +167,7 @@ func (r *Registry) Match(image *storage.ImageName) bool {
 	return r.repositoryList.Contains(image.GetRemote())
 }
 
-// lazyLoadRepoList will perform the initial repo list load if neccessary.
+// lazyLoadRepoList will perform the initial repo list load if necessary.
 // This is safe to call multiple times.
 func (r *Registry) lazyLoadRepoList() {
 	r.repoListOnce.Do(func() {
