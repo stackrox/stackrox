@@ -59,10 +59,7 @@ func LogFeatureFlags() {
 		flag := Flags[envVar]
 		data[flag.Stage()] = append(data[flag.Stage()], logging.Any(flag.EnvVar(), flag.Enabled()))
 	}
-	if len(data[devPreviewString]) > 0 {
-		log.Infow("Feature flags [dev-preview]", data[devPreviewString]...)
-	}
-	if len(data[techPreviewString]) > 0 {
-		log.Infow("Feature flags [tech-preview]", data[techPreviewString]...)
+	for _, stage := range []string{devPreviewString, techPreviewString, releasedString} {
+		log.Infow(fmt.Sprintf("Feature flags [%s]", stage), data[stage]...)
 	}
 }
