@@ -6,6 +6,7 @@ import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.newBuil
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
 import static util.Helpers.withRetry
 
+import com.google.protobuf.Timestamp
 import orchestratormanager.OrchestratorTypes
 
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
@@ -600,9 +601,19 @@ class SACTest extends BaseSpecification {
     }
 
     def "Verify that SAC has the same effect as query restriction for network flows"() {
+        given:
+        "The network graphs retrieved by admin with a query and the SAC restricted token with and without query"
+        // Default behaviour is to use flows for last 5 mins. That can produce different results between calls.
+        def since = Timestamp.newBuilder().setSeconds(System.currentTimeSeconds() - 600).build()
+
+        // Make all service calls in a short succession to avoid potential new flows between calls.
+        def networkGraphWithAllAccess = NetworkGraphService.getNetworkGraph(since, "Namespace:stackrox")
+        useToken("stackroxNetFlowsToken")
+        def networkGraphWithSAC = NetworkGraphService.getNetworkGraph(since, "Namespace:stackrox")
+        def networkGraphWithSACNoQuery = NetworkGraphService.getNetworkGraph(since)
+
         when:
-        "Obtaining the network graph for the StackRox namespace with all access"
-        def networkGraphWithAllAccess = NetworkGraphService.getNetworkGraph(null, "Namespace:stackrox")
+        "The network graph for the StackRox namespace with all access"
         def allAccessFlows = NetworkGraphUtil.flowStrings(networkGraphWithAllAccess)
         allAccessFlows.removeAll(UNSTABLE_FLOWS)
         log.info "allAccessFlows: ${allAccessFlows}"
@@ -613,16 +624,13 @@ class SACTest extends BaseSpecification {
         log.info "allAccessFlowsWithoutNeighbors: ${allAccessFlowsWithoutNeighbors}"
 
         and:
-        "Obtaining the network graph for the StackRox namespace with a SAC restricted token"
-        useToken("stackroxNetFlowsToken")
-        def networkGraphWithSAC = NetworkGraphService.getNetworkGraph(null, "Namespace:stackrox")
+        "The network graph for the StackRox namespace with a SAC restricted token"
         def sacFlows = NetworkGraphUtil.flowStrings(networkGraphWithSAC)
         sacFlows.removeAll(UNSTABLE_FLOWS)
         log.info "sacFlows: ${sacFlows}"
 
         and:
-        "Obtaining the network graph for the StackRox namespace with a SAC restricted token and no query"
-        def networkGraphWithSACNoQuery = NetworkGraphService.getNetworkGraph()
+        "The network graph for the StackRox namespace with a SAC restricted token and no query"
         def sacFlowsNoQuery = NetworkGraphUtil.flowStrings(networkGraphWithSACNoQuery)
         sacFlowsNoQuery.removeAll(UNSTABLE_FLOWS)
         log.info "sacFlowsNoQuery: ${sacFlowsNoQuery}"
