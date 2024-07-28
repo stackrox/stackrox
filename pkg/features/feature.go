@@ -27,7 +27,7 @@ func (f *feature) Name() string {
 	return f.name
 }
 
-func (f *feature) Default() bool {
+func (f *feature) Released() bool {
 	return f.released
 }
 
