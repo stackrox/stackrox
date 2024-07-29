@@ -794,6 +794,9 @@ function launch_sensor {
         rm "$k8s_dir/sensor-deploy.zip"
       fi
 
+      get_cluster_zip "$API_ENDPOINT" "$CLUSTER" "${CLUSTER_TYPE}" "${MAIN_IMAGE}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
+
+
       if [[ -n "${NAMESPACE_OVERRIDE}" ]]; then
         if [[ "${sensor_namespace}" != "stackrox" && "${sensor_namespace}" != "${NAMESPACE_OVERRIDE}" ]]; then
           echo "Custom namespace '${sensor_namespace}' specified and NAMESPACE_OVERRIDE set in the environment, this does not seem reasonable." >&2

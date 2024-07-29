@@ -162,7 +162,7 @@ function get_cluster_zip {
     STATUS=$(curl_central_retry -X POST \
         -d "$CLUSTER_JSON" \
         -o "$TMP" \
-        -w "%{http_code}\n" \
+        -v \
         "https://$LOCAL_API_ENDPOINT/v1/clusters")
     >&2 echo "Status: $STATUS"
     if [ "$STATUS" != "200" ]; then
