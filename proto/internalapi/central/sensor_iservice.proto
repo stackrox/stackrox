@@ -19,6 +19,7 @@ import "internalapi/central/process_listening_on_ports_update.proto";
 import "internalapi/central/sensor_events.proto";
 import "internalapi/central/sensor_upgrade.proto";
 import "internalapi/central/telemetry.proto";
+import "internalapi/common/collector_runtime_config.proto";
 import "storage/cluster.proto";
 import "storage/image.proto";
 
@@ -52,7 +53,7 @@ message ReassessPolicies {}
 
 message ReprocessDeployments {}
 
-// next available tag: 28
+// next available tag: 29
 message MsgToSensor {
   oneof msg {
     SensorEnforcement enforcement = 1;
@@ -82,6 +83,7 @@ message MsgToSensor {
     ClusterHealthResponse cluster_health_response = 25;
     DeduperState deduper_state = 26;
     DeploymentEnhancementRequest deployment_enhancement_request = 27;
+    common.CollectorRuntimeConfig collector_runtime_config = 28;
   }
 }
 
