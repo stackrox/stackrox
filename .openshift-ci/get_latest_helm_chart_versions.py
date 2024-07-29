@@ -61,7 +61,7 @@ def main(argv):
     logging.info(
         f"Helm chart versions for the latest {num_releases} releases:")
 
-    print("\n".join(helm_versions))
+    logging.info("\n".join(helm_versions))
     helm_version_specific = get_latest_helm_chart_version_for_specific_release(
         "stackrox-secured-cluster-services", sample_support_exception
     )
@@ -131,7 +131,11 @@ def __get_supported_helm_chart_versions():
 def get_supported_releases():
     supported_releases = []
     data = __get_data_from_api(PRODUCT_LIFECYCLES_API)
-    releases = data["data"][0]["versions"]
+    releases = []
+    try:
+        releases = data["data"][0]["versions"]
+    except Exception as e:
+        logging.debug(f"Found no RHACS releases in PRODUCT_LIFECYCLES_API at {PRODUCT_LIFECYCLES_API}.\n{repr(e)}")
     for release in releases:
         if release["type"] != "End of life":
             supported_releases.append(parse_release(release["name"]))
