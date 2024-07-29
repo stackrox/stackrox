@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
 import pluralize from 'pluralize';
 import upperFirst from 'lodash/upperFirst';
 import startCase from 'lodash/startCase';
@@ -26,7 +26,10 @@ import { WorkflowState } from 'utils/WorkflowState';
 import EntityList from './EntityList';
 import SidePanel from '../SidePanel/SidePanel';
 
-const ListPage = ({ match, location, history }) => {
+const ListPage = () => {
+    const location = useLocation();
+    const history = useHistory();
+    const match = useRouteMatch();
     const [isExporting, setIsExporting] = useState(false);
     const { isDarkMode } = useTheme();
 
@@ -105,12 +108,6 @@ const ListPage = ({ match, location, history }) => {
             {isExporting && <BackdropExporting />}
         </workflowStateContext.Provider>
     );
-};
-
-ListPage.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
 };
 
 export default ListPage;
