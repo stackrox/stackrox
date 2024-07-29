@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	featureClient "github.com/stackrox/rox/pkg/features/client"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -68,6 +69,8 @@ func (c *Compliance) Start() {
 			log.Errorf("Failed to close connection: %v", err)
 		}
 	}()
+
+	featureClient.ConfigureFeaturesFromCentralSource(context.Background(), conn)
 
 	cli := sensor.NewComplianceServiceClient(conn)
 
