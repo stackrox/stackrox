@@ -108,7 +108,7 @@ function usage {
     echo
     echo "When altering this script, use the 'self-test' command as a (regression) test tool:"
     echo "   \$ $SCRIPT_NAME self-test"
-    echo "For it to work, you need to put a valid activation key in ${SECRET_LOCAL_PATH} file."
+    echo "For it to work, you need to put a valid activation key in ${SCRIPT_DIR}/${SECRET_KEY} file."
     echo "Find out where to get it from ${SECRET_INFO_URL}"
 }
 
