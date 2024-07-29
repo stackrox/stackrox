@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package common;
+
+option go_package = "./internalapi/common;common";
+
+// BooleanOperator has been copied from proto/storage/policy.proto
+// It may have diverged from it
+
+enum BooleanOperator {
+  OR = 0;
+  AND = 1;
+}

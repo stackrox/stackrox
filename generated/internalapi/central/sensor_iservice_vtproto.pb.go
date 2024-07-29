@@ -7,6 +7,7 @@ package central
 import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
+	common "github.com/stackrox/rox/generated/internalapi/common"
 	storage "github.com/stackrox/rox/generated/storage"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -474,6 +475,23 @@ func (m *MsgToSensor_DeploymentEnhancementRequest) CloneVT() isMsgToSensor_Msg {
 	}
 	r := new(MsgToSensor_DeploymentEnhancementRequest)
 	r.DeploymentEnhancementRequest = m.DeploymentEnhancementRequest.CloneVT()
+	return r
+}
+
+func (m *MsgToSensor_CollectorRuntimeConfig) CloneVT() isMsgToSensor_Msg {
+	if m == nil {
+		return (*MsgToSensor_CollectorRuntimeConfig)(nil)
+	}
+	r := new(MsgToSensor_CollectorRuntimeConfig)
+	if rhs := m.CollectorRuntimeConfig; rhs != nil {
+		if vtpb, ok := interface{}(rhs).(interface {
+			CloneVT() *common.CollectorRuntimeConfig
+		}); ok {
+			r.CollectorRuntimeConfig = vtpb.CloneVT()
+		} else {
+			r.CollectorRuntimeConfig = proto.Clone(rhs).(*common.CollectorRuntimeConfig)
+		}
+	}
 	return r
 }
 
@@ -1790,6 +1808,37 @@ func (this *MsgToSensor_DeploymentEnhancementRequest) EqualVT(thatIface isMsgToS
 	return true
 }
 
+func (this *MsgToSensor_CollectorRuntimeConfig) EqualVT(thatIface isMsgToSensor_Msg) bool {
+	that, ok := thatIface.(*MsgToSensor_CollectorRuntimeConfig)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.CollectorRuntimeConfig, that.CollectorRuntimeConfig; p != q {
+		if p == nil {
+			p = &common.CollectorRuntimeConfig{}
+		}
+		if q == nil {
+			q = &common.CollectorRuntimeConfig{}
+		}
+		if equal, ok := interface{}(p).(interface {
+			EqualVT(*common.CollectorRuntimeConfig) bool
+		}); ok {
+			if !equal.EqualVT(q) {
+				return false
+			}
+		} else if !proto.Equal(p, q) {
+			return false
+		}
+	}
+	return true
+}
+
 func (this *DeduperState) EqualVT(that *DeduperState) bool {
 	if this == that {
 		return true
@@ -3022,6 +3071,39 @@ func (m *MsgToSensor_DeploymentEnhancementRequest) MarshalToSizedBufferVT(dAtA [
 	}
 	return len(dAtA) - i, nil
 }
+func (m *MsgToSensor_CollectorRuntimeConfig) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *MsgToSensor_CollectorRuntimeConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.CollectorRuntimeConfig != nil {
+		if vtmsg, ok := interface{}(m.CollectorRuntimeConfig).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.CollectorRuntimeConfig)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xe2
+	}
+	return len(dAtA) - i, nil
+}
 func (m *DeduperState) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -3965,6 +4047,24 @@ func (m *MsgToSensor_DeploymentEnhancementRequest) SizeVT() (n int) {
 	_ = l
 	if m.DeploymentEnhancementRequest != nil {
 		l = m.DeploymentEnhancementRequest.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *MsgToSensor_CollectorRuntimeConfig) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.CollectorRuntimeConfig != nil {
+		if size, ok := interface{}(m.CollectorRuntimeConfig).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.CollectorRuntimeConfig)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -6123,6 +6223,63 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgToSensor_DeploymentEnhancementRequest{DeploymentEnhancementRequest: v}
+			}
+			iNdEx = postIndex
+		case 28:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CollectorRuntimeConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgToSensor_CollectorRuntimeConfig); ok {
+				if unmarshal, ok := interface{}(oneof.CollectorRuntimeConfig).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.CollectorRuntimeConfig); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &common.CollectorRuntimeConfig{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Msg = &MsgToSensor_CollectorRuntimeConfig{CollectorRuntimeConfig: v}
 			}
 			iNdEx = postIndex
 		default:

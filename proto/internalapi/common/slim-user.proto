@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package common;
+
+option go_package = "./internalapi/common;common";
+
+// BooleanOperator has been copied from proto/storage/user.proto
+// It may have diverged from it
+
+message SlimUser {
+  string id = 1;
+  string name = 2;
+}
