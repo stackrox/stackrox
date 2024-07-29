@@ -271,7 +271,9 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                             const { component, path } = routeComponentMap[routeKey];
                             return <Route key={routeKey} path={path} component={component} />;
                         })}
-                    <Route component={NotFoundPage} />
+                    <Route>
+                        <NotFoundPage />
+                    </Route>
                 </Switch>
                 {hasWriteAccessForInviting && showInviteModal && <InviteUsersModal />}
             </ErrorBoundary>

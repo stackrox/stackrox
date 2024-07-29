@@ -10,10 +10,18 @@ import EntityPage from './Entity/WorkflowEntityPageLayout';
 
 const Page = () => (
     <Switch>
-        <Route exact path={workflowPaths.DASHBOARD} component={DashboardPage} />
-        <Route path={workflowPaths.ENTITY} component={EntityPage} />
-        <Route path={workflowPaths.LIST} component={ListPage} />
-        <Route render={PageNotFound} />
+        <Route exact path={workflowPaths.DASHBOARD}>
+            <DashboardPage />
+        </Route>
+        <Route path={workflowPaths.ENTITY}>
+            <EntityPage />
+        </Route>
+        <Route path={workflowPaths.LIST}>
+            <ListPage />
+        </Route>
+        <Route>
+            <PageNotFound />
+        </Route>
     </Switch>
 );
 

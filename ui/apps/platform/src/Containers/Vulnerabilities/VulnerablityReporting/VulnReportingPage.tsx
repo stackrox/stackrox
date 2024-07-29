@@ -28,32 +28,28 @@ function VulnReportingPage() {
 
     return (
         <Switch>
-            <Route
-                exact
-                path={vulnerabilityReportsPath}
-                render={(props) => {
+            <Route exact path={vulnerabilityReportsPath}>
+                {() => {
                     if (pageAction === 'create' && hasWriteAccessForReport) {
-                        return <CreateVulnReportPage {...props} />;
+                        return <CreateVulnReportPage />;
                     }
                     if (pageAction === undefined) {
-                        return <VulnReportsPage {...props} />;
+                        return <VulnReportsPage />;
                     }
                     return <Redirect to={vulnerabilityReportsPath} />;
                 }}
-            />
-            <Route
-                exact
-                path={vulnerabilityReportPath}
-                render={(props) => {
+            </Route>
+            <Route exact path={vulnerabilityReportPath}>
+                {() => {
                     if (pageAction === 'edit' && hasWriteAccessForReport) {
-                        return <EditVulnReportPage {...props} />;
+                        return <EditVulnReportPage />;
                     }
                     if (pageAction === 'clone' && hasWriteAccessForReport) {
-                        return <CloneVulnReportPage {...props} />;
+                        return <CloneVulnReportPage />;
                     }
-                    return <ViewVulnReportPage {...props} />;
+                    return <ViewVulnReportPage />;
                 }}
-            />
+            </Route>
         </Switch>
     );
 }
