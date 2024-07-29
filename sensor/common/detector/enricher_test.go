@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/registry"
 	mockStore "github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ type enricherSuite struct {
 	suite.Suite
 	mockCtrl                *gomock.Controller
 	enricher                *enricher
-	mockCache               expiringcache.Cache
+	mockCache               expiringcache.Cache[cache.Key, cache.Value]
 	mockServiceAccountStore *mockStore.MockServiceAccountStore
 	mockRegistryStore       *registry.Store
 }
@@ -43,7 +44,7 @@ var _ suite.TearDownTestSuite = &enricherSuite{}
 
 func (s *enricherSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	s.mockCache = expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
+	s.mockCache = expiringcache.NewExpiringCache[cache.Key, cache.Value](env.ReprocessInterval.DurationSetting())
 	s.mockServiceAccountStore = mockStore.NewMockServiceAccountStore(s.mockCtrl)
 	s.mockRegistryStore = registry.NewRegistryStore(nil)
 	s.enricher = newEnricher(s.mockCache,

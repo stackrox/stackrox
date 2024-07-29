@@ -181,15 +181,15 @@ class IntegrationsTest extends BaseSpecification {
     @Tag("Integration")
     // splunk is not supported on P/Z
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
-    def "Verify Splunk Integration (legacy mode: #legacy)"() {
+    def "Verify Splunk Integration"() {
         given:
         "the integration is tested"
-        SplunkUtil.SplunkDeployment parts = SplunkUtil.createSplunk(orchestrator,
-                Constants.ORCHESTRATOR_NAMESPACE, true)
+        SplunkUtil.SplunkDeployment parts = SplunkUtil.createSplunk(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
+        SplunkUtil.waitForSplunkBoot(parts.splunkPortForward.localPort)
 
         when:
         "call the grpc API for the splunk integration."
-        SplunkNotifier notifier = new SplunkNotifier(legacy, parts.collectorSvc.name, parts.splunkPortForward.localPort)
+        SplunkNotifier notifier = new SplunkNotifier(parts.collectorSvc.name, parts.splunkPortForward.localPort)
         notifier.createNotifier()
 
         and:
@@ -232,10 +232,6 @@ class IntegrationsTest extends BaseSpecification {
             SplunkUtil.tearDownSplunk(orchestrator, parts)
         }
         notifier.deleteNotifier()
-
-        where:
-        "Data inputs are"
-        legacy << [false, true]
     }
 
     @Unroll
@@ -535,6 +531,8 @@ class IntegrationsTest extends BaseSpecification {
         where:
         "configurations are:"
 
+        // Cloudflare R2 requires an active credit card subscription to access the buckets.
+        // See BitWarden item `06917dbc-17be-40f9-b8e1-b1a1015ce473` for the account details.
         integrationName                          | endpoint
         | urlStyle
         "Cloudflare R2/path-based/no-prefix"     | Env.mustGetCloudflareR2Endpoint()

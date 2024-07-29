@@ -17,7 +17,7 @@ var (
 	_   telemeter.Telemeter = (*segmentTelemeter)(nil)
 	// expiringIDCache stores the computed message IDs to drop duplicates if
 	// requested.
-	expiringIDCache = expiringcache.NewExpiringCache(24*time.Hour, expiringcache.UpdateExpirationOnGets)
+	expiringIDCache = expiringcache.NewExpiringCache[string, bool](24*time.Hour, expiringcache.UpdateExpirationOnGets[string, bool])
 )
 
 type segmentTelemeter struct {

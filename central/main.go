@@ -188,6 +188,7 @@ import (
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	featuresTelemetry "github.com/stackrox/rox/pkg/features/telemetry"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -302,6 +303,7 @@ func main() {
 	}
 	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
+	features.LogFeatureFlags()
 	// Register telemetry prometheus metrics.
 	telemetry.Singleton().Start()
 	// Start the prometheus metrics server
@@ -360,10 +362,7 @@ func startServices() {
 	apiTokenExpiration.Singleton().Start()
 	administrationUsageInjector.Singleton().Start()
 	gcp.Singleton().Start()
-
-	if features.AdministrationEvents.Enabled() {
-		administrationEventHandler.Singleton().Start()
-	}
+	administrationEventHandler.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -371,6 +370,7 @@ func startServices() {
 func servicesToRegister() []pkgGRPC.APIService {
 	// PLEASE KEEP THE FOLLOWING LIST SORTED.
 	servicesToRegister := []pkgGRPC.APIService{
+		administrationEventService.Singleton(),
 		administrationUsageService.Singleton(),
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
@@ -458,10 +458,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, v2ComplianceRules.Singleton())
 		// TODO: this is only done to initialize the table. Once we have a service we can move this there
 		v2ComplianceBenchmark.Singleton()
-	}
-
-	if features.AdministrationEvents.Enabled() {
-		servicesToRegister = append(servicesToRegister, administrationEventService.Singleton())
 	}
 
 	if features.UnifiedCVEDeferral.Enabled() {
@@ -625,6 +621,7 @@ func startGRPCServer() {
 				gs.AddGatherer(imageintegrationsDS.Gather)
 				gs.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
 				gs.AddGatherer(authDS.Gather)
+				gs.AddGatherer(featuresTelemetry.Gather)
 			}
 		}
 	}
@@ -924,6 +921,7 @@ func waitForTerminationSignal() {
 		{apiTokenExpiration.Singleton(), "api token expiration notifier"},
 		{gcp.Singleton(), "GCP cloud credentials manager"},
 		{cloudSourcesManager.Singleton(), "cloud sources manager"},
+		{administrationEventHandler.Singleton(), "administration events handler"},
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
@@ -937,11 +935,6 @@ func waitForTerminationSignal() {
 	if features.ComplianceReporting.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{complianceReportManager.Singleton(), "compliance reports manager"})
-	}
-
-	if features.AdministrationEvents.Enabled() {
-		stoppables = append(stoppables,
-			stoppableWithName{administrationEventHandler.Singleton(), "administration events handler"})
 	}
 
 	var wg sync.WaitGroup

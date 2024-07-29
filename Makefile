@@ -271,10 +271,11 @@ check-service-protos:
 no-large-files:
 	$(BASE_DIR)/tools/detect-large-files.sh "$(BASE_DIR)/tools/allowed-large-files"
 
+# adding the uptodate flag will inform us if the protos and lock are out of date if they pass the compatibility check.
 .PHONY: storage-protos-compatible
 storage-protos-compatible: $(PROTOLOCK_BIN)
 	@echo "+ $@"
-	$(SILENT)$(PROTOLOCK_BIN) status -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage
+	$(SILENT)$(PROTOLOCK_BIN) status -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage --uptodate true
 
 .PHONY: blanks
 blanks:
@@ -307,7 +308,7 @@ dev: install-dev-tools
 ## Generated Code and Dependencies ##
 #####################################
 
-PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_SRCS) $(GENERATED_API_GW_SRCS)
+PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_VT_SRCS) $(GENERATED_COMPAT_SRCS) $(GENERATED_API_SRCS) $(GENERATED_API_GW_SRCS)
 
 include make/protogen.mk
 
@@ -327,7 +328,7 @@ go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(ST
 	@echo "+ $@"
 	PATH="$(GOTOOLS_BIN):$(PATH):$(BASE_DIR)/tools/generate-helpers" MOCKGEN_BIN="$(MOCKGEN_BIN)" go generate -v -x ./...
 
-proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS) $(GENERATED_API_SWAGGER_SPECS_V2) inject-proto-tags
+proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS) $(GENERATED_API_SWAGGER_SPECS_V2) inject-proto-tags cleanup-swagger-json-gotags
 	@echo "+ $@"
 	$(SILENT)touch proto-generated-srcs
 	$(SILENT)$(MAKE) clean-obsolete-protos
@@ -510,7 +511,7 @@ go-unit-tests: build-prep test-prep
 		done; \
 	done
 
-.PHONE: sensor-integration-test
+.PHONY: sensor-integration-test
 sensor-integration-test: build-prep test-prep
 	set -eo pipefail ; \
 	rm -rf  $(GO_TEST_OUTPUT_PATH); \
@@ -779,7 +780,7 @@ roxvet: $(ROXVET_BIN)
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
 	$(SILENT)go list -e ./... \
 	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
-	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)" -donotcompareproto -gogoprotofunctions -tags "sql_integration"
+	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)" -donotcompareproto -gogoprotofunctions -tags "sql_integration test_e2e test race destructive integration scanner_db_integration compliance externalbackups"
 	$(SILENT)go list -e ./... \
 	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
 	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)"

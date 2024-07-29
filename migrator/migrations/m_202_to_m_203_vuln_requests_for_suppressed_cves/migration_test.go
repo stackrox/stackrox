@@ -96,8 +96,10 @@ func (s *migrationTestSuite) TestMigration() {
 	}
 
 	now := protocompat.TimestampNow()
-	expiry := now.Clone()
-	expiry.Seconds += int64(7 * 24 * time.Hour.Seconds())
+	expiry := &protocompat.Timestamp{
+		Seconds: now.Seconds + int64(7*24*time.Hour.Seconds()),
+		Nanos:   now.Nanos,
+	}
 	exceptions := []*storage.VulnerabilityRequest{
 		createVulnerabilityRequest("cve-2023-134", now, expiry),
 		createVulnerabilityRequest("cve-2023-135", now, expiry),

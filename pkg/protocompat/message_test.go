@@ -19,52 +19,14 @@ func TestClone(t *testing.T) {
 
 	cloned := Clone(m1)
 
-	assert.True(t, Equal(m1, cloned))
+	assert.True(t, m1.EqualVT(cloned.(*storage.NamespaceMetadata)))
 
 	// Change a field value to ensure the clone does not point
 	// to the original struct.
 	clonedNamespace, casted := cloned.(*storage.NamespaceMetadata)
 	assert.True(t, casted)
 	clonedNamespace.Name = "Namespace AA"
-	assert.False(t, Equal(m1, cloned))
-}
-
-func TestEqual(t *testing.T) {
-
-	m1 := &storage.NamespaceMetadata{
-		Id:          testconsts.NamespaceA,
-		Name:        "Namespace A",
-		ClusterId:   testconsts.Cluster1,
-		ClusterName: "Cluster 1",
-	}
-	m2 := &storage.NamespaceMetadata{
-		Id:          testconsts.NamespaceA,
-		Name:        "Namespace A",
-		ClusterId:   testconsts.Cluster1,
-		ClusterName: "Cluster 1",
-	}
-	m3 := &storage.NamespaceMetadata{
-		Id:          testconsts.NamespaceA,
-		Name:        "Namespace A",
-		ClusterId:   testconsts.Cluster2,
-		ClusterName: "Cluster 2",
-	}
-	m4 := &storage.NamespaceMetadata{
-		Id:          testconsts.NamespaceB,
-		Name:        "Namespace B",
-		ClusterId:   testconsts.Cluster2,
-		ClusterName: "Cluster 2",
-	}
-	assert.True(t, Equal(m1, m1))
-	assert.True(t, Equal(m1, m2))
-	assert.False(t, Equal(m1, m3))
-	assert.False(t, Equal(m1, m4))
-	assert.True(t, Equal(m2, m2))
-	assert.False(t, Equal(m2, m3))
-	assert.False(t, Equal(m2, m4))
-	assert.True(t, Equal(m3, m3))
-	assert.False(t, Equal(m3, m4))
-	assert.True(t, Equal(m4, m4))
+	assert.False(t, m1.EqualVT(cloned.(*storage.NamespaceMetadata)))
 }
 
 func TestMarshal(t *testing.T) {
@@ -99,12 +61,18 @@ func TestMarshalTextString(t *testing.T) {
 		ClusterName: "Cluster 1",
 	}
 	asString := MarshalTextString(msg)
-	expectedString := `id: "namespaceA"
-` + `name: "Namespace A"
-` + `cluster_id: "aaaaaaaa-bbbb-4011-0000-111111111111"
-` + `cluster_name: "Cluster 1"
+
+	// String output is not guarantied.
+	// Info: https://pkg.go.dev/google.golang.org/protobuf@v1.34.1/encoding/prototext#Format
+	// There is randomization added to output to ensure that library users
+	// are not relaying on stable output format.
+	// Info: https://go-review.googlesource.com/c/protobuf/+/151340
+	expectedRegex := `id: +"namespaceA"
+` + `name: +"Namespace A"
+` + `cluster_id: +"aaaaaaaa-bbbb-4011-0000-111111111111"
+` + `cluster_name: +"Cluster 1"
 `
-	assert.Equal(t, expectedString, asString)
+	assert.Regexp(t, expectedRegex, asString)
 }
 
 func TestUnmarshal(t *testing.T) {
@@ -120,7 +88,7 @@ func TestUnmarshal(t *testing.T) {
 	decoded := &storage.NamespaceMetadata{}
 	err = Unmarshal(data, decoded)
 	assert.NoError(t, err)
-	assert.True(t, Equal(msg, decoded))
+	assert.True(t, msg.EqualVT(decoded))
 }
 
 func TestMerge(t *testing.T) {

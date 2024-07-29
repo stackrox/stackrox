@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/networkgraph/aggregator"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -23,7 +23,7 @@ type flowDataStoreImpl struct {
 	storage                   store.FlowStore
 	graphConfig               graphConfigDS.DataStore
 	hideDefaultExtSrcsManager aggregator.NetworkConnsAggregator
-	deletedDeploymentsCache   expiringcache.Cache
+	deletedDeploymentsCache   cache.DeletedDeployments
 }
 
 func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
@@ -84,12 +84,7 @@ func (fds *flowDataStoreImpl) adjustFlowsForGraphConfig(_ context.Context, flows
 }
 
 func (fds *flowDataStoreImpl) isDeletedDeployment(id string) bool {
-	v, ok := fds.deletedDeploymentsCache.Get(id)
-	if !ok {
-		return false
-	}
-	deleted, _ := v.(bool)
-	return deleted
+	return fds.deletedDeploymentsCache.Contains(id)
 }
 
 func (fds *flowDataStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {

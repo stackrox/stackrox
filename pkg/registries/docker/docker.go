@@ -3,7 +3,6 @@ package docker
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/docker/distribution/manifest/manifestlist"
@@ -74,12 +73,7 @@ type Registry struct {
 func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegration,
 	transports ...registry.Transport,
 ) (*Registry, error) {
-	url := cfg.formatURL()
-	// if the registryServer endpoint contains docker.io then the image will be docker.io/namespace/repo:tag
-	registryServer := urlfmt.GetServerFromURL(url)
-	if strings.Contains(cfg.Endpoint, "docker.io") {
-		registryServer = "docker.io"
-	}
+	hostname, url := RegistryHostnameURL(cfg.Endpoint)
 
 	var transport registry.Transport
 	if len(transports) == 0 || transports[0] == nil {
@@ -99,7 +93,7 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 
 	return &Registry{
 		url:                   url,
-		registry:              registryServer,
+		registry:              hostname,
 		Client:                client,
 		cfg:                   cfg,
 		protoImageIntegration: integration,
@@ -173,7 +167,7 @@ func (r *Registry) Match(image *storage.ImageName) bool {
 	return r.repositoryList.Contains(image.GetRemote())
 }
 
-// lazyLoadRepoList will perform the initial repo list load if neccessary.
+// lazyLoadRepoList will perform the initial repo list load if necessary.
 // This is safe to call multiple times.
 func (r *Registry) lazyLoadRepoList() {
 	r.repoListOnce.Do(func() {

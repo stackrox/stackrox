@@ -1,3 +1,5 @@
+//go:build test_e2e || destructive
+
 package tests
 
 import (

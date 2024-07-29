@@ -26,7 +26,9 @@ describe('Configuration Management Secrets', () => {
     it('should render the deployments link and open the side panel when a row is clicked', () => {
         visitConfigurationManagementEntities(entitiesKey);
 
-        cy.get('.rt-tbody .rt-tr').find(`.rt-td a[data-testid='deployment']`).eq(0).click();
+        cy.get('.rt-tbody .rt-td')
+            .contains('a', new RegExp(/^\d+ Deployments?$/))
+            .click();
         cy.get('[data-testid="side-panel"] [data-testid="panel-header"]:contains("deployment")');
     });
 

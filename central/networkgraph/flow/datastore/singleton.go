@@ -16,7 +16,7 @@ var (
 // Singleton provides the instance of ClusterDataStore to use.
 func Singleton() ClusterDataStore {
 	once.Do(func() {
-		instance = NewClusterDataStore(singleton.Singleton(), graphConfigDS.Singleton(), networktree.Singleton(), cache.DeletedDeploymentCacheSingleton())
+		instance = NewClusterDataStore(singleton.Singleton(), graphConfigDS.Singleton(), networktree.Singleton(), cache.DeletedDeploymentsSingleton())
 	})
 	return instance
 }

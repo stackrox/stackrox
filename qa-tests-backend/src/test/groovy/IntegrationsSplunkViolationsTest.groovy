@@ -56,7 +56,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     def setup() {
-        splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE, false)
+        splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE)
     }
 
     def cleanup() {

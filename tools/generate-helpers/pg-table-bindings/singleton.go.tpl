@@ -74,7 +74,7 @@ func New(db postgres.DB) Store {
 {{- define "insertObject"}}
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx *postgres.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
-    serialized, marshalErr := obj.Marshal()
+    serialized, marshalErr := obj.MarshalVT()
     if marshalErr != nil {
         return marshalErr
     }

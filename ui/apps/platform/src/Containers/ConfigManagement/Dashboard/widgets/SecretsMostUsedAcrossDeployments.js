@@ -107,22 +107,20 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                 return (
                                     <li
                                         key={item.id}
-                                        className={`text-base-600 inline-block flex flex-row border-base-300 w-full ${
+                                        className={`inline-block flex flex-row border-base-300 w-full ${
                                             index !== 4 || index !== 9 ? 'border-b' : ''
                                         }`}
                                     >
                                         <div className="self-center text-2xl pl-4 pr-4">
                                             {index + 1}
                                         </div>
-                                        <div className="flex flex-col truncate pr-4 pb-4 pt-4 text-sm">
-                                            <span className="text-base-500">
+                                        <div className="flex flex-col truncate pr-4 pb-4 pt-4">
+                                            <span className="text-sm">
                                                 {item.clusterName}/{item.namespace}
                                             </span>
-                                            <Link className="text-base-600 underline" to={linkTo}>
-                                                {item.name}
-                                            </Link>
+                                            <Link to={linkTo}>{item.name}</Link>
                                             {item.deploymentCount > 0 && (
-                                                <span className="mt-1 truncate">
+                                                <span className="truncate text-sm">
                                                     {`${item.deploymentCount} ${pluralize(
                                                         'deployment',
                                                         item.deploymentCount

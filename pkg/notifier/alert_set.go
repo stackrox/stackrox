@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // AlertSet is a layer over an expiring cache specifically for alerts.
@@ -18,16 +17,16 @@ type AlertSet interface {
 // NewAlertSet returns a new AlertSet instance
 func NewAlertSet(retryAlertsFor time.Duration) AlertSet {
 	return &alertSetImpl{
-		alerts: expiringcache.NewExpiringCache(retryAlertsFor),
+		alerts: expiringcache.NewExpiringCache[string, *storage.Alert](retryAlertsFor),
 	}
 }
 
 type alertSetImpl struct {
-	alerts expiringcache.Cache
+	alerts expiringcache.Cache[string, *storage.Alert]
 }
 
 func (as *alertSetImpl) Add(alert *storage.Alert) {
-	as.alerts.Add(alert.GetId(), protocompat.Clone(alert))
+	as.alerts.Add(alert.GetId(), alert.Clone())
 }
 
 func (as *alertSetImpl) Remove(id string) {
@@ -35,11 +34,5 @@ func (as *alertSetImpl) Remove(id string) {
 }
 
 func (as *alertSetImpl) GetAll() []*storage.Alert {
-	alertInterfaces := as.alerts.GetAll()
-
-	ret := make([]*storage.Alert, 0, len(alertInterfaces))
-	for _, ai := range alertInterfaces {
-		ret = append(ret, ai.(*storage.Alert))
-	}
-	return ret
+	return as.alerts.GetAll()
 }

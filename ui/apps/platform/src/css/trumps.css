@@ -35,6 +35,19 @@ body {
     text-decoration: var(--pf-v5-global--link--TextDecoration) !important;
 }
 
+/* PatternFly style for links in classic widget body and table cell. */
+
+[data-testid="widget-body"] a,
+.rt-td a {
+    color: var(--pf-v5-global--link--Color);
+}
+
+[data-testid="widget-body"] a:hover,
+.rt-td a:hover {
+  color: var(--pf-v5-global--link--Color--hover);
+  text-decoration: var(--pf-v5-global--link--TextDecoration--hover);
+}
+
 .pf-v5-c-page__sidebar {
     --pf-v5-c-page__sidebar-body--PaddingTop: 0;
 }

@@ -80,6 +80,7 @@ export function waitForResponses(routeMatcherMap, waitOptions = {}) {
  * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  * @param {Parameters<Cypress.Chainable['wait']>[1]} [waitOptions]
+ * @returns {Cypress.Chainable<Interception[] | Interception>}
  */
 export function interactAndWaitForResponses(
     interactionCallback,
@@ -92,4 +93,24 @@ export function interactAndWaitForResponses(
     interactionCallback();
 
     return waitForResponses(routeMatcherMap, waitOptions);
+}
+
+/**
+ * Intercepts a GraphQL request during an interaction and yields the
+ * variables object passed to the request's query
+ *
+ * @param {() => void} interactionCallback The interaction performed to trigger the GraphQL request
+ * @param {string} opname The GraphQL operation name
+ * @returns {Cypress.Chainable<Interception>}
+ */
+export function interactAndInspectGraphQLVariables(interactionCallback, opname) {
+    const url = `/api/graphql?opname=${opname}`;
+
+    cy.intercept({ method: 'POST', url, times: 1 }).as(opname);
+
+    interactionCallback();
+
+    return cy.wait(`@${opname}`).then((interception) => {
+        return cy.wrap(interception.request.body.variables);
+    });
 }

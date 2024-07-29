@@ -4,6 +4,11 @@
     "title": "api/v2/report_service.proto",
     "version": "version not set"
   },
+  "tags": [
+    {
+      "name": "ReportService"
+    }
+  ],
   "consumes": [
     "application/json"
   ],
@@ -25,7 +30,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -101,7 +106,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -175,7 +180,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -208,7 +213,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -237,7 +242,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -266,7 +271,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -282,7 +287,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v2ReportConfiguration"
+              "$ref": "#/definitions/ReportServiceUpdateReportConfigurationBody"
             }
           }
         ],
@@ -305,7 +310,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -387,7 +392,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -469,7 +474,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -500,7 +505,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -531,7 +536,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -562,7 +567,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -590,6 +595,36 @@
       ],
       "default": "VULNERABILITY"
     },
+    "ReportServiceUpdateReportConfigurationBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/ReportConfigurationReportType"
+        },
+        "vulnReportFilters": {
+          "$ref": "#/definitions/v2VulnerabilityReportFilters"
+        },
+        "schedule": {
+          "$ref": "#/definitions/v2ReportSchedule"
+        },
+        "resourceScope": {
+          "$ref": "#/definitions/v2ResourceScope"
+        },
+        "notifiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2NotifierConfiguration"
+          }
+        }
+      }
+    },
     "ReportStatusReportMethod": {
       "type": "string",
       "enum": [
@@ -597,17 +632,6 @@
         "SCHEDULED"
       ],
       "default": "ON_DEMAND"
-    },
-    "ReportStatusRunState": {
-      "type": "string",
-      "enum": [
-        "WAITING",
-        "PREPARING",
-        "GENERATED",
-        "DELIVERED",
-        "FAILURE"
-      ],
-      "default": "WAITING"
     },
     "VulnerabilityReportFiltersFixability": {
       "type": "string",
@@ -640,21 +664,15 @@
     "protobufAny": {
       "type": "object",
       "properties": {
-        "typeUrl": {
+        "@type": {
           "type": "string"
-        },
-        "value": {
-          "type": "string",
-          "format": "byte"
         }
-      }
+      },
+      "additionalProperties": {}
     },
-    "runtimeError": {
+    "rpcStatus": {
       "type": "object",
       "properties": {
-        "error": {
-          "type": "string"
-        },
         "code": {
           "type": "integer",
           "format": "int32"
@@ -665,6 +683,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
@@ -751,6 +770,7 @@
         "reportConfigs": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2ReportConfiguration"
           }
         }
@@ -792,6 +812,7 @@
         "sortOptions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2SortOption"
           },
           "description": "This field is under development. It is not supported on any REST APIs."
@@ -808,7 +829,7 @@
           "$ref": "#/definitions/v2Pagination"
         }
       },
-      "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
     },
     "v2ReportConfiguration": {
       "type": "object",
@@ -837,6 +858,7 @@
         "notifiers": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2NotifierConfiguration"
           }
         }
@@ -848,6 +870,7 @@
         "reportSnapshots": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2ReportSnapshot"
           }
         }
@@ -940,6 +963,7 @@
         "notifiers": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2NotifierConfiguration"
           }
         },
@@ -955,7 +979,7 @@
       "type": "object",
       "properties": {
         "runState": {
-          "$ref": "#/definitions/ReportStatusRunState"
+          "$ref": "#/definitions/v2ReportStatusRunState"
         },
         "completedAt": {
           "type": "string",
@@ -979,6 +1003,17 @@
           "$ref": "#/definitions/v2ReportStatus"
         }
       }
+    },
+    "v2ReportStatusRunState": {
+      "type": "string",
+      "enum": [
+        "WAITING",
+        "PREPARING",
+        "GENERATED",
+        "DELIVERED",
+        "FAILURE"
+      ],
+      "default": "WAITING"
     },
     "v2ResourceScope": {
       "type": "object",

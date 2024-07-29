@@ -10,7 +10,6 @@ import (
 	nfDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -194,7 +193,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 		used := make(map[int]bool)
 		for _, actualUpdate := range actualUpdates {
 			for index, expectedProp := range expectedUpdateProps {
-				if protocompat.Equal(actualUpdate.GetProps(), expectedProp) {
+				if actualUpdate.GetProps().EqualVT(expectedProp) {
 					if used[index] {
 						return false
 					}

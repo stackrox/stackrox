@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -30,11 +30,11 @@ import (
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/logging"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
 	mitreUtils "github.com/stackrox/rox/pkg/mitre/utils"
@@ -44,6 +44,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -86,6 +87,7 @@ const (
 	uncategorizedCategory = `Uncategorized`
 	dryRunParallelism     = 8
 	identityUIDKey        = "identityUID"
+	maxPoliciesReturned   = 1000
 )
 
 var (
@@ -110,7 +112,7 @@ type serviceImpl struct {
 	connectionManager connection.Manager
 	lifecycleManager  lifecycle.Manager
 	processor         notifier.Processor
-	metadataCache     expiringcache.Cache
+	metadataCache     cache.ImageMetadata
 
 	validator *policyValidator
 
@@ -176,23 +178,24 @@ func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPo
 // ListPolicies retrieves all policies in ListPolicy form according to the request.
 func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*v1.ListPoliciesResponse, error) {
 	resp := new(v1.ListPoliciesResponse)
-	if request.GetQuery() == "" {
-		policies, err := s.policies.GetAllPolicies(ctx)
-		if err != nil {
-			return nil, err
-		}
-		resp.Policies = convertPoliciesToListPolicies(policies)
-	} else {
-		parsedQuery, err := search.ParseQuery(request.GetQuery())
-		if err != nil {
-			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-		}
-		policies, err := s.policies.SearchRawPolicies(ctx, parsedQuery)
-		if err != nil {
-			return nil, err
-		}
-		resp.Policies = convertPoliciesToListPolicies(policies)
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+	// Fill in pagination.
+	pagination := request.GetPagination()
+	if request.GetPagination() == nil {
+		pagination = &v1.Pagination{
+			Limit: maxPoliciesReturned,
+		}
+	}
+	paginated.FillPagination(parsedQuery, pagination, maxPoliciesReturned)
+
+	policies, err := s.policies.SearchRawPolicies(ctx, parsedQuery)
+	if err != nil {
+		return nil, err
+	}
+	resp.Policies = convertPoliciesToListPolicies(policies)
 
 	return resp, nil
 }

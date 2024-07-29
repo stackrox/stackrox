@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/group/datastore/serialize"
@@ -191,7 +191,7 @@ func diffGroups(previous []*storage.Group, required []*storage.Group) (removed [
 	}
 	for key, group := range requiredByID {
 		if previousGroup, hasPreviousGroup := previousByID[key]; hasPreviousGroup {
-			if !protocompat.Equal(previousGroup, group) {
+			if !previousGroup.EqualVT(group) {
 				updated = append(updated, group)
 				// Delete the to-be-updated group, otherwise we potentially do not create a group based on stale data.
 				delete(groupsByPropsAndRole,

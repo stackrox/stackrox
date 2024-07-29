@@ -809,6 +809,14 @@ h6 {
 /* React-vis */
 @import '~react-vis/dist/style.css';
 
+/*
+ * Override overflow-y: auto which causes axe DevTools to report:
+ * Scrollable region must have keyboard access
+ */
+.rv-discrete-color-legend {
+    overflow-y: hidden;
+}
+
 /* Legend */
 .horizontal-bar-legend .rv-discrete-color-legend-item {
     padding: 3px 4px;

@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -641,7 +640,7 @@ func cmp(expected, actual []component.DeploytimeDetectionRequest) bool {
 		if e.Action != a.Action {
 			return false
 		}
-		if !protocompat.Equal(e.Object, a.Object) {
+		if !e.Object.EqualVT(a.Object) {
 			return false
 		}
 	}

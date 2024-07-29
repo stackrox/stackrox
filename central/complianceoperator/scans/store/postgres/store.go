@@ -85,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 
 func insertIntoComplianceOperatorScans(batch *pgx.Batch, obj *storage.ComplianceOperatorScan) error {
 
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -124,7 +124,7 @@ func copyFromComplianceOperatorScans(ctx context.Context, s pgSearch.Deleter, tx
 			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 			"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}

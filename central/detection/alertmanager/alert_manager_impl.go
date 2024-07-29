@@ -335,7 +335,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 
 		if matchingOld := findAlert(alert, previousAlerts); matchingOld != nil {
 			mergedAlert := mergeAlerts(matchingOld, alert)
-			if mergedAlert != matchingOld && !protocompat.Equal(mergedAlert, matchingOld) {
+			if mergedAlert != matchingOld && !mergedAlert.EqualVT(matchingOld) {
 				updatedAlerts = append(updatedAlerts, mergedAlert)
 			}
 			continue

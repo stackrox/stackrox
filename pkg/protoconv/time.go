@@ -3,11 +3,11 @@ package protoconv
 import (
 	"time"
 
-	gogoTimestamp "github.com/gogo/protobuf/types"
 	golangTimestamp "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -20,7 +20,7 @@ const (
 )
 
 // ConvertGoGoProtoTimeToGolangProtoTime converts the Gogo Timestamp to the golang protobuf timestamp.
-func ConvertGoGoProtoTimeToGolangProtoTime(gogo *gogoTimestamp.Timestamp) *golangTimestamp.Timestamp {
+func ConvertGoGoProtoTimeToGolangProtoTime(gogo *timestamppb.Timestamp) *golangTimestamp.Timestamp {
 	if gogo == nil {
 		return nil
 	}
@@ -31,57 +31,55 @@ func ConvertGoGoProtoTimeToGolangProtoTime(gogo *gogoTimestamp.Timestamp) *golan
 }
 
 // ConvertTimestampToTimeOrNow converts a proto timestamp to a golang Time, and returns time.Now() if there is an error.
-func ConvertTimestampToTimeOrNow(gogo *gogoTimestamp.Timestamp) time.Time {
+func ConvertTimestampToTimeOrNow(gogo *timestamppb.Timestamp) time.Time {
 	return ConvertTimestampToTimeOrDefault(gogo, time.Now())
 }
 
 // ConvertTimestampToTimeOrDefault converts a proto timestamp to a golang Time, and returns the default value if there is an error.
-func ConvertTimestampToTimeOrDefault(gogo *gogoTimestamp.Timestamp, defaultVal time.Time) time.Time {
-	t, err := gogoTimestamp.TimestampFromProto(gogo)
-	if err != nil {
+func ConvertTimestampToTimeOrDefault(gogo *timestamppb.Timestamp, defaultVal time.Time) time.Time {
+	if gogo.CheckValid() != nil {
 		return defaultVal
 	}
-	return t
+	return gogo.AsTime()
 }
 
 // ConvertTimeToTimestampOrNow converts golang time to proto timestamp.
-func ConvertTimeToTimestampOrNow(goTime *time.Time) *gogoTimestamp.Timestamp {
+func ConvertTimeToTimestampOrNow(goTime *time.Time) *timestamppb.Timestamp {
 	if goTime == nil {
-		return gogoTimestamp.TimestampNow()
+		return timestamppb.Now()
 	}
 	return ConvertTimeToTimestamp(*goTime)
 }
 
 // ConvertTimeToTimestamp converts golang time to proto timestamp.
-func ConvertTimeToTimestamp(goTime time.Time) *gogoTimestamp.Timestamp {
-	t, err := gogoTimestamp.TimestampProto(goTime)
-	if err != nil {
-		return gogoTimestamp.TimestampNow()
+func ConvertTimeToTimestamp(goTime time.Time) *timestamppb.Timestamp {
+	protoTime := timestamppb.New(goTime)
+	if protoTime.CheckValid() != nil {
+		return timestamppb.Now()
 	}
-	return t
+	return protoTime
 }
 
 // ConvertTimeToTimestampOrNil converts golang time to proto timestamp or if it fails returns nil.
-func ConvertTimeToTimestampOrNil(goTime time.Time) *gogoTimestamp.Timestamp {
-	t, err := gogoTimestamp.TimestampProto(goTime)
-	if err != nil {
-		log.Error(err)
+func ConvertTimeToTimestampOrNil(goTime time.Time) *timestamppb.Timestamp {
+	protoTime := timestamppb.New(goTime)
+	if protoTime.CheckValid() != nil {
 		return nil
 	}
-	return t
+	return protoTime
 }
 
 // MustConvertTimeToTimestamp converts golang time to proto timestamp and panics if it fails.
-func MustConvertTimeToTimestamp(goTime time.Time) *gogoTimestamp.Timestamp {
-	t, err := gogoTimestamp.TimestampProto(goTime)
-	if err != nil {
+func MustConvertTimeToTimestamp(goTime time.Time) *timestamppb.Timestamp {
+	protoTime := timestamppb.New(goTime)
+	if err := protoTime.CheckValid(); err != nil {
 		panic(err)
 	}
-	return t
+	return protoTime
 }
 
 // ConvertTimeString converts a vulnerability time string into a proto timestamp
-func ConvertTimeString(str string) *gogoTimestamp.Timestamp {
+func ConvertTimeString(str string) *timestamppb.Timestamp {
 	if str == "" {
 		return nil
 	}
@@ -95,7 +93,7 @@ func ConvertTimeString(str string) *gogoTimestamp.Timestamp {
 
 // ReadableTime takes a proto time type and converts it to a human readable string down to seconds.
 // It prints a UTC time for valid input Timestamp objects.
-func ReadableTime(ts *gogoTimestamp.Timestamp) string {
+func ReadableTime(ts *timestamppb.Timestamp) string {
 	t, err := protocompat.ConvertTimestampToTimeOrError(ts)
 	if err != nil {
 		log.Error(err)
@@ -105,16 +103,16 @@ func ReadableTime(ts *gogoTimestamp.Timestamp) string {
 }
 
 // NowMinus substracts a specified amount of time from the current timestamp
-func NowMinus(t time.Duration) *gogoTimestamp.Timestamp {
+func NowMinus(t time.Duration) *timestamppb.Timestamp {
 	return ConvertTimeToTimestamp(time.Now().Add(-t))
 }
 
 // TimeBeforeDays subtracts a specified number of days from the current timestamp
-func TimeBeforeDays(days int) *gogoTimestamp.Timestamp {
+func TimeBeforeDays(days int) *timestamppb.Timestamp {
 	return NowMinus(24 * time.Duration(days) * time.Hour)
 }
 
 // ConvertMicroTSToProtobufTS converts a microtimestamp to a (Gogo) protobuf representation.
-func ConvertMicroTSToProtobufTS(ts timestamp.MicroTS) *gogoTimestamp.Timestamp {
+func ConvertMicroTSToProtobufTS(ts timestamp.MicroTS) *timestamppb.Timestamp {
 	return protocompat.GetProtoTimestampFromSecondsAndNanos(ts.UnixSeconds(), ts.UnixNanosFraction())
 }

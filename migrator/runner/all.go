@@ -40,4 +40,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_202_to_m_203_vuln_requests_for_suppressed_cves"
 	_ "github.com/stackrox/rox/migrator/migrations/m_203_to_m_204_openshift_policy_exclusions_for_4_5"
 	_ "github.com/stackrox/rox/migrator/migrations/m_204_to_m_205_clusters_platform_type_and_k8_version"
+	_ "github.com/stackrox/rox/migrator/migrations/m_205_to_m_206_remove_bad_gorm_index"
 )

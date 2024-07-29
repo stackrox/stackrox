@@ -10,7 +10,7 @@ import (
 
 // ConvertTestSingleUUIDKeyStructFromProto converts a `*storage.TestSingleUUIDKeyStruct` to Gorm model
 func ConvertTestSingleUUIDKeyStructFromProto(obj *storage.TestSingleUUIDKeyStruct) (*TestSingleUUIDKeyStructs, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func ConvertTestSingleUUIDKeyStructFromProto(obj *storage.TestSingleUUIDKeyStruc
 // ConvertTestSingleUUIDKeyStructToProto converts Gorm model `TestSingleUUIDKeyStructs` to its protobuf type object
 func ConvertTestSingleUUIDKeyStructToProto(m *TestSingleUUIDKeyStructs) (*storage.TestSingleUUIDKeyStruct, error) {
 	var msg storage.TestSingleUUIDKeyStruct
-	if err := msg.Unmarshal(m.Serialized); err != nil {
+	if err := msg.UnmarshalVT(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

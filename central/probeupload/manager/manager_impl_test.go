@@ -81,7 +81,7 @@ func (s *managerTestSuite) TestStoreAndGetExistingProbeFile() {
 	s.Require().Len(fileInfos, 1)
 
 	s.Equal(validFilePath, fileInfos[0].GetName())
-	s.EqualValues(len("foobarbaz"), fileInfos[0].GetSize_())
+	s.EqualValues(len("foobarbaz"), fileInfos[0].GetSize())
 	s.Equal(crc32Sum, fileInfos[0].GetCrc32())
 }
 

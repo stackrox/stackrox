@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/jsonutil"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -124,7 +123,7 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 func removeExclusion(policy *storage.Policy, exclusionToRemove *storage.Exclusion) bool {
 	exclusions := policy.GetExclusions()
 	for i, exclusion := range exclusions {
-		if protocompat.Equal(exclusion, exclusionToRemove) {
+		if exclusion.EqualVT(exclusionToRemove) {
 			policy.Exclusions = append(exclusions[:i], exclusions[i+1:]...)
 			return true
 		}
@@ -277,7 +276,7 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 
 	// TODO: Add others as needed
 
-	if !protocompat.Equal(beforePolicy, afterPolicy) {
+	if !beforePolicy.EqualVT(afterPolicy) {
 		return PolicyUpdates{}, errors.New("policies have diff after nil-ing out fields we checked, please update this function " +
 			"to be able to diff more fields")
 	}
@@ -289,7 +288,7 @@ func getExclusionsUpdates(beforePolicy *storage.Policy, afterPolicy *storage.Pol
 	for _, beforeExclusion := range beforePolicy.GetExclusions() {
 		var found bool
 		for afterExclusionIdx, afterExclusion := range afterPolicy.GetExclusions() {
-			if protocompat.Equal(beforeExclusion, afterExclusion) {
+			if beforeExclusion.EqualVT(afterExclusion) {
 				if !matchedAfterExclusionsIdxs.Contains(afterExclusionIdx) { // to account for duplicates
 					found = true
 					matchedAfterExclusionsIdxs.Add(afterExclusionIdx)
