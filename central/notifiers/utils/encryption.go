@@ -160,7 +160,7 @@ func getCredentials(notifier *storage.Notifier) (string, error) {
 	case pkgNotifiers.AWSSecurityHubType:
 		creds := notifier.GetAwsSecurityHub().GetCredentials()
 		if creds != nil {
-			marshalled, err := creds.Marshal()
+			marshalled, err := creds.MarshalVT()
 			if err != nil {
 				return "", err
 			}

@@ -153,7 +153,7 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ..
 			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 		}
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -225,7 +225,7 @@ func copyFromClusterCVEEdges(ctx context.Context, tx *postgres.Tx, cveType stora
 	for idx, obj := range objs {
 		oldEdges.Remove(obj.GetId())
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
