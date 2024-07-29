@@ -36,6 +36,9 @@ var (
 			RepositoryToCPEURL: "https://access.redhat.com/security/data/metrics/repository-to-cpe.json",
 			NameToReposURL:     "https://access.redhat.com/security/data/metrics/container-name-repos-map.json",
 		},
+		NodeIndexer: NodeIndexerConfig{
+			Enable: false,
+		},
 		Matcher: MatcherConfig{
 			Enable: true,
 			Database: Database{
@@ -58,14 +61,15 @@ var (
 // Config represents the Scanner configuration parameters.
 type Config struct {
 	// StackRoxServices indicates the Scanner is deployed alongside StackRox services.
-	StackRoxServices bool          `yaml:"stackrox_services"`
-	Indexer          IndexerConfig `yaml:"indexer"`
-	Matcher          MatcherConfig `yaml:"matcher"`
-	HTTPListenAddr   string        `yaml:"http_listen_addr"`
-	GRPCListenAddr   string        `yaml:"grpc_listen_addr"`
-	MTLS             MTLSConfig    `yaml:"mtls"`
-	Proxy            ProxyConfig   `yaml:"proxy"`
-	LogLevel         LogLevel      `yaml:"log_level"`
+	StackRoxServices bool              `yaml:"stackrox_services"`
+	Indexer          IndexerConfig     `yaml:"indexer"`
+	NodeIndexer      NodeIndexerConfig `yaml:"nodeindexer"`
+	Matcher          MatcherConfig     `yaml:"matcher"`
+	HTTPListenAddr   string            `yaml:"http_listen_addr"`
+	GRPCListenAddr   string            `yaml:"grpc_listen_addr"`
+	MTLS             MTLSConfig        `yaml:"mtls"`
+	Proxy            ProxyConfig       `yaml:"proxy"`
+	LogLevel         LogLevel          `yaml:"log_level"`
 }
 
 func (c *Config) validate() error {
@@ -83,6 +87,10 @@ func (c *Config) validate() error {
 
 	if err := c.Indexer.validate(); err != nil {
 		return fmt.Errorf("indexer: %w", err)
+	}
+
+	if err := c.NodeIndexer.validate(); err != nil {
+		return fmt.Errorf("nodeindexer: %w", err)
 	}
 
 	if err := c.Matcher.validate(); err != nil {
@@ -149,6 +157,21 @@ func (c *IndexerConfig) validate() error {
 		}
 	}
 
+	return nil
+}
+
+// NodeIndexerConfig .
+type NodeIndexerConfig struct {
+	// StackRoxServices specifies whether Indexer is deployed alongside StackRox services.
+	StackRoxServices bool
+	// Enable if false disables the Indexer service.
+	Enable bool `yaml:"enable"`
+}
+
+func (c *NodeIndexerConfig) validate() error {
+	if !c.Enable {
+		return nil
+	}
 	return nil
 }
 
