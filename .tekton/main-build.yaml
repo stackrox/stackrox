@@ -56,9 +56,6 @@ spec:
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
-  - name: subscription-manager-activation-key
-    secret:
-      secretName: subscription-manager-activation-key
 
   # The pipeline regularly takes >1h to finish.
   timeouts:
