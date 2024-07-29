@@ -42,13 +42,13 @@ var dataTypeMap = map[string]storage.SecretType{
 	"-----BEGIN CERTIFICATE-----":              storage.SecretType_PUBLIC_CERTIFICATE,
 	"-----BEGIN NEW CERTIFICATE REQUEST-----":  storage.SecretType_CERTIFICATE_REQUEST,
 	"-----BEGIN PRIVACY-ENHANCED MESSAGE-----": storage.SecretType_PRIVACY_ENHANCED_MESSAGE,
-	"-----BEGIN OPENSSH PRIVATE KEY-----":      storage.SecretType_OPENSSH_PRIVATE_KEY,
-	"-----BEGIN PGP PRIVATE KEY BLOCK-----":    storage.SecretType_PGP_PRIVATE_KEY,
-	"-----BEGIN EC PRIVATE KEY-----":           storage.SecretType_EC_PRIVATE_KEY,
-	"-----BEGIN RSA PRIVATE KEY-----":          storage.SecretType_RSA_PRIVATE_KEY,
-	"-----BEGIN DSA PRIVATE KEY-----":          storage.SecretType_DSA_PRIVATE_KEY,
-	"-----BEGIN PRIVATE KEY-----":              storage.SecretType_CERT_PRIVATE_KEY,
-	"-----BEGIN ENCRYPTED PRIVATE KEY-----":    storage.SecretType_ENCRYPTED_PRIVATE_KEY,
+	"-----BEGIN OPENSSH PRIVATE KEY-----":      storage.SecretType_OPENSSH_PRIVATE_KEY,   // notsecret
+	"-----BEGIN PGP PRIVATE KEY BLOCK-----":    storage.SecretType_PGP_PRIVATE_KEY,       // notsecret
+	"-----BEGIN EC PRIVATE KEY-----":           storage.SecretType_EC_PRIVATE_KEY,        // notsecret
+	"-----BEGIN RSA PRIVATE KEY-----":          storage.SecretType_RSA_PRIVATE_KEY,       // notsecret
+	"-----BEGIN DSA PRIVATE KEY-----":          storage.SecretType_DSA_PRIVATE_KEY,       // notsecret
+	"-----BEGIN PRIVATE KEY-----":              storage.SecretType_CERT_PRIVATE_KEY,      // notsecret
+	"-----BEGIN ENCRYPTED PRIVATE KEY-----":    storage.SecretType_ENCRYPTED_PRIVATE_KEY, // notsecret
 }
 
 func getSecretType(data string) storage.SecretType {
@@ -398,16 +398,6 @@ func (s *secretDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 	oldSecret, ok := oldObj.(*v1.Secret)
 	if !ok {
 		oldSecret = nil
-	}
-
-	parsedID := string(secret.GetUID())
-	switch action {
-	case central.ResourceAction_SYNC_RESOURCE, central.ResourceAction_CREATE_RESOURCE:
-		s.regStore.AddSecretID(parsedID)
-	case central.ResourceAction_REMOVE_RESOURCE:
-		if !s.regStore.RemoveSecretID(parsedID) {
-			log.Warnf("Should have secret (%s:%s) in registryStore known IDs but ID wasn't found", secret.GetName(), parsedID)
-		}
 	}
 
 	switch secret.Type {

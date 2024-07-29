@@ -35,10 +35,6 @@ type Store struct {
 	// store maps a namespace to the names of registries accessible from within the namespace.
 	store map[string]registries.Set
 
-	// knownSecretIDs keeps track of all secret IDs in the cluster. This is used to reconcile with
-	// central in case secrets were deleted while the connection was broken.
-	knownSecretIDs set.StringSet
-
 	// clusterLocalRegistryHosts contains hosts (names and/or IPs) for registries that are local
 	// to this cluster (ie: the OCP internal registry).
 	clusterLocalRegistryHosts      set.StringSet
@@ -97,7 +93,6 @@ func NewRegistryStore(checkTLSFunc CheckTLS) *Store {
 			types.WithGCPTokenManager(gcp.Singleton()),
 		),
 		clusterLocalRegistryHosts: set.NewStringSet(),
-		knownSecretIDs:            set.NewStringSet(),
 		tlsCheckCache:             tlsCheckCache,
 	}
 
@@ -186,16 +181,6 @@ func genIntegrationName(prefix string, namespace string, registry string) string
 	}
 
 	return fmt.Sprintf("%v%v%v", prefix, namespace, registry)
-}
-
-// AddSecretID appends a kubernetes secret ID into a set to keep track of its existence in the cluster.
-func (rs *Store) AddSecretID(id string) {
-	rs.knownSecretIDs.Add(id)
-}
-
-// RemoveSecretID removes a kubernetes secret ID from tracking set.
-func (rs *Store) RemoveSecretID(id string) bool {
-	return rs.knownSecretIDs.Remove(id)
 }
 
 // UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
