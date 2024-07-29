@@ -602,7 +602,7 @@ func (ds *datastoreImpl) readRowsToFindPLOPsWithNoProcessInformation(rows pgx.Ro
 		}
 
 		var msg storage.ProcessListeningOnPortStorage
-		if err := (&msg).UnmarshalVT(serialized); err != nil {
+		if err := msg.UnmarshalVT(serialized); err != nil {
 			return nil, err
 		}
 
