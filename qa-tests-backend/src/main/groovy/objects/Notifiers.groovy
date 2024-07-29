@@ -1,7 +1,5 @@
 package objects
 
-import static util.Helpers.withRetry
-
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 
@@ -122,22 +120,21 @@ class SlackNotifier extends Notifier {
 class SplunkNotifier extends Notifier {
     def splunkPort
 
-    SplunkNotifier(boolean legacy, String collectorServiceName, int port, String integrationName = "Splunk Test") {
+    SplunkNotifier(String collectorServiceName, int port, String integrationName = "Splunk Test") {
         splunkPort = port
-        notifier = NotifierService.getSplunkIntegrationConfig(legacy, collectorServiceName, integrationName)
+        def hecToken = SplunkUtil.createHECToken(splunkPort)
+        log.info("Using HEC ingest token: ${hecToken}")
+        notifier = NotifierService.getSplunkIntegrationConfig(collectorServiceName, integrationName, hecToken)
     }
 
     def createNotifier() {
-        log.debug "validating splunk deployment is ready to accept events before creating notifier..."
-        withRetry(20, 2) {
-            SplunkUtil.createSearch(splunkPort)
-        }
         notifier = NotifierService.addNotifier(notifier)
     }
 
     void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
-        def response = SplunkUtil.waitForSplunkAlerts(splunkPort, 30)
+        def response = SplunkUtil.waitForSplunkAlerts(splunkPort, "search sourcetype=stackrox-alert " + policy.name)
 
+        log.info("Verifying data in Splunk")
         assert response.find { it.deployment.id == deployment.deploymentUid }
         assert response.find { it.deployment.name == deployment.name }
         assert response.find { it.deployment.namespace == deployment.namespace }
