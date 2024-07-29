@@ -45,13 +45,13 @@ func nodeScanCmd(ctx context.Context) *cobra.Command {
 			return fmt.Errorf("decoding report: %w", err)
 		}
 		fmt.Println(string(reportJSON))
-		switch report.(type) {
+		switch r := report.(type) {
 		case *v4.VulnerabilityReport:
 			fmt.Printf("Vulnerability Report contains %d packages with %d vulns\n",
-				len(report.(*v4.VulnerabilityReport).GetContents().GetPackages()),
-				len(report.(*v4.VulnerabilityReport).GetVulnerabilities()))
+				len(r.GetContents().GetPackages()),
+				len(r.GetVulnerabilities()))
 		case *v4.IndexReport:
-			fmt.Printf("Index Report contains %d packages\n", len(report.(*v4.IndexReport).GetContents().GetPackages()))
+			fmt.Printf("Index Report contains %d packages\n", len(r.GetContents().GetPackages()))
 		}
 
 		return nil

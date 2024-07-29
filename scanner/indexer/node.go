@@ -61,10 +61,10 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*claircore.IndexRepor
 	ctx = context.WithValue(ctx, "manifest_id", h)
 
 	layer, err := constructLayer(ctx, `sha256:`+h)
-	defer layer.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer layer.Close()
 
 	reps, err := runRepositoryScanner(ctx, layer)
 	if err != nil {
@@ -165,6 +165,6 @@ func constructLayer(ctx context.Context, digest string) (*claircore.Layer, error
 	}
 
 	l := claircore.Layer{}
-	l.Init(ctx, desc, nil) // TODO: Is the reader required?
-	return &l, nil
+	err := l.Init(ctx, desc, nil) // TODO: Is the reader required?
+	return &l, err
 }
