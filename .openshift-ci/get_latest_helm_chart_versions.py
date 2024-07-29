@@ -130,7 +130,7 @@ def __get_supported_helm_chart_versions():
 
 def get_supported_releases():
     supported_releases = []
-    data = __get_data_from_api(PRODUCT_LIFECYCLES_API)
+    data = __get_data_from_product_lifecycles_api()
     releases = []
     try:
         releases = data["data"][0]["versions"]
@@ -142,9 +142,9 @@ def get_supported_releases():
     return supported_releases
 
 
-def __get_data_from_api(url):
+def __get_data_from_product_lifecycles_api():
     req = Request(
-        url=url,
+        url=PRODUCT_LIFECYCLES_API,
         headers={'User-Agent': 'Mozilla/5.0'}
     )
     try:
