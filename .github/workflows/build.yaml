@@ -40,8 +40,8 @@ jobs:
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
           if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-            matrix="$(jq '.pre_build_go_binaries.arch += ["arm64", "ppc64le", "s390x"]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.arch += ["arm64", "ppc64le", "s390x"]' <<< "$matrix")"
+            matrix="$(jq '.pre_build_go_binaries.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_main.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
           fi;
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
