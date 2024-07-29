@@ -63,7 +63,7 @@ func New(db postgres.DB) Store {
 
 func insertIntoNetworkBaselines(_ context.Context, batch *pgx.Batch, obj *storage.NetworkBaseline) error {
 
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -109,7 +109,7 @@ func (s *storeImpl) copyFromNetworkBaselines(ctx context.Context, tx *postgres.T
 			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 			"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}

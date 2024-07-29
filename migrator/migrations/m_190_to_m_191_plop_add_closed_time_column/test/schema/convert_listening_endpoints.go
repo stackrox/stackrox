@@ -8,7 +8,7 @@ import (
 
 // ConvertProcessListeningOnPortStorageFromProto converts a `*storage.ProcessListeningOnPortStorage` to Gorm model
 func ConvertProcessListeningOnPortStorageFromProto(obj *storage.ProcessListeningOnPortStorage) (*ListeningEndpoints, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

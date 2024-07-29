@@ -10,7 +10,7 @@ import (
 
 // ConvertPolicyFromProto converts a `*storage.Policy` to Gorm model
 func ConvertPolicyFromProto(obj *storage.Policy) (*Policies, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

@@ -7,7 +7,7 @@ import (
 
 // ConvertComplianceOperatorProfileV2FromProto converts a `*storage.ComplianceOperatorProfileV2` to Gorm model
 func ConvertComplianceOperatorProfileV2FromProto(obj *storage.ComplianceOperatorProfileV2) (*ComplianceOperatorProfileV2, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

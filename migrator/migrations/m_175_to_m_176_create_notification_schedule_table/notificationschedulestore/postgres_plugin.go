@@ -33,7 +33,7 @@ func New(db postgres.DB) Store {
 }
 
 func insertIntoNotificationSchedules(ctx context.Context, tx *postgres.Tx, obj *storage.NotificationSchedule) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}

@@ -45,7 +45,7 @@ func New(db postgres.DB) Store {
 //// Helper functions
 
 func insertIntoDeclarativeConfigHealths(_ context.Context, batch *pgx.Batch, obj *storage.DeclarativeConfigHealth) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
