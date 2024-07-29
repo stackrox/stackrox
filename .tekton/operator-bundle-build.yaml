@@ -46,7 +46,7 @@ spec:
     value: 'operator'
 
   pipelineRef:
-    name: operator-bundle-pipeline
+    name: basic-component-pipeline
   workspaces:
   - name: git-auth
     secret:
