@@ -41,8 +41,10 @@ const (
 	// tmpDirPattern is the pattern for the directory in which all Scanner data is written.
 	tmpDirPattern = "scannerdefinitions-*"
 
-	// scannerV2DefsFile is the name of the file which contains Scanner v2 data.
-	scannerV2DefsFile = "diff.zip"
+	// scannerV2DiffFile is the name of the file which contains Scanner v2 diff data.
+	scannerV2DiffFile = "diff.zip"
+	// scannerV2DefsFileis the name of the file which contains offline Scanner v2 data.
+	scannerV2DefsFile = "scanner-defs.zip"
 	// offlineScannerV2DefsBlobName represents the blob name of offline/fallback data file for Scanner v2.
 	offlineScannerV2DefsBlobName = "/offline/scanner/scanner-defs.zip"
 
@@ -420,7 +422,7 @@ func (h *httpHandler) getUpdater(t updaterType, urlPath string) *requestedUpdate
 			updateURL = scannerUpdateBaseURL.JoinPath(scannerV4VulnSubDir, urlPath)
 			ext = ".json.zst"
 		default: // uuid
-			updateURL = scannerUpdateBaseURL.JoinPath(urlPath, scannerV2DefsFile)
+			updateURL = scannerUpdateBaseURL.JoinPath(urlPath, scannerV2DiffFile)
 			ext = ".zip"
 		}
 		filePath := filepath.Join(h.onlineVulnDir, fileName)
