@@ -6,9 +6,14 @@ Currently, feature flags use environment variables to power the toggles.
 
 Feature flags can be valuable to ship features in a preview state, to provide the end user a way to disable some functionality or to control any boolean setting.
 
+Difference between feature flags and configuration options (DB, `pkg/env`):
+
+* Feature flags support the development and the release of a feature, protecting the master branch from unfinished functionality. Features under flags are considered **unstable** and **not ready** for production use. Tech-preview flags in the last stage of development could be enabled for canary testing.
+* Configuration options allow customers to configure a feature. Functionality has to be tested for the range of allowed values, including when no value is provided, and for the transition from one value to another.
+
 ## Feature lifecycle
 
-1. A feature is being developed on a branch, gated by a dev-preview feature flag.
+1. A feature is being developed on a branch, gated by a dev-preview (default) feature flag.
 2. The code meets the [GA requirements](../../PR_GA.md) with the feature disabled: the branch can be merged to the master branch.
 3. The feature is ready to be tested by the customers: the flag can be upgraded to tech-preview. Consult [the article on Products & Services](https://access.redhat.com/articles/6966848) for the differences between the two stages.
 4. The feature can be enabled for everybody: the flag can be enabled.
@@ -16,6 +21,8 @@ Feature flags can be valuable to ship features in a preview state, to provide th
 
 > :warning: Feature flags cannot be used inside migrations or schema changes.
 > Migrations must be merged to the master branch without any feature flag gate, and must not break any current features.
+>
+> :warning: If a `--feature-flag` parameter is passed to the `pg-table-bindings-wrapper` generator, the schema is only applied if the flag is enabled.
 
 ## Adding a feature flag
 
