@@ -1,0 +1,389 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: operator-bundle-pipeline
+spec:
+
+  finally:
+  - name: show-sbom
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-container.results.IMAGE_URL)
+    taskRef:
+      params:
+      - name: name
+        value: show-sbom
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-show-sbom:0.1@sha256:3ea2255c6ad2dd1074de45227deab51b69dba57901f44dbca80fe1c57646b107
+      - name: kind
+        value: task
+      resolver: bundles
+
+  params:
+  - description: Source Repository URL
+    name: git-url
+    type: string
+  - default: ""
+    description: Revision of the Source Repository
+    name: revision
+    type: string
+  - description: Output Image Repository
+    name: output-image-repo
+    type: string
+  - default: "-fast"
+    description: Suffix that will be appended to the output image tag.
+    name: output-tag-suffix
+    type: string
+  - default: .
+    description: Path to the source code of an application's component from where
+      to build image.
+    name: path-context
+    type: string
+  - default: Dockerfile
+    description: Path to the Dockerfile inside the context specified by parameter
+      path-context
+    name: dockerfile
+    type: string
+  - default: "false"
+    description: Force rebuild image
+    name: rebuild
+    type: string
+  - default: "false"
+    description: Skip checks against built image
+    name: skip-checks
+    type: string
+  - default: "false"
+    description: Execute the build with network isolation
+    name: hermetic
+    type: string
+  - default: ""
+    description: Build dependencies to be prefetched by Cachi2
+    name: prefetch-input
+    type: string
+  - default: "false"
+    description: Java build
+    name: java
+    type: string
+  - default: ""
+    description: Image tag expiration time, time values could be something like
+      1h, 2d, 3w for hours, days, and weeks, respectively.
+    name: image-expires-after
+    type: string
+  - default: "true"
+    description: Build a source image.
+    name: build-source-image
+    type: string
+  - default: "0"
+    description: Depth of the git clone in number of commits. Use "1" for shallow clone. Use "0" for deep clone, i.e. to fetch all commits.
+    name: clone-depth
+    type: string
+  - default: "true"
+    description: Fetch tags with git clone
+    name: clone-fetch-tags
+    type: string
+  - default: "1d"
+    description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
+    name: oci-artifact-expires-after
+    type: string
+  - name: image-tag-style
+    description: Image tag style to be used, valid options are 'main' or 'operator'.
+    default: 'main'
+    type: string
+
+  results:
+  - description: ""
+    name: IMAGE_URL
+    value: $(tasks.build-container.results.IMAGE_URL)
+  - description: ""
+    name: IMAGE_DIGEST
+    value: $(tasks.build-container.results.IMAGE_DIGEST)
+  - description: ""
+    name: CHAINS-GIT_URL
+    value: $(tasks.clone-repository.results.url)
+  - description: ""
+    name: CHAINS-GIT_COMMIT
+    value: $(tasks.clone-repository.results.commit)
+  - description: ""
+    name: JAVA_COMMUNITY_DEPENDENCIES
+    value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
+
+  workspaces:
+  - name: git-auth
+
+  tasks:
+
+  - name: init
+    params:
+    - name: image-url
+      # We can't provide a StackRox-style tag because it is not known at this time (requires cloning source, etc.)
+      # As a workaround, we still provide a unique tag that's based on a revision to this task to comply with its
+      # expected input. We later actually add this tag on a built image with apply-tags task.
+      value: $(params.output-image-repo):konflux-$(params.revision)
+    - name: rebuild
+      value: $(params.rebuild)
+    - name: skip-checks
+      value: $(params.skip-checks)
+    taskRef:
+      params:
+      - name: name
+        value: init
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-init:0.2@sha256:61f1202766cd66242c8472b16aa7fa1a20f8d9a5d674cbad27ffd4b3d067e936
+      - name: kind
+        value: task
+      resolver: bundles
+
+  - name: clone-repository
+    params:
+    - name: url
+      value: $(params.git-url)
+    - name: revision
+      value: $(params.revision)
+    - name: depth
+      value: $(params.clone-depth)
+    - name: fetchTags
+      value: $(params.clone-fetch-tags)
+    - name: ociStorage
+      value: $(params.output-image-repo):konflux-$(params.revision).git
+    - name: ociArtifactExpiresAfter
+      value: $(params.oci-artifact-expires-after)
+    taskRef:
+      params:
+      - name: name
+        value: git-clone-oci-ta
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-git-clone-oci-ta:0.1@sha256:75ea089fefa3c81a5afd7d94ebf3674f76bd683f4e60191411dfd8adeb6c9e4b
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(tasks.init.results.build)
+      operator: in
+      values: [ "true" ]
+    workspaces:
+    - name: basic-auth
+      workspace: git-auth
+
+  - name: determine-image-tag
+    params:
+    - name: TAG_SUFFIX
+      value: $(params.output-tag-suffix)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: IMAGE_TAG_STYLE
+      value: $(params.image-tag-style)
+    taskRef:
+      name: determine-image-tag-oci-ta
+
+  - name: prefetch-dependencies
+    params:
+    - name: input
+      value: $(params.prefetch-input)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: ociStorage
+      value: $(params.output-image-repo):konflux-$(params.revision).prefetch
+    - name: ociArtifactExpiresAfter
+      value: $(params.oci-artifact-expires-after)
+    taskRef:
+      params:
+      - name: name
+        value: prefetch-dependencies-oci-ta
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:e179426b46bc44e083ae4b44a4c707dc61a964734e64ee1bc5f2aa6430cd8418
+      - name: kind
+        value: task
+      resolver: bundles
+
+  - name: output-image-tag-construction
+    params:
+    - name: IMAGE_TAG
+      value: $(tasks.determine-image-tag.results.IMAGE_TAG)
+    - name: IMAGE_TAG_STYLE
+      value: $(params.image-tag-style)
+    results:
+    - name: FINAL_IMAGE_TAG
+    taskRef:
+      name: output-image-tag-construction
+
+  - name: build-container
+    params:
+    - name: IMAGE
+      value: $(params.output-image-repo):$(tasks.output-image-tag-construction.results.FINAL_IMAGE_TAG)
+    - name: DOCKERFILE
+      value: $(params.dockerfile)
+    - name: CONTEXT
+      value: $(params.path-context)
+    - name: HERMETIC
+      value: $(params.hermetic)
+    - name: PREFETCH_INPUT
+      value: $(params.prefetch-input)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.image-expires-after)
+    - name: COMMIT_SHA
+      value: $(tasks.clone-repository.results.commit)
+    - name: BUILD_ARGS
+      value:
+      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    taskRef:
+      params:
+      - name: name
+        value: buildah-oci-ta
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.1@sha256:f34210f5eb1361bc730da98797f872f646855b70a325b0154ea3efaa76e62ee8
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(tasks.init.results.build)
+      operator: in
+      values: [ "true" ]
+
+  - name: apply-tags
+    params:
+    - name: IMAGE
+      value: $(tasks.build-container.results.IMAGE_URL)
+    - name: ADDITIONAL_TAGS
+      value:
+      - konflux-$(params.revision)
+    taskRef:
+      params:
+      - name: name
+        value: apply-tags
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-apply-tags:0.1@sha256:7cf2482a7f50a4c493af0604ff388ff5cc2e2579cb3bf889cfa2587c723aa312
+      - name: kind
+        value: task
+      resolver: bundles
+
+  - name: build-source-image
+    params:
+    - name: BINARY_IMAGE
+      value: $(tasks.build-container.results.IMAGE_URL)
+    - name: BASE_IMAGES
+      value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    taskRef:
+      params:
+      - name: name
+        value: source-build-oci-ta
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-source-build-oci-ta:0.1@sha256:49a4c8ee7f38b89e2a0808bd308737f9dafdb35d43b7dc4a766b63df00d887b3
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(tasks.init.results.build)
+      operator: in
+      values: [ "true" ]
+    - input: $(params.build-source-image)
+      operator: in
+      values: [ "true" ]
+
+  - name: deprecated-base-image-check
+    params:
+    - name: BASE_IMAGES_DIGESTS
+      value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+    - name: IMAGE_URL
+      value: $(tasks.build-container.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-container.results.IMAGE_DIGEST)
+    taskRef:
+      params:
+      - name: name
+        value: deprecated-image-check
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.4@sha256:3f956e0cd9b0a183e4fd95e010aa668a788ef564d3af1f7aecaaf6e2ccc2ce93
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
+  - name: clair-scan
+    params:
+    - name: image-digest
+      value: $(tasks.build-container.results.IMAGE_DIGEST)
+    - name: image-url
+      value: $(tasks.build-container.results.IMAGE_URL)
+    taskRef:
+      params:
+      - name: name
+        value: clair-scan
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-clair-scan:0.1@sha256:3d9d05162d5807cde4431e80f0f126f4c19994c0c1633629a62ece9a43b966cd
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
+  - name: sast-snyk-check
+    params:
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    taskRef:
+      params:
+      - name: name
+        value: sast-snyk-check-oci-ta
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-sast-snyk-check-oci-ta:0.1@sha256:ef3b7feac8fac3851913b1ef1eedf53f5ee37c5a2e8a0a6eb9cc7a0fe064f995
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
+  - name: clamav-scan
+    params:
+    - name: image-digest
+      value: $(tasks.build-container.results.IMAGE_DIGEST)
+    - name: image-url
+      value: $(tasks.build-container.results.IMAGE_URL)
+    taskRef:
+      params:
+      - name: name
+        value: clamav-scan
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-clamav-scan:0.1@sha256:559d281b58584386a6faaf0e6641c814f9d877432d1a13bd03076745fffffaf1
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
+  - name: sbom-json-check
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-container.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-container.results.IMAGE_DIGEST)
+    taskRef:
+      params:
+      - name: name
+        value: sbom-json-check
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-sbom-json-check:0.1@sha256:d34362be8843715b1bcdaf55fcbf1be315094e0dc840562c5cec22716a37a1fe
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
