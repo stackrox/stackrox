@@ -181,15 +181,15 @@ class IntegrationsTest extends BaseSpecification {
     @Tag("Integration")
     // splunk is not supported on P/Z
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
-    def "Verify Splunk Integration (legacy mode: #legacy)"() {
+    def "Verify Splunk Integration"() {
         given:
         "the integration is tested"
-        SplunkUtil.SplunkDeployment parts = SplunkUtil.createSplunk(orchestrator,
-                Constants.ORCHESTRATOR_NAMESPACE, true)
+        SplunkUtil.SplunkDeployment parts = SplunkUtil.createSplunk(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
+        SplunkUtil.waitForSplunkBoot(parts.splunkPortForward.localPort)
 
         when:
         "call the grpc API for the splunk integration."
-        SplunkNotifier notifier = new SplunkNotifier(legacy, parts.collectorSvc.name, parts.splunkPortForward.localPort)
+        SplunkNotifier notifier = new SplunkNotifier(parts.collectorSvc.name, parts.splunkPortForward.localPort)
         notifier.createNotifier()
 
         and:
@@ -232,10 +232,6 @@ class IntegrationsTest extends BaseSpecification {
             SplunkUtil.tearDownSplunk(orchestrator, parts)
         }
         notifier.deleteNotifier()
-
-        where:
-        "Data inputs are"
-        legacy << [false, true]
     }
 
     @Unroll
