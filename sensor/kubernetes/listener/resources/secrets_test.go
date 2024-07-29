@@ -216,7 +216,7 @@ func TestForceLocalScanning(t *testing.T) {
 	d = newSecretDispatcher(regStore)
 
 	// secrets with an service-account.name other than default should not be stored
-	dockerConfigSecret.Annotations = map[string]string{saAnnotation: "something"}
+	dockerConfigSecret.Annotations = map[string]string{saAnnotations[0]: "something"}
 
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
@@ -224,7 +224,7 @@ func TestForceLocalScanning(t *testing.T) {
 	assert.Error(t, err)
 
 	// secrets with an saAnnotation of `default` should still be stored
-	dockerConfigSecret.Annotations = map[string]string{saAnnotation: "default"}
+	dockerConfigSecret.Annotations = map[string]string{saAnnotations[0]: "default"}
 
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
@@ -238,27 +238,38 @@ func TestSAAnnotationImageIntegrationEvents(t *testing.T) {
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
 	d := newSecretDispatcher(regStore)
 
-	// a secret w/ the `default` sa annotation should trigger no imageintegration events
+	// a secret w/ the `default` k8s sa annotation should trigger no imageintegration events
 	secret := openshift4xDockerConfigSecret.DeepCopy()
-	secret.Annotations[saAnnotation] = defaultSA
+	secret.Annotations[saAnnotations[0]] = defaultSA
 	events := d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
 	iiEvents := getImageIntegrationEvents(events)
 	assert.Len(t, iiEvents, 0)
 
-	// a secret w/ any sa annotation should trigger no imageintegration events
-	secret.Annotations[saAnnotation] = "blah"
+	// a secret w/ the `default` OCP sa annotation should trigger no imageintegration events
+	secret = openshift4xDockerConfigSecret.DeepCopy()
+	delete(secret.Annotations, saAnnotations[0])
+	secret.Annotations[saAnnotations[1]] = defaultSA
 	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
 	iiEvents = getImageIntegrationEvents(events)
 	assert.Len(t, iiEvents, 0)
 
-	// a secret w/ an empty sa annotation should trigger an imageintegration event
-	secret.Annotations[saAnnotation] = ""
+	// // a secret w/ any sa annotation should trigger no imageintegration events
+	secret = openshift4xDockerConfigSecret.DeepCopy()
+	secret.Annotations[saAnnotations[0]] = "blah"
+	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
+	iiEvents = getImageIntegrationEvents(events)
+	assert.Len(t, iiEvents, 0)
+
+	// // a secret w/ an empty sa annotation should trigger an imageintegration event
+	secret = openshift4xDockerConfigSecret.DeepCopy()
+	secret.Annotations[saAnnotations[0]] = ""
 	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
 	iiEvents = getImageIntegrationEvents(events)
 	assert.Len(t, iiEvents, 1)
 
-	// a secret w/ no sa annotation should trigger an imageintegration event
-	delete(secret.Annotations, saAnnotation)
+	// // a secret w/ no sa annotation should trigger an imageintegration event
+	secret = openshift4xDockerConfigSecret.DeepCopy()
+	delete(secret.Annotations, saAnnotations[0])
 	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
 	iiEvents = getImageIntegrationEvents(events)
 	assert.Len(t, iiEvents, 1)

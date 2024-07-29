@@ -31,25 +31,31 @@ import (
 )
 
 const (
-	saAnnotation = "kubernetes.io/service-account.name"
-	defaultSA    = "default"
+	defaultSA = "default"
 
 	openshiftConfigNamespace  = "openshift-config"
 	openshiftConfigPullSecret = "pull-secret"
 )
 
-var dataTypeMap = map[string]storage.SecretType{
-	"-----BEGIN CERTIFICATE-----":              storage.SecretType_PUBLIC_CERTIFICATE,
-	"-----BEGIN NEW CERTIFICATE REQUEST-----":  storage.SecretType_CERTIFICATE_REQUEST,
-	"-----BEGIN PRIVACY-ENHANCED MESSAGE-----": storage.SecretType_PRIVACY_ENHANCED_MESSAGE,
-	"-----BEGIN OPENSSH PRIVATE KEY-----":      storage.SecretType_OPENSSH_PRIVATE_KEY,   // notsecret
-	"-----BEGIN PGP PRIVATE KEY BLOCK-----":    storage.SecretType_PGP_PRIVATE_KEY,       // notsecret
-	"-----BEGIN EC PRIVATE KEY-----":           storage.SecretType_EC_PRIVATE_KEY,        // notsecret
-	"-----BEGIN RSA PRIVATE KEY-----":          storage.SecretType_RSA_PRIVATE_KEY,       // notsecret
-	"-----BEGIN DSA PRIVATE KEY-----":          storage.SecretType_DSA_PRIVATE_KEY,       // notsecret
-	"-----BEGIN PRIVATE KEY-----":              storage.SecretType_CERT_PRIVATE_KEY,      // notsecret
-	"-----BEGIN ENCRYPTED PRIVATE KEY-----":    storage.SecretType_ENCRYPTED_PRIVATE_KEY, // notsecret
-}
+var (
+	saAnnotations = []string{
+		"kubernetes.io/service-account.name",
+		"openshift.io/internal-registry-auth-token.service-account",
+	}
+
+	dataTypeMap = map[string]storage.SecretType{
+		"-----BEGIN CERTIFICATE-----":              storage.SecretType_PUBLIC_CERTIFICATE,
+		"-----BEGIN NEW CERTIFICATE REQUEST-----":  storage.SecretType_CERTIFICATE_REQUEST,
+		"-----BEGIN PRIVACY-ENHANCED MESSAGE-----": storage.SecretType_PRIVACY_ENHANCED_MESSAGE,
+		"-----BEGIN OPENSSH PRIVATE KEY-----":      storage.SecretType_OPENSSH_PRIVATE_KEY,   // notsecret
+		"-----BEGIN PGP PRIVATE KEY BLOCK-----":    storage.SecretType_PGP_PRIVATE_KEY,       // notsecret
+		"-----BEGIN EC PRIVATE KEY-----":           storage.SecretType_EC_PRIVATE_KEY,        // notsecret
+		"-----BEGIN RSA PRIVATE KEY-----":          storage.SecretType_RSA_PRIVATE_KEY,       // notsecret
+		"-----BEGIN DSA PRIVATE KEY-----":          storage.SecretType_DSA_PRIVATE_KEY,       // notsecret
+		"-----BEGIN PRIVATE KEY-----":              storage.SecretType_CERT_PRIVATE_KEY,      // notsecret
+		"-----BEGIN ENCRYPTED PRIVATE KEY-----":    storage.SecretType_ENCRYPTED_PRIVATE_KEY, // notsecret
+	}
+)
 
 func getSecretType(data string) storage.SecretType {
 	data = strings.TrimSpace(data)
@@ -251,7 +257,14 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	sensorEvents := make([]*central.SensorEvent, 0, len(dockerConfig)+1)
 	registries := make([]*storage.ImagePullSecret_Registry, 0, len(dockerConfig))
 
-	saName := secret.GetAnnotations()[saAnnotation]
+	var saName string
+	for _, saAnnotation := range saAnnotations {
+		if name, ok := secret.GetAnnotations()[saAnnotation]; ok {
+			saName = name
+			break
+		}
+	}
+
 	// In Kubernetes, the `default` service account always exists in each namespace (it is recreated upon deletion).
 	// The default service account always contains an API token.
 	// In OpenShift, the default service account also contains credentials for the
