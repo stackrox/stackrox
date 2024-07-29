@@ -8,8 +8,7 @@ import {
     VerticalBarSeries,
 } from 'react-vis';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter, Link } from 'react-router-dom';
+import { useHistory, Link } from 'react-router-dom';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import merge from 'deepmerge';
 
@@ -20,7 +19,7 @@ import { verticalBarColors } from './colorsForCompliance';
 class VerticalClusterBar extends Component {
     static propTypes = {
         id: PropTypes.string,
-        history: ReactRouterPropTypes.history.isRequired,
+        history: PropTypes.object.isRequired,
         data: PropTypes.shape({}).isRequired,
         containerProps: PropTypes.shape({}),
         plotProps: PropTypes.shape({}),
@@ -156,4 +155,9 @@ class VerticalClusterBar extends Component {
     }
 }
 
-export default withRouter(VerticalClusterBar);
+function VerticalClusterBarWrapper(props) {
+    const history = useHistory();
+    return <VerticalClusterBar {...props} history={history} />;
+}
+
+export default VerticalClusterBarWrapper;

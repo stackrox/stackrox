@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { withRouter } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import startCase from 'lodash/startCase';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
@@ -24,9 +24,10 @@ import WorkflowSidePanel from '../WorkflowSidePanel';
 import EntityComponent from './VulnMgmtEntity';
 import EntityTabs from './EntityTabs';
 
-const WorkflowEntityPageLayout = ({ location }) => {
+const WorkflowEntityPageLayout = () => {
     const [isExporting, setIsExporting] = useState(false);
     const { isDarkMode } = useTheme();
+    const location = useLocation();
 
     const workflowState = parseURL(location);
     const { stateStack, useCase, search } = workflowState;
@@ -155,4 +156,4 @@ const WorkflowEntityPageLayout = ({ location }) => {
     );
 };
 
-export default withRouter(WorkflowEntityPageLayout);
+export default WorkflowEntityPageLayout;

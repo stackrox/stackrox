@@ -1,8 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router-dom';
-import ReactRouterPropTypes from 'react-router-prop-types';
-
+import { useHistory } from 'react-router-dom';
 import {
     FlexibleXYPlot,
     XAxis,
@@ -31,9 +29,9 @@ const Scatterplot = ({
     yAxisTitle,
     xAxisTitle,
     legendData,
-    history,
 }) => {
     const { onValueMouseOver, onValueMouseOut } = useGraphHoverHint();
+    const history = useHistory();
 
     const lowX = lowerX !== null ? lowerX : getLowValue(data, 'x', xMultiple);
     const highX = upperX !== null ? upperX : getHighValue(data, 'x', xMultiple, shouldPadX);
@@ -116,7 +114,6 @@ Scatterplot.propTypes = {
     legendData: PropTypes.arrayOf(
         PropTypes.shape({ title: PropTypes.string, color: PropTypes.string })
     ),
-    history: ReactRouterPropTypes.history.isRequired,
 };
 
 Scatterplot.defaultProps = {
@@ -135,4 +132,4 @@ Scatterplot.defaultProps = {
     legendData: null,
 };
 
-export default withRouter(Scatterplot);
+export default Scatterplot;

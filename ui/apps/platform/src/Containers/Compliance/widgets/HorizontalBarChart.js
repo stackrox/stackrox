@@ -7,9 +7,8 @@ import {
     HorizontalBarSeries,
     LabelSeries,
 } from 'react-vis';
-import { withRouter, Link } from 'react-router-dom';
+import { useHistory, Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
 import merge from 'deepmerge';
 
 import { getColor } from './colorsForCompliance';
@@ -37,7 +36,7 @@ class HorizontalBarChart extends Component {
         valueGradientColorStart: PropTypes.string,
         valueGradientColorEnd: PropTypes.string,
         minimal: PropTypes.bool,
-        history: ReactRouterPropTypes.history.isRequired,
+        history: PropTypes.object.isRequired,
     };
 
     static defaultProps = {
@@ -214,4 +213,9 @@ class HorizontalBarChart extends Component {
     }
 }
 
-export default withRouter(HorizontalBarChart);
+function HorizontalBarChartWrapper(props) {
+    const history = useHistory();
+    return <HorizontalBarChart {...props} history={history} />;
+}
+
+export default HorizontalBarChartWrapper;
