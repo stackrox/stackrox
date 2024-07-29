@@ -104,6 +104,7 @@ function PolicyDetail({
                 setRequestError(
                     <Alert
                         title={`Request failed: ${formatUpdateDisabledStateAction(disabled)}`}
+                        component="p"
                         variant="danger"
                         isInline
                         actionClose={
@@ -131,6 +132,7 @@ function PolicyDetail({
                 setRequestError(
                     <Alert
                         title="Request failed: Delete policy"
+                        component="p"
                         variant="danger"
                         isInline
                         actionClose={
@@ -255,6 +257,7 @@ function PolicyDetail({
                         <Alert
                             variant={variant}
                             title={title}
+                            component="p"
                             timeout={4000}
                             onTimeout={() => removeToast(key)}
                             actionClose={

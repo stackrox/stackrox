@@ -96,6 +96,7 @@ function PermissionSetForm({
                 setAlertSubmit(
                     <Alert
                         title="Failed to save permission set"
+                        component="p"
                         variant={AlertVariant.danger}
                         isInline
                     >
@@ -183,7 +184,12 @@ function PermissionSetForm({
                 />
             </FormGroup>
             {action === 'create' && (
-                <Alert title="Recommended minimum set of read permissions" variant="info" isInline>
+                <Alert
+                    title="Recommended minimum set of read permissions"
+                    component="p"
+                    variant="info"
+                    isInline
+                >
                     <p>
                         Users might not be able to load certain pages if they do not have a minimum
                         set of read permissions.

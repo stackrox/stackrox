@@ -101,7 +101,12 @@ function RequestApprovalButtonModal({ exception, onSuccess }: RequestApprovalBut
                 showClose={false}
             >
                 {errorMessage && (
-                    <Alert isInline variant={AlertVariant.danger} title={errorMessage} />
+                    <Alert
+                        isInline
+                        variant={AlertVariant.danger}
+                        title={errorMessage}
+                        component="p"
+                    />
                 )}
                 <Form>
                     <FormLabelGroup

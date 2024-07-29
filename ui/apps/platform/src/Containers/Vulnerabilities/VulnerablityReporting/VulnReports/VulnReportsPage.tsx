@@ -164,6 +164,7 @@ function VulnReportsPage() {
                         key={key}
                         variant={variant}
                         title={title}
+                        component="p"
                         timeout
                         onTimeout={() => removeToast(key)}
                         actionClose={
@@ -179,7 +180,9 @@ function VulnReportsPage() {
                 ))}
             </AlertGroup>
             <PageTitle title="Vulnerability reporting" />
-            {runError && <Alert variant={AlertVariant.danger} isInline title={runError} />}
+            {runError && (
+                <Alert variant={AlertVariant.danger} isInline title={runError} component="p" />
+            )}
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex
                     direction={{ default: 'row' }}
@@ -597,6 +600,7 @@ function VulnReportsPage() {
                                 'report',
                                 numSuccessfulDeletions
                             )}`}
+                            component="p"
                             className="pf-v5-u-mb-sm"
                         />
                     )}
@@ -612,6 +616,7 @@ function VulnReportsPage() {
                                 isInline
                                 variant={AlertVariant.danger}
                                 title={`Failed to delete "${report.name}"`}
+                                component="p"
                                 className="pf-v5-u-mb-sm"
                             >
                                 {deleteResult.error}

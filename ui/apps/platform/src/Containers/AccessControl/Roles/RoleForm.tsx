@@ -92,7 +92,12 @@ function RoleForm({
         handleSubmit(values)
             .catch((error) => {
                 setAlertSubmit(
-                    <Alert title="Failed to save role" variant={AlertVariant.danger} isInline>
+                    <Alert
+                        title="Failed to save role"
+                        component="p"
+                        variant={AlertVariant.danger}
+                        isInline
+                    >
                         {error.message}
                     </Alert>
                 );

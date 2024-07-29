@@ -149,6 +149,7 @@ function DeploymentFlows({
                     isInline
                     variant={AlertVariant.danger}
                     title={networkFlowsError || modifyError}
+                    component="p"
                     className="pf-v5-u-mb-sm"
                 />
             )}

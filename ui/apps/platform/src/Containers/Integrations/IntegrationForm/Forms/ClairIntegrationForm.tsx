@@ -95,6 +95,7 @@ function ClairIntegrationForm({
             <PageSection variant="light" isFilled hasOverflowScroll>
                 <Alert
                     title="Deprecation notice"
+                    component="p"
                     variant={AlertVariant.warning}
                     isInline
                     className="pf-v5-u-mb-lg"

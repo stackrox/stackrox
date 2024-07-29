@@ -181,6 +181,7 @@ function ExceptionRequestModal({
                         variant="danger"
                         isInline
                         title="There was an error submitting the exception request"
+                        component="p"
                     >
                         {getAxiosErrorMessage(submissionError)}
                     </Alert>

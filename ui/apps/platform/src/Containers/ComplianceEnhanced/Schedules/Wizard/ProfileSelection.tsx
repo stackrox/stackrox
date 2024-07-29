@@ -177,6 +177,7 @@ function ProfileSelection({
                 {formikTouched.profiles && formikValues.profiles.length === 0 && (
                     <Alert
                         title="At least one profile is required to proceed"
+                        component="p"
                         variant="danger"
                         isInline
                     />

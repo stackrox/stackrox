@@ -327,6 +327,7 @@ function VulnerabilitiesConfiguration({
                         key={key}
                         variant={variant}
                         title={title}
+                        component="p"
                         timeout={variant === 'success'}
                         onTimeout={() => removeToast(key)}
                         actionClose={

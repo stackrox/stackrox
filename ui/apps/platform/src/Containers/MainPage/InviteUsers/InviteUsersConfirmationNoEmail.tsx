@@ -21,6 +21,7 @@ function InviteUsersConfirmationNoEmail({
             {emailBuckets.newEmails.length === 0 ? (
                 <Alert
                     title="All entered emails already have auth provider rules"
+                    component="p"
                     variant="warning"
                     isInline
                     className="pf-v5-u-mb-lg"
@@ -42,6 +43,7 @@ function InviteUsersConfirmationNoEmail({
                     {emailBuckets.existingEmails.length > 0 && (
                         <Alert
                             title="Some emails already have auth provider rules."
+                            component="p"
                             variant="warning"
                             isInline
                             className="pf-v5-u-mb-lg"

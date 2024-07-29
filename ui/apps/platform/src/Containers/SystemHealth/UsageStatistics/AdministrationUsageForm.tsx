@@ -67,9 +67,11 @@ function AdministrationUsageForm(): ReactElement {
     return (
         <>
             {errorFetchingCurrent && (
-                <Alert isInline title={errorFetchingCurrent} variant="danger" />
+                <Alert isInline title={errorFetchingCurrent} component="p" variant="danger" />
             )}
-            {errorFetchingMax && <Alert isInline title={errorFetchingMax} variant="danger" />}
+            {errorFetchingMax && (
+                <Alert isInline title={errorFetchingMax} component="p" variant="danger" />
+            )}
             <Title headingLevel="h2">Currently secured</Title>
             <Divider className="pf-v5-u-pt-xs pf-v5-u-pb-sm" />
             <DescriptionList

@@ -62,7 +62,12 @@ function RolesList({
         handleDelete(nameDeleting)
             .catch((error) => {
                 setAlertDelete(
-                    <Alert title="Delete role failed" variant={AlertVariant.danger} isInline>
+                    <Alert
+                        title="Delete role failed"
+                        component="p"
+                        variant={AlertVariant.danger}
+                        isInline
+                    >
                         {error.message}
                     </Alert>
                 );

@@ -312,6 +312,7 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                                 variant={messageState.variant}
                                 isInline
                                 title={messageState.title}
+                                component="p"
                             >
                                 {messageState.text}
                             </Alert>
@@ -320,7 +321,12 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                     {submissionError && (
                         <div className="w-full">
                             <div className="mb-4 mx-4">
-                                <Alert type="danger" isInline title={submissionError.title}>
+                                <Alert
+                                    type="danger"
+                                    isInline
+                                    title={submissionError.title}
+                                    component="p"
+                                >
                                     {submissionError.text}
                                 </Alert>
                             </div>

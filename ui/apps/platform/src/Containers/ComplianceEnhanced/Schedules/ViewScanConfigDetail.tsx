@@ -147,9 +147,9 @@ function ViewScanConfigDetail({
                         {alertObj !== null && (
                             <Alert
                                 title={alertObj.title}
+                                component="p"
                                 variant={alertObj.type}
                                 className="pf-v5-u-mb-lg pf-v5-u-mx-lg"
-                                component="h2"
                                 actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
                             >
                                 {alertObj.children}
@@ -169,7 +169,7 @@ function ViewScanConfigDetail({
                         <Alert
                             variant="warning"
                             title="Unable to fetch scan schedule"
-                            component="div"
+                            component="p"
                             isInline
                         >
                             {getAxiosErrorMessage(error)}

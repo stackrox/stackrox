@@ -207,7 +207,7 @@ function PoliciesTablePage({
         pageContent = (
             <PageSection variant="light" isFilled id="policies-table-error">
                 <Bullseye>
-                    <Alert variant="danger" title={errorMessage} />
+                    <Alert variant="danger" title={errorMessage} component="p" />
                 </Bullseye>
             </PageSection>
         );
@@ -269,6 +269,7 @@ function PoliciesTablePage({
                     <Alert
                         variant={variant}
                         title={title}
+                        component="p"
                         timeout={4000}
                         onTimeout={() => removeToast(key)}
                         actionClose={

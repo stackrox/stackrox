@@ -162,6 +162,7 @@ function ViewVulnReportPage() {
                         key={key}
                         variant={variant}
                         title={title}
+                        component="p"
                         timeout
                         onTimeout={() => removeToast(key)}
                         actionClose={
@@ -176,7 +177,9 @@ function ViewVulnReportPage() {
                     </Alert>
                 ))}
             </AlertGroup>
-            {runError && <Alert variant={AlertVariant.danger} isInline title={runError} />}
+            {runError && (
+                <Alert variant={AlertVariant.danger} isInline title={runError} component="p" />
+            )}
             <PageTitle title="View vulnerability report" />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
@@ -371,6 +374,7 @@ function ViewVulnReportPage() {
                                 isInline
                                 variant={AlertVariant.danger}
                                 title={`Failed to delete "${reportConfiguration.name}"`}
+                                component="p"
                                 className="pf-v5-u-mb-sm"
                             >
                                 {deleteResult.error}

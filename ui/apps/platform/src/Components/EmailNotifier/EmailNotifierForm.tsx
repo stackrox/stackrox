@@ -136,6 +136,7 @@ function EmailNotifierForm({
                                 <Alert
                                     className="pf-v5-u-mt-md"
                                     title="Security Warning"
+                                    component="p"
                                     variant="warning"
                                     isInline
                                 >

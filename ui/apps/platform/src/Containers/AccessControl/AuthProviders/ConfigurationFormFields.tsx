@@ -171,6 +171,7 @@ function ConfigurationFormFields({
                                     Note: if required by your IdP, use the following callback URL:
                                 </span>
                             }
+                            component="p"
                         >
                             <p>{oidcFragmentCallbackURL}</p>
                         </Alert>
@@ -354,6 +355,7 @@ function ConfigurationFormFields({
                             isInline
                             variant="info"
                             title={<span>Note: allow the following callback URLs:</span>}
+                            component="p"
                         >
                             <p>
                                 {oidcFragmentCallbackURL}
@@ -643,6 +645,7 @@ function ConfigurationFormFields({
                                     Consumer Service (ACS) URL:
                                 </span>
                             }
+                            component="p"
                         >
                             <p>{samlACSURL}</p>
                         </Alert>

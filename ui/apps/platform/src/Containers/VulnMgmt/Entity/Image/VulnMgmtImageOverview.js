@@ -223,6 +223,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                         for a detailed breakdown of detected vulnerabilities
                                     </>
                                 }
+                                component="p"
                             />
                         ) : (
                             <div className="w-full">

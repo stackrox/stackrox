@@ -128,6 +128,7 @@ function ReviewPolicyForm({
                     {policyErrorMessage && (
                         <Alert
                             title={isBadRequest ? 'Policy is invalid' : 'Policy request failure'}
+                            component="p"
                             variant="danger"
                             isInline
                         >
@@ -163,6 +164,7 @@ function ReviewPolicyForm({
                                 isInline
                                 variant="info"
                                 title="Policy disabled"
+                                component="p"
                             >
                                 <p>Violations will not be generated unless the policy is enabled</p>
                             </Alert>
@@ -175,7 +177,12 @@ function ReviewPolicyForm({
                                 </FlexItem>
                             </Flex>
                         ) : checkDryRunErrorMessage ? (
-                            <Alert title="Violations request failure" variant="warning" isInline>
+                            <Alert
+                                title="Violations request failure"
+                                component="p"
+                                variant="warning"
+                                isInline
+                            >
                                 {checkDryRunErrorMessage}
                             </Alert>
                         ) : (

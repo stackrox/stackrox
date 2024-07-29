@@ -372,7 +372,7 @@ function AuthProviderForm({
                 </ToolbarContent>
             </Toolbar>
             {saveAuthProviderStatus?.status === 'error' && (
-                <Alert isInline variant="danger" title="Problem saving auth provider">
+                <Alert isInline variant="danger" title="Problem saving auth provider" component="p">
                     <p>{saveAuthProviderStatus?.message}</p>
                 </Alert>
             )}
@@ -388,6 +388,7 @@ function AuthProviderForm({
                                 is working properly.
                             </span>
                         }
+                        component="p"
                     />
                 )}
             {selectedAuthProvider.active && (
@@ -401,6 +402,7 @@ function AuthProviderForm({
                             delete and recreate.
                         </span>
                     }
+                    component="p"
                 />
             )}
             {getIsAuthProviderImmutable(selectedAuthProvider) && (
@@ -413,6 +415,7 @@ function AuthProviderForm({
                             rules.
                         </span>
                     }
+                    component="p"
                 />
             )}
             <FormikProvider value={formik}>
@@ -500,6 +503,7 @@ function AuthProviderForm({
                             variant="info"
                             title="Note: the minimum access role is granted to all users who sign in with
                                 this authentication provider."
+                            component="p"
                         >
                             <p>
                                 To give users different roles, add rules. Users are granted all
@@ -521,6 +525,7 @@ function AuthProviderForm({
                                 variant="info"
                                 title="Note: the required attributes are used to require attributes being
                                     returned from the authentication provider."
+                                component="p"
                             >
                                 <p>
                                     In case a required attribute is not returned from the
@@ -637,6 +642,7 @@ function AuthProviderForm({
                                 isInline
                                 variant="info"
                                 title="Note: the claim mappings are used to map claims returned in underlying identity provider's token to ACS token."
+                                component="p"
                             >
                                 <p>
                                     In case claim mapping is not configured for a certain claim,

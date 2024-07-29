@@ -70,7 +70,7 @@ function AdministrationEventPage({ id }: AdministrationEventPageProps): ReactEle
                         <Alert
                             variant="warning"
                             title="Unable to fetch administration event"
-                            component="div"
+                            component="p"
                             isInline
                         >
                             {errorMessage}
