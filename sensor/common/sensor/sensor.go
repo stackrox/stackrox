@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	featureClient "github.com/stackrox/rox/pkg/features/client"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	serviceAuthn "github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -173,6 +174,8 @@ func (s *Sensor) Start() {
 	centralCertificates := s.certLoader()
 
 	go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, centralclient.StaticCertLoader(centralCertificates))
+
+	featureClient.ConfigureFeaturesFromCentralSource(context.Background(), s.centralConnection)
 
 	for _, c := range s.components {
 		s.AddNotifiable(c)
