@@ -223,7 +223,7 @@ spec:
     - name: BUILD_ARGS
       value:
       - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-amd64
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -265,7 +265,7 @@ spec:
     - name: BUILD_ARGS
       value:
       - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -306,7 +306,7 @@ spec:
     - name: BUILD_ARGS
       value:
       - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -347,7 +347,7 @@ spec:
     - name: BUILD_ARGS
       value:
       - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-arm64
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
