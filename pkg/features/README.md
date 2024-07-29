@@ -13,11 +13,13 @@ Difference between feature flags and configuration options (DB, `pkg/env`):
 
 ## Feature lifecycle
 
-1. A feature is being developed on a branch, gated by a dev-preview (default) feature flag.
+A feature may go through all of these stages, start from any before the last one, or skip some, but must not go back. A stage can be skipped if the change meets the requirements for the next stage.
+
+1. A feature is being developed on a branch, gated by a disabled dev-preview (default) feature flag.
 2. The code meets the [GA requirements](../../PR_GA.md) with the feature disabled: the branch can be merged to the master branch.
 3. The feature is ready to be tested by the customers: the flag can be upgraded to tech-preview. Consult [the article on Products & Services](https://access.redhat.com/articles/6966848) for the differences between the two stages.
-4. The feature can be enabled for everybody: the flag can be enabled.
-5. The feature has been *tested in production* for some time: the flag can be removed.
+4. The feature can be enabled for everybody: if agreed by Product Management, the flag can be set to `released`.
+5. The feature has been *tested in production* for a few weeks: the flag should be removed.
 
 > :warning: Feature flags cannot be used inside migrations or schema changes.
 > Migrations must be merged to the master branch without any feature flag gate, and must not break any current features.
@@ -33,7 +35,7 @@ To add a feature flag, add a variable with your feature to `list.go`. To registe
 * Options:
   * `devPreview` or `techPreview`: whether the feature is in early development or ready to be tested by customers. Flags are of the **dev-preview** stage by default.
   * `unchangeableInProd`: whether the flag state can be changed via the associated environment variable setting on release builds. Flags are **changeable** by default.
-  * `enabled`: whether the change is activated by default.
+  * `released`: whether the change is activated by default.
 
 > :warning: To introduce features that could be disabled in release builds, you must be cautious to ensure that Central returns to "normal" state after disabling the feature.
 > Sometimes it is not as simple as turning off the feature flag to return Central to the "normal" state for various reasons, including (but not limited to) schema and data changes.
