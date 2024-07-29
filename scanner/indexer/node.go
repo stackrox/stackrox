@@ -64,7 +64,11 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*claircore.IndexRepor
 	if err != nil {
 		return nil, err
 	}
-	defer layer.Close()
+	defer func() {
+		if tmpErr := layer.Close(); tmpErr != nil {
+			err = tmpErr
+		}
+	}()
 
 	reps, err := runRepositoryScanner(ctx, layer)
 	if err != nil {
@@ -160,7 +164,7 @@ func constructLayer(ctx context.Context, digest string) (*claircore.Layer, error
 	desc := &claircore.LayerDescription{
 		Digest:    digest,
 		URI:       hostPath,
-		MediaType: "filesystem/path",
+		MediaType: "application/vnd.claircore.filesystem",
 		Headers:   nil,
 	}
 
