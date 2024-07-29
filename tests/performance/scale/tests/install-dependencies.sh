@@ -28,9 +28,9 @@ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 helm repo add rhacs https://mirror.openshift.com/pub/rhacs/charts
 helm repo update
 
-arch="$(uname -m | sed "s/x86_64//")"; arch="${arch:+-$arch}"
-curl -f -o roxctl "https://mirror.openshift.com/pub/rhacs/assets/4.4.2/bin/Linux/roxctl${arch}"
-chmod +x roxctl
+#arch="$(uname -m | sed "s/x86_64//")"; arch="${arch:+-$arch}"
+#curl -f -o roxctl "https://mirror.openshift.com/pub/rhacs/assets/4.4.2/bin/Linux/roxctl${arch}"
+#chmod +x roxctl
 sudo cp roxctl /usr/local/bin
 
 sudo apt-get install jq -y
