@@ -82,25 +82,28 @@ function usage {
     echo "the actual activation key as a value."
     echo "   Find where to get the secret from ${SECRET_INFO_URL}"
 
-    echo "2. Arrange Dockerfile stages to have UBI (normal) as an installer and other RHEL/UBI (any) as a target."
+    echo -n "2. In the Tekton pipeline 'build-container' step that uses the 'buildah' task, provide the "
+    echo "'$SECRET_NAME_IN_KONFLUX' secret name for the 'ACTIVATION_KEY' parameter."
+
+    echo "3. Arrange Dockerfile stages to have UBI (normal) as an installer and other RHEL/UBI (any) as a target."
     echo "   Make sure to match major versions: 8/8 is ok but 9/8 or 8/9 will result in errors."
     echo "   Copy the target contents to some directory, e.g. ${example_target_dir}, in the installer stage."
     echo "   See self-test Dockerfiles as examples."
 
-    echo "3. In the installer stage, register the container with the subscription manager. Use:"
+    echo "4. In the installer stage, register the container with the subscription manager. Use:"
     echo "   \$ $SCRIPT_NAME register ${example_target_dir}"
     echo -n "   It is possible to provide multiple target directories as arguments if the script is used to prepare "
     echo "multiple distinct stages."
 
-    echo -n "4. Use 'dnf --installroot=${example_target_dir} ...' to install RHEL RPMs, enable RHEL modules, etc. "
+    echo -n "5. Use 'dnf --installroot=${example_target_dir} ...' to install RHEL RPMs, enable RHEL modules, etc. "
     echo "in the target contents."
 
-    echo -n "5. In the same installer stage, deregister the container so that the end users can't use "
+    echo -n "6. In the same installer stage, deregister the container so that the end users can't use "
     echo "our subscription on our behalf. Use:"
     echo "   \$ $SCRIPT_NAME cleanup"
     echo "   This step is mandatory because it cleans entitlements on the target in the right way."
 
-    echo -n "6. Copy out ${example_target_dir} contents from the installer stage to a new 'scratch' stage. "
+    echo -n "7. Copy out ${example_target_dir} contents from the installer stage to a new 'scratch' stage. "
     echo "That's your target container."
 
     echo
