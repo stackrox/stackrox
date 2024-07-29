@@ -3,6 +3,7 @@ package features
 
 import (
 	"fmt"
+	"os"
 	"slices"
 	"strings"
 
@@ -16,6 +17,7 @@ type FeatureFlag interface {
 	EnvVar() string
 	Enabled() bool
 	Default() bool
+	Set(value bool, source FlagSource)
 	Stage() string
 }
 
@@ -35,9 +37,17 @@ func registerFeature(name, envVar string, options ...option) FeatureFlag {
 	f := &feature{
 		name:   name,
 		envVar: envVar,
+		source: FlagSource_DEFAULT,
 	}
 	for _, o := range options {
 		o(f)
+	}
+	f.value = f.defaultValue
+	switch strings.ToLower(os.Getenv(f.envVar)) {
+	case "false":
+		f.Set(false, FlagSource_ENVIRON)
+	case "true":
+		f.Set(true, FlagSource_ENVIRON)
 	}
 	Flags[f.envVar] = f
 	return f

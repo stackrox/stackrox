@@ -1,13 +1,20 @@
 package features
 
-import (
-	"os"
-	"strings"
-)
-
 const (
 	devPreviewString  = "dev-preview"
 	techPreviewString = "tech-preview"
+)
+
+// FlagSource provides information on the origin of a flag configuration.
+type FlagSource int
+
+const (
+	// The flag value is its default value (no override).
+	FlagSource_DEFAULT FlagSource = 0
+	// The flag value comes from the central source (central override).
+	FlagSource_CENTRAL FlagSource = 1
+	// The flag value comes from the component environment (environment variable override).
+	FlagSource_ENVIRON FlagSource = 2
 )
 
 type feature struct {
@@ -16,6 +23,8 @@ type feature struct {
 	defaultValue bool
 	unchangeable bool
 	techPreview  bool
+	value        bool
+	source       FlagSource
 }
 
 func (f *feature) EnvVar() string {
@@ -31,17 +40,13 @@ func (f *feature) Default() bool {
 }
 
 func (f *feature) Enabled() bool {
-	if f.unchangeable {
-		return f.defaultValue
-	}
+	return f.value
+}
 
-	switch strings.ToLower(os.Getenv(f.envVar)) {
-	case "false":
-		return false
-	case "true":
-		return true
-	default:
-		return f.defaultValue
+func (f *feature) Set(value bool, flagSource FlagSource) {
+	if !f.unchangeable && f.source < flagSource {
+		f.value = value
+		f.source = flagSource
 	}
 }
 
