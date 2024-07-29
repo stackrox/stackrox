@@ -246,29 +246,26 @@ func TestSAAnnotationImageIntegrationEvents(t *testing.T) {
 	assert.Len(t, iiEvents, 0)
 
 	// a secret w/ the `default` OCP sa annotation should trigger no imageintegration events
-	secret = openshift4xDockerConfigSecret.DeepCopy()
 	delete(secret.Annotations, saAnnotations[0])
 	secret.Annotations[saAnnotations[1]] = defaultSA
 	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
 	iiEvents = getImageIntegrationEvents(events)
 	assert.Len(t, iiEvents, 0)
+	delete(secret.Annotations, saAnnotations[1])
 
-	// // a secret w/ any sa annotation should trigger no imageintegration events
-	secret = openshift4xDockerConfigSecret.DeepCopy()
+	// a secret w/ any sa annotation should trigger no imageintegration events
 	secret.Annotations[saAnnotations[0]] = "blah"
 	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
 	iiEvents = getImageIntegrationEvents(events)
 	assert.Len(t, iiEvents, 0)
 
-	// // a secret w/ an empty sa annotation should trigger an imageintegration event
-	secret = openshift4xDockerConfigSecret.DeepCopy()
+	// a secret w/ an empty sa annotation should trigger an imageintegration event
 	secret.Annotations[saAnnotations[0]] = ""
 	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
 	iiEvents = getImageIntegrationEvents(events)
 	assert.Len(t, iiEvents, 1)
 
-	// // a secret w/ no sa annotation should trigger an imageintegration event
-	secret = openshift4xDockerConfigSecret.DeepCopy()
+	// a secret w/ no sa annotation should trigger an imageintegration event
 	delete(secret.Annotations, saAnnotations[0])
 	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
 	iiEvents = getImageIntegrationEvents(events)
