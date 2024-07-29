@@ -8,7 +8,11 @@ import PolicyCategoriesPage from 'Containers/PolicyCategories/PolicyCategoriesPa
 function PolicyManagementPage() {
     return (
         <Switch>
-            <Redirect exact from={policyManagementBasePath} to={policiesPath} />
+            <Route
+                exact
+                path={policyManagementBasePath}
+                render={() => <Redirect to={policiesPath} />}
+            />
             <Route path={policiesPath}>
                 <PoliciesPage />
             </Route>

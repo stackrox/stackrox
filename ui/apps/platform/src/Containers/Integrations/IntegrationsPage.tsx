@@ -29,9 +29,8 @@ const Page = (): ReactElement => {
                     `${integrationsPath}/authProviders/clusterInitBundle`,
                     `${integrationsPath}/authProviders/clusterInitBundle/:action/:id`,
                 ]}
-            >
-                <Redirect to={clustersInitBundlesPath} />
-            </Route>
+                render={() => <Redirect to={clustersInitBundlesPath} />}
+            />
             <Route exact path={integrationsListPath}>
                 <IntegrationsListPage />
             </Route>

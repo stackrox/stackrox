@@ -26,19 +26,22 @@ function ScanConfigsPage() {
     return (
         <Switch>
             <Route exact path={complianceEnhancedSchedulesPath}>
-                {() => {
-                    if (pageAction === 'create' && hasWriteAccessForCompliance) {
-                        return <CreateScanConfigPage />;
-                    }
-                    if (pageAction === undefined) {
-                        return (
-                            <ScanConfigsTablePage
-                                hasWriteAccessForCompliance={hasWriteAccessForCompliance}
-                            />
-                        );
-                    }
-                    return <Redirect to={complianceEnhancedSchedulesPath} />;
-                }}
+                <Route
+                    // eslint-disable-next-line react/no-children-prop
+                    children={() => {
+                        if (pageAction === 'create' && hasWriteAccessForCompliance) {
+                            return <CreateScanConfigPage />;
+                        }
+                        if (pageAction === undefined) {
+                            return (
+                                <ScanConfigsTablePage
+                                    hasWriteAccessForCompliance={hasWriteAccessForCompliance}
+                                />
+                            );
+                        }
+                        return <Redirect to={complianceEnhancedSchedulesPath} />;
+                    }}
+                />
             </Route>
             <Route exact path={scanConfigDetailsPath}>
                 {() => (

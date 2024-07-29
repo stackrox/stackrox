@@ -114,7 +114,7 @@ function ExceptionRequestsPage() {
                     <Route exact path={deniedRequestsURL}>
                         <DeniedRequests />
                     </Route>
-                    <Redirect to={pendingRequestsURL} />
+                    <Route render={() => <Redirect to={pendingRequestsURL} />} />
                 </Switch>
             </PageSection>
         </>
