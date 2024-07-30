@@ -200,6 +200,10 @@ test_upgrader() {
         --name remote-new \
         --create-admission-controller
 
+    kubectl get deployments -A -o wide
+    kubectl get secrets -A -o wide
+    kubectl get serviceAccounts -A -o wide
+
     deploy_sensor_via_upgrader "for the first time, to test rollback" 3b2cbf78-d35a-4c2c-b67b-e37f805c14da
     rollback_sensor_via_upgrader 3b2cbf78-d35a-4c2c-b67b-e37f805c14da
 
