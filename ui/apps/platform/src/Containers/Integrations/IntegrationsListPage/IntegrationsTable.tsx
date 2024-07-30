@@ -213,11 +213,8 @@ function IntegrationsTable({
                                             ) {
                                                 return (
                                                     <Td key="name">
-                                                        <Button
-                                                            variant={ButtonVariant.link}
-                                                            isInline
-                                                            component={LinkShim}
-                                                            href={getPathToViewDetails(
+                                                        <Link
+                                                            to={getPathToViewDetails(
                                                                 source,
                                                                 type,
                                                                 id
@@ -227,7 +224,7 @@ function IntegrationsTable({
                                                                 row={integration}
                                                                 column={column}
                                                             />
-                                                        </Button>
+                                                        </Link>
                                                     </Td>
                                                 );
                                             }

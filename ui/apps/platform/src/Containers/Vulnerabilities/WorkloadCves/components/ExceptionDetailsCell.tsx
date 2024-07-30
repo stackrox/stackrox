@@ -1,8 +1,7 @@
 import React from 'react';
-import { Button } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
 import { Td } from '@patternfly/react-table';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import { exceptionManagementPath } from 'routePaths';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
@@ -32,14 +31,7 @@ export type ExceptionDetailsCellProps = {
 function ExceptionDetailsCell({ cve, vulnerabilityState }: ExceptionDetailsCellProps) {
     return (
         <Td dataLabel="Request details">
-            <Button
-                variant="link"
-                isInline
-                component={LinkShim}
-                href={getExceptionManagementURL(cve, vulnerabilityState)}
-            >
-                View
-            </Button>
+            <Link to={getExceptionManagementURL(cve, vulnerabilityState)}>View</Link>
         </Td>
     );
 }
