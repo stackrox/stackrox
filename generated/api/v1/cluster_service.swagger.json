@@ -224,7 +224,8 @@
         "UNAVAILABLE",
         "UNHEALTHY",
         "DEGRADED",
-        "HEALTHY"
+        "HEALTHY",
+        "RANDOM_NEW_HEALTH"
       ],
       "default": "UNINITIALIZED",
       "title": "- UNAVAILABLE: Only collector can have unavailable status"
@@ -682,7 +683,8 @@
         "GENERIC_CLUSTER",
         "KUBERNETES_CLUSTER",
         "OPENSHIFT_CLUSTER",
-        "OPENSHIFT4_CLUSTER"
+        "OPENSHIFT4_CLUSTER",
+        "RANDOM_TEST_CLUSTER"
       ],
       "default": "GENERIC_CLUSTER"
     },

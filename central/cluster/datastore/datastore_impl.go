@@ -439,6 +439,11 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 	}
 
 	clusterHealthStatus.Id = id
+	clusterHealthStatus.ScannerHealthStatus = storage.ClusterHealthStatus_RANDOM_NEW_HEALTH
+	clusterHealthStatus.CollectorHealthStatus = storage.ClusterHealthStatus_RANDOM_NEW_HEALTH
+	clusterHealthStatus.OverallHealthStatus = storage.ClusterHealthStatus_RANDOM_NEW_HEALTH
+	clusterHealthStatus.AdmissionControlHealthStatus = storage.ClusterHealthStatus_RANDOM_NEW_HEALTH
+	clusterHealthStatus.SensorHealthStatus = storage.ClusterHealthStatus_RANDOM_NEW_HEALTH
 	if err := ds.clusterHealthStorage.Upsert(ctx, clusterHealthStatus); err != nil {
 		return err
 	}
