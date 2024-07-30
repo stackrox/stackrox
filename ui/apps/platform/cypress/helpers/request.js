@@ -1,4 +1,10 @@
 /**
+ * @typedef {import("cypress/types/net-stubbing").RouteMatcherOptions} RouteMatcherOptions
+ * @typedef {import("cypress/types/net-stubbing").RouteHandler} RouteHandler
+ * @typedef {import("cypress/types/net-stubbing").WaitOptions} WaitOptions
+ */
+
+/**
  * For example, given ['searchOptions', 'getDeployments'] return:
  * {
  *     searchOptions: {
@@ -96,22 +102,56 @@ export function interactAndWaitForResponses(
 }
 
 /**
- * Intercepts a GraphQL request during an interaction and yields the
- * variables object passed to the request's query
+ * Intercept requests and monitor requests/responses across multiple interactions
  *
- * @param {() => void} interactionCallback The interaction performed to trigger the GraphQL request
- * @param {string} opname The GraphQL operation name
- * @returns {Cypress.Chainable<Interception>}
+ * @template {string} RouteKey
+ * @param {Record<RouteKey, RouteMatcherOptions>} routeMatcherMap
+ * @param {Partial<Record<RouteKey, RouteHandler>>} [staticResponseMap]
+ * @returns {Promise<{
+ *    waitForRequests: typeof waitForRequests,
+ *    waitAndYieldRequestBodyVariables: typeof waitAndYieldRequestBodyVariables,
+ * }>} Helper functions used to monitor requests
+ *          after an interaction that causes a request
  */
-export function interactAndInspectGraphQLVariables(interactionCallback, opname) {
-    const url = `/api/graphql?opname=${opname}`;
+export function interceptAndWatchRequests(routeMatcherMap, staticResponseMap) {
+    interceptRequests(routeMatcherMap, staticResponseMap);
 
-    cy.intercept({ method: 'POST', url, times: 1 }).as(opname);
+    /**
+     * Wait for requests to complete after an interaction
+     *
+     * @param {RouteKey[]=} keys The keys of the routeMatcherMap to wait for, if not provided, wait for all keys in routeMatcherMap
+     * @param {WaitOptions=} waitOptions Wait options for cy.wait
+     * @returns {Cypress.Chainable<Interception> | Cypress.Chainable<Interception[]>} The interception object or array of interception objects
+     */
+    function waitForRequests(keys, waitOptions) {
+        const aliases =
+            keys && keys.length > 0
+                ? keys.map((key) => `@${key}`)
+                : Object.keys(routeMatcherMap).map((key) => `@${key}`);
 
-    interactionCallback();
+        return cy.wait(aliases, waitOptions);
+    }
 
-    return cy.wait(`@${opname}`).then((interception) => {
-        return cy.wrap(interception.request.body.variables);
+    /**
+     * Wait for requests to complete after an interaction and yield the variables object passed in the request body
+     *
+     * @param {RouteKey[]=} keys The keys of the routeMatcherMap to wait for, if not provided, wait for all keys in routeMatcherMap
+     * @param {WaitOptions=} waitOptions Wait options for cy.wait
+     * @returns {Cypress.Chainable<any> | Cypress.Chainable<any[]>} The request variables object or array of request variables objects that were passed in the
+     *          request body of the intercepted request, if available
+     */
+    function waitAndYieldRequestBodyVariables(keys, waitOptions) {
+        return waitForRequests(keys, waitOptions).then((interception) => {
+            if (Array.isArray(interception)) {
+                return cy.wrap(interception.map(({ request }) => request.body.variables));
+            }
+            return cy.wrap(interception.request.body.variables);
+        });
+    }
+
+    return cy.wrap({
+        waitForRequests,
+        waitAndYieldRequestBodyVariables,
     });
 }
 

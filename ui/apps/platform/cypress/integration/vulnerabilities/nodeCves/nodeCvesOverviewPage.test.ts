@@ -9,6 +9,7 @@ import navSelectors from '../../../selectors/navigation';
 import {
     getNodeCvesOpname,
     routeMatcherMapForNodeCves,
+    routeMatcherMapForNodes,
     visitFirstNodeLinkFromTable,
     visitNodeCveOverviewPage,
 } from './NodeCve.helpers';
@@ -18,14 +19,7 @@ import {
     queryTableSortHeader,
     sortByTableHeader,
 } from '../../../helpers/tableHelpers';
-import { waitForTableLoadCompleteIndicator } from '../workloadCves/WorkloadCves.helpers';
-import { expectRequestedSort, interactAndInspectGraphQLVariables } from '../../../helpers/request';
-
-const staticResponseMapForNodeCVES = {
-    [getNodeCvesOpname]: {
-        fixture: `vulnerabilities/nodeCves/${getNodeCvesOpname}`,
-    },
-};
+import { expectRequestedSort, interceptAndWatchRequests } from '../../../helpers/request';
 
 describe('Node CVEs - Overview Page', () => {
     withAuth();
@@ -96,7 +90,11 @@ describe('Node CVEs - Overview Page', () => {
     it('should link a CVE table row to the correct CVE detail page', () => {
         // Having a CVE in CI is unreliable, so we mock the request and assert
         // on the link construction instead of the content of the detail page.
-        visitNodeCveOverviewPage(routeMatcherMapForNodeCves, staticResponseMapForNodeCVES);
+        visitNodeCveOverviewPage(routeMatcherMapForNodeCves, {
+            [getNodeCvesOpname]: {
+                fixture: `vulnerabilities/nodeCves/${getNodeCvesOpname}`,
+            },
+        });
 
         cy.get('tbody tr td[data-label="CVE"] a')
             .first()
@@ -117,107 +115,131 @@ describe('Node CVEs - Overview Page', () => {
     });
 
     it('should sort CVE table columns', () => {
-        visitNodeCveOverviewPage();
-        waitForTableLoadCompleteIndicator();
-
         // check sorting of CVE column
-        interactAndInspectGraphQLVariables(() => sortByTableHeader('CVE'), 'getNodeCVEs').then(
-            expectRequestedSort({ field: 'CVE', reversed: true })
-        );
-        interactAndInspectGraphQLVariables(() => sortByTableHeader('CVE'), 'getNodeCVEs').then(
-            expectRequestedSort({ field: 'CVE', reversed: false })
-        );
+        interceptAndWatchRequests(routeMatcherMapForNodeCves).then(
+            ({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+                visitNodeCveOverviewPage();
+                waitForRequests();
 
-        // check that the Nodes by severity column is not sortable
-        queryTableHeader('Nodes by severity');
-        queryTableSortHeader('Nodes by severity').should('not.exist');
+                // check sorting of CVE column
+                sortByTableHeader('CVE');
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedSort({ field: 'CVE', reversed: true })
+                );
 
-        // check sorting of Top CVSS column
-        interactAndInspectGraphQLVariables(() => sortByTableHeader('Top CVSS'), 'getNodeCVEs').then(
-            expectRequestedSort({
-                field: 'CVSS',
-                reversed: true,
-                aggregateBy: { aggregateFunc: 'max', distinct: false },
-            })
-        );
-        interactAndInspectGraphQLVariables(() => sortByTableHeader('Top CVSS'), 'getNodeCVEs').then(
-            expectRequestedSort({
-                field: 'CVSS',
-                reversed: false,
-                aggregateBy: { aggregateFunc: 'max', distinct: false },
-            })
-        );
+                sortByTableHeader('CVE');
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedSort({ field: 'CVE', reversed: false })
+                );
 
-        // check sorting of Affected Nodes column
-        interactAndInspectGraphQLVariables(
-            () => sortByTableHeader('Affected nodes'),
-            'getNodeCVEs'
-        ).then(
-            expectRequestedSort({
-                field: 'Node ID',
-                reversed: true,
-                aggregateBy: { aggregateFunc: 'count', distinct: true },
-            })
-        );
-        interactAndInspectGraphQLVariables(
-            () => sortByTableHeader('Affected nodes'),
-            'getNodeCVEs'
-        ).then(
-            expectRequestedSort({
-                field: 'Node ID',
-                reversed: false,
-                aggregateBy: { aggregateFunc: 'count', distinct: true },
-            })
-        );
+                // check that the Nodes by severity column is not sortable
+                queryTableHeader('Nodes by severity');
+                queryTableSortHeader('Nodes by severity').should('not.exist');
 
-        // check that the First discovered column is not sortable
-        queryTableHeader('First discovered');
-        queryTableSortHeader('First discovered').should('not.exist');
+                // check sorting of Top CVSS column
+                sortByTableHeader('Top CVSS');
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedSort({
+                        field: 'CVSS',
+                        reversed: true,
+                        aggregateBy: { aggregateFunc: 'max', distinct: false },
+                    })
+                );
+
+                sortByTableHeader('Top CVSS');
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedSort({
+                        field: 'CVSS',
+                        reversed: false,
+                        aggregateBy: { aggregateFunc: 'max', distinct: false },
+                    })
+                );
+
+                // check sorting of Affected nodes column
+                sortByTableHeader('Affected nodes');
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedSort({
+                        field: 'Node ID',
+                        reversed: true,
+                        aggregateBy: { aggregateFunc: 'count', distinct: true },
+                    })
+                );
+
+                sortByTableHeader('Affected nodes');
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedSort({
+                        field: 'Node ID',
+                        reversed: false,
+                        aggregateBy: { aggregateFunc: 'count', distinct: true },
+                    })
+                );
+
+                // check that the First discovered column is not sortable
+                queryTableHeader('First discovered');
+                queryTableSortHeader('First discovered').should('not.exist');
+            }
+        );
     });
 
     it('should sort Node table columns', () => {
-        // Visit Node tab and wait for initial load - sorting will be pre-applied to the Node column
-        interactAndInspectGraphQLVariables(() => {
-            visitNodeCveOverviewPage();
-            cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
-        }, 'getNodes');
+        interceptAndWatchRequests(routeMatcherMapForNodes).then(
+            ({
+                waitForRequests,
+                waitAndYieldRequestBodyVariables: waitAndInspectRequestVariables,
+            }) => {
+                // Visit Node tab and wait for initial load - sorting will be pre-applied to the Node column
+                visitNodeCveOverviewPage();
+                cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
+                waitForRequests();
 
-        // check sorting of Node column
-        interactAndInspectGraphQLVariables(() => sortByTableHeader('Node'), 'getNodes').then(
-            expectRequestedSort({ field: 'Node', reversed: true })
-        );
-        interactAndInspectGraphQLVariables(() => sortByTableHeader('Node'), 'getNodes').then(
-            expectRequestedSort({ field: 'Node', reversed: false })
-        );
+                // check sorting of Node column
+                sortByTableHeader('Node');
+                waitAndInspectRequestVariables().then(
+                    expectRequestedSort({ field: 'Node', reversed: true })
+                );
 
-        // check that CVEs by Severity is not sortable
-        queryTableHeader('CVEs by severity');
-        queryTableSortHeader('CVEs by severity').should('not.exist');
+                sortByTableHeader('Node');
+                waitAndInspectRequestVariables().then(
+                    expectRequestedSort({ field: 'Node', reversed: false })
+                );
 
-        // check sorting of Cluster column
-        interactAndInspectGraphQLVariables(() => sortByTableHeader('Cluster'), 'getNodes').then(
-            expectRequestedSort({ field: 'Cluster', reversed: true })
-        );
-        interactAndInspectGraphQLVariables(() => sortByTableHeader('Cluster'), 'getNodes').then(
-            expectRequestedSort({ field: 'Cluster', reversed: false })
-        );
+                // check that CVEs by Severity is not sortable
+                queryTableHeader('CVEs by severity');
+                queryTableSortHeader('CVEs by severity').should('not.exist');
 
-        // check sorting of Operating System column
-        interactAndInspectGraphQLVariables(
-            () => sortByTableHeader('Operating system'),
-            'getNodes'
-        ).then(expectRequestedSort({ field: 'Operating System', reversed: true }));
-        interactAndInspectGraphQLVariables(
-            () => sortByTableHeader('Operating system'),
-            'getNodes'
-        ).then(expectRequestedSort({ field: 'Operating System', reversed: false }));
+                // check sorting of Cluster column
+                sortByTableHeader('Cluster');
+                waitAndInspectRequestVariables().then(
+                    expectRequestedSort({ field: 'Cluster', reversed: true })
+                );
 
-        // check sorting of Scan time column
-        interactAndInspectGraphQLVariables(() => sortByTableHeader('Scan time'), 'getNodes').then(
-            expectRequestedSort({ field: 'Node Scan Time', reversed: true })
-        );
-        interactAndInspectGraphQLVariables(() => sortByTableHeader('Scan time'), 'getNodes').then(
-            expectRequestedSort({ field: 'Node Scan Time', reversed: false })
+                sortByTableHeader('Cluster');
+                waitAndInspectRequestVariables().then(
+                    expectRequestedSort({ field: 'Cluster', reversed: false })
+                );
+
+                // check sorting of Operating System column
+                sortByTableHeader('Operating system');
+                waitAndInspectRequestVariables().then(
+                    expectRequestedSort({ field: 'Operating System', reversed: true })
+                );
+
+                sortByTableHeader('Operating system');
+                waitAndInspectRequestVariables().then(
+                    expectRequestedSort({ field: 'Operating System', reversed: false })
+                );
+
+                // check sorting of Scan time column
+                sortByTableHeader('Scan time');
+                waitAndInspectRequestVariables().then(
+                    expectRequestedSort({ field: 'Node Scan Time', reversed: true })
+                );
+
+                sortByTableHeader('Scan time');
+                waitAndInspectRequestVariables().then(
+                    expectRequestedSort({ field: 'Node Scan Time', reversed: false })
+                );
+            }
         );
     });
 
