@@ -400,11 +400,6 @@ spec:
         - $(tasks.build-container-arm64.results.IMAGE_URL)@$(tasks.build-container-arm64.results.IMAGE_DIGEST)
     - name: IMAGE_EXPIRES_AFTER
       value: $(params.image-expires-after)
-    runAfter:
-      - apply-tags-amd64
-      - apply-tags-s390x
-      - apply-tags-ppc64le
-      - apply-tags-arm64
     taskRef:
       params:
         - name: name
