@@ -2,9 +2,16 @@ import withAuth from '../../../helpers/basicAuth';
 import { assertAvailableFilters } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
+    expectRequestedSort,
     getRouteMatcherMapForGraphQL,
     interactAndWaitForResponses,
+    interceptAndWatchRequests,
 } from '../../../helpers/request';
+import {
+    queryTableHeader,
+    queryTableSortHeader,
+    sortByTableHeader,
+} from '../../../helpers/tableHelpers';
 import { assertCannotFindThePage, visit } from '../../../helpers/visit';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
@@ -114,24 +121,83 @@ describe('Node CVEs - CVE Detail Page', () => {
         cy.get('nav[aria-label="Breadcrumb"] a').contains('Nodes');
     });
 
-    it('should display the expected Node table columns', () => {
-        // check presence of Node column
-        // check presence of CVE Severity column
-        // check presence of CVE status column
-        // check presence of CVSS column
-        // check presence of cluster column
-        // check presence of Operating System column
-        // check presence of Affected components column
-    });
-
     it('should sort Node table columns', () => {
-        // check sorting of Node column
-        // check sorting of CVE Severity column
-        // check sorting of CVE status column
-        // check sorting of CVSS column
-        // check sorting of cluster column
-        // check sorting of Operating System column
-        // check sorting of Affected components column
+        interceptAndWatchRequests(
+            {
+                [getAffectedNodesOpname]: routeMatcherMapForNodeCvePage[getAffectedNodesOpname],
+            },
+            {
+                [getAffectedNodesOpname]: staticResponseMapForNodeCvePage[getAffectedNodesOpname],
+            }
+        ).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+            // Don't mock the metadata and summary requests, as they are not relevant to this test
+            visitNodeCvePage(mockCveName);
+            waitForRequests();
+
+            // check sorting of Node column
+            sortByTableHeader('Node');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'Node', reversed: true })
+            );
+            sortByTableHeader('Node');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'Node', reversed: false })
+            );
+
+            // check sorting of CVE Severity column
+            sortByTableHeader('CVE severity');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'Severity', reversed: true })
+            );
+            sortByTableHeader('CVE severity');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'Severity', reversed: false })
+            );
+
+            // check sorting of CVE status column
+            sortByTableHeader('CVE status');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'Fixable', reversed: true })
+            );
+            sortByTableHeader('CVE status');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'Fixable', reversed: false })
+            );
+
+            // check sorting of CVSS column
+            sortByTableHeader('CVSS score');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'CVSS', reversed: true })
+            );
+            sortByTableHeader('CVSS score');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'CVSS', reversed: false })
+            );
+
+            // check sorting of Cluster column
+            sortByTableHeader('Cluster');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'Cluster', reversed: true })
+            );
+            sortByTableHeader('Cluster');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'Cluster', reversed: false })
+            );
+
+            // check sorting of Operating System column
+            sortByTableHeader('Operating system');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'Operating System', reversed: true })
+            );
+            sortByTableHeader('Operating system');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'Operating System', reversed: false })
+            );
+
+            // check that the Affected components column is not sortable
+            queryTableHeader('Affected components');
+            queryTableSortHeader('Affected components').should('not.exist');
+        });
     });
 
     it('should filter the Node table', () => {
