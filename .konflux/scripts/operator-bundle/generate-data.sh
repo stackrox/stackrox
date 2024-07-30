@@ -9,6 +9,9 @@ mkdir -p build
 rm -rf build/bundle
 cp -a bundle build
 
+# VERSION is provided in vM.m.p format, but we need it
+# to not have that initial v
+VERSION="${VERSION#v}"
 INDEX_IMG_BASE="quay.io/rhacs-eng/stackrox-operator-index"
 IMG="$INDEX_IMG_BASE:v$VERSION"
 
