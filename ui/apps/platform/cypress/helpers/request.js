@@ -149,7 +149,7 @@ export function interceptAndWatchRequests(routeMatcherMap, staticResponseMap) {
         });
     }
 
-    return Promise.resolve({
+    return cy.wrap({
         waitForRequests,
         waitAndYieldRequestBodyVariables,
     });
