@@ -1,6 +1,7 @@
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
     applyLocalSeverityFilters,
     typeAndSelectSearchFilterValue,
@@ -67,7 +68,7 @@ describe('Workload CVE Image Single page', () => {
         visitFirstImage();
 
         // Check that the CVEs by severity totals in the card match the number in the "results found" text
-        const cardSelector = selectors.summaryCard('CVEs by severity');
+        const cardSelector = vulnSelectors.summaryCard('CVEs by severity');
         cy.get(
             [
                 `${cardSelector} span.pf-v5-c-icon:contains("Critical") ~ p`,
@@ -85,7 +86,7 @@ describe('Workload CVE Image Single page', () => {
         });
 
         // Check that the CVEs by status totals in the card match the number in the "results found" text
-        const fixStatusCardSelector = selectors.summaryCard('CVEs by status');
+        const fixStatusCardSelector = vulnSelectors.summaryCard('CVEs by status');
         cy.get(
             [
                 `${fixStatusCardSelector} p:contains('with available fixes')`,
@@ -105,7 +106,7 @@ describe('Workload CVE Image Single page', () => {
     it('should correctly apply a severity filter', () => {
         visitFirstImage();
         // Check that no severities are hidden by default
-        cy.get(selectors.summaryCard('CVEs by severity'))
+        cy.get(vulnSelectors.summaryCard('CVEs by severity'))
             .find('p')
             .contains(new RegExp('(Critical|Important|Moderate|Low) hidden'))
             .should('not.exist');

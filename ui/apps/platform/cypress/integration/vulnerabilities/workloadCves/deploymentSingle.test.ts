@@ -6,6 +6,7 @@ import {
     selectEntityTab,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import { selectors } from './WorkloadCves.selectors';
 
 describe('Workload CVE Deployment Single page', () => {
@@ -56,8 +57,8 @@ describe('Workload CVE Deployment Single page', () => {
         cy.get(selectors.resourcesTab).should('have.attr', 'aria-selected', 'false');
 
         // Check elements on the Vulnerabilities tab
-        cy.get(selectors.summaryCard('CVEs by severity'));
-        cy.get(selectors.summaryCard('CVEs by status'));
+        cy.get(vulnSelectors.summaryCard('CVEs by severity'));
+        cy.get(vulnSelectors.summaryCard('CVEs by status'));
         // Check table exists with the correct headers
         cy.get('table thead tr th').contains('CVE');
         cy.get('table thead tr th').contains('CVE severity');
@@ -104,7 +105,7 @@ describe('Workload CVE Deployment Single page', () => {
         visitFirstDeployment();
 
         // Check that no severities are hidden by default
-        cy.get(selectors.summaryCard('CVEs by severity'))
+        cy.get(vulnSelectors.summaryCard('CVEs by severity'))
             .find('p')
             .contains(new RegExp('(Critical|Important|Moderate|Low) hidden'))
             .should('not.exist');

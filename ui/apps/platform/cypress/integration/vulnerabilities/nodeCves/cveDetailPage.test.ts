@@ -2,11 +2,13 @@ import withAuth from '../../../helpers/basicAuth';
 import { assertAvailableFilters } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
+    expectRequestedQuery,
     expectRequestedSort,
     getRouteMatcherMapForGraphQL,
     interactAndWaitForResponses,
     interceptAndWatchRequests,
 } from '../../../helpers/request';
+import * as filterHelpers from '../../../helpers/compoundFilters';
 import {
     queryTableHeader,
     queryTableSortHeader,
@@ -26,6 +28,7 @@ import {
     visitNodeCvePageWithStaticPermissions,
 } from './NodeCve.helpers';
 import { staticResponseMapForNodePage } from './nodeDetailPage.test';
+import { applyLocalSeverityFilters } from '../workloadCves/WorkloadCves.helpers';
 
 const mockCveName = 'CYPRESS-CVE-2022-1996';
 
@@ -201,16 +204,37 @@ describe('Node CVEs - CVE Detail Page', () => {
     });
 
     it('should filter the Node table', () => {
-        // filtering by Node name should only display rows with a matching name
-        // filtering by CVE Severity should only display rows with a matching severity
-        // filtering by CVE Status should only display rows with a matching status
-        // filtering by CVSS should only display rows with a CVSS in range
-        // filtering by Cluster should only display rows with a matching cluster
-        // filtering by Operating System should only display rows with a matching OS
-        // filtering by Component should only display rows with a nested table containing a matching component
-        //   - expand each row
-        //   - check that the component name exists in the table
-        // clearing filters should remove all filter chips and filter from the URL
+        interceptAndWatchRequests(
+            {
+                [getAffectedNodesOpname]: routeMatcherMapForNodeCvePage[getAffectedNodesOpname],
+            },
+            {
+                [getAffectedNodesOpname]: staticResponseMapForNodeCvePage[getAffectedNodesOpname],
+            }
+        ).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+            // Don't mock the metadata and summary requests, as they are not relevant to this test
+            visitNodeCvePage(mockCveName);
+            waitForRequests();
+
+            // filtering by Node name should only display rows with a matching name
+            filterHelpers.addAutocompleteFilter('Node', 'Name', 'cypress-node-1');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedQuery(`Node:r/cypress-node-1+CVE:r/^${mockCveName}$`)
+            );
+            filterHelpers.clearFilters();
+            waitForRequests();
+
+            applyLocalSeverityFilters('Low');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedQuery(`SEVERITY:LOW_VULNERABILITY_SEVERITY+CVE:r/^${mockCveName}$`)
+            );
+            cy.get(vulnSelectors.summaryCard('Nodes by severity')).contains('Critical hidden');
+            cy.get(vulnSelectors.summaryCard('Nodes by severity')).contains('Important hidden');
+            cy.get(vulnSelectors.summaryCard('Nodes by severity')).contains('Moderate hidden');
+            cy.get(vulnSelectors.summaryCard('Nodes by severity')).contains(new RegExp(/\d+ Low/));
+            filterHelpers.clearFilters();
+            waitForRequests();
+        });
     });
 
     // Note: This might not be reliable in CI due to the low number of Nodes. We may need to mock and/or
