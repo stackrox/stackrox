@@ -1,10 +1,11 @@
 # Feature Flags
 
-You can use feature flags to control visibility of a feature or a block of code. The end user will not see the feature unless the flag is enabled.
-With this, you can control the release of said feature or allow a user to enable/disable some functionality in production.
-Currently, feature flags use environment variables to power the toggles.
+You can use feature flags to control functionality of a feature or a block of code. The end user will not benefit from the feature unless the flag is enabled.
+With this, you can control the release of said feature.
 
-Feature flags can be valuable to ship features in a preview state, to provide the end user a way to disable some functionality or to control any boolean setting.
+Currently, feature flags use environment variables to power the toggles. They are not automatically propagated from central to other components, except for the case where central renders an installation bundle: it configures the manifests with the current central state of the feature flags.
+
+Feature flags can be valuable to ship features in a preview state, to provide the end user a way to enable some potentially unstable functionality.
 
 Difference between feature flags and configuration options (DB, `pkg/env`):
 
@@ -25,6 +26,10 @@ A feature may go through all of these stages, start from any before the last one
 > Migrations must be merged to the master branch without any feature flag gate, and must not break any current features.
 >
 > :warning: If a `--feature-flag` parameter is passed to the `pg-table-bindings-wrapper` generator, the schema is only applied if the flag is enabled.
+
+### Feature deprecation
+
+To deprecate a feature, introduce a feature flag, that removes the functionality when enabled. Do not use the word "disabled" in the flag and environent variable names, as it maybe confusing to read `featureDisabled.Enabled()`. Consider "removed" or "hidden" instead.
 
 ## Adding a feature flag
 
