@@ -445,12 +445,72 @@ spec:
       operator: in
       values: [ "true" ]
 
-  - name: deprecated-base-image-check
+  - name: deprecated-base-image-check-amd64
     params:
     - name: IMAGE_URL
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-container-amd64.results.IMAGE_URL)
     - name: IMAGE_DIGEST
-      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
+      value: $(tasks.build-container-amd64.results.IMAGE_DIGEST)
+    taskRef:
+      params:
+      - name: name
+        value: deprecated-image-check
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.4@sha256:3f956e0cd9b0a183e4fd95e010aa668a788ef564d3af1f7aecaaf6e2ccc2ce93
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
+  - name: deprecated-base-image-check-s390x
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-container-s390x.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-container-s390x.results.IMAGE_DIGEST)
+    taskRef:
+      params:
+      - name: name
+        value: deprecated-image-check
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.4@sha256:3f956e0cd9b0a183e4fd95e010aa668a788ef564d3af1f7aecaaf6e2ccc2ce93
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
+  - name: deprecated-base-image-check-ppc64le
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-container-ppc64le.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-container-ppc64le.results.IMAGE_DIGEST)
+    taskRef:
+      params:
+      - name: name
+        value: deprecated-image-check
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.4@sha256:3f956e0cd9b0a183e4fd95e010aa668a788ef564d3af1f7aecaaf6e2ccc2ce93
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
+  - name: deprecated-base-image-check-arm64
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-container-arm64.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-container-arm64.results.IMAGE_DIGEST)
     taskRef:
       params:
       - name: name
