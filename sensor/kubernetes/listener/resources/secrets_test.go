@@ -215,19 +215,36 @@ func TestForceLocalScanning(t *testing.T) {
 	regStore = registry.NewRegistryStore(alwaysInsecureCheckTLS)
 	d = newSecretDispatcher(regStore)
 
-	// secrets with an service-account.name other than default should not be stored
+	// secrets with an k8s service-account.name other than default should not be stored
 	dockerConfigSecret.Annotations = map[string]string{saAnnotations[0]: "something"}
-
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
+	assert.False(t, regStore.IsLocal(fakeImage))
+	assert.Nil(t, reg)
+	assert.Error(t, err)
+
+	// secrets with an OCP internal-registry-auth-token.service-account other than default should not be stored
+	dockerConfigSecret.Annotations = map[string]string{saAnnotations[1]: "something"}
+	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
+	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
+	assert.False(t, regStore.IsLocal(fakeImage))
 	assert.Nil(t, reg)
 	assert.Error(t, err)
 
 	// secrets with an saAnnotation of `default` should still be stored
 	dockerConfigSecret.Annotations = map[string]string{saAnnotations[0]: "default"}
-
+	regStore.Cleanup()
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
+	assert.True(t, regStore.IsLocal(fakeImage))
+	assert.NotNil(t, reg)
+	assert.NoError(t, err)
+
+	dockerConfigSecret.Annotations = map[string]string{saAnnotations[1]: "default"}
+	regStore.Cleanup()
+	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
+	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
+	assert.True(t, regStore.IsLocal(fakeImage))
 	assert.NotNil(t, reg)
 	assert.NoError(t, err)
 }
