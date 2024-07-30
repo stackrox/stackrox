@@ -175,7 +175,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_WithValueNot
 	}
 
 	for envValue, expectations := range testCases {
-		s.Run(fmt.Sprintf("ROX_SENSOR_UPGRADER_ENABLED=%v", envValue), func() {
+		s.Run(fmt.Sprintf("%s=%v", env.SensorUpgraderEnabled.EnvVar(), envValue), func() {
 			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
 			s.dataStore.EXPECT().UpsertSensorUpgradeConfig(gomock.Any(), &UpgradeConfigMatcher{expectations.expectedAutoUpdate})
 			s.T().Setenv(env.SensorUpgraderEnabled.EnvVar(), envValue)
