@@ -12,6 +12,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Added Features
 
 - ROX-25066: Add new external backup integration for non-AWS S3 compatible providers.
+- ROX-25376: Add the release stage property to the `/v1/featureflags` response.
+- ROX-25451: Secured Cluster Auto-Upgrader is now enabled for all kind of clusters.
 
 ### Removed Features
 
