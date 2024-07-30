@@ -90,7 +90,11 @@ describe('Node CVEs - Overview Page', () => {
     it('should link a CVE table row to the correct CVE detail page', () => {
         // Having a CVE in CI is unreliable, so we mock the request and assert
         // on the link construction instead of the content of the detail page.
-        visitNodeCveOverviewPage(routeMatcherMapForNodeCves, staticResponseMapForNodeCVES);
+        visitNodeCveOverviewPage(routeMatcherMapForNodeCves, {
+            [getNodeCvesOpname]: {
+                fixture: `vulnerabilities/nodeCves/${getNodeCvesOpname}`,
+            },
+        });
 
         cy.get('tbody tr td[data-label="CVE"] a')
             .first()
