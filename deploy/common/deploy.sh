@@ -162,6 +162,7 @@ function get_cluster_zip {
     STATUS=$(curl_central_retry -X POST \
         -d "$CLUSTER_JSON" \
         -o "$TMP" \
+        -H "Content-Type: application/json" \
         -v \
         "https://$LOCAL_API_ENDPOINT/v1/clusters")
     >&2 echo "Status: $STATUS"
