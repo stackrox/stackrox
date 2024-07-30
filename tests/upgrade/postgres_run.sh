@@ -167,6 +167,19 @@ test_upgrade_paths() {
     touch "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}"
 
     ########################################################################################
+    # Upgrade back to latest to run the smoke tests by first walking previous releases     #
+    ########################################################################################
+    for str in ${PREVIOUS_RELEASES[@]}; do
+      info "Walking upgrades -- release => $str"
+      kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$str"
+      kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$str"
+
+      wait_for_api
+      wait_for_central_db
+      info "4.5.0 should fail"
+    done
+
+    ########################################################################################
     # Upgrade to current in order to run any Postgres -> Postgres migrations               #
     ########################################################################################
     kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
@@ -197,18 +210,6 @@ test_upgrade_paths() {
     wait_for_api
 
     touch "${UPGRADE_PROGRESS_POSTGRES_ROLLBACK}"
-
-    ########################################################################################
-    # Upgrade back to latest to run the smoke tests by first walking previous releases     #
-    ########################################################################################
-    for str in ${PREVIOUS_RELEASES[@]}; do
-      info "Walking upgrades -- release => $str"
-      kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$str"
-      kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$str"
-
-      wait_for_api
-      info "4.5.0 should fail"
-    done
 
     # Now go back to the current release
     kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
