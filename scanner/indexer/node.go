@@ -81,6 +81,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*claircore.IndexRepor
 	if err != nil {
 		return nil, err
 	}
+	pck = filterPackages(ctx, pck)
 	if pck != nil {
 		zlog.Info(ctx).Msgf("Num packages found: %v", len(pck))
 	}
@@ -106,6 +107,18 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*claircore.IndexRepor
 	report.State = controller.IndexFinished.String()
 
 	return report, nil
+}
+
+// As we're only interested in the effective running RPM DB,
+// we filter out packages from other DBs like rpm-ostree
+func filterPackages(_ context.Context, pck []*claircore.Package) []*claircore.Package {
+	var filtered []*claircore.Package
+	for _, pkg := range pck {
+		if pkg.PackageDB == "sqlite:usr/share/rpm" {
+			filtered = append(filtered, pkg)
+		}
+	}
+	return filtered
 }
 
 // Close closes the NodeIndexer.
