@@ -327,7 +327,7 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 		defer utils.IgnoreError(openedFile.Close)
 		// search mapping file
 		fileName := filepath.Base(opts.fileName)
-		targetFile, err := h.openFromArchive(openedFile.Name(), fileName)
+		targetFile, _, err := h.openFromArchive(openedFile.Name(), fileName)
 		if err != nil {
 			return nil, err
 		}
@@ -335,7 +335,7 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 	case vulnerabilityUpdaterType:
 		defer utils.IgnoreError(openedFile.Close)
 		// check version information in manifest
-		mf, err := h.openFromArchive(openedFile.Name(), scannerV4ManifestFile)
+		mf, _, err := h.openFromArchive(openedFile.Name(), scannerV4ManifestFile)
 		if err != nil {
 			return nil, err
 		}
@@ -351,7 +351,7 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 			return nil, errors.New(msg)
 		}
 
-		vulns, err := h.openFromArchive(openedFile.Name(), opts.vulnBundle)
+		vulns, _, err := h.openFromArchive(openedFile.Name(), opts.vulnBundle)
 		if err != nil {
 			return nil, err
 		}
@@ -402,7 +402,7 @@ func (h *httpHandler) openOnlineDefinitions(_ context.Context, t updaterType, op
 		fallthrough
 	case mappingUpdaterType:
 		defer utils.IgnoreError(openedFile.Close)
-		targetFile, err := h.openFromArchive(openedFile.Name(), opts.fileName)
+		targetFile, _, err := h.openFromArchive(openedFile.Name(), opts.fileName)
 		if err != nil {
 			return nil, err
 		}
@@ -493,17 +493,18 @@ func (h *httpHandler) validateV4DefsVersion(zipPath string) error {
 
 	for _, zipF := range zipR.File {
 		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			defs, err := h.openFromArchive(zipPath, zipF.Name)
+			defs, size, err := h.openFromArchive(zipPath, zipF.Name)
 			if err != nil {
 				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
 			}
-			utils.IgnoreError(defs.Close)
-			mf, err := h.openFromArchive(defs.Name(), scannerV4ManifestFile)
+			defer utils.IgnoreError(defs.Close)
+			// Use readFromArchive, as the defs file was already closed via openFromArchive.
+			mf, err := h.readFromArchive(defs, size, scannerV4ManifestFile)
 			if err != nil {
 				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
 			}
+			defer utils.IgnoreError(mf.Close)
 			offlineV, err := getOfflineFileVersion(mf)
-			utils.IgnoreError(mf.Close)
 			if err != nil {
 				return errors.Wrap(err, "couldn't get v4 offline defs version")
 			}
@@ -576,20 +577,46 @@ func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File,
 	return nil
 }
 
-// openFromArchive returns the associated file for the given name within the ZIP archiveFile.
+// readFromArchive returns the associated file for the given name within the ZIP archive.
+//
 // The returned file struct has a file descriptor allocated on the filesystem outside the ZIP, but
 // its name is removed. Meaning: as soon as the file struct is closed, the data will be
-// freed in filesystem by the OS.
-func (h *httpHandler) openFromArchive(archiveFile string, fileName string) (*os.File, error) {
+// freed in filesystem by the OS. That also means there should not be any OS operations
+// done on the returned file.
+func (h *httpHandler) readFromArchive(archive io.ReaderAt, size int64, fileName string) (*os.File, error) {
+	zipReader, err := zip.NewReader(archive, size)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading archive")
+	}
+
+	f, _, err := h.openFromZipReader(zipReader, fileName)
+	return f, err
+}
+
+// openFromArchive returns the associated file for the given name within the ZIP archiveFile
+// along with the file size.
+//
+// The returned file struct has a file descriptor allocated on the filesystem outside the ZIP, but
+// its name is removed. Meaning: as soon as the file struct is closed, the data will be
+// freed in filesystem by the OS. That also means there should not be any OS operations
+// done on the returned file.
+func (h *httpHandler) openFromArchive(archiveFile string, fileName string) (*os.File, int64, error) {
 	// Open zip archive and extract the fileName.
 	zipReader, err := zip.OpenReader(archiveFile)
 	if err != nil {
-		return nil, errors.Wrap(err, "opening zip archive")
+		return nil, 0, errors.Wrap(err, "opening zip archive")
 	}
 	defer utils.IgnoreError(zipReader.Close)
+
+	return h.openFromZipReader(&zipReader.Reader, fileName)
+}
+
+// openFromZipReader does the work for readFromArchive and openFromArchive.
+// It should **not** be used outside of those functions.
+func (h *httpHandler) openFromZipReader(zipReader *zip.Reader, fileName string) (*os.File, int64, error) {
 	zipFile, err := zipReader.Open(fileName)
 	if err != nil {
-		return nil, errors.Wrap(err, "extracting")
+		return nil, 0, errors.Wrap(err, "extracting file")
 	}
 	defer utils.IgnoreError(zipFile.Close)
 
@@ -604,7 +631,7 @@ func (h *httpHandler) openFromArchive(archiveFile string, fileName string) (*os.
 	tmpFilePattern := "*-" + strings.ReplaceAll(fileName, "/", "-")
 	tmpFile, err := os.CreateTemp(h.dataDir, tmpFilePattern)
 	if err != nil {
-		return nil, errors.Wrap(err, "opening temporary file")
+		return nil, 0, errors.Wrap(err, "opening temporary file")
 	}
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
@@ -619,19 +646,19 @@ func (h *httpHandler) openFromArchive(archiveFile string, fileName string) (*os.
 
 	// Extract the file and copy contents to the temporary file, notice we
 	// intentionally don't Sync(), to benefit from filesystem caching.
-	_, err = io.Copy(tmpFile, zipFile)
+	size, err := io.Copy(tmpFile, zipFile)
 	if err != nil {
-		return nil, errors.Wrap(err, "writing to temporary file")
+		return nil, 0, errors.Wrap(err, "writing to temporary file")
 	}
 
 	// Reset for caller's convenience.
 	_, err = tmpFile.Seek(0, io.SeekStart)
 	if err != nil {
-		return nil, errors.Wrap(err, "setting offset for temporary file")
+		return nil, 0, errors.Wrap(err, "setting offset for temporary file")
 	}
 
 	success = true
-	return tmpFile, nil
+	return tmpFile, size, nil
 }
 
 func getOfflineFileVersion(mf *os.File) (string, error) {
