@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -70,7 +71,7 @@ type Registry interface {
 	Match(image *storage.ImageName) bool
 	Metadata(image *storage.Image) (*storage.ImageMetadata, error)
 	Test() error
-	Config() *Config
+	Config(ctx context.Context) *Config
 	Name() string
 	HTTPClient() *http.Client
 }

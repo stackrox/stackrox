@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -232,7 +233,7 @@ func (r *Registry) Test() error {
 }
 
 // Config returns the configuration of the docker registry
-func (r *Registry) Config() *types.Config {
+func (r *Registry) Config(_ context.Context) *types.Config {
 	username, password := r.cfg.GetCredentials()
 	return &types.Config{
 		Username:         username,
