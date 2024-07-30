@@ -134,8 +134,9 @@ def get_supported_releases():
     releases = []
     try:
         releases = data["data"][0]["versions"]
-    except Exception as e:
-        logging.debug(f"Found no RHACS releases in PRODUCT_LIFECYCLES_API at {PRODUCT_LIFECYCLES_API}\n{repr(e)}")
+    except Exception as exception:
+        logging.debug(f"Found no RHACS releases in PRODUCT_LIFECYCLES_API at "
+                      f"{PRODUCT_LIFECYCLES_API}\n{repr(exception)}")
     for release in releases:
         if release["type"] != "End of life":
             supported_releases.append(parse_release(release["name"]))
@@ -155,10 +156,12 @@ def __get_data_from_product_lifecycles_api():
                 response_string = response_bytes.decode('utf-8')
                 data = json.loads(response_string)
                 return data
-            except Exception as e:
-                logging.debug(f"Failed to read data from PRODUCT_LIFECYCLES_API at {PRODUCT_LIFECYCLES_API}\n{repr(e)}")
-    except Exception as e:
-        logging.debug(f"Failed to access PRODUCT_LIFECYCLES_API at {PRODUCT_LIFECYCLES_API}\n{repr(e)}")
+            except Exception as exception:
+                logging.debug(f"Failed to read data from PRODUCT_LIFECYCLES_API at "
+                              f"{PRODUCT_LIFECYCLES_API}\n{repr(exception)}")
+    except Exception as exception:
+        logging.debug(f"Failed to access PRODUCT_LIFECYCLES_API at {PRODUCT_LIFECYCLES_API}\n{repr(exception)}")
+    return []
 
 
 def __does_chart_exist(chart_name, release):
