@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -215,11 +214,9 @@ func (s *debugServiceTestSuite) TestGetBundle() {
 		since:             time.Now(),
 	})
 
-	s.Equal(http.StatusOK, w.Code)
+	s.Equal(http.StatusOK, w.Code())
 
-	body, err := io.ReadAll(w.Data)
-	s.Require().NoError(err)
-
+	body := w.Data()
 	zipReader, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
 	s.Require().NoError(err)
 

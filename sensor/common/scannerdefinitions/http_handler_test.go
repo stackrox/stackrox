@@ -112,11 +112,11 @@ func TestServeHTTP_Responses(t *testing.T) {
 				h.centralReachable.Store(tt.centralReachable)
 				h.ServeHTTP(tt.args.writer, tt.args.request)
 				if tt.jsonResponse {
-					assert.JSONEq(t, tt.responseBody, tt.args.writer.Data.String())
+					assert.JSONEq(t, tt.responseBody, tt.args.writer.DataString())
 				} else {
-					assert.Equal(t, tt.responseBody, tt.args.writer.Data.String())
+					assert.Equal(t, tt.responseBody, tt.args.writer.DataString())
 				}
-				assert.Equal(t, tt.statusCode, tt.args.writer.Code)
+				assert.Equal(t, tt.statusCode, tt.args.writer.Code())
 			}
 		})
 	}

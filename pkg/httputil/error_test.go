@@ -66,8 +66,8 @@ func TestWriteError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			writer := mock.NewResponseWriter()
 			WriteError(writer, tt.incomingErr)
-			assert.Equal(t, tt.expectedStatus, writer.Code)
-			data := writer.Data.String()
+			assert.Equal(t, tt.expectedStatus, writer.Code())
+			data := writer.DataString()
 			if len(data) > 0 {
 				assert.JSONEq(t, tt.expectedMessage, data)
 			} else {
@@ -78,8 +78,8 @@ func TestWriteError(t *testing.T) {
 			if tt.incomingErr != nil {
 				grpcWriter := mock.NewResponseWriter()
 				WriteGRPCStyleError(grpcWriter, tt.grpcCode, tt.incomingErr)
-				assert.Equal(t, tt.expectedStatus, writer.Code)
-				grpcData := grpcWriter.Data.String()
+				assert.Equal(t, tt.expectedStatus, writer.Code())
+				grpcData := grpcWriter.DataString()
 				if len(grpcData) > 0 {
 					assert.JSONEq(t, tt.expectedGRPCMessage, grpcData)
 				} else {

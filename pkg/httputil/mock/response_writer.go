@@ -10,10 +10,10 @@ const httpStatusUnset = -1
 var _ http.ResponseWriter = (*ResponseWriter)(nil)
 
 // ResponseWriter is stub implementation of http.ResponseWriter.
-// It is basic implementation. It is NOT thread safe.
+// It is a basic implementation. It is NOT thread safe.
 type ResponseWriter struct {
-	Data    *bytes.Buffer
-	Code    int
+	data    bytes.Buffer
+	code    int
 	headers http.Header
 	err     error
 }
@@ -28,8 +28,7 @@ func NewResponseWriter() *ResponseWriter {
 // to emulate e.g. closed connection.
 func NewFailingResponseWriter(err error) *ResponseWriter {
 	return &ResponseWriter{
-		Data:    bytes.NewBufferString(""),
-		Code:    httpStatusUnset,
+		code:    httpStatusUnset,
 		headers: make(http.Header),
 		err:     err,
 	}
@@ -45,13 +44,32 @@ func (rw *ResponseWriter) Write(data []byte) (int, error) {
 	if rw.err != nil {
 		return 0, rw.err
 	}
-	if rw.Code == httpStatusUnset {
-		rw.Code = http.StatusOK
+	if rw.code == httpStatusUnset {
+		rw.WriteHeader(http.StatusOK)
 	}
-	return rw.Data.Write(data)
+	return rw.data.Write(data)
 }
 
 // WriteHeader sets status code.
 func (rw *ResponseWriter) WriteHeader(statusCode int) {
-	rw.Code = statusCode
+	rw.code = statusCode
+}
+
+func (rw *ResponseWriter) Code() int {
+	return rw.code
+}
+
+func (rw *ResponseWriter) Data() []byte {
+	return rw.data.Bytes()
+}
+
+func (rw *ResponseWriter) DataString() string {
+	return rw.data.String()
+}
+
+// Reset clears all data from the writer for reuse.
+func (rw *ResponseWriter) Reset() {
+	rw.data.Reset()
+	rw.code = httpStatusUnset
+	clear(rw.headers)
 }
