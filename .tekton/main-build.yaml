@@ -59,7 +59,7 @@ spec:
 
   # The pipeline regularly takes >1h to finish.
   timeouts:
-    pipeline: 1h30m0s
+    pipeline: 2h15m0s
 
   pipelineRef:
     name: main-pipeline
